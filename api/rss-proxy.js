@@ -50,11 +50,13 @@ export default async function handler(req, res) {
     res.status(200).send(rssData);
     
   } catch (error) {
-    console.error(`Error fetching RSS from ${url}:`, error);
-    res.status(500).json({ 
+    console.error('Error fetching RSS:', error);
+    
+    // 返回详细错误信息
+    res.status(500).json({
       error: 'Failed to fetch RSS feed',
       message: error.message,
       url: url
     });
   }
-}
+};
