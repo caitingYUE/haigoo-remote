@@ -6,11 +6,16 @@ import JobFilter from '../components/JobFilter'
 import JobDetailModal from '../components/JobDetailModal'
 import { Job, JobFilter as JobFilterType } from '../types'
 
+// Import company logos
+import techCorpLogo from '../assets/company-logos/techcorp-logo.svg'
+import innovateIncLogo from '../assets/company-logos/innovate-inc-logo.svg'
+import dataCoLogo from '../assets/company-logos/dataco-logo.svg'
+
 // Company logos mapping
 const companyLogos: { [key: string]: string } = {
-  'TechCorp': '/src/assets/company-logos/techcorp-logo.svg',
-  'Innovate Inc.': '/src/assets/company-logos/innovate-inc-logo.svg',
-  'DataCo': '/src/assets/company-logos/dataco-logo.svg'
+  'TechCorp': techCorpLogo,
+  'Innovate Inc.': innovateIncLogo,
+  'DataCo': dataCoLogo
 }
 
 // Mock data for demonstration

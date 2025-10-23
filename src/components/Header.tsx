@@ -1,6 +1,7 @@
 import { Search, Bell, User, Menu, Settings, Briefcase, Star, TrendingUp, LogOut, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import logoSvg from '../assets/logo.svg'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -27,7 +28,7 @@ export default function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <img src="/src/assets/logo.svg" alt="Haigoo" className="h-10 w-auto" />
+              <img src={logoSvg} alt="Haigoo" className="h-10 w-auto" />
               <span className="ml-3 text-base text-gray-600 font-medium">远程助手</span>
             </div>
           </div>
