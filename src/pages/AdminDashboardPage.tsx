@@ -19,7 +19,10 @@ import {
   Settings,
   AlertCircle,
   Info,
-  Loader
+  Loader,
+  Plus,
+  Save,
+  X
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
@@ -41,6 +44,17 @@ const AdminDashboardPage: React.FC = () => {
   // RSS配置相关状态
   const [showRSSConfig, setShowRSSConfig] = useState(false);
   const [rssSources, setRssSources] = useState<RSSSource[]>([]);
+  const [showRSSForm, setShowRSSForm] = useState(false);
+  const [editingRSSSource, setEditingRSSSource] = useState<RSSSource | null>(null);
+  const [rssFormData, setRssFormData] = useState<{
+    name: string;
+    url: string;
+    category: string;
+  }>({
+    name: '',
+    url: '',
+    category: ''
+  });
   const [syncProgress, setSyncProgress] = useState<{
     total: number;
     completed: number;
@@ -186,6 +200,88 @@ const AdminDashboardPage: React.FC = () => {
     loadData();
   };
 
+  // RSS源管理函数
+  const handleAddRSSSource = () => {
+    setEditingRSSSource(null);
+    setRssFormData({ name: '', url: '', category: '' });
+    setShowRSSForm(true);
+  };
+
+  const handleEditRSSSource = (source: RSSSource) => {
+    setEditingRSSSource(source);
+    setRssFormData({
+      name: source.name,
+      url: source.url,
+      category: source.category
+    });
+    setShowRSSForm(true);
+  };
+
+  const handleDeleteRSSSource = (sourceToDelete: RSSSource) => {
+    if (confirm(`确定要删除RSS源 "${sourceToDelete.name}" 吗？`)) {
+      try {
+        const sourceIndex = rssSources.findIndex(s => 
+          s.name === sourceToDelete.name && 
+          s.category === sourceToDelete.category && 
+          s.url === sourceToDelete.url
+        );
+        if (sourceIndex !== -1) {
+          rssService.deleteRSSSource(sourceIndex);
+          const updatedSources = rssService.getRSSSources();
+          setRssSources(updatedSources);
+        }
+      } catch (error) {
+        alert(`删除失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      }
+    }
+  };
+
+  const handleSaveRSSSource = () => {
+    if (!rssFormData.name.trim() || !rssFormData.url.trim() || !rssFormData.category.trim()) {
+      alert('请填写完整的RSS源信息');
+      return;
+    }
+
+    try {
+      if (editingRSSSource) {
+        // 编辑现有源
+        const sourceIndex = rssSources.findIndex(s => 
+          s.name === editingRSSSource.name && 
+          s.category === editingRSSSource.category && 
+          s.url === editingRSSSource.url
+        );
+        if (sourceIndex !== -1) {
+          rssService.updateRSSSource(sourceIndex, {
+            name: rssFormData.name,
+            url: rssFormData.url,
+            category: rssFormData.category
+          });
+        }
+      } else {
+        // 添加新源
+        rssService.addRSSSource({
+          name: rssFormData.name,
+          url: rssFormData.url,
+          category: rssFormData.category
+        });
+      }
+      
+      const updatedSources = rssService.getRSSSources();
+      setRssSources(updatedSources);
+      setShowRSSForm(false);
+      setEditingRSSSource(null);
+      setRssFormData({ name: '', url: '', category: '' });
+    } catch (error) {
+      alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  };
+
+  const handleCancelRSSForm = () => {
+    setShowRSSForm(false);
+    setEditingRSSSource(null);
+    setRssFormData({ name: '', url: '', category: '' });
+  };
+
   const handleJobDelete = (jobId: string) => {
     if (confirm('确定要删除这个岗位吗？')) {
       jobAggregator.deleteJob(jobId);
@@ -328,8 +424,19 @@ const AdminDashboardPage: React.FC = () => {
         {showRSSConfig && (
           <div className="bg-white rounded-lg shadow mb-6">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">RSS数据源配置</h3>
-              <p className="text-sm text-gray-600">管理RSS数据源，共 {rssSources.length} 个源</p>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">RSS数据源配置</h3>
+                  <p className="text-sm text-gray-600">管理RSS数据源，共 {rssSources.length} 个源</p>
+                </div>
+                <button
+                  onClick={handleAddRSSSource}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  添加RSS源
+                </button>
+              </div>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
@@ -341,14 +448,108 @@ const AdminDashboardPage: React.FC = () => {
                         <p className="text-xs text-gray-600 mt-1">{source.category}</p>
                         <p className="text-xs text-gray-500 mt-2 break-all">{source.url}</p>
                       </div>
-                      <div className="ml-2">
+                      <div className="ml-2 flex flex-col space-y-2">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           活跃
                         </span>
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => handleEditRSSSource(source)}
+                            className="p-1 text-gray-400 hover:text-blue-600"
+                            title="编辑"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRSSSource(source)}
+                            className="p-1 text-gray-400 hover:text-red-600"
+                            title="删除"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* RSS源添加/编辑表单 */}
+        {showRSSForm && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {editingRSSSource ? '编辑RSS源' : '添加RSS源'}
+                  </h3>
+                  <button
+                    onClick={handleCancelRSSForm}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      源名称
+                    </label>
+                    <input
+                      type="text"
+                      value={rssFormData.name}
+                      onChange={(e) => setRssFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="例如: WeWorkRemotely"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      分类
+                    </label>
+                    <input
+                      type="text"
+                      value={rssFormData.category}
+                      onChange={(e) => setRssFormData(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="例如: 全栈开发"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      RSS URL
+                    </label>
+                    <input
+                      type="url"
+                      value={rssFormData.url}
+                      onChange={(e) => setRssFormData(prev => ({ ...prev, url: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://example.com/feed.rss"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={handleCancelRSSForm}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleSaveRSSSource}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    保存
+                  </button>
+                </div>
               </div>
             </div>
           </div>
