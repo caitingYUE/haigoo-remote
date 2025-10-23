@@ -267,12 +267,12 @@ class RSSService {
    */
   async fetchRSSFeed(url: string): Promise<string> {
     try {
-      // 在开发环境中，直接尝试获取RSS
-      // 在生产环境中，使用代理服务
+      // 在开发环境中，使用本地代理
+      // 在生产环境中，使用Vercel serverless函数
       const isDevelopment = import.meta.env.DEV;
       const proxyUrl = isDevelopment 
         ? `/api/rss-proxy?url=${encodeURIComponent(url)}`
-        : `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        : `/api/rss-proxy?url=${encodeURIComponent(url)}`;
       
       let response: Response;
       let responseText: string;
@@ -295,29 +295,41 @@ class RSSService {
         } catch (directError) {
           console.log(`Direct fetch failed for ${url}, trying proxy...`);
           
-          // 使用公共CORS代理作为备选
-          response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+          // 使用本地代理
+          response = await fetch(proxyUrl);
           
           if (!response.ok) {
             throw new Error(`Proxy fetch failed: ${response.status}`);
           }
           
-          const proxyData = await response.json();
-          responseText = proxyData.contents;
+          // 检查响应类型
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            throw new Error(`Proxy error: ${errorData.message || errorData.error}`);
+          } else {
+            responseText = await response.text();
+          }
         }
       } else {
-        // 生产环境：使用代理服务
+        // 生产环境：使用Vercel serverless函数代理
         response = await fetch(proxyUrl);
         
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // 尝试解析错误响应
+          try {
+            const errorData = await response.json();
+            throw new Error(`Proxy error: ${errorData.message || errorData.error}`);
+          } catch (parseError) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
         }
         
-        // 检查是否是JSON响应（来自allorigins）
+        // 检查响应类型
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
-          const proxyData = await response.json();
-          responseText = proxyData.contents;
+          const errorData = await response.json();
+          throw new Error(`Proxy error: ${errorData.message || errorData.error}`);
         } else {
           responseText = await response.text();
         }

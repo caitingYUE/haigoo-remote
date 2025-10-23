@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "api/rss-proxy.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
