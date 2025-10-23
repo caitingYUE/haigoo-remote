@@ -3,7 +3,7 @@
 ## 📋 部署前准备
 
 ### 1. 确认项目状态
-- ✅ 代码已推送到 GitHub: `https://github.com/caitingYUE/haigoo-remote-assistant.git`
+- ✅ 代码已推送到 GitHub: `https://github.com/caitingYUE/haigoo-remote.git`
 - ✅ RSS 代理服务已配置: `api/rss-proxy.js`
 - ✅ Vercel 配置文件已更新: `vercel.json`
 
@@ -26,11 +26,11 @@
 
 2. **导入项目**
    - 点击 "New Project"
-   - 选择 GitHub 仓库: `haigoo-remote-assistant`
+   - 选择 GitHub 仓库: `haigoo-remote`
    - 点击 "Import"
 
 3. **配置项目**
-   - Project Name: `haigoo-remote-assistant`
+   - Project Name: `haigoo-remote`
    - Framework Preset: `Vite`
    - Root Directory: `./` (默认)
    - Build Command: `npm run build`
@@ -71,14 +71,14 @@
 ### 1. 获取部署 URL
 部署完成后，你会得到一个 URL，例如：
 ```
-https://haigoo-remote-assistant.vercel.app
+https://haigoo.vercel.app
 ```
 
 ### 2. 更新环境变量
 在 Vercel 项目设置中添加：
 ```
-VITE_API_BASE_URL=https://haigoo-remote-assistant.vercel.app
-VITE_RSS_PROXY_URL=https://haigoo-remote-assistant.vercel.app/api/rss-proxy
+VITE_API_BASE_URL=https://haigoo.vercel.app
+VITE_RSS_PROXY_URL=https://haigoo.vercel.app/api/rss-proxy
 ```
 
 ### 3. 重新部署

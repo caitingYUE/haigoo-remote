@@ -347,19 +347,52 @@ class RSSService {
    */
   parseRSSFeed(xmlData: string, source: RSSSource): RSSFeedItem[] {
     try {
+      // 预处理XML数据，修复常见的格式问题
+      let cleanedXmlData = xmlData;
+      
+      // 移除可能的BOM标记
+      cleanedXmlData = cleanedXmlData.replace(/^\uFEFF/, '');
+      
+      // 确保XML声明后有换行
+      cleanedXmlData = cleanedXmlData.replace(/(<\?xml[^>]*\?>)(\s*<)/, '$1\n$2');
+      
+      // 修复缺少换行的标签
+      cleanedXmlData = cleanedXmlData.replace(/(<\/[^>]+>)(<[^\/][^>]*>)/g, '$1\n$2');
+      
+      // 修复item标签之间缺少换行的问题
+      cleanedXmlData = cleanedXmlData.replace(/(<\/item>)(\s*)(<item>)/g, '$1\n$3');
+      
       const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlData, 'text/xml');
+      const xmlDoc = parser.parseFromString(cleanedXmlData, 'text/xml');
       
       // 检查解析错误
       const parseError = xmlDoc.querySelector('parsererror');
       if (parseError) {
-        throw new Error('XML parsing error');
+        console.error('XML parsing error:', parseError.textContent);
+        // 尝试使用application/xml MIME类型重新解析
+        const xmlDoc2 = parser.parseFromString(cleanedXmlData, 'application/xml');
+        const parseError2 = xmlDoc2.querySelector('parsererror');
+        if (parseError2) {
+          throw new Error(`XML parsing error: ${parseError.textContent}`);
+        }
+        // 如果第二次解析成功，使用第二次的结果
+        return this.extractItemsFromXmlDoc(xmlDoc2, source);
       }
 
-      const items = xmlDoc.querySelectorAll('item');
-      const feedItems: RSSFeedItem[] = [];
+      return this.extractItemsFromXmlDoc(xmlDoc, source);
+    } catch (error) {
+      console.error('Error parsing RSS feed from', source.name, ':', error);
+      console.error('XML data preview:', xmlData.substring(0, 500));
+      return [];
+    }
+  }
 
-      items.forEach(item => {
+  private extractItemsFromXmlDoc(xmlDoc: Document, source: RSSSource): RSSFeedItem[] {
+    const items = xmlDoc.querySelectorAll('item');
+    const feedItems: RSSFeedItem[] = [];
+
+    items.forEach(item => {
+      try {
         const title = item.querySelector('title')?.textContent?.trim() || '';
         const description = item.querySelector('description')?.textContent?.trim() || '';
         const link = item.querySelector('link')?.textContent?.trim() || '';
@@ -381,13 +414,12 @@ class RSSService {
             jobType: this.extractJobType(title, description)
           });
         }
-      });
+      } catch (itemError) {
+        console.warn('Error processing RSS item:', itemError);
+      }
+    });
 
-      return feedItems;
-    } catch (error) {
-      console.error('Error parsing RSS feed:', error);
-      return [];
-    }
+    return feedItems;
   }
 
   /**
@@ -474,11 +506,20 @@ class RSSService {
   async fetchAllRSSFeeds(): Promise<ParsedRSSData[]> {
     const results: ParsedRSSData[] = [];
     
-    for (const source of this.RSS_SOURCES) {
+    // 限制同时处理的RSS源数量，避免过多请求
+    const maxSources = 5; // 先测试少量源
+    const sourcesToProcess = this.RSS_SOURCES.slice(0, maxSources);
+    
+    console.log(`开始同步 ${sourcesToProcess.length} 个RSS源...`);
+    
+    for (const source of sourcesToProcess) {
       try {
-        console.log(`Fetching RSS feed from ${source.name} - ${source.category}`);
+        console.log(`正在获取RSS数据: ${source.name} - ${source.category}`);
         const xmlData = await this.fetchRSSFeed(source.url);
+        console.log(`成功获取RSS数据，长度: ${xmlData.length} 字符`);
+        
         const items = this.parseRSSFeed(xmlData, source);
+        console.log(`解析得到 ${items.length} 个职位`);
         
         results.push({
           source: source.name,
@@ -488,12 +529,13 @@ class RSSService {
         });
         
         // 添加延迟以避免过于频繁的请求
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
-        console.error(`Failed to fetch RSS feed from ${source.name} - ${source.category}:`, error);
+        console.error(`获取RSS数据失败 ${source.name} - ${source.category}:`, error);
       }
     }
     
+    console.log(`RSS同步完成，共处理 ${results.length} 个源`);
     return results;
   }
 }

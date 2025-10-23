@@ -113,8 +113,8 @@ src/
 
 ## 在线体验
 
-- **生产环境**: [https://haigoo-remote-assistant.vercel.app](https://haigoo-remote-assistant.vercel.app)
-- **GitHub仓库**: [https://github.com/caitingYUE/haigoo-remote-assistant](https://github.com/caitingYUE/haigoo-remote-assistant)
+- **生产环境**: [https://haigoo.vercel.app](https://haigoo.vercel.app)
+- **GitHub仓库**: [https://github.com/caitingYUE/haigoo-remote](https://github.com/caitingYUE/haigoo-remote)
 
 ## 开发指南
 

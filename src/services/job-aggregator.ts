@@ -271,7 +271,7 @@ class JobAggregator {
    */
   async syncAllJobs(): Promise<void> {
     if (this.syncStatus.isRunning) {
-      console.log('Sync is already running');
+      console.log('同步已在运行中');
       return;
     }
 
@@ -289,14 +289,17 @@ class JobAggregator {
     };
 
     try {
-      console.log('Starting RSS sync...');
+      console.log('开始RSS同步...');
       const rssData = await rssService.fetchAllRSSFeeds();
+      console.log(`获取到 ${rssData.length} 个RSS数据源`);
       
       for (const data of rssData) {
         try {
+          console.log(`处理RSS数据: ${data.source} - ${data.category}, 包含 ${data.items.length} 个职位`);
           this.processRSSData(data);
           this.syncStatus.successfulSources++;
         } catch (error) {
+          console.error(`处理RSS数据失败: ${data.source}`, error);
           this.syncStatus.failedSources++;
           this.syncStatus.errors.push({
             source: data.source,
@@ -310,9 +313,10 @@ class JobAggregator {
       // 设置下次同步时间（1小时后）
       this.syncStatus.nextSync = new Date(Date.now() + 60 * 60 * 1000);
       
-      console.log(`Sync completed. Added ${this.syncStatus.newJobsAdded} new jobs, updated ${this.syncStatus.updatedJobs} jobs`);
+      console.log(`同步完成。新增 ${this.syncStatus.newJobsAdded} 个职位，更新 ${this.syncStatus.updatedJobs} 个职位，总共处理 ${this.syncStatus.totalJobsProcessed} 个职位`);
+      console.log(`当前总职位数: ${this.jobs.length}`);
     } catch (error) {
-      console.error('Sync failed:', error);
+      console.error('同步失败:', error);
     } finally {
       this.syncStatus.isRunning = false;
     }
@@ -322,22 +326,34 @@ class JobAggregator {
    * 处理单个RSS数据源
    */
   private processRSSData(data: ParsedRSSData): void {
+    console.log(`开始处理RSS数据: ${data.source} - ${data.category}`);
+    let newJobs = 0;
+    let updatedJobs = 0;
+    
     for (const item of data.items) {
-      const job = this.convertRSSItemToJob(item, data.source, data.category);
-      const existingJobIndex = this.jobs.findIndex(j => j.id === job.id);
-      
-      if (existingJobIndex === -1) {
-        // 新岗位
-        this.jobs.push(job);
-        this.syncStatus.newJobsAdded++;
-      } else {
-        // 更新现有岗位
-        this.jobs[existingJobIndex] = { ...this.jobs[existingJobIndex], ...job, updatedAt: new Date() };
-        this.syncStatus.updatedJobs++;
+      try {
+        const job = this.convertRSSItemToJob(item, data.source, data.category);
+        const existingJobIndex = this.jobs.findIndex(j => j.id === job.id);
+        
+        if (existingJobIndex === -1) {
+          // 新岗位
+          this.jobs.push(job);
+          this.syncStatus.newJobsAdded++;
+          newJobs++;
+        } else {
+          // 更新现有岗位
+          this.jobs[existingJobIndex] = { ...this.jobs[existingJobIndex], ...job, updatedAt: new Date() };
+          this.syncStatus.updatedJobs++;
+          updatedJobs++;
+        }
+        
+        this.syncStatus.totalJobsProcessed++;
+      } catch (error) {
+        console.error(`处理职位数据失败:`, item.title, error);
       }
-      
-      this.syncStatus.totalJobsProcessed++;
     }
+    
+    console.log(`${data.source} - ${data.category} 处理完成: 新增 ${newJobs} 个，更新 ${updatedJobs} 个职位`);
   }
 
   /**
