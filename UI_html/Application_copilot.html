@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Copilot - Haigoo Remote Assistant</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#873bf1",
+              "background-light": "#f7f6f8",
+              "background-dark": "#181022",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 dark:border-gray-800 px-6 md:px-10 lg:px-20 py-3 bg-white/80 dark:bg-background-dark/80 backdrop-blur-sm sticky top-0 z-50">
+<div class="flex items-center gap-4 text-gray-900 dark:text-gray-100">
+<div class="size-6 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_6_543)">
+<path d="M42.1739 20.1739L27.8261 5.82609C29.1366 7.13663 28.3989 10.1876 26.2002 13.7654C24.8538 15.9564 22.9595 18.3449 20.6522 20.6522C18.3449 22.9595 15.9564 24.8538 13.7654 26.2002C10.1876 28.3989 7.13663 29.1366 5.82609 27.8261L20.1739 42.1739C21.4845 43.4845 24.5355 42.7467 28.1133 40.548C30.3042 39.2016 32.6927 37.3073 35 35C37.3073 32.6927 39.2016 30.3042 40.548 28.1133C42.7467 24.5355 43.4845 21.4845 42.1739 20.1739Z" fill="currentColor"></path>
+<path clip-rule="evenodd" d="M7.24189 26.4066C7.31369 26.4411 7.64204 26.5637 8.52504 26.3738C9.59462 26.1438 11.0343 25.5311 12.7183 24.4963C14.7583 23.2426 17.0256 21.4503 19.238 19.238C21.4503 17.0256 23.2426 14.7583 24.4963 12.7183C25.5311 11.0343 26.1438 9.59463 26.3738 8.52504C26.5637 7.64204 26.4411 7.31369 26.4066 7.24189C26.345 7.21246 26.143 7.14535 25.6664 7.1918C24.9745 7.25925 23.9954 7.5498 22.7699 8.14278C20.3369 9.32007 17.3369 11.4915 14.4142 14.4142C11.4915 17.3369 9.32007 20.3369 8.14278 22.7699C7.5498 23.9954 7.25925 24.9745 7.1918 25.6664C7.14534 26.143 7.21246 26.345 7.24189 26.4066ZM29.9001 10.7285C29.4519 12.0322 28.7617 13.4172 27.9042 14.8126C26.465 17.1544 24.4686 19.6641 22.0664 22.0664C19.6641 24.4686 17.1544 26.465 14.8126 27.9042C13.4172 28.7617 12.0322 29.4519 10.7285 29.9001L21.5754 40.747C21.6001 40.7606 21.8995 40.931 22.8729 40.7217C23.9424 40.4916 25.3821 39.879 27.0661 38.8441C29.1062 37.5904 31.3734 35.7982 33.5858 33.5858C35.7982 31.3734 37.5904 29.1062 38.8441 27.0661C39.879 25.3821 40.4916 23.9425 40.7216 22.8729C40.931 21.8995 40.7606 21.6001 40.747 21.5754L29.9001 10.7285ZM29.2403 4.41187L43.5881 18.7597C44.9757 20.1473 44.9743 22.1235 44.6322 23.7139C44.2714 25.3919 43.4158 27.2666 42.252 29.1604C40.8128 31.5022 38.8165 34.012 36.4142 36.4142C34.012 38.8165 31.5022 40.8128 29.1604 42.252C27.2666 43.4158 25.3919 44.2714 23.7139 44.6322C22.1235 44.9743 20.1473 44.9757 18.7597 43.5881L4.41187 29.2403C3.29027 28.1187 3.08209 26.5973 3.21067 25.2783C3.34099 23.9415 3.8369 22.4852 4.54214 21.0277C5.96129 18.0948 8.43335 14.7382 11.5858 11.5858C14.7382 8.43335 18.0948 5.9613 21.0277 4.54214C22.4852 3.8369 23.9415 3.34099 25.2783 3.21067C26.5973 3.08209 28.1187 3.29028 29.2403 4.41187Z" fill="currentColor" fill-rule="evenodd"></path>
+</g>
+<defs><clippath id="clip0_6_543"><rect fill="white" height="48" width="48"></rect></clippath></defs>
+</svg>
+</div>
+<h2 class="text-gray-900 dark:text-gray-100 text-lg font-bold leading-tight tracking-[-0.015em]">Haigoo Remote Assistant</h2>
+</div>
+<div class="flex flex-1 justify-end items-center gap-4">
+<nav class="hidden lg:flex items-center gap-9">
+<a class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm font-medium leading-normal" href="#">Dashboard</a>
+<a class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm font-medium leading-normal" href="#">My Applications</a>
+<a class="text-primary text-sm font-semibold leading-normal" href="#">AI Copilot</a>
+<a class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm font-medium leading-normal" href="#">Profile</a>
+</nav>
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDIMa_YjJ3a_2E6StnXwQT6x4a-FjZ1Q4I-4kR4OUyLDAGQyL3uor8WgBgx0tNG_Pxo0W1sVKTXBMfX_18XE8Iu1y2zH6Ai7kMb5GWx-P7bPuvhqPpi6Dv-KWqcklE98d-jCO1J-fLwXVrz_WgEUwuGni59Do295eIypNowJ5S2GoCva3dforwI_HWmLluZ2GNyZkFm2i9DOShcZ0CrwykFzI3bctJRdP3d5T0o3p1uGpEL92BjJpyaj9cdRW7nZXQg572bSC7NNE0");'></div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-screen-2xl mx-auto p-4 sm:p-6 lg:p-8">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+<!-- Left Column: Job Description -->
+<div class="flex flex-col h-[calc(100vh-120px)]">
+<div class="bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm flex flex-col flex-1 overflow-hidden">
+<div class="p-6 border-b border-gray-200 dark:border-gray-800">
+<!-- PageHeading -->
+<div class="flex min-w-72 flex-col gap-2">
+<p class="text-gray-900 dark:text-white text-3xl font-bold leading-tight tracking-tight">Senior Product Designer</p>
+<p class="text-primary text-base font-medium leading-normal">Webflow</p>
+</div>
+<!-- Chips -->
+<div class="flex gap-2 pt-4 flex-wrap">
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-gray-800 px-3">
+<p class="text-gray-800 dark:text-gray-200 text-sm font-medium leading-normal">San Francisco, CA</p>
+</div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-gray-800 px-3">
+<p class="text-gray-800 dark:text-gray-200 text-sm font-medium leading-normal">Full-time</p>
+</div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-gray-800 px-3">
+<p class="text-gray-800 dark:text-gray-200 text-sm font-medium leading-normal">$150k - $180k</p>
+</div>
+</div>
+</div>
+<div class="p-6 overflow-y-auto flex-1">
+<!-- SectionHeader -->
+<h3 class="text-gray-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2">About the Role</h3>
+<!-- BodyText -->
+<p class="text-gray-700 dark:text-gray-300 text-base font-normal leading-relaxed pb-6">
+                                As a Senior Product Designer at Webflow, you will be responsible for leading design projects from concept to execution. You'll work closely with product managers, engineers, and other designers to create intuitive and beautiful experiences for our users.
+                             </p>
+<!-- SectionHeader -->
+<h3 class="text-gray-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2">Responsibilities</h3>
+<!-- BodyText with list -->
+<ul class="text-gray-700 dark:text-gray-300 text-base font-normal leading-relaxed list-disc list-inside space-y-2 pb-6">
+<li>Lead the design of new features and improvements across the Webflow platform.</li>
+<li>Collaborate with cross-functional teams to define product requirements and user stories.</li>
+<li>Create wireframes, prototypes, and high-fidelity mockups to communicate design ideas.</li>
+<li>Conduct user research and usability testing to validate design decisions.</li>
+<li>Contribute to our design system and advocate for design best practices.</li>
+</ul>
+<!-- SectionHeader -->
+<h3 class="text-gray-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2">Qualifications</h3>
+<!-- BodyText with list -->
+<ul class="text-gray-700 dark:text-gray-300 text-base font-normal leading-relaxed list-disc list-inside space-y-2">
+<li>5+ years of experience in product design.</li>
+<li>A strong portfolio showcasing your design process and problem-solving skills.</li>
+<li>Proficiency in Figma, Sketch, or other design tools.</li>
+<li>Experience working in an agile development environment.</li>
+<li>Excellent communication and collaboration skills.</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Right Column: AI Copilot -->
+<div class="flex flex-col gap-6 h-[calc(100vh-120px)]">
+<!-- Match Score Component -->
+<div class="bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-6 flex items-center justify-between">
+<div class="flex flex-col">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Your new match score is</h3>
+<p class="text-sm text-green-600 dark:text-green-400 font-medium">Improved from 68%</p>
+</div>
+<div class="relative size-24">
+<svg class="size-full" height="36" viewbox="0 0 36 36" width="36" xmlns="http://www.w3.org/2000/svg">
+<circle class="stroke-current text-gray-200 dark:text-gray-700" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
+<circle class="stroke-current text-primary" cx="18" cy="18" fill="none" r="16" stroke-dasharray="92, 100" stroke-dashoffset="25" stroke-linecap="round" stroke-width="3" transform="rotate(-90 18 18)"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="text-2xl font-bold text-gray-900 dark:text-white">92%</span>
+</div>
+</div>
+</div>
+<!-- Chat Interface -->
+<div class="bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
+<div class="flex-1 p-6 space-y-6 overflow-y-auto">
+<!-- AI Message -->
+<div class="flex items-start gap-3">
+<div class="size-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined !text-lg">auto_awesome</span>
+</div>
+<div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 max-w-lg">
+<p class="text-sm text-gray-800 dark:text-gray-200">Welcome, Alex! I've analyzed your resume against this role. Your current match score is 68%. Let's improve it together. Here are a few suggestions:</p>
+</div>
+</div>
+<!-- AI Suggestion Card -->
+<div class="flex items-start gap-3">
+<div class="size-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined !text-lg">auto_awesome</span>
+</div>
+<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 max-w-lg flex-1">
+<h4 class="font-semibold text-gray-900 dark:text-white mb-2">Quantify Your Achievements</h4>
+<p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Your resume mentions "Led the design of new features". The job description values data-driven impact. Try to quantify your results.</p>
+<button class="w-full text-left text-sm font-medium text-primary hover:underline">Show me an example</button>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex justify-end">
+<div class="bg-primary text-white rounded-lg p-3 max-w-lg">
+<p class="text-sm">Great idea. I've updated my resume with more specific metrics. How does it look now?</p>
+</div>
+</div>
+<!-- AI Final Message -->
+<div class="flex items-start gap-3">
+<div class="size-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined !text-lg">auto_awesome</span>
+</div>
+<div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 max-w-lg">
+<p class="text-sm text-gray-800 dark:text-gray-200">Excellent changes! Your resume is much stronger. The updates have significantly boosted your match score. You're ready to apply!</p>
+</div>
+</div>
+</div>
+<!-- Chat Input -->
+<div class="p-4 border-t border-gray-200 dark:border-gray-800">
+<div class="flex items-center gap-4">
+<button class="flex-none h-10 px-4 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hidden sm:flex">
+                                    Generate Cover Letter
+                                </button>
+<button class="flex-1 h-10 px-6 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary text-white text-sm font-semibold shadow-sm hover:bg-primary/90 transition-colors">
+                                    Submit Application
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
