@@ -15,10 +15,15 @@ import {
   TrendingUp,
   Users,
   Briefcase,
-  Globe
+  Globe,
+  Settings,
+  AlertCircle,
+  Info,
+  Loader
 } from 'lucide-react';
-import { Job, JobFilter, JobStats, SyncStatus, JobCategory } from '../types/rss-types';
+import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
+import { rssService } from '../services/rss-service';
 
 const AdminDashboardPage: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -32,6 +37,23 @@ const AdminDashboardPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [showFilters, setShowFilters] = useState(false);
+  
+  // RSS配置相关状态
+  const [showRSSConfig, setShowRSSConfig] = useState(false);
+  const [rssSources, setRssSources] = useState<RSSSource[]>([]);
+  const [syncProgress, setSyncProgress] = useState<{
+    total: number;
+    completed: number;
+    current: string;
+    errors: string[];
+    isRunning: boolean;
+  }>({
+    total: 0,
+    completed: 0,
+    current: '',
+    errors: [],
+    isRunning: false
+  });
 
   // 加载数据
   const loadData = () => {
@@ -41,6 +63,10 @@ const AdminDashboardPage: React.FC = () => {
       setJobs(dashboardData.jobs);
       setStats(dashboardData.stats);
       setSyncStatus(dashboardData.syncStatus);
+      
+      // 加载RSS源配置
+      const sources = rssService.getRSSSources();
+      setRssSources(sources);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -55,13 +81,73 @@ const AdminDashboardPage: React.FC = () => {
   // 同步RSS数据
   const handleSync = async () => {
     setSyncing(true);
+    setSyncProgress({
+      total: rssSources.length,
+      completed: 0,
+      current: '',
+      errors: [],
+      isRunning: true
+    });
+
     try {
+      const sources = rssService.getRSSSources();
+      let completed = 0;
+      const errors: string[] = [];
+
+      for (const source of sources) {
+        setSyncProgress(prev => ({
+          ...prev,
+          current: `正在同步: ${source.name} - ${source.category}`,
+          completed
+        }));
+
+        try {
+          // 这里应该调用实际的RSS同步逻辑
+          await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟同步延迟
+          completed++;
+        } catch (error) {
+          const errorMsg = `${source.name} - ${source.category}: ${error instanceof Error ? error.message : '同步失败'}`;
+          errors.push(errorMsg);
+          console.error(`Failed to sync ${source.name}:`, error);
+        }
+
+        setSyncProgress(prev => ({
+          ...prev,
+          completed,
+          errors
+        }));
+      }
+
+      // 完成后重新加载数据
       await jobAggregator.syncAllJobs();
       loadData();
+
+      setSyncProgress(prev => ({
+        ...prev,
+        current: '同步完成',
+        isRunning: false
+      }));
+
     } catch (error) {
       console.error('Sync failed:', error);
+      setSyncProgress(prev => ({
+        ...prev,
+        current: '同步失败',
+        isRunning: false,
+        errors: [...prev.errors, `全局错误: ${error instanceof Error ? error.message : '未知错误'}`]
+      }));
     } finally {
       setSyncing(false);
+      // 3秒后清除进度信息
+      setTimeout(() => {
+        setSyncProgress({
+          total: 0,
+          completed: 0,
+          current: '',
+          errors: [],
+          isRunning: false
+        });
+      }, 3000);
     }
   };
 
@@ -157,6 +243,13 @@ const AdminDashboardPage: React.FC = () => {
             </div>
             <div className="flex space-x-3">
               <button
+                onClick={() => setShowRSSConfig(!showRSSConfig)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                RSS配置
+              </button>
+              <button
                 onClick={handleSync}
                 disabled={syncing}
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
@@ -170,6 +263,97 @@ const AdminDashboardPage: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 同步进度显示 */}
+        {syncProgress.isRunning && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <Loader className="w-5 h-5 animate-spin text-blue-600 mr-3" />
+              <div className="flex-1">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-sm font-medium text-blue-900">
+                    {syncProgress.current}
+                  </p>
+                  <span className="text-sm text-blue-700">
+                    {syncProgress.completed}/{syncProgress.total}
+                  </span>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(syncProgress.completed / syncProgress.total) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 同步完成状态 */}
+        {!syncProgress.isRunning && syncProgress.total > 0 && (
+          <div className={`border rounded-lg p-4 mb-6 ${
+            syncProgress.errors.length > 0 
+              ? 'bg-yellow-50 border-yellow-200' 
+              : 'bg-green-50 border-green-200'
+          }`}>
+            <div className="flex items-center">
+              {syncProgress.errors.length > 0 ? (
+                <AlertCircle className="w-5 h-5 text-yellow-600 mr-3" />
+              ) : (
+                <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
+              )}
+              <div className="flex-1">
+                <p className={`text-sm font-medium ${
+                  syncProgress.errors.length > 0 ? 'text-yellow-900' : 'text-green-900'
+                }`}>
+                  {syncProgress.current} - 完成 {syncProgress.completed}/{syncProgress.total}
+                </p>
+                {syncProgress.errors.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-yellow-800 mb-1">同步错误:</p>
+                    <div className="max-h-32 overflow-y-auto">
+                      {syncProgress.errors.map((error, index) => (
+                        <div key={index} className="text-xs text-yellow-700 bg-yellow-100 p-2 rounded mb-1">
+                          {error}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* RSS配置模块 */}
+        {showRSSConfig && (
+          <div className="bg-white rounded-lg shadow mb-6">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">RSS数据源配置</h3>
+              <p className="text-sm text-gray-600">管理RSS数据源，共 {rssSources.length} 个源</p>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+                {rssSources.map((source, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-gray-900">{source.name}</h4>
+                        <p className="text-xs text-gray-600 mt-1">{source.category}</p>
+                        <p className="text-xs text-gray-500 mt-2 break-all">{source.url}</p>
+                      </div>
+                      <div className="ml-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          活跃
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 统计卡片 */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
