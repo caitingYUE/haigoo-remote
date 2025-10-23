@@ -89,3 +89,38 @@ dist
 # Temporary folders
 tmp/
 temp/
+.vercel
+
+# Test and development files
+*.test.js
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.ts
+*.spec.tsx
+test-results/
+coverage/
+
+# IDE and editor files
+*.swp
+*.swo
+*~
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Prototype and design files
+UI_html/
+*.html.backup
+*.prototype.html
+code.html
+
+# API examples and test scripts
+api_example.py
+test_*.py
+example_*.py
