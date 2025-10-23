@@ -627,7 +627,7 @@ const JobApplicationPage: React.FC = () => {
                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                        <div className="flex items-center mb-3">
                          <AIAvatar size="w-6 h-6" />
-                         <span className="font-semibold text-gray-900 text-sm ml-2">💡 AI 优化建议</span>
+                         <span className="font-semibold text-gray-900 text-sm ml-2">AI 优化建议</span>
                        </div>
                        <div className="text-sm mb-3">
                          <FormattedAIMessage content={msg.content} />

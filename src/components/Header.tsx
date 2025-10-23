@@ -1,4 +1,4 @@
-import { Search, Bell, User, Menu, Settings, Briefcase, Star, TrendingUp, LogOut, ChevronDown } from 'lucide-react'
+import { Search, Bell, User, Menu, Settings, Briefcase, Star, TrendingUp, LogOut, ChevronDown, FileText } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import logoSvg from '../assets/logo.svg'
@@ -39,11 +39,11 @@ export default function Header() {
   // 用户菜单选项
   const userMenuItems = [
     { id: 'profile', label: '个人资料', icon: User, href: '/profile?tab=profile' },
-    { id: 'resume', label: '简历信息', icon: Briefcase, href: '/profile?tab=resume' },
+    { id: 'resume', label: '简历管理', icon: FileText, href: '/profile?tab=resume' },
     { id: 'subscriptions', label: '职位订阅', icon: Bell, href: '/profile?tab=subscriptions' },
     { id: 'recommendations', label: '推荐墙', icon: Star, href: '/profile?tab=recommendations' },
     { id: 'insights', label: 'AI职业洞察', icon: TrendingUp, href: '/profile?tab=insights' },
-    { id: 'applications', label: '我的申请', icon: Briefcase, href: '/applications' },
+    { id: 'applications', label: '我的申请', icon: Briefcase, href: '/profile?tab=applications' },
     { id: 'settings', label: '设置', icon: Settings, href: '/profile?tab=settings' }
   ]
 

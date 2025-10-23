@@ -437,7 +437,7 @@ export default function ResumeOptimizationPage() {
         setChatMessages(prev => [...prev, {
           id: Date.now().toString(),
           type: 'ai',
-          content: '📝 未找到保存的简历数据，将使用当前模板开始编辑。',
+          content: '未找到保存的简历数据，将使用当前模板开始编辑。',
           timestamp: new Date(),
           suggestions: ['开始编辑简历', '上传现有简历']
         }]);

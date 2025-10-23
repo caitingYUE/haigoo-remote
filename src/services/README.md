@@ -54,7 +54,7 @@ src/services/
 └── README.md            # 文档说明
 ```
 
-## 🔧 核心服务
+## 核心服务
 
 ### AI服务 (AIService)
 
@@ -195,7 +195,7 @@ interface ApiResponse<T> {
 }
 ```
 
-## 🔧 配置选项
+## 配置选项
 
 ### API配置
 
@@ -231,7 +231,7 @@ const customRetryConfig = {
 }
 ```
 
-## 📝 使用示例
+## 使用示例
 
 查看 `examples.ts` 文件获取完整的使用示例：
 
@@ -242,7 +242,7 @@ import { runAllExamples } from './services/examples'
 await runAllExamples()
 ```
 
-## 🚨 注意事项
+## 注意事项
 
 1. **API密钥安全**: 确保API密钥存储在环境变量中，不要提交到版本控制
 2. **请求频率**: 注意API调用频率限制，避免触发限流
@@ -250,7 +250,7 @@ await runAllExamples()
 4. **Token限制**: 注意输入文本的长度，避免超过模型的token限制
 5. **网络环境**: 确保网络环境可以访问阿里云API服务
 
-## 🔍 调试技巧
+## 调试技巧
 
 1. **启用详细日志**:
    ```typescript

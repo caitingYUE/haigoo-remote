@@ -291,9 +291,11 @@ export default function ProfilePage() {
   const sidebarItems = [
     { id: 'profile', label: '个人资料', icon: User },
     { id: 'resume', label: '简历管理', icon: FileText },
-    { id: 'jobs', label: '职位管理', icon: Briefcase },
-    { id: 'settings', label: '账户设置', icon: Settings },
-    { id: 'notifications', label: '通知设置', icon: Bell }
+    { id: 'subscriptions', label: '职位订阅', icon: Bell },
+    { id: 'recommendations', label: '推荐墙', icon: Star },
+    { id: 'insights', label: 'AI职业洞察', icon: TrendingUp },
+    { id: 'applications', label: '我的申请', icon: Briefcase },
+    { id: 'settings', label: '设置', icon: Settings }
   ]
 
   // 文件上传处理
@@ -1207,11 +1209,47 @@ export default function ProfilePage() {
       case 'resume':
         return renderResumeManagement()
       
-      case 'jobs':
-        return renderJobManagement()
+      case 'subscriptions':
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">职位订阅</h2>
+            <p className="text-gray-600">管理您的职位订阅和推送设置</p>
+          </div>
+        )
+      
+      case 'recommendations':
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">推荐墙</h2>
+            <p className="text-gray-600">查看为您推荐的优质职位</p>
+          </div>
+        )
+      
+      case 'insights':
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">AI职业洞察</h2>
+            <p className="text-gray-600">获取个性化的职业发展建议和市场洞察</p>
+          </div>
+        )
+      
+      case 'applications':
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">我的申请</h2>
+            <p className="text-gray-600">查看和管理您的职位申请记录</p>
+          </div>
+        )
       
       case 'settings':
         return renderAccountSettings()
+      
+      case 'jobs':
+        return renderJobManagement()
       
       case 'notifications':
         return renderNotificationSettings()
