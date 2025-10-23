@@ -1,5 +1,5 @@
 import { Search, Bell, User, Menu, Settings, Briefcase, Star, TrendingUp, LogOut, ChevronDown } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import logoSvg from '../assets/logo.svg'
 
@@ -7,8 +7,34 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const location = useLocation()
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const timeoutRef = useRef<number | null>(null)
 
   const isActive = (path: string) => location.pathname === path
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
+
+  // 处理鼠标进入用户菜单区域
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    setIsUserMenuOpen(true)
+  }
+
+  // 处理鼠标离开用户菜单区域
+  const handleMouseLeave = () => {
+    timeoutRef.current = window.setTimeout(() => {
+      setIsUserMenuOpen(false)
+    }, 300) // 300ms延迟，给用户足够时间移动鼠标
+  }
 
   // 用户菜单选项
   const userMenuItems = [
@@ -79,21 +105,22 @@ export default function Header() {
 
             {/* User Menu */}
             <div 
+              ref={userMenuRef}
               className="relative"
-              onMouseEnter={() => setIsUserMenuOpen(true)}
-              onMouseLeave={() => setIsUserMenuOpen(false)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
             >
-              <button className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100">
+              <button className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
                 <div className="w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center">
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <span className="text-sm font-medium">张三</span>
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* 下拉菜单 */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="absolute right-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
                   {/* 用户信息 */}
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center space-x-3">
@@ -115,9 +142,9 @@ export default function Header() {
                         <Link
                           key={item.id}
                           to={item.href}
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-haigoo-primary transition-colors"
+                          className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-haigoo-primary/5 hover:text-haigoo-primary transition-all duration-200 group"
                         >
-                          <Icon className="h-4 w-4 mr-3" />
+                          <Icon className="h-4 w-4 mr-3 group-hover:scale-110 transition-transform duration-200" />
                           {item.label}
                         </Link>
                       )
@@ -126,8 +153,8 @@ export default function Header() {
 
                   {/* 退出登录 */}
                   <div className="border-t border-gray-100 pt-1">
-                    <button className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                      <LogOut className="h-4 w-4 mr-3" />
+                    <button className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 group">
+                      <LogOut className="h-4 w-4 mr-3 group-hover:scale-110 transition-transform duration-200" />
                       退出登录
                     </button>
                   </div>

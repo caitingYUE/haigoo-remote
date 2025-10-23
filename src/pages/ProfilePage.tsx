@@ -537,7 +537,7 @@ export default function ProfilePage() {
             <span className="font-medium text-green-900">王总</span>
             <span className="text-sm text-green-700">产品总监</span>
           </div>
-          <p className="text-sm text-green-800">"合作过程中展现出了极强的责任心和专业素养，值得推荐。"</p>
+          <p className="text-sm text-green-800">"合作过程中展现出了极强的responsibility和专业素养，值得推荐。"</p>
         </div>
       </div>
     </div>
@@ -1010,16 +1010,196 @@ export default function ProfilePage() {
     switch (activeSection) {
       case 'profile':
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1 space-y-6">
-              {renderUserProfileCard()}
-              {renderResumeCard()}
-              {renderJobSubscriptionsCard()}
+          <div className="space-y-6">
+            {/* 个人资料概览卡片 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">个人资料概览</h2>
+                <Edit3 
+                  className="w-5 h-5 text-gray-400 cursor-pointer hover:text-haigoo-primary transition-colors" 
+                  onClick={() => setEditingProfile(!editingProfile)}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-5 h-5 text-gray-400" />
+                    <span className="text-gray-700">{user.email}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-5 h-5 text-gray-400" />
+                    <span className="text-gray-700">{user.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-5 h-5 text-gray-400" />
+                    <span className="text-gray-700">{user.location}</span>
+                  </div>
+                  {user.website && (
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-5 h-5 text-gray-400" />
+                      <a href={user.website} className="text-haigoo-primary hover:underline">{user.website}</a>
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">个人简介</h4>
+                  <p className="text-gray-600 text-sm leading-relaxed">{user.summary}</p>
+                </div>
+              </div>
             </div>
-            
-            <div className="lg:col-span-2 space-y-6">
-              {renderRecommendationWall()}
-              {renderAICareerInsights()}
+
+            {/* 简历管理卡片 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">简历管理</h2>
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-4 py-2 bg-haigoo-primary text-white rounded-lg hover:bg-haigoo-primary/90 transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  上传简历
+                </button>
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              
+              <div className="space-y-4">
+                {user.resumeFiles.length > 0 ? (
+                  user.resumeFiles.map(file => (
+                    <div key={file.id} className="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5 text-haigoo-primary" />
+                          <span className="font-medium text-gray-900">{file.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-4 h-4 text-gray-400 cursor-pointer hover:text-haigoo-primary transition-colors" />
+                          <Download className="w-4 h-4 text-gray-400 cursor-pointer hover:text-haigoo-primary transition-colors" />
+                          <Trash2 
+                            className="w-4 h-4 text-gray-400 cursor-pointer hover:text-red-500 transition-colors" 
+                            onClick={() => deleteResumeFile(file.id)}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <span>上传时间: {file.uploadDate}</span>
+                        {file.aiScore && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-haigoo-primary font-medium">AI评分: {file.aiScore}/100</span>
+                            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-haigoo-primary to-purple-600 rounded-full transition-all duration-300"
+                                style={{ width: `${file.aiScore}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">还没有上传简历</h3>
+                    <p className="text-sm text-gray-600 mb-6">上传您的简历，让AI为您提供专业的优化建议</p>
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-6 py-3 bg-haigoo-primary text-white rounded-lg hover:bg-haigoo-primary/90 transition-colors"
+                    >
+                      选择文件
+                    </button>
+                    <p className="text-xs text-gray-500 mt-3">支持 PDF、DOC、DOCX 格式</p>
+                  </div>
+                )}
+                
+                {isUploading && (
+                  <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-3">
+                      <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
+                      <span className="text-blue-700">正在上传并分析简历...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* AI职业洞察卡片 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-haigoo-primary" />
+                  AI职业洞察
+                </h2>
+                <RefreshCw className="w-5 h-5 text-gray-400 cursor-pointer hover:text-haigoo-primary transition-colors" />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    <span className="font-medium text-blue-900">简历匹配度</span>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600">{user.resumeScore}%</div>
+                </div>
+                
+                <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <span className="font-medium text-green-900">市场竞争力</span>
+                  </div>
+                  <div className="text-2xl font-bold text-green-600">85%</div>
+                </div>
+                
+                <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lightbulb className="w-5 h-5 text-purple-600" />
+                    <span className="font-medium text-purple-900">优化建议</span>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-600">5条</div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">AI优化建议</h3>
+                <div className="space-y-3">
+                  {user.aiSuggestions.slice(0, 3).map(suggestion => (
+                    <div key={suggestion.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertCircle className="w-4 h-4 text-amber-500" />
+                            <span className="text-sm font-medium text-gray-700">{suggestion.section}</span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{suggestion.reason}</p>
+                          <p className="text-sm text-gray-900 font-medium">{suggestion.suggested}</p>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <button
+                            onClick={() => acceptSuggestion(suggestion.id)}
+                            className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => rejectSuggestion(suggestion.id)}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )
@@ -1038,7 +1218,7 @@ export default function ProfilePage() {
       
       default:
         return (
-          <div className="text-center py-12">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">功能开发中</h2>
             <p className="text-gray-600">该功能正在开发中，敬请期待！</p>
           </div>
@@ -1047,53 +1227,68 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-haigoo-bg-light">
-      <aside className="w-full lg:w-80 bg-white shadow-lg lg:shadow-xl border-r border-gray-200">
-        <div className="p-4 lg:p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br from-haigoo-primary to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg lg:text-xl shadow-lg">
-              {user.name.charAt(0)}
-            </div>
-            <div>
-              <p className="text-base lg:text-lg font-semibold text-gray-900">{user.name}</p>
-              <p className="text-sm lg:text-base text-gray-500">智能求职者</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* 统一的容器 - 移除阴影，使用更简洁的布局 */}
+      <div className="flex max-w-7xl mx-auto">
+        {/* 左侧边栏 - 固定宽度，与右侧内容对齐 */}
+        <aside className="w-80 bg-white border-r border-gray-200 flex-shrink-0 min-h-screen">
+          <div className="p-8 border-b border-gray-100">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-haigoo-primary to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                {user.name.charAt(0)}
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-gray-900">{user.name}</p>
+                <p className="text-base text-gray-500">智能求职者</p>
+              </div>
             </div>
           </div>
           
-          <nav className="space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
-                    activeSection === item.id
-                      ? 'bg-haigoo-primary text-white shadow-lg'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              )
-            })}
+          <nav className="p-8">
+            <div className="space-y-2">
+              {sidebarItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveSection(item.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                      activeSection === item.id
+                        ? 'bg-haigoo-primary text-white shadow-md'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </button>
+                )
+              })}
+            </div>
           </nav>
-        </div>
-      </aside>
+        </aside>
 
-      <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-              {sidebarItems.find(item => item.id === activeSection)?.label || '个人资料'}
-            </h1>
-            <p className="text-gray-600">管理您的个人信息和设置</p>
+        {/* 右侧主内容区域 - 充分利用剩余空间 */}
+        <main className="flex-1 min-h-screen bg-gray-50">
+          {/* 页面头部 - 与侧边栏顶部对齐 */}
+          <div className="px-8 py-8 bg-white border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {sidebarItems.find(item => item.id === activeSection)?.label || '个人资料'}
+                </h1>
+                <p className="text-gray-600 mt-1">管理您的个人信息和设置</p>
+              </div>
+            </div>
           </div>
           
-          {renderContent()}
-        </div>
-      </main>
+          {/* 内容区域 - 统一的内边距，与头部对齐 */}
+          <div className="p-8">
+            <div className="space-y-8">
+              {renderContent()}
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   )
 }
