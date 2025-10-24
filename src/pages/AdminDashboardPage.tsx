@@ -104,42 +104,17 @@ const AdminDashboardPage: React.FC = () => {
     });
 
     try {
-      const sources = rssService.getRSSSources();
-      let completed = 0;
-      const errors: string[] = [];
-
-      for (const source of sources) {
-        setSyncProgress(prev => ({
-          ...prev,
-          current: `正在同步: ${source.name} - ${source.category}`,
-          completed
-        }));
-
-        try {
-          // 这里应该调用实际的RSS同步逻辑
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟同步延迟
-          completed++;
-        } catch (error) {
-          const errorMsg = `${source.name} - ${source.category}: ${error instanceof Error ? error.message : '同步失败'}`;
-          errors.push(errorMsg);
-          console.error(`Failed to sync ${source.name}:`, error);
-        }
-
-        setSyncProgress(prev => ({
-          ...prev,
-          completed,
-          errors
-        }));
-      }
-
-      // 完成后重新加载数据
+      // 调用实际的RSS同步逻辑
       await jobAggregator.syncAllJobs();
+      
+      // 完成后重新加载数据
       loadData();
 
       setSyncProgress(prev => ({
         ...prev,
         current: '同步完成',
-        isRunning: false
+        isRunning: false,
+        completed: prev.total
       }));
 
     } catch (error) {

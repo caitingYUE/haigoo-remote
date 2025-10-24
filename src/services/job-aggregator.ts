@@ -1,8 +1,11 @@
 import { Job, JobCategory, JobFilter, JobStats, SyncStatus, AdminDashboardData } from '../types/rss-types';
 import { rssService, RSSFeedItem, ParsedRSSData } from './rss-service';
+import { getStorageAdapter } from './storage-factory';
+import { CloudStorageAdapter } from './cloud-storage-adapter';
 
 class JobAggregator {
   private jobs: Job[] = [];
+  private storageAdapter: CloudStorageAdapter | null = null;
   private syncStatus: SyncStatus = {
     isRunning: false,
     lastSync: null,
@@ -15,6 +18,65 @@ class JobAggregator {
     updatedJobs: 0,
     errors: []
   };
+
+  constructor() {
+    // 初始化时从存储加载数据
+    this.initializeStorage();
+  }
+
+  /**
+   * 初始化存储适配器
+   */
+  private async initializeStorage(): Promise<void> {
+    try {
+      this.storageAdapter = await getStorageAdapter();
+      await this.loadJobsFromStorage();
+    } catch (error) {
+      console.error('初始化存储失败:', error);
+    }
+  }
+
+  /**
+   * 从存储加载职位数据
+   */
+  private async loadJobsFromStorage(): Promise<void> {
+    if (!this.storageAdapter) {
+      console.warn('存储适配器未初始化');
+      return;
+    }
+
+    try {
+      const storedJobs = await this.storageAdapter.loadJobs();
+      this.jobs = storedJobs;
+      
+      // 更新同步状态
+      const lastSync = await this.storageAdapter.getLastSyncTime();
+      if (lastSync) {
+        this.syncStatus.lastSync = lastSync;
+      }
+      
+      console.log(`📖 从存储加载了 ${storedJobs.length} 个职位`);
+    } catch (error) {
+      console.error('从存储加载职位失败:', error);
+    }
+  }
+
+  /**
+   * 保存职位数据到存储
+   */
+  private async saveJobsToStorage(): Promise<void> {
+    if (!this.storageAdapter) {
+      console.warn('存储适配器未初始化');
+      return;
+    }
+
+    try {
+      await this.storageAdapter.saveJobs(this.jobs);
+      console.log(`💾 已保存 ${this.jobs.length} 个职位到存储`);
+    } catch (error) {
+      console.error('保存职位到存储失败:', error);
+    }
+  }
 
   /**
    * 自动分类岗位
@@ -309,6 +371,9 @@ class JobAggregator {
           });
         }
       }
+
+      // 保存数据到存储
+      await this.saveJobsToStorage();
 
       // 设置下次同步时间（1小时后）
       this.syncStatus.nextSync = new Date(Date.now() + 60 * 60 * 1000);

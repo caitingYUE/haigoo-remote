@@ -3,6 +3,32 @@ import { Search, MapPin, Building, DollarSign, Bookmark, Calendar } from 'lucide
 import { useNavigate, useLocation } from 'react-router-dom'
 import JobDetailModal from '../components/JobDetailModal'
 import { Job } from '../types'
+import { jobAggregator } from '../services/job-aggregator'
+import { Job as RSSJob } from '../types/rss-types'
+
+// 转换RSS Job类型到页面Job类型的函数
+const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
+  return {
+    id: rssJob.id,
+    title: rssJob.title,
+    company: rssJob.company,
+    location: rssJob.location,
+    type: rssJob.isRemote ? 'remote' : 'full-time',
+    salary: {
+      min: 0,
+      max: 0,
+      currency: 'USD'
+    },
+    description: rssJob.description,
+    requirements: rssJob.requirements,
+    responsibilities: [], // RSS数据中没有这个字段
+    skills: rssJob.tags,
+    postedAt: rssJob.publishedAt.toISOString().split('T')[0],
+    expiresAt: '', // RSS数据中没有这个字段
+    source: rssJob.source,
+    sourceUrl: rssJob.sourceUrl
+  }
+}
 
 const mockJobs: Job[] = [
   {
@@ -127,6 +153,8 @@ export default function JobsPage() {
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [loading, setLoading] = useState(true)
 
   // 从URL参数中获取初始搜索词
   useEffect(() => {
@@ -136,6 +164,26 @@ export default function JobsPage() {
       setSearchTerm(search)
     }
   }, [location.search])
+
+  // 加载存储的职位数据
+  useEffect(() => {
+    const loadJobs = async () => {
+      try {
+        setLoading(true)
+        const rssJobs = await jobAggregator.getJobs()
+        const convertedJobs = rssJobs.map(convertRSSJobToPageJob)
+        setJobs(convertedJobs)
+      } catch (error) {
+        console.error('Failed to load jobs:', error)
+        // 如果加载失败，使用mock数据作为后备
+        setJobs(mockJobs)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadJobs()
+  }, [])
 
   const toggleSaveJob = (jobId: string) => {
     setSavedJobs(prev => {
@@ -164,7 +212,7 @@ export default function JobsPage() {
   }
 
   // 筛选逻辑
-  const filteredJobs = mockJobs.filter(job => {
+  const filteredJobs = jobs.filter(job => {
     const matchesSearch = searchTerm === '' || 
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -328,7 +376,18 @@ export default function JobsPage() {
 
               {/* 岗位列表 */}
               <div className="space-y-4">
-                {filteredJobs.map((job) => (
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-haigoo-primary"></div>
+                    <span className="ml-3 text-gray-600">正在加载职位数据...</span>
+                  </div>
+                ) : filteredJobs.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-gray-500 text-lg mb-2">暂无符合条件的职位</div>
+                    <div className="text-gray-400 text-sm">请尝试调整筛选条件或搜索关键词</div>
+                  </div>
+                ) : (
+                  filteredJobs.map((job) => (
                   <div
                     key={job.id}
                     className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/60 p-6 hover:shadow-xl hover:border-haigoo-primary/30 hover:bg-white transition-all duration-300 cursor-pointer group will-change-transform hover:scale-[1.01] active:scale-[0.99]"
@@ -417,15 +476,9 @@ export default function JobsPage() {
                       </button>
                     </div>
                   </div>
-                ))}
+                )))}
 
-                {/* 空状态 */}
-                {filteredJobs.length === 0 && (
-                  <div className="text-center py-12">
-                    <div className="text-gray-400 text-lg mb-2">暂无匹配的岗位</div>
-                    <div className="text-gray-500 text-sm">尝试调整筛选条件或搜索关键词</div>
-                  </div>
-                )}
+                {/* 空状态 - 移除重复的空状态检查 */}
               </div>
             </div>
           </div>
