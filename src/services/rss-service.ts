@@ -456,21 +456,95 @@ class RSSService {
    * 从标题或描述中提取公司名称
    */
   private extractCompany(title: string, description: string): string {
-    // 简单的公司名称提取逻辑，可以根据实际RSS格式优化
+    // 增强的公司名称提取逻辑，支持多种格式
     const companyPatterns = [
-      /at\s+([A-Z][a-zA-Z\s&.,-]+?)(?:\s|$)/,
+      // 标准格式：Job Title at Company Name
+      /at\s+([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/i,
+      // 管道分隔：Job Title | Company Name
       /\|\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*\||$)/,
-      /^([A-Z][a-zA-Z\s&.,-]+?)\s*[-:]/
+      // 冒号分隔：Job Title: Company Name
+      /:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/,
+      // 破折号分隔：Job Title - Company Name
+      /\s-\s([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/,
+      // 开头格式：Company Name - Job Title
+      /^([A-Z][a-zA-Z\s&.,-]+?)\s*[-:]/,
+      // 括号格式：Job Title (Company Name)
+      /\(([A-Z][a-zA-Z\s&.,-]+?)\)/,
+      // @符号格式：Job Title @Company Name
+      /@\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/i,
+      // 描述中的公司名称：Company: Company Name
+      /company:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[.\n]|$)/i,
+      // 描述中的雇主：Employer: Company Name
+      /employer:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[.\n]|$)/i,
+      // 描述中的组织：Organization: Company Name
+      /organization:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[.\n]|$)/i,
+      // 描述中的客户端：Client: Company Name
+      /client:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[.\n]|$)/i,
+      // 工作地点格式：Job Title - Remote at Company Name
+      /remote\s+at\s+([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/i,
+      // 位置格式：Job Title - Location - Company Name
+      /\s-\s[A-Za-z\s,]+\s-\s([A-Z][a-zA-Z\s&.,-]+?)(?:\s*$)/,
+      // 简单的大写字母开头的词组
+      /\b([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*){1,3})\b/
     ];
 
-    for (const pattern of companyPatterns) {
-      const match = title.match(pattern) || description.match(pattern);
+    // 首先尝试从标题中提取
+    for (const pattern of companyPatterns.slice(0, -1)) { // 排除最后一个通用模式
+      const match = title.match(pattern);
       if (match && match[1]) {
-        return match[1].trim();
+        const company = match[1].trim();
+        // 过滤掉常见的非公司名称
+        if (!this.isCommonNonCompanyWord(company)) {
+          return company;
+        }
+      }
+    }
+
+    // 然后尝试从描述中提取
+    for (const pattern of companyPatterns.slice(0, -1)) {
+      const match = description.match(pattern);
+      if (match && match[1]) {
+        const company = match[1].trim();
+        if (!this.isCommonNonCompanyWord(company)) {
+          return company;
+        }
+      }
+    }
+
+    // 最后使用通用模式作为备选
+    const generalPattern = companyPatterns[companyPatterns.length - 1];
+    const matches = title.match(new RegExp(generalPattern, 'g'));
+    if (matches) {
+      for (const match of matches) {
+        const company = match.trim();
+        if (company.length > 2 && !this.isCommonNonCompanyWord(company)) {
+          return company;
+        }
       }
     }
 
     return '';
+  }
+
+  /**
+   * 检查是否为常见的非公司名称词汇
+   */
+  private isCommonNonCompanyWord(word: string): boolean {
+    const commonWords = [
+      'remote', 'full', 'time', 'part', 'contract', 'freelance', 'temporary',
+      'senior', 'junior', 'lead', 'principal', 'staff', 'entry', 'level',
+      'developer', 'engineer', 'designer', 'manager', 'analyst', 'specialist',
+      'coordinator', 'assistant', 'director', 'executive', 'consultant',
+      'intern', 'trainee', 'associate', 'administrator', 'supervisor',
+      'job', 'position', 'role', 'opportunity', 'career', 'work', 'employment',
+      'hiring', 'wanted', 'seeking', 'looking', 'required', 'needed',
+      'usa', 'europe', 'worldwide', 'global', 'international', 'local',
+      'new', 'old', 'big', 'small', 'large', 'major', 'minor', 'top',
+      'best', 'great', 'good', 'excellent', 'amazing', 'awesome',
+      'the', 'and', 'or', 'but', 'for', 'with', 'without', 'from', 'to'
+    ];
+    
+    return commonWords.includes(word.toLowerCase()) || word.length < 2;
   }
 
   /**
@@ -578,75 +652,126 @@ class RSSService {
   private extractRemoteLocationRestriction(title: string, description: string): string {
     const text = `${title} ${description}`.toLowerCase();
     
-    // 检查是否有地区限制
+    // 检查是否有地区限制 - 更精确的匹配
     if (text.includes('us only') || text.includes('usa only') || text.includes('united states only') || 
-        text.includes('us citizens') || text.includes('american citizens') || text.includes('us residents')) {
+        text.includes('us citizens') || text.includes('american citizens') || text.includes('us residents') ||
+        text.includes('location: usa') || text.includes('location: us') || text.includes('remote location: usa') ||
+        text.includes('remote location: us') || text.includes('usa-based') || text.includes('us-based')) {
       return '仅限美国';
     }
     
     if (text.includes('eu only') || text.includes('europe only') || text.includes('european union') || 
-        text.includes('eu citizens') || text.includes('european citizens')) {
+        text.includes('eu citizens') || text.includes('european citizens') || text.includes('location: eu') ||
+        text.includes('location: europe') || text.includes('remote location: eu') || text.includes('eu-based')) {
       return '仅限欧盟';
     }
     
-    if (text.includes('uk only') || text.includes('united kingdom only') || text.includes('british citizens')) {
+    if (text.includes('uk only') || text.includes('united kingdom only') || text.includes('british citizens') ||
+        text.includes('location: uk') || text.includes('remote location: uk') || text.includes('uk-based')) {
       return '仅限英国';
     }
     
-    if (text.includes('canada only') || text.includes('canadian citizens') || text.includes('canadian residents')) {
+    if (text.includes('canada only') || text.includes('canadian citizens') || text.includes('canadian residents') ||
+        text.includes('location: canada') || text.includes('remote location: canada') || text.includes('canada-based')) {
       return '仅限加拿大';
     }
     
-    if (text.includes('australia only') || text.includes('australian citizens') || text.includes('australian residents')) {
+    if (text.includes('australia only') || text.includes('australian citizens') || text.includes('australian residents') ||
+        text.includes('location: australia') || text.includes('remote location: australia') || text.includes('australia-based')) {
       return '仅限澳大利亚';
     }
     
-    if (text.includes('brazil only') || text.includes('brazilian citizens') || text.includes('brazilian residents')) {
+    if (text.includes('brazil only') || text.includes('brazilian citizens') || text.includes('brazilian residents') ||
+        text.includes('location: brazil') || text.includes('remote location: brazil') || text.includes('brazil-based')) {
       return '仅限巴西';
     }
     
-    if (text.includes('india only') || text.includes('indian citizens') || text.includes('indian residents')) {
+    if (text.includes('india only') || text.includes('indian citizens') || text.includes('indian residents') ||
+        text.includes('location: india') || text.includes('remote location: india') || text.includes('india-based')) {
       return '仅限印度';
     }
     
-    if (text.includes('germany only') || text.includes('german citizens') || text.includes('german residents')) {
+    if (text.includes('germany only') || text.includes('german citizens') || text.includes('german residents') ||
+        text.includes('location: germany') || text.includes('remote location: germany') || text.includes('germany-based')) {
       return '仅限德国';
     }
     
-    if (text.includes('france only') || text.includes('french citizens') || text.includes('french residents')) {
+    if (text.includes('france only') || text.includes('french citizens') || text.includes('french residents') ||
+        text.includes('location: france') || text.includes('remote location: france') || text.includes('france-based')) {
       return '仅限法国';
     }
     
-    if (text.includes('japan only') || text.includes('japanese citizens') || text.includes('japanese residents')) {
+    if (text.includes('japan only') || text.includes('japanese citizens') || text.includes('japanese residents') ||
+        text.includes('location: japan') || text.includes('remote location: japan') || text.includes('japan-based')) {
       return '仅限日本';
+    }
+
+    // 检查具体国家/地区的更多模式
+    const locationPatterns = [
+      { pattern: /remote location:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
+      { pattern: /location:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
+      { pattern: /based in:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
+      { pattern: /must be located in:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
+      { pattern: /candidates from:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
+      { pattern: /timezone:\s*([^,\n]+)/i, transform: (match: string) => `${match.trim()}时区` },
+      { pattern: /time zone:\s*([^,\n]+)/i, transform: (match: string) => `${match.trim()}时区` }
+    ];
+
+    for (const { pattern, transform } of locationPatterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        const location = match[1].trim();
+        // 过滤掉一些通用词汇
+        if (!['remote', 'anywhere', 'worldwide', 'global', 'any'].includes(location.toLowerCase())) {
+          return transform(location);
+        }
+      }
     }
     
     // 检查时区限制
-    if (text.includes('est timezone') || text.includes('eastern time') || text.includes('et timezone')) {
+    if (text.includes('est timezone') || text.includes('eastern time') || text.includes('et timezone') ||
+        text.includes('eastern standard time') || text.includes('eastern daylight time')) {
       return '东部时区';
     }
     
-    if (text.includes('pst timezone') || text.includes('pacific time') || text.includes('pt timezone')) {
+    if (text.includes('pst timezone') || text.includes('pacific time') || text.includes('pt timezone') ||
+        text.includes('pacific standard time') || text.includes('pacific daylight time')) {
       return '太平洋时区';
     }
     
-    if (text.includes('cet timezone') || text.includes('central european time')) {
+    if (text.includes('cet timezone') || text.includes('central european time') ||
+        text.includes('cest timezone') || text.includes('central european summer time')) {
       return '中欧时区';
     }
     
-    if (text.includes('utc timezone') || text.includes('gmt timezone')) {
+    if (text.includes('utc timezone') || text.includes('gmt timezone') || text.includes('coordinated universal time')) {
       return 'UTC时区';
+    }
+
+    if (text.includes('cst timezone') || text.includes('central standard time') || text.includes('central time')) {
+      return '中部时区';
+    }
+
+    if (text.includes('mst timezone') || text.includes('mountain standard time') || text.includes('mountain time')) {
+      return '山地时区';
     }
     
     // 检查全球远程
     if (text.includes('worldwide') || text.includes('global') || text.includes('anywhere') || 
         text.includes('any location') || text.includes('no location restriction') || 
-        text.includes('remote worldwide') || text.includes('work from anywhere')) {
+        text.includes('remote worldwide') || text.includes('work from anywhere') ||
+        text.includes('location: worldwide') || text.includes('location: global') ||
+        text.includes('remote location: worldwide') || text.includes('remote location: global')) {
       return '全球远程';
     }
     
-    // 默认返回全球远程
-    return '全球远程';
+    // 如果没有找到特定限制，检查是否明确提到了远程工作
+    if (text.includes('remote') || text.includes('work from home') || text.includes('telecommute')) {
+      return '全球远程';
+    }
+    
+    // 默认返回空字符串，让前端决定如何显示
+    return '';
   }
 
   /**

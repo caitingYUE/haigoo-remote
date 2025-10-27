@@ -45,8 +45,14 @@ const AdminDashboardPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   
   // 排序相关状态
-  const [sortBy, setSortBy] = useState<'publishedAt' | 'title' | 'company'>('publishedAt');
+  const [sortBy, setSortBy] = useState<'publishedAt' | 'title' | 'company' | 'remoteLocationRestriction'>('publishedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  // 筛选下拉菜单状态
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [showSourceFilter, setShowSourceFilter] = useState(false);
+  const [showStatusFilter, setShowStatusFilter] = useState(false);
+  const [showRemoteLocationFilter, setShowRemoteLocationFilter] = useState(false);
   
   // RSS配置相关状态
   const [showRSSConfig, setShowRSSConfig] = useState(false);
@@ -324,6 +330,10 @@ const AdminDashboardPage: React.FC = () => {
           aValue = a.company?.toLowerCase() || '';
           bValue = b.company?.toLowerCase() || '';
           break;
+        case 'remoteLocationRestriction':
+          aValue = a.remoteLocationRestriction?.toLowerCase() || '';
+          bValue = b.remoteLocationRestriction?.toLowerCase() || '';
+          break;
         default:
           return 0;
       }
@@ -345,7 +355,7 @@ const AdminDashboardPage: React.FC = () => {
   const currentJobs = sortedJobs.slice(startIndex, endIndex);
 
   // 处理排序
-  const handleSort = (field: 'publishedAt' | 'title' | 'company') => {
+  const handleSort = (field: 'publishedAt' | 'title' | 'company' | 'remoteLocationRestriction') => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -388,6 +398,59 @@ const AdminDashboardPage: React.FC = () => {
       case 'deleted': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
     }
+  };
+
+  // 获取唯一的筛选选项
+  const getUniqueCategories = () => {
+    const categories = [...new Set(jobs.map(job => job.category).filter(Boolean))];
+    return categories.sort();
+  };
+
+  const getUniqueSources = () => {
+    const sources = [...new Set(jobs.map(job => job.source).filter(Boolean))];
+    return sources.sort();
+  };
+
+  const getUniqueRemoteLocationRestrictions = () => {
+    const restrictions = [...new Set(jobs.map(job => job.remoteLocationRestriction).filter(Boolean))];
+    return restrictions.sort();
+  };
+
+  // 筛选处理函数
+  const handleCategoryFilter = (category: string) => {
+    setFilter(prev => ({
+      ...prev,
+      category: category === 'all' ? undefined : [category as JobCategory]
+    }));
+    setShowCategoryFilter(false);
+    setCurrentPage(1);
+  };
+
+  const handleSourceFilter = (source: string) => {
+    setFilter(prev => ({
+      ...prev,
+      source: source === 'all' ? undefined : [source]
+    }));
+    setShowSourceFilter(false);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilter = (status: string) => {
+    setFilter(prev => ({
+      ...prev,
+      status: status === 'all' ? undefined : [status as Job['status']]
+    }));
+    setShowStatusFilter(false);
+    setCurrentPage(1);
+  };
+
+  const handleRemoteLocationFilter = (restriction: string) => {
+    setFilter(prev => ({
+      ...prev,
+      remoteLocationRestriction: restriction === 'all' ? undefined : [restriction]
+    }));
+    setShowRemoteLocationFilter(false);
+    setCurrentPage(1);
   };
 
   if (loading) {
@@ -905,14 +968,170 @@ const AdminDashboardPage: React.FC = () => {
                       )}
                     </button>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    分类
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setShowCategoryFilter(!showCategoryFilter)}
+                        className="flex items-center space-x-1 hover:text-gray-700"
+                      >
+                        <span>分类</span>
+                        <Filter className="w-3 h-3" />
+                      </button>
+                    </div>
+                    {showCategoryFilter && (
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                        <div className="py-1">
+                          <button
+                            onClick={() => handleCategoryFilter('all')}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                              !filter.category ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            }`}
+                          >
+                            全部分类
+                          </button>
+                          {getUniqueCategories().map(category => (
+                            <button
+                              key={category}
+                              onClick={() => handleCategoryFilter(category)}
+                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                                filter.category?.[0] === category ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
+                            >
+                              {category}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    来源
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setShowSourceFilter(!showSourceFilter)}
+                        className="flex items-center space-x-1 hover:text-gray-700"
+                      >
+                        <span>来源</span>
+                        <Filter className="w-3 h-3" />
+                      </button>
+                    </div>
+                    {showSourceFilter && (
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                        <div className="py-1">
+                          <button
+                            onClick={() => handleSourceFilter('all')}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                              !filter.source ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            }`}
+                          >
+                            全部来源
+                          </button>
+                          {getUniqueSources().map(source => (
+                            <button
+                              key={source}
+                              onClick={() => handleSourceFilter(source)}
+                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                                filter.source?.[0] === source ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
+                            >
+                              {source}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    状态
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setShowStatusFilter(!showStatusFilter)}
+                        className="flex items-center space-x-1 hover:text-gray-700"
+                      >
+                        <span>状态</span>
+                        <Filter className="w-3 h-3" />
+                      </button>
+                    </div>
+                    {showStatusFilter && (
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                        <div className="py-1">
+                          <button
+                            onClick={() => handleStatusFilter('all')}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                              !filter.status ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            }`}
+                          >
+                            全部状态
+                          </button>
+                          <button
+                            onClick={() => handleStatusFilter('active')}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                              filter.status?.[0] === 'active' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            }`}
+                          >
+                            活跃
+                          </button>
+                          <button
+                            onClick={() => handleStatusFilter('inactive')}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                              filter.status?.[0] === 'inactive' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            }`}
+                          >
+                            非活跃
+                          </button>
+                          <button
+                            onClick={() => handleStatusFilter('deleted')}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                              filter.status?.[0] === 'deleted' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            }`}
+                          >
+                            已删除
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => handleSort('remoteLocationRestriction')}
+                        className="flex items-center space-x-1 hover:text-gray-700"
+                      >
+                        <span>远程地点限制</span>
+                        {sortBy === 'remoteLocationRestriction' && (
+                          sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setShowRemoteLocationFilter(!showRemoteLocationFilter)}
+                        className="ml-1 hover:text-gray-700"
+                      >
+                        <Filter className="w-3 h-3" />
+                      </button>
+                    </div>
+                    {showRemoteLocationFilter && (
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                        <div className="py-1">
+                          <button
+                            onClick={() => handleRemoteLocationFilter('all')}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                              !filter.remoteLocationRestriction ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            }`}
+                          >
+                            全部地点
+                          </button>
+                          {getUniqueRemoteLocationRestrictions().map(restriction => (
+                            <button
+                              key={restriction}
+                              onClick={() => handleRemoteLocationFilter(restriction)}
+                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                                filter.remoteLocationRestriction?.[0] === restriction ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
+                            >
+                              {restriction}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button
@@ -988,11 +1207,6 @@ const AdminDashboardPage: React.FC = () => {
                                {job.experienceLevel}
                              </span>
                            )}
-                           {job.remoteLocationRestriction && (
-                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
-                               {job.remoteLocationRestriction}
-                             </span>
-                           )}
                          </div>
                       </div>
                     </td>
@@ -1008,6 +1222,15 @@ const AdminDashboardPage: React.FC = () => {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
                         {job.status === 'active' ? '活跃' : job.status === 'inactive' ? '非活跃' : '已删除'}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {job.remoteLocationRestriction ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                          {job.remoteLocationRestriction}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">无限制</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(job.publishedAt)}

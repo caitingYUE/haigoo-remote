@@ -165,6 +165,7 @@ export interface JobFilter {
   };
   isRemote?: boolean;
   status?: Job['status'][];
+  remoteLocationRestriction?: string[];
 }
 
 export interface JobStats {
