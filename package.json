@@ -17,6 +17,8 @@
     "@vercel/kv": "^3.0.0",
     "axios": "^1.6.2",
     "clsx": "^2.0.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "lucide-react": "^0.294.0",
     "node-fetch": "^3.3.2",
     "react": "^18.2.0",

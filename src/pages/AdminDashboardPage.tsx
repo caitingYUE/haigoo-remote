@@ -188,6 +188,31 @@ const AdminDashboardPage: React.FC = () => {
     };
   }, [rssSources.length, loadData]);
 
+  // 清除所有数据
+  const handleClearData = useCallback(async () => {
+    const confirmed = confirm(
+      '⚠️ 警告：此操作将清除所有职位数据和缓存，无法恢复！\n\n确定要继续吗？'
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      console.log('开始清除所有数据...');
+      
+      // 调用清除数据方法
+      await jobAggregator.clearAllData();
+      
+      // 重新加载数据（此时应该是空的）
+      await loadData();
+      
+      alert('✅ 数据清除成功！下次点击"同步数据"将重新拉取所有RSS信息。');
+      
+    } catch (error) {
+      console.error('清除数据失败:', error);
+      alert(`❌ 清除数据失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  }, [loadData]);
+
   // 搜索处理
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
@@ -411,8 +436,8 @@ const AdminDashboardPage: React.FC = () => {
     return sources.sort();
   };
 
-  const getUniqueRemoteLocationRestrictions = () => {
-    const restrictions = [...new Set(jobs.map(job => job.remoteLocationRestriction).filter(Boolean))];
+  const getUniqueRemoteLocationRestrictions = (): string[] => {
+    const restrictions = [...new Set(jobs.map(job => job.remoteLocationRestriction).filter((restriction): restriction is string => Boolean(restriction)))];
     return restrictions.sort();
   };
 
@@ -481,6 +506,13 @@ const AdminDashboardPage: React.FC = () => {
               >
                 <Settings className="w-4 h-4 mr-2" />
                 RSS配置
+              </button>
+              <button
+                onClick={handleClearData}
+                className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                清除数据
               </button>
               <button
                 onClick={handleSync}
@@ -1123,7 +1155,7 @@ const AdminDashboardPage: React.FC = () => {
                               key={restriction}
                               onClick={() => handleRemoteLocationFilter(restriction)}
                               className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                                filter.remoteLocationRestriction?.[0] === restriction ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                filter.remoteLocationRestriction?.includes(restriction) ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
                               }`}
                             >
                               {restriction}

@@ -1,25 +1,15 @@
-import { MapPin, Clock, DollarSign, ExternalLink, Bookmark, Star } from 'lucide-react'
-import { Job } from '../types'
+import { MapPin, Clock, DollarSign, ExternalLink, Bookmark, Star, Building, Briefcase } from 'lucide-react'
+import { Job } from '../types/rss-types'
+import { DateFormatter } from '../utils/date-formatter'
 
 interface JobCardProps {
   job: Job
 }
 
 export default function JobCard({ job }: JobCardProps) {
-  const formatSalary = (min: number, max: number, currency: string) => {
-    return `$${min.toLocaleString()} - $${max.toLocaleString()} ${currency}`
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    if (diffDays === 1) return '1天前'
-    if (diffDays < 7) return `${diffDays}天前`
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)}周前`
-    return `${Math.ceil(diffDays / 30)}个月前`
+  const formatSalary = (salary?: string) => {
+    if (!salary) return '薪资面议'
+    return salary
   }
 
   const getCompanyLogo = (company: string) => {
@@ -36,6 +26,28 @@ export default function JobCard({ job }: JobCardProps) {
     return colors[colorIndex]
   }
 
+  const getJobTypeLabel = (jobType: string) => {
+    const labels = {
+      'full-time': '全职',
+      'part-time': '兼职',
+      'contract': '合同',
+      'freelance': '自由职业',
+      'internship': '实习'
+    }
+    return labels[jobType as keyof typeof labels] || jobType
+  }
+
+  const getExperienceLevelLabel = (level: string) => {
+    const labels = {
+      'Entry': '初级',
+      'Mid': '中级',
+      'Senior': '高级',
+      'Lead': '主管',
+      'Executive': '总监'
+    }
+    return labels[level as keyof typeof labels] || level
+  }
+
   return (
     <div className="group bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md hover:border-purple-200 transition-all duration-300 cursor-pointer">
       {/* Header - 横向布局 */}
@@ -48,7 +60,21 @@ export default function JobCard({ job }: JobCardProps) {
             <h3 className="font-semibold text-gray-900 text-lg group-hover:text-purple-600 transition-colors mb-1">
               {job.title}
             </h3>
-            <p className="text-gray-500 text-sm mb-2">{job.company}</p>
+            
+            {/* 公司信息行 */}
+            <div className="flex items-center gap-4 text-gray-500 text-sm mb-2">
+              <div className="flex items-center">
+                <Building className="w-4 h-4 mr-1" />
+                <span>{job.company}</span>
+              </div>
+              <div className="flex items-center">
+                <Briefcase className="w-4 h-4 mr-1" />
+                <span>{getJobTypeLabel(job.jobType)}</span>
+              </div>
+              <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-md">
+                {getExperienceLevelLabel(job.experienceLevel)}
+              </span>
+            </div>
             
             {/* Job Details - 水平排列 */}
             <div className="flex items-center gap-4 text-gray-500 text-sm">
@@ -56,19 +82,26 @@ export default function JobCard({ job }: JobCardProps) {
                 <MapPin className="w-4 h-4 mr-1" />
                 <span>{job.location}</span>
               </div>
+              {job.remoteLocationRestriction && (
+                <div className="flex items-center">
+                  <span className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded-md">
+                    远程: {job.remoteLocationRestriction}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center">
                 <DollarSign className="w-4 h-4 mr-1" />
-                <span>{formatSalary(job.salary.min, job.salary.max, job.salary.currency)}</span>
+                <span>{formatSalary(job.salary)}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="w-4 h-4 mr-1" />
-                <span>{formatDate(job.postedAt)}</span>
+                <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
               </div>
             </div>
             
             {/* Skills */}
             <div className="flex flex-wrap gap-2 mt-3">
-              {job.skills.slice(0, 3).map((skill, index) => (
+              {job.tags.slice(0, 3).map((skill, index) => (
                 <span
                   key={index}
                   className="px-2 py-1 bg-purple-50 text-purple-600 text-xs font-medium rounded-md"
@@ -76,9 +109,9 @@ export default function JobCard({ job }: JobCardProps) {
                   {skill}
                 </span>
               ))}
-              {job.skills.length > 3 && (
+              {job.tags.length > 3 && (
                 <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-md">
-                  +{job.skills.length - 3}
+                  +{job.tags.length - 3}
                 </span>
               )}
             </div>
@@ -90,9 +123,15 @@ export default function JobCard({ job }: JobCardProps) {
           <button className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
             <Bookmark className="w-5 h-5" />
           </button>
-          <button className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200">
+          <a 
+            href={job.url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200 flex items-center gap-1"
+          >
             申请
-          </button>
+            <ExternalLink className="w-4 h-4" />
+          </a>
         </div>
       </div>
     </div>

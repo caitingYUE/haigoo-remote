@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Search, MapPin, Building, DollarSign, Bookmark, Calendar } from 'lucide-react'
+import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import JobDetailModal from '../components/JobDetailModal'
 import { Job } from '../types'
 import { jobAggregator } from '../services/job-aggregator'
 import { Job as RSSJob } from '../types/rss-types'
+import { DateFormatter } from '../utils/date-formatter'
 
 // 转换RSS Job类型到页面Job类型的函数
 const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
@@ -13,7 +14,7 @@ const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
     title: rssJob.title,
     company: rssJob.company,
     location: rssJob.location,
-    type: rssJob.isRemote ? 'remote' : 'full-time',
+    type: rssJob.jobType || 'full-time',
     salary: {
       min: 0,
       max: 0,
@@ -23,10 +24,10 @@ const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
     requirements: rssJob.requirements,
     responsibilities: [], // RSS数据中没有这个字段
     skills: rssJob.tags,
-    postedAt: rssJob.publishedAt.toISOString().split('T')[0],
+    postedAt: typeof rssJob.publishedAt === 'string' ? rssJob.publishedAt : new Date(rssJob.publishedAt).toISOString().split('T')[0],
     expiresAt: '', // RSS数据中没有这个字段
     source: rssJob.source,
-    sourceUrl: rssJob.sourceUrl
+    sourceUrl: rssJob.url
   }
 }
 
@@ -293,30 +294,26 @@ export default function JobsPage() {
       job.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (job.skills && job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
     
-    // 工作类型匹配 - 统一使用RSS Job的jobType字段
-    const matchesType = filters.type === 'all' || 
-      (job as any).jobType?.toLowerCase() === filters.type.toLowerCase() || 
-      job.type === filters.type
+    // 工作类型匹配
+    const matchesType = filters.type === 'all' || job.type === filters.type
     
-    // 岗位分类匹配 - 使用RSS Job的category字段
+    // 岗位分类匹配 - 通过技能标签匹配
     const matchesCategory = filters.category === 'all' || 
-      (job as any).category === filters.category ||
       (job.skills && job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase())))
     
     // 地点匹配 - 支持远程工作判断
     const matchesLocation = filters.location === 'all' || 
       job.location.includes(filters.location) ||
-      (filters.location === 'Remote' && ((job as any).isRemote || job.location.includes('远程'))) ||
+      (filters.location === 'Remote' && (job.type === 'remote' || job.location.includes('远程'))) ||
       (filters.location === 'Worldwide' && (job.location.includes('全球') || job.location.includes('远程')))
     
-    // 经验等级匹配
-    const matchesExperience = filters.experience === 'all' || 
-      (job as any).experienceLevel === filters.experience
+    // 经验等级匹配 - 暂时跳过，因为Job接口中没有experienceLevel字段
+    const matchesExperience = filters.experience === 'all'
     
     // 远程工作匹配
     const matchesRemote = filters.remote === 'all' || 
-      (filters.remote === 'yes' && ((job as any).isRemote || job.location.includes('远程'))) ||
-      (filters.remote === 'no' && !((job as any).isRemote || job.location.includes('远程')))
+      (filters.remote === 'yes' && (job.type === 'remote' || job.location.includes('远程'))) ||
+      (filters.remote === 'no' && !(job.type === 'remote' || job.location.includes('远程')))
     
     return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote
   })
@@ -547,7 +544,12 @@ export default function JobsPage() {
                           </div>
                           <div className="flex items-center gap-1.5">
                             <Calendar className="h-4 w-4 text-gray-400 transition-colors duration-200" />
-                            <span>{job.postedAt}</span>
+                            <span>{DateFormatter.formatPublishTime(job.postedAt)}</span>
+                          </div>
+                          {/* 添加工作类型显示 */}
+                          <div className="flex items-center gap-1.5">
+                            <Briefcase className="h-4 w-4 text-gray-400 transition-colors duration-200" />
+                            <span>{getTypeLabel(job.type)}</span>
                           </div>
                         </div>
                       </div>

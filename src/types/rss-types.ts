@@ -10,22 +10,21 @@ export interface Job {
   company: string;
   location: string;
   description: string;
+  url: string;
+  publishedAt: string;
+  source: string;
+  category: JobCategory;
   salary?: string;
   jobType: 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship';
-  category: JobCategory;
-  source: string;
-  sourceUrl: string;
-  publishedAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  status: 'active' | 'inactive' | 'deleted';
+  experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
+  remoteLocationRestriction?: string;
   tags: string[];
   requirements: string[];
   benefits: string[];
-  applicationUrl: string;
   isRemote: boolean;
-  experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
-  remoteLocationRestriction?: string;
+  status: 'active' | 'inactive' | 'archived';
+  createdAt: string;
+  updatedAt: string;
 }
 
 // 标准化的工作分类
@@ -130,22 +129,21 @@ export interface Job {
   company: string;
   location: string;
   description: string;
+  url: string;
+  publishedAt: string;
+  source: string;
+  category: JobCategory;
   salary?: string;
   jobType: 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship';
-  category: JobCategory;
-  source: string;
-  sourceUrl: string;
-  publishedAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  status: 'active' | 'inactive' | 'deleted';
+  experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
+  remoteLocationRestriction?: string; // 远程工作的地理限制
   tags: string[];
   requirements: string[];
   benefits: string[];
-  applicationUrl: string;
   isRemote: boolean;
-  experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
-  remoteLocationRestriction?: string;
+  status: 'active' | 'inactive' | 'archived';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface JobFilter {

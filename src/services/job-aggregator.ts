@@ -1,5 +1,6 @@
 import { Job, JobCategory, JobFilter, JobStats, SyncStatus, AdminDashboardData } from '../types/rss-types';
 import { rssService, RSSFeedItem, ParsedRSSData } from './rss-service';
+import { aiJobParser, ParsedJobInfo } from './ai-job-parser';
 import { getStorageAdapter } from './storage-factory';
 import { CloudStorageAdapter } from './cloud-storage-adapter';
 
@@ -22,6 +23,8 @@ class JobAggregator {
   constructor() {
     // 初始化时从存储加载数据
     this.initializeStorage();
+    // 启动时立即加载存储的数据
+    this.loadJobsFromStorage();
     console.log('JobAggregator 初始化完成');
   }
 
@@ -41,24 +44,27 @@ class JobAggregator {
    * 从存储加载职位数据
    */
   private async loadJobsFromStorage(): Promise<void> {
-    if (!this.storageAdapter) {
-      console.warn('存储适配器未初始化');
-      return;
-    }
-
     try {
-      const storedJobs = await this.storageAdapter.loadJobs();
-      this.jobs = storedJobs;
-      
-      // 更新同步状态
-      const lastSync = await this.storageAdapter.getLastSyncTime();
-      if (lastSync) {
-        this.syncStatus.lastSync = lastSync;
+      if (this.storageAdapter) {
+        const storedJobs = await this.storageAdapter.loadJobs();
+        if (storedJobs && storedJobs.length > 0) {
+          this.jobs = storedJobs;
+          console.log(`从存储加载了 ${storedJobs.length} 个职位数据`);
+        } else {
+          console.log('存储中没有找到职位数据');
+        }
+        
+        // 更新同步状态
+        const lastSync = await this.storageAdapter.getLastSyncTime();
+        if (lastSync) {
+          this.syncStatus.lastSync = lastSync;
+        }
+      } else {
+        console.log('存储适配器未初始化，无法加载数据');
       }
-      
-      console.log(`📖 从存储加载了 ${storedJobs.length} 个职位`);
     } catch (error) {
-      console.error('从存储加载职位失败:', error);
+      console.error('从存储加载数据失败:', error);
+      // 即使加载失败，也不要清空现有数据
     }
   }
 
@@ -66,16 +72,18 @@ class JobAggregator {
    * 保存职位数据到存储
    */
   private async saveJobsToStorage(): Promise<void> {
-    if (!this.storageAdapter) {
-      console.warn('存储适配器未初始化');
-      return;
-    }
-
     try {
-      await this.storageAdapter.saveJobs(this.jobs);
-      console.log(`💾 已保存 ${this.jobs.length} 个职位到存储`);
+      if (this.storageAdapter && this.jobs.length > 0) {
+        await this.storageAdapter.saveJobs(this.jobs);
+        console.log(`💾 成功保存 ${this.jobs.length} 个职位到存储`);
+      } else if (!this.storageAdapter) {
+        console.warn('存储适配器未初始化，无法保存数据');
+      } else {
+        console.log('没有职位数据需要保存');
+      }
     } catch (error) {
-      console.error('保存职位到存储失败:', error);
+      console.error('保存职位数据到存储失败:', error);
+      // 保存失败不应该影响内存中的数据
     }
   }
 
@@ -380,11 +388,57 @@ class JobAggregator {
   }
 
   /**
-   * 将RSS项目转换为Job对象
+   * 将RSS项目转换为Job对象 - 使用AI解析
    */
-  private convertRSSItemToJob(item: RSSFeedItem, source: string, sourceCategory: string): Job {
+  private async convertRSSItemToJob(item: RSSFeedItem, source: string, sourceCategory: string): Promise<Job> {
+    const id = this.generateJobId(item.link, source);
+    
+    try {
+      // 使用AI解析职位信息
+      const parsedInfo: ParsedJobInfo = await aiJobParser.parseJobInfo(
+        item.title,
+        item.description,
+        source
+      );
+      
+      const now = new Date().toISOString();
+      
+      return {
+        id,
+        title: parsedInfo.title,
+        company: parsedInfo.company,
+        location: parsedInfo.location,
+        description: item.description,
+        url: item.link,
+        publishedAt: item.pubDate || now,
+        source,
+        category: parsedInfo.category as JobCategory,
+        salary: parsedInfo.salary,
+        jobType: parsedInfo.jobType,
+        experienceLevel: parsedInfo.experienceLevel,
+        remoteLocationRestriction: parsedInfo.remoteLocationRestriction,
+        tags: parsedInfo.tags,
+        requirements: parsedInfo.requirements,
+        benefits: parsedInfo.benefits,
+        isRemote: this.isRemoteJob(parsedInfo.title, item.description, parsedInfo.location),
+        status: 'active',
+        createdAt: now,
+        updatedAt: now
+      };
+    } catch (error) {
+      console.error('AI解析失败，使用备用方法:', error);
+      // 备用方法：使用原有逻辑
+      return this.convertRSSItemToJobFallback(item, source, sourceCategory);
+    }
+  }
+
+  /**
+   * 备用转换方法（当AI解析失败时使用）
+   */
+  private convertRSSItemToJobFallback(item: RSSFeedItem, source: string, sourceCategory: string): Job {
     const id = this.generateJobId(item.link, source);
     const category = this.categorizeJob(item.title, item.description, sourceCategory);
+    const now = new Date().toISOString();
     
     return {
       id,
@@ -392,21 +446,21 @@ class JobAggregator {
       company: item.company || this.extractCompanyFromDescription(item.description),
       location: item.location || 'Remote',
       description: item.description,
+      url: item.link,
+      publishedAt: item.pubDate || now,
+      source,
+      category,
       salary: item.salary,
       jobType: (item.jobType as Job['jobType']) || 'full-time',
-      category,
-      source,
-      sourceUrl: item.link,
-      publishedAt: item.pubDate ? new Date(item.pubDate) : new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      status: 'active',
+      experienceLevel: this.determineExperienceLevel(item.title, item.description),
+      remoteLocationRestriction: undefined,
       tags: this.extractTags(item.title, item.description),
       requirements: this.extractRequirements(item.description),
       benefits: this.extractBenefits(item.description),
-      applicationUrl: item.link,
       isRemote: this.isRemoteJob(item.title, item.description, item.location),
-      experienceLevel: this.determineExperienceLevel(item.title, item.description)
+      status: 'active',
+      createdAt: now,
+      updatedAt: now
     };
   }
 
@@ -573,15 +627,14 @@ class JobAggregator {
       const rssData = await rssService.fetchAllRSSFeeds();
       console.log(`获取到 ${rssData.length} 个RSS数据源`);
       
-      // 清空现有职位数据，重新开始
+      // 保留现有数据，进行增量更新而不是清空重建
       const oldJobsCount = this.jobs.length;
-      this.jobs = [];
-      console.log(`清空了 ${oldJobsCount} 个旧职位数据`);
+      console.log(`当前已有 ${oldJobsCount} 个职位数据，将进行增量更新`);
       
       for (const data of rssData) {
         try {
           console.log(`处理RSS数据: ${data.source} - ${data.category}, 包含 ${data.items.length} 个职位`);
-          this.processRSSData(data);
+          await this.processRSSData(data);
           this.syncStatus.successfulSources++;
         } catch (error) {
           console.error(`处理RSS数据失败: ${data.source}`, error);
@@ -626,14 +679,14 @@ class JobAggregator {
   /**
    * 处理单个RSS数据源
    */
-  private processRSSData(data: ParsedRSSData): void {
+  private async processRSSData(data: ParsedRSSData): Promise<void> {
     console.log(`开始处理RSS数据: ${data.source} - ${data.category}`);
     let newJobs = 0;
     let updatedJobs = 0;
     
     for (const item of data.items) {
       try {
-        const job = this.convertRSSItemToJob(item, data.source, data.category);
+        const job = await this.convertRSSItemToJob(item, data.source, data.category);
         const existingJobIndex = this.jobs.findIndex(j => j.id === job.id);
         
         if (existingJobIndex === -1) {
@@ -643,7 +696,7 @@ class JobAggregator {
           newJobs++;
         } else {
           // 更新现有岗位
-          this.jobs[existingJobIndex] = { ...this.jobs[existingJobIndex], ...job, updatedAt: new Date() };
+          this.jobs[existingJobIndex] = { ...this.jobs[existingJobIndex], ...job, updatedAt: new Date().toISOString() };
           this.syncStatus.updatedJobs++;
           updatedJobs++;
         }
@@ -707,7 +760,7 @@ class JobAggregator {
   getJobStats(): JobStats {
     const activeJobs = this.jobs.filter(job => job.status === 'active');
     const recentlyAdded = this.jobs.filter(job => 
-      job.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000)
+      new Date(job.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
     ).length;
 
     const byCategory: Record<JobCategory, number> = {} as Record<JobCategory, number>;
@@ -763,7 +816,7 @@ class JobAggregator {
     const jobIndex = this.jobs.findIndex(job => job.id === jobId);
     if (jobIndex !== -1) {
       this.jobs[jobIndex].status = status;
-      this.jobs[jobIndex].updatedAt = new Date();
+      this.jobs[jobIndex].updatedAt = new Date().toISOString();
       return true;
     }
     return false;
@@ -790,11 +843,48 @@ class JobAggregator {
       const jobIndex = this.jobs.findIndex(job => job.id === jobId);
       if (jobIndex !== -1) {
         this.jobs[jobIndex].category = category;
-        this.jobs[jobIndex].updatedAt = new Date();
+        this.jobs[jobIndex].updatedAt = new Date().toISOString();
         updatedCount++;
       }
     });
     return updatedCount;
+  }
+
+  /**
+   * 清除所有数据
+   */
+  async clearAllData(): Promise<void> {
+    try {
+      console.log('开始清除所有数据...');
+      
+      // 清空内存中的数据
+      this.jobs = [];
+      
+      // 重置同步状态
+      this.syncStatus = {
+        isRunning: false,
+        lastSync: null,
+        nextSync: null,
+        totalSources: 0,
+        successfulSources: 0,
+        failedSources: 0,
+        totalJobsProcessed: 0,
+        newJobsAdded: 0,
+        updatedJobs: 0,
+        errors: []
+      };
+      
+      // 清除存储中的数据
+      if (this.storageAdapter) {
+        await this.storageAdapter.clearAllData();
+        console.log('✅ 存储数据已清除');
+      }
+      
+      console.log('✅ 所有数据清除完成');
+    } catch (error) {
+      console.error('清除数据失败:', error);
+      throw error;
+    }
   }
 }
 

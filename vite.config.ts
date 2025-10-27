@@ -8,15 +8,24 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     host: true,
-    // 配置代理，将API请求转发到Vercel开发服务器
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('API proxy error:', err)
-          })
+          // 处理API路由
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            if (req.url?.startsWith('/api/rss-proxy')) {
+              // 重写为直接调用RSS代理函数
+              const url = new URL(req.url, 'http://localhost:3000');
+              const rssUrl = url.searchParams.get('url');
+              if (rssUrl) {
+                // 直接转发到RSS源
+                proxyReq.path = rssUrl;
+                proxyReq.setHeader('host', new URL(rssUrl).host);
+              }
+            }
+          });
         }
       }
     }

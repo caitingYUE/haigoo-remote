@@ -3,7 +3,7 @@ export interface Job {
   title: string
   company: string
   location: string
-  type: 'full-time' | 'part-time' | 'contract' | 'remote'
+  type: 'full-time' | 'part-time' | 'contract' | 'remote' | 'freelance' | 'internship'
   salary: {
     min: number
     max: number
@@ -16,7 +16,7 @@ export interface Job {
   postedAt: string
   expiresAt: string
   source: string
-  sourceUrl: string
+  sourceUrl?: string
   logo?: string
 }
 

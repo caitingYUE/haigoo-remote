@@ -259,49 +259,34 @@ class RSSService {
    * 获取单个RSS源的数据
    */
   async fetchRSSFeed(url: string): Promise<string> {
-    const proxyUrl = process.env.NODE_ENV === 'development' 
-      ? `http://localhost:3000/api/rss-proxy?url=${encodeURIComponent(url)}`
-      : `/api/rss-proxy?url=${encodeURIComponent(url)}`;
-
     let response: Response;
     let responseText: string = '';
 
     try {
-      if (process.env.NODE_ENV === 'development') {
-        // 开发环境：使用代理，避免CORS问题
-        try {
-          response = await fetch(proxyUrl, {
-            signal: AbortSignal.timeout(15000) // 15秒超时
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
-          }
-          
-          // 检查响应类型
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const errorData = await response.json();
-            throw new Error(`Proxy error: ${errorData.message || errorData.error}`);
-          } else {
-            responseText = await response.text();
-          }
-        } catch (proxyError: unknown) {
-          console.error(`Proxy failed for ${url}:`, proxyError instanceof Error ? proxyError.message : proxyError);
-          throw proxyError; // 直接抛出错误，不再尝试直接获取
-        }
-      } else {
-        // 生产环境：直接使用代理
-        response = await fetch(proxyUrl, {
-          signal: AbortSignal.timeout(15000) // 15秒超时
-        });
-        
-        if (!response.ok) {
+      // 根据环境选择代理服务
+      const baseUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3001' 
+        : 'https://haigoo.vercel.app';
+      
+      const proxyUrl = `${baseUrl}/api/rss-proxy?url=${encodeURIComponent(url)}`;
+      console.log(`Fetching RSS via Vercel proxy: ${proxyUrl}`);
+      
+      response = await fetch(proxyUrl, {
+        signal: AbortSignal.timeout(20000) // 20秒超时
+      });
+      
+      if (!response.ok) {
+        // 检查响应类型
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(`Proxy error: ${errorData.message || errorData.error}`);
+        } else {
           throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
         }
-        
-        responseText = await response.text();
       }
+      
+      responseText = await response.text();
       
       // 验证响应是否为有效的XML
       if (!responseText || responseText.trim().length === 0) {
@@ -384,6 +369,22 @@ class RSSService {
         // 尝试从不同字段提取额外信息
         const category = item.querySelector('category')?.textContent?.trim() || source.category;
         
+        // 优先从专门的XML字段提取信息（特别是Remotive源）
+        let company = item.querySelector('company')?.textContent?.trim() || '';
+        let location = item.querySelector('location')?.textContent?.trim() || '';
+        let jobType = item.querySelector('type')?.textContent?.trim() || '';
+        
+        // 如果专门字段没有信息，则从标题和描述中提取
+        if (!company) {
+          company = this.extractCompany(title, description);
+        }
+        if (!location) {
+          location = this.extractLocation(title, description);
+        }
+        if (!jobType) {
+          jobType = this.extractJobType(title, description);
+        }
+        
         if (title && link) {
           const salary = this.extractSalary(title, description);
           
@@ -393,10 +394,10 @@ class RSSService {
             link,
             pubDate,
             category,
-            company: this.extractCompany(title, description),
-            location: this.extractLocation(title, description),
+            company,
+            location,
             salary,
-            jobType: this.extractJobType(title, description),
+            jobType,
             workType: this.extractWorkType(title, description),
             experienceLevel: this.extractExperienceLevel(title, description),
             salaryRange: this.parseSalaryRange(salary),
@@ -552,16 +553,32 @@ class RSSService {
    */
   private extractLocation(title: string, description: string): string {
     const locationPatterns = [
+      // 通用远程工作关键词
       /Remote|Worldwide|Global|Anywhere/i,
+      // 国家名称（包括Philippines等）
+      /\b(Philippines|Singapore|Malaysia|Thailand|Vietnam|Indonesia|India|China|Japan|Korea|Australia|New Zealand)\b/i,
+      // 城市,国家格式
       /\b([A-Z][a-z]+,\s*[A-Z]{2,})\b/,
-      /\b([A-Z][a-z]+\s*[A-Z][a-z]*,?\s*(?:USA|UK|Canada|Germany|France))\b/i
+      // 城市 国家格式（包含常见国家）
+      /\b([A-Z][a-z]+\s*[A-Z][a-z]*,?\s*(?:USA|UK|Canada|Germany|France|Australia|Netherlands|Spain|Italy|Brazil|Mexico|Argentina))\b/i,
+      // 美国州名格式
+      /\b([A-Z][a-z]+,\s*(?:CA|NY|TX|FL|WA|IL|PA|OH|GA|NC|MI|NJ|VA|AZ|MA|TN|IN|MO|MD|WI|CO|MN|SC|AL|LA|KY|OR|OK|CT|UT|IA|NV|AR|MS|KS|NM|NE|WV|ID|HI|NH|ME|MT|RI|DE|SD|ND|AK|VT|WY))\b/,
+      // 欧洲国家
+      /\b(United Kingdom|England|Scotland|Wales|Ireland|France|Germany|Spain|Italy|Netherlands|Belgium|Switzerland|Austria|Sweden|Norway|Denmark|Finland|Poland|Czech Republic|Hungary|Portugal|Greece)\b/i,
+      // 亚洲国家和地区
+      /\b(Hong Kong|Taiwan|South Korea|North Korea|Bangladesh|Pakistan|Sri Lanka|Myanmar|Cambodia|Laos|Brunei|Maldives|Nepal|Bhutan|Afghanistan|Mongolia)\b/i,
+      // 其他地区
+      /\b(Remote - .*|Location: .*|Based in .*)\b/i
     ];
 
     const text = `${title} ${description}`;
     for (const pattern of locationPatterns) {
       const match = text.match(pattern);
       if (match) {
-        return match[0].trim();
+        let location = match[0].trim();
+        // 清理格式
+        location = location.replace(/^(Remote - |Location: |Based in )/i, '');
+        return location;
       }
     }
 
