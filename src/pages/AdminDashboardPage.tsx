@@ -420,7 +420,7 @@ const AdminDashboardPage: React.FC = () => {
     switch (status) {
       case 'active': return 'text-green-600 bg-green-100';
       case 'inactive': return 'text-yellow-600 bg-yellow-100';
-      case 'deleted': return 'text-red-600 bg-red-100';
+      case 'archived': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -886,7 +886,7 @@ const AdminDashboardPage: React.FC = () => {
                     <option value="">全部状态</option>
                     <option value="active">活跃</option>
                     <option value="inactive">非活跃</option>
-                    <option value="deleted">已删除</option>
+                    <option value="archived">已删除</option>
                   </select>
                 </div>
                 <div>
@@ -1110,9 +1110,9 @@ const AdminDashboardPage: React.FC = () => {
                             非活跃
                           </button>
                           <button
-                            onClick={() => handleStatusFilter('deleted')}
+                            onClick={() => handleStatusFilter('archived')}
                             className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                              filter.status?.[0] === 'deleted' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              filter.status?.[0] === 'archived' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
                             }`}
                           >
                             已删除
@@ -1201,9 +1201,9 @@ const AdminDashboardPage: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="max-w-xs">
                         <div className="text-sm font-medium text-gray-900 truncate">
-                          {job.sourceUrl ? (
+                          {job.url ? (
                             <a
-                              href={job.sourceUrl}
+                              href={job.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
@@ -1270,7 +1270,7 @@ const AdminDashboardPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => window.open(job.applicationUrl, '_blank')}
+                          onClick={() => window.open(job.url, '_blank')}
                           className="text-blue-600 hover:text-blue-900"
                           title="查看详情"
                         >

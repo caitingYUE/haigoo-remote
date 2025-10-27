@@ -83,9 +83,9 @@ class JobStorageService {
       // 转换日期字符串为Date对象
       const jobs = data.jobs.map(job => ({
         ...job,
-        publishedAt: new Date(job.publishedAt),
-        createdAt: new Date(job.createdAt),
-        updatedAt: new Date(job.updatedAt)
+        publishedAt: typeof job.publishedAt === 'string' ? job.publishedAt : new Date(job.publishedAt).toISOString(),
+        createdAt: typeof job.createdAt === 'string' ? job.createdAt : new Date(job.createdAt).toISOString(),
+        updatedAt: typeof job.updatedAt === 'string' ? job.updatedAt : new Date(job.updatedAt).toISOString()
       }));
 
       // 如果启用自动清理，过滤过期数据
@@ -244,7 +244,7 @@ class JobStorageService {
     newJobs.forEach(job => {
       jobMap.set(job.id, {
         ...job,
-        updatedAt: new Date() // 更新时间戳
+        updatedAt: new Date().toISOString() // 更新时间戳
       });
     });
 
