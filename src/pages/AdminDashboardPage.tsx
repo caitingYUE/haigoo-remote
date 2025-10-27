@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Search, 
   Filter, 
@@ -16,13 +16,16 @@ import {
   Users,
   Briefcase,
   Globe,
+  Database,
   Settings,
   AlertCircle,
   Info,
   Loader,
   Plus,
   Save,
-  X
+  X,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
@@ -40,6 +43,10 @@ const AdminDashboardPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [showFilters, setShowFilters] = useState(false);
+  
+  // 排序相关状态
+  const [sortBy, setSortBy] = useState<'publishedAt' | 'title' | 'company'>('publishedAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   // RSS配置相关状态
   const [showRSSConfig, setShowRSSConfig] = useState(false);
@@ -69,53 +76,81 @@ const AdminDashboardPage: React.FC = () => {
     isRunning: false
   });
 
-  // 加载数据
-  const loadData = () => {
+  // 加载数据 - 添加错误处理
+  const loadData = useCallback(async () => {
+    console.log('开始加载管理后台数据...');
     setLoading(true);
     try {
       const dashboardData = jobAggregator.getAdminDashboardData(filter);
-      setJobs(dashboardData.jobs);
+      console.log('获取到的数据:', {
+        jobsCount: dashboardData.jobs?.length || 0,
+        stats: dashboardData.stats,
+        syncStatus: dashboardData.syncStatus
+      });
+      
+      setJobs(dashboardData.jobs || []);
       setStats(dashboardData.stats);
       setSyncStatus(dashboardData.syncStatus);
       
       // 加载RSS源配置
       const sources = rssService.getRSSSources();
-      setRssSources(sources);
+      console.log('RSS源数量:', sources.length);
+      setRssSources(sources || []);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
+      // 设置默认值防止组件崩溃
+      setJobs([]);
+      setStats(null);
+      setSyncStatus(null);
+      setRssSources([]);
     } finally {
       setLoading(false);
+      console.log('数据加载完成');
     }
-  };
-
-  useEffect(() => {
-    loadData();
   }, [filter]);
 
+  useEffect(() => {
+    // 添加防抖和错误边界
+    const timeoutId = setTimeout(() => {
+      loadData();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [loadData]);
+
   // 同步RSS数据
-  const handleSync = async () => {
+  const handleSync = useCallback(async () => {
+    console.log('开始同步数据...');
     setSyncing(true);
     setSyncProgress({
       total: rssSources.length,
       completed: 0,
-      current: '',
+      current: '正在初始化同步...',
       errors: [],
       isRunning: true
     });
 
+    let timeoutId: NodeJS.Timeout | null = null;
+
     try {
+      console.log('调用 jobAggregator.syncAllJobs()...');
+      
       // 调用实际的RSS同步逻辑
       await jobAggregator.syncAllJobs();
       
+      console.log('同步完成，重新加载数据...');
+      
       // 完成后重新加载数据
-      loadData();
+      await loadData();
 
       setSyncProgress(prev => ({
         ...prev,
-        current: '同步完成',
+        current: '同步完成，数据已更新',
         isRunning: false,
         completed: prev.total
       }));
+
+      console.log('数据重新加载完成');
 
     } catch (error) {
       console.error('Sync failed:', error);
@@ -128,7 +163,7 @@ const AdminDashboardPage: React.FC = () => {
     } finally {
       setSyncing(false);
       // 3秒后清除进度信息
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         setSyncProgress({
           total: 0,
           completed: 0,
@@ -138,17 +173,24 @@ const AdminDashboardPage: React.FC = () => {
         });
       }, 3000);
     }
-  };
+
+    // 清理定时器
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [rssSources.length, loadData]);
 
   // 搜索处理
-  const handleSearch = (term: string) => {
+  const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
     setFilter(prev => ({ ...prev, keywords: term }));
     setCurrentPage(1);
-  };
+  }, []);
 
   // 批量操作
-  const handleBatchDelete = () => {
+  const handleBatchDelete = useCallback(async () => {
     if (selectedJobs.length === 0) return;
     
     if (confirm(`确定要删除选中的 ${selectedJobs.length} 个岗位吗？`)) {
@@ -156,23 +198,23 @@ const AdminDashboardPage: React.FC = () => {
         jobAggregator.deleteJob(jobId);
       });
       setSelectedJobs([]);
-      loadData();
+      await loadData();
     }
-  };
+  }, [selectedJobs, loadData]);
 
-  const handleBatchUpdateCategory = (category: JobCategory) => {
+  const handleBatchUpdateCategory = useCallback(async (category: JobCategory) => {
     if (selectedJobs.length === 0) return;
     
     const updatedCount = jobAggregator.batchUpdateCategory(selectedJobs, category);
     alert(`已更新 ${updatedCount} 个岗位的分类`);
     setSelectedJobs([]);
-    loadData();
-  };
+    await loadData();
+  }, [selectedJobs, loadData]);
 
   // 单个岗位操作
-  const handleJobStatusUpdate = (jobId: string, status: Job['status']) => {
+  const handleJobStatusUpdate = async (jobId: string, status: Job['status']) => {
     jobAggregator.updateJobStatus(jobId, status);
-    loadData();
+    await loadData();
   };
 
   // RSS源管理函数
@@ -257,28 +299,85 @@ const AdminDashboardPage: React.FC = () => {
     setRssFormData({ name: '', url: '', category: '' });
   };
 
-  const handleJobDelete = (jobId: string) => {
+  const handleJobDelete = async (jobId: string) => {
     if (confirm('确定要删除这个岗位吗？')) {
       jobAggregator.deleteJob(jobId);
-      loadData();
+      await loadData();
     }
   };
 
-  // 分页
-  const totalPages = Math.ceil(jobs.length / itemsPerPage);
+  // 排序和分页逻辑
+  const sortedJobs = React.useMemo(() => {
+    const sorted = [...jobs].sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortBy) {
+        case 'publishedAt':
+          aValue = new Date(a.publishedAt || 0).getTime();
+          bValue = new Date(b.publishedAt || 0).getTime();
+          break;
+        case 'title':
+          aValue = a.title?.toLowerCase() || '';
+          bValue = b.title?.toLowerCase() || '';
+          break;
+        case 'company':
+          aValue = a.company?.toLowerCase() || '';
+          bValue = b.company?.toLowerCase() || '';
+          break;
+        default:
+          return 0;
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      }
+    });
+    
+    return sorted;
+  }, [jobs, sortBy, sortOrder]);
+
+  // 分页 - 使用排序后的数据
+  const totalPages = Math.max(1, Math.ceil(sortedJobs.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentJobs = jobs.slice(startIndex, endIndex);
+  const currentJobs = sortedJobs.slice(startIndex, endIndex);
+
+  // 处理排序
+  const handleSort = (field: 'publishedAt' | 'title' | 'company') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    setCurrentPage(1); // 重置到第一页
+  };
 
   // 格式化日期
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+  const formatDate = (date: Date | string | null | undefined) => {
+    if (!date) return '无效日期';
+    
+    try {
+      const dateObj = date instanceof Date ? date : new Date(date);
+      
+      // 检查日期是否有效
+      if (isNaN(dateObj.getTime())) {
+        return '无效日期';
+      }
+      
+      return new Intl.DateTimeFormat('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(dateObj);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '无效日期';
+    }
   };
 
   // 获取状态颜色
@@ -532,7 +631,7 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* 统计卡片 */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -575,8 +674,40 @@ const AdminDashboardPage: React.FC = () => {
                   <Globe className="h-8 w-8 text-indigo-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">数据源</p>
-                  <p className="text-2xl font-semibold text-gray-900">{Object.keys(stats.bySource).length}</p>
+                  <p className="text-sm font-medium text-gray-500">RSS数据源</p>
+                  <p className="text-2xl font-semibold text-gray-900">{rssSources.length}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 存储容量卡片 */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <Database className="h-8 w-8 text-orange-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">存储容量</p>
+                  <div className="flex items-baseline space-x-2">
+                    <p className="text-lg font-semibold text-gray-900">
+                      {Math.round((stats.total * 2) / 1024 * 100) / 100}MB
+                    </p>
+                    <p className="text-xs text-gray-500">/ 20MB</p>
+                  </div>
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          (stats.total * 2) / 1024 / 20 > 0.8 ? 'bg-red-500' : 
+                          (stats.total * 2) / 1024 / 20 > 0.6 ? 'bg-yellow-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(((stats.total * 2) / 1024 / 20) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      预计可存储 {Math.floor(20 * 1024 / 2)} 个职位
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -610,7 +741,7 @@ const AdminDashboardPage: React.FC = () => {
                 <p className="text-sm text-red-600">同步错误 ({syncStatus.errors.length})</p>
                 <div className="mt-2 max-h-32 overflow-y-auto">
                   {syncStatus.errors.map((error, index) => (
-                    <div key={index} className="text-xs text-red-500 bg-red-50 p-2 rounded mb-1">
+                    <div key={`error-${index}-${error.source}`} className="text-xs text-red-500 bg-red-50 p-2 rounded mb-1">
                       {error.source}: {error.error}
                     </div>
                   ))}
@@ -764,7 +895,15 @@ const AdminDashboardPage: React.FC = () => {
                     />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    岗位信息
+                    <button
+                      onClick={() => handleSort('title')}
+                      className="flex items-center space-x-1 hover:text-gray-700"
+                    >
+                      <span>岗位信息</span>
+                      {sortBy === 'title' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                      )}
+                    </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     分类
@@ -776,7 +915,15 @@ const AdminDashboardPage: React.FC = () => {
                     状态
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    发布时间
+                    <button
+                      onClick={() => handleSort('publishedAt')}
+                      className="flex items-center space-x-1 hover:text-gray-700"
+                    >
+                      <span>发布时间</span>
+                      {sortBy === 'publishedAt' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                      )}
+                    </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     操作
@@ -803,16 +950,50 @@ const AdminDashboardPage: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="max-w-xs">
                         <div className="text-sm font-medium text-gray-900 truncate">
-                          {job.title}
+                          {job.sourceUrl ? (
+                            <a
+                              href={job.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                              title="点击查看原始职位信息"
+                            >
+                              {job.title}
+                            </a>
+                          ) : (
+                            <span>{job.title}</span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500 truncate">
                           {job.company} • {job.location}
                         </div>
-                        {job.salary && (
-                          <div className="text-xs text-green-600">
-                            {job.salary}
-                          </div>
-                        )}
+                        <div className="flex flex-wrap gap-1 mt-1">
+                           {job.salary && (
+                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                               {job.salary}
+                             </span>
+                           )}
+                           {job.jobType && (
+                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                               {job.jobType}
+                             </span>
+                           )}
+                           {job.isRemote && (
+                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                               远程
+                             </span>
+                           )}
+                           {job.experienceLevel && (
+                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                               {job.experienceLevel}
+                             </span>
+                           )}
+                           {job.remoteLocationRestriction && (
+                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                               {job.remoteLocationRestriction}
+                             </span>
+                           )}
+                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -898,7 +1079,7 @@ const AdminDashboardPage: React.FC = () => {
                     >
                       上一页
                     </button>
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    {totalPages > 0 && Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       const page = i + 1;
                       return (
                         <button

@@ -22,6 +22,7 @@ class JobAggregator {
   constructor() {
     // 初始化时从存储加载数据
     this.initializeStorage();
+    console.log('JobAggregator 初始化完成');
   }
 
   /**
@@ -82,42 +83,221 @@ class JobAggregator {
    * 自动分类岗位
    */
   private categorizeJob(title: string, description: string, sourceCategory: string): JobCategory {
+    // 首先尝试根据RSS源的分类进行映射
+    const sourceCategoryMapping: Record<string, JobCategory> = {
+      // WeWorkRemotely 分类映射
+      '销售和市场营销': '市场营销',
+      '客户支持': '客户支持',
+      '产品职位': '产品管理',
+      '全栈编程': '全栈开发',
+      '后端编程': '后端开发',
+      '前端编程': '前端开发',
+      '所有编程': '软件开发',
+      '管理和财务': '财务',
+      '设计': 'UI/UX设计',
+      'DevOps和系统管理员': 'DevOps',
+      
+      // Remotive 分类映射
+      '软件开发': '软件开发',
+      '客户服务': '客户支持',
+      '营销': '市场营销',
+      '销售/业务': '销售',
+      '产品': '产品管理',
+      '项目管理': '项目管理',
+      '数据分析': '数据分析',
+      'DevOps/系统管理员': 'DevOps',
+      '金融/法律': '财务',
+      '人力资源': '人力资源',
+      '质量保证': '质量保证',
+      '写作': '内容写作',
+      
+      // JobsCollider 分类映射
+      '网络安全': 'DevOps',
+      '商业': '商务拓展',
+      '数据': '数据分析',
+      '财务与法律': '财务',
+      
+      // RealWorkFromAnywhere 分类映射
+      '开发人员': '软件开发',
+      '工程师': '软件开发',
+      '前端': '前端开发',
+      '后端': '后端开发',
+      '全栈开发': '全栈开发',
+      '研究': '数据科学',
+      '金融': '财务',
+      '高级岗位': '软件开发',
+      '行政': '运营'
+    };
+
+    // 如果RSS源分类有明确映射，优先使用
+    if (sourceCategory && sourceCategoryMapping[sourceCategory]) {
+      return sourceCategoryMapping[sourceCategory];
+    }
+
     const text = `${title} ${description}`.toLowerCase();
     
-    // 基于关键词的分类逻辑
+    // 优化后的分类逻辑 - 更精确的关键词匹配
     const categoryKeywords: Record<JobCategory, string[]> = {
-      '前端开发': ['frontend', 'front-end', 'react', 'vue', 'angular', 'javascript', 'typescript', 'html', 'css', 'ui developer'],
-      '后端开发': ['backend', 'back-end', 'server', 'api', 'database', 'node.js', 'python', 'java', 'php', 'ruby', 'go', 'rust'],
-      '全栈开发': ['fullstack', 'full-stack', 'full stack'],
-      '软件开发': ['software engineer', 'software developer', 'programmer', 'coding', 'development'],
-      'DevOps': ['devops', 'infrastructure', 'deployment', 'ci/cd', 'docker', 'kubernetes', 'aws', 'cloud', 'sysadmin'],
-      '数据科学': ['data scientist', 'machine learning', 'ai', 'artificial intelligence', 'deep learning', 'ml engineer'],
-      '数据分析': ['data analyst', 'business intelligence', 'analytics', 'tableau', 'power bi', 'sql analyst'],
-      '产品管理': ['product manager', 'product owner', 'pm', 'product strategy'],
-      '项目管理': ['project manager', 'scrum master', 'agile', 'pmp'],
-      'UI/UX设计': ['ui designer', 'ux designer', 'user experience', 'user interface', 'figma', 'sketch'],
-      '平面设计': ['graphic designer', 'visual designer', 'brand designer', 'creative designer'],
-      '市场营销': ['marketing', 'digital marketing', 'content marketing', 'seo', 'sem', 'social media'],
-      '数字营销': ['digital marketing', 'online marketing', 'performance marketing', 'growth marketing'],
-      '销售': ['sales', 'business development', 'account manager', 'sales representative'],
-      '客户服务': ['customer service', 'customer support', 'help desk', 'technical support'],
-      '客户支持': ['customer support', 'client support', 'user support'],
-      '人力资源': ['human resources', 'hr', 'recruiter', 'talent acquisition'],
-      '财务': ['finance', 'accounting', 'financial analyst', 'controller', 'cfo'],
-      '法律': ['legal', 'lawyer', 'attorney', 'compliance', 'paralegal'],
-      '写作': ['writer', 'content writer', 'copywriter', 'technical writer', 'blogger'],
-      '内容创作': ['content creator', 'content marketing', 'social media manager'],
-      '质量保证': ['qa', 'quality assurance', 'tester', 'test engineer'],
-      '测试': ['testing', 'test automation', 'qa engineer', 'software tester'],
-      '运营': ['operations', 'business operations', 'ops manager'],
-      '商务拓展': ['business development', 'bd', 'partnerships', 'strategic partnerships'],
-      '咨询': ['consultant', 'consulting', 'advisory', 'strategy consultant'],
-      '教育培训': ['education', 'training', 'instructor', 'teacher', 'tutor'],
+      '全部': [],
+      '销售': [
+        'sales', 'account executive', 'business development', 'account manager', 
+        'sales representative', 'sales manager', 'sales director', 'account director',
+        'business development manager', 'sales consultant', 'inside sales', 'outside sales',
+        'enterprise sales', 'channel sales', 'regional sales', 'territory manager',
+        'sales development', 'sales operations', 'revenue', 'quota', 'pipeline'
+      ],
+      '数据分析': [
+        'data analyst', 'business intelligence', 'analytics', 'tableau', 'power bi', 
+        'sql analyst', 'business analyst', 'data engineer', 'analytics engineer',
+        'people analytics', 'workforce analytics', 'hr analytics', 'analytics analyst'
+      ],
+      '前端开发': [
+        'frontend', 'front-end', 'react', 'vue', 'angular', 'javascript', 'typescript', 
+        'html', 'css', 'ui developer', 'frontend developer', 'front end developer',
+        'web developer', 'javascript developer', 'react developer', 'vue developer'
+      ],
+      '后端开发': [
+        'backend', 'back-end', 'server', 'api', 'database', 'node.js', 'python', 
+        'java', 'php', 'ruby', 'go', 'rust', 'backend developer', 'server developer',
+        'api developer', 'microservices', 'backend engineer'
+      ],
+      '全栈开发': ['fullstack', 'full-stack', 'full stack', 'fullstack developer'],
+      '软件开发': [
+        'software engineer', 'software developer', 'programmer', 'coding', 'development',
+        'engineer', 'developer', 'software architect', 'senior engineer', 'lead developer'
+      ],
+      'DevOps': [
+        'devops', 'infrastructure', 'deployment', 'ci/cd', 'docker', 'kubernetes', 
+        'aws', 'cloud', 'sysadmin', 'site reliability', 'platform engineer',
+        'infrastructure engineer', 'cloud engineer', 'systems engineer'
+      ],
+      '数据科学': [
+        'data scientist', 'machine learning', 'ai', 'artificial intelligence', 
+        'deep learning', 'ml engineer', 'research scientist', 'ai engineer'
+      ],
+      '产品管理': [
+        'product manager', 'product owner', 'pm', 'product strategy', 'product director',
+        'senior product manager', 'associate product manager', 'product lead'
+      ],
+      '项目管理': [
+        'project manager', 'scrum master', 'agile', 'pmp', 'program manager',
+        'delivery manager', 'technical project manager'
+      ],
+      'UI/UX设计': [
+        'ui designer', 'ux designer', 'user experience', 'user interface', 'figma', 
+        'sketch', 'product designer', 'interaction designer', 'visual designer'
+      ],
+      '平面设计': [
+        'graphic designer', 'visual designer', 'brand designer', 'creative designer',
+        'art director', 'design director'
+      ],
+      '市场营销': [
+        'marketing', 'digital marketing', 'content marketing', 'seo', 'sem', 'social media',
+        'marketing manager', 'marketing director', 'brand manager', 'growth marketing',
+        'performance marketing', 'email marketing', 'product marketing', 'field marketing',
+        'demand generation', 'marketing coordinator', 'marketing specialist', 'campaign',
+        'advertising', 'promotion', 'brand', 'communications', 'pr', 'public relations',
+        'online marketing', 'paid media', 'ppc', 'google ads', 'facebook ads'
+      ],
+      '客户支持': [
+        'customer service', 'customer support', 'help desk', 'technical support',
+        'support specialist', 'customer success', 'client support', 'user support', 
+        'support engineer', 'customer success manager', 'technical support engineer'
+      ],
+      '人力资源': [
+        'human resources', 'hr', 'recruiter', 'talent acquisition', 'hr manager',
+        'people operations', 'hr business partner', 'talent manager'
+      ],
+      '财务': [
+        'finance', 'accounting', 'financial analyst', 'controller', 'cfo',
+        'accountant', 'financial manager', 'finance manager', 'treasury'
+      ],
+      '法律': [
+        'legal', 'lawyer', 'attorney', 'compliance', 'paralegal', 'legal counsel',
+        'general counsel', 'compliance officer'
+      ],
+      '内容写作': [
+        'writer', 'content writer', 'copywriter', 'technical writer', 'blogger',
+        'content creator', 'editor', 'communications', 'content marketing', 
+        'social media manager', 'content strategist', 'creative director', 'brand storyteller'
+      ],
+      '质量保证': [
+        'qa', 'quality assurance', 'tester', 'test engineer', 'qa engineer',
+        'quality engineer', 'test automation', 'testing', 'software tester',
+        'automation engineer', 'test lead'
+      ],
+      '运营': [
+        'operations', 'business operations', 'ops manager', 'operations manager',
+        'business ops', 'operational excellence'
+      ],
+      '商务拓展': [
+        'business development', 'bd', 'partnerships', 'strategic partnerships',
+        'partnership manager', 'alliance manager'
+      ],
+      '咨询': [
+        'consultant', 'consulting', 'advisory', 'strategy consultant',
+        'management consultant', 'technical consultant'
+      ],
+      '教育培训': [
+        'education', 'training', 'instructor', 'teacher', 'educator',
+        'learning specialist', 'curriculum developer', 'training manager',
+        'tutor', 'learning', 'curriculum', 'educational'
+      ],
+      '移动开发': [
+        'mobile developer', 'ios developer', 'android developer', 'react native',
+        'flutter', 'swift', 'kotlin', 'mobile app', 'app developer'
+      ],
+      '人工智能': [
+        'artificial intelligence', 'ai engineer', 'machine learning engineer',
+        'deep learning', 'neural networks', 'computer vision', 'nlp'
+      ],
+      '网络安全': [
+        'cybersecurity', 'security engineer', 'information security', 'penetration testing',
+        'security analyst', 'cyber security', 'infosec'
+      ],
+      '产品设计': [
+        'product designer', 'design lead', 'design manager', 'user research',
+        'design systems', 'design strategy'
+      ],
+      '商业分析': [
+        'business analyst', 'business intelligence', 'data analyst', 'market research',
+        'business strategy', 'process improvement'
+      ],
+      '招聘': [
+        'recruiter', 'talent acquisition', 'hiring manager', 'recruitment',
+        'talent sourcing', 'hr recruiter'
+      ],
+      '会计': [
+        'accountant', 'accounting', 'bookkeeper', 'financial reporting',
+        'tax preparation', 'audit', 'cpa'
+      ],
       '其他': []
     };
 
-    // 首先尝试基于源分类进行映射
+    // 改进的源分类映射 - 更准确的映射关系
     const sourceCategoryMap: Record<string, JobCategory> = {
+      // 英文源分类映射
+      'Sales and Marketing': '销售',
+      'Marketing': '市场营销',
+      'Sales': '销售',
+      'Customer Support': '客户支持',
+      'Customer Service': '客户支持',
+      'Human Resources': '人力资源',
+      'Finance': '财务',
+      'Legal': '法律',
+      'Writing': '内容写作',
+      'Design': 'UI/UX设计',
+      'Product': '产品管理',
+      'Project Management': '项目管理',
+      'Data': '数据分析',
+      'DevOps': 'DevOps',
+      'QA': '质量保证',
+      'Operations': '运营',
+      'Business Development': '商务拓展',
+      'Consulting': '咨询',
+      'Education': '教育培训',
+      
+      // 中文源分类映射
       '前端编程': '前端开发',
       '后端编程': '后端开发',
       '全栈编程': '全栈开发',
@@ -125,7 +305,6 @@ class JobAggregator {
       '软件开发': '软件开发',
       'DevOps和系统管理员': 'DevOps',
       'DevOps/系统管理员': 'DevOps',
-      'DevOps': 'DevOps',
       '数据分析': '数据分析',
       '数据': '数据分析',
       '产品职位': '产品管理',
@@ -133,28 +312,66 @@ class JobAggregator {
       '项目管理': '项目管理',
       '设计': 'UI/UX设计',
       '营销': '市场营销',
-      '销售和市场营销': '市场营销',
+      '销售和市场营销': '销售',
       '销售/业务': '销售',
       '销售量': '销售',
       '销售': '销售',
       '客户支持': '客户支持',
-      '客户服务': '客户服务',
+      '客户服务': '客户支持',
       '人力资源': '人力资源',
       '财务与法律': '财务',
       '金融/法律': '财务',
       '金融': '财务',
-      '写作': '写作',
+      '写作': '内容写作',
       '质量保证': '质量保证',
       '管理和财务': '财务'
     };
 
+    // 首先尝试精确匹配源分类
     if (sourceCategoryMap[sourceCategory]) {
       return sourceCategoryMap[sourceCategory];
     }
 
-    // 基于关键词匹配
+    // 基于职位标题的优先级匹配 - 职位标题权重更高
+    const titleText = title.toLowerCase();
+    
+    // 数据分析相关职位的特殊处理 - 优先级最高
+    if (titleText.includes('people analytics') || titleText.includes('workforce analytics') || 
+        titleText.includes('hr analytics') || titleText.includes('analytics analyst')) {
+      return '数据分析';
+    }
+    
+    // 销售相关职位的特殊处理
+    if (titleText.includes('account executive') || titleText.includes('sales')) {
+      return '销售';
+    }
+    
+    // 市场营销相关职位的特殊处理
+    if (titleText.includes('marketing') && !titleText.includes('product marketing')) {
+      return '市场营销';
+    }
+    
+    // 产品相关职位的特殊处理
+    if (titleText.includes('product') && (titleText.includes('manager') || titleText.includes('owner'))) {
+      return '产品管理';
+    }
+
+    // 基于关键词匹配 - 按优先级顺序检查
+    const priorityOrder: JobCategory[] = [
+      '销售', '市场营销', '产品管理', '前端开发', '后端开发', '全栈开发', 
+      '软件开发', 'DevOps', '数据科学', '数据分析', 'UI/UX设计', '客户支持'
+    ];
+    
+    for (const category of priorityOrder) {
+      const keywords = categoryKeywords[category];
+      if (keywords && keywords.some(keyword => text.includes(keyword))) {
+        return category;
+      }
+    }
+    
+    // 如果没有匹配到优先级分类，检查其他分类
     for (const [category, keywords] of Object.entries(categoryKeywords)) {
-      if (keywords.some(keyword => text.includes(keyword))) {
+      if (!priorityOrder.includes(category as JobCategory) && keywords.some(keyword => text.includes(keyword))) {
         return category as JobCategory;
       }
     }
@@ -176,7 +393,7 @@ class JobAggregator {
       location: item.location || 'Remote',
       description: item.description,
       salary: item.salary,
-      jobType: (item.jobType as Job['jobType']) || 'Full-time',
+      jobType: (item.jobType as Job['jobType']) || 'full-time',
       category,
       source,
       sourceUrl: item.link,
@@ -337,6 +554,7 @@ class JobAggregator {
       return;
     }
 
+    console.log('开始同步所有RSS职位数据...');
     this.syncStatus = {
       isRunning: true,
       lastSync: new Date(),
@@ -354,6 +572,11 @@ class JobAggregator {
       console.log('开始RSS同步...');
       const rssData = await rssService.fetchAllRSSFeeds();
       console.log(`获取到 ${rssData.length} 个RSS数据源`);
+      
+      // 清空现有职位数据，重新开始
+      const oldJobsCount = this.jobs.length;
+      this.jobs = [];
+      console.log(`清空了 ${oldJobsCount} 个旧职位数据`);
       
       for (const data of rssData) {
         try {
@@ -380,10 +603,23 @@ class JobAggregator {
       
       console.log(`同步完成。新增 ${this.syncStatus.newJobsAdded} 个职位，更新 ${this.syncStatus.updatedJobs} 个职位，总共处理 ${this.syncStatus.totalJobsProcessed} 个职位`);
       console.log(`当前总职位数: ${this.jobs.length}`);
+      
+      // 更新同步状态中的最后同步时间
+      if (this.storageAdapter) {
+        await this.storageAdapter.saveJobs(this.jobs);
+      }
+      
     } catch (error) {
       console.error('同步失败:', error);
+      this.syncStatus.errors.push({
+        source: 'System',
+        url: '',
+        error: error instanceof Error ? error.message : 'Unknown sync error',
+        timestamp: new Date()
+      });
     } finally {
       this.syncStatus.isRunning = false;
+      console.log('同步流程结束');
     }
   }
 
@@ -508,8 +744,12 @@ class JobAggregator {
    * 获取管理后台数据
    */
   getAdminDashboardData(filter?: JobFilter): AdminDashboardData {
+    console.log(`获取管理后台数据，当前职位数量: ${this.jobs.length}`);
+    const filteredJobs = this.getJobs(filter);
+    console.log(`过滤后职位数量: ${filteredJobs.length}`);
+    
     return {
-      jobs: this.getJobs(filter),
+      jobs: filteredJobs,
       stats: this.getJobStats(),
       syncStatus: this.getSyncStatus(),
       sources: rssService.getRSSSources()

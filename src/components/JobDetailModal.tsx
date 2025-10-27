@@ -100,9 +100,15 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                     <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-100">{job.company}</h3>
                     <div className="flex flex-wrap gap-3 text-sm text-zinc-600 dark:text-zinc-400">
                       <span className="flex items-center gap-1">
-                         {job.location}
-                       </span>
-                       <span className="flex items-center gap-1">
+                        📍 {job.location}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        💼 {job.type === 'remote' ? '远程工作' : job.type === 'full-time' ? '全职' : job.type === 'part-time' ? '兼职' : job.type === 'contract' ? '合同工' : job.type}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        📅 {new Date(job.postedAt).toLocaleDateString('zh-CN')}
+                      </span>
+                      <span className="flex items-center gap-1">
                          {job.type}
                        </span>
                        <span className="flex items-center gap-1">

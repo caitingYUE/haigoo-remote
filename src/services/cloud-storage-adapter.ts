@@ -1,7 +1,8 @@
 import { Job, JobStats } from '../types/rss-types';
 
-// 条件导入 @vercel/kv，只在服务端环境使用
+// 条件导入 @vercel/kv 和 redis，只在服务端环境使用
 let kv: any = null;
+let redis: any = null;
 
 // 检查是否在服务端环境
 const isServerSide = typeof window === 'undefined';
@@ -9,13 +10,24 @@ const isServerSide = typeof window === 'undefined';
 if (isServerSide) {
   try {
     // 动态导入 @vercel/kv
-    import('@vercel/kv').then(module => {
-      kv = module.kv;
+    import('@vercel/kv').then((kvModule) => {
+      kv = kvModule.kv;
     }).catch(() => {
-      console.warn('Vercel KV not available in server environment');
+      console.warn('Vercel KV not available');
     });
   } catch (error) {
-    console.warn('Failed to import @vercel/kv:', error);
+    console.warn('Vercel KV not available:', error);
+  }
+
+  try {
+    // 动态导入 redis
+    import('redis').then((redisModule) => {
+      redis = redisModule;
+    }).catch(() => {
+      console.warn('Redis not available');
+    });
+  } catch (error) {
+    console.warn('Redis not available:', error);
   }
 }
 
@@ -27,9 +39,10 @@ export interface StorageStats {
 }
 
 export interface StorageConfig {
-  provider: 'vercel-kv' | 'localStorage';
+  provider: 'vercel-kv' | 'redis' | 'localStorage';
   maxJobs?: number;
   maxDays?: number;
+  redisUrl?: string;
 }
 
 export interface CloudStorageProvider {
@@ -53,52 +66,46 @@ class VercelKVProvider implements CloudStorageProvider {
       return false;
     }
     
-    // 检查是否在 Vercel 环境且 KV 已初始化
     try {
-      const isVercel = typeof globalThis !== 'undefined' && 
-                      (globalThis as any).process?.env?.VERCEL;
-      return isVercel && kv !== null;
-    } catch {
+      if (!kv) return false;
+      // 简单测试连接
+      await kv.ping();
+      return true;
+    } catch (error) {
+      console.warn('Vercel KV not available:', error);
       return false;
     }
   }
 
   async saveJobs(jobs: Job[]): Promise<void> {
+    if (!await this.isAvailable()) {
+      throw new Error('Vercel KV is not available');
+    }
+
     try {
-      // 过滤最近7天的职位
-      const recentJobs = this.filterRecentJobs(jobs);
-      
-      // 去重
-      const uniqueJobs = this.removeDuplicates(recentJobs);
-      
-      // 保存到 KV
-      await kv.set(this.JOBS_KEY, JSON.stringify(uniqueJobs));
-      
-      // 更新统计信息
-      await this.updateStats(uniqueJobs);
-      
-      // 更新同步时间
+      const filteredJobs = this.removeDuplicates(this.filterRecentJobs(jobs));
+      await kv.set(this.JOBS_KEY, JSON.stringify(filteredJobs));
+      await this.updateStats(filteredJobs);
       await kv.set(this.SYNC_TIME_KEY, new Date().toISOString());
-      
-      console.log(`✅ 已保存 ${uniqueJobs.length} 个职位到 Vercel KV`);
     } catch (error) {
-      console.error('保存职位到 Vercel KV 失败:', error);
+      console.error('Failed to save jobs to Vercel KV:', error);
       throw error;
     }
   }
 
   async loadJobs(): Promise<Job[]> {
+    if (!await this.isAvailable()) {
+      return [];
+    }
+
     try {
       const jobsData = await kv.get(this.JOBS_KEY);
-      if (!jobsData) {
-        return [];
-      }
+      if (!jobsData) return [];
       
       const jobs = typeof jobsData === 'string' ? JSON.parse(jobsData) : jobsData;
-      console.log(`📖 从 Vercel KV 加载了 ${jobs.length} 个职位`);
-      return jobs;
+      return Array.isArray(jobs) ? jobs : [];
     } catch (error) {
-      console.error('从 Vercel KV 加载职位失败:', error);
+      console.error('Failed to load jobs from Vercel KV:', error);
       return [];
     }
   }
@@ -110,61 +117,70 @@ class VercelKVProvider implements CloudStorageProvider {
   }
 
   async getStats(): Promise<StorageStats> {
+    if (!await this.isAvailable()) {
+      return this.getDefaultStats();
+    }
+
     try {
       const statsData = await kv.get(this.STATS_KEY);
-      const jobs = await this.loadJobs();
-      
-      if (statsData && typeof statsData === 'object') {
+      if (statsData) {
+        const stats = typeof statsData === 'string' ? JSON.parse(statsData) : statsData;
         return {
-          ...statsData as StorageStats,
-          totalJobs: jobs.length,
+          ...stats,
+          lastSync: stats.lastSync ? new Date(stats.lastSync) : null,
           provider: 'vercel-kv'
         };
       }
-      
       return this.getDefaultStats();
     } catch (error) {
-      console.error('获取 Vercel KV 统计信息失败:', error);
+      console.error('Failed to get stats from Vercel KV:', error);
       return this.getDefaultStats();
     }
   }
 
   async getLastSyncTime(): Promise<Date | null> {
+    if (!await this.isAvailable()) {
+      return null;
+    }
+
     try {
       const syncTime = await kv.get(this.SYNC_TIME_KEY);
-      return syncTime ? new Date(syncTime as string) : null;
+      return syncTime ? new Date(syncTime) : null;
     } catch (error) {
-      console.error('获取最后同步时间失败:', error);
+      console.error('Failed to get last sync time from Vercel KV:', error);
       return null;
     }
   }
 
   async clearAllData(): Promise<void> {
+    if (!await this.isAvailable()) {
+      return;
+    }
+
     try {
       await kv.del(this.JOBS_KEY);
       await kv.del(this.STATS_KEY);
       await kv.del(this.SYNC_TIME_KEY);
-      console.log('✅ 已清除所有 Vercel KV 数据');
     } catch (error) {
-      console.error('清除 Vercel KV 数据失败:', error);
+      console.error('Failed to clear data from Vercel KV:', error);
       throw error;
     }
   }
 
   private filterRecentJobs(jobs: Job[]): Job[] {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    return jobs.filter(job => new Date(job.publishedAt) >= sevenDaysAgo);
+    const maxDays = 7;
+    const cutoffDate = new Date(Date.now() - maxDays * 24 * 60 * 60 * 1000);
+    return jobs.filter(job => new Date(job.publishedAt) >= cutoffDate);
   }
 
   private removeDuplicates(jobs: Job[]): Job[] {
-    const seen = new Set<string>();
+    const seen = new Set();
     return jobs.filter(job => {
-      if (seen.has(job.id)) {
+      const key = `${job.title}-${job.company}`;
+      if (seen.has(key)) {
         return false;
       }
-      seen.add(job.id);
+      seen.add(key);
       return true;
     });
   }
@@ -177,10 +193,9 @@ class VercelKVProvider implements CloudStorageProvider {
         storageSize: JSON.stringify(jobs).length,
         provider: 'vercel-kv'
       };
-      
       await kv.set(this.STATS_KEY, JSON.stringify(stats));
     } catch (error) {
-      console.error('更新统计信息失败:', error);
+      console.error('Failed to update stats in Vercel KV:', error);
     }
   }
 
@@ -194,43 +209,71 @@ class VercelKVProvider implements CloudStorageProvider {
   }
 }
 
-class LocalStorageProvider implements CloudStorageProvider {
+class RedisProvider implements CloudStorageProvider {
   private readonly JOBS_KEY = 'haigoo:jobs';
   private readonly STATS_KEY = 'haigoo:stats';
   private readonly SYNC_TIME_KEY = 'haigoo:last_sync';
+  private client: any = null;
+  private redisUrl: string;
+
+  constructor(redisUrl?: string) {
+    this.redisUrl = redisUrl || process.env.REDIS_URL || 'redis://localhost:6379';
+  }
 
   async isAvailable(): Promise<boolean> {
-    return typeof localStorage !== 'undefined';
+    // 在客户端环境，Redis 不可用
+    if (typeof window !== 'undefined') {
+      return false;
+    }
+    
+    try {
+      if (!redis) return false;
+      
+      if (!this.client) {
+        this.client = redis.createClient({
+          url: this.redisUrl
+        });
+        await this.client.connect();
+      }
+      
+      // 测试连接
+      await this.client.ping();
+      return true;
+    } catch (error) {
+      console.warn('Redis not available:', error);
+      return false;
+    }
   }
 
   async saveJobs(jobs: Job[]): Promise<void> {
+    if (!await this.isAvailable()) {
+      throw new Error('Redis is not available');
+    }
+
     try {
-      const recentJobs = this.filterRecentJobs(jobs);
-      const uniqueJobs = this.removeDuplicates(recentJobs);
-      
-      localStorage.setItem(this.JOBS_KEY, JSON.stringify(uniqueJobs));
-      await this.updateStats(uniqueJobs);
-      localStorage.setItem(this.SYNC_TIME_KEY, new Date().toISOString());
-      
-      console.log(`✅ 已保存 ${uniqueJobs.length} 个职位到 localStorage`);
+      const filteredJobs = this.removeDuplicates(this.filterRecentJobs(jobs));
+      await this.client.set(this.JOBS_KEY, JSON.stringify(filteredJobs));
+      await this.updateStats(filteredJobs);
+      await this.client.set(this.SYNC_TIME_KEY, new Date().toISOString());
     } catch (error) {
-      console.error('保存职位到 localStorage 失败:', error);
+      console.error('Failed to save jobs to Redis:', error);
       throw error;
     }
   }
 
   async loadJobs(): Promise<Job[]> {
+    if (!await this.isAvailable()) {
+      return [];
+    }
+
     try {
-      const jobsData = localStorage.getItem(this.JOBS_KEY);
-      if (!jobsData) {
-        return [];
-      }
+      const jobsData = await this.client.get(this.JOBS_KEY);
+      if (!jobsData) return [];
       
       const jobs = JSON.parse(jobsData);
-      console.log(`📖 从 localStorage 加载了 ${jobs.length} 个职位`);
-      return jobs;
+      return Array.isArray(jobs) ? jobs : [];
     } catch (error) {
-      console.error('从 localStorage 加载职位失败:', error);
+      console.error('Failed to load jobs from Redis:', error);
       return [];
     }
   }
@@ -242,62 +285,219 @@ class LocalStorageProvider implements CloudStorageProvider {
   }
 
   async getStats(): Promise<StorageStats> {
+    if (!await this.isAvailable()) {
+      return this.getDefaultStats();
+    }
+
     try {
-      const statsData = localStorage.getItem(this.STATS_KEY);
-      const jobs = await this.loadJobs();
-      
+      const statsData = await this.client.get(this.STATS_KEY);
       if (statsData) {
         const stats = JSON.parse(statsData);
         return {
           ...stats,
-          totalJobs: jobs.length,
-          provider: 'localStorage'
+          lastSync: stats.lastSync ? new Date(stats.lastSync) : null,
+          provider: 'redis'
         };
       }
-      
       return this.getDefaultStats();
     } catch (error) {
-      console.error('获取 localStorage 统计信息失败:', error);
+      console.error('Failed to get stats from Redis:', error);
       return this.getDefaultStats();
     }
   }
 
   async getLastSyncTime(): Promise<Date | null> {
+    if (!await this.isAvailable()) {
+      return null;
+    }
+
     try {
-      const syncTime = localStorage.getItem(this.SYNC_TIME_KEY);
+      const syncTime = await this.client.get(this.SYNC_TIME_KEY);
       return syncTime ? new Date(syncTime) : null;
     } catch (error) {
-      console.error('获取最后同步时间失败:', error);
+      console.error('Failed to get last sync time from Redis:', error);
       return null;
     }
   }
 
   async clearAllData(): Promise<void> {
+    if (!await this.isAvailable()) {
+      return;
+    }
+
     try {
-      localStorage.removeItem(this.JOBS_KEY);
-      localStorage.removeItem(this.STATS_KEY);
-      localStorage.removeItem(this.SYNC_TIME_KEY);
-      console.log('✅ 已清除所有 localStorage 数据');
+      await this.client.del(this.JOBS_KEY);
+      await this.client.del(this.STATS_KEY);
+      await this.client.del(this.SYNC_TIME_KEY);
     } catch (error) {
-      console.error('清除 localStorage 数据失败:', error);
+      console.error('Failed to clear data from Redis:', error);
       throw error;
     }
   }
 
   private filterRecentJobs(jobs: Job[]): Job[] {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    return jobs.filter(job => new Date(job.publishedAt) >= sevenDaysAgo);
+    const maxDays = 7;
+    const cutoffDate = new Date(Date.now() - maxDays * 24 * 60 * 60 * 1000);
+    return jobs.filter(job => new Date(job.publishedAt) >= cutoffDate);
   }
 
   private removeDuplicates(jobs: Job[]): Job[] {
-    const seen = new Set<string>();
+    const seen = new Set();
     return jobs.filter(job => {
-      if (seen.has(job.id)) {
+      const key = `${job.title}-${job.company}`;
+      if (seen.has(key)) {
         return false;
       }
-      seen.add(job.id);
+      seen.add(key);
+      return true;
+    });
+  }
+
+  private async updateStats(jobs: Job[]): Promise<void> {
+    try {
+      const stats: StorageStats = {
+        totalJobs: jobs.length,
+        lastSync: new Date(),
+        storageSize: JSON.stringify(jobs).length,
+        provider: 'redis'
+      };
+      await this.client.set(this.STATS_KEY, JSON.stringify(stats));
+    } catch (error) {
+      console.error('Failed to update stats in Redis:', error);
+    }
+  }
+
+  private getDefaultStats(): StorageStats {
+    return {
+      totalJobs: 0,
+      lastSync: null,
+      storageSize: 0,
+      provider: 'redis'
+    };
+  }
+}
+
+class LocalStorageProvider implements CloudStorageProvider {
+  private readonly JOBS_KEY = 'haigoo:jobs';
+  private readonly STATS_KEY = 'haigoo:stats';
+  private readonly SYNC_TIME_KEY = 'haigoo:last_sync';
+
+  async isAvailable(): Promise<boolean> {
+    return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+  }
+
+  async saveJobs(jobs: Job[]): Promise<void> {
+    if (!await this.isAvailable()) {
+      throw new Error('LocalStorage is not available');
+    }
+
+    try {
+      const filteredJobs = this.removeDuplicates(this.filterRecentJobs(jobs));
+      localStorage.setItem(this.JOBS_KEY, JSON.stringify(filteredJobs));
+      await this.updateStats(filteredJobs);
+      localStorage.setItem(this.SYNC_TIME_KEY, new Date().toISOString());
+    } catch (error) {
+      console.error('Failed to save jobs to localStorage:', error);
+      throw error;
+    }
+  }
+
+  async loadJobs(): Promise<Job[]> {
+    if (!await this.isAvailable()) {
+      return [];
+    }
+
+    try {
+      const jobsData = localStorage.getItem(this.JOBS_KEY);
+      if (!jobsData) return [];
+      
+      const jobs = JSON.parse(jobsData);
+      return Array.isArray(jobs) ? jobs : [];
+    } catch (error) {
+      console.error('Failed to load jobs from localStorage:', error);
+      return [];
+    }
+  }
+
+  async addJobs(newJobs: Job[]): Promise<void> {
+    const existingJobs = await this.loadJobs();
+    const allJobs = [...existingJobs, ...newJobs];
+    await this.saveJobs(allJobs);
+  }
+
+  async getStats(): Promise<StorageStats> {
+    if (!await this.isAvailable()) {
+      return this.getDefaultStats();
+    }
+
+    try {
+      const statsData = localStorage.getItem(this.STATS_KEY);
+      if (statsData) {
+        const stats = JSON.parse(statsData);
+        return {
+          ...stats,
+          lastSync: stats.lastSync ? new Date(stats.lastSync) : null,
+          provider: 'localStorage'
+        };
+      }
+      
+      // 如果没有统计数据，基于现有作业生成
+      const jobs = await this.loadJobs();
+      return {
+        totalJobs: jobs.length,
+        lastSync: null,
+        storageSize: JSON.stringify(jobs).length,
+        provider: 'localStorage'
+      };
+    } catch (error) {
+      console.error('Failed to get stats from localStorage:', error);
+      return this.getDefaultStats();
+    }
+  }
+
+  async getLastSyncTime(): Promise<Date | null> {
+    if (!await this.isAvailable()) {
+      return null;
+    }
+
+    try {
+      const syncTime = localStorage.getItem(this.SYNC_TIME_KEY);
+      return syncTime ? new Date(syncTime) : null;
+    } catch (error) {
+      console.error('Failed to get last sync time from localStorage:', error);
+      return null;
+    }
+  }
+
+  async clearAllData(): Promise<void> {
+    if (!await this.isAvailable()) {
+      return;
+    }
+
+    try {
+      localStorage.removeItem(this.JOBS_KEY);
+      localStorage.removeItem(this.STATS_KEY);
+      localStorage.removeItem(this.SYNC_TIME_KEY);
+    } catch (error) {
+      console.error('Failed to clear data from localStorage:', error);
+      throw error;
+    }
+  }
+
+  private filterRecentJobs(jobs: Job[]): Job[] {
+    const maxDays = 7;
+    const cutoffDate = new Date(Date.now() - maxDays * 24 * 60 * 60 * 1000);
+    return jobs.filter(job => new Date(job.publishedAt) >= cutoffDate);
+  }
+
+  private removeDuplicates(jobs: Job[]): Job[] {
+    const seen = new Set();
+    return jobs.filter(job => {
+      const key = `${job.title}-${job.company}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
       return true;
     });
   }
@@ -310,10 +510,9 @@ class LocalStorageProvider implements CloudStorageProvider {
         storageSize: JSON.stringify(jobs).length,
         provider: 'localStorage'
       };
-      
       localStorage.setItem(this.STATS_KEY, JSON.stringify(stats));
     } catch (error) {
-      console.error('更新统计信息失败:', error);
+      console.error('Failed to update stats in localStorage:', error);
     }
   }
 
@@ -338,6 +537,8 @@ export class CloudStorageAdapter {
     switch (config.provider) {
       case 'vercel-kv':
         return new VercelKVProvider();
+      case 'redis':
+        return new RedisProvider(config.redisUrl);
       case 'localStorage':
       default:
         return new LocalStorageProvider();
@@ -373,7 +574,7 @@ export class CloudStorageAdapter {
   }
 }
 
-// 创建存储适配器实例
+// 创建存储适配器的工厂函数
 export const createStorageAdapter = async (config?: Partial<StorageConfig>): Promise<CloudStorageAdapter> => {
   const defaultConfig: StorageConfig = {
     provider: 'localStorage',
@@ -383,26 +584,30 @@ export const createStorageAdapter = async (config?: Partial<StorageConfig>): Pro
 
   const finalConfig = { ...defaultConfig, ...config };
 
-  // 如果指定使用 Vercel KV，先检查是否可用
-  if (finalConfig.provider === 'vercel-kv') {
-    const kvProvider = new VercelKVProvider();
-    const isAvailable = await kvProvider.isAvailable();
-    
-    if (!isAvailable) {
-      console.warn('Vercel KV 不可用，回退到 localStorage');
-      finalConfig.provider = 'localStorage';
+  // 在服务端环境，优先尝试 Vercel KV，然后是 Redis
+  if (typeof window === 'undefined') {
+    if (!finalConfig.provider || finalConfig.provider === 'localStorage') {
+      const kvAdapter = new CloudStorageAdapter({ ...finalConfig, provider: 'vercel-kv' });
+      if (await kvAdapter.isAvailable()) {
+        return kvAdapter;
+      }
+      
+      const redisAdapter = new CloudStorageAdapter({ ...finalConfig, provider: 'redis' });
+      if (await redisAdapter.isAvailable()) {
+        return redisAdapter;
+      }
     }
   }
 
   return new CloudStorageAdapter(finalConfig);
 };
 
-// 默认存储适配器（自动检测环境）
+// 检查是否在 Vercel 环境
 const isVercelEnvironment = typeof window === 'undefined' && 
   typeof globalThis !== 'undefined' && 
   (globalThis as any).process?.env?.VERCEL;
 
-// 使用立即执行函数来避免 top-level await
+// 全局存储适配器实例
 let cloudStorageAdapter: CloudStorageAdapter;
 
 (async () => {

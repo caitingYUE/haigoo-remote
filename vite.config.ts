@@ -8,25 +8,22 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     host: true,
+    // 配置代理，将API请求转发到Vercel开发服务器
     proxy: {
-      '/api/rss-proxy': {
-        target: 'https://api.allorigins.win',
+      '/api': {
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => {
-          // 从 /api/rss-proxy?url=xxx 转换为 /get?url=xxx
-          const url = new URL(path, 'http://localhost')
-          const targetUrl = url.searchParams.get('url')
-          return `/get?url=${encodeURIComponent(targetUrl || '')}`
-        },
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('RSS proxy error:', err)
-          })
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('RSS proxy request:', req.url)
+            console.log('API proxy error:', err)
           })
         }
       }
     }
   },
+  // 配置构建选项
+  build: {
+    outDir: 'dist',
+    sourcemap: true
+  }
 })

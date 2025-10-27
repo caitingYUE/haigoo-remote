@@ -23,7 +23,7 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
   delay: number
 ): T {
   const callbackRef = useRef(callback)
-  const timeoutRef = useRef<number>()
+  const timeoutRef = useRef<NodeJS.Timeout>()
 
   // Update callback ref when callback changes
   useEffect(() => {
@@ -104,6 +104,7 @@ export function useSearch(
   const [results, setResults] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const debouncedQuery = useDebounce(query, delay)
 
@@ -115,27 +116,57 @@ export function useSearch(
     }
 
     const performSearch = async () => {
+      // 取消之前的请求
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+
+      // 创建新的 AbortController
+      abortControllerRef.current = new AbortController()
+      
       setIsLoading(true)
       setError(null)
 
       try {
         const searchResults = await searchFunction(debouncedQuery)
-        setResults(searchResults)
+        
+        // 检查请求是否被取消
+        if (!abortControllerRef.current?.signal.aborted) {
+          setResults(searchResults)
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : '搜索失败')
-        setResults([])
+        // 忽略被取消的请求错误
+        if (!abortControllerRef.current?.signal.aborted) {
+          setError(err instanceof Error ? err.message : '搜索失败')
+          setResults([])
+        }
       } finally {
-        setIsLoading(false)
+        if (!abortControllerRef.current?.signal.aborted) {
+          setIsLoading(false)
+        }
       }
     }
 
     performSearch()
+
+    // 清理函数
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
   }, [debouncedQuery, searchFunction])
 
   const clearSearch = useCallback(() => {
+    // 取消正在进行的搜索
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
     setQuery('')
     setResults([])
     setError(null)
+    setIsLoading(false)
   }, [])
 
   return {

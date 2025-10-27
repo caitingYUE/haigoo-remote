@@ -10,6 +10,15 @@ export interface RSSFeedItem {
   location?: string;
   salary?: string;
   jobType?: string;
+  workType?: 'remote' | 'hybrid' | 'onsite';
+  experienceLevel?: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
+  salaryRange?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+    period?: 'hourly' | 'monthly' | 'yearly';
+  };
+  remoteLocationRestriction?: string;
 }
 
 export interface ParsedRSSData {
@@ -71,29 +80,13 @@ class RSSService {
     { name: 'JobsCollider', category: '项目管理', url: 'https://jobscollider.com/remote-project-management-jobs.rss' },
     { name: 'JobsCollider', category: '所有其他', url: 'https://jobscollider.com/remote-all-others-jobs.rss' },
     
-    // RealWorkFromAnywhere
-    { name: 'RealWorkFromAnywhere', category: '全部', url: 'https://www.realworkfromanywhere.com/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '产品', url: 'https://www.realworkfromanywhere.com/remote-product-manager-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '开发人员', url: 'https://www.realworkfromanywhere.com/remote-developer-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '工程师', url: 'https://www.realworkfromanywhere.com/remote-engineer-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '前端', url: 'https://www.realworkfromanywhere.com/remote-frontend-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '后端', url: 'https://www.realworkfromanywhere.com/remote-backend-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '全栈开发', url: 'https://www.realworkfromanywhere.com/remote-fullstack-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '设计', url: 'https://www.realworkfromanywhere.com/remote-design-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '数据', url: 'https://www.realworkfromanywhere.com/remote-data-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '研究', url: 'https://www.realworkfromanywhere.com/remote-research-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '金融', url: 'https://www.realworkfromanywhere.com/remote-finance-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '营销', url: 'https://www.realworkfromanywhere.com/remote-marketing-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '高级岗位', url: 'https://www.realworkfromanywhere.com/remote-senior-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '销售', url: 'https://www.realworkfromanywhere.com/remote-sales-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '客户服务', url: 'https://www.realworkfromanywhere.com/remote-customer-service-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '客户支持', url: 'https://www.realworkfromanywhere.com/remote-customer-support-jobs/rss.xml' },
-    { name: 'RealWorkFromAnywhere', category: '行政', url: 'https://www.realworkfromanywhere.com/remote-admin-jobs/rss.xml' },
+    // RealWorkFromAnywhere - 暂时禁用，因为RSS源不可用
+    // { name: 'RealWorkFromAnywhere', category: '全部', url: 'https://www.realworkfromanywhere.com/rss.xml' },
     
     // Himalayas
     { name: 'Himalayas', category: '全部', url: 'https://himalayas.app/jobs/rss' },
     
-    // NoDesk
+    // NoDesk - 更新为正确的RSS源
     { name: 'NoDesk', category: '全部', url: 'https://nodesk.substack.com/feed' }
   ];
 
@@ -266,40 +259,23 @@ class RSSService {
    * 获取单个RSS源的数据
    */
   async fetchRSSFeed(url: string): Promise<string> {
+    const proxyUrl = process.env.NODE_ENV === 'development' 
+      ? `http://localhost:3000/api/rss-proxy?url=${encodeURIComponent(url)}`
+      : `/api/rss-proxy?url=${encodeURIComponent(url)}`;
+
+    let response: Response;
+    let responseText: string = '';
+
     try {
-      // 在开发环境中，使用本地代理
-      // 在生产环境中，使用Vercel serverless函数
-      const isDevelopment = import.meta.env.DEV;
-      const proxyUrl = isDevelopment 
-        ? `/api/rss-proxy?url=${encodeURIComponent(url)}`
-        : `/api/rss-proxy?url=${encodeURIComponent(url)}`;
-      
-      let response: Response;
-      let responseText: string;
-      
-      if (isDevelopment) {
-        // 开发环境：先尝试直接获取，失败则使用代理
+      if (process.env.NODE_ENV === 'development') {
+        // 开发环境：使用代理，避免CORS问题
         try {
-          response = await fetch(url, {
-            headers: {
-              'User-Agent': 'Haigoo Job Aggregator/1.0',
-              'Accept': 'application/rss+xml, application/xml, text/xml'
-            }
+          response = await fetch(proxyUrl, {
+            signal: AbortSignal.timeout(15000) // 15秒超时
           });
           
           if (!response.ok) {
-            throw new Error(`Direct fetch failed: ${response.status}`);
-          }
-          
-          responseText = await response.text();
-        } catch (directError) {
-          console.log(`Direct fetch failed for ${url}, trying proxy...`);
-          
-          // 使用本地代理
-          response = await fetch(proxyUrl);
-          
-          if (!response.ok) {
-            throw new Error(`Proxy fetch failed: ${response.status}`);
+            throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
           }
           
           // 检查响应类型
@@ -310,35 +286,39 @@ class RSSService {
           } else {
             responseText = await response.text();
           }
+        } catch (proxyError: unknown) {
+          console.error(`Proxy failed for ${url}:`, proxyError instanceof Error ? proxyError.message : proxyError);
+          throw proxyError; // 直接抛出错误，不再尝试直接获取
         }
       } else {
-        // 生产环境：使用Vercel serverless函数代理
-        response = await fetch(proxyUrl);
+        // 生产环境：直接使用代理
+        response = await fetch(proxyUrl, {
+          signal: AbortSignal.timeout(15000) // 15秒超时
+        });
         
         if (!response.ok) {
-          // 尝试解析错误响应
-          try {
-            const errorData = await response.json();
-            throw new Error(`Proxy error: ${errorData.message || errorData.error}`);
-          } catch (parseError) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+          throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
         }
         
-        // 检查响应类型
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          throw new Error(`Proxy error: ${errorData.message || errorData.error}`);
-        } else {
-          responseText = await response.text();
-        }
+        responseText = await response.text();
+      }
+      
+      // 验证响应是否为有效的XML
+      if (!responseText || responseText.trim().length === 0) {
+        throw new Error('Empty response received');
+      }
+      
+      // 检查是否为XML格式
+      if (!responseText.trim().startsWith('<?xml') && !responseText.trim().startsWith('<rss') && !responseText.trim().startsWith('<feed')) {
+        throw new Error('Response is not valid XML/RSS format');
       }
       
       return responseText;
-    } catch (error) {
-      console.error(`Error fetching RSS feed from ${url}:`, error);
-      throw error;
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Failed to fetch RSS from ${url}:`, errorMessage);
+      throw new Error(`RSS fetch failed: ${errorMessage}`);
     }
   }
 
@@ -394,14 +374,19 @@ class RSSService {
     items.forEach(item => {
       try {
         const title = item.querySelector('title')?.textContent?.trim() || '';
-        const description = item.querySelector('description')?.textContent?.trim() || '';
+        let description = item.querySelector('description')?.textContent?.trim() || '';
         const link = item.querySelector('link')?.textContent?.trim() || '';
         const pubDate = item.querySelector('pubDate')?.textContent?.trim() || '';
+        
+        // 清理和格式化描述内容
+        description = this.cleanDescription(description);
         
         // 尝试从不同字段提取额外信息
         const category = item.querySelector('category')?.textContent?.trim() || source.category;
         
         if (title && link) {
+          const salary = this.extractSalary(title, description);
+          
           feedItems.push({
             title,
             description,
@@ -410,8 +395,12 @@ class RSSService {
             category,
             company: this.extractCompany(title, description),
             location: this.extractLocation(title, description),
-            salary: this.extractSalary(title, description),
-            jobType: this.extractJobType(title, description)
+            salary,
+            jobType: this.extractJobType(title, description),
+            workType: this.extractWorkType(title, description),
+            experienceLevel: this.extractExperienceLevel(title, description),
+            salaryRange: this.parseSalaryRange(salary),
+            remoteLocationRestriction: this.extractRemoteLocationRestriction(title, description)
           });
         }
       } catch (itemError) {
@@ -420,6 +409,47 @@ class RSSService {
     });
 
     return feedItems;
+  }
+
+  /**
+   * 清理和格式化职位描述
+   */
+  private cleanDescription(description: string): string {
+    if (!description) return '';
+    
+    // 移除HTML标签
+    let cleaned = description.replace(/<[^>]*>/g, '');
+    
+    // 解码HTML实体
+    const htmlEntities: Record<string, string> = {
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&quot;': '"',
+      '&#39;': "'",
+      '&nbsp;': ' ',
+      '&mdash;': '—',
+      '&ndash;': '–',
+      '&hellip;': '…',
+      '&rsquo;': "'",
+      '&lsquo;': "'",
+      '&rdquo;': '"',
+      '&ldquo;': '"'
+    };
+    
+    Object.entries(htmlEntities).forEach(([entity, char]) => {
+      cleaned = cleaned.replace(new RegExp(entity, 'g'), char);
+    });
+    
+    // 清理多余的空白字符
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    
+    // 限制描述长度，避免过长的内容
+    if (cleaned.length > 500) {
+      cleaned = cleaned.substring(0, 497) + '...';
+    }
+    
+    return cleaned;
   }
 
   /**
@@ -491,13 +521,174 @@ class RSSService {
   private extractJobType(title: string, description: string): string {
     const text = `${title} ${description}`.toLowerCase();
     
-    if (text.includes('full-time') || text.includes('full time')) return 'Full-time';
-    if (text.includes('part-time') || text.includes('part time')) return 'Part-time';
-    if (text.includes('contract') || text.includes('contractor')) return 'Contract';
-    if (text.includes('freelance') || text.includes('freelancer')) return 'Freelance';
-    if (text.includes('intern') || text.includes('internship')) return 'Internship';
+    if (text.includes('full-time') || text.includes('full time')) return 'full-time';
+    if (text.includes('part-time') || text.includes('part time')) return 'part-time';
+    if (text.includes('contract') || text.includes('contractor')) return 'contract';
+    if (text.includes('freelance') || text.includes('freelancer')) return 'freelance';
+    if (text.includes('intern') || text.includes('internship')) return 'internship';
     
-    return 'Full-time'; // 默认值
+    return 'full-time'; // 默认值
+  }
+
+  /**
+   * 从标题或描述中提取工作方式（远程/混合/现场）
+   */
+  private extractWorkType(title: string, description: string): 'remote' | 'hybrid' | 'onsite' {
+    const text = `${title} ${description}`.toLowerCase();
+    
+    if (text.includes('remote') || text.includes('work from home') || text.includes('wfh')) {
+      return 'remote';
+    }
+    if (text.includes('hybrid') || text.includes('flexible')) {
+      return 'hybrid';
+    }
+    if (text.includes('onsite') || text.includes('on-site') || text.includes('office')) {
+      return 'onsite';
+    }
+    
+    // 默认为远程，因为大部分RSS源都是远程工作
+    return 'remote';
+  }
+
+  /**
+   * 从标题或描述中提取经验级别
+   */
+  private extractExperienceLevel(title: string, description: string): 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' {
+    const text = `${title} ${description}`.toLowerCase();
+    
+    if (text.includes('senior') || text.includes('sr.') || text.includes('lead')) {
+      return 'Senior';
+    }
+    if (text.includes('junior') || text.includes('jr.') || text.includes('entry') || text.includes('graduate')) {
+      return 'Entry';
+    }
+    if (text.includes('principal') || text.includes('staff') || text.includes('architect')) {
+      return 'Lead';
+    }
+    if (text.includes('director') || text.includes('vp') || text.includes('head of') || text.includes('chief')) {
+      return 'Executive';
+    }
+    
+    return 'Mid'; // 默认值
+  }
+
+  /**
+   * 从标题或描述中提取远程地点限制
+   */
+  private extractRemoteLocationRestriction(title: string, description: string): string {
+    const text = `${title} ${description}`.toLowerCase();
+    
+    // 检查是否有地区限制
+    if (text.includes('us only') || text.includes('usa only') || text.includes('united states only') || 
+        text.includes('us citizens') || text.includes('american citizens') || text.includes('us residents')) {
+      return '仅限美国';
+    }
+    
+    if (text.includes('eu only') || text.includes('europe only') || text.includes('european union') || 
+        text.includes('eu citizens') || text.includes('european citizens')) {
+      return '仅限欧盟';
+    }
+    
+    if (text.includes('uk only') || text.includes('united kingdom only') || text.includes('british citizens')) {
+      return '仅限英国';
+    }
+    
+    if (text.includes('canada only') || text.includes('canadian citizens') || text.includes('canadian residents')) {
+      return '仅限加拿大';
+    }
+    
+    if (text.includes('australia only') || text.includes('australian citizens') || text.includes('australian residents')) {
+      return '仅限澳大利亚';
+    }
+    
+    if (text.includes('brazil only') || text.includes('brazilian citizens') || text.includes('brazilian residents')) {
+      return '仅限巴西';
+    }
+    
+    if (text.includes('india only') || text.includes('indian citizens') || text.includes('indian residents')) {
+      return '仅限印度';
+    }
+    
+    if (text.includes('germany only') || text.includes('german citizens') || text.includes('german residents')) {
+      return '仅限德国';
+    }
+    
+    if (text.includes('france only') || text.includes('french citizens') || text.includes('french residents')) {
+      return '仅限法国';
+    }
+    
+    if (text.includes('japan only') || text.includes('japanese citizens') || text.includes('japanese residents')) {
+      return '仅限日本';
+    }
+    
+    // 检查时区限制
+    if (text.includes('est timezone') || text.includes('eastern time') || text.includes('et timezone')) {
+      return '东部时区';
+    }
+    
+    if (text.includes('pst timezone') || text.includes('pacific time') || text.includes('pt timezone')) {
+      return '太平洋时区';
+    }
+    
+    if (text.includes('cet timezone') || text.includes('central european time')) {
+      return '中欧时区';
+    }
+    
+    if (text.includes('utc timezone') || text.includes('gmt timezone')) {
+      return 'UTC时区';
+    }
+    
+    // 检查全球远程
+    if (text.includes('worldwide') || text.includes('global') || text.includes('anywhere') || 
+        text.includes('any location') || text.includes('no location restriction') || 
+        text.includes('remote worldwide') || text.includes('work from anywhere')) {
+      return '全球远程';
+    }
+    
+    // 默认返回全球远程
+    return '全球远程';
+  }
+
+  /**
+   * 解析薪资范围
+   */
+  private parseSalaryRange(salaryText: string): { min?: number; max?: number; currency?: string; period?: 'hourly' | 'monthly' | 'yearly' } | undefined {
+    if (!salaryText) return undefined;
+
+    const result: { min?: number; max?: number; currency?: string; period?: 'hourly' | 'monthly' | 'yearly' } = {};
+
+    // 提取货币符号
+    if (salaryText.includes('$')) result.currency = 'USD';
+    else if (salaryText.includes('€')) result.currency = 'EUR';
+    else if (salaryText.includes('£')) result.currency = 'GBP';
+    else result.currency = 'USD'; // 默认
+
+    // 提取时间周期
+    if (salaryText.toLowerCase().includes('hour') || salaryText.toLowerCase().includes('hr')) {
+      result.period = 'hourly';
+    } else if (salaryText.toLowerCase().includes('month') || salaryText.toLowerCase().includes('mo')) {
+      result.period = 'monthly';
+    } else {
+      result.period = 'yearly'; // 默认
+    }
+
+    // 提取数字范围
+    const numberPattern = /[\d,]+/g;
+    const numbers = salaryText.match(numberPattern);
+    
+    if (numbers && numbers.length > 0) {
+      const cleanNumbers = numbers.map(n => parseInt(n.replace(/,/g, '')));
+      
+      if (cleanNumbers.length === 1) {
+        result.min = cleanNumbers[0];
+        result.max = cleanNumbers[0];
+      } else if (cleanNumbers.length >= 2) {
+        result.min = Math.min(...cleanNumbers);
+        result.max = Math.max(...cleanNumbers);
+      }
+    }
+
+    return Object.keys(result).length > 0 ? result : undefined;
   }
 
   /**
@@ -505,37 +696,57 @@ class RSSService {
    */
   async fetchAllRSSFeeds(): Promise<ParsedRSSData[]> {
     const results: ParsedRSSData[] = [];
+    const batchSize = 3; // 减少并发数量
+    const sources = this.RSS_SOURCES;
     
-    // 限制同时处理的RSS源数量，避免过多请求
-    const maxSources = 5; // 先测试少量源
-    const sourcesToProcess = this.RSS_SOURCES.slice(0, maxSources);
+    console.log(`开始获取 ${sources.length} 个RSS源的数据...`);
     
-    console.log(`开始同步 ${sourcesToProcess.length} 个RSS源...`);
-    
-    for (const source of sourcesToProcess) {
-      try {
-        console.log(`正在获取RSS数据: ${source.name} - ${source.category}`);
-        const xmlData = await this.fetchRSSFeed(source.url);
-        console.log(`成功获取RSS数据，长度: ${xmlData.length} 字符`);
-        
-        const items = this.parseRSSFeed(xmlData, source);
-        console.log(`解析得到 ${items.length} 个职位`);
-        
-        results.push({
-          source: source.name,
-          category: source.category,
-          items,
-          lastUpdated: new Date()
-        });
-        
-        // 添加延迟以避免过于频繁的请求
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (error) {
-        console.error(`获取RSS数据失败 ${source.name} - ${source.category}:`, error);
+    // 分批处理RSS源
+    for (let i = 0; i < sources.length; i += batchSize) {
+      const batch = sources.slice(i, i + batchSize);
+      console.log(`处理第 ${Math.floor(i/batchSize) + 1} 批，共 ${batch.length} 个源`);
+      
+      const batchPromises = batch.map(async (source) => {
+        try {
+          console.log(`正在获取 ${source.name} - ${source.category} 的数据...`);
+          const xmlData = await this.fetchRSSFeed(source.url);
+          const items = this.parseRSSFeed(xmlData, source);
+          
+          if (items.length > 0) {
+            console.log(`✓ ${source.name} - ${source.category}: 获取到 ${items.length} 个职位`);
+            return {
+              source: source.name,
+              category: source.category,
+              items,
+              lastUpdated: new Date()
+            };
+          } else {
+            console.warn(`⚠ ${source.name} - ${source.category}: 未获取到职位数据`);
+            return null;
+          }
+        } catch (error) {
+          console.error(`✗ ${source.name} - ${source.category} 获取失败:`, error instanceof Error ? error.message : error);
+          return null;
+        }
+      });
+      
+      const batchResults = await Promise.allSettled(batchPromises);
+      
+      // 处理批次结果
+      batchResults.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          results.push(result.value);
+        }
+      });
+      
+      // 批次间延迟，避免请求过于频繁
+      if (i + batchSize < sources.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     
-    console.log(`RSS同步完成，共处理 ${results.length} 个源`);
+    console.log(`RSS数据获取完成: 成功 ${results.length}/${sources.length} 个源`);
+    
     return results;
   }
 }

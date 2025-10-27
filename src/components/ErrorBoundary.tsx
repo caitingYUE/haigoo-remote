@@ -24,7 +24,15 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
-    this.setState({ error, errorInfo })
+    
+    // 安全地处理错误信息，避免 RangeError
+    try {
+      this.setState({ error, errorInfo })
+    } catch (stateError) {
+      console.error('Error setting state in ErrorBoundary:', stateError)
+      // 如果设置状态失败，至少保持错误状态
+      this.setState({ hasError: true, error: new Error('组件渲染错误'), errorInfo: undefined })
+    }
   }
 
   handleRetry = () => {
@@ -61,9 +69,12 @@ class ErrorBoundary extends Component<Props, State> {
               {this.state.error && (
                 <div className="mb-6 p-4 bg-gray-100 rounded-lg text-left">
                   <h3 className="font-semibold text-gray-900 mb-2">错误详情：</h3>
-                  <pre className="text-xs text-gray-700 overflow-auto">
+                  <pre className="text-xs text-gray-700 overflow-auto max-h-32">
                     {this.state.error.toString()}
-                    {this.state.errorInfo?.componentStack}
+                    {this.state.errorInfo?.componentStack && 
+                      this.state.errorInfo.componentStack.length > 0 && 
+                      this.state.errorInfo.componentStack.substring(0, 500)
+                    }
                   </pre>
                 </div>
               )}

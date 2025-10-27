@@ -13,7 +13,7 @@
   <path d="M12 16 Q16 18 20 16" stroke="#8b5cf6" stroke-width="1.5" fill="none" stroke-linecap="round" />
   
   <!-- 天线 -->
-  <line x1="16" y1="6" x2="16" y2="4" stroke="white" stroke-width="2" stroke-linecap="round" />
+  <path d="M16 6 L16 4" stroke="white" stroke-width="2" stroke-linecap="round" />
   <circle cx="16" cy="3" r="1" fill="white" />
   
   <!-- 装饰性电路纹理 -->

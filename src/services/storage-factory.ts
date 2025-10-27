@@ -33,10 +33,17 @@ class StorageFactory {
       typeof globalThis !== 'undefined' && 
       (globalThis as any).process?.env?.VERCEL;
 
+    // 检查是否有 Redis URL 配置（兼容浏览器环境）
+    const hasRedisConfig = typeof window === 'undefined' && 
+      typeof process !== 'undefined' && 
+      (process.env?.REDIS_URL || config?.redisUrl);
+
     const defaultConfig: Partial<StorageConfig> = {
-      provider: isVercelEnvironment ? 'vercel-kv' : 'localStorage',
+      provider: isVercelEnvironment ? 'vercel-kv' : 
+                hasRedisConfig ? 'redis' : 'localStorage',
       maxJobs: 1000,
-      maxDays: 7
+      maxDays: 7,
+      redisUrl: typeof process !== 'undefined' ? process.env?.REDIS_URL : undefined
     };
 
     const finalConfig = { ...defaultConfig, ...config };

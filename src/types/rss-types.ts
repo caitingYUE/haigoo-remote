@@ -11,7 +11,7 @@ export interface Job {
   location: string;
   description: string;
   salary?: string;
-  jobType: 'Full-time' | 'Part-time' | 'Contract' | 'Freelance' | 'Internship';
+  jobType: 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship';
   category: JobCategory;
   source: string;
   sourceUrl: string;
@@ -25,37 +25,128 @@ export interface Job {
   applicationUrl: string;
   isRemote: boolean;
   experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
+  remoteLocationRestriction?: string;
 }
 
+// 标准化的工作分类
 export type JobCategory = 
-  | '软件开发'
+  // 技术类
+  | '全栈开发'
   | '前端开发'
   | '后端开发'
-  | '全栈开发'
+  | '移动开发'
+  | '软件开发'
   | 'DevOps'
-  | '数据科学'
   | '数据分析'
-  | '产品管理'
-  | '项目管理'
+  | '数据科学'
+  | '人工智能'
+  | '质量保证'
+  | '网络安全'
+  
+  // 设计类
   | 'UI/UX设计'
   | '平面设计'
+  | '产品设计'
+  
+  // 商业类
+  | '产品管理'
+  | '项目管理'
+  | '商业分析'
+  
+  // 市场营销类
   | '市场营销'
-  | '数字营销'
   | '销售'
-  | '客户服务'
+  | '内容写作'
+  
+  // 客户服务类
   | '客户支持'
+  
+  // 人力资源类
   | '人力资源'
+  | '招聘'
+  
+  // 财务法律类
   | '财务'
   | '法律'
-  | '写作'
-  | '内容创作'
-  | '质量保证'
-  | '测试'
+  | '会计'
+  
+  // 运营类
   | '运营'
   | '商务拓展'
   | '咨询'
   | '教育培训'
-  | '其他';
+  
+  // 其他
+  | '其他'
+  | '全部';
+
+// 工作类型
+export type WorkType = 'remote' | 'hybrid' | 'onsite';
+
+// 扩展的Job接口
+export interface EnhancedJob {
+  id: string;
+  title: string;
+  company: string;
+  location: {
+    chinese: string;
+    english: string;
+  };
+  description: string;
+  salary?: string;
+  jobType: 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship';
+  workType: {
+    type: WorkType;
+    chinese: string;
+    english: string;
+  };
+  category: {
+    standard: string;
+    chinese: string;
+    english: string;
+  };
+  source: string;
+  sourceUrl: string;
+  publishedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  status: 'active' | 'inactive' | 'deleted';
+  tags: string[];
+  requirements: string[];
+  benefits: string[];
+  applicationUrl: string;
+  isRemote: boolean;
+  experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
+  
+  // 新增字段
+  originalCategory?: string; // 原始分类
+  lastUpdated: string; // 最后更新时间
+}
+
+// 保持原有Job接口兼容性
+export interface Job {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  salary?: string;
+  jobType: 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship';
+  category: JobCategory;
+  source: string;
+  sourceUrl: string;
+  publishedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  status: 'active' | 'inactive' | 'deleted';
+  tags: string[];
+  requirements: string[];
+  benefits: string[];
+  applicationUrl: string;
+  isRemote: boolean;
+  experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
+  remoteLocationRestriction?: string;
+}
 
 export interface JobFilter {
   category?: JobCategory[];

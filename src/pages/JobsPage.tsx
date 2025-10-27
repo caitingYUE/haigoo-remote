@@ -118,17 +118,49 @@ const jobTypes = [
   { value: 'full-time', label: '全职' },
   { value: 'part-time', label: '兼职' },
   { value: 'contract', label: '合同工' },
-  { value: 'remote', label: '远程工作' }
+  { value: 'freelance', label: '自由职业' },
+  { value: 'internship', label: '实习' }
 ]
 
 const jobCategories = [
   { value: 'all', label: '全部岗位' },
+  { value: '软件开发', label: '软件开发' },
   { value: '前端开发', label: '前端开发' },
   { value: '后端开发', label: '后端开发' },
   { value: '全栈开发', label: '全栈开发' },
-  { value: 'UI设计', label: 'UI设计' },
-  { value: '产品经理', label: '产品经理' },
-  { value: '数据分析', label: '数据分析' }
+  { value: 'DevOps', label: 'DevOps' },
+  { value: '数据科学', label: '数据科学' },
+  { value: '数据分析', label: '数据分析' },
+  { value: '产品管理', label: '产品管理' },
+  { value: '项目管理', label: '项目管理' },
+  { value: 'UI/UX设计', label: 'UI/UX设计' },
+  { value: '平面设计', label: '平面设计' },
+  { value: '市场营销', label: '市场营销' },
+  { value: '数字营销', label: '数字营销' },
+  { value: '销售', label: '销售' },
+  { value: '客户服务', label: '客户服务' },
+  { value: '客户支持', label: '客户支持' },
+  { value: '人力资源', label: '人力资源' },
+  { value: '财务', label: '财务' },
+  { value: '法律', label: '法律' },
+  { value: '写作', label: '写作' },
+  { value: '内容创作', label: '内容创作' },
+  { value: '质量保证', label: '质量保证' },
+  { value: '测试', label: '测试' },
+  { value: '运营', label: '运营' },
+  { value: '商务拓展', label: '商务拓展' },
+  { value: '咨询', label: '咨询' },
+  { value: '教育培训', label: '教育培训' },
+  { value: '其他', label: '其他' }
+]
+
+const experienceLevels = [
+  { value: 'all', label: '全部经验' },
+  { value: 'Entry', label: '入门级' },
+  { value: 'Mid', label: '中级' },
+  { value: 'Senior', label: '高级' },
+  { value: 'Lead', label: '技术负责人' },
+  { value: 'Executive', label: '管理层' }
 ]
 
 const locations = [
@@ -137,7 +169,20 @@ const locations = [
   { value: '上海', label: '上海' },
   { value: '深圳', label: '深圳' },
   { value: '杭州', label: '杭州' },
-  { value: '全球远程', label: '全球远程' }
+  { value: '广州', label: '广州' },
+  { value: '成都', label: '成都' },
+  { value: '西安', label: '西安' },
+  { value: '南京', label: '南京' },
+  { value: '武汉', label: '武汉' },
+  { value: '苏州', label: '苏州' },
+  { value: 'Remote', label: '远程工作' },
+  { value: 'Worldwide', label: '全球远程' }
+]
+
+const remoteOptions = [
+  { value: 'all', label: '全部' },
+  { value: 'yes', label: '仅远程' },
+  { value: 'no', label: '非远程' }
 ]
 
 export default function JobsPage() {
@@ -148,7 +193,9 @@ export default function JobsPage() {
   const [filters, setFilters] = useState({
     type: 'all',
     category: 'all',
-    location: 'all'
+    location: 'all',
+    experience: 'all',
+    remote: 'all'
   })
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
@@ -170,9 +217,35 @@ export default function JobsPage() {
     const loadJobs = async () => {
       try {
         setLoading(true)
-        const rssJobs = await jobAggregator.getJobs()
-        const convertedJobs = rssJobs.map(convertRSSJobToPageJob)
-        setJobs(convertedJobs)
+        
+        // 等待一小段时间让jobAggregator初始化完成
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // 获取RSS岗位数据
+        const rssJobs = jobAggregator.getJobs()
+        console.log('获取到RSS岗位数据:', rssJobs.length, '个')
+        
+        if (rssJobs.length > 0) {
+          const convertedJobs = rssJobs.map(convertRSSJobToPageJob)
+          setJobs(convertedJobs)
+          console.log('转换后的岗位数据:', convertedJobs.length, '个')
+        } else {
+          // 如果没有RSS数据，尝试触发同步
+          console.log('没有找到RSS数据，尝试同步...')
+          await jobAggregator.syncAllJobs()
+          
+          // 同步后再次获取数据
+          const syncedJobs = jobAggregator.getJobs()
+          if (syncedJobs.length > 0) {
+            const convertedJobs = syncedJobs.map(convertRSSJobToPageJob)
+            setJobs(convertedJobs)
+            console.log('同步后获取到岗位数据:', convertedJobs.length, '个')
+          } else {
+            // 如果仍然没有数据，使用mock数据
+            console.log('同步后仍无数据，使用mock数据')
+            setJobs(mockJobs)
+          }
+        }
       } catch (error) {
         console.error('Failed to load jobs:', error)
         // 如果加载失败，使用mock数据作为后备
@@ -213,17 +286,39 @@ export default function JobsPage() {
 
   // 筛选逻辑
   const filteredJobs = jobs.filter(job => {
+    // 搜索匹配
     const matchesSearch = searchTerm === '' || 
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+      (job.skills && job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
     
-    const matchesType = filters.type === 'all' || job.type === filters.type
-    const matchesCategory = filters.category === 'all' || job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase()))
-    const matchesLocation = filters.location === 'all' || job.location.includes(filters.location)
+    // 工作类型匹配 - 统一使用RSS Job的jobType字段
+    const matchesType = filters.type === 'all' || 
+      (job as any).jobType?.toLowerCase() === filters.type.toLowerCase() || 
+      job.type === filters.type
     
-    return matchesSearch && matchesType && matchesCategory && matchesLocation
+    // 岗位分类匹配 - 使用RSS Job的category字段
+    const matchesCategory = filters.category === 'all' || 
+      (job as any).category === filters.category ||
+      (job.skills && job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase())))
+    
+    // 地点匹配 - 支持远程工作判断
+    const matchesLocation = filters.location === 'all' || 
+      job.location.includes(filters.location) ||
+      (filters.location === 'Remote' && ((job as any).isRemote || job.location.includes('远程'))) ||
+      (filters.location === 'Worldwide' && (job.location.includes('全球') || job.location.includes('远程')))
+    
+    // 经验等级匹配
+    const matchesExperience = filters.experience === 'all' || 
+      (job as any).experienceLevel === filters.experience
+    
+    // 远程工作匹配
+    const matchesRemote = filters.remote === 'all' || 
+      (filters.remote === 'yes' && ((job as any).isRemote || job.location.includes('远程'))) ||
+      (filters.remote === 'no' && !((job as any).isRemote || job.location.includes('远程')))
+    
+    return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote
   })
 
   const getTypeLabel = (type: string) => {
@@ -345,6 +440,46 @@ export default function JobsPage() {
                       </div>
                     </div>
 
+                    {/* 经验等级 */}
+                    <div className="mb-5">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">经验等级</label>
+                      <div className="space-y-2">
+                        {experienceLevels.map((level) => (
+                          <label key={level.value} className="flex items-center group cursor-pointer">
+                            <input
+                              type="radio"
+                              name="experience"
+                              value={level.value}
+                              checked={filters.experience === level.value}
+                              onChange={(e) => setFilters(prev => ({ ...prev, experience: e.target.value }))}
+                              className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
+                            />
+                            <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">{level.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 远程工作 */}
+                    <div className="mb-5">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">远程工作</label>
+                      <div className="space-y-2">
+                        {remoteOptions.map((option) => (
+                          <label key={option.value} className="flex items-center group cursor-pointer">
+                            <input
+                              type="radio"
+                              name="remote"
+                              value={option.value}
+                              checked={filters.remote === option.value}
+                              onChange={(e) => setFilters(prev => ({ ...prev, remote: e.target.value }))}
+                              className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
+                            />
+                            <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* 清除筛选按钮 */}
                     {activeFiltersCount > 0 && (
                       <button
@@ -352,7 +487,9 @@ export default function JobsPage() {
                           setFilters({
                             type: 'all',
                             category: 'all',
-                            location: 'all'
+                            location: 'all',
+                            experience: 'all',
+                            remote: 'all'
                           });
                         }}
                         className="w-full px-4 py-2.5 bg-gradient-to-r from-haigoo-primary to-haigoo-primary/90 text-white text-sm font-medium rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 transform"
