@@ -664,131 +664,190 @@ class RSSService {
   }
 
   /**
-   * 从标题或描述中提取远程地点限制
+   * 提取远程工作的地点限制
    */
   private extractRemoteLocationRestriction(title: string, description: string): string {
-    const text = `${title} ${description}`.toLowerCase();
+    const text = (title + ' ' + description).toLowerCase();
     
-    // 检查是否有地区限制 - 更精确的匹配
-    if (text.includes('us only') || text.includes('usa only') || text.includes('united states only') || 
-        text.includes('us citizens') || text.includes('american citizens') || text.includes('us residents') ||
-        text.includes('location: usa') || text.includes('location: us') || text.includes('remote location: usa') ||
-        text.includes('remote location: us') || text.includes('usa-based') || text.includes('us-based')) {
-      return '仅限美国';
-    }
-    
-    if (text.includes('eu only') || text.includes('europe only') || text.includes('european union') || 
-        text.includes('eu citizens') || text.includes('european citizens') || text.includes('location: eu') ||
-        text.includes('location: europe') || text.includes('remote location: eu') || text.includes('eu-based')) {
-      return '仅限欧盟';
-    }
-    
-    if (text.includes('uk only') || text.includes('united kingdom only') || text.includes('british citizens') ||
-        text.includes('location: uk') || text.includes('remote location: uk') || text.includes('uk-based')) {
-      return '仅限英国';
-    }
-    
-    if (text.includes('canada only') || text.includes('canadian citizens') || text.includes('canadian residents') ||
-        text.includes('location: canada') || text.includes('remote location: canada') || text.includes('canada-based')) {
-      return '仅限加拿大';
-    }
-    
-    if (text.includes('australia only') || text.includes('australian citizens') || text.includes('australian residents') ||
-        text.includes('location: australia') || text.includes('remote location: australia') || text.includes('australia-based')) {
-      return '仅限澳大利亚';
-    }
-    
-    if (text.includes('brazil only') || text.includes('brazilian citizens') || text.includes('brazilian residents') ||
-        text.includes('location: brazil') || text.includes('remote location: brazil') || text.includes('brazil-based')) {
-      return '仅限巴西';
-    }
-    
-    if (text.includes('india only') || text.includes('indian citizens') || text.includes('indian residents') ||
-        text.includes('location: india') || text.includes('remote location: india') || text.includes('india-based')) {
-      return '仅限印度';
-    }
-    
-    if (text.includes('germany only') || text.includes('german citizens') || text.includes('german residents') ||
-        text.includes('location: germany') || text.includes('remote location: germany') || text.includes('germany-based')) {
-      return '仅限德国';
-    }
-    
-    if (text.includes('france only') || text.includes('french citizens') || text.includes('french residents') ||
-        text.includes('location: france') || text.includes('remote location: france') || text.includes('france-based')) {
-      return '仅限法国';
-    }
-    
-    if (text.includes('japan only') || text.includes('japanese citizens') || text.includes('japanese residents') ||
-        text.includes('location: japan') || text.includes('remote location: japan') || text.includes('japan-based')) {
-      return '仅限日本';
-    }
-
-    // 检查具体国家/地区的更多模式
-    const locationPatterns = [
-      { pattern: /remote location:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
-      { pattern: /location:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
-      { pattern: /based in:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
-      { pattern: /must be located in:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
-      { pattern: /candidates from:\s*([^,\n]+)/i, transform: (match: string) => `仅限${match.trim()}` },
-      { pattern: /timezone:\s*([^,\n]+)/i, transform: (match: string) => `${match.trim()}时区` },
-      { pattern: /time zone:\s*([^,\n]+)/i, transform: (match: string) => `${match.trim()}时区` }
+    // 优先检查明确的地理限制表述
+    const explicitRestrictions = [
+      // 美国相关
+      { patterns: ['us only', 'usa only', 'united states only', 'us citizens only', 'us residents only', 'american citizens only', 'must be us citizen', 'must be in us', 'us-based only', 'usa-based only'], result: '仅限美国' },
+      
+      // 欧盟相关
+      { patterns: ['eu only', 'europe only', 'european union only', 'eu citizens only', 'eu residents only', 'european citizens only', 'must be eu citizen', 'must be in eu', 'eu-based only', 'europe-based only'], result: '仅限欧盟' },
+      
+      // 英国相关
+      { patterns: ['uk only', 'united kingdom only', 'britain only', 'uk citizens only', 'uk residents only', 'british citizens only', 'must be uk citizen', 'must be in uk', 'uk-based only'], result: '仅限英国' },
+      
+      // 加拿大相关
+      { patterns: ['canada only', 'canadian citizens only', 'canadian residents only', 'must be canadian citizen', 'must be in canada', 'canada-based only'], result: '仅限加拿大' },
+      
+      // 澳大利亚相关
+      { patterns: ['australia only', 'australian citizens only', 'australian residents only', 'must be australian citizen', 'must be in australia', 'australia-based only'], result: '仅限澳大利亚' },
+      
+      // 德国相关
+      { patterns: ['germany only', 'german citizens only', 'german residents only', 'must be in germany', 'germany-based only'], result: '仅限德国' },
+      
+      // 法国相关
+      { patterns: ['france only', 'french citizens only', 'french residents only', 'must be in france', 'france-based only'], result: '仅限法国' },
+      
+      // 荷兰相关
+      { patterns: ['netherlands only', 'dutch citizens only', 'dutch residents only', 'must be in netherlands', 'netherlands-based only'], result: '仅限荷兰' },
+      
+      // 日本相关
+      { patterns: ['japan only', 'japanese citizens only', 'japanese residents only', 'must be in japan', 'japan-based only'], result: '仅限日本' },
+      
+      // 新加坡相关
+      { patterns: ['singapore only', 'singaporean citizens only', 'singaporean residents only', 'must be in singapore', 'singapore-based only'], result: '仅限新加坡' },
+      
+      // 印度相关
+      { patterns: ['india only', 'indian citizens only', 'indian residents only', 'must be in india', 'india-based only'], result: '仅限印度' },
+      
+      // 巴西相关
+      { patterns: ['brazil only', 'brazilian citizens only', 'brazilian residents only', 'must be in brazil', 'brazil-based only'], result: '仅限巴西' },
+      
+      // 墨西哥相关
+      { patterns: ['mexico only', 'mexican citizens only', 'mexican residents only', 'must be in mexico', 'mexico-based only'], result: '仅限墨西哥' },
+      
+      // 全球远程
+      { patterns: ['worldwide', 'global remote', 'anywhere in the world', 'no location restriction', 'work from anywhere', 'remote worldwide', 'globally remote'], result: '全球远程' }
     ];
 
-    for (const { pattern, transform } of locationPatterns) {
+    // 检查明确的限制表述
+    for (const restriction of explicitRestrictions) {
+      for (const pattern of restriction.patterns) {
+        if (text.includes(pattern)) {
+          return restriction.result;
+        }
+      }
+    }
+
+    // 检查更复杂的地理限制模式
+    const advancedPatterns = [
+      // 地点限制模式
+      { pattern: /(?:remote )?(?:location|position|job|work)(?:\s+is)?\s*(?:restricted to|limited to|only in|exclusively in)\s*([^,.\n]+)/i, prefix: '仅限' },
+      { pattern: /(?:must|need|required to)\s+(?:be\s+)?(?:located|based|residing)\s+in\s+([^,.\n]+)/i, prefix: '仅限' },
+      { pattern: /(?:candidates|applicants)\s+(?:must\s+)?(?:be\s+)?(?:from|in|based in)\s+([^,.\n]+)/i, prefix: '仅限' },
+      { pattern: /(?:only\s+)?(?:accepting|considering)\s+(?:candidates|applicants)\s+(?:from|in)\s+([^,.\n]+)/i, prefix: '仅限' },
+      { pattern: /(?:remote\s+)?(?:work|position)\s+(?:available|open)\s+(?:only\s+)?(?:to|for)\s+(?:candidates\s+)?(?:from|in)\s+([^,.\n]+)/i, prefix: '仅限' },
+      
+      // 时区限制模式
+      { pattern: /(?:must|need|required to)\s+(?:be\s+)?(?:available|work)\s+(?:in|during)\s+([^,.\n]*(?:timezone|time zone|tz))/i, prefix: '' },
+      { pattern: /(?:working|work)\s+hours?\s*:\s*([^,.\n]*(?:timezone|time zone|tz|est|pst|cet|utc|gmt))/i, prefix: '' },
+      
+      // 特定地区组合
+      { pattern: /(?:us|usa|united states)\s*(?:and|or|\+|\/)\s*(?:canada|canadian)/i, result: '北美地区' },
+      { pattern: /(?:europe|eu|european union)\s*(?:and|or|\+|\/)\s*(?:uk|united kingdom)/i, result: '欧洲地区' },
+      { pattern: /(?:asia|asian)\s+(?:countries|region|timezone)/i, result: '亚洲地区' },
+      { pattern: /(?:latin america|south america|latam)/i, result: '拉美地区' }
+    ];
+
+    for (const { pattern, prefix, result } of advancedPatterns) {
       const match = text.match(pattern);
-      if (match && match[1]) {
-        const location = match[1].trim();
-        // 过滤掉一些通用词汇
-        if (!['remote', 'anywhere', 'worldwide', 'global', 'any'].includes(location.toLowerCase())) {
-          return transform(location);
+      if (match) {
+        if (result) {
+          return result;
+        }
+        
+        const location = match[1]?.trim();
+        if (location && !this.isGenericLocation(location)) {
+          // 标准化地名
+          const standardized = this.standardizeLocationName(location);
+          return prefix ? `${prefix}${standardized}` : standardized;
         }
       }
     }
     
-    // 检查时区限制
-    if (text.includes('est timezone') || text.includes('eastern time') || text.includes('et timezone') ||
-        text.includes('eastern standard time') || text.includes('eastern daylight time')) {
-      return '东部时区';
-    }
-    
-    if (text.includes('pst timezone') || text.includes('pacific time') || text.includes('pt timezone') ||
-        text.includes('pacific standard time') || text.includes('pacific daylight time')) {
-      return '太平洋时区';
-    }
-    
-    if (text.includes('cet timezone') || text.includes('central european time') ||
-        text.includes('cest timezone') || text.includes('central european summer time')) {
-      return '中欧时区';
-    }
-    
-    if (text.includes('utc timezone') || text.includes('gmt timezone') || text.includes('coordinated universal time')) {
-      return 'UTC时区';
-    }
+    // 检查时区限制（更精确的匹配）
+    const timezonePatterns = [
+      { patterns: ['est', 'eastern time', 'eastern standard time', 'eastern daylight time', 'et timezone'], result: '东部时区' },
+      { patterns: ['pst', 'pacific time', 'pacific standard time', 'pacific daylight time', 'pt timezone'], result: '太平洋时区' },
+      { patterns: ['cet', 'central european time', 'cest', 'central european summer time'], result: '中欧时区' },
+      { patterns: ['utc', 'gmt', 'coordinated universal time', 'greenwich mean time'], result: 'UTC时区' },
+      { patterns: ['cst', 'central standard time', 'central time'], result: '中部时区' },
+      { patterns: ['mst', 'mountain standard time', 'mountain time'], result: '山地时区' }
+    ];
 
-    if (text.includes('cst timezone') || text.includes('central standard time') || text.includes('central time')) {
-      return '中部时区';
-    }
-
-    if (text.includes('mst timezone') || text.includes('mountain standard time') || text.includes('mountain time')) {
-      return '山地时区';
+    for (const { patterns, result } of timezonePatterns) {
+      for (const pattern of patterns) {
+        if (text.includes(pattern)) {
+          return result;
+        }
+      }
     }
     
-    // 检查全球远程
-    if (text.includes('worldwide') || text.includes('global') || text.includes('anywhere') || 
-        text.includes('any location') || text.includes('no location restriction') || 
-        text.includes('remote worldwide') || text.includes('work from anywhere') ||
-        text.includes('location: worldwide') || text.includes('location: global') ||
-        text.includes('remote location: worldwide') || text.includes('remote location: global')) {
+    // 如果没有找到特定限制，但明确提到了远程工作，返回全球远程
+    if (this.isRemoteJob(text) && !this.hasLocationRestriction(text)) {
       return '全球远程';
     }
     
-    // 如果没有找到特定限制，检查是否明确提到了远程工作
-    if (text.includes('remote') || text.includes('work from home') || text.includes('telecommute')) {
-      return '全球远程';
-    }
-    
-    // 默认返回空字符串，让前端决定如何显示
+    // 默认返回空字符串
     return '';
+  }
+
+  /**
+   * 检查是否为通用地点词汇
+   */
+  private isGenericLocation(location: string): boolean {
+    const genericTerms = [
+      'remote', 'anywhere', 'worldwide', 'global', 'any', 'flexible', 
+      'distributed', 'virtual', 'online', 'digital', 'internet'
+    ];
+    return genericTerms.some(term => location.toLowerCase().includes(term));
+  }
+
+  /**
+   * 标准化地名
+   */
+  private standardizeLocationName(location: string): string {
+    const locationMap: { [key: string]: string } = {
+      'us': '美国',
+      'usa': '美国', 
+      'united states': '美国',
+      'america': '美国',
+      'eu': '欧盟',
+      'europe': '欧洲',
+      'european union': '欧盟',
+      'uk': '英国',
+      'united kingdom': '英国',
+      'britain': '英国',
+      'canada': '加拿大',
+      'australia': '澳大利亚',
+      'germany': '德国',
+      'france': '法国',
+      'netherlands': '荷兰',
+      'japan': '日本',
+      'singapore': '新加坡',
+      'india': '印度',
+      'brazil': '巴西',
+      'mexico': '墨西哥'
+    };
+
+    const normalized = location.toLowerCase().trim();
+    return locationMap[normalized] || location.trim();
+  }
+
+  /**
+   * 检查是否为远程工作
+   */
+  private isRemoteJob(text: string): boolean {
+    const remoteKeywords = [
+      'remote', 'work from home', 'wfh', 'telecommute', 'distributed', 
+      'virtual', 'home-based', 'location independent'
+    ];
+    return remoteKeywords.some(keyword => text.includes(keyword));
+  }
+
+  /**
+   * 检查是否有地点限制
+   */
+  private hasLocationRestriction(text: string): boolean {
+    const restrictionKeywords = [
+      'only', 'must be', 'required to be', 'based in', 'located in', 
+      'residents', 'citizens', 'timezone', 'time zone'
+    ];
+    return restrictionKeywords.some(keyword => text.includes(keyword));
   }
 
   /**

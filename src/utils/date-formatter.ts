@@ -25,17 +25,12 @@ export class DateFormatter {
           const diffMinutes = Math.floor(diffMs / (1000 * 60));
           return diffMinutes <= 0 ? '刚刚' : `${diffMinutes}分钟前`;
         }
-        return `${diffHours}小时前`;
+        return `今天`;
       }
       
       // 昨天
       if (diffDays === 1) {
         return '昨天';
-      }
-      
-      // 前天
-      if (diffDays === 2) {
-        return '前天';
       }
       
       // 3天以前用具体日期

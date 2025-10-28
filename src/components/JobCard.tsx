@@ -76,26 +76,26 @@ export default function JobCard({ job }: JobCardProps) {
               </span>
             </div>
             
-            {/* Job Details - 水平排列 */}
-            <div className="flex items-center gap-4 text-gray-500 text-sm">
+            {/* Job Details - 响应式布局 */}
+            <div className="flex flex-wrap items-center gap-3 text-gray-500 text-sm">
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-1" />
-                <span>{job.location}</span>
+                <span className="break-words">{job.location}</span>
               </div>
               {job.remoteLocationRestriction && (
                 <div className="flex items-center">
-                  <span className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded-md">
+                  <span className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded-md break-words max-w-[200px]">
                     远程: {job.remoteLocationRestriction}
                   </span>
                 </div>
               )}
               <div className="flex items-center">
                 <DollarSign className="w-4 h-4 mr-1" />
-                <span>{formatSalary(job.salary)}</span>
+                <span className="break-words">{formatSalary(job.salary)}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="w-4 h-4 mr-1" />
-                <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
+                <span className="whitespace-nowrap">{DateFormatter.formatPublishTime(job.publishedAt)}</span>
               </div>
             </div>
             

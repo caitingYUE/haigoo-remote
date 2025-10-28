@@ -98,7 +98,7 @@ class AIJobParser {
   "location": "工作地点（如果是远程工作，请标注具体的地理限制，如'美国远程'、'全球远程'等）",
   "jobType": "工作类型（full-time/part-time/contract/freelance/internship之一）",
   "experienceLevel": "经验等级（Entry/Mid/Senior/Lead/Executive之一）",
-  "remoteLocationRestriction": "远程工作的地理限制（如'仅限美国'、'欧盟国家'、'全球'等，如果不是远程工作则为null）",
+  "remoteLocationRestriction": "远程工作的地理限制（请仔细分析职位描述中的地理限制信息，如'仅限美国'、'欧盟国家'、'全球'等，如果不是远程工作则为null）",
   "salary": "薪资信息（如果有的话，保持原格式）",
   "tags": ["技能标签数组，提取3-8个关键技能"],
   "requirements": ["职位要求数组，提取3-6个主要要求"],
@@ -115,6 +115,15 @@ class AIJobParser {
 6. 技能标签要提取最相关的技术和技能
 7. 要求和福利要简洁明了
 8. 分类要准确匹配预定义的类别
+9. **重要：对于remoteLocationRestriction字段，请特别仔细分析职位描述中的地理限制信息：**
+   - 如果明确提到"US only"、"USA only"、"US citizens only"等，返回"仅限美国"
+   - 如果提到"EU only"、"Europe only"、"EU citizens only"等，返回"仅限欧盟"
+   - 如果提到"UK only"、"British citizens only"等，返回"仅限英国"
+   - 如果提到"Canada only"、"Canadian citizens only"等，返回"仅限加拿大"
+   - 如果提到特定时区要求如"EST timezone"、"Pacific time"等，返回相应时区信息
+   - 如果提到"worldwide"、"global"、"anywhere"等，返回"全球远程"
+   - 如果没有明确的地理限制但是远程工作，返回"全球远程"
+   - 如果不是远程工作，返回null
 
 请只返回JSON格式的结果，不要包含其他文字说明。
 `;
