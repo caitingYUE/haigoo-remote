@@ -68,6 +68,17 @@ const AdminDashboardPage: React.FC = () => {
     url: '',
     category: ''
   });
+  
+  // 新增状态
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [sourceToDelete, setSourceToDelete] = useState<RSSSource | null>(null);
+  const [selectedSources, setSelectedSources] = useState<number[]>([]);
+  const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
+  const [batchRSSForms, setBatchRSSForms] = useState<Array<{
+    name: string;
+    url: string;
+    category: string;
+  }>>([{ name: '', url: '', category: '' }]);
   const [syncProgress, setSyncProgress] = useState<{
     total: number;
     completed: number;
@@ -265,22 +276,115 @@ const AdminDashboardPage: React.FC = () => {
     setShowRSSForm(true);
   };
 
-  const handleDeleteRSSSource = (sourceToDelete: RSSSource) => {
-    if (confirm(`确定要删除RSS源 "${sourceToDelete.name}" 吗？`)) {
-      try {
-        const sourceIndex = rssSources.findIndex(s => 
-          s.name === sourceToDelete.name && 
-          s.category === sourceToDelete.category && 
-          s.url === sourceToDelete.url
-        );
-        if (sourceIndex !== -1) {
-          rssService.deleteRSSSource(sourceIndex);
-          const updatedSources = rssService.getRSSSources();
-          setRssSources(updatedSources);
-        }
-      } catch (error) {
-        alert(`删除失败: ${error instanceof Error ? error.message : '未知错误'}`);
+  const handleDeleteRSSSource = (source: RSSSource) => {
+    setSourceToDelete(source);
+    setShowDeleteConfirm(true);
+  };
+
+  // 确认删除RSS源
+  const confirmDeleteRSSSource = async () => {
+    if (!sourceToDelete) return;
+    
+    try {
+      const sourceIndex = rssSources.findIndex(s => 
+        s.name === sourceToDelete.name && 
+        s.category === sourceToDelete.category && 
+        s.url === sourceToDelete.url
+      );
+      if (sourceIndex !== -1) {
+        rssService.deleteRSSSource(sourceIndex);
+        const updatedSources = rssService.getRSSSources();
+        setRssSources(updatedSources);
       }
+      setShowDeleteConfirm(false);
+      setSourceToDelete(null);
+    } catch (error) {
+      alert(`删除失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  };
+
+  // 取消删除
+  const cancelDeleteRSSSource = () => {
+    setShowDeleteConfirm(false);
+    setSourceToDelete(null);
+  };
+
+  // 批量删除相关函数
+  const handleSelectSource = (index: number) => {
+    setSelectedSources(prev => 
+      prev.includes(index) 
+        ? prev.filter(i => i !== index)
+        : [...prev, index]
+    );
+  };
+
+  const handleSelectAllSources = () => {
+    if (selectedSources.length === rssSources.length) {
+      setSelectedSources([]);
+    } else {
+      setSelectedSources(rssSources.map((_, index) => index));
+    }
+  };
+
+  const handleBatchDeleteRSS = () => {
+    if (selectedSources.length === 0) return;
+    setShowBatchDeleteConfirm(true);
+  };
+
+  const confirmBatchDelete = async () => {
+    try {
+      // 按索引从大到小排序，避免删除时索引变化
+      const sortedIndices = selectedSources.sort((a, b) => b - a);
+      for (const index of sortedIndices) {
+        rssService.deleteRSSSource(index);
+      }
+      const updatedSources = rssService.getRSSSources();
+      setRssSources(updatedSources);
+      setSelectedSources([]);
+      setShowBatchDeleteConfirm(false);
+    } catch (error) {
+      alert(`批量删除失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    }
+  };
+
+  const cancelBatchDelete = () => {
+    setShowBatchDeleteConfirm(false);
+  };
+
+  // 批量添加相关函数
+  const addBatchRSSForm = () => {
+    setBatchRSSForms(prev => [...prev, { name: '', url: '', category: '' }]);
+  };
+
+  const removeBatchRSSForm = (index: number) => {
+    if (batchRSSForms.length > 1) {
+      setBatchRSSForms(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateBatchRSSForm = (index: number, field: string, value: string) => {
+    setBatchRSSForms(prev => prev.map((form, i) => 
+      i === index ? { ...form, [field]: value } : form
+    ));
+  };
+
+  const handleBatchSaveRSSSource = async () => {
+    try {
+      for (const formData of batchRSSForms) {
+        if (formData.name && formData.url && formData.category) {
+          rssService.addRSSSource({
+            name: formData.name,
+            url: formData.url,
+            category: formData.category
+          });
+        }
+      }
+      const updatedSources = rssService.getRSSSources();
+      setRssSources(updatedSources);
+      setBatchRSSForms([{ name: '', url: '', category: '' }]);
+      setShowRSSForm(false);
+    } catch (error) {
+      alert(`批量保存RSS源失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 
@@ -608,14 +712,46 @@ const AdminDashboardPage: React.FC = () => {
               </div>
             </div>
             <div className="p-6">
+              {/* 批量操作工具栏 */}
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedSources.length === rssSources.length && rssSources.length > 0}
+                    onChange={handleSelectAllSources}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-600">
+                    {selectedSources.length > 0 ? `已选择 ${selectedSources.length} 个` : '全选'}
+                  </span>
+                </div>
+                {selectedSources.length > 0 && (
+                  <button
+                    onClick={handleBatchDeleteRSS}
+                    className="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    批量删除
+                  </button>
+                )}
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                 {rssSources.map((source, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-gray-900">{source.name}</h4>
-                        <p className="text-xs text-gray-600 mt-1">{source.category}</p>
-                        <p className="text-xs text-gray-500 mt-2 break-all">{source.url}</p>
+                      <div className="flex items-start space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedSources.includes(index)}
+                          onChange={() => handleSelectSource(index)}
+                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900">{source.name}</h4>
+                          <p className="text-xs text-gray-600 mt-1">{source.category}</p>
+                          <p className="text-xs text-gray-500 mt-2 break-all">{source.url}</p>
+                        </div>
                       </div>
                       <div className="ml-2 flex flex-col space-y-2">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -649,11 +785,11 @@ const AdminDashboardPage: React.FC = () => {
         {/* RSS源添加/编辑表单 */}
         {showRSSForm && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white max-h-[80vh] overflow-y-auto">
               <div className="mt-3">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium text-gray-900">
-                    {editingRSSSource ? '编辑RSS源' : '添加RSS源'}
+                    {editingRSSSource ? '编辑RSS源' : '批量添加RSS源'}
                   </h3>
                   <button
                     onClick={handleCancelRSSForm}
@@ -663,46 +799,123 @@ const AdminDashboardPage: React.FC = () => {
                   </button>
                 </div>
                 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      源名称
-                    </label>
-                    <input
-                      type="text"
-                      value={rssFormData.name}
-                      onChange={(e) => setRssFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="例如: WeWorkRemotely"
-                    />
+                {/* 批量添加模式 */}
+                {!editingRSSSource && (
+                  <div className="space-y-4">
+                    {batchRSSForms.map((form, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="text-sm font-medium text-gray-700">RSS源 {index + 1}</h4>
+                          <div className="flex space-x-2">
+                            {index === batchRSSForms.length - 1 && (
+                              <button
+                                onClick={addBatchRSSForm}
+                                className="p-1 text-green-600 hover:text-green-800"
+                                title="添加更多"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            )}
+                            {batchRSSForms.length > 1 && (
+                              <button
+                                onClick={() => removeBatchRSSForm(index)}
+                                className="p-1 text-red-600 hover:text-red-800"
+                                title="删除"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              源名称
+                            </label>
+                            <input
+                              type="text"
+                              value={form.name}
+                              onChange={(e) => updateBatchRSSForm(index, 'name', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="例如: WeWorkRemotely"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              分类
+                            </label>
+                            <input
+                              type="text"
+                              value={form.category}
+                              onChange={(e) => updateBatchRSSForm(index, 'category', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="例如: 全栈开发"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              RSS URL
+                            </label>
+                            <input
+                              type="url"
+                              value={form.url}
+                              onChange={(e) => updateBatchRSSForm(index, 'url', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="https://example.com/feed.rss"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      分类
-                    </label>
-                    <input
-                      type="text"
-                      value={rssFormData.category}
-                      onChange={(e) => setRssFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="例如: 全栈开发"
-                    />
+                )}
+                
+                {/* 单个编辑模式 */}
+                {editingRSSSource && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        源名称
+                      </label>
+                      <input
+                        type="text"
+                        value={rssFormData.name}
+                        onChange={(e) => setRssFormData(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="例如: WeWorkRemotely"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        分类
+                      </label>
+                      <input
+                        type="text"
+                        value={rssFormData.category}
+                        onChange={(e) => setRssFormData(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="例如: 全栈开发"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        RSS URL
+                      </label>
+                      <input
+                        type="url"
+                        value={rssFormData.url}
+                        onChange={(e) => setRssFormData(prev => ({ ...prev, url: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://example.com/feed.rss"
+                      />
+                    </div>
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      RSS URL
-                    </label>
-                    <input
-                      type="url"
-                      value={rssFormData.url}
-                      onChange={(e) => setRssFormData(prev => ({ ...prev, url: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="https://example.com/feed.rss"
-                    />
-                  </div>
-                </div>
+                )}
                 
                 <div className="flex justify-end space-x-3 mt-6">
                   <button
@@ -712,11 +925,11 @@ const AdminDashboardPage: React.FC = () => {
                     取消
                   </button>
                   <button
-                    onClick={handleSaveRSSSource}
+                    onClick={editingRSSSource ? handleSaveRSSSource : handleBatchSaveRSSSource}
                     className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    保存
+                    {editingRSSSource ? '保存' : '批量保存'}
                   </button>
                 </div>
               </div>
@@ -1361,9 +1574,77 @@ const AdminDashboardPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
-        </div>
+        )}
       </div>
+
+      {/* 删除确认弹窗 */}
+      {showDeleteConfirm && sourceToDelete && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mt-4">确认删除RSS源</h3>
+              <div className="mt-2 px-7 py-3">
+                <p className="text-sm text-gray-500">
+                  确定要删除RSS源 "<span className="font-medium">{sourceToDelete.name}</span>" 吗？
+                </p>
+                <p className="text-xs text-gray-400 mt-1">此操作无法撤销</p>
+              </div>
+              <div className="flex justify-center space-x-3 mt-4">
+                <button
+                  onClick={cancelDeleteRSSSource}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={confirmDeleteRSSSource}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  确认删除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 批量删除确认弹窗 */}
+      {showBatchDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mt-4">确认批量删除</h3>
+              <div className="mt-2 px-7 py-3">
+                <p className="text-sm text-gray-500">
+                  确定要删除选中的 <span className="font-medium">{selectedSources.length}</span> 个RSS源吗？
+                </p>
+                <p className="text-xs text-gray-400 mt-1">此操作无法撤销</p>
+              </div>
+              <div className="flex justify-center space-x-3 mt-4">
+                <button
+                  onClick={cancelBatchDelete}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={confirmBatchDelete}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                >
+                  确认删除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
     </div>
   );
 };
