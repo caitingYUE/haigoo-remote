@@ -1,9 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Search, Filter, ChevronDown, MapPin, Clock, DollarSign, Users, Briefcase, TrendingUp, Star, Bookmark, Building, Calendar } from 'lucide-react'
+import { Search, Filter, ChevronDown, MapPin, Clock, DollarSign, Users, Briefcase, TrendingUp, Star, Bookmark, Building, Calendar, AlertTriangle } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import JobCard from '../components/JobCard'
 import JobFilter from '../components/JobFilter'
 import JobDetailModal from '../components/JobDetailModal'
+import SearchBar from '../components/SearchBar'
+import FilterDropdown from '../components/FilterDropdown'
+import RSSStatusIndicator from '../components/RSSStatusIndicator'
+import NotificationProvider from '../components/NotificationSystem'
 import { Job, JobFilter as JobFilterType } from '../types'
 
 // Import company logos
@@ -74,374 +78,337 @@ export default function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
   
-  const handleApply = (jobId: string) => {
-    console.log('Apply button clicked for job:', jobId)
-    const job = jobs.find(j => j.id === jobId) || null
-    // 保存首页当前快照，返回时直接恢复，避免背景闪烁
-    try {
-      sessionStorage.setItem('HOME_PAGE_SNAPSHOT', JSON.stringify({
-        jobs,
-        filters,
-        savedJobs: Array.from(savedJobs),
-        selectedJob: job,
-        isJobDetailOpen: true
-      }))
-    } catch (e) {
-      console.warn('Failed to save home snapshot:', e)
-    }
-    console.log('Navigating to:', `/job/${jobId}/apply`)
-    navigate(`/job/${jobId}/apply`, {
-      state: {
-        job: job || undefined,
-        previousPath: '/',
-        returnToModal: true
-      }
-    })
-  }
-
+  // State management
   const [jobs, setJobs] = useState<Job[]>([])
-  const [filters, setFilters] = useState<JobFilterType>({
-    search: '',
-    type: '',
-    salaryMin: 0,
-    salaryMax: 0,
-    skills: []
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filters, setFilters] = useState({
+    jobType: 'all',
+    salary: 'all',
+    location: 'all'
   })
-  const [isLoading, setIsLoading] = useState(true)
-  const [sortBy, setSortBy] = useState('relevance')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
 
-  // 根据 location.state 初始化模态与选中岗位，避免首次渲染闪烁
-  const initialNavState = location.state as any
-  const [selectedJob, setSelectedJob] = useState<Job | null>(initialNavState?.job ?? null)
-  const [isJobDetailOpen, setIsJobDetailOpen] = useState<boolean>(Boolean(initialNavState?.reopenJobDetail && initialNavState?.job))
-  const [currentJobIndex, setCurrentJobIndex] = useState(0)
+  // Filter options
+  const jobTypeOptions = [
+    { value: 'all', label: '全部类型' },
+    { value: 'full-time', label: '全职', count: 45 },
+    { value: 'contract', label: '合同工', count: 23 },
+    { value: 'part-time', label: '兼职', count: 12 }
+  ]
 
-  // 处理从AI优化页面返回时重新打开模态框（后备：仅有jobId时）
+  const salaryOptions = [
+    { value: 'all', label: '全部薪资' },
+    { value: '0-50000', label: '$0 - $50K', count: 15 },
+    { value: '50000-80000', label: '$50K - $80K', count: 32 },
+    { value: '80000-120000', label: '$80K - $120K', count: 28 },
+    { value: '120000+', label: '$120K+', count: 18 }
+  ]
+
+  const locationOptions = [
+    { value: 'all', label: '全部地区' },
+    { value: 'remote-global', label: '全球远程', count: 56 },
+    { value: 'remote-us', label: '美国远程', count: 34 },
+    { value: 'remote-eu', label: '欧洲远程', count: 23 },
+    { value: 'remote-asia', label: '亚洲远程', count: 12 }
+  ]
+
+  // Load jobs data
   useEffect(() => {
-    const state = location.state as any
-    // 优先：若存在快照，直接恢复，避免背景刷新
-    try {
-      const snapStr = sessionStorage.getItem('HOME_PAGE_SNAPSHOT')
-      if (state?.reopenJobDetail && snapStr) {
-        const snap = JSON.parse(snapStr)
-        if (Array.isArray(snap.jobs)) setJobs(snap.jobs)
-        if (Array.isArray(snap.savedJobs)) setSavedJobs(new Set(snap.savedJobs))
-        setSelectedJob(snap.selectedJob || state.job || null)
-        setIsJobDetailOpen(true)
-        setIsLoading(false)
-        sessionStorage.removeItem('HOME_PAGE_SNAPSHOT')
-        navigate(location.pathname, { replace: true, state: {} })
-        return
-      }
-    } catch (e) {
-      console.warn('Failed to restore home snapshot:', e)
-    }
-
-    if (!isJobDetailOpen && state?.reopenJobDetail && state?.jobId && !state?.job) {
-      const job = jobs.find(j => j.id === state.jobId)
-      if (job) {
-        setSelectedJob(job)
-        setIsJobDetailOpen(true)
-        // 清除状态，避免重复触发
-        navigate(location.pathname, { replace: true, state: {} })
+    const loadJobs = async () => {
+      try {
+        setLoading(true)
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        setJobs(mockJobs)
+        setError(null)
+      } catch (err) {
+        setError('加载职位信息失败，请稍后重试')
+      } finally {
+        setLoading(false)
       }
     }
-    // 如果传递了完整job对象，初始化后立即清除state，避免重复打开
-    if (state?.job && state?.reopenJobDetail) {
-      navigate(location.pathname, { replace: true, state: {} })
-    }
-  }, [location.state, jobs, navigate, location.pathname, isJobDetailOpen])
 
-  // Memoize filtered jobs for better performance
-  const filteredJobs = useMemo(() => {
-    return jobs.filter(job => {
-      const matchesSearch = !filters.search || 
-        job.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        job.company.toLowerCase().includes(filters.search.toLowerCase()) ||
-        job.skills.some((skill: string) => skill.toLowerCase().includes(filters.search.toLowerCase()))
-      
-      const matchesType = !filters.type || job.type === filters.type
-      
-      const matchesSalary = (!filters.salaryMin || job.salary.min >= filters.salaryMin) &&
-        (!filters.salaryMax || job.salary.max <= filters.salaryMax)
-      
-      const matchesSkills = filters.skills.length === 0 || 
-        filters.skills.some((skill: string) => job.skills.some((jobSkill: string) => 
-          jobSkill.toLowerCase().includes(skill.toLowerCase())
-        ))
-      
-      return matchesSearch && matchesType && matchesSalary && matchesSkills
-    })
-  }, [jobs, filters])
-
-  useEffect(() => {
-    // Simulate API call with faster loading
-    const timer = setTimeout(() => {
-      setJobs(mockJobs)
-      setIsLoading(false)
-    }, 500) // Reduced from 1000ms to 500ms
-
-    return () => clearTimeout(timer)
+    loadJobs()
   }, [])
 
-  const toggleSaveJob = (jobId: string) => {
-     setSavedJobs(prev => {
-       const newSet = new Set(prev)
-       if (newSet.has(jobId)) {
-         newSet.delete(jobId)
-       } else {
-         newSet.add(jobId)
-       }
-       return newSet
-     })
-   }
+  // Filter jobs based on search and filters
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(job => {
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase()
+        const matchesSearch = 
+          job.title.toLowerCase().includes(searchLower) ||
+          job.company.toLowerCase().includes(searchLower) ||
+          job.skills.some(skill => skill.toLowerCase().includes(searchLower)) ||
+          job.description.toLowerCase().includes(searchLower)
+        
+        if (!matchesSearch) return false
+      }
 
-   const openJobDetail = (job: Job) => {
-     console.log('Opening job detail for:', job.title, job.id)
-     const jobIndex = filteredJobs.findIndex(j => j.id === job.id)
-     setCurrentJobIndex(jobIndex >= 0 ? jobIndex : 0)
-     setSelectedJob(job)
-     setIsJobDetailOpen(true)
-   }
+      // Job type filter
+      if (filters.jobType !== 'all' && job.type !== filters.jobType) {
+        return false
+      }
 
-   const closeJobDetail = () => {
-     setIsJobDetailOpen(false)
-     setSelectedJob(null)
-   }
+      // Salary filter
+      if (filters.salary !== 'all') {
+        const [min, max] = filters.salary.split('-').map(s => s.replace('+', '').replace('$', '').replace('K', '000'))
+        const jobSalaryMin = job.salary?.min || 0
+        const jobSalaryMax = job.salary?.max || 0
+        
+        if (filters.salary.includes('+')) {
+          if (jobSalaryMin < parseInt(min)) return false
+        } else {
+          if (jobSalaryMin < parseInt(min) || jobSalaryMax > parseInt(max)) return false
+        }
+      }
 
-   const handleNavigateJob = (direction: 'prev' | 'next') => {
-     if (direction === 'prev' && currentJobIndex > 0) {
-       const newIndex = currentJobIndex - 1
-       setCurrentJobIndex(newIndex)
-       setSelectedJob(filteredJobs[newIndex])
-     } else if (direction === 'next' && currentJobIndex < filteredJobs.length - 1) {
-       const newIndex = currentJobIndex + 1
-       setCurrentJobIndex(newIndex)
-       setSelectedJob(filteredJobs[newIndex])
-     }
-   }
+      // Location filter
+      if (filters.location !== 'all') {
+        const locationMap: { [key: string]: string[] } = {
+          'remote-global': ['Remote - Global', 'Global Remote'],
+          'remote-us': ['Remote - US', 'US Remote'],
+          'remote-eu': ['Remote - EU', 'EU Remote'],
+          'remote-asia': ['Remote - Asia', 'Asia Remote']
+        }
+        
+        const allowedLocations = locationMap[filters.location] || []
+        if (!allowedLocations.some(loc => job.location.includes(loc))) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [jobs, searchTerm, filters])
+
+  const handleApply = (jobId: string) => {
+    const job = jobs.find(j => j.id === jobId)
+    if (job) {
+      navigate(`/job/${jobId}/apply`, {
+        state: { job, previousPath: '/' }
+      })
+    }
+  }
+
+  const openJobDetail = (job: Job) => {
+    setSelectedJob(job)
+    setIsJobDetailOpen(true)
+  }
+
+  const closeJobDetail = () => {
+    setSelectedJob(null)
+    setIsJobDetailOpen(false)
+  }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Main Content */}
-      <main className="px-6 md:px-10 lg:px-20 py-10 flex flex-1 justify-center">
-        <div className="layout-content-container flex flex-col max-w-7xl w-full flex-1 gap-8">
-          {/* Hero Section - Tool-focused */}
-          <div className="flex flex-wrap justify-between items-center gap-6">
-            <div className="flex min-w-72 flex-col gap-2">
-              <div className="mb-2">
-                <span className="inline-block px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary text-xs font-medium rounded-full">
-                  够快、够广、够理想
-                </span>
-              </div>
-              <p className="text-zinc-800 dark:text-zinc-100 text-4xl font-black leading-tight tracking-[-0.033em]">
-                Haigoo 帮你找到理想的远程工作
-              </p>
-              <p className="text-zinc-500 dark:text-zinc-400 text-base font-normal leading-normal">
-                专业的远程工作求职工具，精准匹配优质职位
-              </p>
+    <div className="min-h-screen bg-gray-50">
+      <main className="container mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <div className="mb-4">
+            <span className="inline-block px-4 py-2 bg-haigoo-primary/10 text-haigoo-primary text-sm font-medium rounded-full">
+              够快、够广、够理想
+            </span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            Haigoo 帮你找到理想的远程工作
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            专业的远程工作求职工具，精准匹配优质职位
+          </p>
+        </div>
+
+        {/* 搜索和筛选区域 */}
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+            <div className="flex-1">
+              <SearchBar 
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="搜索职位、公司或技能..."
+                className="w-full"
+              />
             </div>
-            
-            {/* Search Bar - Integrated into header */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-zinc-400" />
+            <div className="flex flex-wrap gap-2">
+              <FilterDropdown
+                label="工作类型"
+                options={jobTypeOptions}
+                value={filters.jobType}
+                onChange={(value) => setFilters(prev => ({ ...prev, jobType: value }))}
+              />
+              <FilterDropdown
+                label="薪资范围"
+                options={salaryOptions}
+                value={filters.salary}
+                onChange={(value) => setFilters(prev => ({ ...prev, salary: value }))}
+              />
+              <FilterDropdown
+                label="地点"
+                options={locationOptions}
+                value={filters.location}
+                onChange={(value) => setFilters(prev => ({ ...prev, location: value }))}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 职位列表 */}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="space-y-4">
+              {/* 改进的加载状态 */}
+              <div className="text-center py-8">
+                <div className="inline-flex items-center space-x-2 text-gray-600">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-haigoo-primary"></div>
+                  <span>正在加载最新职位信息...</span>
                 </div>
-                <input
-                  type="text"
-                  placeholder="搜索职位、公司或技能..."
-                  value={filters.search}
-                  onChange={(e) => setFilters((prev: JobFilterType) => ({ ...prev, search: e.target.value }))}
-                  className="w-full pl-12 pr-4 py-3 text-sm bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-800 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-haigoo-primary/50 focus:border-haigoo-primary shadow-sm"
-                />
               </div>
-            </div>
-          </div>
-
-          {/* Filter Buttons */}
-          <div className="flex gap-3 flex-wrap items-center">
-            <button className="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white dark:bg-zinc-800 pl-4 pr-3 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 shadow-sm">
-              <p className="text-sm font-medium leading-normal">工作类型</p>
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            <button className="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white dark:bg-zinc-800 pl-4 pr-3 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 shadow-sm">
-              <p className="text-sm font-medium leading-normal">经验要求</p>
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            <button className="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white dark:bg-zinc-800 pl-4 pr-3 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 shadow-sm">
-              <p className="text-sm font-medium leading-normal">薪资范围</p>
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            <div className="flex-grow"></div>
-            <button className="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white dark:bg-zinc-800 pl-4 pr-3 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 shadow-sm">
-              <p className="text-sm font-medium leading-normal">排序: 相关性</p>
-              <ChevronDown className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Job Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {isLoading ? (
-              // Loading skeleton
-              [...Array(6)].map((_, i) => (
-                <div key={i} className="group relative bg-white dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm hover:shadow-xl transition-all duration-300 animate-pulse">
-                  <div className="p-6">
-                    {/* Company Logo Skeleton */}
-                    <div className="w-16 h-16 bg-zinc-200 dark:bg-zinc-700 rounded-xl mb-4"></div>
-                    
-                    {/* Content Skeleton */}
-                    <div className="space-y-3">
-                      <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-1/3"></div>
-                      <div className="h-6 bg-zinc-200 dark:bg-zinc-700 rounded w-4/5"></div>
-                      <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-2/3"></div>
-                      <div className="flex gap-2 mt-4">
-                        <div className="h-6 bg-zinc-200 dark:bg-zinc-700 rounded w-16"></div>
-                        <div className="h-6 bg-zinc-200 dark:bg-zinc-700 rounded w-20"></div>
-                        <div className="h-6 bg-zinc-200 dark:bg-zinc-700 rounded w-14"></div>
-                      </div>
+              {/* 骨架屏 */}
+              {[...Array(3)].map((_, index) => (
+                <div key={index} className="card p-6 animate-pulse">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                      <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                      <div className="w-8 h-8 bg-gray-200 rounded"></div>
                     </div>
                   </div>
+                  <div className="space-y-2 mb-4">
+                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="h-6 bg-gray-200 rounded w-16"></div>
+                    ))}
+                  </div>
                 </div>
-              ))
-            ) : (
-               filteredJobs.map((job) => (
-                 <div 
-                   key={job.id} 
-                   className="group relative bg-white dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm hover:shadow-xl hover:border-haigoo-primary/20 dark:hover:border-haigoo-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
-                   onClick={() => openJobDetail(job)}
-                 >
-                   {/* Gradient overlay for visual appeal */}
-                   <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-haigoo-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                   
-                   <div className="relative p-6">
-                     {/* Header with Company Logo and Save Button */}
-                     <div className="flex items-start justify-between mb-4">
-                       <div className="flex items-center gap-4">
-                         {/* Company Logo */}
-                         <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-haigoo-primary/10 to-haigoo-secondary/10 flex items-center justify-center flex-shrink-0">
-                           {companyLogos[job.company] ? (
-                             <img 
-                               src={companyLogos[job.company]} 
-                               alt={`${job.company} logo`}
-                               className="w-full h-full object-cover"
-                               loading="lazy"
-                             />
-                           ) : (
-                             <span className="text-xl font-bold text-haigoo-primary">
-                               {job.company.charAt(0)}
-                             </span>
-                           )}
-                         </div>
-                         
-                         {/* Company and Job Type */}
-                         <div className="flex-1 min-w-0">
-                           <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium mb-1">{job.company}</p>
-                           <div className="flex items-center gap-2">
-                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                               job.type === 'full-time' 
-                                 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                 : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                             }`}>
-                               {job.type === 'full-time' ? '全职' : '合同'}
-                             </span>
-                           </div>
-                         </div>
-                       </div>
-                       
-                       {/* Save Button */}
-                       <button 
-                         onClick={(e) => {
-                           e.stopPropagation()
-                           toggleSaveJob(job.id)
-                         }}
-                         className="flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors opacity-0 group-hover:opacity-100"
-                       >
-                         <Bookmark className={`h-4 w-4 ${savedJobs.has(job.id) ? 'text-haigoo-primary fill-current' : 'text-zinc-500 dark:text-zinc-400'}`} />
-                       </button>
-                     </div>
-
-                     {/* Job Title */}
-                     <h3 className="text-zinc-900 dark:text-zinc-100 text-xl font-bold leading-tight mb-3 group-hover:text-haigoo-primary transition-colors">
-                       {job.title}
-                     </h3>
-
-                     {/* Job Details */}
-                     <div className="space-y-3 mb-6">
-                       <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 text-sm">
-                         <MapPin className="h-4 w-4 flex-shrink-0" />
-                         <span className="truncate">{job.location}</span>
-                       </div>
-                       
-                       <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 text-sm">
-                         <DollarSign className="h-4 w-4 flex-shrink-0" />
-                         <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                           ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}
-                         </span>
-                       </div>
-                     </div>
-
-                     {/* Skills Tags */}
-                     <div className="flex flex-wrap gap-2 mb-6">
-                       {job.skills.slice(0, 3).map((skill, index) => (
-                         <span 
-                           key={index} 
-                           className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-haigoo-primary/10 text-haigoo-primary border border-haigoo-primary/20"
-                         >
-                           {skill}
-                         </span>
-                       ))}
-                       {job.skills.length > 3 && (
-                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                           +{job.skills.length - 3}
-                         </span>
-                       )}
-                     </div>
-
-                     {/* Apply Button */}
-                     <button 
-                       onClick={(e) => {
-                         console.log('Apply button clicked - preventing default and stopping propagation')
-                         e.preventDefault()
-                         e.stopPropagation()
-                         handleApply(job.id)
-                       }}
-                       className="w-full h-12 bg-haigoo-primary hover:bg-haigoo-primary/90 text-white font-semibold rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md"
-                     >
-                       立即申请
-                     </button>
-                   </div>
-                 </div>
-               ))
-             )}
-          </div>
-
-          {/* Load More Button */}
-          {!isLoading && filteredJobs.length > 0 && (
-            <div className="text-center">
-              <button className="px-8 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-lg font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                加载更多职位
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">加载失败</h3>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="btn-primary px-6 py-2"
+              >
+                重新加载
               </button>
             </div>
-          )}
-        </div>
-      </main>
+          ) : filteredJobs.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">未找到匹配的职位</h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm || Object.values(filters).some(f => f !== 'all') 
+                  ? '尝试调整搜索条件或筛选器' 
+                  : '暂时没有可用的职位信息'
+                }
+              </p>
+              {(searchTerm || Object.values(filters).some(f => f !== 'all')) && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('')
+                    setFilters({ jobType: 'all', salary: 'all', location: 'all' })
+                  }}
+                  className="btn-secondary px-6 py-2"
+                >
+                  清除筛选条件
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* 结果统计 */}
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-600">
+                  找到 <span className="font-semibold text-gray-900">{filteredJobs.length}</span> 个职位
+                  {searchTerm && (
+                    <span> 包含 "<span className="font-semibold">{searchTerm}</span>"</span>
+                  )}
+                </p>
+                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span>实时更新</span>
+                </div>
+              </div>
 
-      {/* Job Detail Modal */}
-      {isJobDetailOpen && selectedJob && (
-        <JobDetailModal 
-          job={selectedJob} 
-          isOpen={isJobDetailOpen}
-          onClose={closeJobDetail}
-          onSave={() => toggleSaveJob(selectedJob.id)}
-          isSaved={savedJobs.has(selectedJob.id)}
-          onApply={handleApply}
-          jobs={filteredJobs}
-          currentJobIndex={currentJobIndex}
-          onNavigateJob={handleNavigateJob}
-        />
-      )}
+              {/* 职位卡片列表 */}
+              <div className="space-y-4">
+                 {filteredJobs.map((job) => (
+                   <JobCard 
+                     key={job.id} 
+                     job={job} 
+                     onClick={openJobDetail}
+                     isSaved={savedJobs.has(job.id)}
+                     onSave={(jobId: string) => {
+                       setSavedJobs(prev => {
+                         const newSet = new Set(prev)
+                         if (newSet.has(jobId)) {
+                           newSet.delete(jobId)
+                         } else {
+                           newSet.add(jobId)
+                         }
+                         return newSet
+                       })
+                     }}
+                   />
+                 ))}
+               </div>
+
+               {/* 加载更多按钮 */}
+               {filteredJobs.length >= 20 && (
+                 <div className="text-center pt-8">
+                   <button className="btn-secondary px-8 py-3">
+                     加载更多职位
+                   </button>
+                 </div>
+               )}
+             </>
+           )}
+         </div>
+       </main>
+
+       {/* RSS状态指示器 */}
+       <RSSStatusIndicator />
+
+       {/* 职位详情模态框 */}
+       {isJobDetailOpen && selectedJob && (
+         <JobDetailModal
+           job={selectedJob}
+           isOpen={isJobDetailOpen}
+           onClose={closeJobDetail}
+           onApply={handleApply}
+           isSaved={savedJobs.has(selectedJob.id)}
+           onSave={(jobId: string) => {
+             setSavedJobs(prev => {
+               const newSet = new Set(prev)
+               if (newSet.has(jobId)) {
+                 newSet.delete(jobId)
+               } else {
+                 newSet.add(jobId)
+               }
+               return newSet
+             })
+           }}
+         />
+       )}
     </div>
   )
 }

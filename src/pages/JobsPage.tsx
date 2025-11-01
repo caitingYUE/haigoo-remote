@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import JobDetailModal from '../components/JobDetailModal'
@@ -268,6 +268,11 @@ export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   
+  // Refs for focus management
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const filterSectionRef = useRef<HTMLDivElement>(null)
+  const jobListRef = useRef<HTMLDivElement>(null)
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     type: 'all',
@@ -282,6 +287,37 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
+
+  // Keyboard navigation handler
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      if (isJobDetailOpen) {
+        closeJobDetail()
+      }
+    }
+  }
+
+  // Filter keyboard navigation
+  const handleFilterKeyDown = (event: React.KeyboardEvent, filterType: string, value: string) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      setFilters(prev => ({ ...prev, [filterType]: value }))
+    }
+  }
+
+  // Clear filters keyboard handler
+  const handleClearFiltersKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      setFilters({
+        type: 'all',
+        category: 'all',
+        location: 'all',
+        experience: 'all',
+        remote: 'all'
+      })
+    }
+  }
 
   // 从URL参数中获取初始搜索词
   useEffect(() => {
@@ -422,46 +458,70 @@ export default function JobsPage() {
   const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-x-hidden">
+    <div 
+      className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-x-hidden"
+      onKeyDown={handleKeyDown}
+      role="main"
+      aria-label="职位搜索页面"
+    >
       {/* 主内容区域 */}
       <div className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* 页面标题与搜索 */}
-          <div className="text-center mb-6">
+          <header className="text-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-1">全部岗位</h1>
             <p className="text-gray-600 text-sm">发现适合你的工作机会</p>
-          </div>
+          </header>
+          
           <div className="max-w-2xl mx-auto mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 transition-colors duration-200" />
+              <Search 
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 transition-colors duration-200" 
+                aria-hidden="true"
+              />
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="搜索岗位、公司或地点..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-haigoo-primary focus:border-transparent text-base bg-white/90 backdrop-blur-sm shadow-sm transition-all duration-300 hover:shadow-md focus:shadow-lg transform hover:scale-[1.01] focus:scale-[1.01]"
+                role="searchbox"
+                aria-label="搜索职位"
+                aria-describedby="search-help"
               />
+              <div id="search-help" className="sr-only">
+                输入关键词搜索职位、公司名称或工作地点
+              </div>
             </div>
           </div>
         </div>
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex gap-6">
             {/* 侧边栏筛选 - 优化固定定位 */}
-            <div className="w-72 shrink-0">
+            <aside className="w-72 shrink-0" aria-label="职位筛选器">
               <div className="sticky top-24 w-72 h-[calc(100vh-120px)] will-change-transform">
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden h-full flex flex-col">
+                <div 
+                  ref={filterSectionRef}
+                  className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden h-full flex flex-col"
+                  role="region"
+                  aria-label="筛选条件"
+                >
                   <div className="p-5 border-b border-gray-100">
-                    <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-haigoo-primary rounded-full"></div>
+                    <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-haigoo-primary rounded-full" aria-hidden="true"></div>
                       筛选条件
-                    </h3>
+                    </h2>
                   </div>
                   
                   <div className="p-5 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     {/* 工作类型 */}
-                    <div className="mb-5">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">工作类型</label>
-                      <div className="space-y-2">
+                    <fieldset className="mb-5">
+                      <legend className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                        工作类型
+                      </legend>
+                      <div className="space-y-2" role="radiogroup" aria-label="选择工作类型">
                         {jobTypes.map((type) => (
                           <label key={type.value} className="flex items-center group cursor-pointer">
                             <input
@@ -470,18 +530,27 @@ export default function JobsPage() {
                               value={type.value}
                               checked={filters.type === type.value}
                               onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+                              onKeyDown={(e) => handleFilterKeyDown(e, 'type', type.value)}
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
+                              aria-describedby={`type-${type.value}-desc`}
                             />
-                            <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">{type.label}</span>
+                            <span 
+                              className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
+                              id={`type-${type.value}-desc`}
+                            >
+                              {type.label}
+                            </span>
                           </label>
                         ))}
                       </div>
-                    </div>
+                    </fieldset>
 
                     {/* 岗位类别 */}
-                    <div className="mb-5">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">岗位类别</label>
-                      <div className="space-y-2">
+                    <fieldset className="mb-5">
+                      <legend className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                        岗位类别
+                      </legend>
+                      <div className="space-y-2" role="radiogroup" aria-label="选择岗位类别">
                         {jobCategories.map((category) => (
                           <label key={category.value} className="flex items-center group cursor-pointer">
                             <input
@@ -490,18 +559,27 @@ export default function JobsPage() {
                               value={category.value}
                               checked={filters.category === category.value}
                               onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                              onKeyDown={(e) => handleFilterKeyDown(e, 'category', category.value)}
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
+                              aria-describedby={`category-${category.value}-desc`}
                             />
-                            <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">{category.label}</span>
+                            <span 
+                              className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
+                              id={`category-${category.value}-desc`}
+                            >
+                              {category.label}
+                            </span>
                           </label>
                         ))}
                       </div>
-                    </div>
+                    </fieldset>
 
                     {/* 工作地点 */}
-                    <div className="mb-5">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">工作地点</label>
-                      <div className="space-y-2">
+                    <fieldset className="mb-5">
+                      <legend className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                        工作地点
+                      </legend>
+                      <div className="space-y-2" role="radiogroup" aria-label="选择工作地点">
                         {locations.map((location) => (
                           <label key={location.value} className="flex items-center group cursor-pointer">
                             <input
@@ -510,18 +588,27 @@ export default function JobsPage() {
                               value={location.value}
                               checked={filters.location === location.value}
                               onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                              onKeyDown={(e) => handleFilterKeyDown(e, 'location', location.value)}
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
+                              aria-describedby={`location-${location.value}-desc`}
                             />
-                            <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">{location.label}</span>
+                            <span 
+                              className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
+                              id={`location-${location.value}-desc`}
+                            >
+                              {location.label}
+                            </span>
                           </label>
                         ))}
                       </div>
-                    </div>
+                    </fieldset>
 
                     {/* 经验等级 */}
-                    <div className="mb-5">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">经验等级</label>
-                      <div className="space-y-2">
+                    <fieldset className="mb-5">
+                      <legend className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                        经验等级
+                      </legend>
+                      <div className="space-y-2" role="radiogroup" aria-label="选择经验等级">
                         {experienceLevels.map((level) => (
                           <label key={level.value} className="flex items-center group cursor-pointer">
                             <input
@@ -530,18 +617,27 @@ export default function JobsPage() {
                               value={level.value}
                               checked={filters.experience === level.value}
                               onChange={(e) => setFilters(prev => ({ ...prev, experience: e.target.value }))}
+                              onKeyDown={(e) => handleFilterKeyDown(e, 'experience', level.value)}
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
+                              aria-describedby={`experience-${level.value}-desc`}
                             />
-                            <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">{level.label}</span>
+                            <span 
+                              className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
+                              id={`experience-${level.value}-desc`}
+                            >
+                              {level.label}
+                            </span>
                           </label>
                         ))}
                       </div>
-                    </div>
+                    </fieldset>
 
                     {/* 远程工作 */}
-                    <div className="mb-5">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">远程工作</label>
-                      <div className="space-y-2">
+                    <fieldset className="mb-5">
+                      <legend className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                        远程工作
+                      </legend>
+                      <div className="space-y-2" role="radiogroup" aria-label="选择远程工作选项">
                         {remoteOptions.map((option) => (
                           <label key={option.value} className="flex items-center group cursor-pointer">
                             <input
@@ -550,13 +646,20 @@ export default function JobsPage() {
                               value={option.value}
                               checked={filters.remote === option.value}
                               onChange={(e) => setFilters(prev => ({ ...prev, remote: e.target.value }))}
+                              onKeyDown={(e) => handleFilterKeyDown(e, 'remote', option.value)}
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
+                              aria-describedby={`remote-${option.value}-desc`}
                             />
-                            <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">{option.label}</span>
+                            <span 
+                              className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
+                              id={`remote-${option.value}-desc`}
+                            >
+                              {option.label}
+                            </span>
                           </label>
                         ))}
                       </div>
-                    </div>
+                    </fieldset>
 
                     {/* 清除筛选按钮 */}
                     {activeFiltersCount > 0 && (
@@ -570,7 +673,9 @@ export default function JobsPage() {
                             remote: 'all'
                           });
                         }}
-                        className="w-full px-4 py-2.5 bg-gradient-to-r from-haigoo-primary to-haigoo-primary/90 text-white text-sm font-medium rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 transform"
+                        onKeyDown={handleClearFiltersKeyDown}
+                        className="w-full px-4 py-2.5 bg-gradient-to-r from-haigoo-primary to-haigoo-primary/90 text-white text-sm font-medium rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 transform focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2"
+                        aria-label={`清除所有筛选条件，当前已选择 ${activeFiltersCount} 个筛选条件`}
                       >
                         清除所有筛选
                       </button>
@@ -578,44 +683,68 @@ export default function JobsPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </aside>
 
             {/* 主要内容区域 */}
-            <div className="flex-1 min-w-0 relative">
+            <main className="flex-1 min-w-0 relative" role="main" aria-label="职位列表">
               {/* 结果统计 */}
               <div className="flex items-center justify-between mb-6">
-                <div className="text-gray-600 text-sm">
+                <div 
+                  className="text-gray-600 text-sm"
+                  role="status"
+                  aria-live="polite"
+                  aria-label={`搜索结果统计：找到 ${filteredJobs.length} 个岗位`}
+                >
                   找到 <span className="font-semibold text-gray-900 text-base">{filteredJobs.length}</span> 个岗位
                 </div>
               </div>
 
               {/* 岗位列表 */}
-              <div className="space-y-4">
+              <div 
+                ref={jobListRef}
+                className="space-y-4"
+                role="list"
+                aria-label="职位列表"
+                aria-describedby="job-list-help"
+              >
+                <div id="job-list-help" className="sr-only">
+                  使用方向键导航职位列表，按回车键查看职位详情
+                </div>
+                
                 {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-haigoo-primary"></div>
+                  <div 
+                    className="flex items-center justify-center py-12"
+                    role="status"
+                    aria-live="polite"
+                    aria-label="正在加载职位数据"
+                  >
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-haigoo-primary" aria-hidden="true"></div>
                     <span className="ml-3 text-gray-600">正在加载职位数据...</span>
                   </div>
                 ) : filteredJobs.length === 0 ? (
-                  <div className="text-center py-12">
+                  <div 
+                    className="text-center py-12"
+                    role="status"
+                    aria-live="polite"
+                  >
                     <div className="text-gray-500 text-lg mb-2">暂无符合条件的职位</div>
                     <div className="text-gray-400 text-sm">请尝试调整筛选条件或搜索关键词</div>
                   </div>
                 ) : (
-                  filteredJobs.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      onSave={() => toggleSaveJob(job.id)}
-                      isSaved={savedJobs.has(job.id)}
-                      onClick={() => openJobDetail(job)}
-                    />
+                  filteredJobs.map((job, index) => (
+                    <div key={job.id} role="listitem">
+                      <JobCard
+                        job={job}
+                        onSave={() => toggleSaveJob(job.id)}
+                        isSaved={savedJobs.has(job.id)}
+                        onClick={() => openJobDetail(job)}
+                        aria-label={`职位 ${index + 1}：${job.title} - ${job.company}`}
+                      />
+                    </div>
                   ))
                 )}
-
-                {/* 空状态 - 移除重复的空状态检查 */}
               </div>
-            </div>
+            </main>
           </div>
         </div>
       </div>

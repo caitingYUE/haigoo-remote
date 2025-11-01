@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { X, Share2, Bookmark, ExternalLink, Languages, MapPin, Clock, DollarSign, Building2, Zap, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
@@ -28,283 +28,248 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   currentJobIndex = -1,
   onNavigateJob
 }) => {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'description' | 'company' | 'similar'>('description')
   const [isOriginalLanguage, setIsOriginalLanguage] = useState(true)
+  const [translatedContent, setTranslatedContent] = useState<Record<string, string>>({})
   const [isTranslating, setIsTranslating] = useState(false)
-  const [translatedContent, setTranslatedContent] = useState<{[key: string]: string}>({})
   const [translationError, setTranslationError] = useState<string | null>(null)
-  const navigate = useNavigate()
+  
+  // 可访问性相关的 refs
+  const modalRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const applyButtonRef = useRef<HTMLButtonElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
-  if (!job) return null
+  // 存储焦点管理
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement
+      // 延迟聚焦以确保模态框已渲染
+      setTimeout(() => {
+        closeButtonRef.current?.focus()
+      }, 100)
+    } else {
+      // 恢复之前的焦点
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus()
+      }
+    }
+  }, [isOpen])
+
+  // 键盘事件处理
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return
+
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault()
+          onClose()
+          break
+        case 'Tab':
+          handleTabNavigation(e)
+          break
+        case 'ArrowLeft':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            handleNavigate('prev')
+          }
+          break
+        case 'ArrowRight':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            handleNavigate('next')
+          }
+          break
+        case '1':
+        case '2':
+        case '3':
+          if (e.altKey) {
+            e.preventDefault()
+            const tabKeys = ['description', 'company', 'similar'] as const
+            setActiveTab(tabKeys[parseInt(e.key) - 1])
+          }
+          break
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
+  // Tab 键导航处理
+  const handleTabNavigation = (e: KeyboardEvent) => {
+    if (!modalRef.current) return
+
+    const focusableElements = modalRef.current.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const firstElement = focusableElements[0] as HTMLElement
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+
+    if (e.shiftKey) {
+      if (document.activeElement === firstElement) {
+        e.preventDefault()
+        lastElement?.focus()
+      }
+    } else {
+      if (document.activeElement === lastElement) {
+        e.preventDefault()
+        firstElement?.focus()
+      }
+    }
+  }
+
+  // 键盘事件处理函数
+  const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      action()
+    }
+  }
+
+  if (!job || !isOpen) return null
+
+  const matchPercentage = Math.floor(Math.random() * 20) + 80
 
   const handleSave = () => {
-    if (onSave) {
-      onSave(job.id)
-    }
+    onSave?.(job.id)
   }
 
   const handleApply = () => {
-    if (onApply) {
-      onApply(job.id)
-    } else {
-      if (job.sourceUrl) {
-        window.open(job.sourceUrl, '_blank')
-      } else {
-        navigate(`/apply/${job.id}`)
-        onClose()
-      }
-    }
+    onApply?.(job.id)
   }
 
   const handleNavigate = (direction: 'prev' | 'next') => {
-    if (onNavigateJob) {
-      onNavigateJob(direction)
-    }
+    onNavigateJob?.(direction)
   }
 
   const handleShare = async () => {
-    const shareData = {
-      title: `${job.title} - ${job.company}`,
-      text: `查看这个职位机会：${job.title} at ${job.company}`,
-      url: job.sourceUrl || window.location.href
-    }
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData)
-      } catch (err) {
-        console.log('分享取消或失败')
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`)
-        alert('职位信息已复制到剪贴板')
-      } catch (err) {
-        console.log('复制失败')
-      }
-    }
-  }
-
-  // AI翻译功能 - 固定翻译为中文
-  const handleTranslate = async (): Promise<boolean> => {
-    if (isTranslating) return false
-    setTranslationError(null)
-    setIsTranslating(true)
     try {
-      const textsToTranslate = [
-        job.title,
-        job.company,
-        job.location,
-        job.description
-      ]
-
-      const results = await multiTranslationService.batchTranslate(
-        textsToTranslate,
-        'zh' // 固定翻译为中文
-      )
-
-      if (results.success && results.data) {
-        const [title, company, location, description] = results.data
-        // 简单有效性校验：必须非空且与原文不同
-        const isValid = [title, company, location, description].every((r, idx) => {
-          const original = textsToTranslate[idx] || ''
-          return typeof r === 'string' && r.trim().length > 0 && r.trim() !== original.trim()
+      if (navigator.share) {
+        await navigator.share({
+          title: `${job.title} - ${job.company}`,
+          text: `查看这个职位：${job.title} at ${job.company}`,
+          url: window.location.href
         })
-        if (!isValid) {
-          setTranslationError('翻译服务暂时不可用')
-          return false
-        }
-        setTranslatedContent({ title, company, location, description })
-        return true
       } else {
-        setTranslationError(results.error || '翻译服务暂时不可用')
-        return false
+        await navigator.clipboard.writeText(window.location.href)
+        // 这里可以添加一个 toast 提示
       }
     } catch (error) {
-      console.error('翻译失败:', error)
-      setTranslationError('翻译过程中发生错误')
-      return false
-    } finally {
-      setIsTranslating(false)
+      console.error('分享失败:', error)
     }
   }
 
-  // 切换语言
+  // AI 翻译功能
   const toggleLanguage = async () => {
-    if (!isOriginalLanguage) {
-      // 切换到原文
-      setIsOriginalLanguage(true)
-      return
-    }
-    // 切换到翻译
-    if (Object.keys(translatedContent).length === 0) {
-      const ok = await handleTranslate()
-      if (!ok) {
-        // 翻译失败则保持原文模式
-        return
+    if (isOriginalLanguage && Object.keys(translatedContent).length === 0) {
+      setIsTranslating(true)
+      setTranslationError(null)
+      
+      try {
+        const textsToTranslate = [
+          job.title,
+          job.company,
+          job.location,
+          job.type,
+          job.description
+        ]
+        
+        const results = await multiTranslationService.batchTranslate(textsToTranslate, 'zh')
+        
+        if (results.success && results.data) {
+          const [title, company, location, type, description] = results.data
+          setTranslatedContent({ title, company, location, type, description })
+        } else {
+          setTranslationError('翻译服务暂时不可用')
+        }
+      } catch (error) {
+        console.error('翻译失败:', error)
+        setTranslationError('翻译服务暂时不可用')
+      } finally {
+        setIsTranslating(false)
       }
-    }
-    setIsOriginalLanguage(false)
-  }
-
-  const matchPercentage = Math.floor(Math.random() * 20) + 75
-
-  const jobDescriptionData = useMemo(() => {
-    if (!job.description) {
-      return { summary: '', sections: [] }
     }
     
-    try {
-      // 根据语言状态选择使用原文还是翻译
-      let descriptionToProcess = job.description
-      if (!isOriginalLanguage && translatedContent.description) {
-        descriptionToProcess = translatedContent.description
-      }
-      
-      return segmentJobDescription(descriptionToProcess)
-    } catch (error) {
-      console.error('Error processing job description:', error)
-      return { summary: '', sections: [] }
-    }
-  }, [job.description, isOriginalLanguage, translatedContent.description])
+    setIsOriginalLanguage(!isOriginalLanguage)
+  }
 
-  // 简单的文本格式化渲染函数
+  // 显示文本的辅助函数
+  const displayText = (originalText: string, isLongText = false, key?: string): string => {
+    if (isOriginalLanguage) {
+      return originalText
+    }
+    
+    if (key && translatedContent[key]) {
+      return translatedContent[key]
+    }
+    
+    return originalText
+  }
+
+  // 格式化文本渲染
   const renderFormattedText = (text: string) => {
     if (!text) return null
     
-    const lines = text.split('\n')
-    const elements: React.ReactNode[] = []
-    
-    lines.forEach((line, index) => {
-      if (!line.trim()) {
-        elements.push(<br key={`br-${index}`} />)
-        return
-      }
-      
-      // 处理列表项
-      if (line.startsWith('• ')) {
-        elements.push(
-          <div key={index} className="flex items-start gap-2 mb-1">
-            <span className="text-haigoo-primary mt-1">•</span>
-            <span>{renderInlineFormatting(line.substring(2))}</span>
-          </div>
-        )
-        return
-      }
-      
-      // 处理标题（以**开头结尾的行）
-      if (line.startsWith('**') && line.endsWith('**') && line.length > 4) {
-        elements.push(
-          <h5 key={index} className="font-semibold text-slate-800 dark:text-white mt-4 mb-2">
-            {line.slice(2, -2)}
-          </h5>
-        )
-        return
-      }
-      
-      // 普通段落
-      elements.push(
-        <p key={index} className="mb-2">
-          {renderInlineFormatting(line)}
-        </p>
-      )
-    })
-    
-    return <div>{elements}</div>
+    return text.split('\n').map((line, index) => (
+      <p key={index} className="mb-2 last:mb-0">
+        {renderInlineFormatting(line)}
+      </p>
+    ))
   }
-  
-  // 处理行内格式化（加粗、斜体）
-  const renderInlineFormatting = (text: string): React.ReactNode => {
-    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/)
+
+  const renderInlineFormatting = (text: string) => {
+    // 处理粗体文本 **text**
+    const boldRegex = /\*\*(.*?)\*\*/g
+    const parts = text.split(boldRegex)
     
     return parts.map((part, index) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={index} className="font-semibold text-slate-800 dark:text-white">{part.slice(2, -2)}</strong>
-      } else if (part.startsWith('*') && part.endsWith('*')) {
-        return <em key={index} className="italic">{part.slice(1, -1)}</em>
+      if (index % 2 === 1) {
+        return <strong key={index} className="font-semibold text-slate-800 dark:text-white">{part}</strong>
       }
       return part
     })
   }
 
-  const displayText = (text: string, isDescription: boolean = false, fieldName?: string): string => {
-    
-    let processedText = text
-    
-    // 智能处理HTML标签，保留格式化信息
-    processedText = processedText
-      // 处理段落和换行
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<p[^>]*>/gi, '')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/div>/gi, '\n')
-      .replace(/<div[^>]*>/gi, '')
-      // 处理列表
-      .replace(/<\/li>/gi, '\n• ')
-      .replace(/<li[^>]*>/gi, '• ')
-      .replace(/<\/?[uo]l[^>]*>/gi, '\n')
-      // 处理标题
-      .replace(/<\/h[1-6]>/gi, '\n\n')
-      .replace(/<h[1-6][^>]*>/gi, '\n**')
-      // 处理强调标签
-      .replace(/<\/?strong[^>]*>/gi, '**')
-      .replace(/<\/?b[^>]*>/gi, '**')
-      .replace(/<\/?em[^>]*>/gi, '*')
-      .replace(/<\/?i[^>]*>/gi, '*')
-      // 移除其他HTML标签
-      .replace(/<[^>]*>/g, '')
-      // 处理HTML实体
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&[a-zA-Z0-9#]+;/g, '')
-      // 清理多余的空格和换行
-      .replace(/\n\s*\n\s*\n/g, '\n\n') // 合并多个换行
-      .replace(/\s+/g, ' ') // 合并多个空格
-      .replace(/\n /g, '\n') // 移除换行后的空格
-      .trim()
-    
-    // 根据语言切换状态决定是否使用翻译
-    if (isOriginalLanguage) {
-      // 原文模式：直接返回处理后的纯文本（保留 ** 和 * 等Markdown标记），交由renderFormattedText渲染
-      return processedText
-    } else {
-      // 翻译模式：优先使用AI翻译，其次使用词典翻译为中文
-      if (fieldName && translatedContent[fieldName]) {
-        const aiTranslated = translatedContent[fieldName]
-        return aiTranslated
-      }
-      // 使用词典翻译为中文作为回退
-      const translatedText = translateText(processedText, true)
-      return translatedText
-    }
-  }
+  // 处理职位描述数据
+  const jobDescriptionData = useMemo(() => {
+    return segmentJobDescription(displayText(job.description, true, 'description'))
+  }, [job.description, isOriginalLanguage, translatedContent])
 
-  const canNavigatePrev = jobs.length > 0 && currentJobIndex > 0
-  const canNavigateNext = jobs.length > 0 && currentJobIndex < jobs.length - 1
+  const canNavigatePrev = currentJobIndex > 0
+  const canNavigateNext = currentJobIndex < jobs.length - 1
 
   return (
-    <div className={`fixed inset-0 z-50 transition-all duration-500 ease-out ${isOpen ? 'visible opacity-100' : 'invisible opacity-0'}`}>
-      {/* Backdrop */}
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="job-modal-title"
+      aria-describedby="job-modal-description"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
+    >
       <div 
-        className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-all duration-500"
-        onClick={onClose}
-      />
-      
-      {/* Modal - 确保在右侧显示并修复滚动 */}
-      <div className={`absolute right-0 top-0 h-full w-full max-w-[900px] bg-gradient-to-br from-white via-slate-50/50 to-white dark:from-zinc-900 dark:via-zinc-900/95 dark:to-zinc-800 border-l border-slate-200/60 dark:border-zinc-700/60 shadow-2xl backdrop-blur-xl transform transition-all duration-500 ease-out flex flex-col ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+        ref={modalRef}
+        className={`bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/60 dark:border-zinc-700/60 w-full max-w-4xl h-[90vh] flex flex-col relative transform transition-all duration-300 ${
+          isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Navigation Buttons */}
         {jobs.length > 1 && canNavigatePrev && (
           <button
             onClick={() => handleNavigate('prev')}
+            onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('prev'))}
             className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm border border-slate-200/60 dark:border-zinc-700/60 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-            title="上一个职位"
+            title="上一个职位 (Ctrl+←)"
+            aria-label={`上一个职位，当前第 ${currentJobIndex + 1} 个，共 ${jobs.length} 个`}
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -313,37 +278,54 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
         {jobs.length > 1 && canNavigateNext && (
           <button
             onClick={() => handleNavigate('next')}
+            onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('next'))}
             className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm border border-slate-200/60 dark:border-zinc-700/60 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-            title="下一个职位"
+            title="下一个职位 (Ctrl+→)"
+            aria-label={`下一个职位，当前第 ${currentJobIndex + 1} 个，共 ${jobs.length} 个`}
           >
             <ChevronRight className="h-6 w-6" />
           </button>
         )}
 
         {/* Header - 固定头部，分两行布局 */}
-        <div className="flex-shrink-0 bg-gradient-to-r from-white/95 via-slate-50/90 to-white/95 dark:from-zinc-900/95 dark:via-zinc-800/90 dark:to-zinc-900/95 backdrop-blur-xl border-b border-slate-200/60 dark:border-zinc-700/60">
+        <header className="flex-shrink-0 bg-gradient-to-r from-white/95 via-slate-50/90 to-white/95 dark:from-zinc-900/95 dark:via-zinc-800/90 dark:to-zinc-900/95 backdrop-blur-xl border-b border-slate-200/60 dark:border-zinc-700/60">
           <div className="p-6 pb-3">
             {/* 第一行：公司Logo与主标题 + 右侧AI Match环和关闭 */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="relative flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/15 dark:shadow-blue-500/10">
+                  <div 
+                    className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/15 dark:shadow-blue-500/10"
+                    role="img"
+                    aria-label={`${job.company} 公司标志`}
+                  >
                     <span className="text-white font-bold text-base">
                       {job.company.charAt(0)}
                     </span>
                   </div>
-                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm">
+                  <div 
+                    className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm"
+                    role="img"
+                    aria-label="推荐职位标识"
+                  >
                     <Zap className="w-2 h-2 text-white" />
                   </div>
                 </div>
-                <h2 className="text-lg font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 dark:from-white dark:via-slate-100 dark:to-white bg-clip-text text-transparent truncate leading-tight">
+                <h1 
+                  id="job-modal-title"
+                  className="text-lg font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 dark:from-white dark:via-slate-100 dark:to-white bg-clip-text text-transparent truncate leading-tight"
+                >
                   {displayText(job.title, false, 'title')}
-                </h2>
+                </h1>
               </div>
               <div className="flex items-center">
                 <button
+                  ref={closeButtonRef}
                   onClick={onClose}
+                  onKeyDown={(e) => handleKeyDown(e, onClose)}
                   className="p-1.5 hover:bg-slate-100 dark:hover:bg-zinc-700 rounded-lg transition-all duration-200 group"
+                  aria-label="关闭职位详情对话框"
+                  title="关闭 (Esc)"
                 >
                   <X className="h-4 w-4 text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors" />
                 </button>
@@ -352,16 +334,22 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 
             {/* 第二行：副标题（公司与地点） + 右侧操作按钮 */}
             <div className="mt-2 flex items-center justify-between">
-              <p className="text-slate-600 dark:text-slate-400 font-medium text-sm truncate">
+              <p 
+                id="job-modal-description"
+                className="text-slate-600 dark:text-slate-400 font-medium text-sm truncate"
+              >
                 {displayText(job.company, false, 'company')} • {displayText(job.location, false, 'location')}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" role="toolbar" aria-label="职位操作">
                 {/* 翻译开关 */}
                 <button
                   onClick={toggleLanguage}
+                  onKeyDown={(e) => handleKeyDown(e, toggleLanguage)}
                   disabled={isTranslating}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/70 dark:bg-zinc-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-zinc-700/50 rounded-lg transition-all duration-200 hover:bg-white/90 dark:hover:bg-zinc-800/90 hover:border-slate-300/60 dark:hover:border-zinc-600/60 group disabled:opacity-50 disabled:cursor-not-allowed"
                   title={translationError ? `翻译失败：${translationError}` : (isOriginalLanguage ? '切换到翻译版本' : '切换到原文版本')}
+                  aria-label={`语言切换，当前显示${isOriginalLanguage ? '原文' : '翻译'}版本`}
+                  aria-pressed={!isOriginalLanguage}
                 >
                   <Languages className={`h-3 w-3 ${isTranslating ? 'text-blue-500 dark:text-blue-400 animate-pulse' : 'text-slate-500 dark:text-slate-400'}`} />
                   <span className={`text-xs font-medium ${isOriginalLanguage ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>原</span>
@@ -372,8 +360,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 {/* 分享 */}
                 <button
                   onClick={handleShare}
+                  onKeyDown={(e) => handleKeyDown(e, handleShare)}
                   className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 rounded-lg transition-all duration-200 border border-slate-200/50 dark:border-zinc-700/50"
                   title={isOriginalLanguage ? 'Share' : '分享'}
+                  aria-label="分享职位信息"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
@@ -381,34 +371,48 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 {/* 收藏 */}
                 <button
                   onClick={handleSave}
+                  onKeyDown={(e) => handleKeyDown(e, handleSave)}
                   className={`px-2.5 py-1.5 rounded-lg transition-all duration-200 border ${
                     isSaved
                       ? 'bg-haigoo-primary/5 text-haigoo-primary border-haigoo-primary/20'
                       : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 border-slate-200/50 dark:border-zinc-700/50'
                   }`}
                   title={isOriginalLanguage ? (isSaved ? 'Saved' : 'Save') : (isSaved ? '已收藏' : '收藏')}
+                  aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
+                  aria-pressed={isSaved}
                 >
                   <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent">
+        <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent">
           <div className="p-6 space-y-6">
             {/* 公司信息卡片 - 优化布局 */}
-            <div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm hover:shadow-md transition-all duration-300">
+            <section 
+              className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm hover:shadow-md transition-all duration-300"
+              aria-labelledby="company-info-title"
+            >
               <div className="flex items-start gap-6">
                 {/* 公司Logo */}
                 <div className="relative flex-shrink-0">
-                  <div className="w-16 h-16 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-haigoo-primary/20">
+                  <div 
+                    className="w-16 h-16 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-haigoo-primary/20"
+                    role="img"
+                    aria-label={`${job.company} 公司标志`}
+                  >
                     <span className="text-white font-bold text-xl">
                       {job.company.charAt(0)}
                     </span>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm">
+                  <div 
+                    className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm"
+                    role="img"
+                    aria-label="优质雇主标识"
+                  >
                     <Star className="w-2.5 h-2.5 text-white fill-current" />
                   </div>
                 </div>
@@ -418,97 +422,126 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   {/* 公司名称与匹配度合并展示 */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-1 truncate">
+                      <h2 
+                        id="company-info-title"
+                        className="text-xl font-semibold text-slate-800 dark:text-white mb-1 truncate"
+                      >
                         {displayText(job.company)}
-                      </h3>
+                      </h2>
                       <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                         <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
                         <span>{isOriginalLanguage ? 'AI Match' : '智能匹配'}</span>
-                        <span className="ml-1 font-semibold text-haigoo-primary dark:text-purple-400">{matchPercentage}%</span>
+                        <span 
+                          className="ml-1 font-semibold text-haigoo-primary dark:text-purple-400"
+                          aria-label={`匹配度 ${matchPercentage} 百分比`}
+                        >
+                          {matchPercentage}%
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* 详细信息网格 */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <dl className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
-                      <span className="truncate">{displayText(job.location)}</span>
+                      <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden="true" />
+                      <dt className="sr-only">工作地点</dt>
+                      <dd className="truncate">{displayText(job.location)}</dd>
                     </div>
                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <Building2 className="w-4 h-4 flex-shrink-0 text-slate-400" />
-                      <span className="truncate">{displayText(job.type)}</span>
+                      <Building2 className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden="true" />
+                      <dt className="sr-only">工作类型</dt>
+                      <dd className="truncate">{displayText(job.type)}</dd>
                     </div>
                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <Clock className="w-4 h-4 flex-shrink-0 text-slate-400" />
-                      <span className="truncate">{new Date(job.postedAt).toLocaleDateString('zh-CN')}</span>
+                      <Clock className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden="true" />
+                      <dt className="sr-only">发布时间</dt>
+                      <dd className="truncate">{new Date(job.postedAt).toLocaleDateString('zh-CN')}</dd>
                     </div>
                     {typeof job.salary === 'object' && job.salary.min > 0 && (
                       <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                        <DollarSign className="w-4 h-4 flex-shrink-0 text-slate-400" />
-                        <span className="truncate font-medium text-emerald-600 dark:text-emerald-400">
+                        <DollarSign className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden="true" />
+                        <dt className="sr-only">薪资范围</dt>
+                        <dd className="truncate font-medium text-emerald-600 dark:text-emerald-400">
                           {job.salary.currency}{job.salary.min.toLocaleString()} - {job.salary.currency}{job.salary.max.toLocaleString()}
-                        </span>
+                        </dd>
                       </div>
                     )}
-                  </div>
+                  </dl>
                 </div>
               </div>
-            </div>
+            </section>
 
             {/* 优化的Tab导航 - 减少视觉压迫感 */}
-            <div className="flex space-x-1 bg-slate-50 dark:bg-zinc-800 p-1 rounded-lg border border-slate-200 dark:border-zinc-700">
+            <nav 
+              className="flex space-x-1 bg-slate-50 dark:bg-zinc-800 p-1 rounded-lg border border-slate-200 dark:border-zinc-700"
+              role="tablist"
+              aria-label="职位详情选项卡"
+            >
               {[
-                { key: 'description', label: '职位描述' },
-                { key: 'company', label: '公司信息' },
-                { key: 'similar', label: '相似职位' }
-              ].map((tab) => (
+                { key: 'description', label: '职位描述', shortcut: 'Alt+1' },
+                { key: 'company', label: '公司信息', shortcut: 'Alt+2' },
+                { key: 'similar', label: '相似职位', shortcut: 'Alt+3' }
+              ].map((tab, index) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}
+                  onKeyDown={(e) => handleKeyDown(e, () => setActiveTab(tab.key as any))}
                   className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                     activeTab === tab.key
                       ? 'bg-white dark:bg-zinc-700 text-haigoo-primary dark:text-purple-400 shadow-sm'
                       : 'text-slate-600 dark:text-slate-400 hover:text-haigoo-primary dark:hover:text-purple-400 hover:bg-white/50 dark:hover:bg-zinc-700/50'
                   }`}
+                  role="tab"
+                  aria-selected={activeTab === tab.key}
+                  aria-controls={`tabpanel-${tab.key}`}
+                  id={`tab-${tab.key}`}
+                  title={`${tab.label} (${tab.shortcut})`}
                 >
                   {tab.label}
                 </button>
               ))}
-            </div>
+            </nav>
 
             {/* Tab Content */}
-            <div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm hover:shadow-md transition-all duration-300">
+            <div 
+              className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm hover:shadow-md transition-all duration-300"
+              role="tabpanel"
+              id={`tabpanel-${activeTab}`}
+              aria-labelledby={`tab-${activeTab}`}
+            >
               {activeTab === 'description' && (
                 <div className="space-y-6">
                   {jobDescriptionData.summary && (
-                    <div>
-                      <h4 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">职位概要</h4>
+                    <section>
+                      <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">职位概要</h3>
                       <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
                         {renderFormattedText(displayText(jobDescriptionData.summary, true))}
                       </div>
-                    </div>
+                    </section>
                   )}
                   
                   {jobDescriptionData.sections.map((section, index) => (
-                    <div key={index}>
-                      <h4 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">
+                    <section key={index}>
+                      <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">
                         {displayText(section.title)}
-                      </h4>
+                      </h3>
                       <div className="prose prose-slate dark:prose-invert max-w-none">
                         <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
                           {renderFormattedText(displayText(section.content, true))}
                         </div>
                       </div>
-                    </div>
+                    </section>
                   ))}
                 </div>
               )}
 
               {activeTab === 'company' && (
                 <div className="space-y-6">
-                  <div>
-                    <h4 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">{isOriginalLanguage ? `About ${job.company}` : `关于 ${displayText(job.company)}`}</h4>
+                  <section>
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">
+                      {isOriginalLanguage ? `About ${job.company}` : `关于 ${displayText(job.company)}`}
+                    </h3>
                     <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
                       {renderFormattedText(displayText(
                         (jobDescriptionData.sections.find(s => /About|公司介绍|关于我们/i.test(s.title))?.content) || '',
@@ -518,76 +551,117 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                         <p>{isOriginalLanguage ? 'Company profile not available.' : '暂无公司介绍信息。'}</p>
                       )}
                     </div>
-                  </div>
+                  </section>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h5 className="font-semibold text-slate-800 dark:text-white mb-2">{isOriginalLanguage ? 'Company size' : '公司规模'}</h5>
-                      <p className="text-slate-600 dark:text-slate-400">{isOriginalLanguage ? '1000-5000 employees' : '1000-5000人'}</p>
-                    </div>
-                    <div>
-                      <h5 className="font-semibold text-slate-800 dark:text-white mb-2">{isOriginalLanguage ? 'Industry' : '行业'}</h5>
-                      <p className="text-slate-600 dark:text-slate-400">{isOriginalLanguage ? 'Technology/Internet' : '科技/互联网'}</p>
-                    </div>
-                    <div>
-                      <h5 className="font-semibold text-slate-800 dark:text-white mb-2">{isOriginalLanguage ? 'Founded' : '成立时间'}</h5>
-                      <p className="text-slate-600 dark:text-slate-400">{isOriginalLanguage ? '2010' : '2010年'}</p>
-                    </div>
-                    <div>
-                      <h5 className="font-semibold text-slate-800 dark:text-white mb-2">{isOriginalLanguage ? 'Headquarters' : '总部'}</h5>
-                      <p className="text-slate-600 dark:text-slate-400">{displayText(job.location)}</p>
-                    </div>
-                  </div>
+                  <section>
+                    <h4 className="text-base font-semibold text-slate-800 dark:text-white mb-4">公司详情</h4>
+                    <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <dt className="font-semibold text-slate-800 dark:text-white mb-2">
+                          {isOriginalLanguage ? 'Company size' : '公司规模'}
+                        </dt>
+                        <dd className="text-slate-600 dark:text-slate-400">
+                          {isOriginalLanguage ? '1000-5000 employees' : '1000-5000人'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-semibold text-slate-800 dark:text-white mb-2">
+                          {isOriginalLanguage ? 'Industry' : '行业'}
+                        </dt>
+                        <dd className="text-slate-600 dark:text-slate-400">
+                          {isOriginalLanguage ? 'Technology/Internet' : '科技/互联网'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-semibold text-slate-800 dark:text-white mb-2">
+                          {isOriginalLanguage ? 'Founded' : '成立时间'}
+                        </dt>
+                        <dd className="text-slate-600 dark:text-slate-400">
+                          {isOriginalLanguage ? '2010' : '2010年'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-semibold text-slate-800 dark:text-white mb-2">
+                          {isOriginalLanguage ? 'Headquarters' : '总部'}
+                        </dt>
+                        <dd className="text-slate-600 dark:text-slate-400">{displayText(job.location)}</dd>
+                      </div>
+                    </dl>
+                  </section>
                 </div>
               )}
 
               {activeTab === 'similar' && (
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">相似职位推荐</h4>
-                  {[1, 2, 3].map((index) => (
-                    <div key={index} className="p-4 border border-slate-200/60 dark:border-zinc-700/60 rounded-xl hover:bg-gradient-to-r hover:from-slate-50/80 hover:to-white/80 dark:hover:from-zinc-700/50 dark:hover:to-zinc-600/50 transition-all duration-300 cursor-pointer group transform hover:scale-[1.01]">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-haigoo-primary/25 group-hover:shadow-haigoo-primary/40 transition-all duration-300">
-                          <span className="text-white font-bold">
-                            {String.fromCharCode(65 + index)}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-haigoo-primary dark:group-hover:text-purple-400 transition-colors">
-                            {job.title} {index + 1}
-                          </h4>
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                            {job.company} • {job.location}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-haigoo-primary dark:text-purple-400">
-                            {85 + index * 2}% 匹配
+                <section>
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">相似职位推荐</h3>
+                  <div className="space-y-4" role="list">
+                    {[1, 2, 3].map((index) => (
+                      <article 
+                        key={index} 
+                        className="p-4 border border-slate-200/60 dark:border-zinc-700/60 rounded-xl hover:bg-gradient-to-r hover:from-slate-50/80 hover:to-white/80 dark:hover:from-zinc-700/50 dark:hover:to-zinc-600/50 transition-all duration-300 cursor-pointer group transform hover:scale-[1.01]"
+                        role="listitem"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            // 处理相似职位点击
+                          }
+                        }}
+                        aria-label={`相似职位：${job.title} ${index + 1}，匹配度 ${85 + index * 2}%`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div 
+                            className="w-12 h-12 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-haigoo-primary/25 group-hover:shadow-haigoo-primary/40 transition-all duration-300"
+                            role="img"
+                            aria-hidden="true"
+                          >
+                            <span className="text-white font-bold">
+                              {String.fromCharCode(65 + index)}
+                            </span>
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            2天前
+                          <div className="flex-1">
+                            <h4 className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-haigoo-primary dark:group-hover:text-purple-400 transition-colors">
+                              {job.title} {index + 1}
+                            </h4>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                              {job.company} • {job.location}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div 
+                              className="text-sm font-medium text-haigoo-primary dark:text-purple-400"
+                              aria-label={`匹配度 ${85 + index * 2} 百分比`}
+                            >
+                              {85 + index * 2}% 匹配
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              2天前
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
               )}
             </div>
           </div>
-        </div>
+        </main>
         
         {/* 底部固定申请按钮 - 科技感设计 */}
-        <div className="border-t border-slate-200/60 dark:border-zinc-700/60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-4">
+        <footer className="border-t border-slate-200/60 dark:border-zinc-700/60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-4">
           <button
+            ref={applyButtonRef}
             onClick={handleApply}
+            onKeyDown={(e) => handleKeyDown(e, handleApply)}
             className="w-full bg-gradient-to-r from-haigoo-primary via-purple-600 to-indigo-600 hover:from-haigoo-primary/90 hover:via-purple-600/90 hover:to-indigo-600/90 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:shadow-haigoo-primary/25 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group"
+            aria-label={`申请 ${job.title} 职位`}
           >
-            <Zap className="w-4 h-4 group-hover:animate-pulse" />
+            <Zap className="w-4 h-4 group-hover:animate-pulse" aria-hidden="true" />
             立即申请
             <span className="text-xs opacity-75">• 一键投递</span>
           </button>
-        </div>
+        </footer>
       </div>
     </div>
   )
