@@ -151,17 +151,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
-      {/* 筛选标题 */}
-      <div className="mb-2">
-        <label 
-          htmlFor={buttonId}
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {label}
-        </label>
-      </div>
-      
-      {/* 筛选按钮 */}
+      {/* 筛选按钮 - 将标题集成到按钮内 */}
       <button
         ref={buttonRef}
         id={buttonId}
@@ -170,7 +160,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
         onKeyDown={handleKeyDown}
         disabled={disabled}
         className={`
-          inline-flex items-center justify-between w-full px-4 py-3 text-base font-medium rounded-xl border transition-all duration-200 focus-ring min-w-[140px]
+          inline-flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium rounded-lg border transition-all duration-200 focus-ring min-w-[140px]
           ${selectedValues.length > 0 
             ? 'bg-haigoo-primary/10 text-haigoo-primary border-haigoo-primary/30 hover:bg-haigoo-primary/20' 
             : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
@@ -184,13 +174,13 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
         aria-describedby={`${dropdownId}-help`}
       >
         <span className="truncate text-left">
-          {getDisplayText()}
+          {selectedValues.length > 0 ? getDisplayText() : label}
         </span>
         
         {/* 选中数量指示器 */}
         {selectedValues.length > 0 && (
           <span 
-            className="ml-2 px-2 py-0.5 text-xs bg-haigoo-primary text-white rounded-full"
+            className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-haigoo-primary text-white rounded-full"
             aria-hidden="true"
           >
             {selectedValues.length}
@@ -210,14 +200,14 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
 
       {/* 下拉选项列表 */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-slideUp">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-slideUp">
           <ul
             ref={listRef}
             id={listboxId}
             role="listbox"
             aria-label={`${label}选项列表`}
             aria-multiselectable={multiple}
-            className="py-2 max-h-64 overflow-y-auto scrollbar-thin"
+            className="py-1 max-h-64 overflow-y-auto scrollbar-thin"
           >
             {options.map((option, index) => {
               const isSelected = selectedValues.includes(option.value);
@@ -232,17 +222,17 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                     onClick={() => handleOptionToggle(option.value)}
                     onMouseEnter={() => setFocusedIndex(index)}
                     className={`
-                      w-full text-left px-4 py-3 flex items-center justify-between transition-colors duration-200
+                      w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors duration-200
                       ${isFocused ? 'bg-gray-50 dark:bg-gray-700' : ''}
                       ${isSelected ? 'text-haigoo-primary bg-haigoo-primary/5' : 'text-gray-700 dark:text-gray-300'}
                       hover:bg-gray-50 dark:hover:bg-gray-700
                     `}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       {/* 选中状态指示器 */}
                       <div 
                         className={`
-                          w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200
+                          w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all duration-200
                           ${isSelected 
                             ? 'bg-haigoo-primary border-haigoo-primary' 
                             : 'border-gray-300 dark:border-gray-600'
@@ -251,11 +241,11 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                         aria-hidden="true"
                       >
                         {isSelected && (
-                          <Check className="w-3 h-3 text-white" />
+                          <Check className="w-2 h-2 text-white" strokeWidth={3} />
                         )}
                       </div>
                       
-                      <span className="text-base font-medium">{option.label}</span>
+                      <span className="text-sm">{option.label}</span>
                     </div>
                     
                     {/* 数量显示 */}

@@ -116,10 +116,10 @@ export default function Header() {
           >
             <Link 
               to="/" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
+              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
                 isActive('/') 
-                  ? 'text-white bg-haigoo-primary shadow-md' 
-                  : 'text-gray-700 hover:text-haigoo-primary hover:bg-haigoo-primary/8'
+                  ? 'text-white bg-haigoo-primary shadow-md transform scale-105' 
+                  : 'text-gray-700 hover:text-haigoo-primary hover:bg-haigoo-primary/10 hover:scale-102'
               }`}
               aria-current={isActive('/') ? 'page' : undefined}
             >
@@ -127,25 +127,25 @@ export default function Header() {
             </Link>
             <Link 
               to="/jobs" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
+              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
                 isActive('/jobs') 
-                  ? 'text-white bg-haigoo-primary shadow-md' 
-                  : 'text-gray-700 hover:text-haigoo-primary hover:bg-haigoo-primary/8'
+                  ? 'text-white bg-haigoo-primary shadow-md transform scale-105' 
+                  : 'text-gray-700 hover:text-haigoo-primary hover:bg-haigoo-primary/10 hover:scale-102'
               }`}
               aria-current={isActive('/jobs') ? 'page' : undefined}
             >
-              💼 全部职位
+              全部职位
             </Link>
             <Link 
               to="/remote-experience" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
+              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
                 isActive('/remote-experience') 
-                  ? 'text-white bg-haigoo-primary shadow-md' 
-                  : 'text-gray-700 hover:text-haigoo-primary hover:bg-haigoo-primary/8'
+                  ? 'text-white bg-haigoo-primary shadow-md transform scale-105' 
+                  : 'text-gray-700 hover:text-haigoo-primary hover:bg-haigoo-primary/10 hover:scale-102'
               }`}
               aria-current={isActive('/remote-experience') ? 'page' : undefined}
             >
-              🌍 远程指南
+              远程指南
             </Link>
           </nav>
 

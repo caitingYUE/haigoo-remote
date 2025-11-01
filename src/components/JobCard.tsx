@@ -235,22 +235,12 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               {job.title}
             </h2>
             
-            {/* 公司信息行 */}
+            {/* 公司信息行 - 移除来源标签，避免与底部重复 */}
             <div className="flex items-center gap-3 text-gray-600 text-sm mb-3 flex-wrap">
               <div className="flex items-center font-medium">
                 <Building className="w-4 h-4 mr-1.5" aria-hidden="true" />
                 <span>{job.company}</span>
               </div>
-              
-              {/* 来源标签 */}
-              {job.source && (
-                <span 
-                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-md"
-                  aria-label={`职位来源：${job.source}`}
-                >
-                  来源: {job.source}
-                </span>
-              )}
             </div>
             
             {/* 核心信息行 */}
@@ -303,7 +293,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               </div>
             </div>
             
-            {/* 标签行 */}
+            {/* 标签行 - 优化标签逻辑，避免重复 */}
             <div className="flex flex-wrap items-center gap-2 mt-3" role="list" aria-label="职位标签">
               {job.experienceLevel && (
                 <span 
@@ -315,16 +305,20 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
                   {getExperienceLevelLabel(job.experienceLevel)}
                 </span>
               )}
+              
+              {/* 远程工作标签 - 统一处理，避免重复 */}
               {job.isRemote && (
                 <span 
                   className="px-2 py-1 bg-green-50 text-green-600 text-xs font-medium rounded-md"
                   role="listitem"
-                  aria-label="支持远程工作"
+                  aria-label={job.remoteLocationRestriction ? `远程工作 - ${job.remoteLocationRestriction}` : "支持远程工作"}
+                  title={job.remoteLocationRestriction ? `远程工作限制: ${job.remoteLocationRestriction}` : "支持远程工作"}
                 >
                   <Globe className="w-3 h-3 inline mr-1" aria-hidden="true" />
-                  远程工作
+                  {job.remoteLocationRestriction ? `远程 - ${job.remoteLocationRestriction}` : '远程工作'}
                 </span>
               )}
+              
               {job.category && (
                 <span 
                   className="px-2 py-1 bg-orange-50 text-orange-600 text-xs font-medium rounded-md"
@@ -334,22 +328,12 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
                   {job.category}
                 </span>
               )}
-              {job.remoteLocationRestriction && (
-                <span 
-                  className="px-2 py-1 bg-yellow-50 text-yellow-600 text-xs font-medium rounded-md max-w-[150px] truncate" 
-                  title={`远程限制: ${job.remoteLocationRestriction}`}
-                  role="listitem"
-                  aria-label={`远程工作限制：${job.remoteLocationRestriction}`}
-                >
-                  限制: {job.remoteLocationRestriction}
-                </span>
-              )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* 职位描述 */}
+      {/* 职位描述 - 优化HTML标签处理 */}
       {job.description && (
         <section className="mt-4 pt-4 border-t border-gray-100">
           <p 
@@ -357,7 +341,11 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             className="text-gray-600 text-sm line-clamp-2 leading-relaxed"
             aria-label="职位描述"
           >
-            {processJobDescription(job.description)}
+            {processJobDescription(job.description, { 
+              formatMarkdown: false, 
+              maxLength: 120, 
+              preserveHtml: false 
+            })}
           </p>
         </section>
       )}
@@ -389,7 +377,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         </section>
       )}
 
-      {/* 底部操作栏 */}
+      {/* 底部操作栏 - 优化来源信息显示 */}
       <footer className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
         <div className="flex items-center space-x-4 text-xs text-gray-500">
           {job.source && job.sourceUrl && (
@@ -401,8 +389,14 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               tabIndex={0}
             >
               <ExternalLink className="w-3 h-3 mr-1" aria-hidden="true" />
-              在{job.source}查看
+              来源: {job.source}
             </button>
+          )}
+          {!job.sourceUrl && job.source && (
+            <span className="flex items-center text-gray-400">
+              <ExternalLink className="w-3 h-3 mr-1" aria-hidden="true" />
+              来源: {job.source}
+            </span>
           )}
         </div>
         
