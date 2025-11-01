@@ -7,6 +7,7 @@ import { myMemoryTranslateService } from './mymemory-translate-service'
 import { translationAIService } from './translation-ai-service'
 import { libreTranslateService } from './libre-translate-service'
 import { googleTranslateService } from './google-translate-service'
+import { proxyTranslationService } from './proxy-translation-service'
 import type { ApiResponse } from './types'
 
 /**
@@ -49,6 +50,20 @@ export class MultiTranslationService {
    */
   private initializeProviders() {
     this.providers = [
+      // 优先使用代理翻译服务 - 零成本且解决CORS问题
+      {
+        name: 'Proxy',
+        priority: 1,
+        translateText: async (text: string, targetLang: string, sourceLang: string = 'auto') => {
+          return await proxyTranslationService.translateText(text, targetLang, sourceLang)
+        },
+        batchTranslate: async (texts: string[], targetLang: string, sourceLang: string = 'auto') => {
+          return await proxyTranslationService.batchTranslate(texts, targetLang, sourceLang)
+        },
+        checkHealth: async () => {
+          return await proxyTranslationService.checkHealth()
+        }
+      },
       // 暂时禁用豆包服务，因为模型配置有问题
       // {
       //   name: 'Doubao',
