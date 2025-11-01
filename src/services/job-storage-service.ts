@@ -154,7 +154,7 @@ class JobStorageService {
     try {
       localStorage.removeItem(this.STORAGE_KEY);
       this.cleanupAllBackups();
-      console.log('✅ 已清空所有职位数据');
+      console.log('已清空所有职位数据');
     } catch (error) {
       console.error('清空数据失败:', error);
       throw error;
@@ -178,7 +178,7 @@ class JobStorageService {
       }
 
       localStorage.setItem(this.STORAGE_KEY, backupData);
-      console.log(`✅ 已从备份恢复数据: ${backupKey}`);
+      console.log(`已从备份恢复数据: ${backupKey}`);
       return true;
     } catch (error) {
       console.error('恢复备份失败:', error);

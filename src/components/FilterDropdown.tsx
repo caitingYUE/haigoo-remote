@@ -151,6 +151,16 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
+      {/* 筛选标题 */}
+      <div className="mb-2">
+        <label 
+          htmlFor={buttonId}
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {label}
+        </label>
+      </div>
+      
       {/* 筛选按钮 */}
       <button
         ref={buttonRef}
@@ -160,7 +170,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
         onKeyDown={handleKeyDown}
         disabled={disabled}
         className={`
-          inline-flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium rounded-xl border transition-all duration-200 focus-ring
+          inline-flex items-center justify-between w-full px-4 py-3 text-base font-medium rounded-xl border transition-all duration-200 focus-ring min-w-[140px]
           ${selectedValues.length > 0 
             ? 'bg-haigoo-primary/10 text-haigoo-primary border-haigoo-primary/30 hover:bg-haigoo-primary/20' 
             : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
@@ -173,7 +183,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
         aria-label={getAriaLabel()}
         aria-describedby={`${dropdownId}-help`}
       >
-        <span className="truncate">
+        <span className="truncate text-left">
           {getDisplayText()}
         </span>
         
@@ -245,13 +255,13 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                         )}
                       </div>
                       
-                      <span className="font-medium">{option.label}</span>
+                      <span className="text-base font-medium">{option.label}</span>
                     </div>
                     
                     {/* 数量显示 */}
                     {option.count !== undefined && (
                       <span 
-                        className="text-sm text-gray-500 dark:text-gray-400"
+                        className="text-sm text-gray-500 dark:text-gray-400 font-medium"
                         aria-label={`${option.count} 个结果`}
                       >
                         {option.count}
@@ -276,7 +286,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
               <button
                 type="button"
                 onClick={() => onChange([])}
-                className="flex-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors focus-ring"
+                className="flex-1 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors focus-ring"
                 aria-label="清除所有选择"
               >
                 清除全部
@@ -284,7 +294,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
               <button
                 type="button"
                 onClick={() => onChange(options.map(opt => opt.value))}
-                className="flex-1 px-3 py-2 text-sm text-haigoo-primary hover:text-haigoo-primary-dark hover:bg-haigoo-primary/10 rounded-lg transition-colors focus-ring"
+                className="flex-1 px-3 py-2 text-sm font-medium text-haigoo-primary hover:text-haigoo-primary-dark hover:bg-haigoo-primary/10 rounded-lg transition-colors focus-ring"
                 aria-label="选择所有选项"
               >
                 全选

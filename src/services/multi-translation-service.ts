@@ -28,13 +28,13 @@ export class MultiTranslationService {
   private readonly service = optimizedTranslationService
 
   constructor() {
-    console.log('🚀 多翻译服务已初始化 - 优化版本')
+    console.log('多翻译服务已初始化 - 优化版本')
     this.logServiceInfo()
   }
 
   private logServiceInfo() {
     const info = this.service.getServiceInfo()
-    console.log('📊 翻译服务信息:', {
+    console.log('翻译服务信息:', {
       name: info.name,
       version: info.version,
       features: info.features,

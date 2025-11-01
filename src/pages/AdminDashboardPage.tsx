@@ -216,7 +216,7 @@ const AdminDashboardPage: React.FC = () => {
       // 重新加载数据（此时应该是空的）
       await loadData();
       
-      alert('✅ 数据清除成功！下次点击"同步数据"将重新拉取所有RSS信息。');
+      alert('数据清除成功！下次点击"同步数据"将重新拉取所有RSS信息。');
       
     } catch (error) {
       console.error('清除数据失败:', error);

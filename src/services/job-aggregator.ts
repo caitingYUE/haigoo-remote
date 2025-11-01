@@ -863,10 +863,10 @@ class JobAggregator {
       // 清除存储中的数据
       if (this.storageAdapter) {
         await this.storageAdapter.clearAllData();
-        console.log('✅ 存储数据已清除');
+        console.log('存储数据已清除');
       }
       
-      console.log('✅ 所有数据清除完成');
+      console.log('所有数据清除完成');
     } catch (error) {
       console.error('清除数据失败:', error);
       throw error;

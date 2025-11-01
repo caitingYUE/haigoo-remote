@@ -123,7 +123,7 @@ export default function Header() {
               }`}
               aria-current={isActive('/') ? 'page' : undefined}
             >
-              🎯 智能推荐
+              智能推荐
             </Link>
             <Link 
               to="/jobs" 

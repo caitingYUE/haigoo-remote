@@ -1314,7 +1314,7 @@ class RSSService {
               lastUpdated: new Date()
             };
           } else {
-            console.warn(`⚠ ${source.name} - ${source.category}: 未获取到职位数据`);
+            console.warn(`${source.name} - ${source.category}: 未获取到职位数据`);
             return null;
           }
         } catch (error) {

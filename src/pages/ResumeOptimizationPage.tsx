@@ -400,7 +400,7 @@ export default function ResumeOptimizationPage() {
       setChatMessages(prev => [...prev, {
         id: Date.now().toString(),
         type: 'ai',
-        content: '✅ 简历已成功保存到本地存储！数据已备份，您可以随时恢复。',
+        content: '简历已成功保存到本地存储！数据已备份，您可以随时恢复。',
         timestamp: new Date(),
         suggestions: ['导出PDF版本', '继续优化简历', '查看保存历史']
       }]);
@@ -429,7 +429,7 @@ export default function ResumeOptimizationPage() {
         setChatMessages(prev => [...prev, {
           id: Date.now().toString(),
           type: 'ai',
-          content: `✅ 已成功加载保存的简历数据！\n最后修改时间: ${new Date(parsedResume.lastModified || Date.now()).toLocaleString()}`,
+          content: `已成功加载保存的简历数据！\n最后修改时间: ${new Date(parsedResume.lastModified || Date.now()).toLocaleString()}`,
           timestamp: new Date(),
           suggestions: ['继续编辑', '导出PDF', '重新开始']
         }]);

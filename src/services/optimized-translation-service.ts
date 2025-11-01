@@ -201,7 +201,7 @@ export class OptimizedTranslationService {
       // 检查缓存
       const cachedResult = this.getFromCache(text, targetLanguage, sourceLanguage)
       if (cachedResult) {
-        console.log('🎯 缓存命中:', text.substring(0, 50) + '...')
+        console.log('缓存命中:', text.substring(0, 50) + '...')
         return {
           success: true,
           data: cachedResult
@@ -251,7 +251,7 @@ export class OptimizedTranslationService {
         const cachedResult = this.getFromCache(text, targetLanguage, sourceLanguage)
         if (cachedResult) {
           results[i] = cachedResult.translatedText
-          console.log(`🎯 批量缓存命中 [${i}]:`, text.substring(0, 30) + '...')
+          console.log(`批量缓存命中 [${i}]:`, text.substring(0, 30) + '...')
         } else {
           uncachedTexts.push({ text, index: i })
         }
@@ -259,7 +259,7 @@ export class OptimizedTranslationService {
 
       // 第二步：并行处理未缓存的文本
       if (uncachedTexts.length > 0) {
-        console.log(`🚀 并行翻译 ${uncachedTexts.length} 个文本`)
+        console.log(`并行翻译 ${uncachedTexts.length} 个文本`)
         
         // 分批处理，避免过多并发请求
         const batches: Array<{ text: string; index: number }[]> = []
@@ -344,7 +344,7 @@ export class OptimizedTranslationService {
    */
   clearCache(): void {
     this.cache.clear()
-    console.log('🗑️ 翻译缓存已清空')
+    console.log('翻译缓存已清空')
   }
 
   /**

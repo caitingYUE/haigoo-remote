@@ -256,7 +256,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     >
       <div 
         ref={modalRef}
-        className={`bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/60 dark:border-zinc-700/60 w-full max-w-4xl h-[90vh] flex flex-col relative transform transition-all duration-300 ${
+        className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200/60 dark:border-zinc-700/60 w-full max-w-4xl h-[90vh] flex flex-col relative transform transition-all duration-300 ${
           isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -472,9 +472,9 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
               </div>
             </section>
 
-            {/* 优化的Tab导航 - 减少视觉压迫感 */}
+            {/* 优化的Tab导航 - 简洁设计 */}
             <nav 
-              className="flex space-x-1 bg-slate-50 dark:bg-zinc-800 p-1 rounded-lg border border-slate-200 dark:border-zinc-700"
+              className="flex space-x-1 bg-slate-50/80 dark:bg-zinc-800/80 p-1 rounded-xl"
               role="tablist"
               aria-label="职位详情选项卡"
             >
@@ -487,10 +487,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}
                   onKeyDown={(e) => handleKeyDown(e, () => setActiveTab(tab.key as any))}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
                     activeTab === tab.key
                       ? 'bg-white dark:bg-zinc-700 text-haigoo-primary dark:text-purple-400 shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-haigoo-primary dark:hover:text-purple-400 hover:bg-white/50 dark:hover:bg-zinc-700/50'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-zinc-700/60'
                   }`}
                   role="tab"
                   aria-selected={activeTab === tab.key}
@@ -505,7 +505,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 
             {/* Tab Content */}
             <div 
-              className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm hover:shadow-md transition-all duration-300"
+              className="bg-white dark:bg-zinc-800 rounded-xl p-6 border border-slate-200/40 dark:border-zinc-700/40"
               role="tabpanel"
               id={`tabpanel-${activeTab}`}
               aria-labelledby={`tab-${activeTab}`}
