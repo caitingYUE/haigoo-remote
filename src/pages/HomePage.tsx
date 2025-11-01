@@ -231,6 +231,7 @@ export default function HomePage() {
               <SearchBar 
                 value={searchTerm}
                 onChange={setSearchTerm}
+                onSearch={(query) => setSearchTerm(query)}
                 placeholder="搜索职位、公司或技能..."
                 className="w-full"
               />
@@ -239,20 +240,23 @@ export default function HomePage() {
               <FilterDropdown
                 label="工作类型"
                 options={jobTypeOptions}
-                value={filters.jobType}
-                onChange={(value) => setFilters(prev => ({ ...prev, jobType: value }))}
+                selectedValues={filters.jobType === 'all' ? [] : [filters.jobType]}
+                onChange={(values) => setFilters(prev => ({ ...prev, jobType: values.length > 0 ? values[0] : 'all' }))}
+                multiple={false}
               />
               <FilterDropdown
                 label="薪资范围"
                 options={salaryOptions}
-                value={filters.salary}
-                onChange={(value) => setFilters(prev => ({ ...prev, salary: value }))}
+                selectedValues={filters.salary === 'all' ? [] : [filters.salary]}
+                onChange={(values) => setFilters(prev => ({ ...prev, salary: values.length > 0 ? values[0] : 'all' }))}
+                multiple={false}
               />
               <FilterDropdown
                 label="地点"
                 options={locationOptions}
-                value={filters.location}
-                onChange={(value) => setFilters(prev => ({ ...prev, location: value }))}
+                selectedValues={filters.location === 'all' ? [] : [filters.location]}
+                onChange={(values) => setFilters(prev => ({ ...prev, location: values.length > 0 ? values[0] : 'all' }))}
+                multiple={false}
               />
             </div>
           </div>
