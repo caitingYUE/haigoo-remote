@@ -276,7 +276,7 @@ export class OptimizedTranslationService {
           const batchResults = await Promise.allSettled(batchPromises)
           
           batchResults.forEach((promiseResult, batchIndex) => {
-            const { index, originalText } = batch[batchIndex]
+            const { text: originalText, index } = batch[batchIndex]
             
             if (promiseResult.status === 'fulfilled') {
               const { result } = promiseResult.value
