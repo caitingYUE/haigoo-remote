@@ -557,18 +557,18 @@ export class TagFilter {
 
 // 导出便捷函数
 export const tagUtils = {
-  normalize: TagProcessor.normalizeTag,
-  process: TagProcessor.processTags,
-  sort: TagProcessor.sortTagsByPriority,
-  limit: TagProcessor.limitTagsByCategory,
-  generateLayout: TagProcessor.generateTagCloudLayout,
-  generateStyle: TagStyleGenerator.generateTagStyle,
-  generateHoverStyle: TagStyleGenerator.generateHoverStyle,
-  generateContainerStyle: TagStyleGenerator.generateContainerStyle,
-  filterByCategory: TagFilter.filterByCategory,
-  filterByPriority: TagFilter.filterByPriority,
-  search: TagFilter.searchTags,
-  getRecommended: TagFilter.getRecommendedTags
+  normalize: (tagText: string) => TagProcessor.normalizeTag(tagText),
+  process: (tagTexts: string[]) => TagProcessor.processTags(tagTexts),
+  sort: (tags: JobTag[]) => TagProcessor.sortTagsByPriority(tags),
+  limit: (tags: JobTag[]) => TagProcessor.limitTagsByCategory(tags),
+  generateLayout: (tags: JobTag[], maxTags?: number) => TagProcessor.generateTagCloudLayout(tags, maxTags),
+  generateStyle: (tag: JobTag) => TagStyleGenerator.generateTagStyle(tag),
+  generateHoverStyle: (tag: JobTag) => TagStyleGenerator.generateHoverStyle(tag),
+  generateContainerStyle: () => TagStyleGenerator.generateContainerStyle(),
+  filterByCategory: (tags: JobTag[], category: TagCategory) => TagFilter.filterByCategory(tags, category),
+  filterByPriority: (tags: JobTag[], priority: TagPriority) => TagFilter.filterByPriority(tags, priority),
+  search: (query: string) => TagFilter.searchTags(query),
+  getRecommended: (existingTags: JobTag[], limit?: number) => TagFilter.getRecommendedTags(existingTags, limit)
 };
 
 export default tagUtils;
