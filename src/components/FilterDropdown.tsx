@@ -174,7 +174,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
         aria-describedby={`${dropdownId}-help`}
       >
         <span className="truncate text-left">
-          {selectedValues.length > 0 ? getDisplayText() : label}
+          {getDisplayText()}
         </span>
         
         {/* 选中数量指示器 */}

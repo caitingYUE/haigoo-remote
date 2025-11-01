@@ -224,35 +224,29 @@ export default function JobDetailPage() {
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="bg-white rounded-xl shadow-sm mb-4 md:mb-6 overflow-hidden">
-              <div className="flex border-b border-gray-200 overflow-x-auto">
+            {/* 专业Tab导航 - 海狗品牌交互状态 */}
+            <div className="bg-white rounded-xl shadow-sm mb-4 md:mb-6 overflow-hidden border border-haigoo-neutral-200">
+              <div className="flex bg-haigoo-neutral-50 p-1 rounded-t-xl">
                 <button
                   onClick={() => setActiveTab('description')}
-                  className={`flex-1 min-w-0 py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${
-                    activeTab === 'description'
-                      ? 'border-purple-600 text-purple-600'
-                      : 'border-transparent text-gray-500 hover:text-purple-600'
+                  className={`tab-nav-item ${
+                    activeTab === 'description' ? 'tab-nav-active' : 'tab-nav-default'
                   }`}
                 >
                   Job Description
                 </button>
                 <button
                   onClick={() => setActiveTab('company')}
-                  className={`flex-1 min-w-0 py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${
-                    activeTab === 'company'
-                      ? 'border-purple-600 text-purple-600'
-                      : 'border-transparent text-gray-500 hover:text-purple-600'
+                  className={`tab-nav-item ${
+                    activeTab === 'company' ? 'tab-nav-active' : 'tab-nav-default'
                   }`}
                 >
                   Company Info
                 </button>
                 <button
                   onClick={() => setActiveTab('similar')}
-                  className={`flex-1 min-w-0 py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${
-                    activeTab === 'similar'
-                      ? 'border-purple-600 text-purple-600'
-                      : 'border-transparent text-gray-500 hover:text-purple-600'
+                  className={`tab-nav-item ${
+                    activeTab === 'similar' ? 'tab-nav-active' : 'tab-nav-default'
                   }`}
                 >
                   Similar Jobs

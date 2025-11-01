@@ -75,7 +75,7 @@ export default function Footer() {
 
         {/* 可选：添加额外的页脚信息 */}
         <div className="mt-6 pt-6 border-t border-gray-100">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-400">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-600">
             <div 
               className="flex items-center gap-4"
               role="region"

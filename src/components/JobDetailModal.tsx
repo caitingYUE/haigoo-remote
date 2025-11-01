@@ -472,9 +472,9 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
               </div>
             </section>
 
-            {/* 优化的Tab导航 - 简洁设计 */}
+            {/* 专业Tab导航 - 海狗品牌交互状态 */}
             <nav 
-              className="flex space-x-1 bg-slate-50/80 dark:bg-zinc-800/80 p-1 rounded-xl"
+              className="flex space-x-1 bg-haigoo-neutral-50 dark:bg-haigoo-neutral-800 p-1 rounded-xl border border-haigoo-neutral-200 dark:border-haigoo-neutral-700"
               role="tablist"
               aria-label="职位详情选项卡"
             >
@@ -487,10 +487,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}
                   onKeyDown={(e) => handleKeyDown(e, () => setActiveTab(tab.key as any))}
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
-                    activeTab === tab.key
-                      ? 'bg-white dark:bg-zinc-700 text-haigoo-primary dark:text-purple-400 shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-zinc-700/60'
+                  className={`tab-nav-item ${
+                    activeTab === tab.key ? 'tab-nav-active' : 'tab-nav-default'
                   }`}
                   role="tab"
                   aria-selected={activeTab === tab.key}

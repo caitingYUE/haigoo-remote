@@ -2,6 +2,109 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Haigoo 专业颜色系统 v2.0 */
+:root {
+  /* 主品牌色系 */
+  --haigoo-primary: #8B5CF6;
+  --haigoo-primary-hover: #7C3AED;
+  --haigoo-primary-active: #6D28D9;
+  --haigoo-primary-light: #A78BFA;
+  --haigoo-primary-dark: #5B21B6;
+  
+  /* 辅助色系 */
+  --haigoo-secondary: #EC4899;
+  --haigoo-accent: #06B6D4;
+  --haigoo-success: #10B981;
+  --haigoo-warning: #F59E0B;
+  --haigoo-error: #EF4444;
+  
+  /* 中性色系 */
+  --haigoo-gray-50: #F9FAFB;
+  --haigoo-gray-100: #F3F4F6;
+  --haigoo-gray-200: #E5E7EB;
+  --haigoo-gray-300: #D1D5DB;
+  --haigoo-gray-400: #9CA3AF;
+  --haigoo-gray-500: #6B7280;
+  --haigoo-gray-600: #4B5563;
+  --haigoo-gray-700: #374151;
+  --haigoo-gray-800: #1F2937;
+  --haigoo-gray-900: #111827;
+  
+  /* 过渡动画 */
+  --transition-standard: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s ease-out;
+  --transition-slow: all 0.5s ease-in-out;
+  
+  /* 标签颜色系统 */
+  --tag-development: #3B82F6;
+  --tag-design: #8B5CF6;
+  --tag-marketing: #EC4899;
+  --tag-sales: #10B981;
+  --tag-support: #F59E0B;
+  --tag-management: #6B7280;
+  --tag-remote: #06B6D4;
+  --tag-hybrid: #8B5CF6;
+  --tag-onsite: #6B7280;
+  --tag-urgent: #EF4444;
+  --tag-normal: #6B7280;
+  --tag-flexible: #10B981;
+}
+
+/* Tab 导航专业交互状态 */
+.tab-navigation {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.tab-default {
+  background-color: var(--haigoo-gray-50);
+  color: var(--haigoo-primary);
+  border: 1px solid var(--haigoo-gray-200);
+  transition: var(--transition-standard);
+}
+
+.tab-hover:hover {
+  background-color: var(--haigoo-primary);
+  color: #FFFFFF;
+  border-color: var(--haigoo-primary);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+  transform: translateY(-1px);
+}
+
+.tab-active {
+  background-color: var(--haigoo-primary-active) !important;
+  color: #FFFFFF !important;
+  border-color: var(--haigoo-primary-active) !important;
+  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.35);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.tab-focus:focus {
+  outline: 2px solid var(--haigoo-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+}
+
+/* 标签系统样式 */
+.job-tag {
+  @apply inline-flex items-center px-2.5 py-1 rounded text-xs font-medium;
+  height: 28px;
+  border-radius: 4px;
+  transition: var(--transition-fast);
+}
+
+.job-tag-development { background-color: rgba(59, 130, 246, 0.1); color: #3B82F6; }
+.job-tag-design { background-color: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
+.job-tag-marketing { background-color: rgba(236, 72, 153, 0.1); color: #EC4899; }
+.job-tag-sales { background-color: rgba(16, 185, 129, 0.1); color: #10B981; }
+.job-tag-support { background-color: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+.job-tag-management { background-color: rgba(107, 114, 128, 0.1); color: #6B7280; }
+.job-tag-remote { background-color: rgba(6, 182, 212, 0.1); color: #06B6D4; }
+.job-tag-hybrid { background-color: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
+.job-tag-onsite { background-color: rgba(107, 114, 128, 0.1); color: #6B7280; }
+.job-tag-urgent { background-color: rgba(239, 68, 68, 0.1); color: #EF4444; }
+.job-tag-normal { background-color: rgba(107, 114, 128, 0.1); color: #6B7280; }
+.job-tag-flexible { background-color: rgba(16, 185, 129, 0.1); color: #10B981; }
+
 /* 改进的动画效果 */
 @keyframes fadeIn {
   from { 

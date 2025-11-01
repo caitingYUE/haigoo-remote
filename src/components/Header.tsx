@@ -153,13 +153,13 @@ export default function Header() {
           <div className="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
             {/* Notifications */}
             <button 
-              className="p-2 text-gray-400 hover:text-gray-600 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg"
+              className="p-3 text-gray-400 hover:text-gray-600 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="通知，有 1 条新消息"
               title="通知"
             >
               <Bell className="h-6 w-6" aria-hidden="true" />
               <span 
-                className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400"
+                className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-400"
                 aria-hidden="true"
               ></span>
               <span className="sr-only">有新通知</span>
@@ -260,7 +260,7 @@ export default function Header() {
               ref={mobileMenuButtonRef}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               onKeyDown={(e) => handleKeyDown(e, () => setIsMenuOpen(!isMenuOpen))}
-              className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-haigoo-primary"
+              className="md:hidden p-3 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-haigoo-primary min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
               aria-label={isMenuOpen ? '关闭移动菜单' : '打开移动菜单'}

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { MapPin, Clock, DollarSign, ExternalLink, Bookmark, Star, Building, Briefcase, Globe, Award, Share2 } from 'lucide-react';
+import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
+import { JobTags } from './JobTag';
+import { tagUtils, JobTag as JobTagType } from '../utils/tagSystem';
 
 interface JobCardProps {
   job: Job;
@@ -12,7 +14,56 @@ interface JobCardProps {
 }
 
 export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps) {
-  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+
+  // 生成标签数据
+  const generateJobTags = (job: Job): string[] => {
+    const tags: string[] = [];
+    
+    // 岗位类型
+    if (job.category) {
+      tags.push(job.category);
+    }
+    
+    // 工作模式
+    if (job.isRemote) {
+      if (job.remoteLocationRestriction) {
+        tags.push(`远程 - ${job.remoteLocationRestriction}`);
+      } else {
+        tags.push('远程工作');
+      }
+    } else {
+      tags.push('现场办公');
+    }
+    
+    // 经验要求
+    if (job.experienceLevel) {
+      const experienceMap: Record<string, string> = {
+        'Entry': '初级',
+        'Mid': '中级', 
+        'Senior': '高级',
+        'Lead': '资深',
+        'Executive': '专家'
+      };
+      tags.push(experienceMap[job.experienceLevel] || job.experienceLevel);
+    }
+    
+    // 工作类型 - 使用type属性
+    if (job.type) {
+      const jobTypeMap: Record<string, string> = {
+        'full-time': '全职',
+        'part-time': '兼职',
+        'contract': '合同',
+        'freelance': '自由职业',
+        'internship': '实习',
+        'remote': '远程'
+      };
+      tags.push(jobTypeMap[job.type] || job.type);
+    }
+    
+    return tags;
+  };
+
+  const jobTags = generateJobTags(job);
 
   const formatSalary = (salary: Job['salary']) => {
     if (!salary || (salary.min === 0 && salary.max === 0)) return '薪资面议';
@@ -57,18 +108,6 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     return labels[jobType as keyof typeof labels] || jobType;
   };
 
-  const getExperienceLevelLabel = (level?: string) => {
-    if (!level) return null;
-    const labels = {
-      'Entry': '初级',
-      'Mid': '中级',
-      'Senior': '高级',
-      'Lead': '主管',
-      'Executive': '总监'
-    };
-    return labels[level as keyof typeof labels] || level;
-  };
-
   // 键盘导航处理
   const handleCardKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -80,23 +119,6 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
   const handleCardClick = () => {
     if (onClick) {
       onClick(job);
-    }
-  };
-
-  const handleSaveClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onSave) {
-      onSave(job.id);
-    }
-  };
-
-  const handleSaveKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      e.stopPropagation();
-      if (onSave) {
-        onSave(job.id);
-      }
     }
   };
 
@@ -117,28 +139,6 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     }
   };
 
-  const handleShareClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (navigator.share) {
-      navigator.share({
-        title: job.title,
-        text: `${job.company} - ${job.title}`,
-        url: window.location.href
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      setIsShareMenuOpen(false);
-    }
-  };
-
-  const handleShareKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      e.stopPropagation();
-      handleShareClick(e as any);
-    }
-  };
-
   // 生成职位卡片的 ARIA 标签
   const getJobCardAriaLabel = () => {
     const parts = [
@@ -151,7 +151,15 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     ];
     
     if (job.experienceLevel) {
-      parts.push(`经验要求：${getExperienceLevelLabel(job.experienceLevel)}`);
+      const experienceMap: Record<string, string> = {
+        'Entry': '初级',
+        'Mid': '中级', 
+        'Senior': '高级',
+        'Lead': '资深',
+        'Executive': '专家'
+      };
+      const experienceLabel = experienceMap[job.experienceLevel] || job.experienceLevel;
+      parts.push(`经验要求：${experienceLabel}`);
     }
     
     if (job.isRemote) {
@@ -167,59 +175,28 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       tabIndex={0}
-      role="button"
       aria-label={getJobCardAriaLabel()}
       aria-describedby={`job-${job.id}-description`}
     >
-      {/* 右上角操作按钮组 */}
-      <div 
-        className="absolute top-4 right-4 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-        role="toolbar"
-        aria-label="职位操作"
-      >
-        {/* 原始链接跳转按钮 */}
-        {job.sourceUrl && (
+      {/* 右上角操作按钮组 - 仅保留原始链接跳转 */}
+      {job.sourceUrl && (
+        <div 
+          className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          role="toolbar"
+          aria-label="职位操作"
+        >
           <button
             onClick={handleSourceClick}
             onKeyDown={handleSourceKeyDown}
-            className="p-2 text-gray-400 hover:text-haigoo-primary hover:bg-haigoo-primary/10 rounded-lg transition-all duration-200 focus-ring"
+            className="p-3 text-gray-400 hover:text-haigoo-primary hover:bg-haigoo-primary/10 rounded-lg transition-all duration-200 focus-ring min-w-[44px] min-h-[44px] flex items-center justify-center"
             title={`在 ${job.source} 查看原始职位`}
             aria-label={`在 ${job.source} 查看原始职位`}
             tabIndex={0}
           >
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
           </button>
-        )}
-        
-        {/* 分享按钮 */}
-        <button
-          onClick={handleShareClick}
-          onKeyDown={handleShareKeyDown}
-          className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all duration-200 focus-ring"
-          title="分享职位"
-          aria-label="分享职位"
-          tabIndex={0}
-        >
-          <Share2 className="h-4 w-4" aria-hidden="true" />
-        </button>
-        
-        {/* 收藏按钮 */}
-        <button
-          onClick={handleSaveClick}
-          onKeyDown={handleSaveKeyDown}
-          className={`p-2 rounded-lg transition-all duration-200 focus-ring ${
-            isSaved 
-              ? 'text-yellow-500 bg-yellow-50' 
-              : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50'
-          }`}
-          title={isSaved ? '取消收藏' : '收藏职位'}
-          aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
-          aria-pressed={isSaved}
-          tabIndex={0}
-        >
-          <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} aria-hidden="true" />
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Header */}
       <header className="flex items-start justify-between pr-20">
@@ -293,41 +270,14 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               </div>
             </div>
             
-            {/* 标签行 - 优化标签逻辑，避免重复 */}
-            <div className="flex flex-wrap items-center gap-2 mt-3" role="list" aria-label="职位标签">
-              {job.experienceLevel && (
-                <span 
-                  className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-md"
-                  role="listitem"
-                  aria-label={`经验要求：${getExperienceLevelLabel(job.experienceLevel)}`}
-                >
-                  <Award className="w-3 h-3 inline mr-1" aria-hidden="true" />
-                  {getExperienceLevelLabel(job.experienceLevel)}
-                </span>
-              )}
-              
-              {/* 远程工作标签 - 统一处理，避免重复 */}
-              {job.isRemote && (
-                <span 
-                  className="px-2 py-1 bg-green-50 text-green-600 text-xs font-medium rounded-md"
-                  role="listitem"
-                  aria-label={job.remoteLocationRestriction ? `远程工作 - ${job.remoteLocationRestriction}` : "支持远程工作"}
-                  title={job.remoteLocationRestriction ? `远程工作限制: ${job.remoteLocationRestriction}` : "支持远程工作"}
-                >
-                  <Globe className="w-3 h-3 inline mr-1" aria-hidden="true" />
-                  {job.remoteLocationRestriction ? `远程 - ${job.remoteLocationRestriction}` : '远程工作'}
-                </span>
-              )}
-              
-              {job.category && (
-                <span 
-                  className="px-2 py-1 bg-orange-50 text-orange-600 text-xs font-medium rounded-md"
-                  role="listitem"
-                  aria-label={`职位类别：${job.category}`}
-                >
-                  {job.category}
-                </span>
-              )}
+            {/* 标签行 - 使用新的标签系统 */}
+            <div className="mt-3" role="list" aria-label="职位标签">
+              <JobTags 
+                tags={jobTags}
+                size="small"
+                maxTags={4}
+                showMore={true}
+              />
             </div>
           </div>
         </div>
@@ -377,7 +327,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         </section>
       )}
 
-      {/* 底部操作栏 - 优化来源信息显示 */}
+      {/* 底部操作栏 - 简化布局，移除重复按钮 */}
       <footer className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
         <div className="flex items-center space-x-4 text-xs text-gray-500">
           {job.source && job.sourceUrl && (
@@ -389,7 +339,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               tabIndex={0}
             >
               <ExternalLink className="w-3 h-3 mr-1" aria-hidden="true" />
-              来源: {job.source}
+              在 {job.source} 查看
             </button>
           )}
           {!job.sourceUrl && job.source && (
@@ -400,28 +350,9 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
           )}
         </div>
         
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={handleShareClick}
-            onKeyDown={handleShareKeyDown}
-            className="text-xs text-gray-500 hover:text-blue-500 transition-colors duration-200 focus-ring rounded px-1"
-            aria-label="分享职位"
-            tabIndex={0}
-          >
-            分享
-          </button>
-          <button
-            onClick={handleSaveClick}
-            onKeyDown={handleSaveKeyDown}
-            className={`text-xs transition-colors duration-200 focus-ring rounded px-1 ${
-              isSaved ? 'text-yellow-500' : 'text-gray-500 hover:text-yellow-500'
-            }`}
-            aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
-            aria-pressed={isSaved}
-            tabIndex={0}
-          >
-            {isSaved ? '已收藏' : '收藏'}
-          </button>
+        {/* 移除重复的分享和收藏按钮，右上角已有图标按钮 */}
+        <div className="text-xs text-gray-400">
+          点击查看详情
         </div>
       </footer>
     </article>
