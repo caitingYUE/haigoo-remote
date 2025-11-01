@@ -16,23 +16,23 @@ interface JobCardProps {
 export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps) {
 
   // 生成标签数据
-  const generateJobTags = (job: Job): string[] => {
-    const tags: string[] = [];
+  const generateJobTags = (job: Job): JobTagType[] => {
+    const tagTexts: string[] = [];
     
     // 岗位类型
     if (job.category) {
-      tags.push(job.category);
+      tagTexts.push(job.category);
     }
     
     // 工作模式
     if (job.isRemote) {
       if (job.remoteLocationRestriction) {
-        tags.push(`远程 - ${job.remoteLocationRestriction}`);
+        tagTexts.push(`远程 - ${job.remoteLocationRestriction}`);
       } else {
-        tags.push('远程工作');
+        tagTexts.push('远程工作');
       }
     } else {
-      tags.push('现场办公');
+      tagTexts.push('现场办公');
     }
     
     // 经验要求
@@ -44,7 +44,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         'Lead': '资深',
         'Executive': '专家'
       };
-      tags.push(experienceMap[job.experienceLevel] || job.experienceLevel);
+      tagTexts.push(experienceMap[job.experienceLevel] || job.experienceLevel);
     }
     
     // 工作类型 - 使用type属性
@@ -57,10 +57,11 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         'internship': '实习',
         'remote': '远程'
       };
-      tags.push(jobTypeMap[job.type] || job.type);
+      tagTexts.push(jobTypeMap[job.type] || job.type);
     }
     
-    return tags;
+    // 使用tagUtils处理标签文本，转换为JobTag对象
+    return tagUtils.process(tagTexts);
   };
 
   const jobTags = generateJobTags(job);
