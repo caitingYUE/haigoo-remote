@@ -1,6 +1,5 @@
 import { Job, JobCategory, JobFilter, JobStats, SyncStatus, AdminDashboardData } from '../types/rss-types';
 import { rssService, RSSFeedItem, ParsedRSSData } from './rss-service';
-import { aiJobParser, ParsedJobInfo } from './ai-job-parser';
 import { getStorageAdapter } from './storage-factory';
 import { CloudStorageAdapter } from './cloud-storage-adapter';
 
@@ -75,7 +74,7 @@ class JobAggregator {
     try {
       if (this.storageAdapter && this.jobs.length > 0) {
         await this.storageAdapter.saveJobs(this.jobs);
-        console.log(`💾 成功保存 ${this.jobs.length} 个职位到存储`);
+        console.log(`成功保存 ${this.jobs.length} 个职位到存储`);
       } else if (!this.storageAdapter) {
         console.warn('存储适配器未初始化，无法保存数据');
       } else {
@@ -388,48 +387,35 @@ class JobAggregator {
   }
 
   /**
-   * 将RSS项目转换为Job对象 - 使用AI解析
+   * 将RSS项目转换为Job对象 - 使用基于规则的解析
    */
-  private async convertRSSItemToJob(item: RSSFeedItem, source: string, sourceCategory: string): Promise<Job> {
+  private convertRSSItemToJob(item: RSSFeedItem, source: string, sourceCategory: string): Job {
     const id = this.generateJobId(item.link, source);
+    const category = this.categorizeJob(item.title, item.description, sourceCategory);
+    const now = new Date().toISOString();
     
-    try {
-      // 使用AI解析职位信息
-      const parsedInfo: ParsedJobInfo = await aiJobParser.parseJobInfo(
-        item.title,
-        item.description,
-        source
-      );
-      
-      const now = new Date().toISOString();
-      
-      return {
-        id,
-        title: parsedInfo.title,
-        company: parsedInfo.company,
-        location: parsedInfo.location,
-        description: item.description,
-        url: item.link,
-        publishedAt: item.pubDate || now,
-        source,
-        category: parsedInfo.category as JobCategory,
-        salary: parsedInfo.salary,
-        jobType: parsedInfo.jobType,
-        experienceLevel: parsedInfo.experienceLevel,
-        remoteLocationRestriction: parsedInfo.remoteLocationRestriction,
-        tags: parsedInfo.tags,
-        requirements: parsedInfo.requirements,
-        benefits: parsedInfo.benefits,
-        isRemote: this.isRemoteJob(parsedInfo.title, item.description, parsedInfo.location),
-        status: 'active',
-        createdAt: now,
-        updatedAt: now
-      };
-    } catch (error) {
-      console.error('AI解析失败，使用备用方法:', error);
-      // 备用方法：使用原有逻辑
-      return this.convertRSSItemToJobFallback(item, source, sourceCategory);
-    }
+    return {
+      id,
+      title: item.title,
+      company: item.company || this.extractCompanyFromDescription(item.description),
+      location: item.location || 'Remote',
+      description: item.description,
+      url: item.link,
+      publishedAt: item.pubDate || now,
+      source,
+      category,
+      salary: item.salary,
+      jobType: (item.jobType as Job['jobType']) || 'full-time',
+      experienceLevel: item.experienceLevel || this.determineExperienceLevel(item.title, item.description),
+      remoteLocationRestriction: item.remoteLocationRestriction,
+      tags: this.extractTags(item.title, item.description),
+      requirements: this.extractRequirements(item.description),
+      benefits: this.extractBenefits(item.description),
+      isRemote: item.workType === 'remote' || this.isRemoteJob(item.title, item.description, item.location),
+      status: 'active',
+      createdAt: now,
+      updatedAt: now
+    };
   }
 
   /**

@@ -18,6 +18,11 @@ export interface Job {
   source: string
   sourceUrl?: string
   logo?: string
+  // RSS数据扩展字段
+  experienceLevel?: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive'
+  category?: string
+  isRemote?: boolean
+  remoteLocationRestriction?: string
 }
 
 export interface User {

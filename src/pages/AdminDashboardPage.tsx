@@ -202,7 +202,7 @@ const AdminDashboardPage: React.FC = () => {
   // 清除所有数据
   const handleClearData = useCallback(async () => {
     const confirmed = confirm(
-      '⚠️ 警告：此操作将清除所有职位数据和缓存，无法恢复！\n\n确定要继续吗？'
+      '警告：此操作将清除所有职位数据和缓存，无法恢复！\n\n确定要继续吗？'
     );
     
     if (!confirmed) return;

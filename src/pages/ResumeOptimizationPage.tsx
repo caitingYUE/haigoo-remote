@@ -129,7 +129,7 @@ export default function ResumeOptimizationPage() {
     {
       id: '1',
       type: 'ai',
-      content: '你好！我是你的AI简历优化助手 🤖 请先上传目标职位的JD和你的简历，我将为你提供个性化的优化建议。我会在每次修改前都征求你的确认，确保优化方向符合你的期望。',
+      content: '你好！我是你的AI简历优化助手，请先上传目标职位的JD和你的简历，我将为你提供个性化的优化建议。我会在每次修改前都征求你的确认，确保优化方向符合你的期望。',
       timestamp: new Date()
     }
   ])

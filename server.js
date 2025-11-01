@@ -136,6 +136,62 @@ app.get('/api/rss-proxy', async (req, res) => {
   }
 });
 
+// Jobs API端点
+app.get('/api/jobs', async (req, res) => {
+  try {
+    console.log('Jobs API called');
+    
+    // 模拟职位数据 - 在实际应用中，这里会从数据库获取数据
+    const jobs = [
+      {
+        id: '1',
+        title: 'Frontend Developer',
+        company: 'Tech Corp',
+        location: 'Remote',
+        description: '<p>We are looking for a skilled Frontend Developer to join our team. You will be responsible for developing user interfaces using React, TypeScript, and modern web technologies.</p><ul><li>3+ years of React experience</li><li>Strong TypeScript skills</li><li>Experience with modern CSS frameworks</li></ul>',
+        requirements: 'Bachelor\'s degree in Computer Science or related field',
+        salary: '$80,000 - $120,000',
+        type: 'Full-time',
+        remote: true,
+        experience: 'Mid-level',
+        skills: ['React', 'TypeScript', 'CSS', 'JavaScript'],
+        postedDate: new Date().toISOString(),
+        source: 'test'
+      },
+      {
+        id: '2',
+        title: 'Backend Engineer',
+        company: 'StartupXYZ',
+        location: 'San Francisco, CA',
+        description: '<p>Join our backend team to build scalable APIs and microservices. You\'ll work with Node.js, Python, and cloud technologies to create robust systems.</p><h3>What you\'ll do:</h3><ul><li>Design and implement RESTful APIs</li><li>Optimize database queries</li><li>Deploy services to AWS</li></ul>',
+        requirements: 'Experience with Node.js and Python',
+        salary: '$100,000 - $150,000',
+        type: 'Full-time',
+        remote: false,
+        experience: 'Senior',
+        skills: ['Node.js', 'Python', 'AWS', 'MongoDB'],
+        postedDate: new Date().toISOString(),
+        source: 'test'
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: jobs,
+      total: jobs.length,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Jobs API error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch jobs',
+      message: error.message
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`RSS Proxy server running on http://localhost:${PORT}`);
 });

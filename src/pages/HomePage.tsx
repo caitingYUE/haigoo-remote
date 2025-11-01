@@ -115,6 +115,7 @@ export default function HomePage() {
   const initialNavState = location.state as any
   const [selectedJob, setSelectedJob] = useState<Job | null>(initialNavState?.job ?? null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState<boolean>(Boolean(initialNavState?.reopenJobDetail && initialNavState?.job))
+  const [currentJobIndex, setCurrentJobIndex] = useState(0)
 
   // 处理从AI优化页面返回时重新打开模态框（后备：仅有jobId时）
   useEffect(() => {
@@ -198,6 +199,8 @@ export default function HomePage() {
 
    const openJobDetail = (job: Job) => {
      console.log('Opening job detail for:', job.title, job.id)
+     const jobIndex = filteredJobs.findIndex(j => j.id === job.id)
+     setCurrentJobIndex(jobIndex >= 0 ? jobIndex : 0)
      setSelectedJob(job)
      setIsJobDetailOpen(true)
    }
@@ -205,6 +208,18 @@ export default function HomePage() {
    const closeJobDetail = () => {
      setIsJobDetailOpen(false)
      setSelectedJob(null)
+   }
+
+   const handleNavigateJob = (direction: 'prev' | 'next') => {
+     if (direction === 'prev' && currentJobIndex > 0) {
+       const newIndex = currentJobIndex - 1
+       setCurrentJobIndex(newIndex)
+       setSelectedJob(filteredJobs[newIndex])
+     } else if (direction === 'next' && currentJobIndex < filteredJobs.length - 1) {
+       const newIndex = currentJobIndex + 1
+       setCurrentJobIndex(newIndex)
+       setSelectedJob(filteredJobs[newIndex])
+     }
    }
 
   return (
@@ -422,6 +437,9 @@ export default function HomePage() {
           onSave={() => toggleSaveJob(selectedJob.id)}
           isSaved={savedJobs.has(selectedJob.id)}
           onApply={handleApply}
+          jobs={filteredJobs}
+          currentJobIndex={currentJobIndex}
+          onNavigateJob={handleNavigateJob}
         />
       )}
     </div>

@@ -10,23 +10,9 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        configure: (proxy, options) => {
-          // 处理API路由
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            if (req.url?.startsWith('/api/rss-proxy')) {
-              // 重写为直接调用RSS代理函数
-              const url = new URL(req.url, 'http://localhost:3000');
-              const rssUrl = url.searchParams.get('url');
-              if (rssUrl) {
-                // 直接转发到RSS源
-                proxyReq.path = rssUrl;
-                proxyReq.setHeader('host', new URL(rssUrl).host);
-              }
-            }
-          });
-        }
+        rewrite: (path) => path.replace(/^\/api/, '/api')
       }
     }
   },

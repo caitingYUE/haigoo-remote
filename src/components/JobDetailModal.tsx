@@ -1,7 +1,9 @@
-import React, { useState } from 'react'
-import { X, Share2, Bookmark, ExternalLink } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { X, Share2, Bookmark, ExternalLink, Languages, MapPin, Clock, DollarSign, Building2, Zap, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
+import { translateText, formatJobDescription, segmentJobDescription } from '../utils/translation'
+import { multiTranslationService } from '../services/multi-translation-service'
 
 interface JobDetailModalProps {
   job: Job | null
@@ -10,6 +12,9 @@ interface JobDetailModalProps {
   onSave?: (jobId: string) => void
   isSaved?: boolean
   onApply?: (jobId: string) => void
+  jobs?: Job[]
+  currentJobIndex?: number
+  onNavigateJob?: (direction: 'prev' | 'next') => void
 }
 
 const JobDetailModal: React.FC<JobDetailModalProps> = ({
@@ -18,9 +23,16 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   onClose,
   onSave,
   isSaved = false,
-  onApply
+  onApply,
+  jobs = [],
+  currentJobIndex = -1,
+  onNavigateJob
 }) => {
   const [activeTab, setActiveTab] = useState<'description' | 'company' | 'similar'>('description')
+  const [isOriginalLanguage, setIsOriginalLanguage] = useState(true)
+  const [isTranslating, setIsTranslating] = useState(false)
+  const [translatedContent, setTranslatedContent] = useState<{[key: string]: string}>({})
+  const [translationError, setTranslationError] = useState<string | null>(null)
   const navigate = useNavigate()
 
   if (!job) return null
@@ -35,385 +47,546 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     if (onApply) {
       onApply(job.id)
     } else {
-      // 导航到AI优化页面，并传递当前页面信息以便正确返回
-      navigate(`/job/${job.id}/apply`, { 
-        state: { 
-          job,
-          returnToModal: true,
-          previousPath: window.location.pathname
-        } 
-      })
+      if (job.sourceUrl) {
+        window.open(job.sourceUrl, '_blank')
+      } else {
+        navigate(`/apply/${job.id}`)
+        onClose()
+      }
     }
   }
 
-  const matchPercentage = Math.floor(Math.random() * 20) + 75 // 75-95% match
+  const handleNavigate = (direction: 'prev' | 'next') => {
+    if (onNavigateJob) {
+      onNavigateJob(direction)
+    }
+  }
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `${job.title} - ${job.company}`,
+      text: `查看这个职位机会：${job.title} at ${job.company}`,
+      url: job.sourceUrl || window.location.href
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+      } catch (err) {
+        console.log('分享取消或失败')
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`)
+        alert('职位信息已复制到剪贴板')
+      } catch (err) {
+        console.log('复制失败')
+      }
+    }
+  }
+
+  // AI翻译功能 - 固定翻译为中文
+  const handleTranslate = async (): Promise<boolean> => {
+    if (isTranslating) return false
+    setTranslationError(null)
+    setIsTranslating(true)
+    try {
+      const textsToTranslate = [
+        job.title,
+        job.company,
+        job.location,
+        job.description
+      ]
+
+      const results = await multiTranslationService.batchTranslate(
+        textsToTranslate,
+        'zh' // 固定翻译为中文
+      )
+
+      if (results.success && results.data) {
+        const [title, company, location, description] = results.data
+        // 简单有效性校验：必须非空且与原文不同
+        const isValid = [title, company, location, description].every((r, idx) => {
+          const original = textsToTranslate[idx] || ''
+          return typeof r === 'string' && r.trim().length > 0 && r.trim() !== original.trim()
+        })
+        if (!isValid) {
+          setTranslationError('翻译服务暂时不可用')
+          return false
+        }
+        setTranslatedContent({ title, company, location, description })
+        return true
+      } else {
+        setTranslationError(results.error || '翻译服务暂时不可用')
+        return false
+      }
+    } catch (error) {
+      console.error('翻译失败:', error)
+      setTranslationError('翻译过程中发生错误')
+      return false
+    } finally {
+      setIsTranslating(false)
+    }
+  }
+
+  // 切换语言
+  const toggleLanguage = async () => {
+    if (!isOriginalLanguage) {
+      // 切换到原文
+      setIsOriginalLanguage(true)
+      return
+    }
+    // 切换到翻译
+    if (Object.keys(translatedContent).length === 0) {
+      const ok = await handleTranslate()
+      if (!ok) {
+        // 翻译失败则保持原文模式
+        return
+      }
+    }
+    setIsOriginalLanguage(false)
+  }
+
+  const matchPercentage = Math.floor(Math.random() * 20) + 75
+
+  const jobDescriptionData = useMemo(() => {
+    if (!job.description) {
+      return { summary: '', sections: [] }
+    }
+    
+    try {
+      // 根据语言状态选择使用原文还是翻译
+      let descriptionToProcess = job.description
+      if (!isOriginalLanguage && translatedContent.description) {
+        descriptionToProcess = translatedContent.description
+      }
+      
+      return segmentJobDescription(descriptionToProcess)
+    } catch (error) {
+      console.error('Error processing job description:', error)
+      return { summary: '', sections: [] }
+    }
+  }, [job.description, isOriginalLanguage, translatedContent.description])
+
+  // 简单的文本格式化渲染函数
+  const renderFormattedText = (text: string) => {
+    if (!text) return null
+    
+    const lines = text.split('\n')
+    const elements: React.ReactNode[] = []
+    
+    lines.forEach((line, index) => {
+      if (!line.trim()) {
+        elements.push(<br key={`br-${index}`} />)
+        return
+      }
+      
+      // 处理列表项
+      if (line.startsWith('• ')) {
+        elements.push(
+          <div key={index} className="flex items-start gap-2 mb-1">
+            <span className="text-haigoo-primary mt-1">•</span>
+            <span>{renderInlineFormatting(line.substring(2))}</span>
+          </div>
+        )
+        return
+      }
+      
+      // 处理标题（以**开头结尾的行）
+      if (line.startsWith('**') && line.endsWith('**') && line.length > 4) {
+        elements.push(
+          <h5 key={index} className="font-semibold text-slate-800 dark:text-white mt-4 mb-2">
+            {line.slice(2, -2)}
+          </h5>
+        )
+        return
+      }
+      
+      // 普通段落
+      elements.push(
+        <p key={index} className="mb-2">
+          {renderInlineFormatting(line)}
+        </p>
+      )
+    })
+    
+    return <div>{elements}</div>
+  }
+  
+  // 处理行内格式化（加粗、斜体）
+  const renderInlineFormatting = (text: string): React.ReactNode => {
+    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/)
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index} className="font-semibold text-slate-800 dark:text-white">{part.slice(2, -2)}</strong>
+      } else if (part.startsWith('*') && part.endsWith('*')) {
+        return <em key={index} className="italic">{part.slice(1, -1)}</em>
+      }
+      return part
+    })
+  }
+
+  const displayText = (text: string, isDescription: boolean = false, fieldName?: string): string => {
+    
+    let processedText = text
+    
+    // 智能处理HTML标签，保留格式化信息
+    processedText = processedText
+      // 处理段落和换行
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<div[^>]*>/gi, '')
+      // 处理列表
+      .replace(/<\/li>/gi, '\n• ')
+      .replace(/<li[^>]*>/gi, '• ')
+      .replace(/<\/?[uo]l[^>]*>/gi, '\n')
+      // 处理标题
+      .replace(/<\/h[1-6]>/gi, '\n\n')
+      .replace(/<h[1-6][^>]*>/gi, '\n**')
+      // 处理强调标签
+      .replace(/<\/?strong[^>]*>/gi, '**')
+      .replace(/<\/?b[^>]*>/gi, '**')
+      .replace(/<\/?em[^>]*>/gi, '*')
+      .replace(/<\/?i[^>]*>/gi, '*')
+      // 移除其他HTML标签
+      .replace(/<[^>]*>/g, '')
+      // 处理HTML实体
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&[a-zA-Z0-9#]+;/g, '')
+      // 清理多余的空格和换行
+      .replace(/\n\s*\n\s*\n/g, '\n\n') // 合并多个换行
+      .replace(/\s+/g, ' ') // 合并多个空格
+      .replace(/\n /g, '\n') // 移除换行后的空格
+      .trim()
+    
+    // 根据语言切换状态决定是否使用翻译
+    if (isOriginalLanguage) {
+      // 原文模式：直接返回处理后的纯文本（保留 ** 和 * 等Markdown标记），交由renderFormattedText渲染
+      return processedText
+    } else {
+      // 翻译模式：优先使用AI翻译，其次使用词典翻译为中文
+      if (fieldName && translatedContent[fieldName]) {
+        const aiTranslated = translatedContent[fieldName]
+        return aiTranslated
+      }
+      // 使用词典翻译为中文作为回退
+      const translatedText = translateText(processedText, true)
+      return translatedText
+    }
+  }
+
+  const canNavigatePrev = jobs.length > 0 && currentJobIndex > 0
+  const canNavigateNext = jobs.length > 0 && currentJobIndex < jobs.length - 1
 
   return (
-    <div className={`fixed inset-0 z-50 transition-all duration-300 ${isOpen ? 'visible opacity-100' : 'invisible opacity-0'}`}>
+    <div className={`fixed inset-0 z-50 transition-all duration-500 ease-out ${isOpen ? 'visible opacity-100' : 'invisible opacity-0'}`}>
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-transparent transition-opacity duration-300"
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-all duration-500"
         onClick={onClose}
       />
       
-      {/* Modal */}
-      <div className={`absolute right-0 top-0 h-full w-full max-w-[840px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-lg transform transition-transform duration-300 ${
+      {/* Modal - 确保在右侧显示并修复滚动 */}
+      <div className={`absolute right-0 top-0 h-full w-full max-w-[900px] bg-gradient-to-br from-white via-slate-50/50 to-white dark:from-zinc-900 dark:via-zinc-900/95 dark:to-zinc-800 border-l border-slate-200/60 dark:border-zinc-700/60 shadow-2xl backdrop-blur-xl transform transition-all duration-500 ease-out flex flex-col ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
-          <div className="flex items-center justify-between p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-haigoo-primary/20 to-haigoo-primary/10 rounded-xl flex items-center justify-center">
-                <span className="text-haigoo-primary font-bold text-lg">
-                  {job.company.charAt(0)}
-                </span>
+        
+        {/* Navigation Buttons */}
+        {jobs.length > 1 && canNavigatePrev && (
+          <button
+            onClick={() => handleNavigate('prev')}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm border border-slate-200/60 dark:border-zinc-700/60 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            title="上一个职位"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+        )}
+        
+        {jobs.length > 1 && canNavigateNext && (
+          <button
+            onClick={() => handleNavigate('next')}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm border border-slate-200/60 dark:border-zinc-700/60 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            title="下一个职位"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+        )}
+
+        {/* Header - 固定头部，分两行布局 */}
+        <div className="flex-shrink-0 bg-gradient-to-r from-white/95 via-slate-50/90 to-white/95 dark:from-zinc-900/95 dark:via-zinc-800/90 dark:to-zinc-900/95 backdrop-blur-xl border-b border-slate-200/60 dark:border-zinc-700/60">
+          <div className="p-6 pb-3">
+            {/* 第一行：公司Logo与主标题 + 右侧AI Match环和关闭 */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="relative flex-shrink-0">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/15 dark:shadow-blue-500/10">
+                    <span className="text-white font-bold text-base">
+                      {job.company.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm">
+                    <Zap className="w-2 h-2 text-white" />
+                  </div>
+                </div>
+                <h2 className="text-lg font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 dark:from-white dark:via-slate-100 dark:to-white bg-clip-text text-transparent truncate leading-tight">
+                  {displayText(job.title, false, 'title')}
+                </h2>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">{job.title}</h2>
-                <p className="text-zinc-600 dark:text-zinc-400">{job.company} • {job.location}</p>
+              <div className="flex items-center">
+                <button
+                  onClick={onClose}
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-zinc-700 rounded-lg transition-all duration-200 group"
+                >
+                  <X className="h-4 w-4 text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors" />
+                </button>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
-            >
-              <X className="h-5 w-5 text-zinc-500" />
-            </button>
+
+            {/* 第二行：副标题（公司与地点） + 右侧操作按钮 */}
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-slate-600 dark:text-slate-400 font-medium text-sm truncate">
+                {displayText(job.company, false, 'company')} • {displayText(job.location, false, 'location')}
+              </p>
+              <div className="flex items-center gap-2">
+                {/* 翻译开关 */}
+                <button
+                  onClick={toggleLanguage}
+                  disabled={isTranslating}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/70 dark:bg-zinc-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-zinc-700/50 rounded-lg transition-all duration-200 hover:bg-white/90 dark:hover:bg-zinc-800/90 hover:border-slate-300/60 dark:hover:border-zinc-600/60 group disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={translationError ? `翻译失败：${translationError}` : (isOriginalLanguage ? '切换到翻译版本' : '切换到原文版本')}
+                >
+                  <Languages className={`h-3 w-3 ${isTranslating ? 'text-blue-500 dark:text-blue-400 animate-pulse' : 'text-slate-500 dark:text-slate-400'}`} />
+                  <span className={`text-xs font-medium ${isOriginalLanguage ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>原</span>
+                  <span className="text-slate-300 dark:text-slate-600 mx-0.5">/</span>
+                  <span className={`text-xs font-medium ${!isOriginalLanguage ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>译</span>
+                </button>
+
+                {/* 分享 */}
+                <button
+                  onClick={handleShare}
+                  className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 rounded-lg transition-all duration-200 border border-slate-200/50 dark:border-zinc-700/50"
+                  title={isOriginalLanguage ? 'Share' : '分享'}
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+
+                {/* 收藏 */}
+                <button
+                  onClick={handleSave}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all duration-200 border ${
+                    isSaved
+                      ? 'bg-haigoo-primary/5 text-haigoo-primary border-haigoo-primary/20'
+                      : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 border-slate-200/50 dark:border-zinc-700/50'
+                  }`}
+                  title={isOriginalLanguage ? (isSaved ? 'Saved' : 'Save') : (isSaved ? '已收藏' : '收藏')}
+                >
+                  <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="h-full overflow-y-auto pb-20">
-          <div className="p-6 space-y-8">
-            {/* Company Info Card */}
-            <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-700 shadow-sm">
-              <div className="flex flex-col sm:flex-row gap-6">
-                {/* Company Logo & Basic Info */}
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-16 h-16 bg-gradient-to-br from-haigoo-primary to-haigoo-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent">
+          <div className="p-6 space-y-6">
+            {/* 公司信息卡片 - 优化布局 */}
+            <div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="flex items-start gap-6">
+                {/* 公司Logo */}
+                <div className="relative flex-shrink-0">
+                  <div className="w-16 h-16 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-haigoo-primary/20">
                     <span className="text-white font-bold text-xl">
                       {job.company.charAt(0)}
                     </span>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-100">{job.company}</h3>
-                    <div className="flex flex-wrap gap-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      <span className="flex items-center gap-1">
-                        📍 {job.location}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        💼 {job.type === 'remote' ? '远程工作' : job.type === 'full-time' ? '全职' : job.type === 'part-time' ? '兼职' : job.type === 'contract' ? '合同工' : job.type}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        📅 {new Date(job.postedAt).toLocaleDateString('zh-CN')}
-                      </span>
-                      <span className="flex items-center gap-1">
-                         {job.type}
-                       </span>
-                       <span className="flex items-center gap-1">
-                          {typeof job.salary === 'object' ? `${job.salary.currency}${job.salary.min.toLocaleString()} - ${job.salary.currency}${job.salary.max.toLocaleString()}` : job.salary}
-                        </span>
-                    </div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm">
+                    <Star className="w-2.5 h-2.5 text-white fill-current" />
                   </div>
                 </div>
-
-                {/* AI Match Score */}
-                <div className="flex items-center gap-4 bg-white dark:bg-zinc-800 rounded-xl p-4 border border-zinc-200 dark:border-zinc-600">
-                  <div className="relative w-16 h-16">
-                    <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-                      <path
-                        d="M18 2.0845
-                          a 15.9155 15.9155 0 0 1 0 31.831
-                          a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeDasharray={`${matchPercentage}, 100`}
-                        className="text-haigoo-primary"
-                      />
-                      <path
-                        d="M18 2.0845
-                          a 15.9155 15.9155 0 0 1 0 31.831
-                          a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeDasharray="100, 100"
-                        className="text-zinc-200 dark:text-zinc-700"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-lg font-bold text-haigoo-primary">
-                        {matchPercentage}%
-                      </span>
+                
+                {/* 主要信息区域 */}
+                <div className="flex-1 min-w-0">
+                  {/* 公司名称与匹配度合并展示 */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-1 truncate">
+                        {displayText(job.company)}
+                      </h3>
+                      <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                        <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
+                        <span>{isOriginalLanguage ? 'AI Match' : '智能匹配'}</span>
+                        <span className="ml-1 font-semibold text-haigoo-primary dark:text-purple-400">{matchPercentage}%</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">AI 匹配度</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">基于你的技能和经验</p>
+
+                  {/* 详细信息网格 */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                      <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
+                      <span className="truncate">{displayText(job.location)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                      <Building2 className="w-4 h-4 flex-shrink-0 text-slate-400" />
+                      <span className="truncate">{displayText(job.type)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                      <Clock className="w-4 h-4 flex-shrink-0 text-slate-400" />
+                      <span className="truncate">{new Date(job.postedAt).toLocaleDateString('zh-CN')}</span>
+                    </div>
+                    {typeof job.salary === 'object' && job.salary.min > 0 && (
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                        <DollarSign className="w-4 h-4 flex-shrink-0 text-slate-400" />
+                        <span className="truncate font-medium text-emerald-600 dark:text-emerald-400">
+                          {job.salary.currency}{job.salary.min.toLocaleString()} - {job.salary.currency}{job.salary.max.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm">
-              <div className="flex flex-col sm:flex-row gap-4">
+            {/* 优化的Tab导航 - 减少视觉压迫感 */}
+            <div className="flex space-x-1 bg-slate-50 dark:bg-zinc-800 p-1 rounded-lg border border-slate-200 dark:border-zinc-700">
+              {[
+                { key: 'description', label: '职位描述' },
+                { key: 'company', label: '公司信息' },
+                { key: 'similar', label: '相似职位' }
+              ].map((tab) => (
                 <button
-                  onClick={handleApply}
-                  className="flex-1 bg-gradient-to-r from-haigoo-primary to-haigoo-primary/90 hover:from-haigoo-primary/90 hover:to-haigoo-primary text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  立即申请
-                </button>
-                <button
-                  onClick={handleSave}
-                  className={`flex-1 border-2 font-semibold py-3 px-6 rounded-xl transition-all duration-200 ${
-                    isSaved
-                      ? 'border-haigoo-primary bg-haigoo-primary/10 text-haigoo-primary'
-                      : 'border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:border-haigoo-primary hover:text-haigoo-primary'
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key as any)}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                    activeTab === tab.key
+                      ? 'bg-white dark:bg-zinc-700 text-haigoo-primary dark:text-purple-400 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-haigoo-primary dark:hover:text-purple-400 hover:bg-white/50 dark:hover:bg-zinc-700/50'
                   }`}
                 >
-                  <Bookmark className={`inline-block w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
-                  {isSaved ? '已保存' : '保存职位'}
+                  {tab.label}
                 </button>
-              </div>
-              
-              <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                <button className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-haigoo-primary transition-colors">
-                  <Share2 className="w-4 h-4" />
-                  分享推荐链接
-                </button>
-              </div>
+              ))}
             </div>
 
-            {/* Tab Navigation */}
-            <div className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm overflow-hidden">
-              <div className="flex border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50">
-                {[
-                  { key: 'description', label: '职位描述' },
-                  { key: 'company', label: '公司信息' },
-                  { key: 'similar', label: '相似职位' }
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key as any)}
-                    className={`flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 ${
-                      activeTab === tab.key
-                        ? 'text-haigoo-primary bg-white dark:bg-zinc-800 border-b-2 border-haigoo-primary'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Tab Content */}
-              <div className="p-6 space-y-6">
-                {activeTab === 'description' && (
-                  <div className="space-y-4">
+            {/* Tab Content */}
+            <div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm hover:shadow-md transition-all duration-300">
+              {activeTab === 'description' && (
+                <div className="space-y-6">
+                  {jobDescriptionData.summary && (
                     <div>
-                      <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-3 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-gradient-to-b from-haigoo-primary to-haigoo-primary/60 rounded-full"></div>
-                        职位描述
-                      </h3>
-                      <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                        我们正在寻找一位才华横溢的专业人士加入我们充满活力的团队。这个职位在协作环境中提供了出色的成长和发展机会。
-                      </p>
-                    </div>
-
-                    <div>
-                      <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-3 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-gradient-to-b from-haigoo-primary to-haigoo-primary/60 rounded-full"></div>
-                        工作职责
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {[
-                          "从概念到完成领导项目",
-                          "与跨职能团队协作",
-                          "开发和实施创新解决方案",
-                          "指导初级团队成员",
-                          "确保达到质量标准"
-                        ].map((item, index) => (
-                          <div key={index} className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg">
-                            <div className="w-2 h-2 bg-haigoo-primary rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-zinc-600 dark:text-zinc-300 leading-relaxed">{item}</span>
-                          </div>
-                        ))}
+                      <h4 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">职位概要</h4>
+                      <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {renderFormattedText(displayText(jobDescriptionData.summary, true))}
                       </div>
                     </div>
-
-                    <div>
-                      <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-3 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-gradient-to-b from-haigoo-primary to-haigoo-primary/60 rounded-full"></div>
-                        任职要求
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {[
-                          "3年以上相关工作经验",
-                          "在相关技术方面具有强大的技术技能",
-                          "出色的沟通和团队合作能力",
-                          "学士学位或同等工作经验",
-                          "解决问题的思维方式"
-                        ].map((item, index) => (
-                          <div key={index} className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-zinc-600 dark:text-zinc-300 leading-relaxed">{item}</span>
-                          </div>
-                        ))}
+                  )}
+                  
+                  {jobDescriptionData.sections.map((section, index) => (
+                    <div key={index}>
+                      <h4 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">
+                        {displayText(section.title)}
+                      </h4>
+                      <div className="prose prose-slate dark:prose-invert max-w-none">
+                        <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                          {renderFormattedText(displayText(section.content, true))}
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              )}
 
-                    <div>
-                      <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-3 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-gradient-to-b from-haigoo-primary to-haigoo-primary/60 rounded-full"></div>
-                        技能要求
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {job.skills.map((skill, index) => (
-                          <span 
-                            key={index} 
-                            className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-sm rounded-full border border-zinc-200 dark:border-zinc-600 hover:border-haigoo-primary hover:text-haigoo-primary transition-colors"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-emerald-400 rounded-full"></div>
-                        福利待遇
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {[
-                          "全面的健康、牙科和视力保险",
-                          "灵活的工作时间和远程优先文化",
-                          "慷慨的带薪休假和育儿假",
-                          "专业发展机会",
-                          "有竞争力的薪资和股权包"
-                        ].map((item, index) => (
-                          <div key={index} className="flex items-start gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200/50 dark:border-emerald-700/30">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-zinc-600 dark:text-zinc-300 leading-relaxed">{item}</span>
-                          </div>
-                        ))}
-                      </div>
+              {activeTab === 'company' && (
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">{isOriginalLanguage ? `About ${job.company}` : `关于 ${displayText(job.company)}`}</h4>
+                    <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {renderFormattedText(displayText(
+                        (jobDescriptionData.sections.find(s => /About|公司介绍|关于我们/i.test(s.title))?.content) || '',
+                        true,
+                        'company_about'
+                      )) || (
+                        <p>{isOriginalLanguage ? 'Company profile not available.' : '暂无公司介绍信息。'}</p>
+                      )}
                     </div>
                   </div>
-                )}
-
-                {activeTab === 'company' && (
-                  <>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-3 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-gradient-to-b from-haigoo-primary to-haigoo-primary/60 rounded-full"></div>
-                        关于 {job.company}
-                      </h3>
-                      <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed mb-6">
-                        {job.company} 是技术领域的领先公司，致力于创新和卓越。
-                        我们营造一个协作环境，让有才华的个人能够茁壮成长并产生有意义的影响。
-                      </p>
+                      <h5 className="font-semibold text-slate-800 dark:text-white mb-2">{isOriginalLanguage ? 'Company size' : '公司规模'}</h5>
+                      <p className="text-slate-600 dark:text-slate-400">{isOriginalLanguage ? '1000-5000 employees' : '1000-5000人'}</p>
                     </div>
-
                     <div>
-                      <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-gradient-to-b from-haigoo-primary to-haigoo-primary/60 rounded-full"></div>
-                        公司文化
-                      </h3>
-                      <div className="space-y-3">
-                        {[
-                          "创新驱动和前瞻性思维",
-                          "协作和包容的工作环境",
-                          "致力于工作与生活的平衡",
-                          "持续学习和发展",
-                          "多元化和包容性倡议"
-                        ].map((item, index) => (
-                          <div key={index} className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-700/30">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-zinc-600 dark:text-zinc-300 leading-relaxed">{item}</span>
+                      <h5 className="font-semibold text-slate-800 dark:text-white mb-2">{isOriginalLanguage ? 'Industry' : '行业'}</h5>
+                      <p className="text-slate-600 dark:text-slate-400">{isOriginalLanguage ? 'Technology/Internet' : '科技/互联网'}</p>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-slate-800 dark:text-white mb-2">{isOriginalLanguage ? 'Founded' : '成立时间'}</h5>
+                      <p className="text-slate-600 dark:text-slate-400">{isOriginalLanguage ? '2010' : '2010年'}</p>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-slate-800 dark:text-white mb-2">{isOriginalLanguage ? 'Headquarters' : '总部'}</h5>
+                      <p className="text-slate-600 dark:text-slate-400">{displayText(job.location)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'similar' && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">相似职位推荐</h4>
+                  {[1, 2, 3].map((index) => (
+                    <div key={index} className="p-4 border border-slate-200/60 dark:border-zinc-700/60 rounded-xl hover:bg-gradient-to-r hover:from-slate-50/80 hover:to-white/80 dark:hover:from-zinc-700/50 dark:hover:to-zinc-600/50 transition-all duration-300 cursor-pointer group transform hover:scale-[1.01]">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-haigoo-primary/25 group-hover:shadow-haigoo-primary/40 transition-all duration-300">
+                          <span className="text-white font-bold">
+                            {String.fromCharCode(65 + index)}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-haigoo-primary dark:group-hover:text-purple-400 transition-colors">
+                            {job.title} {index + 1}
+                          </h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                            {job.company} • {job.location}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-haigoo-primary dark:text-purple-400">
+                            {85 + index * 2}% 匹配
                           </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-gradient-to-b from-haigoo-primary to-haigoo-primary/60 rounded-full"></div>
-                        公司规模与行业
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg">
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-100 block mb-1">行业</span>
-                          <p className="text-zinc-600 dark:text-zinc-300">科技</p>
-                        </div>
-                        <div className="p-4 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg">
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-100 block mb-1">公司规模</span>
-                          <p className="text-zinc-600 dark:text-zinc-300">100-500 员工</p>
-                        </div>
-                        <div className="p-4 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg">
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-100 block mb-1">成立时间</span>
-                          <p className="text-zinc-600 dark:text-zinc-300">2015年</p>
-                        </div>
-                        <div className="p-4 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg">
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-100 block mb-1">地点</span>
-                          <p className="text-zinc-600 dark:text-zinc-300">{job.location}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {activeTab === 'similar' && (
-                  <>
-                    <div>
-                      <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 mb-6 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-gradient-to-b from-haigoo-primary to-haigoo-primary/60 rounded-full"></div>
-                        你可能喜欢的相似职位
-                      </h3>
-                      <div className="space-y-4">
-                        {[1, 2, 3].map((item) => (
-                          <div key={item} className="p-6 bg-gradient-to-r from-white to-zinc-50 dark:from-zinc-800 dark:to-zinc-800/80 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-md transition-all duration-200">
-                            <div className="flex justify-between items-start mb-3">
-                              <h4 className="font-bold text-zinc-800 dark:text-zinc-100 text-lg">
-                                相似的 {job.title} 职位
-                              </h4>
-                              <ExternalLink className="h-5 w-5 text-zinc-400 hover:text-haigoo-primary transition-colors cursor-pointer" />
-                            </div>
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className="w-8 h-8 bg-gradient-to-br from-zinc-400 to-zinc-500 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-sm">C</span>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">其他科技公司</p>
-                                <p className="text-xs text-zinc-500 dark:text-zinc-400">{job.location}</p>
-                              </div>
-                            </div>
-                            <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-4 leading-relaxed">
-                              具有相似要求和福利的职位，为你的职业发展提供更多选择
-                            </p>
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 bg-gradient-to-r from-haigoo-primary to-emerald-500 rounded-full"></div>
-                                <span className="text-sm font-semibold text-haigoo-primary">
-                                  {Math.floor(Math.random() * 15) + 80}% 匹配
-                                </span>
-                              </div>
-                              <button className="text-sm font-medium text-haigoo-primary hover:text-haigoo-primary/80 hover:underline transition-colors">
-                                查看详情 →
-                              </button>
-                            </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            2天前
                           </div>
-                        ))}
+                        </div>
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
+        </div>
+        
+        {/* 底部固定申请按钮 - 科技感设计 */}
+        <div className="border-t border-slate-200/60 dark:border-zinc-700/60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-4">
+          <button
+            onClick={handleApply}
+            className="w-full bg-gradient-to-r from-haigoo-primary via-purple-600 to-indigo-600 hover:from-haigoo-primary/90 hover:via-purple-600/90 hover:to-indigo-600/90 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:shadow-haigoo-primary/25 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group"
+          >
+            <Zap className="w-4 h-4 group-hover:animate-pulse" />
+            立即申请
+            <span className="text-xs opacity-75">• 一键投递</span>
+          </button>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Send, FileText, CheckCircle, Bot } from 'lucide-react';
-import { aiService } from '../services/aiService';
+import { aiService } from '../services/ai-service';
 
 interface JobDetail {
   id: number;
@@ -334,25 +334,24 @@ const JobApplicationPage: React.FC = () => {
 
       setApiProgress('正在生成回复...');
 
-      // 添加AI回复
-      const aiMessage: ChatMessage = {
-        id: Date.now() + 1,
-        type: 'ai',
-        content: aiResponse.content
-      };
-
-      setChatMessages(prev => [...prev, aiMessage]);
-
-      // 如果有建议，添加建议消息
-      if (aiResponse.suggestions && aiResponse.suggestions.length > 0) {
-        const suggestionMessage: ChatMessage = {
-          id: Date.now() + 2,
-          type: 'suggestion',
-          content: '基于我们的对话，我建议你：',
-          suggestions: aiResponse.suggestions
+      if (aiResponse.success && aiResponse.data) {
+        // 添加AI回复
+        const aiMessage: ChatMessage = {
+          id: Date.now() + 1,
+          type: 'ai',
+          content: aiResponse.data.output.text
         };
 
-        setChatMessages(prev => [...prev, suggestionMessage]);
+        setChatMessages(prev => [...prev, aiMessage]);
+      } else {
+        // 处理错误情况
+        const errorMessage: ChatMessage = {
+          id: Date.now() + 1,
+          type: 'ai',
+          content: aiResponse.error || '抱歉，我暂时无法回复您的消息。请检查网络连接或稍后再试。'
+        };
+
+        setChatMessages(prev => [...prev, errorMessage]);
       }
     } catch (error) {
       console.error('发送消息失败:', error);
@@ -416,13 +415,23 @@ const JobApplicationPage: React.FC = () => {
 
       setApiProgress('正在生成求职信内容...');
 
-      const coverLetterMessage: ChatMessage = {
-        id: Date.now(),
-        type: 'ai',
-        content: `我为你生成了一份求职信：\n\n${aiResponse.content}`
-      };
+      if (aiResponse.success && aiResponse.data) {
+        const coverLetterMessage: ChatMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: `我为你生成了一份求职信：\n\n${aiResponse.data.output.text}`
+        };
 
-      setChatMessages(prev => [...prev, coverLetterMessage]);
+        setChatMessages(prev => [...prev, coverLetterMessage]);
+      } else {
+        const errorMessage: ChatMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: aiResponse.error || '抱歉，生成求职信失败。请稍后再试。'
+        };
+
+        setChatMessages(prev => [...prev, errorMessage]);
+      }
     } catch (error) {
       console.error('生成求职信失败:', error);
       

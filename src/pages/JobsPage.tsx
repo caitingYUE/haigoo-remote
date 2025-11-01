@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import JobDetailModal from '../components/JobDetailModal'
+import JobCard from '../components/JobCard'
 import { Job } from '../types'
 import { jobAggregator } from '../services/job-aggregator'
 import { Job as RSSJob } from '../types/rss-types'
@@ -9,25 +10,102 @@ import { DateFormatter } from '../utils/date-formatter'
 
 // 转换RSS Job类型到页面Job类型的函数
 const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
+  // 处理薪资信息 - 统一薪资格式
+  let salary = {
+    min: 0,
+    max: 0,
+    currency: 'USD'
+  };
+  
+  if (rssJob.salary) {
+    if (typeof rssJob.salary === 'string') {
+      // 尝试从字符串中解析薪资信息
+      const salaryMatch = rssJob.salary.match(/(\d+(?:,\d+)*(?:\.\d+)?)\s*[-–—到至]\s*(\d+(?:,\d+)*(?:\.\d+)?)/);
+      if (salaryMatch) {
+        salary.min = parseInt(salaryMatch[1].replace(/,/g, ''));
+        salary.max = parseInt(salaryMatch[2].replace(/,/g, ''));
+      } else {
+        // 尝试解析单个数字
+        const singleMatch = rssJob.salary.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
+        if (singleMatch) {
+          const amount = parseInt(singleMatch[1].replace(/,/g, ''));
+          salary.min = amount;
+          salary.max = amount;
+        }
+      }
+      
+      // 检测货币类型
+      if (rssJob.salary.includes('¥') || rssJob.salary.includes('CNY') || rssJob.salary.includes('人民币')) {
+        salary.currency = 'CNY';
+      } else if (rssJob.salary.includes('$') || rssJob.salary.includes('USD')) {
+        salary.currency = 'USD';
+      } else if (rssJob.salary.includes('€') || rssJob.salary.includes('EUR')) {
+        salary.currency = 'EUR';
+      }
+    }
+  }
+
+  // 处理发布日期
+  let postedAt = '';
+  if (rssJob.publishedAt) {
+    try {
+      const date = new Date(rssJob.publishedAt);
+      if (!isNaN(date.getTime())) {
+        postedAt = date.toISOString().split('T')[0];
+      } else {
+        postedAt = rssJob.publishedAt;
+      }
+    } catch {
+      postedAt = rssJob.publishedAt || '';
+    }
+  }
+
+  // 确定工作类型
+  let jobType: Job['type'] = 'full-time';
+  if (rssJob.jobType) {
+    switch (rssJob.jobType) {
+      case 'full-time':
+        jobType = 'full-time';
+        break;
+      case 'part-time':
+        jobType = 'part-time';
+        break;
+      case 'contract':
+        jobType = 'contract';
+        break;
+      case 'freelance':
+        jobType = 'freelance';
+        break;
+      case 'internship':
+        jobType = 'internship';
+        break;
+      default:
+        jobType = rssJob.isRemote ? 'remote' : 'full-time';
+    }
+  } else if (rssJob.isRemote) {
+    jobType = 'remote';
+  }
+
   return {
     id: rssJob.id,
     title: rssJob.title,
     company: rssJob.company,
     location: rssJob.location,
-    type: rssJob.jobType || 'full-time',
-    salary: {
-      min: 0,
-      max: 0,
-      currency: 'USD'
-    },
+    type: jobType,
+    salary,
     description: rssJob.description,
-    requirements: rssJob.requirements,
-    responsibilities: [], // RSS数据中没有这个字段
-    skills: rssJob.tags,
-    postedAt: typeof rssJob.publishedAt === 'string' ? rssJob.publishedAt : new Date(rssJob.publishedAt).toISOString().split('T')[0],
-    expiresAt: '', // RSS数据中没有这个字段
+    requirements: rssJob.requirements || [],
+    responsibilities: rssJob.benefits || [],
+    skills: rssJob.tags || [],
+    postedAt,
+    expiresAt: '',
     source: rssJob.source,
-    sourceUrl: rssJob.url
+    sourceUrl: rssJob.url,
+    // RSS特有字段
+    experienceLevel: rssJob.experienceLevel,
+    category: rssJob.category,
+    isRemote: rssJob.isRemote,
+    remoteLocationRestriction: rssJob.remoteLocationRestriction
   }
 }
 
@@ -203,6 +281,7 @@ export default function JobsPage() {
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentJobIndex, setCurrentJobIndex] = useState(0)
 
   // 从URL参数中获取初始搜索词
   useEffect(() => {
@@ -222,14 +301,20 @@ export default function JobsPage() {
         // 等待一小段时间让jobAggregator初始化完成
         await new Promise(resolve => setTimeout(resolve, 100))
         
-        // 获取RSS岗位数据
+        // 获取RSS岗位数据并转换为页面Job类型
         const rssJobs = jobAggregator.getJobs()
         console.log('获取到RSS岗位数据:', rssJobs.length, '个')
         
         if (rssJobs.length > 0) {
+          // 转换RSS Job数据为页面Job类型
           const convertedJobs = rssJobs.map(convertRSSJobToPageJob)
           setJobs(convertedJobs)
           console.log('转换后的岗位数据:', convertedJobs.length, '个')
+          console.log('示例岗位数据:', convertedJobs.slice(0, 2).map(job => ({
+            title: job.title,
+            company: job.company,
+            description: job.description.substring(0, 100) + '...'
+          })))
         } else {
           // 如果没有RSS数据，尝试触发同步
           console.log('没有找到RSS数据，尝试同步...')
@@ -272,6 +357,8 @@ export default function JobsPage() {
   }
 
   const openJobDetail = (job: Job) => {
+    const jobIndex = filteredJobs.findIndex(j => j.id === job.id)
+    setCurrentJobIndex(jobIndex >= 0 ? jobIndex : 0)
     setSelectedJob(job)
     setIsJobDetailOpen(true)
   }
@@ -279,6 +366,18 @@ export default function JobsPage() {
   const closeJobDetail = () => {
     setIsJobDetailOpen(false)
     setSelectedJob(null)
+  }
+
+  const handleNavigateJob = (direction: 'prev' | 'next') => {
+    if (direction === 'prev' && currentJobIndex > 0) {
+      const newIndex = currentJobIndex - 1
+      setCurrentJobIndex(newIndex)
+      setSelectedJob(filteredJobs[newIndex])
+    } else if (direction === 'next' && currentJobIndex < filteredJobs.length - 1) {
+      const newIndex = currentJobIndex + 1
+      setCurrentJobIndex(newIndex)
+      setSelectedJob(filteredJobs[newIndex])
+    }
   }
 
   const handleApply = (jobId: string) => {
@@ -297,46 +396,28 @@ export default function JobsPage() {
     // 工作类型匹配
     const matchesType = filters.type === 'all' || job.type === filters.type
     
-    // 岗位分类匹配 - 通过技能标签匹配
+    // 岗位分类匹配 - 支持RSS数据的category字段和技能标签匹配
     const matchesCategory = filters.category === 'all' || 
+      (job.category && job.category === filters.category) ||
       (job.skills && job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase())))
     
-    // 地点匹配 - 支持远程工作判断
+    // 地点匹配 - 支持远程工作判断和RSS数据的isRemote字段
     const matchesLocation = filters.location === 'all' || 
       job.location.includes(filters.location) ||
-      (filters.location === 'Remote' && (job.type === 'remote' || job.location.includes('远程'))) ||
-      (filters.location === 'Worldwide' && (job.location.includes('全球') || job.location.includes('远程')))
+      (filters.location === 'Remote' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
+      (filters.location === 'Worldwide' && (job.location.includes('全球') || job.location.includes('远程') || job.isRemote))
     
-    // 经验等级匹配 - 暂时跳过，因为Job接口中没有experienceLevel字段
-    const matchesExperience = filters.experience === 'all'
+    // 经验等级匹配 - 支持RSS数据的experienceLevel字段
+    const matchesExperience = filters.experience === 'all' || 
+      (job.experienceLevel && job.experienceLevel === filters.experience)
     
-    // 远程工作匹配
+    // 远程工作匹配 - 支持RSS数据的isRemote字段
     const matchesRemote = filters.remote === 'all' || 
-      (filters.remote === 'yes' && (job.type === 'remote' || job.location.includes('远程'))) ||
-      (filters.remote === 'no' && !(job.type === 'remote' || job.location.includes('远程')))
+      (filters.remote === 'yes' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
+      (filters.remote === 'no' && !(job.type === 'remote' || job.location.includes('远程') || job.isRemote))
     
     return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote
   })
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'full-time': return '全职'
-      case 'part-time': return '兼职'
-      case 'contract': return '合同工'
-      case 'remote': return '远程工作'
-      default: return type
-    }
-  }
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'full-time': return 'bg-green-100 text-green-700'
-      case 'part-time': return 'bg-blue-100 text-blue-700'
-      case 'contract': return 'bg-purple-100 text-purple-700'
-      case 'remote': return 'bg-orange-100 text-orange-700'
-      default: return 'bg-gray-100 text-gray-700'
-    }
-  }
 
   const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length
 
@@ -522,100 +603,15 @@ export default function JobsPage() {
                   </div>
                 ) : (
                   filteredJobs.map((job) => (
-                  <div
-                    key={job.id}
-                    className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/60 p-6 hover:shadow-xl hover:border-haigoo-primary/30 hover:bg-white transition-all duration-300 cursor-pointer group will-change-transform hover:scale-[1.01] active:scale-[0.99]"
-                    onClick={() => openJobDetail(job)}
-                  >
-                    {/* 卡片头部 */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-haigoo-primary transition-colors duration-200 mb-2 truncate">
-                          {job.title}
-                        </h3>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
-                          <div className="flex items-center gap-1.5">
-                            <Building className="h-4 w-4 text-gray-400 transition-colors duration-200" />
-                            <span className="font-medium">{job.company}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="h-4 w-4 text-gray-400 transition-colors duration-200" />
-                            <span>{job.location}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-4 w-4 text-gray-400 transition-colors duration-200" />
-                            <span>{DateFormatter.formatPublishTime(job.postedAt)}</span>
-                          </div>
-                          {/* 添加工作类型显示 */}
-                          <div className="flex items-center gap-1.5">
-                            <Briefcase className="h-4 w-4 text-gray-400 transition-colors duration-200" />
-                            <span>{getTypeLabel(job.type)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 ml-4">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSaveJob(job.id);
-                          }}
-                          className="p-2.5 rounded-xl hover:bg-gray-100 active:bg-gray-200 transition-all duration-300 group/bookmark transform hover:scale-110 active:scale-95"
-                        >
-                          <Bookmark
-                            className={`h-5 w-5 transition-all duration-200 ${
-                              savedJobs.has(job.id) ? 'text-haigoo-primary fill-current' : 'text-gray-400 group-hover/bookmark:text-gray-600'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 标签 */}
-                    <div className="flex items-center gap-2 mb-4 flex-wrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200 ${getTypeColor(job.type)}`}>
-                        {getTypeLabel(job.type)}
-                      </span>
-                      {job.skills.slice(0, 3).map((skill, index) => (
-                        <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium hover:bg-gray-200 active:bg-gray-300 transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
-                          {skill}
-                        </span>
-                      ))}
-                      {job.skills.length > 3 && (
-                        <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
-                          +{job.skills.length - 3}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 描述 */}
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">
-                      {job.description}
-                    </p>
-
-                    {/* 底部信息 */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-haigoo-primary font-semibold">
-                        <DollarSign className="h-4 w-4" />
-                        <span className="text-lg">
-                          {job.salary.min === job.salary.max 
-                            ? `${job.salary.min / 1000}K` 
-                            : `${job.salary.min / 1000}-${job.salary.max / 1000}K`
-                          }
-                        </span>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleApply(job.id);
-                        }}
-                        className="px-4 py-2 bg-haigoo-primary text-white text-sm font-medium rounded-lg hover:bg-haigoo-primary/90 hover:shadow-lg active:scale-[0.95] transition-all duration-300 transform hover:scale-105"
-                      >
-                        查看详情
-                      </button>
-                    </div>
-                  </div>
-                )))}
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      onSave={() => toggleSaveJob(job.id)}
+                      isSaved={savedJobs.has(job.id)}
+                      onClick={() => openJobDetail(job)}
+                    />
+                  ))
+                )}
 
                 {/* 空状态 - 移除重复的空状态检查 */}
               </div>
@@ -633,6 +629,9 @@ export default function JobsPage() {
           onSave={() => toggleSaveJob(selectedJob.id)}
           isSaved={savedJobs.has(selectedJob.id)}
           onApply={handleApply}
+          jobs={filteredJobs}
+          currentJobIndex={currentJobIndex}
+          onNavigateJob={handleNavigateJob}
         />
       )}
     </div>

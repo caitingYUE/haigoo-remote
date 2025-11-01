@@ -55,7 +55,7 @@ class JobStorageService {
       // 清理旧备份
       this.cleanupOldBackups();
       
-      console.log(`✅ 成功保存 ${limitedJobs.length} 个职位数据`);
+      console.log(`成功保存 ${limitedJobs.length} 个职位到 IndexedDB`);
     } catch (error) {
       console.error('保存职位数据失败:', error);
       throw new Error('数据保存失败，请检查浏览器存储空间');

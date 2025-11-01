@@ -61,24 +61,8 @@ class RSSService {
     { name: 'Remotive', category: '写作', url: 'https://remotive.com/remote-jobs/feed/writing' },
     { name: 'Remotive', category: '所有其他', url: 'https://remotive.com/remote-jobs/feed/all-others' },
     
-    // JobsCollider
-    { name: 'JobsCollider', category: '全部', url: 'https://jobscollider.com/remote-jobs.rss' },
-    { name: 'JobsCollider', category: '软件开发', url: 'https://jobscollider.com/remote-software-development-jobs.rss' },
-    { name: 'JobsCollider', category: '网络安全', url: 'https://jobscollider.com/remote-software-development-jobs.rss' },
-    { name: 'JobsCollider', category: '客户服务', url: 'https://jobscollider.com/remote-customer-service-jobs.rss' },
-    { name: 'JobsCollider', category: '设计', url: 'https://jobscollider.com/remote-design-jobs.rss' },
-    { name: 'JobsCollider', category: '营销', url: 'https://jobscollider.com/remote-marketing-jobs.rss' },
-    { name: 'JobsCollider', category: '销售', url: 'https://jobscollider.com/remote-sales-jobs.rss' },
-    { name: 'JobsCollider', category: '产品', url: 'https://jobscollider.com/remote-product-jobs.rss' },
-    { name: 'JobsCollider', category: '商业', url: 'https://jobscollider.com/remote-business-jobs.rss' },
-    { name: 'JobsCollider', category: '数据', url: 'https://jobscollider.com/remote-data-jobs.rss' },
-    { name: 'JobsCollider', category: 'DevOps', url: 'https://jobscollider.com/remote-devops-jobs.rss' },
-    { name: 'JobsCollider', category: '财务与法律', url: 'https://jobscollider.com/remote-finance-legal-jobs.rss' },
-    { name: 'JobsCollider', category: '人力资源', url: 'https://jobscollider.com/remote-human-resources-jobs.rss' },
-    { name: 'JobsCollider', category: '质量保证', url: 'https://jobscollider.com/remote-qa-jobs.rss' },
-    { name: 'JobsCollider', category: '写作', url: 'https://jobscollider.com/remote-writing-jobs.rss' },
-    { name: 'JobsCollider', category: '项目管理', url: 'https://jobscollider.com/remote-project-management-jobs.rss' },
-    { name: 'JobsCollider', category: '所有其他', url: 'https://jobscollider.com/remote-all-others-jobs.rss' },
+    // JobsCollider - 暂时移除，RSS源为空
+    // { name: 'JobsCollider', category: '全部', url: 'https://jobscollider.com/remote-jobs.rss' },
     
     // RealWorkFromAnywhere - 暂时禁用，因为RSS源不可用
     // { name: 'RealWorkFromAnywhere', category: '全部', url: 'https://www.realworkfromanywhere.com/rss.xml' },
@@ -366,42 +350,26 @@ class RSSService {
         // 清理和格式化描述内容
         description = this.cleanDescription(description);
         
-        // 尝试从不同字段提取额外信息
-        const category = item.querySelector('category')?.textContent?.trim() || source.category;
-        
-        // 优先从专门的XML字段提取信息（特别是Remotive源）
-        let company = item.querySelector('company')?.textContent?.trim() || '';
-        let location = item.querySelector('location')?.textContent?.trim() || '';
-        let jobType = item.querySelector('type')?.textContent?.trim() || '';
-        
-        // 如果专门字段没有信息，则从标题和描述中提取
-        if (!company) {
-          company = this.extractCompany(title, description);
-        }
-        if (!location) {
-          location = this.extractLocation(title, description);
-        }
-        if (!jobType) {
-          jobType = this.extractJobType(title, description);
-        }
+        // 根据不同RSS源使用专门的解析逻辑
+        const parsedData = this.parseBySource(item, source, title, description);
         
         if (title && link) {
-          const salary = this.extractSalary(title, description);
+          const salary = parsedData.salary || this.extractSalary(title, description);
           
           feedItems.push({
-            title,
+            title: parsedData.title || title,
             description,
             link,
             pubDate,
-            category,
-            company,
-            location,
+            category: parsedData.category || source.category,
+            company: parsedData.company,
+            location: parsedData.location,
             salary,
-            jobType,
-            workType: this.extractWorkType(title, description),
-            experienceLevel: this.extractExperienceLevel(title, description),
+            jobType: parsedData.jobType,
+            workType: parsedData.workType || this.extractWorkType(title, description),
+            experienceLevel: parsedData.experienceLevel || this.extractExperienceLevel(title, description),
             salaryRange: this.parseSalaryRange(salary),
-            remoteLocationRestriction: this.extractRemoteLocationRestriction(title, description)
+            remoteLocationRestriction: parsedData.remoteLocationRestriction || this.extractRemoteLocationRestriction(title, description)
           });
         }
       } catch (itemError) {
@@ -413,15 +381,308 @@ class RSSService {
   }
 
   /**
+   * 根据不同RSS源使用专门的解析逻辑
+   */
+  private parseBySource(item: Element, source: RSSSource, title: string, description: string): {
+    title?: string;
+    company?: string;
+    location?: string;
+    jobType?: string;
+    workType?: 'remote' | 'hybrid' | 'onsite';
+    experienceLevel?: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
+    category?: string;
+    salary?: string;
+    remoteLocationRestriction?: string;
+  } {
+    const sourceName = source.name.toLowerCase();
+    
+    switch (sourceName) {
+      case 'weworkremotely':
+        return this.parseWeWorkRemotely(item, title, description);
+      case 'remotive':
+        return this.parseRemotive(item, title, description);
+      case 'himalayas':
+        return this.parseHimalayas(item, title, description);
+      case 'jobscollider':
+        return this.parseJobsCollider(item, title, description);
+      case 'nodesk':
+        return this.parseNoDesk(item, title, description);
+      default:
+        return this.parseGeneric(item, title, description);
+    }
+  }
+
+  /**
+   * 解析WeWorkRemotely的特殊字段
+   */
+  private parseWeWorkRemotely(item: Element, title: string, description: string): any {
+    // WeWorkRemotely有丰富的结构化字段
+    const region = item.querySelector('region')?.textContent?.trim() || '';
+    const country = item.querySelector('country')?.textContent?.trim() || '';
+    const state = item.querySelector('state')?.textContent?.trim() || '';
+    const type = item.querySelector('type')?.textContent?.trim() || '';
+    const skills = item.querySelector('skills')?.textContent?.trim() || '';
+    
+    // 从标题中提取公司名（格式：Company: Job Title）
+    let company = '';
+    let cleanTitle = title;
+    const titleMatch = title.match(/^([^:]+):\s*(.+)$/);
+    if (titleMatch) {
+      company = titleMatch[1].trim();
+      cleanTitle = titleMatch[2].trim();
+    }
+    
+    // 构建位置信息
+    let location = '';
+    if (region && country) {
+      location = `${region}, ${country}`;
+    } else if (country) {
+      location = country.replace(/🇺🇸|🇬🇧|🇨🇦|🇦🇺|🇩🇪|🇫🇷|🇪🇸|🇮🇹|🇳🇱|🇸🇪|🇳🇴|🇩🇰|🇫🇮/g, '').trim();
+    }
+    if (state) {
+      location = location ? `${location}, ${state}` : state;
+    }
+    
+    // 映射工作类型
+    let jobType = '';
+    if (type) {
+      jobType = type.toLowerCase().includes('full') ? 'Full-time' :
+                type.toLowerCase().includes('part') ? 'Part-time' :
+                type.toLowerCase().includes('contract') ? 'Contract' : type;
+    }
+    
+    // 提取远程地点限制
+    let remoteLocationRestriction = '';
+    if (country) {
+      const countryName = country.replace(/🇺🇸|🇬🇧|🇨🇦|🇦🇺|🇩🇪|🇫🇷|🇪🇸|🇮🇹|🇳🇱|🇸🇪|🇳🇴|🇩🇰|🇫🇮/g, '').trim();
+      if (countryName && countryName !== 'Worldwide') {
+        remoteLocationRestriction = `仅限${countryName}`;
+      } else if (countryName === 'Worldwide') {
+        remoteLocationRestriction = '全球远程';
+      }
+    }
+    
+    return {
+      title: cleanTitle,
+      company: company || this.extractCompany(title, description),
+      location: location || this.extractLocation(title, description),
+      jobType: jobType || this.extractJobType(title, description),
+      workType: 'remote' as const,
+      remoteLocationRestriction
+    };
+  }
+
+  /**
+   * 解析Remotive的特殊字段
+   */
+  private parseRemotive(item: Element, title: string, description: string): any {
+    // Remotive有专门的company和location字段
+    const company = item.querySelector('company')?.textContent?.trim() || '';
+    const location = item.querySelector('location')?.textContent?.trim() || '';
+    
+    // 从location字段提取远程地点限制
+    let remoteLocationRestriction = '';
+    if (location) {
+      if (location.toLowerCase().includes('worldwide') || location.toLowerCase().includes('global')) {
+        remoteLocationRestriction = '全球远程';
+      } else if (location.toLowerCase().includes('usa') || location.toLowerCase().includes('united states')) {
+        remoteLocationRestriction = '仅限美国';
+      } else if (location.toLowerCase().includes('europe') || location.toLowerCase().includes('eu')) {
+        remoteLocationRestriction = '仅限欧盟';
+      } else if (location.length > 0 && location !== 'Remote') {
+        remoteLocationRestriction = `仅限${location}`;
+      }
+    }
+    
+    return {
+      company: company || this.extractCompany(title, description),
+      location: location || this.extractLocation(title, description),
+      jobType: this.extractJobType(title, description),
+      workType: 'remote' as const,
+      remoteLocationRestriction
+    };
+  }
+
+  /**
+   * 解析Himalayas的特殊字段
+   */
+  private parseHimalayas(item: Element, title: string, description: string): any {
+    // Himalayas使用自定义字段，优先使用这些字段
+    // 由于命名空间问题，我们需要使用不同的选择器策略
+    let company: string | undefined;
+    let location: string | undefined;
+    let salary: string | undefined;
+    let jobType: string | undefined;
+    
+    // 尝试多种方式查找自定义字段
+    const allElements = Array.from(item.children);
+    
+    // 首先尝试直接查找himalayasJobs命名空间字段
+    const companyNameEl = item.querySelector('himalayasJobs\\:companyName, companyName');
+    if (companyNameEl) {
+      company = companyNameEl.textContent?.trim();
+    }
+    
+    const locationRestrictionEl = item.querySelector('himalayasJobs\\:locationRestriction, locationRestriction');
+    if (locationRestrictionEl) {
+      location = locationRestrictionEl.textContent?.trim();
+    }
+    
+    const salaryEl = item.querySelector('himalayasJobs\\:salary, salary');
+    if (salaryEl) {
+      salary = salaryEl.textContent?.trim();
+    }
+    
+    const jobTypeEl = item.querySelector('himalayasJobs\\:jobType, jobType');
+    if (jobTypeEl) {
+      jobType = jobTypeEl.textContent?.trim();
+    }
+    
+    // 如果直接查找失败，遍历所有子元素
+    if (!company || !location || !salary || !jobType) {
+      for (const element of allElements) {
+        const tagName = element.tagName.toLowerCase();
+        const localName = element.localName?.toLowerCase();
+        
+        // 检查公司名称字段
+        if (!company && (tagName.includes('companyname') || localName?.includes('companyname'))) {
+          company = element.textContent?.trim();
+        }
+        
+        // 检查位置限制字段
+        if (!location && (tagName.includes('locationrestriction') || localName?.includes('locationrestriction'))) {
+          location = element.textContent?.trim();
+        }
+        
+        // 检查薪资字段
+        if (!salary && (tagName.includes('salary') || localName?.includes('salary'))) {
+          salary = element.textContent?.trim();
+        }
+        
+        // 检查工作类型字段
+        if (!jobType && (tagName.includes('jobtype') || localName?.includes('jobtype'))) {
+          jobType = element.textContent?.trim();
+        }
+      }
+    }
+    
+    // 如果没有找到自定义字段，使用传统提取方法
+    if (!company) {
+      company = this.extractCompany(title, description);
+    }
+    
+    if (!location) {
+      location = this.extractLocation(title, description);
+    }
+    
+    if (!salary) {
+      salary = this.extractSalary(title, description);
+    }
+    
+    if (!jobType) {
+      jobType = this.extractJobType(title, description);
+    }
+    
+    // 获取分类信息
+    const categories = Array.from(item.querySelectorAll('category')).map(cat => cat.textContent?.trim()).filter(Boolean);
+    
+    // 从标题和分类中提取职位级别
+    let experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' | undefined;
+    
+    // 首先从标题中检查
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes('senior') || titleLower.includes('sr.')) {
+      experienceLevel = 'Senior';
+    } else if (titleLower.includes('lead') || titleLower.includes('principal')) {
+      experienceLevel = 'Lead';
+    } else if (titleLower.includes('junior') || titleLower.includes('jr.') || titleLower.includes('entry')) {
+      experienceLevel = 'Entry';
+    } else {
+      // 从categories中提取职位级别
+      for (const category of categories) {
+        if (category?.toLowerCase().includes('senior')) {
+          experienceLevel = 'Senior';
+          break;
+        } else if (category?.toLowerCase().includes('lead')) {
+          experienceLevel = 'Lead';
+          break;
+        } else if (category?.toLowerCase().includes('junior') || category?.toLowerCase().includes('entry')) {
+          experienceLevel = 'Entry';
+          break;
+        }
+      }
+    }
+    
+    // 检测是否为远程工作
+    let workType: 'remote' | 'hybrid' | 'onsite' = 'remote';
+    if (location) {
+      const locationLower = location.toLowerCase();
+      if (locationLower.includes('hybrid')) {
+        workType = 'hybrid';
+      } else if (locationLower.includes('onsite') || locationLower.includes('on-site')) {
+        workType = 'onsite';
+      }
+    }
+    
+    return {
+      company: company || undefined,
+      location: location || undefined,
+      jobType: jobType || undefined,
+      workType: workType,
+      experienceLevel: experienceLevel || this.extractExperienceLevel(title, description),
+      category: categories.length > 0 ? categories[0] : undefined,
+      salary: salary || undefined
+    };
+  }
+
+  /**
+   * 解析JobsCollider的特殊字段
+   */
+  private parseJobsCollider(item: Element, title: string, description: string): any {
+    return {
+      company: this.extractCompany(title, description),
+      location: this.extractLocation(title, description),
+      jobType: this.extractJobType(title, description),
+      workType: 'remote' as const
+    };
+  }
+
+  /**
+   * 解析NoDesk的特殊字段
+   */
+  private parseNoDesk(item: Element, title: string, description: string): any {
+    return {
+      company: this.extractCompany(title, description),
+      location: this.extractLocation(title, description),
+      jobType: this.extractJobType(title, description),
+      workType: 'remote' as const
+    };
+  }
+
+  /**
+   * 通用解析逻辑
+   */
+  private parseGeneric(item: Element, title: string, description: string): any {
+    // 尝试从XML字段提取信息
+    const company = item.querySelector('company')?.textContent?.trim() || '';
+    const location = item.querySelector('location')?.textContent?.trim() || '';
+    const jobType = item.querySelector('type')?.textContent?.trim() || '';
+    
+    return {
+      company: company || this.extractCompany(title, description),
+      location: location || this.extractLocation(title, description),
+      jobType: jobType || this.extractJobType(title, description),
+      workType: this.extractWorkType(title, description)
+    };
+  }
+
+  /**
    * 清理和格式化职位描述
    */
   private cleanDescription(description: string): string {
     if (!description) return '';
     
-    // 移除HTML标签
-    let cleaned = description.replace(/<[^>]*>/g, '');
-    
-    // 解码HTML实体
+    // 先解码HTML实体
     const htmlEntities: Record<string, string> = {
       '&amp;': '&',
       '&lt;': '<',
@@ -438,16 +699,43 @@ class RSSService {
       '&ldquo;': '"'
     };
     
+    let cleaned = description;
     Object.entries(htmlEntities).forEach(([entity, char]) => {
       cleaned = cleaned.replace(new RegExp(entity, 'g'), char);
     });
     
-    // 清理多余的空白字符
-    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    // 保留段落结构，将块级元素转换为换行
+    cleaned = cleaned.replace(/<\/?(p|div|br|h[1-6]|li|ul|ol)[^>]*>/gi, '\n');
     
-    // 限制描述长度，避免过长的内容
-    if (cleaned.length > 500) {
-      cleaned = cleaned.substring(0, 497) + '...';
+    // 保留重要的格式标签，转换为文本标记
+    cleaned = cleaned.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
+    cleaned = cleaned.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
+    cleaned = cleaned.replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*');
+    cleaned = cleaned.replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*');
+    
+    // 移除其他HTML标签
+    cleaned = cleaned.replace(/<[^>]*>/g, '');
+    
+    // 清理多余的空白字符，但保留段落分隔
+    cleaned = cleaned.replace(/\n\s*\n/g, '\n\n'); // 保留段落间距
+    cleaned = cleaned.replace(/[ \t]+/g, ' '); // 合并空格和制表符
+    cleaned = cleaned.trim();
+    
+    // 增加描述长度限制到2000字符
+    if (cleaned.length > 2000) {
+      // 尝试在句子结束处截断
+      const truncated = cleaned.substring(0, 1997);
+      const lastSentenceEnd = Math.max(
+        truncated.lastIndexOf('.'),
+        truncated.lastIndexOf('!'),
+        truncated.lastIndexOf('?')
+      );
+      
+      if (lastSentenceEnd > 1500) {
+        cleaned = truncated.substring(0, lastSentenceEnd + 1) + '...';
+      } else {
+        cleaned = truncated + '...';
+      }
     }
     
     return cleaned;
@@ -460,10 +748,10 @@ class RSSService {
     // 增强的公司名称提取逻辑，支持多种格式
     const companyPatterns = [
       // 标准格式：Job Title at Company Name
-      /at\s+([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/i,
+      /\bat\s+([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/i,
       // 管道分隔：Job Title | Company Name
       /\|\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*\||$)/,
-      // 冒号分隔：Job Title: Company Name
+      // 冒号分隔：Job Title: Company Name (已在WeWorkRemotely中处理)
       /:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/,
       // 破折号分隔：Job Title - Company Name
       /\s-\s([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/,
@@ -473,58 +761,56 @@ class RSSService {
       /\(([A-Z][a-zA-Z\s&.,-]+?)\)/,
       // @符号格式：Job Title @Company Name
       /@\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/i,
-      // 描述中的公司名称：Company: Company Name
-      /company:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[.\n]|$)/i,
-      // 描述中的雇主：Employer: Company Name
-      /employer:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[.\n]|$)/i,
-      // 描述中的组织：Organization: Company Name
-      /organization:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[.\n]|$)/i,
-      // 描述中的客户端：Client: Company Name
-      /client:\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[.\n]|$)/i,
+      // 描述中的公司名称模式
+      /(?:company|employer|organization|client):\s*([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[.\n]|$)/i,
       // 工作地点格式：Job Title - Remote at Company Name
       /remote\s+at\s+([A-Z][a-zA-Z\s&.,-]+?)(?:\s*[-|•]|\s*$)/i,
       // 位置格式：Job Title - Location - Company Name
       /\s-\s[A-Za-z\s,]+\s-\s([A-Z][a-zA-Z\s&.,-]+?)(?:\s*$)/,
-      // 简单的大写字母开头的词组
-      /\b([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*){1,3})\b/
+      // 描述开头的公司名称：Company Name is looking for...
+      /^([A-Z][a-zA-Z\s&.,-]+?)\s+(?:is\s+looking|seeks?|wants?|needs?)\s+/i,
+      // 描述中的 "Join Company Name" 格式
+      /join\s+([A-Z][a-zA-Z\s&.,-]+?)(?:\s+(?:as|and|team)|[.,!]|\s*$)/i,
+      // 描述中的 "Company Name team" 格式
+      /([A-Z][a-zA-Z\s&.,-]+?)\s+team(?:\s|[.,!]|$)/i
     ];
 
     // 首先尝试从标题中提取
-    for (const pattern of companyPatterns.slice(0, -1)) { // 排除最后一个通用模式
+    for (const pattern of companyPatterns.slice(0, 11)) { // 排除描述专用模式
       const match = title.match(pattern);
       if (match && match[1]) {
         const company = match[1].trim();
         // 过滤掉常见的非公司名称
-        if (!this.isCommonNonCompanyWord(company)) {
-          return company;
+        if (!this.isCommonNonCompanyWord(company) && company.length > 2) {
+          return this.cleanCompanyName(company);
         }
       }
     }
 
     // 然后尝试从描述中提取
-    for (const pattern of companyPatterns.slice(0, -1)) {
+    for (const pattern of companyPatterns) {
       const match = description.match(pattern);
       if (match && match[1]) {
         const company = match[1].trim();
-        if (!this.isCommonNonCompanyWord(company)) {
-          return company;
-        }
-      }
-    }
-
-    // 最后使用通用模式作为备选
-    const generalPattern = companyPatterns[companyPatterns.length - 1];
-    const matches = title.match(new RegExp(generalPattern, 'g'));
-    if (matches) {
-      for (const match of matches) {
-        const company = match.trim();
-        if (company.length > 2 && !this.isCommonNonCompanyWord(company)) {
-          return company;
+        if (!this.isCommonNonCompanyWord(company) && company.length > 2) {
+          return this.cleanCompanyName(company);
         }
       }
     }
 
     return '';
+  }
+
+  /**
+   * 清理公司名称
+   */
+  private cleanCompanyName(company: string): string {
+    // 移除常见的后缀
+    return company
+      .replace(/\s+(Inc\.?|LLC\.?|Ltd\.?|Corp\.?|Co\.?|Company)$/i, '')
+      .replace(/\s+(is\s+hiring|hiring|jobs?)$/i, '')
+      .replace(/\s*[,.-]+\s*$/, '')
+      .trim();
   }
 
   /**
@@ -542,7 +828,9 @@ class RSSService {
       'usa', 'europe', 'worldwide', 'global', 'international', 'local',
       'new', 'old', 'big', 'small', 'large', 'major', 'minor', 'top',
       'best', 'great', 'good', 'excellent', 'amazing', 'awesome',
-      'the', 'and', 'or', 'but', 'for', 'with', 'without', 'from', 'to'
+      'the', 'and', 'or', 'but', 'for', 'with', 'without', 'from', 'to',
+      'software', 'web', 'mobile', 'frontend', 'backend', 'fullstack',
+      'marketing', 'sales', 'support', 'customer', 'product', 'data'
     ];
     
     return commonWords.includes(word.toLowerCase()) || word.length < 2;
@@ -552,37 +840,141 @@ class RSSService {
    * 从标题或描述中提取地理位置
    */
   private extractLocation(title: string, description: string): string {
+    // 增强的位置信息提取逻辑
     const locationPatterns = [
-      // 通用远程工作关键词
-      /Remote|Worldwide|Global|Anywhere/i,
-      // 国家名称（包括Philippines等）
-      /\b(Philippines|Singapore|Malaysia|Thailand|Vietnam|Indonesia|India|China|Japan|Korea|Australia|New Zealand)\b/i,
-      // 城市,国家格式
-      /\b([A-Z][a-z]+,\s*[A-Z]{2,})\b/,
-      // 城市 国家格式（包含常见国家）
-      /\b([A-Z][a-z]+\s*[A-Z][a-z]*,?\s*(?:USA|UK|Canada|Germany|France|Australia|Netherlands|Spain|Italy|Brazil|Mexico|Argentina))\b/i,
-      // 美国州名格式
-      /\b([A-Z][a-z]+,\s*(?:CA|NY|TX|FL|WA|IL|PA|OH|GA|NC|MI|NJ|VA|AZ|MA|TN|IN|MO|MD|WI|CO|MN|SC|AL|LA|KY|OR|OK|CT|UT|IA|NV|AR|MS|KS|NM|NE|WV|ID|HI|NH|ME|MT|RI|DE|SD|ND|AK|VT|WY))\b/,
-      // 欧洲国家
-      /\b(United Kingdom|England|Scotland|Wales|Ireland|France|Germany|Spain|Italy|Netherlands|Belgium|Switzerland|Austria|Sweden|Norway|Denmark|Finland|Poland|Czech Republic|Hungary|Portugal|Greece)\b/i,
-      // 亚洲国家和地区
-      /\b(Hong Kong|Taiwan|South Korea|North Korea|Bangladesh|Pakistan|Sri Lanka|Myanmar|Cambodia|Laos|Brunei|Maldives|Nepal|Bhutan|Afghanistan|Mongolia)\b/i,
-      // 其他地区
-      /\b(Remote - .*|Location: .*|Based in .*)\b/i
+      // 标准格式：Job Title - Location
+      /\s-\s([A-Z][a-zA-Z\s,.-]+?)(?:\s*[-|•]|\s*$)/,
+      // 括号格式：Job Title (Location)
+      /\(([A-Z][a-zA-Z\s,.-]+?)\)/,
+      // 管道分隔：Job Title | Location
+      /\|\s*([A-Z][a-zA-Z\s,.-]+?)(?:\s*\||$)/,
+      // 位置关键词：Location: City, Country
+      /(?:location|based|office):\s*([A-Za-z\s,.-]+?)(?:\s*[.\n]|$)/i,
+      // 远程工作格式：Remote - Location
+      /remote\s*[-–]\s*([A-Za-z\s,.-]+?)(?:\s*[.\n]|$)/i,
+      // 工作地点：Work from Location
+      /work\s+from\s+([A-Za-z\s,.-]+?)(?:\s*[.\n]|$)/i,
+      // 描述中的位置：in Location
+      /\bin\s+([A-Z][a-zA-Z\s,.-]+?)(?:\s*[,.\n]|$)/,
+      // 国家/城市模式
+      /\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*),\s*([A-Z][A-Z]+|[A-Z][a-zA-Z]+)\b/,
+      // 远程工作限制：Remote (Location only)
+      /remote\s*\(([^)]+)\)/i,
+      // 时区信息：Location timezone
+      /([A-Za-z\s,.-]+?)\s+(?:timezone|time\s+zone|tz)/i
     ];
 
-    const text = `${title} ${description}`;
+    // 首先尝试从标题中提取
     for (const pattern of locationPatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        let location = match[0].trim();
-        // 清理格式
-        location = location.replace(/^(Remote - |Location: |Based in )/i, '');
-        return location;
+      const match = title.match(pattern);
+      if (match && match[1]) {
+        const location = match[1].trim();
+        if (this.isValidLocation(location)) {
+          return this.cleanLocation(location);
+        }
       }
     }
 
-    return 'Remote';
+    // 然后尝试从描述中提取
+    for (const pattern of locationPatterns) {
+      const match = description.match(pattern);
+      if (match && match[1]) {
+        const location = match[1].trim();
+        if (this.isValidLocation(location)) {
+          return this.cleanLocation(location);
+        }
+      }
+    }
+
+    // 检查是否包含远程工作关键词
+    if (this.containsRemoteKeywords(title) || this.containsRemoteKeywords(description)) {
+      return 'Remote';
+    }
+
+    return 'Remote'; // 默认为远程
+  }
+
+  /**
+   * 检查是否为有效的位置信息
+   */
+  private isValidLocation(location: string): boolean {
+    // 过滤掉明显不是位置的词汇
+    const invalidLocationWords = [
+      'remote', 'full', 'time', 'part', 'contract', 'freelance', 'temporary',
+      'senior', 'junior', 'lead', 'principal', 'staff', 'entry', 'level',
+      'developer', 'engineer', 'designer', 'manager', 'analyst', 'specialist',
+      'job', 'position', 'role', 'opportunity', 'career', 'work', 'employment',
+      'hiring', 'wanted', 'seeking', 'looking', 'required', 'needed',
+      'software', 'web', 'mobile', 'frontend', 'backend', 'fullstack',
+      'marketing', 'sales', 'support', 'customer', 'product', 'data'
+    ];
+
+    const lowerLocation = location.toLowerCase();
+    
+    // 检查是否包含无效词汇
+    for (const word of invalidLocationWords) {
+      if (lowerLocation.includes(word)) {
+        return false;
+      }
+    }
+
+    // 检查长度和格式
+    if (location.length < 2 || location.length > 50) {
+      return false;
+    }
+
+    // 检查是否包含常见的位置关键词
+    const locationKeywords = [
+      'usa', 'us', 'united states', 'america', 'canada', 'uk', 'united kingdom',
+      'europe', 'asia', 'australia', 'new zealand', 'germany', 'france', 'spain',
+      'italy', 'netherlands', 'sweden', 'norway', 'denmark', 'finland',
+      'city', 'state', 'country', 'province', 'region', 'worldwide', 'global',
+      'new york', 'san francisco', 'los angeles', 'chicago', 'boston', 'seattle',
+      'london', 'paris', 'berlin', 'amsterdam', 'stockholm', 'copenhagen',
+      'toronto', 'vancouver', 'sydney', 'melbourne', 'tokyo', 'singapore'
+    ];
+
+    for (const keyword of locationKeywords) {
+      if (lowerLocation.includes(keyword)) {
+        return true;
+      }
+    }
+
+    // 检查是否符合城市,国家格式
+    if (/^[A-Z][a-zA-Z\s]+,\s*[A-Z][A-Za-z\s]+$/.test(location)) {
+      return true;
+    }
+
+    // 检查是否为简单的地名格式
+    if (/^[A-Z][a-zA-Z\s]{1,20}$/.test(location)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * 清理位置信息
+   */
+  private cleanLocation(location: string): string {
+    return location
+      .replace(/\s*[,.-]+\s*$/, '')
+      .replace(/^\s*[,.-]+\s*/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * 检查是否包含远程工作关键词
+   */
+  private containsRemoteKeywords(text: string): boolean {
+    const remoteKeywords = [
+      'remote', 'work from home', 'wfh', 'telecommute', 'distributed',
+      'anywhere', 'location independent', 'home office', 'virtual'
+    ];
+
+    const lowerText = text.toLowerCase();
+    return remoteKeywords.some(keyword => lowerText.includes(keyword));
   }
 
   /**
