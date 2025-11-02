@@ -349,7 +349,7 @@ export default function JobsPage() {
           console.log('示例岗位数据:', convertedJobs.slice(0, 2).map(job => ({
             title: job.title,
             company: job.company,
-            description: job.description.substring(0, 100) + '...'
+            description: (job.description || '').substring(0, 100) + '...'
           })))
         } else {
           // 如果没有RSS数据，尝试触发同步
@@ -425,8 +425,8 @@ export default function JobsPage() {
     // 搜索匹配
     const matchesSearch = searchTerm === '' || 
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (job.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (job.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (job.skills && job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
     
     // 工作类型匹配

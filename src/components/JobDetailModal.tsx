@@ -149,8 +149,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `${job.title} - ${job.company}`,
-          text: `查看这个职位：${job.title} at ${job.company}`,
+          title: `${job.title} - ${job.company || ''}`,
+        text: `查看这个职位：${job.title} at ${job.company || ''}`,
           url: window.location.href
         })
       } else {
@@ -170,12 +170,12 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
       
       try {
         const textsToTranslate = [
-          job.title,
-          job.company,
-          job.location,
-          job.type,
-          job.description
-        ]
+          job.title || '',
+          job.company || '',
+          job.location || '',
+          job.type || '',
+          job.description || ''
+        ].filter(text => text.trim() !== '')
         
         const results = await multiTranslationService.batchTranslate(textsToTranslate, 'zh')
         
@@ -235,7 +235,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 
   // 处理职位描述数据
   const jobDescriptionData = useMemo(() => {
-    return segmentJobDescription(displayText(job.description, true, 'description'))
+    return segmentJobDescription(displayText(job.description || '', true, 'description'))
   }, [job.description, isOriginalLanguage, translatedContent])
 
   const canNavigatePrev = currentJobIndex > 0
@@ -297,10 +297,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <div 
                     className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/15 dark:shadow-blue-500/10 relative"
                     role="img"
-                    aria-label={`${job.company} 公司标志`}
+                    aria-label={`${job.company || '未知公司'} 公司标志`}
                   >
                     <span className="text-white font-bold text-base">
-                      {job.company.charAt(0)}
+                      {(job.company || '未知公司').charAt(0)}
                     </span>
                     {/* 推荐标识集成到右上角 */}
                     <div 
@@ -339,7 +339,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 id="job-modal-description"
                 className="text-slate-600 dark:text-slate-400 font-medium text-sm truncate"
               >
-                {displayText(job.company, false, 'company')} • {displayText(job.location, false, 'location')}
+                {displayText(job.company || '', false, 'company')} • {displayText(job.location || '', false, 'location')}
               </p>
               <div className="flex items-center gap-2" role="toolbar" aria-label="职位操作">
                 {/* 翻译开关 */}
@@ -403,10 +403,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <div 
                     className="w-16 h-16 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-haigoo-primary/20"
                     role="img"
-                    aria-label={`${job.company} 公司标志`}
+                    aria-label={`${job.company || '未知公司'} 公司标志`}
                   >
                     <span className="text-white font-bold text-xl">
-                      {job.company.charAt(0)}
+                      {(job.company || '未知公司').charAt(0)}
                     </span>
                   </div>
                 </div>
@@ -420,7 +420,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                         id="company-info-title"
                         className="text-xl font-semibold text-slate-800 dark:text-white mb-1 truncate"
                       >
-                        {displayText(job.company)}
+                        {displayText(job.company || '')}
                       </h2>
                       
                       {/* 来源信息 */}
@@ -554,7 +554,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 <div className="space-y-6">
                   <section>
                     <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">
-                      {isOriginalLanguage ? `About ${job.company}` : `关于 ${displayText(job.company)}`}
+                      {isOriginalLanguage ? `About ${job.company || ''}` : `关于 ${displayText(job.company || '')}`}
                     </h3>
                     <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
                       {renderFormattedText(displayText(

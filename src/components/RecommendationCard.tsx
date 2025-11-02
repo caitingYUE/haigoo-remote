@@ -128,8 +128,8 @@ export default function RecommendationCard({ job, onClick, className = '' }: Rec
       <div className="h-24 bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 relative">
         {/* 公司Logo */}
         <div className="absolute top-3 left-4">
-          <div className={`w-12 h-12 rounded-xl ${getCompanyLogo(job.company)} flex items-center justify-center text-gray-800 font-bold text-base border-2 border-white/30 shadow-lg backdrop-blur-sm`}>
-            {job.company.charAt(0).toUpperCase()}
+          <div className={`w-12 h-12 rounded-xl ${getCompanyLogo(job.company || '')} flex items-center justify-center text-gray-800 font-bold text-base border-2 border-white/30 shadow-lg backdrop-blur-sm`}>
+          {(job.company || '未知公司').charAt(0).toUpperCase()}
           </div>
         </div>
         

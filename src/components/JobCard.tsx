@@ -203,10 +203,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       <header className="flex items-start justify-between pr-20">
         <div className="flex items-center flex-1 min-w-0">
           <div 
-            className={`w-12 h-12 rounded-xl ${getCompanyLogo(job.company)} flex items-center justify-center text-white font-semibold text-sm mr-4 flex-shrink-0 shadow-sm`}
+            className={`w-12 h-12 rounded-xl ${getCompanyLogo(job.company || '')} flex items-center justify-center text-white font-semibold text-sm mr-4 flex-shrink-0 shadow-sm`}
             aria-hidden="true"
           >
-            {job.company.charAt(0).toUpperCase()}
+            {(job.company || '未知公司').charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <h2 

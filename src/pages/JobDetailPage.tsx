@@ -185,7 +185,7 @@ export default function JobDetailPage() {
               <div className="flex flex-col gap-4 md:flex-row md:justify-between items-start md:items-center">
                 <div className="flex gap-3 md:gap-4 items-center w-full md:w-auto">
                   <div className="bg-purple-600 rounded-xl h-16 w-16 md:h-20 md:w-20 flex items-center justify-center text-white font-bold text-lg md:text-xl flex-shrink-0">
-                    {job.company.charAt(0)}
+                    {(job.company || '未知公司').charAt(0)}
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
                     <p className="text-gray-900 text-lg md:text-xl font-bold leading-tight truncate">{job.company}</p>
