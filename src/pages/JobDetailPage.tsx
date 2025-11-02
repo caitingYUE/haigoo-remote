@@ -102,6 +102,8 @@ export default function JobDetailPage() {
   }
 
   const formatSalary = (salary: { min: number; max: number; currency: string }) => {
+    if (!salary || (salary.min === 0 && salary.max === 0)) return 'None';
+    
     const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: salary.currency,
@@ -189,10 +191,12 @@ export default function JobDetailPage() {
                     <p className="text-gray-900 text-lg md:text-xl font-bold leading-tight truncate">{job.company}</p>
                     <p className="text-gray-500 text-sm md:text-base truncate">{job.location}</p>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
-                      <div className="flex items-center text-green-600 font-semibold text-sm md:text-base">
-                        <DollarSign className="w-4 h-4 mr-1" />
-                        <span>{formatSalary(job.salary)}</span>
-                      </div>
+                      {job.salary && job.salary.min > 0 && (
+                        <div className="flex items-center text-green-600 font-semibold text-sm md:text-base">
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          <span>{formatSalary(job.salary)}</span>
+                        </div>
+                      )}
                       <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs md:text-sm rounded-md w-fit">
                         {job.type === 'full-time' ? '全职' : job.type === 'contract' ? '合同' : '兼职'}
                       </span>

@@ -67,7 +67,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
   const jobTags = generateJobTags(job);
 
   const formatSalary = (salary: Job['salary']) => {
-    if (!salary || (salary.min === 0 && salary.max === 0)) return '薪资面议';
+    if (!salary || (salary.min === 0 && salary.max === 0)) return 'None';
     
     const formatAmount = (amount: number) => {
       if (amount >= 10000) {
@@ -209,7 +209,11 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             {job.company.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="font-semibold text-gray-900 text-lg group-hover:text-haigoo-primary transition-colors mb-1 line-clamp-1">
+            <h2 
+              id={`job-${job.id}-title`}
+              className="font-semibold text-gray-900 text-lg group-hover:text-haigoo-primary transition-colors mb-1 line-clamp-1"
+              title={job.title}
+            >
               {job.title}
             </h2>
             
@@ -223,13 +227,15 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             
             {/* 核心信息行 */}
             <div className="flex flex-wrap items-center gap-4 text-sm">
-              {/* 薪资 */}
-              <div className="flex items-center text-haigoo-primary font-semibold">
-                <DollarSign className="w-4 h-4 mr-1 flex-shrink-0" aria-hidden="true" />
-                <span aria-label={`薪资：${formatSalary(job.salary)}`}>
-                  {formatSalary(job.salary)}
-                </span>
-              </div>
+              {/* 薪资 - 只有当薪资数据存在且大于0时才显示 */}
+              {job.salary && job.salary.min > 0 && (
+                <div className="flex items-center text-haigoo-primary font-semibold">
+                  <DollarSign className="w-4 h-4 mr-1 flex-shrink-0" aria-hidden="true" />
+                  <span aria-label={`薪资：${formatSalary(job.salary)}`}>
+                    {formatSalary(job.salary)}
+                  </span>
+                </div>
+              )}
               
               {/* 地点 */}
               <div className="flex items-center text-gray-600 min-w-0 max-w-[200px]">

@@ -1,20 +1,20 @@
 export interface Job {
   id: string
   title: string
-  company: string
+  company?: string  // 可选，避免显示"未知公司"
   location: string
   type: 'full-time' | 'part-time' | 'contract' | 'remote' | 'freelance' | 'internship'
-  salary: {
+  salary?: {
     min: number
     max: number
     currency: string
   }
-  description: string
+  description?: string  // 可选，避免显示"暂无描述"
   requirements: string[]
   responsibilities: string[]
   skills: string[]
   postedAt: string
-  expiresAt: string
+  expiresAt?: string  // 可选，避免虚假过期时间
   source: string
   sourceUrl?: string
   logo?: string
@@ -23,6 +23,8 @@ export interface Job {
   category?: string
   isRemote?: boolean
   remoteLocationRestriction?: string
+  // 推荐度得分 (0-100) - 只有真实数据才设置
+  recommendationScore?: number
 }
 
 export interface User {

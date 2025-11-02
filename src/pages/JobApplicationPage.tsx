@@ -55,9 +55,11 @@ const JobApplicationPage: React.FC = () => {
         title: job.title,
         company: job.company,
         location: job.location,
-        salary: job.salary.currency === 'CNY' 
+        salary: job.salary && job.salary.currency === 'CNY' 
           ? `${(job.salary.min / 1000).toFixed(0)}-${(job.salary.max / 1000).toFixed(0)}K`
-          : `${job.salary.min}-${job.salary.max} ${job.salary.currency}`,
+          : job.salary 
+            ? `${job.salary.min}-${job.salary.max} ${job.salary.currency}`
+            : '薪资面议',
         description: job.description,
         requirements: job.requirements || [],
         responsibilities: job.responsibilities || [],

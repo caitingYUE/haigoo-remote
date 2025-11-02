@@ -256,7 +256,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     >
       <div 
         ref={modalRef}
-        className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200/60 dark:border-zinc-700/60 w-full max-w-4xl h-[90vh] flex flex-col relative transform transition-all duration-300 ${
+        className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-4xl h-[90vh] flex flex-col relative transform transition-all duration-300 ${
           isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -267,7 +267,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           <button
             onClick={() => handleNavigate('prev')}
             onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('prev'))}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm border border-slate-200/60 dark:border-zinc-700/60 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
             title="上一个职位 (Ctrl+←)"
             aria-label={`上一个职位，当前第 ${currentJobIndex + 1} 个，共 ${jobs.length} 个`}
           >
@@ -279,7 +279,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           <button
             onClick={() => handleNavigate('next')}
             onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('next'))}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm border border-slate-200/60 dark:border-zinc-700/60 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
             title="下一个职位 (Ctrl+→)"
             aria-label={`下一个职位，当前第 ${currentJobIndex + 1} 个，共 ${jobs.length} 个`}
           >
@@ -287,28 +287,29 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           </button>
         )}
 
-        {/* Header - 固定头部，分两行布局 */}
-        <header className="flex-shrink-0 bg-gradient-to-r from-white/95 via-slate-50/90 to-white/95 dark:from-zinc-900/95 dark:via-zinc-800/90 dark:to-zinc-900/95 backdrop-blur-xl border-b border-slate-200/60 dark:border-zinc-700/60">
+        {/* Header - 简化头部样式 */}
+        <header className="flex-shrink-0 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
           <div className="p-6 pb-3">
             {/* 第一行：公司Logo与主标题 + 右侧AI Match环和关闭 */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="relative flex-shrink-0">
+                <div className="flex-shrink-0">
                   <div 
-                    className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/15 dark:shadow-blue-500/10"
+                    className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/15 dark:shadow-blue-500/10 relative"
                     role="img"
                     aria-label={`${job.company} 公司标志`}
                   >
                     <span className="text-white font-bold text-base">
                       {job.company.charAt(0)}
                     </span>
-                  </div>
-                  <div 
-                    className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm"
-                    role="img"
-                    aria-label="推荐职位标识"
-                  >
-                    <Zap className="w-2 h-2 text-white" />
+                    {/* 推荐标识集成到右上角 */}
+                    <div 
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-emerald-400 to-green-500 rounded-md flex items-center justify-center shadow-sm"
+                      role="img"
+                      aria-label="推荐职位标识"
+                    >
+                      <Zap className="w-2 h-2 text-white" />
+                    </div>
                   </div>
                 </div>
                 <h1 
@@ -398,7 +399,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             >
               <div className="flex items-start gap-6">
                 {/* 公司Logo */}
-                <div className="relative flex-shrink-0">
+                <div className="flex-shrink-0">
                   <div 
                     className="w-16 h-16 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-haigoo-primary/20"
                     role="img"
@@ -407,13 +408,6 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                     <span className="text-white font-bold text-xl">
                       {job.company.charAt(0)}
                     </span>
-                  </div>
-                  <div 
-                    className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm"
-                    role="img"
-                    aria-label="优质雇主标识"
-                  >
-                    <Star className="w-2.5 h-2.5 text-white fill-current" />
                   </div>
                 </div>
                 
@@ -428,8 +422,26 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                       >
                         {displayText(job.company)}
                       </h2>
+                      
+                      {/* 来源信息 */}
+                      {job.sourceUrl && (
+                        <div className="mb-2">
+                          <span className="text-sm text-slate-500 dark:text-slate-400">
+                            {isOriginalLanguage ? 'Source: ' : '来自：'}
+                          </span>
+                          <a
+                            href={job.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-haigoo-primary dark:text-purple-400 hover:text-haigoo-primary/80 dark:hover:text-purple-300 underline decoration-1 underline-offset-2 transition-colors"
+                            title={isOriginalLanguage ? 'View original job posting' : '查看原始职位信息'}
+                          >
+                            {job.source || new URL(job.sourceUrl).hostname}
+                          </a>
+                        </div>
+                      )}
+                      
                       <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                        <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
                         <span>{isOriginalLanguage ? 'AI Match' : '智能匹配'}</span>
                         <span 
                           className="ml-1 font-semibold text-haigoo-primary dark:text-purple-400"
@@ -441,13 +453,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                     </div>
                   </div>
 
-                  {/* 详细信息网格 */}
-                  <dl className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden="true" />
-                      <dt className="sr-only">工作地点</dt>
-                      <dd className="truncate">{displayText(job.location)}</dd>
-                    </div>
+                  {/* 详细信息网格 - 移除地址信息 */}
+                  <dl className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                       <Building2 className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden="true" />
                       <dt className="sr-only">工作类型</dt>
@@ -472,9 +479,9 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
               </div>
             </section>
 
-            {/* 专业Tab导航 - 海狗品牌交互状态 */}
+            {/* 专业Tab导航 - 标准tab组件样式 */}
             <nav 
-              className="flex space-x-1 bg-haigoo-neutral-50 dark:bg-haigoo-neutral-800 p-1 rounded-xl border border-haigoo-neutral-200 dark:border-haigoo-neutral-700"
+              className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700"
               role="tablist"
               aria-label="职位详情选项卡"
             >
@@ -487,8 +494,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}
                   onKeyDown={(e) => handleKeyDown(e, () => setActiveTab(tab.key as any))}
-                  className={`tab-nav-item ${
-                    activeTab === tab.key ? 'tab-nav-active' : 'tab-nav-default'
+                  className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 ${
+                    activeTab === tab.key 
+                      ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm border border-gray-200 dark:border-gray-600' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                   role="tab"
                   aria-selected={activeTab === tab.key}
@@ -510,14 +519,21 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             >
               {activeTab === 'description' && (
                 <div className="space-y-6">
-                  {jobDescriptionData.summary && (
-                    <section>
-                      <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">职位概要</h3>
-                      <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {renderFormattedText(displayText(jobDescriptionData.summary, true))}
+                  {/* 工作地点信息模块 */}
+                  <section>
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-slate-500" />
+                      {isOriginalLanguage ? 'Work Location' : '工作地点'}
+                    </h3>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                      <div className="text-slate-700 dark:text-slate-300 font-medium">
+                        {displayText(job.location)}
                       </div>
-                    </section>
-                  )}
+                      <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        {isOriginalLanguage ? 'This position may have specific location requirements or remote work options.' : '此职位可能有特定的地点要求或远程工作选项。'}
+                      </div>
+                    </div>
+                  </section>
                   
                   {jobDescriptionData.sections.map((section, index) => (
                     <section key={index}>
@@ -656,8 +672,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             aria-label={`申请 ${job.title} 职位`}
           >
             <Zap className="w-4 h-4 group-hover:animate-pulse" aria-hidden="true" />
-            立即申请
-            <span className="text-xs opacity-75">• 一键投递</span>
+            前往申请，Go！
           </button>
         </footer>
       </div>

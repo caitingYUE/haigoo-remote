@@ -1,200 +1,304 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Search, Filter, ChevronDown, MapPin, Clock, DollarSign, Users, Briefcase, TrendingUp, Star, Bookmark, Building, Calendar, AlertTriangle } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import JobCard from '../components/JobCard'
-import JobFilter from '../components/JobFilter'
+import { Briefcase, Bookmark, AlertTriangle } from 'lucide-react'
 import JobDetailModal from '../components/JobDetailModal'
-import SearchBar from '../components/SearchBar'
-import FilterDropdown from '../components/FilterDropdown'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
-import NotificationProvider from '../components/NotificationSystem'
-import { Job, JobFilter as JobFilterType } from '../types'
+import { Job } from '../types'
+import { jobAggregator } from '../services/job-aggregator'
+import { Job as RSSJob } from '../types/rss-types'
 
-// Import company logos
-import techCorpLogo from '../assets/company-logos/techcorp-logo.svg'
-import innovateIncLogo from '../assets/company-logos/innovate-inc-logo.svg'
-import dataCoLogo from '../assets/company-logos/dataco-logo.svg'
+// 转换RSS职位为页面职位格式
+const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
+  // 处理薪资信息 - 从RSS数据中解析真实薪资
+  let salary: { min: number; max: number; currency: string } | undefined = undefined;
 
-// Company logos mapping
-const companyLogos: { [key: string]: string } = {
-  'TechCorp': techCorpLogo,
-  'Innovate Inc.': innovateIncLogo,
-  'DataCo': dataCoLogo
+  if (rssJob.salary && typeof rssJob.salary === 'string' && rssJob.salary.trim()) {
+    const salaryText = rssJob.salary.trim();
+    
+    // 排除明显不是薪资的文本
+    const excludePatterns = [
+      /\$[\d,]+\s*(?:million|billion|k|thousand)\s*(?:company|business|startup|funding|investment|valuation|revenue)/i,
+      /\$[\d,]+\s*(?:in|of)\s*(?:funding|investment|revenue|sales)/i,
+      /\$[\d,]+\s*(?:raised|funded|invested)/i
+    ];
+
+    let isExcluded = false;
+    for (const excludePattern of excludePatterns) {
+      if (excludePattern.test(salaryText)) {
+        isExcluded = true;
+        break;
+      }
+    }
+
+    if (!isExcluded) {
+      // 尝试从字符串中解析薪资信息
+      const salaryMatch = salaryText.match(/(\d+(?:,\d+)*(?:\.\d+)?)\s*[-–—到至]\s*(\d+(?:,\d+)*(?:\.\d+)?)/);
+      if (salaryMatch) {
+        const min = parseInt(salaryMatch[1].replace(/,/g, ''));
+        const max = parseInt(salaryMatch[2].replace(/,/g, ''));
+        // 确保薪资数字在合理范围内
+        if (min >= 1000 && max >= 1000 && min > 0 && max > 0) {
+          salary = {
+            min,
+            max,
+            currency: 'USD'
+          };
+        }
+      } else {
+        // 尝试解析单个数字
+        const singleMatch = salaryText.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
+        if (singleMatch) {
+          const amount = parseInt(singleMatch[1].replace(/,/g, ''));
+          // 确保薪资数字在合理范围内，或者是时薪
+          if ((amount >= 1000) || (amount >= 10 && salaryText.toLowerCase().includes('hour'))) {
+            salary = {
+              min: amount,
+              max: amount,
+              currency: 'USD'
+            };
+          }
+        }
+      }
+      
+      // 检测货币类型
+      if (salary) {
+        if (salaryText.includes('¥') || salaryText.includes('CNY') || salaryText.includes('人民币')) {
+          salary.currency = 'CNY';
+        } else if (salaryText.includes('$') || salaryText.includes('USD')) {
+          salary.currency = 'USD';
+        } else if (salaryText.includes('€') || salaryText.includes('EUR')) {
+          salary.currency = 'EUR';
+        }
+      }
+    }
+  }
+
+  // 确定工作类型
+  let jobType: Job['type'] = 'full-time';
+  if (rssJob.jobType) {
+    switch (rssJob.jobType) {
+      case 'full-time':
+        jobType = 'full-time';
+        break;
+      case 'part-time':
+        jobType = 'part-time';
+        break;
+      case 'contract':
+        jobType = 'contract';
+        break;
+      case 'freelance':
+        jobType = 'freelance';
+        break;
+      case 'internship':
+        jobType = 'internship';
+        break;
+      default:
+        jobType = rssJob.isRemote ? 'remote' : 'full-time';
+    }
+  } else if (rssJob.isRemote) {
+    jobType = 'remote';
+  }
+
+  // 计算推荐分数 - 完全独立于薪资数据，基于其他职位属性
+  let recommendationScore = 0;
+  
+  // 基础分数
+  recommendationScore += 60;
+  
+  // 远程工作加分
+  if (rssJob.isRemote) {
+    recommendationScore += 20;
+  }
+  
+  // 有技能标签加分
+  if (rssJob.tags && rssJob.tags.length > 0) {
+    recommendationScore += Math.min(rssJob.tags.length * 3, 15);
+  }
+  
+  // 有详细描述加分
+  if (rssJob.description && rssJob.description.length > 100) {
+    recommendationScore += 10;
+  }
+  
+  // 有公司信息加分
+  if (rssJob.company && rssJob.company.trim()) {
+    recommendationScore += 5;
+  }
+  
+  // 添加一些随机性，让排序更自然
+  recommendationScore += Math.random() * 15;
+
+  return {
+    id: rssJob.id,
+    title: rssJob.title,
+    company: rssJob.company || undefined,  // 不设置虚假公司名
+    location: rssJob.location || 'Remote',
+    type: jobType,
+    salary,
+    description: rssJob.description || undefined,  // 不设置虚假描述
+    requirements: rssJob.requirements || [],
+    responsibilities: rssJob.benefits || [],
+    skills: rssJob.tags || [],
+    postedAt: rssJob.publishedAt || new Date().toISOString().split('T')[0],
+    expiresAt: undefined,  // 不设置虚假过期时间
+    source: rssJob.source || 'RSS',
+    sourceUrl: rssJob.url || '#',
+    recommendationScore, // 基于真实属性计算的推荐分数
+    // RSS特有字段
+    experienceLevel: rssJob.experienceLevel,
+    category: rssJob.category,
+    isRemote: rssJob.isRemote,
+    remoteLocationRestriction: rssJob.remoteLocationRestriction
+  }
 }
 
-// Mock data for demonstration
-const mockJobs: Job[] = [
-  {
-    id: '1',
-    title: 'Senior Product Designer',
-    company: 'TechCorp',
-    location: 'Remote - Global',
-    type: 'full-time',
-    salary: { min: 60000, max: 90000, currency: 'USD' },
-    description: 'We are looking for a talented UI/UX designer to join our team. You will be responsible for creating user-friendly interfaces and improving user experience.',
-    requirements: ['Figma', 'Sketch', 'Adobe XD'],
-    responsibilities: ['Design user interfaces', 'Create prototypes', 'Conduct user research'],
-    skills: ['UI/UX', 'Figma', 'Prototyping'],
-    postedAt: '2024-01-15',
-    expiresAt: '2024-02-15',
-    source: 'Dribbble',
-    sourceUrl: 'https://dribbble.com'
-  },
-  {
-    id: '2',
-    title: 'Lead Software Engineer',
-    company: 'Innovate Inc.',
-    location: 'Remote - US',
-    type: 'contract',
-    salary: { min: 80000, max: 120000, currency: 'USD' },
-    description: 'Join our engineering team to build scalable web applications using modern technologies.',
-    requirements: ['React', 'Node.js', 'AWS'],
-    responsibilities: ['Lead development team', 'Architect solutions', 'Code review'],
-    skills: ['React', 'Node.js', 'AWS'],
-    postedAt: '2024-01-14',
-    expiresAt: '2024-02-14',
-    source: 'LinkedIn',
-    sourceUrl: 'https://linkedin.com'
-  },
-  {
-    id: '3',
-    title: 'Data Scientist',
-    company: 'DataCo',
-    location: 'Remote - EU',
-    type: 'full-time',
-    salary: { min: 70000, max: 100000, currency: 'USD' },
-    description: 'Analyze complex datasets and build machine learning models to drive business insights.',
-    requirements: ['Python', 'Machine Learning', 'SQL'],
-    responsibilities: ['Data analysis', 'Model building', 'Business insights'],
-    skills: ['Python', 'Machine Learning', 'SQL'],
-    postedAt: '2024-01-13',
-    expiresAt: '2024-02-13',
-    source: 'AngelList',
-    sourceUrl: 'https://angel.co'
+// 获取公司颜色
+const getCompanyColor = (companyName: string) => {
+  const colors = [
+    'bg-violet-500',
+    'bg-blue-500',
+    'bg-green-500',
+    'bg-yellow-500',
+    'bg-red-500',
+    'bg-indigo-500',
+    'bg-pink-500',
+    'bg-teal-500'
+  ]
+  
+  const index = companyName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
+  return colors[index]
+}
+
+// 获取推荐样式
+const getRecommendationStyles = (score?: number, index?: number) => {
+  if (!score || score < 70) {
+    return {
+      cardClass: 'bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-700',
+      showBadge: false,
+      isTop: false,
+      badge: '',
+      label: '',
+      accentColor: ''
+    }
   }
-]
+
+  // TOP 1, 2, 3 样式 - 精致专业的设计
+  const topStyles = [
+    {
+      // TOP 1 - 高端金色渐变
+      cardClass: 'relative bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/80 dark:from-amber-900/25 dark:via-yellow-900/20 dark:to-orange-900/25 rounded-2xl p-8 shadow-2xl hover:shadow-3xl border border-amber-200/40 dark:border-amber-700/40 backdrop-blur-sm ring-1 ring-amber-300/20 dark:ring-amber-600/20',
+      badge: 'bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white shadow-2xl backdrop-blur-sm ring-2 ring-white/30',
+      label: 'TOP 1',
+      showBadge: true,
+      isTop: true,
+      accentColor: 'from-amber-500 via-yellow-500 to-orange-500'
+    },
+    {
+      // TOP 2 - 优雅蓝紫渐变
+      cardClass: 'relative bg-gradient-to-br from-blue-50/80 via-indigo-50/60 to-purple-50/80 dark:from-blue-900/25 dark:via-indigo-900/20 dark:to-purple-900/25 rounded-2xl p-8 shadow-2xl hover:shadow-3xl border border-blue-200/40 dark:border-blue-700/40 backdrop-blur-sm ring-1 ring-blue-300/20 dark:ring-blue-600/20',
+      badge: 'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white shadow-2xl backdrop-blur-sm ring-2 ring-white/30',
+      label: 'TOP 2',
+      showBadge: true,
+      isTop: true,
+      accentColor: 'from-blue-500 via-indigo-500 to-purple-500'
+    },
+    {
+      // TOP 3 - 清新青绿渐变
+      cardClass: 'relative bg-gradient-to-br from-emerald-50/80 via-teal-50/60 to-cyan-50/80 dark:from-emerald-900/25 dark:via-teal-900/20 dark:to-cyan-900/25 rounded-2xl p-8 shadow-2xl hover:shadow-3xl border border-emerald-200/40 dark:border-emerald-700/40 backdrop-blur-sm ring-1 ring-emerald-300/20 dark:ring-emerald-600/20',
+      badge: 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-2xl backdrop-blur-sm ring-2 ring-white/30',
+      label: 'TOP 3',
+      showBadge: true,
+      isTop: true,
+      accentColor: 'from-emerald-500 via-teal-500 to-cyan-500'
+    }
+  ]
+
+  return topStyles[index || 0] || {
+    cardClass: 'bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-700',
+    showBadge: false,
+    isTop: false,
+    badge: '',
+    label: '',
+    accentColor: ''
+  }
+}
 
 export default function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
-  
-  // State management
   const [jobs, setJobs] = useState<Job[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filters, setFilters] = useState({
-    jobType: 'all',
-    salary: 'all',
-    location: 'all'
-  })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
 
-  // Filter options
-  const jobTypeOptions = [
-    { value: 'all', label: '全部类型' },
-    { value: 'full-time', label: '全职', count: 45 },
-    { value: 'contract', label: '合同工', count: 23 },
-    { value: 'part-time', label: '兼职', count: 12 }
-  ]
+  // 从URL参数获取筛选条件
+  const searchParams = new URLSearchParams(location.search)
+  const locationFilter = searchParams.get('location') || ''
+  const typeFilter = searchParams.get('type') || ''
+  const skillsFilter = searchParams.get('skills') || ''
 
-  const salaryOptions = [
-    { value: 'all', label: '全部薪资' },
-    { value: '0-50000', label: '$0 - $50K', count: 15 },
-    { value: '50000-80000', label: '$50K - $80K', count: 32 },
-    { value: '80000-120000', label: '$80K - $120K', count: 28 },
-    { value: '120000+', label: '$120K+', count: 18 }
-  ]
-
-  const locationOptions = [
-    { value: 'all', label: '全部地区' },
-    { value: 'remote-global', label: '全球远程', count: 56 },
-    { value: 'remote-us', label: '美国远程', count: 34 },
-    { value: 'remote-eu', label: '欧洲远程', count: 23 },
-    { value: 'remote-asia', label: '亚洲远程', count: 12 }
-  ]
-
-  // Load jobs data
-  useEffect(() => {
-    const loadJobs = async () => {
-      try {
-        setLoading(true)
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setJobs(mockJobs)
-        setError(null)
-      } catch (err) {
-        setError('加载职位信息失败，请稍后重试')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadJobs()
-  }, [])
-
-  // Filter jobs based on search and filters
+  // 筛选职位
   const filteredJobs = useMemo(() => {
-    return jobs.filter(job => {
-      // Search filter
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase()
-        const matchesSearch = 
-          job.title.toLowerCase().includes(searchLower) ||
-          job.company.toLowerCase().includes(searchLower) ||
-          job.skills.some(skill => skill.toLowerCase().includes(searchLower)) ||
-          job.description.toLowerCase().includes(searchLower)
-        
-        if (!matchesSearch) return false
-      }
+    let filtered = jobs
 
-      // Job type filter
-      if (filters.jobType !== 'all' && job.type !== filters.jobType) {
-        return false
-      }
-
-      // Salary filter
-      if (filters.salary !== 'all') {
-        const [min, max] = filters.salary.split('-').map(s => s.replace('+', '').replace('$', '').replace('K', '000'))
-        const jobSalaryMin = job.salary?.min || 0
-        const jobSalaryMax = job.salary?.max || 0
-        
-        if (filters.salary.includes('+')) {
-          if (jobSalaryMin < parseInt(min)) return false
-        } else {
-          if (jobSalaryMin < parseInt(min) || jobSalaryMax > parseInt(max)) return false
-        }
-      }
-
-      // Location filter
-      if (filters.location !== 'all') {
-        const locationMap: { [key: string]: string[] } = {
-          'remote-global': ['Remote - Global', 'Global Remote'],
-          'remote-us': ['Remote - US', 'US Remote'],
-          'remote-eu': ['Remote - EU', 'EU Remote'],
-          'remote-asia': ['Remote - Asia', 'Asia Remote']
-        }
-        
-        const allowedLocations = locationMap[filters.location] || []
-        if (!allowedLocations.some(loc => job.location.includes(loc))) {
-          return false
-        }
-      }
-
-      return true
-    })
-  }, [jobs, searchTerm, filters])
-
-  const handleApply = (jobId: string) => {
-    const job = jobs.find(j => j.id === jobId)
-    if (job) {
-      navigate(`/job/${jobId}/apply`, {
-        state: { job, previousPath: '/' }
-      })
+    if (locationFilter) {
+      filtered = filtered.filter(job => 
+        job.location.toLowerCase().includes(locationFilter.toLowerCase())
+      )
     }
-  }
+
+    if (typeFilter) {
+      filtered = filtered.filter(job => job.type === typeFilter)
+    }
+
+    if (skillsFilter) {
+      const skills = skillsFilter.split(',').map(s => s.trim().toLowerCase())
+      filtered = filtered.filter(job =>
+        skills.some(skill =>
+          job.skills.some(jobSkill => jobSkill.toLowerCase().includes(skill))
+        )
+      )
+    }
+
+    // 按推荐分数排序并限制为6个
+    return filtered
+      .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
+      .slice(0, 6)
+  }, [jobs, locationFilter, typeFilter, skillsFilter])
+
+  // 获取RSS职位数据
+   useEffect(() => {
+     const fetchJobs = async () => {
+       try {
+         setLoading(true)
+         setError(null)
+         
+         const rssJobs = jobAggregator.getJobs()
+         
+         if (rssJobs.length > 0) {
+           const convertedJobs = rssJobs.map(convertRSSJobToPageJob)
+           // 只使用RSS数据，不合并模拟数据
+           setJobs(convertedJobs)
+           // 设置数据更新时间
+           setLastUpdateTime(new Date())
+         } else {
+           // 如果没有RSS数据，设置为空数组
+           setJobs([])
+         }
+       } catch (err) {
+         console.error('获取职位数据失败:', err)
+         setError('获取职位数据失败')
+         setJobs([])
+       } finally {
+         setLoading(false)
+       }
+     }
+
+     fetchJobs()
+   }, [])
 
   const openJobDetail = (job: Job) => {
     setSelectedJob(job)
@@ -202,217 +306,334 @@ export default function HomePage() {
   }
 
   const closeJobDetail = () => {
-    setSelectedJob(null)
     setIsJobDetailOpen(false)
+    setSelectedJob(null)
+  }
+
+  const handleApply = (jobId: string) => {
+    if (selectedJob) {
+      // 导航到AI优化页面，传递当前岗位信息
+      navigate(`/job/${jobId}/apply`, {
+        state: {
+          job: selectedJob,
+          returnToModal: true, // 从模态框进入，返回时需要显示模态框
+          previousPath: '/', // 返回到首页
+          jobDetailPageState: {
+            showModal: true,
+            jobId: jobId
+          }
+        }
+      })
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <main className="container mx-auto px-4 pt-16 pb-8">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="mb-4">
-            <span className="inline-block px-4 py-2 bg-haigoo-primary/10 text-haigoo-primary text-sm font-medium rounded-full">
-              够快、够广、够理想
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Haigoo 帮你找到理想的远程工作
+        <div className="text-center mb-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            Haigoo帮你获得理想的远程工作
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            专业的远程工作求职工具，精准匹配优质职位
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-4">
+            专业的远程求职工具，每天为你精选一组最匹配的岗位，Go！
           </p>
+          {/* 数据更新时间提示 */}
+          {lastUpdateTime && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              今日推荐岗位数据已于{lastUpdateTime.getMonth() + 1}月{lastUpdateTime.getDate()}日{lastUpdateTime.getHours()}点{lastUpdateTime.getMinutes().toString().padStart(2, '0')}分更新
+            </p>
+          )}
         </div>
 
-        {/* 搜索和筛选区域 */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-            <div className="flex-1">
-              <SearchBar 
-                value={searchTerm}
-                onChange={setSearchTerm}
-                onSearch={(query) => setSearchTerm(query)}
-                placeholder="搜索职位、公司或技能..."
-                className="w-full"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <FilterDropdown
-                label="工作类型"
-                options={jobTypeOptions}
-                selectedValues={filters.jobType === 'all' ? [] : [filters.jobType]}
-                onChange={(values) => setFilters(prev => ({ ...prev, jobType: values.length > 0 ? values[0] : 'all' }))}
-                multiple={false}
-              />
-              <FilterDropdown
-                label="薪资范围"
-                options={salaryOptions}
-                selectedValues={filters.salary === 'all' ? [] : [filters.salary]}
-                onChange={(values) => setFilters(prev => ({ ...prev, salary: values.length > 0 ? values[0] : 'all' }))}
-                multiple={false}
-              />
-              <FilterDropdown
-                label="地点"
-                options={locationOptions}
-                selectedValues={filters.location === 'all' ? [] : [filters.location]}
-                onChange={(values) => setFilters(prev => ({ ...prev, location: values.length > 0 ? values[0] : 'all' }))}
-                multiple={false}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 职位列表 */}
-        <div className="space-y-4">
+        {/* 职位区域 */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           {loading ? (
-            <div className="space-y-4">
-              {/* 改进的加载状态 */}
-              <div className="text-center py-8">
-                <div className="inline-flex items-center space-x-2 text-gray-600">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-haigoo-primary"></div>
-                  <span>正在加载最新职位信息...</span>
-                </div>
-              </div>
-              {/* 骨架屏 */}
-              {[...Array(3)].map((_, index) => (
-                <div key={index} className="card p-6 animate-pulse">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <div className="w-8 h-8 bg-gray-200 rounded"></div>
-                      <div className="w-8 h-8 bg-gray-200 rounded"></div>
-                      <div className="w-8 h-8 bg-gray-200 rounded"></div>
-                    </div>
-                  </div>
-                  <div className="space-y-2 mb-4">
-                    <div className="h-4 bg-gray-200 rounded w-full"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className="h-6 bg-gray-200 rounded w-16"></div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div>
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-8 h-8 text-red-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">加载失败</h3>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="btn-primary px-6 py-2"
-              >
-                重新加载
-              </button>
+              <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <p className="text-red-600 dark:text-red-400">{error}</p>
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">未找到匹配的职位</h3>
-              <p className="text-gray-600 mb-4">
-                {searchTerm || Object.values(filters).some(f => f !== 'all') 
-                  ? '尝试调整搜索条件或筛选器' 
-                  : '暂时没有可用的职位信息'
-                }
+            <div className="text-center py-16">
+              <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                暂无匹配的职位
+              </h3>
+              <p className="text-gray-500 dark:text-gray-500">
+                请尝试调整筛选条件或稍后再试
               </p>
-              {(searchTerm || Object.values(filters).some(f => f !== 'all')) && (
-                <button
-                  onClick={() => {
-                    setSearchTerm('')
-                    setFilters({ jobType: 'all', salary: 'all', location: 'all' })
-                  }}
-                  className="btn-secondary px-6 py-2"
-                >
-                  清除筛选条件
-                </button>
-              )}
             </div>
           ) : (
-            <>
-              {/* 结果统计 */}
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-gray-600">
-                  找到 <span className="font-semibold text-gray-900">{filteredJobs.length}</span> 个职位
-                  {searchTerm && (
-                    <span> 包含 "<span className="font-semibold">{searchTerm}</span>"</span>
-                  )}
-                </p>
-                <div className="flex items-center space-x-2 text-xs text-gray-500">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span>实时更新</span>
+            <div className="space-y-12">
+              {/* Top 3 推荐岗位 */}
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
+                  {filteredJobs.slice(0, 3).map((job, index) => {
+                    const isSaved = savedJobs.has(job.id)
+                    const styles = getRecommendationStyles(job.recommendationScore, index)
+                    
+                    return (
+                        <div
+                          key={job.id}
+                          className="relative pt-6"
+                        >
+                          {/* TOP标签 - 独立容器，确保完全可见 */}
+                          {styles.showBadge && (
+                            <div className="absolute top-0 right-4 z-30">
+                              <div className={`px-4 py-2 rounded-full text-sm font-bold ${styles.badge} transform -rotate-3 hover:rotate-0 transition-all duration-300 shadow-xl border-2 border-white/20`}>
+                                {styles.label}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 卡片主体 */}
+                          <div
+                            onClick={() => openJobDetail(job)}
+                            className={`cursor-pointer transition-all duration-300 group transform hover:-translate-y-2 hover:scale-[1.02] ${styles.cardClass}`}
+                          >
+                            {/* 装饰性背景元素 - 仅对TOP卡片显示 */}
+                            {styles.isTop && (
+                              <>
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/30 to-transparent rounded-full -translate-y-12 translate-x-12 opacity-60"></div>
+                                <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-white/20 to-transparent rounded-full translate-y-10 -translate-x-10 opacity-40"></div>
+                                <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-gradient-to-r from-white/10 to-transparent rounded-full -translate-x-1/2 -translate-y-1/2 opacity-30"></div>
+                              </>
+                            )}
+
+                        <div className="flex items-start justify-between mb-6">
+                          <div className="flex items-center flex-1 min-w-0">
+                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 shadow-md ${getCompanyColor(job.company || 'Unknown')} ${styles.isTop ? 'ring-2 ring-white/60 dark:ring-gray-600/60' : ''}`}>
+                              <span className="text-white font-bold text-lg">
+                                {(job.company || 'U').charAt(0)}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className={`font-bold text-lg mb-1 truncate ${styles.isTop ? 'text-gray-800 dark:text-white' : 'text-gray-900 dark:text-white'}`}>
+                                {job.title}
+                              </h3>
+                              {job.company && (
+                                <p className={`text-sm font-medium ${styles.isTop ? 'text-gray-600 dark:text-gray-300' : 'text-gray-600 dark:text-gray-400'}`}>
+                                  {job.company}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 mb-6">
+                          {job.description && (
+                            <p className={`text-sm line-clamp-2 leading-relaxed ${styles.isTop ? 'text-gray-700 dark:text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                              {job.description}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <p className={`text-sm truncate flex-1 mr-4 whitespace-nowrap overflow-hidden ${styles.isTop ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                              📍 {job.location}
+                            </p>
+                            {job.salary && job.salary.min > 0 && (
+                              <p className={`font-bold text-xl flex-shrink-0 ${styles.isTop ? `bg-gradient-to-r ${styles.accentColor} bg-clip-text text-transparent` : 'text-violet-600 dark:text-violet-400'}`}>
+                                ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 mb-6">
+                          {job.skills.slice(0, 3).map((skill, skillIndex) => (
+                            <span
+                              key={skillIndex}
+                              className={`px-3 py-1.5 text-sm rounded-lg font-medium ${
+                                styles.isTop 
+                                  ? 'bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 backdrop-blur-sm' 
+                                  : 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                              }`}
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openJobDetail(job);
+                            }}
+                            className={`flex-1 py-3 px-6 rounded-xl font-semibold text-white transition-all duration-200 mr-3 ${
+                              styles.isTop 
+                                ? `bg-gradient-to-r ${styles.accentColor} hover:shadow-lg hover:scale-[1.02] shadow-md` 
+                                : 'bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600'
+                            }`}
+                          >
+                            立即申请
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSavedJobs(prev => {
+                                const newSet = new Set(prev);
+                                if (newSet.has(job.id)) {
+                                  newSet.delete(job.id);
+                                } else {
+                                  newSet.add(job.id);
+                                }
+                                return newSet;
+                              });
+                            }}
+                            className={`p-3 rounded-xl transition-all duration-200 ${
+                              isSaved
+                                ? styles.isTop 
+                                  ? `bg-gradient-to-r ${styles.accentColor} text-white shadow-md` 
+                                  : 'bg-violet-600 text-white dark:bg-violet-500'
+                                : styles.isTop
+                                  ? 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-400 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            } hover:scale-110`}
+                          >
+                            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                          </button>
+                        </div>
+                          </div>
+                        </div>
+                    )
+                  })}
                 </div>
               </div>
 
-              {/* 职位卡片列表 */}
-              <div className="space-y-4">
-                 {filteredJobs.map((job) => (
-                   <JobCard 
-                     key={job.id} 
-                     job={job} 
-                     onClick={openJobDetail}
-                     isSaved={savedJobs.has(job.id)}
-                     onSave={(jobId: string) => {
-                       setSavedJobs(prev => {
-                         const newSet = new Set(prev)
-                         if (newSet.has(jobId)) {
-                           newSet.delete(jobId)
-                         } else {
-                           newSet.add(jobId)
-                         }
-                         return newSet
-                       })
-                     }}
-                   />
-                 ))}
-               </div>
+              {/* 更多推荐岗位 */}
+              {filteredJobs.length > 3 && (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredJobs.slice(3, 6).map((job) => {
+                      const isSaved = savedJobs.has(job.id)
+                      
+                      return (
+                        <div
+                          key={job.id}
+                          onClick={() => openJobDetail(job)}
+                          className="relative bg-white dark:bg-gray-800 rounded-2xl p-6 cursor-pointer transition-all duration-300 group shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center flex-1 min-w-0">
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 shadow-sm ${getCompanyColor(job.company || 'Unknown')}`}>
+                                <span className="text-white font-bold text-base">
+                                  {(job.company || 'U').charAt(0)}
+                                </span>
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-bold text-gray-900 dark:text-white text-lg leading-tight truncate mb-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                                  {job.title}
+                                </h3>
+                                {job.company && (
+                                  <p className="text-gray-600 dark:text-gray-400 font-medium truncate">
+                                    {job.company}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
 
-               {/* 加载更多按钮 */}
-               {filteredJobs.length >= 20 && (
-                 <div className="text-center pt-8">
-                   <button className="btn-secondary px-8 py-3">
-                     加载更多职位
-                   </button>
-                 </div>
-               )}
-             </>
-           )}
-         </div>
-       </main>
+                          <div className="space-y-3 mb-4">
+                            {job.description && (
+                              <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-2 leading-relaxed">
+                                {job.description}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                                📍 {job.location}
+                              </p>
+                              {job.salary && job.salary.min > 0 && (
+                                <p className="text-violet-600 dark:text-violet-400 font-bold text-xl">
+                                  ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
 
-       {/* RSS状态指示器 */}
-       <RSSStatusIndicator />
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {job.skills.slice(0, 3).map((skill, skillIndex) => (
+                              <span
+                                key={skillIndex}
+                                className="px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-sm rounded-lg font-medium"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                            {job.skills.length > 3 && (
+                              <span className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm rounded-lg">
+                                +{job.skills.length - 3}
+                              </span>
+                            )}
+                          </div>
 
-       {/* 职位详情模态框 */}
-       {isJobDetailOpen && selectedJob && (
-         <JobDetailModal
-           job={selectedJob}
-           isOpen={isJobDetailOpen}
-           onClose={closeJobDetail}
-           onApply={handleApply}
-           isSaved={savedJobs.has(selectedJob.id)}
-           onSave={(jobId: string) => {
-             setSavedJobs(prev => {
-               const newSet = new Set(prev)
-               if (newSet.has(jobId)) {
-                 newSet.delete(jobId)
-               } else {
-                 newSet.add(jobId)
-               }
-               return newSet
-             })
-           }}
-         />
-       )}
+                          <div className="flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleApply(job.id);
+                              }}
+                              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 text-sm"
+                            >
+                              立即申请
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSavedJobs(prev => {
+                                  const newSet = new Set(prev);
+                                  if (newSet.has(job.id)) {
+                                    newSet.delete(job.id);
+                                  } else {
+                                    newSet.add(job.id);
+                                  }
+                                  return newSet;
+                                });
+                              }}
+                              className="p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 hover:border-violet-400 dark:hover:border-violet-500 text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                            >
+                              <Bookmark className={`w-5 h-5 ${isSaved ? 'text-violet-600 dark:text-violet-400 fill-current' : ''}`} />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* RSS状态指示器 */}
+      <RSSStatusIndicator />
+
+      {/* 职位详情模态框 */}
+      {isJobDetailOpen && selectedJob && (
+        <JobDetailModal
+          job={selectedJob}
+          isOpen={isJobDetailOpen}
+          onClose={closeJobDetail}
+          onApply={handleApply}
+          isSaved={savedJobs.has(selectedJob.id)}
+          onSave={(jobId: string) => {
+            setSavedJobs(prev => {
+              const newSet = new Set(prev)
+              if (newSet.has(jobId)) {
+                newSet.delete(jobId)
+              } else {
+                newSet.add(jobId)
+              }
+              return newSet
+            })
+          }}
+        />
+      )}
     </div>
   )
 }

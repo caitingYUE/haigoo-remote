@@ -97,7 +97,7 @@ export default function Header() {
           <div className="flex items-center">
             <Link 
               to="/" 
-              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg"
+              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 rounded-lg transition-all duration-200 hover:opacity-80"
               aria-label="Haigoo 首页"
             >
               <img 
@@ -106,9 +106,16 @@ export default function Header() {
                 className="h-10 w-auto" 
               />
             </Link>
+            {/* Brand Slogan */}
+            <div className="ml-4">
+              <p className="text-lg font-medium text-slate-700 italic tracking-wide transform hover:scale-105 transition-transform duration-300" 
+                 style={{ fontFamily: "'Inter', 'Helvetica Neue', 'Arial', sans-serif", fontWeight: 500 }}>
+                Go Higher with Haigoo
+              </p>
+            </div>
           </div>
 
-          {/* Desktop Navigation - 改善导航层级和视觉效果 */}
+          {/* Desktop Navigation - 优化导航样式，移除深色背景和下划线 */}
           <nav 
             className="hidden md:flex items-center space-x-1"
             role="navigation"
@@ -116,10 +123,10 @@ export default function Header() {
           >
             <Link 
               to="/" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
+              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transform hover:scale-105 ${
                 isActive('/') 
-                  ? 'text-white bg-haigoo-primary shadow-md transform scale-105' 
-                  : 'text-gray-700 hover:text-haigoo-primary hover:bg-haigoo-primary/10 hover:scale-102'
+                  ? 'text-violet-600 bg-violet-50 font-semibold shadow-sm' 
+                  : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50'
               }`}
               aria-current={isActive('/') ? 'page' : undefined}
             >
@@ -127,10 +134,10 @@ export default function Header() {
             </Link>
             <Link 
               to="/jobs" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
+              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transform hover:scale-105 ${
                 isActive('/jobs') 
-                  ? 'text-white bg-haigoo-primary shadow-md transform scale-105' 
-                  : 'text-gray-700 hover:text-haigoo-primary hover:bg-haigoo-primary/10 hover:scale-102'
+                  ? 'text-violet-600 bg-violet-50 font-semibold shadow-sm' 
+                  : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50'
               }`}
               aria-current={isActive('/jobs') ? 'page' : undefined}
             >
@@ -138,10 +145,10 @@ export default function Header() {
             </Link>
             <Link 
               to="/remote-experience" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
+              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transform hover:scale-105 ${
                 isActive('/remote-experience') 
-                  ? 'text-white bg-haigoo-primary shadow-md transform scale-105' 
-                  : 'text-gray-700 hover:text-haigoo-primary hover:bg-haigoo-primary/10 hover:scale-102'
+                  ? 'text-violet-600 bg-violet-50 font-semibold shadow-sm' 
+                  : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50'
               }`}
               aria-current={isActive('/remote-experience') ? 'page' : undefined}
             >

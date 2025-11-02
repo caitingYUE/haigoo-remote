@@ -168,20 +168,58 @@ export const extractJobSummary = (description: string): string => {
   if (!description) return '';
   
   // 移除HTML标签
-  const cleanText = description.replace(/<[^>]*>/g, '');
+  const cleanText = description.replace(/<[^>]*>/g, '').trim();
+  
+  // 检查是否有明确的摘要标识
+  const summaryMarkers = [
+    /^(summary|overview|about|description)[:：]/im,
+    /^(职位概要|职位摘要|岗位概述|关于职位)[:：]/im
+  ];
+  
+  let hasSummaryMarker = false;
+  for (const marker of summaryMarkers) {
+    if (marker.test(cleanText)) {
+      hasSummaryMarker = true;
+      break;
+    }
+  }
+  
+  // 如果没有明确的摘要标识，且文本很短或很长，则不提取摘要
+  if (!hasSummaryMarker) {
+    // 如果文本太短（少于100字符）或太长（超过2000字符），可能不适合作为摘要
+    if (cleanText.length < 100 || cleanText.length > 2000) {
+      return '';
+    }
+    
+    // 检查是否是纯粹的职位描述列表（包含大量项目符号或编号）
+    const listItemCount = (cleanText.match(/^[\s]*[-•*]\s+/gm) || []).length + 
+                         (cleanText.match(/^[\s]*\d+[\.\)]\s+/gm) || []).length;
+    if (listItemCount > 5) {
+      return ''; // 如果有太多列表项，可能不适合作为摘要
+    }
+  }
   
   // 按句子分割，取前两句
   const sentences = cleanText.split(/[.!?。！？]/).filter(s => s.trim().length > 10);
+  
+  // 如果句子太少，可能不是有效的摘要
+  if (sentences.length < 2) {
+    return '';
+  }
+  
   const summary = sentences.slice(0, 2).join('。') + (sentences.length > 2 ? '。' : '');
+  
+  // 如果摘要太短或太长，返回空
+  if (summary.length < 50 || summary.length > 300) {
+    return '';
+  }
   
   return summary.length > 150 ? summary.substring(0, 150) + '...' : summary;
 };
 
 // 分段职位描述 - 简化分段逻辑，保持原文完整性
 export const segmentJobDescription = (description: string) => {
-  if (!description) return { summary: '', sections: [] };
-  
-  const summary = extractJobSummary(description);
+  if (!description) return { sections: [] };
   
   // 清理描述文本，但保持基本结构
   const cleanDescription = description
@@ -204,7 +242,6 @@ export const segmentJobDescription = (description: string) => {
   // 如果文本较短或没有明显的分段标志，直接返回完整内容
   if (cleanDescription.length < 500 || !cleanDescription.includes('\n')) {
     return { 
-      summary, 
       sections: [{ 
         title: '职位详情', 
         content: cleanDescription 
@@ -228,7 +265,6 @@ export const segmentJobDescription = (description: string) => {
   if (paragraphs.length <= 2) {
     // 段落太少，不分段
     return { 
-      summary, 
       sections: [{ 
         title: '职位详情', 
         content: cleanDescription 
@@ -279,7 +315,6 @@ export const segmentJobDescription = (description: string) => {
   // 如果没有找到有效的分段，返回完整内容
   if (naturalSections.length === 0 || naturalSections.length === 1) {
     return { 
-      summary, 
       sections: [{ 
         title: '职位详情', 
         content: cleanDescription 
@@ -287,5 +322,5 @@ export const segmentJobDescription = (description: string) => {
     };
   }
   
-  return { summary, sections: naturalSections };
+  return { sections: naturalSections };
 };

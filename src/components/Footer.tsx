@@ -81,9 +81,9 @@ export default function Footer() {
               role="region"
               aria-label="网站信息"
             >
-              <span>🌍 专注海外远程工作机会</span>
+              <span>专注海外远程工作机会</span>
               <span className="hidden sm:inline">•</span>
-              <span>🤖 AI 智能匹配推荐</span>
+              <span>AI 智能匹配推荐</span>
             </div>
             
             <div 

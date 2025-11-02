@@ -981,17 +981,57 @@ class RSSService {
    * 从标题或描述中提取薪资信息
    */
   private extractSalary(title: string, description: string): string {
+    // 更严格的薪资模式，必须包含明确的薪资上下文
     const salaryPatterns = [
-      /\$[\d,]+(?:\s*-\s*\$?[\d,]+)?(?:\s*\/?\s*(?:year|yr|annually|month|mo|hour|hr))?/i,
-      /€[\d,]+(?:\s*-\s*€?[\d,]+)?(?:\s*\/?\s*(?:year|yr|annually|month|mo|hour|hr))?/i,
-      /£[\d,]+(?:\s*-\s*£?[\d,]+)?(?:\s*\/?\s*(?:year|yr|annually|month|mo|hour|hr))?/i
+      // 明确的薪资范围模式，如 "$50,000 - $80,000 per year"
+      /(?:salary|pay|compensation|wage|income|earn|earning|earnings)[\s:]*\$[\d,]+(?:\s*-\s*\$?[\d,]+)?(?:\s*\/?\s*(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly))?/i,
+      // 明确的薪资模式，如 "Salary: $60,000"
+      /(?:salary|pay|compensation|wage|income)[\s:]+\$[\d,]+(?:\s*-\s*\$?[\d,]+)?/i,
+      // 年薪模式，如 "$60,000/year" 或 "$60,000 annually"
+      /\$[\d,]+(?:\s*-\s*\$?[\d,]+)?\s*(?:\/|\s+)(?:year|yr|annually|annual)/i,
+      // 月薪模式，如 "$5,000/month" 或 "$5,000 monthly"
+      /\$[\d,]+(?:\s*-\s*\$?[\d,]+)?\s*(?:\/|\s+)(?:month|mo|monthly)/i,
+      // 时薪模式，如 "$25/hour" 或 "$25 hourly"
+      /\$[\d,]+(?:\s*-\s*\$?[\d,]+)?\s*(?:\/|\s+)(?:hour|hr|hourly)/i,
+      // 欧元薪资
+      /(?:salary|pay|compensation|wage|income|earn|earning|earnings)[\s:]*€[\d,]+(?:\s*-\s*€?[\d,]+)?(?:\s*\/?\s*(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly))?/i,
+      /€[\d,]+(?:\s*-\s*€?[\d,]+)?\s*(?:\/|\s+)(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly)/i,
+      // 英镑薪资
+      /(?:salary|pay|compensation|wage|income|earn|earning|earnings)[\s:]*£[\d,]+(?:\s*-\s*£?[\d,]+)?(?:\s*\/?\s*(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly))?/i,
+      /£[\d,]+(?:\s*-\s*£?[\d,]+)?\s*(?:\/|\s+)(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly)/i
     ];
 
     const text = `${title} ${description}`;
+    
+    // 排除明显不是薪资的上下文
+    const excludePatterns = [
+      /\$[\d,]+\s*(?:million|billion|k|thousand)\s*(?:company|business|startup|funding|investment|valuation|revenue)/i,
+      /\$[\d,]+\s*(?:in|of)\s*(?:funding|investment|revenue|sales)/i,
+      /\$[\d,]+\s*(?:raised|funded|invested)/i
+    ];
+
+    // 检查是否匹配排除模式
+    for (const excludePattern of excludePatterns) {
+      if (excludePattern.test(text)) {
+        return '';
+      }
+    }
+
+    // 检查薪资模式
     for (const pattern of salaryPatterns) {
       const match = text.match(pattern);
       if (match) {
-        return match[0].trim();
+        const salaryText = match[0].trim();
+        
+        // 进一步验证：确保薪资数字在合理范围内
+        const numbers = salaryText.match(/\d+/g);
+        if (numbers) {
+          const amount = parseInt(numbers[0]);
+          // 排除明显不合理的薪资数字（如 $1, $2 等）
+          if (amount >= 1000 || salaryText.toLowerCase().includes('hour')) {
+            return salaryText;
+          }
+        }
       }
     }
 
