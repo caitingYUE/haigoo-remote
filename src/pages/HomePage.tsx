@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Briefcase, Bookmark, AlertTriangle } from 'lucide-react'
+import { Briefcase, Bookmark, AlertTriangle, Archive, Clock } from 'lucide-react'
 import JobDetailModal from '../components/JobDetailModal'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
+import RecommendationHistory from '../components/RecommendationHistory'
 import { Job } from '../types'
 import { jobAggregator } from '../services/job-aggregator'
 import { Job as RSSJob } from '../types/rss-types'
+import { recommendationHistoryService } from '../services/recommendation-history-service'
 
 // 转换RSS职位为页面职位格式
 const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
@@ -233,6 +235,7 @@ export default function HomePage() {
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   // 从URL参数获取筛选条件
   const searchParams = new URLSearchParams(location.search)
@@ -284,6 +287,12 @@ export default function HomePage() {
            setJobs(convertedJobs)
            // 设置数据更新时间
            setLastUpdateTime(new Date())
+           
+           // 保存今日推荐到历史记录
+           const topRecommendations = convertedJobs
+             .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
+             .slice(0, 6)
+           recommendationHistoryService.saveDailyRecommendation(topRecommendations)
          } else {
            // 如果没有RSS数据，设置为空数组
            setJobs([])
@@ -332,9 +341,19 @@ export default function HomePage() {
       <main className="container mx-auto px-4 pt-16 pb-8">
         {/* Hero Section */}
         <div className="text-center mb-6">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Haigoo帮你获得理想的远程工作
-          </h1>
+          <div className="flex items-center justify-center mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+              Haigoo帮你获得理想的远程工作
+            </h1>
+            <button
+              onClick={() => setIsHistoryOpen(true)}
+              className="ml-6 flex items-center px-4 py-2 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 rounded-lg transition-colors duration-200 group"
+              title="查看过往推荐"
+            >
+              <Archive className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+              <span className="text-sm font-medium">过往推荐</span>
+            </button>
+          </div>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-4">
             专业的远程求职工具，每天为你精选一组最匹配的岗位，Go！
           </p>
@@ -631,6 +650,19 @@ export default function HomePage() {
               }
               return newSet
             })
+          }}
+        />
+      )}
+
+      {/* 过往推荐模态框 */}
+      {isHistoryOpen && (
+        <RecommendationHistory
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          onJobClick={(job: Job) => {
+            setSelectedJob(job)
+            setIsJobDetailOpen(true)
+            setIsHistoryOpen(false)
           }}
         />
       )}
