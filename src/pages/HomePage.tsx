@@ -239,19 +239,7 @@ export default function HomePage() {
   const [historyExpansionLevel, setHistoryExpansionLevel] = useState(0) // 0: 不显示, 1: 昨天, 2: 前2天, 3: 前3天
   const [pastRecommendations, setPastRecommendations] = useState<{[key: string]: Job[]}>({})
   const [loadingHistory, setLoadingHistory] = useState(false)
-
-  // 生成测试数据的函数
-  const generateTestHistoryData = () => {
-    try {
-      recommendationHistoryService.generateTestData()
-      // 重新加载历史数据
-      loadHistoryRecommendations(historyExpansionLevel)
-      alert('测试数据已生成！请点击"查看昨天推荐"按钮查看效果。')
-    } catch (error) {
-      console.error('生成测试数据失败:', error)
-      alert('生成测试数据失败，请查看控制台了解详情。')
-    }
-  }
+  const [todayRecommendations, setTodayRecommendations] = useState<Job[]>([]) // 今天的固定推荐
 
   // 从URL参数获取筛选条件
   const searchParams = new URLSearchParams(location.search)
@@ -259,9 +247,12 @@ export default function HomePage() {
   const typeFilter = searchParams.get('type') || ''
   const skillsFilter = searchParams.get('skills') || ''
 
-  // 筛选职位
+  // 筛选职位 - 使用今天的固定推荐
   const filteredJobs = useMemo(() => {
-    let filtered = jobs
+    // 优先使用今天的固定推荐
+    const jobsToFilter = todayRecommendations.length > 0 ? todayRecommendations : jobs
+    
+    let filtered = jobsToFilter
 
     if (locationFilter) {
       filtered = filtered.filter(job => 
@@ -282,48 +273,65 @@ export default function HomePage() {
       )
     }
 
-    // 按推荐分数排序并限制为6个
-    return filtered
-      .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
-      .slice(0, 6)
-  }, [jobs, locationFilter, typeFilter, skillsFilter])
+    // 如果使用的是今天的推荐，保持原有顺序；如果是RSS数据，按推荐分数排序
+    if (todayRecommendations.length > 0) {
+      return filtered.slice(0, 6) // 今天的推荐已经是固定顺序的
+    } else {
+      // 按推荐分数排序并限制为6个
+      return filtered
+        .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
+        .slice(0, 6)
+    }
+  }, [todayRecommendations, jobs, locationFilter, typeFilter, skillsFilter])
 
   // 获取RSS职位数据
-   useEffect(() => {
-     const fetchJobs = async () => {
-       try {
-         setLoading(true)
-         setError(null)
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const rssJobs = jobAggregator.getJobs()
+        
+        if (rssJobs.length > 0) {
+          const convertedJobs = rssJobs.map(convertRSSJobToPageJob)
+          // 只使用RSS数据，不合并模拟数据
+          setJobs(convertedJobs)
+         // 设置数据更新时间
+         setLastUpdateTime(new Date())
          
-         const rssJobs = jobAggregator.getJobs()
-         
-         if (rssJobs.length > 0) {
-           const convertedJobs = rssJobs.map(convertRSSJobToPageJob)
-           // 只使用RSS数据，不合并模拟数据
-           setJobs(convertedJobs)
-           // 设置数据更新时间
-           setLastUpdateTime(new Date())
-           
-           // 保存今日推荐到历史记录
-           const topRecommendations = convertedJobs
-             .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
-             .slice(0, 6)
-           recommendationHistoryService.saveDailyRecommendation(topRecommendations)
-         } else {
-           // 如果没有RSS数据，设置为空数组
-           setJobs([])
-         }
-       } catch (err) {
-         console.error('获取职位数据失败:', err)
-         setError('获取职位数据失败')
-         setJobs([])
-       } finally {
-         setLoading(false)
-       }
-     }
+         // 新的推荐系统会自动生成固定的每日推荐，无需手动保存
+        } else {
+          // 如果没有RSS数据，设置为空数组
+          setJobs([])
+        }
+      } catch (err) {
+        console.error('获取职位数据失败:', err)
+        setError('获取职位数据失败')
+        setJobs([])
+      } finally {
+        setLoading(false)
+      }
+    }
 
-     fetchJobs()
-   }, [])
+    fetchJobs()
+  }, [])
+
+  // 加载今天的固定推荐
+  useEffect(() => {
+    const loadTodayRecommendations = async () => {
+      try {
+        const todayRec = recommendationHistoryService.getTodayRecommendation()
+        if (todayRec && todayRec.jobs) {
+          setTodayRecommendations(todayRec.jobs)
+        }
+      } catch (error) {
+        console.error('加载今日推荐失败:', error)
+      }
+    }
+
+    loadTodayRecommendations()
+  }, [])
 
   // 加载历史推荐数据
    const loadHistoryRecommendations = async (level: number) => {
@@ -398,18 +406,6 @@ export default function HomePage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               今日推荐岗位数据已于{lastUpdateTime.getMonth() + 1}月{lastUpdateTime.getDate()}日{lastUpdateTime.getHours()}点{lastUpdateTime.getMinutes().toString().padStart(2, '0')}分更新
             </p>
-          )}
-          
-          {/* 测试按钮 - 仅在开发环境显示 */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4">
-              <button
-                onClick={generateTestHistoryData}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                生成测试历史数据
-              </button>
-            </div>
           )}
         </div>
 
