@@ -183,7 +183,7 @@ const AdminTeamPage: React.FC = () => {
           </div>
           <div className="stat-content">
             <h3>总职位数</h3>
-            <p className="stat-number">{stats?.totalJobs || stats?.total || 0}</p>
+            <p className="stat-number">{stats?.total || 0}</p>
             <span className="stat-change positive">+{stats?.recentlyAdded || 0} 今日新增</span>
           </div>
         </div>

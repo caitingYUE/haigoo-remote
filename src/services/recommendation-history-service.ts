@@ -289,7 +289,9 @@ class RecommendationHistoryService {
         salary: { min: 25000, max: 35000, currency: 'CNY' },
         type: 'full-time',
         postedAt: new Date().toISOString(),
-        description: '负责前端架构设计和开发，使用React、TypeScript等技术栈',
+        description: '高级前端开发工程师，负责React应用开发和架构设计',
+        requirements: ['3年以上前端开发经验', '熟练掌握React/Vue', '了解TypeScript'],
+        responsibilities: ['负责前端架构设计', '开发高质量的用户界面', '优化前端性能'],
         skills: ['React', 'TypeScript', 'JavaScript', 'CSS'],
         category: '前端开发',
         experienceLevel: 'Senior',
@@ -298,7 +300,7 @@ class RecommendationHistoryService {
         sourceUrl: 'https://example.com/job1',
         recommendationId: 'rec-test-1',
         recommendedAt: new Date().toISOString(),
-        recommendationGroup: 'morning'
+        recommendationGroup: 1
       },
       {
         id: 'test-2',
@@ -309,6 +311,8 @@ class RecommendationHistoryService {
         type: 'full-time',
         postedAt: new Date().toISOString(),
         description: '全栈开发工程师，负责前后端开发和系统架构',
+        requirements: ['2年以上全栈开发经验', '熟悉Node.js和React', '了解数据库设计'],
+        responsibilities: ['负责全栈应用开发', '设计和实现API', '数据库设计和优化'],
         skills: ['Node.js', 'React', 'MongoDB', 'Express'],
         category: '全栈开发',
         experienceLevel: 'Mid',
@@ -317,7 +321,7 @@ class RecommendationHistoryService {
         sourceUrl: 'https://example.com/job2',
         recommendationId: 'rec-test-2',
         recommendedAt: new Date().toISOString(),
-        recommendationGroup: 'morning'
+        recommendationGroup: 1
       },
       {
         id: 'test-3',
@@ -328,6 +332,8 @@ class RecommendationHistoryService {
         type: 'full-time',
         postedAt: new Date().toISOString(),
         description: '后端开发工程师，负责API设计和数据库优化',
+        requirements: ['3年以上Java开发经验', '熟悉Spring框架', '了解微服务架构'],
+        responsibilities: ['设计和开发后端API', '数据库设计和优化', '系统性能调优'],
         skills: ['Java', 'Spring Boot', 'MySQL', 'Redis'],
         category: '后端开发',
         experienceLevel: 'Mid',
@@ -336,7 +342,7 @@ class RecommendationHistoryService {
         sourceUrl: 'https://example.com/job3',
         recommendationId: 'rec-test-3',
         recommendedAt: new Date().toISOString(),
-        recommendationGroup: 'afternoon'
+        recommendationGroup: 2
       },
       {
         id: 'test-4',
@@ -347,6 +353,8 @@ class RecommendationHistoryService {
         type: 'full-time',
         postedAt: new Date().toISOString(),
         description: 'DevOps工程师，负责CI/CD流程和云基础设施管理',
+        requirements: ['3年以上DevOps经验', '熟悉Docker和K8s', '了解云平台服务'],
+        responsibilities: ['构建CI/CD流程', '管理云基础设施', '监控系统性能'],
         skills: ['Docker', 'Kubernetes', 'AWS', 'Jenkins'],
         category: 'DevOps',
         experienceLevel: 'Senior',
@@ -355,7 +363,7 @@ class RecommendationHistoryService {
         sourceUrl: 'https://example.com/job4',
         recommendationId: 'rec-test-4',
         recommendedAt: new Date().toISOString(),
-        recommendationGroup: 'afternoon'
+        recommendationGroup: 2
       },
       {
         id: 'test-5',
@@ -366,6 +374,8 @@ class RecommendationHistoryService {
         type: 'full-time',
         postedAt: new Date().toISOString(),
         description: '数据科学家，负责机器学习模型开发和数据分析',
+        requirements: ['3年以上数据科学经验', '熟悉Python和机器学习', '了解深度学习框架'],
+        responsibilities: ['开发机器学习模型', '数据分析和挖掘', '模型部署和优化'],
         skills: ['Python', 'TensorFlow', 'Pandas', 'SQL'],
         category: '数据科学',
         experienceLevel: 'Senior',
@@ -374,7 +384,7 @@ class RecommendationHistoryService {
         sourceUrl: 'https://example.com/job5',
         recommendationId: 'rec-test-5',
         recommendedAt: new Date().toISOString(),
-        recommendationGroup: 'afternoon'
+        recommendationGroup: 2
       },
       {
         id: 'test-6',
@@ -385,6 +395,8 @@ class RecommendationHistoryService {
         type: 'full-time',
         postedAt: new Date().toISOString(),
         description: '产品经理，负责产品规划和需求管理',
+        requirements: ['3年以上产品管理经验', '熟悉产品设计流程', '了解用户体验设计'],
+        responsibilities: ['产品规划和设计', '需求分析和管理', '跨团队协作'],
         skills: ['产品设计', '需求分析', 'Axure', 'Figma'],
         category: '产品管理',
         experienceLevel: 'Mid',
@@ -393,7 +405,7 @@ class RecommendationHistoryService {
         sourceUrl: 'https://example.com/job6',
         recommendationId: 'rec-test-6',
         recommendedAt: new Date().toISOString(),
-        recommendationGroup: 'afternoon'
+        recommendationGroup: 2
       }
     ]
 
