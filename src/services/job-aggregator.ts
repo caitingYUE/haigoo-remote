@@ -2,6 +2,8 @@ import { Job, JobCategory, JobFilter, JobStats, SyncStatus, AdminDashboardData }
 import { rssService, RSSFeedItem, ParsedRSSData } from './rss-service';
 import { getStorageAdapter } from './storage-factory';
 import { CloudStorageAdapter } from './cloud-storage-adapter';
+import { recommendationHistoryService } from './recommendation-history-service';
+import { Job as PageJob } from '../types';
 
 class JobAggregator {
   private jobs: Job[] = [];
@@ -25,6 +27,127 @@ class JobAggregator {
     // 启动时立即加载存储的数据
     this.loadJobsFromStorage();
     console.log('JobAggregator 初始化完成');
+  }
+
+  /**
+   * 将RSS Job转换为Page Job格式（用于推荐历史）
+   */
+  convertRSSJobToPageJob(rssJob: Job): PageJob {
+    // 处理薪资信息
+    let salary: { min: number; max: number; currency: string } | undefined = undefined;
+
+    if (rssJob.salary && typeof rssJob.salary === 'string' && rssJob.salary.trim()) {
+      const salaryText = rssJob.salary.trim();
+      
+      // 排除明显不是薪资的文本
+      const excludePatterns = [
+        /\$[\d,]+\s*(?:million|billion|k|thousand)\s*(?:company|business|startup|funding|investment|valuation|revenue)/i,
+        /\$[\d,]+\s*(?:in|of)\s*(?:funding|investment|revenue|sales)/i,
+        /\$[\d,]+\s*(?:raised|funded|invested)/i
+      ];
+
+      let isExcluded = false;
+      for (const excludePattern of excludePatterns) {
+        if (excludePattern.test(salaryText)) {
+          isExcluded = true;
+          break;
+        }
+      }
+
+      if (!isExcluded) {
+        // 尝试从字符串中解析薪资信息
+        const salaryMatch = salaryText.match(/(\d+(?:,\d+)*(?:\.\d+)?)\s*[-–—到至]\s*(\d+(?:,\d+)*(?:\.\d+)?)/);
+        if (salaryMatch) {
+          const min = parseInt(salaryMatch[1].replace(/,/g, ''));
+          const max = parseInt(salaryMatch[2].replace(/,/g, ''));
+          if (min >= 1000 && max >= 1000 && min > 0 && max > 0) {
+            salary = { min, max, currency: 'USD' };
+          }
+        } else {
+          const singleMatch = salaryText.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
+          if (singleMatch) {
+            const amount = parseInt(singleMatch[1].replace(/,/g, ''));
+            if ((amount >= 1000) || (amount >= 10 && salaryText.toLowerCase().includes('hour'))) {
+              salary = { min: amount, max: amount, currency: 'USD' };
+            }
+          }
+        }
+        
+        // 检测货币类型
+        if (salary) {
+          if (salaryText.includes('¥') || salaryText.includes('CNY') || salaryText.includes('人民币')) {
+            salary.currency = 'CNY';
+          } else if (salaryText.includes('$') || salaryText.includes('USD')) {
+            salary.currency = 'USD';
+          } else if (salaryText.includes('€') || salaryText.includes('EUR')) {
+            salary.currency = 'EUR';
+          }
+        }
+      }
+    }
+
+    // 确定工作类型
+    let jobType: PageJob['type'] = 'full-time';
+    if (rssJob.jobType) {
+      switch (rssJob.jobType) {
+        case 'full-time':
+          jobType = 'full-time';
+          break;
+        case 'part-time':
+          jobType = 'part-time';
+          break;
+        case 'contract':
+          jobType = 'contract';
+          break;
+        case 'freelance':
+          jobType = 'freelance';
+          break;
+        case 'internship':
+          jobType = 'internship';
+          break;
+        default:
+          jobType = rssJob.isRemote ? 'remote' : 'full-time';
+      }
+    } else if (rssJob.isRemote) {
+      jobType = 'remote';
+    }
+
+    // 计算推荐分数
+    let recommendationScore = 60; // 基础分数
+    
+    if (rssJob.isRemote) recommendationScore += 20;
+    if (rssJob.tags && rssJob.tags.length > 0) {
+      recommendationScore += Math.min(rssJob.tags.length * 3, 15);
+    }
+    if (rssJob.description && rssJob.description.length > 100) {
+      recommendationScore += 10;
+    }
+    if (rssJob.company && rssJob.company.trim()) {
+      recommendationScore += 5;
+    }
+    recommendationScore += Math.random() * 15;
+
+    return {
+      id: rssJob.id,
+      title: rssJob.title,
+      company: rssJob.company || undefined,
+      location: rssJob.location || 'Remote',
+      type: jobType,
+      salary,
+      description: rssJob.description || undefined,
+      requirements: rssJob.requirements || [],
+      responsibilities: rssJob.benefits || [],
+      skills: rssJob.tags || [],
+      postedAt: rssJob.publishedAt || new Date().toISOString().split('T')[0],
+      expiresAt: undefined,
+      source: rssJob.source || 'RSS',
+      sourceUrl: rssJob.url || '#',
+      recommendationScore,
+      experienceLevel: rssJob.experienceLevel,
+      category: rssJob.category,
+      isRemote: rssJob.isRemote,
+      remoteLocationRestriction: rssJob.remoteLocationRestriction
+    };
   }
 
   /**
@@ -636,6 +759,34 @@ class JobAggregator {
 
       // 保存数据到存储
       await this.saveJobsToStorage();
+
+      // 生成并保存今日推荐到历史记录
+      if (this.jobs.length > 0) {
+        try {
+          console.log('生成今日推荐数据...');
+          const convertedJobs = this.jobs.map(job => this.convertRSSJobToPageJob(job));
+          
+          // 按推荐分数排序，选择前6个岗位（分为2组，每组3个）
+          const topRecommendations = convertedJobs
+            .filter(job => job.recommendationScore && job.recommendationScore > 0) // 只选择有推荐分数的岗位
+            .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
+            .slice(0, 6); // 确保每天推荐6个岗位
+          
+          if (topRecommendations.length >= 6) {
+            recommendationHistoryService.saveDailyRecommendation(topRecommendations);
+            console.log(`已保存 ${topRecommendations.length} 个今日推荐到历史记录（分为2组，每组3个岗位）`);
+          } else {
+            console.warn(`推荐岗位数量不足：只有 ${topRecommendations.length} 个岗位，需要至少6个`);
+            // 如果岗位不足6个，仍然保存现有的推荐
+            if (topRecommendations.length > 0) {
+              recommendationHistoryService.saveDailyRecommendation(topRecommendations);
+              console.log(`已保存 ${topRecommendations.length} 个今日推荐到历史记录（岗位数量不足）`);
+            }
+          }
+        } catch (error) {
+          console.error('保存推荐历史失败:', error);
+        }
+      }
 
       // 设置下次同步时间（1小时后）
       this.syncStatus.nextSync = new Date(Date.now() + 60 * 60 * 1000);

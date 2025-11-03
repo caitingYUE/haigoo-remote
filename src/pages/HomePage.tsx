@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Briefcase, Bookmark, AlertTriangle, Archive, Clock } from 'lucide-react'
+import { Briefcase, Bookmark, AlertTriangle, ChevronDown, Clock } from 'lucide-react'
 import JobDetailModal from '../components/JobDetailModal'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
-import RecommendationHistory from '../components/RecommendationHistory'
+import JobCard from '../components/JobCard'
 import { Job } from '../types'
 import { jobAggregator } from '../services/job-aggregator'
 import { Job as RSSJob } from '../types/rss-types'
 import { recommendationHistoryService } from '../services/recommendation-history-service'
+import { processJobDescription } from '../utils/text-formatter'
 
 // 转换RSS职位为页面职位格式
 const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
@@ -235,7 +236,22 @@ export default function HomePage() {
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const [historyExpansionLevel, setHistoryExpansionLevel] = useState(0) // 0: 不显示, 1: 昨天, 2: 前2天, 3: 前3天
+  const [pastRecommendations, setPastRecommendations] = useState<{[key: string]: Job[]}>({})
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
+  // 生成测试数据的函数
+  const generateTestHistoryData = () => {
+    try {
+      recommendationHistoryService.generateTestData()
+      // 重新加载历史数据
+      loadHistoryRecommendations(historyExpansionLevel)
+      alert('测试数据已生成！请点击"查看昨天推荐"按钮查看效果。')
+    } catch (error) {
+      console.error('生成测试数据失败:', error)
+      alert('生成测试数据失败，请查看控制台了解详情。')
+    }
+  }
 
   // 从URL参数获取筛选条件
   const searchParams = new URLSearchParams(location.search)
@@ -309,6 +325,34 @@ export default function HomePage() {
      fetchJobs()
    }, [])
 
+  // 加载历史推荐数据
+   const loadHistoryRecommendations = async (level: number) => {
+     if (level === 0) {
+       setPastRecommendations({})
+       return
+     }
+     
+     setLoadingHistory(true)
+     try {
+       const history = await recommendationHistoryService.getRecommendationsForPastDays(level)
+       // 转换为 {[date]: Job[]} 格式
+       const historyMap: {[key: string]: Job[]} = {}
+       history.forEach(item => {
+         historyMap[item.date] = item.jobs
+       })
+       setPastRecommendations(historyMap)
+     } catch (error) {
+       console.error('加载历史推荐失败:', error)
+     } finally {
+       setLoadingHistory(false)
+     }
+   }
+
+  // 当展开级别改变时加载对应的历史数据
+  useEffect(() => {
+    loadHistoryRecommendations(historyExpansionLevel)
+  }, [historyExpansionLevel])
+
   const openJobDetail = (job: Job) => {
     setSelectedJob(job)
     setIsJobDetailOpen(true)
@@ -345,14 +389,6 @@ export default function HomePage() {
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
               Haigoo帮你获得理想的远程工作
             </h1>
-            <button
-              onClick={() => setIsHistoryOpen(true)}
-              className="ml-6 flex items-center px-4 py-2 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 rounded-lg transition-colors duration-200 group"
-              title="查看过往推荐"
-            >
-              <Archive className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-              <span className="text-sm font-medium">过往推荐</span>
-            </button>
           </div>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-4">
             专业的远程求职工具，每天为你精选一组最匹配的岗位，Go！
@@ -362,6 +398,18 @@ export default function HomePage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               今日推荐岗位数据已于{lastUpdateTime.getMonth() + 1}月{lastUpdateTime.getDate()}日{lastUpdateTime.getHours()}点{lastUpdateTime.getMinutes().toString().padStart(2, '0')}分更新
             </p>
+          )}
+          
+          {/* 测试按钮 - 仅在开发环境显示 */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4">
+              <button
+                onClick={generateTestHistoryData}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                生成测试历史数据
+              </button>
+            </div>
           )}
         </div>
 
@@ -446,7 +494,11 @@ export default function HomePage() {
                         <div className="space-y-4 mb-6">
                           {job.description && (
                             <p className={`text-sm line-clamp-2 leading-relaxed ${styles.isTop ? 'text-gray-700 dark:text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>
-                              {job.description}
+                              {processJobDescription(job.description, { 
+                                formatMarkdown: false, 
+                                maxLength: 120, 
+                                preserveHtml: false 
+                              })}
                             </p>
                           )}
                           <div className="flex items-center justify-between">
@@ -559,7 +611,11 @@ export default function HomePage() {
                           <div className="space-y-3 mb-4">
                             {job.description && (
                               <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-2 leading-relaxed">
-                                {job.description}
+                                {processJobDescription(job.description, { 
+                                  formatMarkdown: false, 
+                                  maxLength: 120, 
+                                  preserveHtml: false 
+                                })}
                               </p>
                             )}
                             <div className="flex items-center justify-between">
@@ -626,6 +682,157 @@ export default function HomePage() {
               )}
             </div>
           )}
+
+          {/* 过往推荐内联展示 */}
+          {(filteredJobs.length > 0 || historyExpansionLevel > 0) && (
+            <div className="mt-12">
+              {/* 昨天推荐 - 默认显示 */}
+              {historyExpansionLevel >= 1 && (
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Clock className="w-5 h-5 mr-2 text-violet-600 dark:text-violet-400" />
+                    昨天推荐
+                  </h3>
+                  {loadingHistory ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                       {Object.entries(pastRecommendations)
+                         .filter(([date]) => {
+                           const yesterday = new Date()
+                           yesterday.setDate(yesterday.getDate() - 1)
+                           return date === yesterday.toISOString().split('T')[0]
+                         })
+                         .flatMap(([date, jobs]) => 
+                           jobs.slice(0, 6).map((job) => (
+                             <JobCard
+                               key={job.id}
+                               job={job}
+                               onClick={() => openJobDetail(job)}
+                             />
+                           ))
+                         )}
+                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* 前天推荐 - 展开级别2时显示 */}
+              {historyExpansionLevel >= 2 && (
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Clock className="w-5 h-5 mr-2 text-violet-600 dark:text-violet-400" />
+                    前天推荐
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {Object.entries(pastRecommendations)
+                       .filter(([date]) => {
+                         const dayBeforeYesterday = new Date()
+                         dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2)
+                         return date === dayBeforeYesterday.toISOString().split('T')[0]
+                       })
+                       .flatMap(([date, jobs]) => 
+                         jobs.slice(0, 6).map((job) => (
+                           <JobCard
+                             key={job.id}
+                             job={job}
+                             onClick={() => openJobDetail(job)}
+                           />
+                         ))
+                       )}
+                   </div>
+                </div>
+              )}
+
+              {/* 大前天推荐 - 展开级别3时显示 */}
+              {historyExpansionLevel >= 3 && (
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Clock className="w-5 h-5 mr-2 text-violet-600 dark:text-violet-400" />
+                    大前天推荐
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {Object.entries(pastRecommendations)
+                       .filter(([date]) => {
+                         const threeDaysAgo = new Date()
+                         threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+                         return date === threeDaysAgo.toISOString().split('T')[0]
+                       })
+                       .flatMap(([date, jobs]) => 
+                         jobs.slice(0, 6).map((job) => (
+                           <JobCard
+                             key={job.id}
+                             job={job}
+                             onClick={() => openJobDetail(job)}
+                           />
+                         ))
+                       )}
+                   </div>
+                </div>
+              )}
+
+              {/* 展开/收起按钮 */}
+              <div className="flex justify-center mt-8">
+                {historyExpansionLevel === 0 && (
+                  <button
+                    onClick={() => setHistoryExpansionLevel(1)}
+                    className="flex items-center px-6 py-3 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 rounded-lg transition-colors duration-200 group"
+                  >
+                    <Clock className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                    <span className="font-medium">查看昨天推荐</span>
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </button>
+                )}
+                
+                {historyExpansionLevel === 1 && (
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setHistoryExpansionLevel(2)}
+                      className="flex items-center px-6 py-3 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 rounded-lg transition-colors duration-200"
+                    >
+                      <span className="font-medium">查看更多历史</span>
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </button>
+                    <button
+                      onClick={() => setHistoryExpansionLevel(0)}
+                      className="flex items-center px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors duration-200"
+                    >
+                      <span className="font-medium">收起</span>
+                    </button>
+                  </div>
+                )}
+                
+                {historyExpansionLevel === 2 && (
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setHistoryExpansionLevel(3)}
+                      className="flex items-center px-6 py-3 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 rounded-lg transition-colors duration-200"
+                    >
+                      <span className="font-medium">查看全部历史</span>
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </button>
+                    <button
+                      onClick={() => setHistoryExpansionLevel(0)}
+                      className="flex items-center px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors duration-200"
+                    >
+                      <span className="font-medium">收起</span>
+                    </button>
+                  </div>
+                )}
+                
+                {historyExpansionLevel === 3 && (
+                  <button
+                    onClick={() => setHistoryExpansionLevel(0)}
+                    className="flex items-center px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors duration-200"
+                  >
+                    <span className="font-medium">收起历史推荐</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
@@ -650,19 +857,6 @@ export default function HomePage() {
               }
               return newSet
             })
-          }}
-        />
-      )}
-
-      {/* 过往推荐模态框 */}
-      {isHistoryOpen && (
-        <RecommendationHistory
-          isOpen={isHistoryOpen}
-          onClose={() => setIsHistoryOpen(false)}
-          onJobClick={(job: Job) => {
-            setSelectedJob(job)
-            setIsJobDetailOpen(true)
-            setIsHistoryOpen(false)
           }}
         />
       )}

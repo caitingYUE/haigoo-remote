@@ -8,6 +8,8 @@ import JobDetailPage from './pages/JobDetailPage'
 import ProfilePage from './pages/ProfilePage'
 import ResumeOptimizationPage from './pages/ResumeOptimizationPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
+import AdminPanel from './components/AdminPanel'
+import AdminTeamPage from './pages/AdminTeamPage'
 import { AppProvider } from './contexts/AppContext'
 import NotificationProvider from './components/NotificationSystem'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -23,6 +25,12 @@ function App() {
             
             {/* AdminDashboardPage 独立布局，不使用 Layout */}
             <Route path="/admin" element={<AdminDashboardPage />} />
+            
+            {/* AdminPanel 独立布局，用于数据管理 */}
+            <Route path="/admin/data" element={<AdminPanel />} />
+            
+            {/* AdminTeamPage 统一后台管理页面 */}
+            <Route path="/admin_team" element={<AdminTeamPage />} />
             
             {/* 其他页面使用标准布局 */}
             <Route path="/*" element={

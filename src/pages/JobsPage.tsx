@@ -7,6 +7,7 @@ import { Job } from '../types'
 import { jobAggregator } from '../services/job-aggregator'
 import { Job as RSSJob } from '../types/rss-types'
 import { DateFormatter } from '../utils/date-formatter'
+import { processJobDescription } from '../utils/text-formatter'
 
 // 转换RSS Job类型到页面Job类型的函数
 const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
@@ -349,7 +350,11 @@ export default function JobsPage() {
           console.log('示例岗位数据:', convertedJobs.slice(0, 2).map(job => ({
             title: job.title,
             company: job.company,
-            description: (job.description || '').substring(0, 100) + '...'
+            description: processJobDescription(job.description || '', {
+              formatMarkdown: false,
+              maxLength: 100,
+              preserveHtml: false
+            })
           })))
         } else {
           // 如果没有RSS数据，尝试触发同步

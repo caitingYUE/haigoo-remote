@@ -8,37 +8,49 @@ import { Job } from '../types'
 export interface DailyRecommendation {
   date: string // YYYY-MM-DD 格式
   jobs: Job[]
-  updateTime: string // ISO 时间戳
-  totalJobs: number
-}
-
-export interface RecommendationHistory {
-  [date: string]: DailyRecommendation
+  timestamp: number
 }
 
 class RecommendationHistoryService {
   private readonly STORAGE_KEY = 'haigoo_recommendation_history'
-  private readonly MAX_HISTORY_DAYS = 7
+  private readonly MAX_DAYS = 3 // 最多保存3天的历史数据
 
-  /**
-   * 保存当日推荐数据
-   */
+  // 保存每日推荐
   saveDailyRecommendation(jobs: Job[]): void {
     try {
-      const today = this.getTodayDateString()
+      const today = new Date().toISOString().split('T')[0]
+      const timestamp = Date.now()
+      const recommendationId = `rec_${today}_${timestamp}`
+      
+      // 为每个岗位添加推荐时间戳和ID
+      const jobsWithRecommendationData = jobs.slice(0, 6).map((job, index) => ({
+        ...job,
+        recommendationId,
+        recommendedAt: new Date().toISOString(),
+        recommendationGroup: Math.floor(index / 3) + 1 // 每3个岗位为一组
+      }))
+      
       const history = this.getHistory()
       
-      const dailyRecommendation: DailyRecommendation = {
-        date: today,
-        jobs: jobs.slice(0, 6), // 只保存前6个推荐职位
-        updateTime: new Date().toISOString(),
-        totalJobs: jobs.length
-      }
-
-      history[today] = dailyRecommendation
+      // 检查今天是否已有推荐
+      const existingIndex = history.findIndex(item => item.date === today)
       
-      // 清理超过7天的历史数据
-      this.cleanOldHistory(history)
+      const newRecommendation: DailyRecommendation = {
+        date: today,
+        jobs: jobsWithRecommendationData,
+        timestamp
+      }
+      
+      if (existingIndex >= 0) {
+        // 更新今天的推荐
+        history[existingIndex] = newRecommendation
+      } else {
+        // 添加新的推荐
+        history.unshift(newRecommendation)
+      }
+      
+      // 清理超过3天的数据
+      this.cleanupOldData(history)
       
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history))
     } catch (error) {
@@ -46,126 +58,176 @@ class RecommendationHistoryService {
     }
   }
 
-  /**
-   * 获取完整历史记录
-   */
-  getHistory(): RecommendationHistory {
+  // 保存指定日期的推荐（用于测试数据生成）
+  saveRecommendationForDate(jobs: Job[], date: string): void {
+    try {
+      const timestamp = new Date(date).getTime()
+      const recommendationId = `rec_${date}_${timestamp}`
+      
+      // 为每个岗位添加推荐时间戳和ID
+      const jobsWithRecommendationData = jobs.slice(0, 6).map((job, index) => ({
+        ...job,
+        recommendationId,
+        recommendedAt: new Date(date).toISOString(),
+        recommendationGroup: Math.floor(index / 3) + 1 // 每3个岗位为一组
+      }))
+      
+      const history = this.getHistory()
+      
+      // 检查指定日期是否已有推荐
+      const existingIndex = history.findIndex(item => item.date === date)
+      
+      const newRecommendation: DailyRecommendation = {
+        date,
+        jobs: jobsWithRecommendationData,
+        timestamp
+      }
+      
+      if (existingIndex >= 0) {
+        // 更新指定日期的推荐
+        history[existingIndex] = newRecommendation
+      } else {
+        // 添加新的推荐，按日期排序插入
+        history.push(newRecommendation)
+        history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      }
+      
+      // 清理超过3天的数据
+      this.cleanupOldData(history)
+      
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history))
+    } catch (error) {
+      console.error('保存指定日期推荐失败:', error)
+    }
+  }
+
+  // 私有方法：获取历史数据
+  private getHistory(): DailyRecommendation[] {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY)
-      return stored ? JSON.parse(stored) : {}
+      return stored ? JSON.parse(stored) : []
     } catch (error) {
-      console.error('获取推荐历史失败:', error)
-      return {}
+      console.error('读取历史数据失败:', error)
+      return []
     }
   }
 
-  /**
-   * 获取指定日期的推荐数据
-   */
-  getRecommendationByDate(date: string): DailyRecommendation | null {
-    const history = this.getHistory()
-    return history[date] || null
-  }
-
-  /**
-   * 获取过往N天的推荐数据（不包括今天）
-   */
-  getPastRecommendations(days: number = 7): DailyRecommendation[] {
-    const history = this.getHistory()
-    const today = this.getTodayDateString()
-    const pastDates = this.getPastDates(days)
-    
-    return pastDates
-      .filter(date => date !== today) // 排除今天
-      .map(date => history[date])
-      .filter(Boolean) // 过滤掉不存在的数据
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // 按日期倒序
-  }
-
-  /**
-   * 获取可用的历史日期列表
-   */
-  getAvailableDates(): string[] {
-    const history = this.getHistory()
-    const today = this.getTodayDateString()
-    
-    return Object.keys(history)
-      .filter(date => date !== today) // 排除今天
-      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) // 按日期倒序
-  }
-
-  /**
-   * 检查今天是否已有推荐数据
-   */
-  hasTodayRecommendation(): boolean {
-    const today = this.getTodayDateString()
-    const history = this.getHistory()
-    return !!history[today]
-  }
-
-  /**
-   * 获取今天的推荐数据
-   */
-  getTodayRecommendation(): DailyRecommendation | null {
-    const today = this.getTodayDateString()
-    return this.getRecommendationByDate(today)
-  }
-
-  /**
-   * 清理历史数据
-   */
-  clearHistory(): void {
-    localStorage.removeItem(this.STORAGE_KEY)
-  }
-
-  /**
-   * 获取统计信息
-   */
-  getStatistics() {
-    const history = this.getHistory()
-    const dates = Object.keys(history)
-    const totalDays = dates.length
-    const totalJobs = Object.values(history).reduce((sum, day) => sum + day.totalJobs, 0)
-    const avgJobsPerDay = totalDays > 0 ? Math.round(totalJobs / totalDays) : 0
-
-    return {
-      totalDays,
-      totalJobs,
-      avgJobsPerDay,
-      oldestDate: dates.length > 0 ? Math.min(...dates.map(d => new Date(d).getTime())) : null,
-      newestDate: dates.length > 0 ? Math.max(...dates.map(d => new Date(d).getTime())) : null
+  // 获取指定日期的推荐
+  getRecommendationsByDate(date: string): DailyRecommendation | null {
+    try {
+      const history = this.getHistory()
+      return history.find(item => item.date === date) || null
+    } catch (error) {
+      console.error('获取指定日期推荐失败:', error)
+      return null
     }
   }
 
-  // 私有方法
-
-  private getTodayDateString(): string {
-    return new Date().toISOString().split('T')[0]
-  }
-
-  private getPastDates(days: number): string[] {
-    const dates: string[] = []
-    const today = new Date()
-    
-    for (let i = 0; i < days; i++) {
-      const date = new Date(today)
-      date.setDate(today.getDate() - i)
-      dates.push(date.toISOString().split('T')[0])
+  // 获取过往N天的推荐（不包括今天）
+  getPastRecommendations(days: number = 3): DailyRecommendation[] {
+    try {
+      const history = this.getHistory()
+      const today = new Date().toISOString().split('T')[0]
+      
+      // 过滤掉今天的数据，只返回过往的推荐
+      return history
+        .filter(item => item.date !== today)
+        .slice(0, Math.min(days, this.MAX_DAYS))
+    } catch (error) {
+      console.error('获取历史推荐失败:', error)
+      return []
     }
-    
-    return dates
   }
 
-  private cleanOldHistory(history: RecommendationHistory): void {
-    const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - this.MAX_HISTORY_DAYS)
-    const cutoffString = cutoffDate.toISOString().split('T')[0]
+  // 获取昨天的推荐
+  getYesterdayRecommendations(): DailyRecommendation | null {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toISOString().split('T')[0]
+    return this.getRecommendationsByDate(yesterdayStr)
+  }
 
-    Object.keys(history).forEach(date => {
-      if (date < cutoffString) {
-        delete history[date]
+  // 获取前N天的推荐（1=昨天，2=前天，3=大前天）
+  getRecommendationsForPastDays(days: number): DailyRecommendation[] {
+    const results: DailyRecommendation[] = []
+    
+    for (let i = 1; i <= Math.min(days, this.MAX_DAYS); i++) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      const recommendation = this.getRecommendationsByDate(dateStr)
+      if (recommendation) {
+        results.push(recommendation)
       }
-    })
+    }
+    
+    return results
+  }
+
+  // 获取可用的历史日期
+  getAvailableDates(): string[] {
+    try {
+      const history = this.getHistory()
+      const today = new Date().toISOString().split('T')[0]
+      
+      return history
+        .filter(item => item.date !== today)
+        .map(item => item.date)
+        .slice(0, this.MAX_DAYS)
+    } catch (error) {
+      console.error('获取可用日期失败:', error)
+      return []
+    }
+  }
+
+  // 检查并获取今日推荐
+  getTodayRecommendation(): DailyRecommendation | null {
+    const today = new Date().toISOString().split('T')[0]
+    return this.getRecommendationsByDate(today)
+  }
+
+  // 清除所有历史数据
+  clearHistory(): void {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY)
+    } catch (error) {
+      console.error('清除历史数据失败:', error)
+    }
+  }
+
+  // 获取统计信息
+  getStats(): { totalDays: number; totalJobs: number; oldestDate: string | null } {
+    try {
+      const history = this.getHistory()
+      const totalJobs = history.reduce((sum, day) => sum + day.jobs.length, 0)
+      const oldestDate = history.length > 0 ? history[history.length - 1].date : null
+      
+      return {
+        totalDays: history.length,
+        totalJobs,
+        oldestDate
+      }
+    } catch (error) {
+      console.error('获取统计信息失败:', error)
+      return { totalDays: 0, totalJobs: 0, oldestDate: null }
+    }
+  }
+
+  // 私有方法：清理超过3天的旧数据
+  private cleanupOldData(history: DailyRecommendation[]): void {
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - this.MAX_DAYS)
+    const cutoffStr = cutoffDate.toISOString().split('T')[0]
+    
+    // 保留最近3天的数据
+    const filtered = history.filter(item => item.date >= cutoffStr)
+    
+    // 如果过滤后的数据少于原数据，说明有数据被清理
+    if (filtered.length < history.length) {
+      history.length = 0
+      history.push(...filtered)
+    }
   }
 
   /**
@@ -213,7 +275,145 @@ class RecommendationHistoryService {
       return '一周前'
     }
   }
+
+  /**
+   * 生成测试数据（仅用于开发测试）
+   */
+  generateTestData(): void {
+    const testJobs: Job[] = [
+      {
+        id: 'test-1',
+        title: 'Senior Frontend Developer',
+        company: 'TechCorp',
+        location: '上海',
+        salary: { min: 25000, max: 35000, currency: 'CNY' },
+        type: 'full-time',
+        postedAt: new Date().toISOString(),
+        description: '负责前端架构设计和开发，使用React、TypeScript等技术栈',
+        skills: ['React', 'TypeScript', 'JavaScript', 'CSS'],
+        category: '前端开发',
+        experienceLevel: 'Senior',
+        isRemote: false,
+        source: 'TestSource',
+        sourceUrl: 'https://example.com/job1',
+        recommendationId: 'rec-test-1',
+        recommendedAt: new Date().toISOString(),
+        recommendationGroup: 'morning'
+      },
+      {
+        id: 'test-2',
+        title: 'Full Stack Engineer',
+        company: 'StartupXYZ',
+        location: '北京',
+        salary: { min: 20000, max: 30000, currency: 'CNY' },
+        type: 'full-time',
+        postedAt: new Date().toISOString(),
+        description: '全栈开发工程师，负责前后端开发和系统架构',
+        skills: ['Node.js', 'React', 'MongoDB', 'Express'],
+        category: '全栈开发',
+        experienceLevel: 'Mid',
+        isRemote: true,
+        source: 'TestSource',
+        sourceUrl: 'https://example.com/job2',
+        recommendationId: 'rec-test-2',
+        recommendedAt: new Date().toISOString(),
+        recommendationGroup: 'morning'
+      },
+      {
+        id: 'test-3',
+        title: 'Backend Developer',
+        company: 'DataTech',
+        location: '深圳',
+        salary: { min: 22000, max: 32000, currency: 'CNY' },
+        type: 'full-time',
+        postedAt: new Date().toISOString(),
+        description: '后端开发工程师，负责API设计和数据库优化',
+        skills: ['Java', 'Spring Boot', 'MySQL', 'Redis'],
+        category: '后端开发',
+        experienceLevel: 'Mid',
+        isRemote: false,
+        source: 'TestSource',
+        sourceUrl: 'https://example.com/job3',
+        recommendationId: 'rec-test-3',
+        recommendedAt: new Date().toISOString(),
+        recommendationGroup: 'afternoon'
+      },
+      {
+        id: 'test-4',
+        title: 'DevOps Engineer',
+        company: 'CloudCorp',
+        location: '杭州',
+        salary: { min: 28000, max: 38000, currency: 'CNY' },
+        type: 'full-time',
+        postedAt: new Date().toISOString(),
+        description: 'DevOps工程师，负责CI/CD流程和云基础设施管理',
+        skills: ['Docker', 'Kubernetes', 'AWS', 'Jenkins'],
+        category: 'DevOps',
+        experienceLevel: 'Senior',
+        isRemote: true,
+        source: 'TestSource',
+        sourceUrl: 'https://example.com/job4',
+        recommendationId: 'rec-test-4',
+        recommendedAt: new Date().toISOString(),
+        recommendationGroup: 'afternoon'
+      },
+      {
+        id: 'test-5',
+        title: 'Data Scientist',
+        company: 'AI Labs',
+        location: '广州',
+        salary: { min: 30000, max: 45000, currency: 'CNY' },
+        type: 'full-time',
+        postedAt: new Date().toISOString(),
+        description: '数据科学家，负责机器学习模型开发和数据分析',
+        skills: ['Python', 'TensorFlow', 'Pandas', 'SQL'],
+        category: '数据科学',
+        experienceLevel: 'Senior',
+        isRemote: false,
+        source: 'TestSource',
+        sourceUrl: 'https://example.com/job5',
+        recommendationId: 'rec-test-5',
+        recommendedAt: new Date().toISOString(),
+        recommendationGroup: 'afternoon'
+      },
+      {
+        id: 'test-6',
+        title: 'Product Manager',
+        company: 'ProductCo',
+        location: '成都',
+        salary: { min: 25000, max: 40000, currency: 'CNY' },
+        type: 'full-time',
+        postedAt: new Date().toISOString(),
+        description: '产品经理，负责产品规划和需求管理',
+        skills: ['产品设计', '需求分析', 'Axure', 'Figma'],
+        category: '产品管理',
+        experienceLevel: 'Mid',
+        isRemote: true,
+        source: 'TestSource',
+        sourceUrl: 'https://example.com/job6',
+        recommendationId: 'rec-test-6',
+        recommendedAt: new Date().toISOString(),
+        recommendationGroup: 'afternoon'
+      }
+    ]
+
+    // 生成昨天的推荐
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    this.saveRecommendationForDate(testJobs, yesterday.toISOString().split('T')[0])
+
+    // 生成前天的推荐
+    const dayBeforeYesterday = new Date()
+    dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2)
+    this.saveRecommendationForDate(testJobs, dayBeforeYesterday.toISOString().split('T')[0])
+
+    // 生成大前天的推荐
+    const threeDaysAgo = new Date()
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+    this.saveRecommendationForDate(testJobs, threeDaysAgo.toISOString().split('T')[0])
+
+    console.log('测试数据已生成，包含过去3天的推荐历史')
+  }
 }
 
-// 创建单例实例
 export const recommendationHistoryService = new RecommendationHistoryService()

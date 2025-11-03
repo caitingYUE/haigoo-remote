@@ -1,0 +1,839 @@
+import React, { useState, useEffect } from 'react';
+import { Job as RSSJob } from '../types/rss-types';
+import { dataRetentionService, RetentionStats } from '../services/data-retention-service';
+import './AdminPanel.css';
+
+interface AdminPanelProps {
+  className?: string;
+}
+
+type TabType = 'raw' | 'processed' | 'stats' | 'retention';
+
+interface SimpleUnifiedJob {
+  id: string;
+  jobTitle: string;
+  category: string;
+  level: string;
+  companyName: string;
+  industryType: string;
+  jobType: string;
+  locationRestriction: string;
+  skillTags: string[];
+  languageRequirements: string;
+  dataQuality: number;
+  sourceUrl: string;
+  publishDate: string;
+}
+
+interface SimpleStats {
+  totalRaw: number;
+  totalProcessed: number;
+  successRate: number;
+  averageQuality: number;
+  categoryDistribution: Record<string, number>;
+  sourceDistribution: Record<string, number>;
+}
+
+export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
+  const [activeTab, setActiveTab] = useState<TabType>('raw');
+  const [rawJobs, setRawJobs] = useState<RSSJob[]>([]);
+  const [processedJobs, setProcessedJobs] = useState<SimpleUnifiedJob[]>([]);
+  const [stats, setStats] = useState<SimpleStats | null>(null);
+  const [retentionStats, setRetentionStats] = useState<RetentionStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // 模拟RSS原始数据
+      const mockRawJobs: RSSJob[] = [
+        {
+          id: '1',
+          title: 'Senior React Developer',
+          company: 'Tech Corp',
+          location: 'Remote',
+          description: 'We are looking for a senior React developer with 5+ years of experience...',
+          url: 'https://example.com/job/1',
+          requirements: ['React', 'TypeScript', 'Node.js', 'AWS'],
+          salary: '$120,000 - $150,000',
+          publishedAt: '2024-01-15',
+          source: 'https://example.com/job/1',
+          tags: ['React', 'TypeScript', 'Remote'],
+          category: '前端开发',
+          jobType: 'full-time',
+          experienceLevel: 'Senior',
+          benefits: ['Health Insurance', 'Remote Work'],
+          isRemote: true,
+          status: 'active',
+          createdAt: '2024-01-15T10:00:00Z',
+          updatedAt: '2024-01-15T10:00:00Z'
+        },
+        {
+          id: '2',
+          title: '产品经理',
+          company: '创新科技公司',
+          location: '北京',
+          description: '负责产品规划和管理，需要3年以上产品经验...',
+          url: 'https://example.com/job/2',
+          requirements: ['产品管理', '数据分析', '用户研究'],
+          salary: '25万-35万',
+          publishedAt: '2024-01-14',
+          source: 'https://example.com/job/2',
+          tags: ['产品管理', '数据分析'],
+          category: '产品管理',
+          jobType: 'full-time',
+          experienceLevel: 'Mid',
+          benefits: ['五险一金', '年终奖'],
+          isRemote: false,
+          status: 'active',
+          createdAt: '2024-01-14T10:00:00Z',
+          updatedAt: '2024-01-14T10:00:00Z'
+        },
+        {
+          id: '3',
+          title: 'DevOps Engineer - Remote',
+          company: 'Cloud Solutions Inc',
+          location: 'Anywhere',
+          description: 'Join our DevOps team to manage cloud infrastructure and CI/CD pipelines...',
+          url: 'https://example.com/job/3',
+          requirements: ['Docker', 'Kubernetes', 'AWS', 'Jenkins', 'Python'],
+          salary: '$100,000 - $130,000',
+          publishedAt: '2024-01-13',
+          source: 'https://example.com/job/3',
+          tags: ['DevOps', 'AWS', 'Docker'],
+          category: 'DevOps',
+          jobType: 'full-time',
+          experienceLevel: 'Mid',
+          benefits: ['Stock Options', 'Flexible Hours'],
+          isRemote: true,
+          status: 'active',
+          createdAt: '2024-01-13T10:00:00Z',
+          updatedAt: '2024-01-13T10:00:00Z'
+        }
+      ];
+
+      setRawJobs(mockRawJobs);
+
+      // 模拟处理后的统一数据
+      const mockProcessedJobs: SimpleUnifiedJob[] = [
+        {
+          id: '1',
+          jobTitle: 'Senior React Developer',
+          category: 'DEVELOPMENT',
+          level: 'SENIOR',
+          companyName: 'Tech Corp',
+          industryType: 'TECHNOLOGY',
+          jobType: 'FULL_TIME',
+          locationRestriction: 'NO_RESTRICTION',
+          skillTags: ['React', 'TypeScript', 'Node.js', 'AWS'],
+          languageRequirements: 'English (Business)',
+          dataQuality: 85,
+          sourceUrl: 'https://example.com/job/1',
+          publishDate: '2024-01-15'
+        },
+        {
+          id: '2',
+          jobTitle: '产品经理',
+          category: 'PRODUCT',
+          level: 'MID',
+          companyName: '创新科技公司',
+          industryType: 'TECHNOLOGY',
+          jobType: 'FULL_TIME',
+          locationRestriction: 'SPECIFIC_REGIONS',
+          skillTags: ['产品管理', '数据分析', '用户研究'],
+          languageRequirements: '中文 (母语)',
+          dataQuality: 78,
+          sourceUrl: 'https://example.com/job/2',
+          publishDate: '2024-01-14'
+        },
+        {
+          id: '3',
+          jobTitle: 'DevOps Engineer',
+          category: 'DEVOPS',
+          level: 'MID',
+          companyName: 'Cloud Solutions Inc',
+          industryType: 'TECHNOLOGY',
+          jobType: 'FULL_TIME',
+          locationRestriction: 'NO_RESTRICTION',
+          skillTags: ['Docker', 'Kubernetes', 'AWS', 'Jenkins', 'Python'],
+          languageRequirements: 'English (Fluent)',
+          dataQuality: 92,
+          sourceUrl: 'https://example.com/job/3',
+          publishDate: '2024-01-13'
+        }
+      ];
+
+      setProcessedJobs(mockProcessedJobs);
+
+      // 生成统计信息
+      const categoryDist: Record<string, number> = {};
+      const sourceDist: Record<string, number> = {};
+
+      mockProcessedJobs.forEach(job => {
+        categoryDist[job.category] = (categoryDist[job.category] || 0) + 1;
+        const domain = new URL(job.sourceUrl).hostname;
+        sourceDist[domain] = (sourceDist[domain] || 0) + 1;
+      });
+
+      const simpleStats: SimpleStats = {
+        totalRaw: mockRawJobs.length,
+        totalProcessed: mockProcessedJobs.length,
+        successRate: (mockProcessedJobs.length / mockRawJobs.length) * 100,
+        averageQuality: mockProcessedJobs.reduce((sum, job) => sum + job.dataQuality, 0) / mockProcessedJobs.length,
+        categoryDistribution: categoryDist,
+        sourceDistribution: sourceDist
+      };
+
+      setStats(simpleStats);
+
+      // 获取数据保留统计
+      const retention = await dataRetentionService.getRetentionStats();
+      setRetentionStats(retention);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    loadData();
+  };
+
+  const handleCleanup = async () => {
+    setLoading(true);
+    try {
+      const cleanupStats = await dataRetentionService.manualCleanup();
+      setRetentionStats(cleanupStats);
+      await loadData(); // 重新加载数据
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '清理数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = (type: 'raw' | 'processed') => {
+    const data = type === 'raw' ? rawJobs : processedJobs;
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${type}_jobs_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const renderTabContent = () => {
+    if (loading) {
+      return <div className="loading">加载中...</div>;
+    }
+
+    if (error) {
+      return <div className="error">错误: {error}</div>;
+    }
+
+    switch (activeTab) {
+      case 'raw':
+        return <RawJobsTable jobs={rawJobs} onExport={() => handleExport('raw')} />;
+      case 'processed':
+        return <ProcessedJobsTable jobs={processedJobs} onExport={() => handleExport('processed')} />;
+      case 'stats':
+        return <StatsPanel stats={stats} />;
+      case 'retention':
+        return <RetentionPanel stats={retentionStats} onCleanup={handleCleanup} loading={loading} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className={`admin-panel ${className || ''}`}>
+      {/* 侧边栏导航 */}
+      <aside className="admin-sidebar">
+        <div>
+          <div className="sidebar-logo">
+            <div className="logo-icon">海</div>
+            <div className="logo-text">
+              <h1>海狗招聘</h1>
+              <p>数据管理后台</p>
+            </div>
+          </div>
+
+          <nav className="sidebar-nav">
+            <a href="#" className="nav-item active">
+              <span className="material-symbols-outlined">dashboard</span>
+              数据概览
+            </a>
+            <a href="#" className="nav-item">
+              <span className="material-symbols-outlined">rss_feed</span>
+              RSS管理
+            </a>
+            <a href="#" className="nav-item">
+              <span className="material-symbols-outlined">people</span>
+              求职者管理
+            </a>
+            <a href="#" className="nav-item">
+              <span className="material-symbols-outlined">business</span>
+              企业管理
+            </a>
+            <a href="#" className="nav-item">
+              <span className="material-symbols-outlined">storage</span>
+              数据保留
+            </a>
+            <a href="#" className="nav-item">
+              <span className="material-symbols-outlined">analytics</span>
+              数据分析
+            </a>
+            <a href="#" className="nav-item">
+              <span className="material-symbols-outlined">settings</span>
+              系统设置
+            </a>
+          </nav>
+        </div>
+
+        <div className="sidebar-footer">
+          <a href="#" className="nav-item">
+            <span className="material-symbols-outlined">help</span>
+            帮助中心
+          </a>
+          <a href="#" className="nav-item">
+            <span className="material-symbols-outlined">logout</span>
+            退出登录
+          </a>
+        </div>
+      </aside>
+
+      {/* 主内容区域 */}
+      <main className="admin-main">
+        <div className="admin-container">
+          {/* 页面头部 */}
+          <header className="admin-header">
+            <h1>海狗招聘数据管理后台</h1>
+            <div className="header-actions">
+              <button 
+                className="btn-primary" 
+                onClick={handleRefresh}
+                disabled={loading}
+              >
+                <span className="material-symbols-outlined">refresh</span>
+                {loading ? '刷新中...' : '刷新数据'}
+              </button>
+            </div>
+          </header>
+
+          {/* 标签页导航 */}
+          <div className="admin-tabs">
+            <nav className="tabs-nav">
+              <a 
+                href="#"
+                className={`tab-item ${activeTab === 'raw' ? 'active' : ''}`}
+                onClick={(e) => { e.preventDefault(); setActiveTab('raw'); }}
+              >
+                RSS原始数据 ({rawJobs.length})
+              </a>
+              <a 
+                href="#"
+                className={`tab-item ${activeTab === 'processed' ? 'active' : ''}`}
+                onClick={(e) => { e.preventDefault(); setActiveTab('processed'); }}
+              >
+                处理后数据 ({processedJobs.length})
+              </a>
+              <a 
+                href="#"
+                className={`tab-item ${activeTab === 'stats' ? 'active' : ''}`}
+                onClick={(e) => { e.preventDefault(); setActiveTab('stats'); }}
+              >
+                统计信息
+              </a>
+              <a 
+                href="#"
+                className={`tab-item ${activeTab === 'retention' ? 'active' : ''}`}
+                onClick={(e) => { e.preventDefault(); setActiveTab('retention'); }}
+              >
+                数据保留
+              </a>
+            </nav>
+          </div>
+
+          {/* 内容区域 */}
+          <div className="tab-content">
+            {renderTabContent()}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+// RSS原始数据表格组件
+const RawJobsTable: React.FC<{ jobs: RSSJob[]; onExport: () => void }> = ({ jobs, onExport }) => {
+  return (
+    <div className="table-container">
+      <div className="table-header">
+        <h3 className="table-title">RSS原始数据 (近7天)</h3>
+        <div className="table-controls">
+          <div className="search-input">
+            <span className="material-symbols-outlined">search</span>
+            <input type="text" placeholder="搜索岗位..." />
+          </div>
+          <button className="filter-btn">
+            <span className="material-symbols-outlined">filter_list</span>
+            筛选
+          </button>
+          <button onClick={onExport} className="btn-primary">
+            <span className="material-symbols-outlined">download</span>
+            导出数据
+          </button>
+        </div>
+      </div>
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>岗位标题</th>
+              <th>公司</th>
+              <th>地点</th>
+              <th>分类</th>
+              <th>类型</th>
+              <th>级别</th>
+              <th>薪资</th>
+              <th>发布时间</th>
+              <th>来源</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {jobs.map(job => (
+              <tr key={job.id}>
+                <td>{job.id}</td>
+                <td className="job-title">{job.title}</td>
+                <td>{job.company}</td>
+                <td>{job.location}</td>
+                <td>
+                  <span className="status-badge medium">{job.category}</span>
+                </td>
+                <td>{job.jobType}</td>
+                <td>{job.experienceLevel}</td>
+                <td>{job.salary}</td>
+                <td>{new Date(job.publishedAt).toLocaleDateString()}</td>
+                <td>
+                  <a href={job.source} target="_blank" rel="noopener noreferrer">
+                    查看原文
+                  </a>
+                </td>
+                <td>
+                  <button className="action-btn">
+                    <span className="material-symbols-outlined">edit</span>
+                  </button>
+                  <button className="action-btn danger">
+                    <span className="material-symbols-outlined">delete</span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="pagination">
+        <span>显示 1-{jobs.length} 条，共 {jobs.length} 条记录</span>
+        <div className="pagination-controls">
+          <button className="pagination-btn" disabled>上一页</button>
+          <button className="pagination-btn">下一页</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 统一岗位数据表格组件
+const UnifiedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => void }> = ({ jobs, onExport }) => {
+  return (
+    <div className="table-container">
+      <div className="table-header">
+        <h3 className="table-title">统一岗位数据</h3>
+        <div className="table-controls">
+          <div className="search-input">
+            <span className="material-symbols-outlined">search</span>
+            <input type="text" placeholder="搜索岗位..." />
+          </div>
+          <button className="filter-btn">
+            <span className="material-symbols-outlined">filter_list</span>
+            筛选
+          </button>
+          <button onClick={onExport} className="btn-primary">
+            <span className="material-symbols-outlined">download</span>
+            导出数据
+          </button>
+        </div>
+      </div>
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>岗位标题</th>
+              <th>公司</th>
+              <th>地点</th>
+              <th>薪资范围</th>
+              <th>技能要求</th>
+              <th>数据质量</th>
+              <th>来源</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {jobs.map(job => (
+              <tr key={job.id}>
+                <td>{job.id}</td>
+                <td className="job-title">{job.jobTitle}</td>
+                <td>{job.companyName}</td>
+                <td>{job.locationRestriction}</td>
+                <td>-</td>
+                <td>
+                  <div className="skills-container">
+                    {job.skillTags.slice(0, 2).map((skill, index) => (
+                      <span key={index} className="skill-tag">{skill}</span>
+                    ))}
+                    {job.skillTags.length > 2 && (
+                      <span className="skill-tag more">+{job.skillTags.length - 2}</span>
+                    )}
+                  </div>
+                </td>
+                <td>
+                  <div className="quality-score">
+                    <div className="score-bar">
+                      <div 
+                        className="score-fill" 
+                        style={{ width: `${job.dataQuality}%` }}
+                      ></div>
+                    </div>
+                    <span className="score-text">{job.dataQuality}%</span>
+                  </div>
+                </td>
+                <td>
+                  <a href={job.sourceUrl} target="_blank" rel="noopener noreferrer">
+                    查看原文
+                  </a>
+                </td>
+                <td>
+                  <button className="action-btn">
+                    <span className="material-symbols-outlined">edit</span>
+                  </button>
+                  <button className="action-btn">
+                    <span className="material-symbols-outlined">visibility</span>
+                  </button>
+                  <button className="action-btn danger">
+                    <span className="material-symbols-outlined">delete</span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="pagination">
+        <span>显示 1-{jobs.length} 条，共 {jobs.length} 条记录</span>
+        <div className="pagination-controls">
+          <button className="pagination-btn" disabled>上一页</button>
+          <button className="pagination-btn">下一页</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 处理后数据表格组件
+const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => void }> = ({ jobs, onExport }) => {
+  return (
+    <div className="table-container">
+      <div className="table-header">
+        <h3 className="table-title">处理后数据 (近7天)</h3>
+        <div className="table-controls">
+          <div className="search-input">
+            <span className="material-symbols-outlined">search</span>
+            <input type="text" placeholder="搜索岗位..." />
+          </div>
+          <button className="filter-btn">
+            <span className="material-symbols-outlined">filter_list</span>
+            筛选
+          </button>
+          <button onClick={onExport} className="btn-primary">
+            <span className="material-symbols-outlined">download</span>
+            导出数据
+          </button>
+        </div>
+      </div>
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>岗位名称</th>
+              <th>分类</th>
+              <th>级别</th>
+              <th>企业名称</th>
+              <th>行业类型</th>
+              <th>岗位类型</th>
+              <th>区域限制</th>
+              <th>技能标签</th>
+              <th>语言要求</th>
+              <th>数据质量</th>
+              <th>来源</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {jobs.map(job => (
+              <tr key={job.id}>
+                <td>{job.id}</td>
+                <td className="job-title">{job.jobTitle}</td>
+                <td>{job.category}</td>
+                <td>{job.level}</td>
+                <td>{job.companyName}</td>
+                <td>{job.industryType}</td>
+                <td>{job.jobType}</td>
+                <td>{job.locationRestriction}</td>
+                <td>
+                  <div className="skill-tags">
+                    {job.skillTags.slice(0, 3).map(skill => (
+                      <span key={skill} className="skill-tag">{skill}</span>
+                    ))}
+                    {job.skillTags.length > 3 && <span className="more-skills">+{job.skillTags.length - 3}</span>}
+                  </div>
+                </td>
+                <td>{job.languageRequirements}</td>
+                <td>
+                  <div className="quality-score">
+                    <span className={`score ${job.dataQuality >= 80 ? 'high' : job.dataQuality >= 60 ? 'medium' : 'low'}`}>
+                      {job.dataQuality}%
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <a href={job.sourceUrl} target="_blank" rel="noopener noreferrer">
+                    查看原文
+                  </a>
+                </td>
+                <td>
+                  <button className="action-btn">
+                    <span className="material-symbols-outlined">edit</span>
+                  </button>
+                  <button className="action-btn">
+                    <span className="material-symbols-outlined">visibility</span>
+                  </button>
+                  <button className="action-btn danger">
+                    <span className="material-symbols-outlined">delete</span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="pagination">
+        <span>显示 1-{jobs.length} 条，共 {jobs.length} 条记录</span>
+        <div className="pagination-controls">
+          <button className="pagination-btn" disabled>上一页</button>
+          <button className="pagination-btn">下一页</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 统计信息面板组件
+const StatsPanel: React.FC<{ stats: SimpleStats | null }> = ({ stats }) => {
+  if (!stats) {
+    return <div>暂无统计数据</div>;
+  }
+
+  return (
+    <div className="stats-panel">
+      <div className="stats-grid">
+        <div className="stat-card">
+          <h4>RSS原始数据</h4>
+          <div className="stat-value">{stats.totalRaw}</div>
+        </div>
+        <div className="stat-card">
+          <h4>处理后数据</h4>
+          <div className="stat-value">{stats.totalProcessed}</div>
+        </div>
+        <div className="stat-card">
+          <h4>处理成功率</h4>
+          <div className="stat-value">{Math.round(stats.successRate)}%</div>
+        </div>
+        <div className="stat-card">
+          <h4>平均质量分</h4>
+          <div className="stat-value">{Math.round(stats.averageQuality)}%</div>
+        </div>
+      </div>
+
+      <div className="distribution-charts">
+        <div className="chart-section">
+          <h4>岗位分类分布</h4>
+          <div className="chart-bars">
+            {Object.entries(stats.categoryDistribution).map(([category, count]) => (
+              <div key={category} className="chart-bar">
+                <span className="bar-label">{category}</span>
+                <div className="bar-container">
+                  <div 
+                    className="bar-fill" 
+                    style={{ width: `${(count / stats.totalProcessed) * 100}%` }}
+                  ></div>
+                </div>
+                <span className="bar-value">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="chart-section">
+          <h4>数据来源分布</h4>
+          <div className="chart-bars">
+            {Object.entries(stats.sourceDistribution).map(([source, count]) => (
+              <div key={source} className="chart-bar">
+                <span className="bar-label">{source}</span>
+                <div className="bar-container">
+                  <div 
+                    className="bar-fill" 
+                    style={{ width: `${(count / stats.totalProcessed) * 100}%` }}
+                  ></div>
+                </div>
+                <span className="bar-value">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 数据保留管理面板组件
+const RetentionPanel: React.FC<{ 
+  stats: RetentionStats | null; 
+  onCleanup: () => void; 
+  loading: boolean; 
+}> = ({ stats, onCleanup, loading }) => {
+  if (!stats) {
+    return <div className="loading">加载数据保留信息中...</div>;
+  }
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatDate = (date: Date | null): string => {
+    if (!date) return '从未执行';
+    return new Date(date).toLocaleString('zh-CN');
+  };
+
+  return (
+    <div className="retention-panel">
+      <div className="retention-header">
+        <h3>数据保留策略管理</h3>
+        <button 
+          onClick={onCleanup} 
+          className="cleanup-btn" 
+          disabled={loading}
+        >
+          {loading ? '清理中...' : '手动清理'}
+        </button>
+      </div>
+
+      <div className="retention-stats-grid">
+        <div className="retention-card">
+          <h4>总记录数</h4>
+          <div className="retention-value">{stats.totalRecords}</div>
+          <div className="retention-desc">RSS + 统一数据</div>
+        </div>
+        
+        <div className="retention-card">
+          <h4>过期记录</h4>
+          <div className="retention-value expired">{stats.expiredRecords}</div>
+          <div className="retention-desc">超过7天的数据</div>
+        </div>
+        
+        <div className="retention-card">
+          <h4>已清理记录</h4>
+          <div className="retention-value cleaned">{stats.cleanedRecords}</div>
+          <div className="retention-desc">本次清理删除</div>
+        </div>
+        
+        <div className="retention-card">
+          <h4>存储使用</h4>
+          <div className="retention-value">{formatBytes(stats.storageUsage.total)}</div>
+          <div className="retention-desc">总存储空间</div>
+        </div>
+      </div>
+
+      <div className="retention-details">
+        <div className="retention-section">
+          <h4>清理时间</h4>
+          <div className="time-info">
+            <div className="time-item">
+              <span className="time-label">上次清理:</span>
+              <span className="time-value">{formatDate(stats.lastCleanup)}</span>
+            </div>
+            <div className="time-item">
+              <span className="time-label">下次清理:</span>
+              <span className="time-value">{formatDate(stats.nextCleanup)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="retention-section">
+          <h4>存储详情</h4>
+          <div className="storage-breakdown">
+            <div className="storage-item">
+              <span className="storage-label">RSS原始数据:</span>
+              <span className="storage-value">{formatBytes(stats.storageUsage.rssData)}</span>
+            </div>
+            <div className="storage-item">
+              <span className="storage-label">统一岗位数据:</span>
+              <span className="storage-value">{formatBytes(stats.storageUsage.unifiedData)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="retention-config">
+        <h4>保留策略配置</h4>
+        <div className="config-info">
+          <div className="config-item">
+            <span className="config-label">保留天数:</span>
+            <span className="config-value">7天</span>
+          </div>
+          <div className="config-item">
+            <span className="config-label">清理间隔:</span>
+            <span className="config-value">24小时</span>
+          </div>
+          <div className="config-item">
+            <span className="config-label">最大记录数:</span>
+            <span className="config-value">10,000条</span>
+          </div>
+          <div className="config-item">
+            <span className="config-label">自动清理:</span>
+            <span className="config-value enabled">已启用</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminPanel;

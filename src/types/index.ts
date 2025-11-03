@@ -25,6 +25,10 @@ export interface Job {
   remoteLocationRestriction?: string
   // 推荐度得分 (0-100) - 只有真实数据才设置
   recommendationScore?: number
+  // 推荐相关字段
+  recommendationId?: string  // 推荐唯一ID，用于关联推荐时间
+  recommendedAt?: string     // 推荐时间戳 (ISO 8601 format)
+  recommendationGroup?: number // 推荐组别 (1或2，每天2组推荐)
 }
 
 export interface User {

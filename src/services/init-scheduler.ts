@@ -1,4 +1,5 @@
 import { browserScheduler, configureSchedulerForEnvironment } from './scheduler';
+import { dataRetentionService } from './data-retention-service';
 
 /**
  * 初始化RSS数据同步调度器
@@ -28,7 +29,9 @@ export function initializeScheduler() {
     // 在开发环境下提供调度器控制台访问
     if (isDevelopment) {
       (window as any).jobScheduler = browserScheduler.getScheduler();
+      (window as any).dataRetentionService = dataRetentionService;
       console.log('Scheduler available at window.jobScheduler for debugging');
+      console.log('Data retention service available at window.dataRetentionService for debugging');
     }
     
   } catch (error) {

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { processJobDescription } from '../utils/text-formatter'
 import {
   Mail,
   Phone,
@@ -788,7 +789,13 @@ export default function ProfilePage() {
                     </span>
                     <span className="text-haigoo-primary font-medium">{job.salary}</span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">{job.description}</p>
+                  <p className="text-sm text-gray-600 mt-2">
+                    {processJobDescription(job.description, { 
+                      formatMarkdown: false, 
+                      maxLength: 150, 
+                      preserveHtml: false 
+                    })}
+                  </p>
                 </div>
                 
                 <div className="flex items-center gap-2 ml-4">

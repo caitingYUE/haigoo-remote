@@ -4,6 +4,38 @@
  */
 
 /**
+ * 清理Markdown符号，返回纯文本
+ */
+export function cleanMarkdownSymbols(text: string): string {
+  if (!text) return '';
+  
+  let cleaned = text;
+  
+  // 移除Markdown粗体符号 **text** -> text
+  cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1');
+  
+  // 移除Markdown斜体符号 *text* -> text
+  cleaned = cleaned.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '$1');
+  
+  // 移除其他常见的Markdown符号
+  cleaned = cleaned.replace(/~~(.*?)~~/g, '$1'); // 删除线
+  cleaned = cleaned.replace(/`([^`]+)`/g, '$1'); // 行内代码
+  
+  // 处理多余的星号和特殊符号
+  cleaned = cleaned.replace(/\*{3,}/g, ''); // 移除3个或更多连续的星号
+  cleaned = cleaned.replace(/_{3,}/g, ''); // 移除3个或更多连续的下划线
+  
+  // 处理多余的空白字符
+  cleaned = cleaned.replace(/\s+/g, ' '); // 合并多个空格
+  cleaned = cleaned.replace(/\n\s*\n/g, '\n\n'); // 保留段落间距
+  
+  // 清理开头和结尾的空白
+  cleaned = cleaned.trim();
+  
+  return cleaned;
+}
+
+/**
  * 清理和格式化文本，处理Markdown符号
  */
 export function formatJobDescription(text: string): string {
@@ -90,18 +122,21 @@ export function processJobDescription(description: string, options: {
   
   let processed = description;
   
-  // 格式化Markdown符号
+  // 处理Markdown符号
   if (formatMarkdown) {
     processed = formatJobDescription(processed);
+  } else {
+    // 如果不需要HTML格式，则清理Markdown符号
+    processed = cleanMarkdownSymbols(processed);
   }
   
   // 如果需要截断
   if (maxLength) {
-    if (preserveHtml) {
+    if (preserveHtml && formatMarkdown) {
       // 保留HTML的情况下，先截断纯文本，然后重新格式化
       const plainText = stripHtmlTags(processed);
       const truncated = truncateText(plainText, maxLength);
-      processed = formatMarkdown ? formatJobDescription(truncated) : truncated;
+      processed = formatJobDescription(truncated);
     } else {
       processed = truncateText(processed, maxLength);
     }
