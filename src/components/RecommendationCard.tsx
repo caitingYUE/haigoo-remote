@@ -175,25 +175,26 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
         )}
       </div>
 
-      {/* 关键信息（可选显示） */}
+      {/* 关键信息：按当天卡布局，将地点（以及可选薪资）放在描述下方 */}
+      {/* 注意：不在此处展示类型，保持与当天卡一致 */}
+
+      {/* 描述 */}
+      {job.description && (
+        <p id={`job-${job.id}-description`} className="mt-3 text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
+          {processJobDescription(job.description, { formatMarkdown: false, maxLength: 120, preserveHtml: false })}
+        </p>
+      )}
+
       {(() => {
-        const showTypeFinal = (showType ?? showMeta) && !!job.type
         const showLocationFinal = (showLocation ?? showMeta) && !!job.location
         const showSalaryFinal = (showSalary ?? showMeta) && !!(job.salary && job.salary.min > 0)
-        const showAny = showTypeFinal || showLocationFinal || showSalaryFinal
-        if (!showAny) return null
+        if (!showLocationFinal && !showSalaryFinal) return null
         return (
-          <div className="mt-3 flex items-center gap-4">
-            {showTypeFinal && (
-              <div className="flex items-center gap-1">
-                <Briefcase className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-300">{job.type}</span>
-              </div>
-            )}
+          <div className="mt-3 flex items-center justify-between">
             {showLocationFinal && (
-              <div className="flex items-center gap-1">
-                <MapPin className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-300">{job.location}</span>
+              <div className="flex items-center gap-1 min-w-0">
+                <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                <span className="text-sm text-gray-600 dark:text-gray-300 truncate whitespace-nowrap overflow-hidden" title={job.location}>{job.location}</span>
               </div>
             )}
             {showSalaryFinal && (
@@ -205,13 +206,6 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
           </div>
         )
       })()}
-
-      {/* 描述 */}
-      {job.description && (
-        <p id={`job-${job.id}-description`} className="mt-3 text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
-          {processJobDescription(job.description, { formatMarkdown: false, maxLength: 120, preserveHtml: false })}
-        </p>
-      )}
 
       {/* 技能标签 - 最多3个 +N */}
       {Array.isArray(job.skills) && job.skills.length > 0 && (

@@ -13,27 +13,23 @@ export class DateFormatter {
     try {
       const date = new Date(dateString);
       const now = new Date();
-      
-      // 计算时间差（毫秒）
-      const diffMs = now.getTime() - date.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      
-      // 今天
-      if (diffDays === 0) {
+
+      // 按“日历日”判断今天/昨天，避免仅按小时差导致跨午夜显示错误
+      if (this.isToday(dateString)) {
+        const diffMs = now.getTime() - date.getTime();
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
         if (diffHours === 0) {
           const diffMinutes = Math.floor(diffMs / (1000 * 60));
           return diffMinutes <= 0 ? '刚刚' : `${diffMinutes}分钟前`;
         }
-        return `今天`;
+        return '今天';
       }
-      
-      // 昨天
-      if (diffDays === 1) {
+
+      if (this.isYesterday(dateString)) {
         return '昨天';
       }
-      
-      // 3天以前用具体日期
+
+      // 其余情况用具体日期（MM-DD）
       return this.formatDate(date);
       
     } catch (error) {

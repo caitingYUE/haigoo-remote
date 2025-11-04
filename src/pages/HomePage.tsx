@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Briefcase, Bookmark, AlertTriangle, ChevronDown, Clock, MapPin } from 'lucide-react'
+import { Briefcase, Bookmark, AlertTriangle, ChevronDown, Clock, MapPin, Building } from 'lucide-react'
 import JobDetailModal from '../components/JobDetailModal'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
 import JobCard from '../components/JobCard'
@@ -344,9 +344,10 @@ export default function HomePage() {
                                 {job.title}
                               </h3>
                               {job.company && (
-                                <p className={`text-sm font-medium ${styles.isTop ? 'text-gray-600 dark:text-gray-300' : 'text-gray-600 dark:text-gray-400'}`}>
-                                  {job.company}
-                                </p>
+                                <div className={`flex items-center gap-1 text-sm min-w-0 ${styles.isTop ? 'text-gray-600 dark:text-gray-300' : 'text-gray-600 dark:text-gray-400'}`}>
+                                  <Building className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                  <span className="truncate" title={job.company}>{job.company}</span>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -363,9 +364,9 @@ export default function HomePage() {
                             </p>
                           )}
                           <div className="flex items-center justify-between">
-                            <div className={`flex items-center gap-1 text-sm truncate flex-1 mr-4 whitespace-nowrap overflow-hidden ${styles.isTop ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                            <div className={`flex items-center gap-1 text-sm flex-1 mr-4 min-w-0 whitespace-nowrap overflow-hidden ${styles.isTop ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-400'}`}>
                               <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                              <span>{job.location}</span>
+                              <span className="truncate" title={job.location}>{job.location}</span>
                             </div>
                             {job.salary && job.salary.min > 0 && (
                               <p className={`font-bold text-xl flex-shrink-0 ${styles.isTop ? `bg-gradient-to-r ${styles.accentColor} bg-clip-text text-transparent` : 'text-violet-600 dark:text-violet-400'}`}>
@@ -462,9 +463,10 @@ export default function HomePage() {
                                   {job.title}
                                 </h3>
                                 {job.company && (
-                                  <p className="text-gray-600 dark:text-gray-400 font-medium truncate">
-                                    {job.company}
-                                  </p>
+                                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 text-sm font-medium min-w-0">
+                                    <Building className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                    <span className="truncate" title={job.company}>{job.company}</span>
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -481,9 +483,9 @@ export default function HomePage() {
                               </p>
                             )}
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 text-sm">
-                                <MapPin className="w-4 h-4 text-gray-500" />
-                                <span>{job.location}</span>
+                              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 text-sm min-w-0">
+                                <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                <span className="truncate" title={job.location}>{job.location}</span>
                               </div>
                               {job.salary && job.salary.min > 0 && (
                                 <p className="text-violet-600 dark:text-violet-400 font-bold text-xl">
