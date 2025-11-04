@@ -63,7 +63,22 @@ class ProcessedJobsService {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const data = await response.json()
+      const contentType = response.headers.get('content-type') || ''
+      let data: any
+      if (contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        const text = await response.text()
+        console.warn('Processed jobs API返回非JSON，使用安全回退。content-type:', contentType)
+        // 返回占位结构，避免页面崩溃
+        data = {
+          jobs: [],
+          total: 0,
+          page: page,
+          pageSize: limit,
+          totalPages: 0
+        }
+      }
       
       // 转换后端数据格式为前端Job类型
       const jobs: Job[] = data.jobs.map((job: any) => ({

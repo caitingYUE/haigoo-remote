@@ -127,7 +127,27 @@ class RecommendationHistoryService {
   private getHistory(): DailyRecommendation[] {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      // 兼容历史格式：若不是数组，进行转换或重置
+      if (Array.isArray(parsed)) {
+        return parsed as DailyRecommendation[];
+      }
+      if (parsed && typeof parsed === 'object') {
+        // 兼容 { [date]: Job[] } 旧格式
+        const historyArray: DailyRecommendation[] = [];
+        for (const [date, jobs] of Object.entries(parsed)) {
+          if (Array.isArray(jobs)) {
+            historyArray.push({
+              date,
+              jobs: jobs as Job[],
+              timestamp: new Date(`${date}T09:00:00.000Z`).getTime()
+            });
+          }
+        }
+        return historyArray;
+      }
+      return [];
     } catch (error) {
       console.error('读取推荐历史失败:', error);
       return [];

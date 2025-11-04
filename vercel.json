@@ -9,6 +9,9 @@
     },
     "api/parse-resume.js": {
       "maxDuration": 30
+    },
+    "api/data/processed-jobs.js": {
+      "maxDuration": 30
     }
   },
   "headers": [
