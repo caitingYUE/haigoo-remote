@@ -207,19 +207,23 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
         )
       })()}
 
-      {/* 技能标签 - 最多3个 +N */}
-      {Array.isArray(job.skills) && job.skills.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-4 mb-2">
-          {job.skills.slice(0, 3).map((skill, idx) => (
-            <span key={idx} className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium">
-              {skill}
-            </span>
-          ))}
-          {job.skills.length > 3 && (
-            <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm">+{job.skills.length - 3}</span>
-          )}
-        </div>
-      )}
+      {/* 技能标签 - 最多3个 +N；当无标签时兜底显示“remote”避免卡片不对称 */}
+      <div className="flex flex-wrap gap-2 mt-4 mb-2">
+        {Array.isArray(job.skills) && job.skills.length > 0 ? (
+          <>
+            {job.skills.slice(0, 3).map((skill, idx) => (
+              <span key={idx} className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium">
+                {skill}
+              </span>
+            ))}
+            {job.skills.length > 3 && (
+              <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm">+{job.skills.length - 3}</span>
+            )}
+          </>
+        ) : (
+          <span className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium">remote</span>
+        )}
+      </div>
 
       {/* 底部信息与操作 */}
       <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700 mt-2">
