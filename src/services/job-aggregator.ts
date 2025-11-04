@@ -773,13 +773,13 @@ class JobAggregator {
             .slice(0, 6); // 确保每天推荐6个岗位
           
           if (topRecommendations.length >= 6) {
-            recommendationHistoryService.saveDailyRecommendation(topRecommendations);
+            await recommendationHistoryService.saveDailyRecommendation(topRecommendations);
             console.log(`已保存 ${topRecommendations.length} 个今日推荐到历史记录（分为2组，每组3个岗位）`);
           } else {
             console.warn(`推荐岗位数量不足：只有 ${topRecommendations.length} 个岗位，需要至少6个`);
             // 如果岗位不足6个，仍然保存现有的推荐
             if (topRecommendations.length > 0) {
-              recommendationHistoryService.saveDailyRecommendation(topRecommendations);
+              await recommendationHistoryService.saveDailyRecommendation(topRecommendations);
               console.log(`已保存 ${topRecommendations.length} 个今日推荐到历史记录（岗位数量不足）`);
             }
           }

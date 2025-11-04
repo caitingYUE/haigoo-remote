@@ -15,6 +15,95 @@ export interface DailyRecommendation {
 class RecommendationHistoryService {
   private readonly STORAGE_KEY = 'haigoo_recommendation_history'
   private readonly MAX_DAYS = 3 // 最多保存3天的历史数据
+  private readonly baseUrl = '/api'
+  private readonly defaultUUID = 'default'
+
+  /**
+   * 将服务端返回的推荐数据规范化为 DailyRecommendation
+   */
+  private normalizeServerPayload(payload: any): DailyRecommendation | null {
+    if (!payload || typeof payload !== 'object') return null
+    const { date, jobs, timestamp } = payload
+    if (!date || !Array.isArray(jobs)) return null
+    return {
+      date,
+      jobs: jobs as Job[],
+      timestamp: typeof timestamp === 'number' ? timestamp : new Date(`${date}T09:00:00.000Z`).getTime()
+    }
+  }
+
+  /**
+   * 从服务端获取某日推荐
+   */
+  private async fetchRecommendationFromServer(date: string, uuid: string = this.defaultUUID): Promise<DailyRecommendation | null> {
+    try {
+      const params = new URLSearchParams({ date, uuid })
+      const resp = await fetch(`${this.baseUrl}/recommendations?${params.toString()}`)
+      if (!resp.ok) return null
+      const data = await resp.json().catch(() => null)
+      if (data && data.success && data.data) {
+        const normalized = this.normalizeServerPayload(data.data)
+        return normalized
+      }
+      return null
+    } catch (error) {
+      console.warn('fetchRecommendationFromServer 失败，降级到本地:', error)
+      return null
+    }
+  }
+
+  /**
+   * 对某日推荐的岗位列表进行时间一致性校验与清洗（postedAt 不晚于当日）
+   */
+  private sanitizeJobsForDate(jobs: Job[], dateString: string): Job[] {
+    const endOfDay = new Date(`${dateString}T23:59:59`)
+    return jobs.filter(job => {
+      try {
+        const posted = new Date((job as any).postedAt || (job as any).publishedAt)
+        return posted.getTime() <= endOfDay.getTime()
+      } catch {
+        return false
+      }
+    })
+  }
+
+  /**
+   * 保存某日推荐到服务端
+   */
+  private async saveRecommendationToServer(date: string, jobs: Job[], uuid: string = this.defaultUUID): Promise<DailyRecommendation | null> {
+    try {
+      const resp = await fetch(`${this.baseUrl}/recommendations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, jobs, uuid })
+      })
+      if (!resp.ok) return null
+      const data = await resp.json().catch(() => null)
+      if (data && data.success && data.data) {
+        const normalized = this.normalizeServerPayload(data.data)
+        return normalized
+      }
+      return null
+    } catch (error) {
+      console.warn('saveRecommendationToServer 失败:', error)
+      return null
+    }
+  }
+
+  /**
+   * 将某日推荐写入本地存储（存在则覆盖），并清理超期数据
+   */
+  private upsertLocalRecommendation(recommendation: DailyRecommendation): void {
+    const history = this.getHistory()
+    const idx = history.findIndex(item => item.date === recommendation.date)
+    if (idx >= 0) {
+      history[idx] = recommendation
+    } else {
+      history.unshift(recommendation)
+    }
+    this.cleanupOldData(history)
+    this.saveHistory(history)
+  }
 
   /**
    * 基于日期种子生成固定的推荐
@@ -46,10 +135,25 @@ class RecommendationHistoryService {
    * 获取指定日期的固定推荐职位
    */
   private getFixedRecommendationsForDate(dateString: string): Job[] {
-    // 获取所有可用的职位
+    // 获取所有可用的职位，并确保发布时间不晚于该日期（避免历史推荐出现“今天”）
     const allJobs = jobAggregator.getJobs();
-    
     if (allJobs.length === 0) {
+      return [];
+    }
+
+    // 以本地时区计算当日的结束时间
+    const endOfDay = new Date(`${dateString}T23:59:59`);
+    const eligibleJobs = allJobs.filter(job => {
+      try {
+        const publishDate = new Date(job.publishedAt);
+        return publishDate.getTime() <= endOfDay.getTime();
+      } catch {
+        // 无法解析发布时间的岗位直接排除，避免不确定性
+        return false;
+      }
+    });
+
+    if (eligibleJobs.length === 0) {
       return [];
     }
 
@@ -58,7 +162,7 @@ class RecommendationHistoryService {
     const random = this.seededRandom(seed);
     
     // 使用种子随机选择职位，确保每天的选择是固定的
-    const shuffledJobs = [...allJobs];
+    const shuffledJobs = [...eligibleJobs];
     
     // Fisher-Yates 洗牌算法，使用固定种子
     for (let i = shuffledJobs.length - 1; i > 0; i--) {
@@ -92,6 +196,36 @@ class RecommendationHistoryService {
     const history = this.getHistory();
     const existingRecommendation = history.find(item => item.date === dateString);
     
+    // 如果存在旧记录但包含发布时间晚于该日期的岗位，进行纠正
+    const endOfDay = new Date(`${dateString}T23:59:59`);
+    if (existingRecommendation) {
+      const hasInvalid = (existingRecommendation.jobs || []).some(job => {
+        try {
+          const publishDate = new Date((job as any).postedAt || (job as any).publishedAt);
+          return publishDate.getTime() > endOfDay.getTime();
+        } catch {
+          return false;
+        }
+      });
+
+      if (hasInvalid) {
+        const jobs = this.getFixedRecommendationsForDate(dateString);
+        if (jobs.length > 0) {
+          const idx = history.findIndex(item => item.date === dateString);
+          const corrected: DailyRecommendation = {
+            date: dateString,
+            jobs,
+            timestamp: new Date(`${dateString}T09:00:00.000Z`).getTime()
+          };
+          if (idx >= 0) {
+            history[idx] = corrected;
+          }
+          this.cleanupOldData(history);
+          this.saveHistory(history);
+        }
+      }
+    }
+
     if (!existingRecommendation) {
       // 生成该日期的固定推荐
       const jobs = this.getFixedRecommendationsForDate(dateString);
@@ -196,23 +330,55 @@ class RecommendationHistoryService {
   /**
    * 获取过去指定天数的推荐（如果不存在则生成）
    */
-  getRecommendationsForPastDays(days: number): DailyRecommendation[] {
-    const recommendations: DailyRecommendation[] = [];
-    
+  async getRecommendationsForPastDays(days: number): Promise<DailyRecommendation[]> {
+    const recommendations: DailyRecommendation[] = []
     for (let i = 1; i <= days; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      
-      this.ensureRecommendationForDate(dateStr);
-      const recommendation = this.getRecommendationsByDate(dateStr);
-      
-      if (recommendation) {
-        recommendations.push(recommendation);
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dateStr = date.toISOString().split('T')[0]
+
+      // 优先从服务端拉取
+      const remote = await this.fetchRecommendationFromServer(dateStr)
+      if (remote && Array.isArray(remote.jobs) && remote.jobs.length > 0) {
+        // 对远程数据进行时间一致性校验与清洗
+        const sanitizedJobs = this.sanitizeJobsForDate(remote.jobs, dateStr)
+        const needsCorrection = sanitizedJobs.length !== remote.jobs.length
+        const correctedRec: DailyRecommendation = {
+          date: remote.date,
+          jobs: sanitizedJobs,
+          timestamp: remote.timestamp
+        }
+
+        // 如检测到不一致，回写服务端以纠正历史缓存
+        if (needsCorrection) {
+          const saved = await this.saveRecommendationToServer(dateStr, sanitizedJobs)
+          if (saved) {
+            recommendations.push(saved)
+            this.upsertLocalRecommendation(saved)
+            continue
+          }
+        }
+
+        // 无需纠正或纠正失败时，仍然使用清洗后的数据
+        recommendations.push(correctedRec)
+        this.upsertLocalRecommendation(correctedRec)
+        continue
+      }
+
+      // 服务端没有数据，生成固定推荐并写回服务端
+      const jobs = this.getFixedRecommendationsForDate(dateStr)
+      if (jobs.length > 0) {
+        const saved = await this.saveRecommendationToServer(dateStr, jobs)
+        const rec = saved ?? {
+          date: dateStr,
+          jobs,
+          timestamp: new Date(`${dateStr}T09:00:00.000Z`).getTime()
+        }
+        recommendations.push(rec)
+        this.upsertLocalRecommendation(rec)
       }
     }
-    
-    return recommendations;
+    return recommendations
   }
 
   /**
@@ -227,7 +393,16 @@ class RecommendationHistoryService {
    * 获取过往推荐（向后兼容）
    */
   getPastRecommendations(days: number = 3): DailyRecommendation[] {
-    return this.getRecommendationsForPastDays(days);
+    // 为向后兼容保留同步接口，但内部仍使用本地数据
+    const recs: DailyRecommendation[] = []
+    for (let i = 1; i <= days; i++) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dateStr = date.toISOString().split('T')[0]
+      const recommendation = this.getRecommendationsByDate(dateStr)
+      if (recommendation) recs.push(recommendation)
+    }
+    return recs
   }
 
   /**
@@ -314,17 +489,30 @@ class RecommendationHistoryService {
   /**
    * 保存每日推荐（向后兼容，但现在使用固定推荐）
    */
-  saveDailyRecommendation(jobs: Job[]): void {
-    // 在新系统中，推荐是自动生成的，这个方法保留用于向后兼容
-    console.log('使用固定推荐系统，不需要手动保存推荐');
+  async saveDailyRecommendation(jobs: Job[]): Promise<void> {
+    const today = new Date().toISOString().split('T')[0]
+    // 写入服务端
+    const saved = await this.saveRecommendationToServer(today, jobs)
+    const rec = saved ?? {
+      date: today,
+      jobs,
+      timestamp: new Date(`${today}T09:00:00.000Z`).getTime()
+    }
+    // 同步本地缓存
+    this.upsertLocalRecommendation(rec)
   }
 
   /**
    * 保存指定日期的推荐（向后兼容）
    */
-  saveRecommendationForDate(jobs: Job[], date: string): void {
-    // 在新系统中，推荐是自动生成的，这个方法保留用于向后兼容
-    console.log('使用固定推荐系统，不需要手动保存推荐');
+  async saveRecommendationForDate(jobs: Job[], date: string): Promise<void> {
+    const saved = await this.saveRecommendationToServer(date, jobs)
+    const rec = saved ?? {
+      date,
+      jobs,
+      timestamp: new Date(`${date}T09:00:00.000Z`).getTime()
+    }
+    this.upsertLocalRecommendation(rec)
   }
 }
 

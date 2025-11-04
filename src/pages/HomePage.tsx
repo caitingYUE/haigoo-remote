@@ -4,6 +4,7 @@ import { Briefcase, Bookmark, AlertTriangle, ChevronDown, Clock } from 'lucide-r
 import JobDetailModal from '../components/JobDetailModal'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
 import JobCard from '../components/JobCard'
+import RecommendationCard from '../components/RecommendationCard'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { recommendationHistoryService } from '../services/recommendation-history-service'
@@ -555,10 +556,20 @@ export default function HomePage() {
                          })
                          .flatMap(([date, jobs]) => 
                            jobs.slice(0, 6).map((job) => (
-                             <JobCard
+                             <RecommendationCard
                                key={job.id}
                                job={job}
                                onClick={() => openJobDetail(job)}
+                               onApply={(id) => handleApply(id)}
+                               onToggleSave={(id) => {
+                                 setSavedJobs(prev => {
+                                   const newSet = new Set(prev)
+                                   if (newSet.has(id)) newSet.delete(id)
+                                   else newSet.add(id)
+                                   return newSet
+                                 })
+                               }}
+                               isSaved={savedJobs.has(job.id)}
                              />
                            ))
                          )}
@@ -583,10 +594,20 @@ export default function HomePage() {
                        })
                        .flatMap(([date, jobs]) => 
                          jobs.slice(0, 6).map((job) => (
-                           <JobCard
+                           <RecommendationCard
                              key={job.id}
                              job={job}
                              onClick={() => openJobDetail(job)}
+                             onApply={(id) => handleApply(id)}
+                             onToggleSave={(id) => {
+                               setSavedJobs(prev => {
+                                 const newSet = new Set(prev)
+                                 if (newSet.has(id)) newSet.delete(id)
+                                 else newSet.add(id)
+                                 return newSet
+                               })
+                             }}
+                             isSaved={savedJobs.has(job.id)}
                            />
                          ))
                        )}
@@ -610,10 +631,20 @@ export default function HomePage() {
                        })
                        .flatMap(([date, jobs]) => 
                          jobs.slice(0, 6).map((job) => (
-                           <JobCard
+                           <RecommendationCard
                              key={job.id}
                              job={job}
                              onClick={() => openJobDetail(job)}
+                             onApply={(id) => handleApply(id)}
+                             onToggleSave={(id) => {
+                               setSavedJobs(prev => {
+                                 const newSet = new Set(prev)
+                                 if (newSet.has(id)) newSet.delete(id)
+                                 else newSet.add(id)
+                                 return newSet
+                               })
+                             }}
+                             isSaved={savedJobs.has(job.id)}
                            />
                          ))
                        )}

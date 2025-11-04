@@ -611,6 +611,74 @@ app.delete('/api/data/processed-jobs/:id', async (req, res) => {
   }
 });
 
+// ========================
+// 推荐历史（开发环境存储）
+// ========================
+// 说明：为本地开发环境提供 /api/recommendations 接口，存储在内存中
+// 生产环境由 Vercel 函数使用 KV 持久化
+
+// 简单内存存储：key 为 `${uuid}:${date}`
+const recommendationStore = new Map();
+
+// CORS 预检处理（与 vercel.json 保持一致）
+app.options('/api/recommendations', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization');
+  res.status(200).end();
+});
+
+// 查询某日推荐
+app.get('/api/recommendations', (req, res) => {
+  try {
+    const { date, uuid = 'default' } = req.query;
+    if (!date) {
+      return res.status(400).json({ success: false, error: 'date is required' });
+    }
+    const key = `${uuid}:${date}`;
+    const data = recommendationStore.get(key) || null;
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('GET /api/recommendations error:', error);
+    return res.status(500).json({ success: false, error: 'internal error' });
+  }
+});
+
+// 保存某日推荐
+app.post('/api/recommendations', async (req, res) => {
+  try {
+    let body = req.body;
+    // 兼容原始流
+    if (!body || typeof body !== 'object') {
+      body = await new Promise((resolve) => {
+        let data = '';
+        req.on('data', chunk => data += chunk);
+        req.on('end', () => {
+          try { resolve(JSON.parse(data || '{}')); } catch { resolve({}); }
+        });
+      });
+    }
+
+    const { date, jobs, uuid = 'default' } = body || {};
+    if (!date || !Array.isArray(jobs)) {
+      return res.status(400).json({ success: false, error: 'date and jobs are required' });
+    }
+
+    const payload = {
+      date,
+      uuid,
+      jobs,
+      timestamp: Date.now()
+    };
+    const key = `${uuid}:${date}`;
+    recommendationStore.set(key, payload);
+    return res.json({ success: true, data: payload });
+  } catch (error) {
+    console.error('POST /api/recommendations error:', error);
+    return res.status(500).json({ success: false, error: 'internal error' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`RSS Proxy server running on http://localhost:${PORT}`);
 });
