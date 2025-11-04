@@ -5,155 +5,11 @@ import JobDetailModal from '../components/JobDetailModal'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
 import JobCard from '../components/JobCard'
 import { Job } from '../types'
-import { jobAggregator } from '../services/job-aggregator'
-import { Job as RSSJob } from '../types/rss-types'
+import { processedJobsService } from '../services/processed-jobs-service'
 import { recommendationHistoryService } from '../services/recommendation-history-service'
 import { processJobDescription } from '../utils/text-formatter'
 
-// 转换RSS职位为页面职位格式
-const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
-  // 处理薪资信息 - 从RSS数据中解析真实薪资
-  let salary: { min: number; max: number; currency: string } | undefined = undefined;
 
-  if (rssJob.salary && typeof rssJob.salary === 'string' && rssJob.salary.trim()) {
-    const salaryText = rssJob.salary.trim();
-    
-    // 排除明显不是薪资的文本
-    const excludePatterns = [
-      /\$[\d,]+\s*(?:million|billion|k|thousand)\s*(?:company|business|startup|funding|investment|valuation|revenue)/i,
-      /\$[\d,]+\s*(?:in|of)\s*(?:funding|investment|revenue|sales)/i,
-      /\$[\d,]+\s*(?:raised|funded|invested)/i
-    ];
-
-    let isExcluded = false;
-    for (const excludePattern of excludePatterns) {
-      if (excludePattern.test(salaryText)) {
-        isExcluded = true;
-        break;
-      }
-    }
-
-    if (!isExcluded) {
-      // 尝试从字符串中解析薪资信息
-      const salaryMatch = salaryText.match(/(\d+(?:,\d+)*(?:\.\d+)?)\s*[-–—到至]\s*(\d+(?:,\d+)*(?:\.\d+)?)/);
-      if (salaryMatch) {
-        const min = parseInt(salaryMatch[1].replace(/,/g, ''));
-        const max = parseInt(salaryMatch[2].replace(/,/g, ''));
-        // 确保薪资数字在合理范围内
-        if (min >= 1000 && max >= 1000 && min > 0 && max > 0) {
-          salary = {
-            min,
-            max,
-            currency: 'USD'
-          };
-        }
-      } else {
-        // 尝试解析单个数字
-        const singleMatch = salaryText.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
-        if (singleMatch) {
-          const amount = parseInt(singleMatch[1].replace(/,/g, ''));
-          // 确保薪资数字在合理范围内，或者是时薪
-          if ((amount >= 1000) || (amount >= 10 && salaryText.toLowerCase().includes('hour'))) {
-            salary = {
-              min: amount,
-              max: amount,
-              currency: 'USD'
-            };
-          }
-        }
-      }
-      
-      // 检测货币类型
-      if (salary) {
-        if (salaryText.includes('¥') || salaryText.includes('CNY') || salaryText.includes('人民币')) {
-          salary.currency = 'CNY';
-        } else if (salaryText.includes('$') || salaryText.includes('USD')) {
-          salary.currency = 'USD';
-        } else if (salaryText.includes('€') || salaryText.includes('EUR')) {
-          salary.currency = 'EUR';
-        }
-      }
-    }
-  }
-
-  // 确定工作类型
-  let jobType: Job['type'] = 'full-time';
-  if (rssJob.jobType) {
-    switch (rssJob.jobType) {
-      case 'full-time':
-        jobType = 'full-time';
-        break;
-      case 'part-time':
-        jobType = 'part-time';
-        break;
-      case 'contract':
-        jobType = 'contract';
-        break;
-      case 'freelance':
-        jobType = 'freelance';
-        break;
-      case 'internship':
-        jobType = 'internship';
-        break;
-      default:
-        jobType = rssJob.isRemote ? 'remote' : 'full-time';
-    }
-  } else if (rssJob.isRemote) {
-    jobType = 'remote';
-  }
-
-  // 计算推荐分数 - 完全独立于薪资数据，基于其他职位属性
-  let recommendationScore = 0;
-  
-  // 基础分数
-  recommendationScore += 60;
-  
-  // 远程工作加分
-  if (rssJob.isRemote) {
-    recommendationScore += 20;
-  }
-  
-  // 有技能标签加分
-  if (rssJob.tags && rssJob.tags.length > 0) {
-    recommendationScore += Math.min(rssJob.tags.length * 3, 15);
-  }
-  
-  // 有详细描述加分
-  if (rssJob.description && rssJob.description.length > 100) {
-    recommendationScore += 10;
-  }
-  
-  // 有公司信息加分
-  if (rssJob.company && rssJob.company.trim()) {
-    recommendationScore += 5;
-  }
-  
-  // 添加一些随机性，让排序更自然
-  recommendationScore += Math.random() * 15;
-
-  return {
-    id: rssJob.id,
-    title: rssJob.title,
-    company: rssJob.company || undefined,  // 不设置虚假公司名
-    location: rssJob.location || 'Remote',
-    type: jobType,
-    salary,
-    description: rssJob.description || undefined,  // 不设置虚假描述
-    requirements: rssJob.requirements || [],
-    responsibilities: rssJob.benefits || [],
-    skills: rssJob.tags || [],
-    postedAt: rssJob.publishedAt || new Date().toISOString().split('T')[0],
-    expiresAt: undefined,  // 不设置虚假过期时间
-    source: rssJob.source || 'RSS',
-    sourceUrl: rssJob.url || '#',
-    recommendationScore, // 基于真实属性计算的推荐分数
-    // RSS特有字段
-    experienceLevel: rssJob.experienceLevel,
-    category: rssJob.category,
-    isRemote: rssJob.isRemote,
-    remoteLocationRestriction: rssJob.remoteLocationRestriction
-  }
-}
 
 // 获取公司颜色
 const getCompanyColor = (companyName: string) => {
@@ -284,25 +140,21 @@ export default function HomePage() {
     }
   }, [todayRecommendations, jobs, locationFilter, typeFilter, skillsFilter])
 
-  // 获取RSS职位数据
+  // 获取处理后的职位数据
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         setLoading(true)
         setError(null)
         
-        const rssJobs = jobAggregator.getJobs()
+        const response = await processedJobsService.getProcessedJobs(1, 50)
         
-        if (rssJobs.length > 0) {
-          const convertedJobs = rssJobs.map(convertRSSJobToPageJob)
-          // 只使用RSS数据，不合并模拟数据
-          setJobs(convertedJobs)
-         // 设置数据更新时间
-         setLastUpdateTime(new Date())
-         
-         // 新的推荐系统会自动生成固定的每日推荐，无需手动保存
+        if (response.jobs.length > 0) {
+          setJobs(response.jobs)
+          // 设置数据更新时间
+          setLastUpdateTime(new Date())
         } else {
-          // 如果没有RSS数据，设置为空数组
+          // 如果没有处理后的数据，设置为空数组
           setJobs([])
         }
       } catch (err) {

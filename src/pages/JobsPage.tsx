@@ -4,111 +4,9 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import JobDetailModal from '../components/JobDetailModal'
 import JobCard from '../components/JobCard'
 import { Job } from '../types'
-import { jobAggregator } from '../services/job-aggregator'
-import { Job as RSSJob } from '../types/rss-types'
+import { processedJobsService } from '../services/processed-jobs-service'
 import { DateFormatter } from '../utils/date-formatter'
 import { processJobDescription } from '../utils/text-formatter'
-
-// 转换RSS Job类型到页面Job类型的函数
-const convertRSSJobToPageJob = (rssJob: RSSJob): Job => {
-  // 处理薪资信息 - 统一薪资格式
-  let salary = {
-    min: 0,
-    max: 0,
-    currency: 'USD'
-  };
-  
-  if (rssJob.salary) {
-    if (typeof rssJob.salary === 'string') {
-      // 尝试从字符串中解析薪资信息
-      const salaryMatch = rssJob.salary.match(/(\d+(?:,\d+)*(?:\.\d+)?)\s*[-–—到至]\s*(\d+(?:,\d+)*(?:\.\d+)?)/);
-      if (salaryMatch) {
-        salary.min = parseInt(salaryMatch[1].replace(/,/g, ''));
-        salary.max = parseInt(salaryMatch[2].replace(/,/g, ''));
-      } else {
-        // 尝试解析单个数字
-        const singleMatch = rssJob.salary.match(/(\d+(?:,\d+)*(?:\.\d+)?)/);
-        if (singleMatch) {
-          const amount = parseInt(singleMatch[1].replace(/,/g, ''));
-          salary.min = amount;
-          salary.max = amount;
-        }
-      }
-      
-      // 检测货币类型
-      if (rssJob.salary.includes('¥') || rssJob.salary.includes('CNY') || rssJob.salary.includes('人民币')) {
-        salary.currency = 'CNY';
-      } else if (rssJob.salary.includes('$') || rssJob.salary.includes('USD')) {
-        salary.currency = 'USD';
-      } else if (rssJob.salary.includes('€') || rssJob.salary.includes('EUR')) {
-        salary.currency = 'EUR';
-      }
-    }
-  }
-
-  // 处理发布日期
-  let postedAt = '';
-  if (rssJob.publishedAt) {
-    try {
-      const date = new Date(rssJob.publishedAt);
-      if (!isNaN(date.getTime())) {
-        postedAt = date.toISOString().split('T')[0];
-      } else {
-        postedAt = rssJob.publishedAt;
-      }
-    } catch {
-      postedAt = rssJob.publishedAt || '';
-    }
-  }
-
-  // 确定工作类型
-  let jobType: Job['type'] = 'full-time';
-  if (rssJob.jobType) {
-    switch (rssJob.jobType) {
-      case 'full-time':
-        jobType = 'full-time';
-        break;
-      case 'part-time':
-        jobType = 'part-time';
-        break;
-      case 'contract':
-        jobType = 'contract';
-        break;
-      case 'freelance':
-        jobType = 'freelance';
-        break;
-      case 'internship':
-        jobType = 'internship';
-        break;
-      default:
-        jobType = rssJob.isRemote ? 'remote' : 'full-time';
-    }
-  } else if (rssJob.isRemote) {
-    jobType = 'remote';
-  }
-
-  return {
-    id: rssJob.id,
-    title: rssJob.title,
-    company: rssJob.company,
-    location: rssJob.location,
-    type: jobType,
-    salary,
-    description: rssJob.description,
-    requirements: rssJob.requirements || [],
-    responsibilities: rssJob.benefits || [],
-    skills: rssJob.tags || [],
-    postedAt,
-    expiresAt: '',
-    source: rssJob.source,
-    sourceUrl: rssJob.url,
-    // RSS特有字段
-    experienceLevel: rssJob.experienceLevel,
-    category: rssJob.category,
-    isRemote: rssJob.isRemote,
-    remoteLocationRestriction: rssJob.remoteLocationRestriction
-  }
-}
 
 const mockJobs: Job[] = [
   {
@@ -329,25 +227,19 @@ export default function JobsPage() {
     }
   }, [location.search])
 
-  // 加载存储的职位数据
+  // 加载处理后的职位数据
   useEffect(() => {
     const loadJobs = async () => {
       try {
         setLoading(true)
         
-        // 等待一小段时间让jobAggregator初始化完成
-        await new Promise(resolve => setTimeout(resolve, 100))
+        // 获取处理后的职位数据
+        const response = await processedJobsService.getAllProcessedJobs()
+        console.log('获取到处理后的岗位数据:', response.length, '个')
         
-        // 获取RSS岗位数据并转换为页面Job类型
-        const rssJobs = jobAggregator.getJobs()
-        console.log('获取到RSS岗位数据:', rssJobs.length, '个')
-        
-        if (rssJobs.length > 0) {
-          // 转换RSS Job数据为页面Job类型
-          const convertedJobs = rssJobs.map(convertRSSJobToPageJob)
-          setJobs(convertedJobs)
-          console.log('转换后的岗位数据:', convertedJobs.length, '个')
-          console.log('示例岗位数据:', convertedJobs.slice(0, 2).map(job => ({
+        if (response.length > 0) {
+          setJobs(response)
+          console.log('示例岗位数据:', response.slice(0, 2).map((job: Job) => ({
             title: job.title,
             company: job.company,
             description: processJobDescription(job.description || '', {
@@ -357,21 +249,9 @@ export default function JobsPage() {
             })
           })))
         } else {
-          // 如果没有RSS数据，尝试触发同步
-          console.log('没有找到RSS数据，尝试同步...')
-          await jobAggregator.syncAllJobs()
-          
-          // 同步后再次获取数据
-          const syncedJobs = jobAggregator.getJobs()
-          if (syncedJobs.length > 0) {
-            const convertedJobs = syncedJobs.map(convertRSSJobToPageJob)
-            setJobs(convertedJobs)
-            console.log('同步后获取到岗位数据:', convertedJobs.length, '个')
-          } else {
-            // 如果仍然没有数据，使用mock数据
-            console.log('同步后仍无数据，使用mock数据')
-            setJobs(mockJobs)
-          }
+          // 如果没有处理后的数据，使用mock数据
+          console.log('没有找到处理后的数据，使用mock数据')
+          setJobs(mockJobs)
         }
       } catch (error) {
         console.error('Failed to load jobs:', error)
@@ -437,22 +317,22 @@ export default function JobsPage() {
     // 工作类型匹配
     const matchesType = filters.type === 'all' || job.type === filters.type
     
-    // 岗位分类匹配 - 支持RSS数据的category字段和技能标签匹配
+    // 岗位分类匹配 - 支持处理后数据的category字段和技能标签匹配
     const matchesCategory = filters.category === 'all' || 
       (job.category && job.category === filters.category) ||
       (job.skills && job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase())))
     
-    // 地点匹配 - 支持远程工作判断和RSS数据的isRemote字段
+    // 地点匹配 - 支持远程工作判断和处理后数据的isRemote字段
     const matchesLocation = filters.location === 'all' || 
       job.location.includes(filters.location) ||
       (filters.location === 'Remote' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
       (filters.location === 'Worldwide' && (job.location.includes('全球') || job.location.includes('远程') || job.isRemote))
     
-    // 经验等级匹配 - 支持RSS数据的experienceLevel字段
+    // 经验等级匹配 - 支持处理后数据的experienceLevel字段
     const matchesExperience = filters.experience === 'all' || 
       (job.experienceLevel && job.experienceLevel === filters.experience)
     
-    // 远程工作匹配 - 支持RSS数据的isRemote字段
+    // 远程工作匹配 - 支持处理后数据的isRemote字段
     const matchesRemote = filters.remote === 'all' || 
       (filters.remote === 'yes' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
       (filters.remote === 'no' && !(job.type === 'remote' || job.location.includes('远程') || job.isRemote))

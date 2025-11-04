@@ -29,11 +29,16 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  Rss
+  Rss,
+  Menu,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
+import DataManagementTabs from '../components/DataManagementTabs';
+import ResumeLibraryPage from './ResumeLibraryPage';
 import '../components/AdminPanel.css';
 
 // 扩展RSSSource接口以包含管理所需的字段
@@ -80,6 +85,9 @@ const AdminTeamPage: React.FC = () => {
   const [rawJobs, setRawJobs] = useState<any[]>([]);
   const [processedJobs, setProcessedJobs] = useState<any[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // 侧边栏折叠状态
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // 加载数据
   const loadData = useCallback(async () => {
@@ -230,15 +238,6 @@ const AdminTeamPage: React.FC = () => {
         <div className="card-content">
           <div className="flex flex-wrap gap-4">
             <button 
-              onClick={handleSync}
-              disabled={syncing}
-              className="btn-primary"
-            >
-              {syncing ? <Loader className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              {syncing ? '同步中...' : '立即同步'}
-            </button>
-            
-            <button 
               onClick={() => handleExport('processed')}
               className="btn-secondary"
             >
@@ -328,73 +327,12 @@ const AdminTeamPage: React.FC = () => {
 
   // 渲染职位数据管理
   const renderJobDataManagement = () => (
-    <div className="space-y-6">
-      <div className="card">
-        <div className="card-header">
-          <h2>职位数据管理</h2>
-          <div className="flex space-x-2">
-            <button 
-              onClick={() => handleExport('raw')}
-              className="btn-secondary"
-            >
-              <Download className="w-4 h-4" />
-              导出原始数据
-            </button>
-            <button 
-              onClick={() => handleExport('processed')}
-              className="btn-secondary"
-            >
-              <Download className="w-4 h-4" />
-              导出处理数据
-            </button>
-          </div>
-        </div>
-        <div className="card-content">
-          <div className="table-wrapper">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>职位标题</th>
-                  <th>公司</th>
-                  <th>地点</th>
-                  <th>薪资</th>
-                  <th>发布时间</th>
-                  <th>来源</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.slice(0, 20).map((job) => (
-                  <tr key={job.id}>
-                    <td className="font-medium">{job.title}</td>
-                    <td>{job.company}</td>
-                    <td>{job.remoteLocationRestriction || '远程'}</td>
-                    <td>{job.salary || '--'}</td>
-                    <td>{new Date(job.publishedAt).toLocaleDateString()}</td>
-                    <td>
-                      <span className="status-badge medium">{job.source}</span>
-                    </td>
-                    <td>
-                      <div className="flex space-x-2">
-                        <button className="action-btn">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="action-btn">
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button className="action-btn danger">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
+    <DataManagementTabs />
+  );
+
+  // 渲染简历库
+  const renderResumeLibrary = () => (
+    <ResumeLibraryPage />
   );
 
   // 渲染数据分析
@@ -531,6 +469,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'dashboard', label: '数据概览', icon: BarChart3 },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
+    { id: 'resumes', label: '简历库', icon: Users },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'settings', label: '系统设置', icon: Settings }
   ];
@@ -538,14 +477,23 @@ const AdminTeamPage: React.FC = () => {
   return (
     <div className={`admin-panel ${isDarkMode ? 'dark' : ''}`}>
       {/* 侧边栏导航 */}
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div>
           <div className="sidebar-logo">
             <div className="logo-icon">海</div>
-            <div className="logo-text">
-              <h1>海狗招聘</h1>
-              <p>团队管理后台</p>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="logo-text">
+                <h1>海狗招聘</h1>
+                <p>团队管理后台</p>
+              </div>
+            )}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="collapse-btn"
+              title={sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'}
+            >
+              {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
           </div>
 
           <nav className="sidebar-nav">
@@ -560,9 +508,10 @@ const AdminTeamPage: React.FC = () => {
                     e.preventDefault();
                     setActiveTab(tab.id);
                   }}
+                  title={sidebarCollapsed ? tab.label : ''}
                 >
                   <Icon className="w-5 h-5" />
-                  {tab.label}
+                  {!sidebarCollapsed && tab.label}
                 </a>
               );
             })}
@@ -570,33 +519,23 @@ const AdminTeamPage: React.FC = () => {
         </div>
 
         <div className="sidebar-footer">
-          <a href="#" className="nav-item">
+          <a href="#" className="nav-item" title={sidebarCollapsed ? '帮助中心' : ''}>
             <Info className="w-5 h-5" />
-            帮助中心
+            {!sidebarCollapsed && '帮助中心'}
           </a>
-          <a href="/" className="nav-item">
+          <a href="/" className="nav-item" title={sidebarCollapsed ? '返回前台' : ''}>
             <Globe className="w-5 h-5" />
-            返回前台
+            {!sidebarCollapsed && '返回前台'}
           </a>
         </div>
       </aside>
 
       {/* 主内容区域 */}
-      <main className="admin-main">
+      <main className={`admin-main ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="admin-container">
           {/* 页面头部 */}
           <header className="admin-header">
             <h1>海狗招聘团队管理后台</h1>
-            <div className="header-actions">
-              <button 
-                onClick={handleSync}
-                disabled={syncing}
-                className="btn-primary"
-              >
-                {syncing ? <Loader className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                {syncing ? '同步中...' : '同步数据'}
-              </button>
-            </div>
           </header>
 
           {/* 内容区域 */}
@@ -610,6 +549,7 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'rss' && renderRSSManagement()}
               {activeTab === 'jobs' && renderJobDataManagement()}
+              {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'analytics' && renderAnalytics()}
               {activeTab === 'settings' && renderSettings()}
             </div>

@@ -6,6 +6,9 @@
     },
     "api/translate.js": {
       "maxDuration": 30
+    },
+    "api/parse-resume.js": {
+      "maxDuration": 30
     }
   },
   "headers": [

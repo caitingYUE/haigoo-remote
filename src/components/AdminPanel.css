@@ -58,6 +58,48 @@
   transition: all 0.3s ease;
 }
 
+/* 折叠状态的侧边栏 */
+.admin-sidebar.collapsed {
+  width: 80px;
+  padding: 1rem 0.5rem;
+}
+
+/* 折叠按钮 */
+.collapse-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--background-light);
+  border: 1px solid var(--border-light);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+}
+
+.collapse-btn:hover {
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-dark);
+}
+
+.admin-panel.dark .collapse-btn {
+  background: var(--background-secondary);
+  border-color: var(--border-dark);
+  color: var(--text-dark-secondary);
+}
+
+.admin-panel.dark .collapse-btn:hover {
+  background: var(--background-light);
+  color: var(--text-dark-primary);
+}
+
 .admin-panel.dark .admin-sidebar {
   background: var(--background-secondary);
   border-right-color: var(--border-dark);
@@ -70,6 +112,30 @@
   gap: 0.75rem;
   padding: 0.5rem;
   margin-bottom: 2rem;
+  position: relative;
+}
+
+/* 折叠状态下的Logo */
+.admin-sidebar.collapsed .sidebar-logo {
+  justify-content: center;
+  gap: 0;
+  padding: 0.5rem 0;
+}
+
+.admin-sidebar.collapsed .logo-text {
+  display: none;
+}
+
+.admin-sidebar.collapsed .collapse-btn {
+  right: -12px;
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.admin-sidebar.collapsed .collapse-btn:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 .logo-icon {
@@ -145,6 +211,35 @@
   font-size: 1.25rem;
 }
 
+/* 折叠状态下的导航项 */
+.admin-sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  gap: 0;
+}
+
+.admin-sidebar.collapsed .nav-item span:not(.material-symbols-outlined) {
+  display: none;
+}
+
+/* 侧边栏页脚 */
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.admin-panel.dark .sidebar-footer {
+  border-top-color: var(--border-dark);
+}
+
+/* 折叠状态下的页脚 */
+.admin-sidebar.collapsed .sidebar-footer .nav-item span:not(.material-symbols-outlined) {
+  display: none;
+}
+
 /* 主内容区域 */
 .admin-main {
   flex: 1;
@@ -152,6 +247,12 @@
   padding: 1.5rem 2.5rem;
   max-width: calc(100vw - 256px);
   transition: all 0.3s ease;
+}
+
+/* 侧边栏折叠时的主内容区域 */
+.admin-main.sidebar-collapsed {
+  margin-left: 80px;
+  max-width: calc(100vw - 80px);
 }
 
 .admin-container {
