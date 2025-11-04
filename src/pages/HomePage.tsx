@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Briefcase, Bookmark, AlertTriangle, ChevronDown, Clock } from 'lucide-react'
+import { Briefcase, Bookmark, AlertTriangle, ChevronDown, Clock, MapPin } from 'lucide-react'
 import JobDetailModal from '../components/JobDetailModal'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
 import JobCard from '../components/JobCard'
@@ -225,20 +225,32 @@ export default function HomePage() {
   }
 
   const handleApply = (jobId: string) => {
-    if (selectedJob) {
-      // 导航到AI优化页面，传递当前岗位信息
-      navigate(`/job/${jobId}/apply`, {
-        state: {
-          job: selectedJob,
-          returnToModal: true, // 从模态框进入，返回时需要显示模态框
-          previousPath: '/', // 返回到首页
-          jobDetailPageState: {
-            showModal: true,
-            jobId: jobId
-          }
-        }
-      })
+    // 优先使用当前已选岗位
+    let job = selectedJob
+
+    // 如果没有打开详情，则在当前数据源中查找该岗位
+    if (!job) {
+      job =
+        todayRecommendations.find(j => j.id === jobId) ||
+        jobs.find(j => j.id === jobId) ||
+        Object.values(pastRecommendations).flat().find(j => j.id === jobId) ||
+        null
     }
+
+    // 成功定位岗位则带状态跳转到申请页；否则兜底直接跳转
+    navigate(`/job/${jobId}/apply`, {
+      state: job
+        ? {
+            job,
+            returnToModal: false,
+            previousPath: '/',
+            jobDetailPageState: { showModal: true, jobId }
+          }
+        : {
+            returnToModal: false,
+            previousPath: '/'
+          }
+    })
   }
 
   return (
@@ -351,9 +363,10 @@ export default function HomePage() {
                             </p>
                           )}
                           <div className="flex items-center justify-between">
-                            <p className={`text-sm truncate flex-1 mr-4 whitespace-nowrap overflow-hidden ${styles.isTop ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-400'}`}>
-                              📍 {job.location}
-                            </p>
+                            <div className={`flex items-center gap-1 text-sm truncate flex-1 mr-4 whitespace-nowrap overflow-hidden ${styles.isTop ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                              <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                              <span>{job.location}</span>
+                            </div>
                             {job.salary && job.salary.min > 0 && (
                               <p className={`font-bold text-xl flex-shrink-0 ${styles.isTop ? `bg-gradient-to-r ${styles.accentColor} bg-clip-text text-transparent` : 'text-violet-600 dark:text-violet-400'}`}>
                                 ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}
@@ -468,9 +481,10 @@ export default function HomePage() {
                               </p>
                             )}
                             <div className="flex items-center justify-between">
-                              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                                📍 {job.location}
-                              </p>
+                              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 text-sm">
+                                <MapPin className="w-4 h-4 text-gray-500" />
+                                <span>{job.location}</span>
+                              </div>
                               {job.salary && job.salary.min > 0 && (
                                 <p className="text-violet-600 dark:text-violet-400 font-bold text-xl">
                                   ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}
@@ -570,6 +584,9 @@ export default function HomePage() {
                                  })
                                }}
                                isSaved={savedJobs.has(job.id)}
+                               showSourceLink={false}
+                               showMeta={false}
+                               showLocation={true}
                              />
                            ))
                          )}
@@ -608,6 +625,9 @@ export default function HomePage() {
                                })
                              }}
                              isSaved={savedJobs.has(job.id)}
+                             showSourceLink={false}
+                             showMeta={false}
+                             showLocation={true}
                            />
                          ))
                        )}
@@ -645,6 +665,9 @@ export default function HomePage() {
                                })
                              }}
                              isSaved={savedJobs.has(job.id)}
+                             showSourceLink={false}
+                             showMeta={false}
+                             showLocation={true}
                            />
                          ))
                        )}

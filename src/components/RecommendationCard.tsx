@@ -14,9 +14,19 @@ interface RecommendationCardProps {
   onToggleSave?: (jobId: string) => void;
   isSaved?: boolean;
   showActions?: boolean;
+  /** 是否显示来源外链按钮（默认不显示，以免误认作分享） */
+  showSourceLink?: boolean;
+  /** 是否显示岗位类型、地点等次要信息（历史卡片默认不显示） */
+  showMeta?: boolean;
+  /** 仅显示岗位类型 */
+  showType?: boolean;
+  /** 仅显示地点 */
+  showLocation?: boolean;
+  /** 仅显示薪资 */
+  showSalary?: boolean;
 }
 
-export default function RecommendationCard({ job, onClick, className = '', onApply, onToggleSave, isSaved = false, showActions = true }: RecommendationCardProps) {
+export default function RecommendationCard({ job, onClick, className = '', onApply, onToggleSave, isSaved = false, showActions = true, showSourceLink = false, showMeta = true, showType, showLocation, showSalary }: RecommendationCardProps) {
   
   // 生成推荐标签数据
   const generateRecommendationTags = (job: Job): JobTagType[] => {
@@ -152,8 +162,8 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
             </div>
           </div>
         </div>
-        {/* 原始链接按钮 */}
-        {job.sourceUrl && (
+        {/* 原始链接按钮（可选） */}
+        {showSourceLink && job.sourceUrl && (
           <button
             onClick={(e) => { e.stopPropagation(); window.open(job.sourceUrl!, '_blank', 'noopener,noreferrer'); }}
             className="p-3 text-gray-400 hover:text-haigoo-primary hover:bg-haigoo-primary/10 rounded-lg transition-all duration-200 focus-ring min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -165,28 +175,41 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
         )}
       </div>
 
-      {/* 关键信息 */}
-      <div className="mt-3 flex items-center gap-4">
-        <div className="flex items-center gap-1">
-          <Briefcase className="w-4 h-4 text-gray-500" />
-          <span className="text-sm text-gray-600 dark:text-gray-300">{job.type}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <MapPin className="w-4 h-4 text-gray-500" />
-          <span className="text-sm text-gray-600 dark:text-gray-300">{job.location}</span>
-        </div>
-        {job.salary && job.salary.min > 0 && (
-          <div className="flex items-center gap-1">
-            <DollarSign className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-            <span className="text-xl font-bold text-violet-600 dark:text-violet-400">{formatSalary(job.salary)}</span>
+      {/* 关键信息（可选显示） */}
+      {(() => {
+        const showTypeFinal = (showType ?? showMeta) && !!job.type
+        const showLocationFinal = (showLocation ?? showMeta) && !!job.location
+        const showSalaryFinal = (showSalary ?? showMeta) && !!(job.salary && job.salary.min > 0)
+        const showAny = showTypeFinal || showLocationFinal || showSalaryFinal
+        if (!showAny) return null
+        return (
+          <div className="mt-3 flex items-center gap-4">
+            {showTypeFinal && (
+              <div className="flex items-center gap-1">
+                <Briefcase className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-300">{job.type}</span>
+              </div>
+            )}
+            {showLocationFinal && (
+              <div className="flex items-center gap-1">
+                <MapPin className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-300">{job.location}</span>
+              </div>
+            )}
+            {showSalaryFinal && (
+              <div className="flex items-center gap-1">
+                <DollarSign className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                <span className="text-xl font-bold text-violet-600 dark:text-violet-400">{formatSalary(job.salary)}</span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        )
+      })()}
 
       {/* 描述 */}
       {job.description && (
         <p id={`job-${job.id}-description`} className="mt-3 text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
-          {processJobDescription(job.description)}
+          {processJobDescription(job.description, { formatMarkdown: false, maxLength: 120, preserveHtml: false })}
         </p>
       )}
 

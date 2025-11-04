@@ -237,9 +237,9 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
                 </div>
               )}
               
-              {/* 地点 */}
-              <div className="flex items-center text-gray-600 min-w-0 max-w-[200px]">
-                <MapPin className="w-4 h-4 mr-1 flex-shrink-0" aria-hidden="true" />
+              {/* 地点（统一为历史推荐卡片风格） */}
+              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300 min-w-0 max-w-[200px]">
+                <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" aria-hidden="true" />
                 <span 
                   className="truncate" 
                   title={job.location}
