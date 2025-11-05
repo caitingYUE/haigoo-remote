@@ -273,6 +273,40 @@ async function batchTranslate(texts, targetLang, sourceLang = 'auto') {
   }
 }
 
+// Simple in-memory rate limiter for Edge Functions
+const rateLimitStore = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 20; // 20 translation requests per minute per IP
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const record = rateLimitStore.get(ip);
+  
+  if (!record) {
+    rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    // Cleanup old entries periodically
+    if (rateLimitStore.size > 1000) {
+      for (const [k, v] of rateLimitStore.entries()) {
+        if (v.resetAt < now) rateLimitStore.delete(k);
+      }
+    }
+    return true;
+  }
+  
+  if (record.resetAt < now) {
+    record.count = 1;
+    record.resetAt = now + RATE_LIMIT_WINDOW;
+    return true;
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+}
+
 /**
  * Edge Function处理器
  */
@@ -303,6 +337,27 @@ export default async function handler(request) {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json'
+      }
+    })
+  }
+
+  // Rate limiting
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                   request.headers.get('x-real-ip') || 
+                   'unknown';
+  if (!checkRateLimit(clientIp)) {
+    console.warn(`[translate] Rate limit exceeded for ${clientIp}`);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Rate limit exceeded',
+      message: 'Too many translation requests. Please try again later.',
+      retryAfter: 60
+    }), {
+      status: 429,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Retry-After': '60'
       }
     })
   }
@@ -341,6 +396,11 @@ export default async function handler(request) {
     })
 
   } catch (error) {
+    console.error(`[translate] Error:`, {
+      message: error.message,
+      name: error.name,
+      ip: clientIp
+    });
     return new Response(JSON.stringify({
       success: false,
       error: error.message || 'Internal server error'

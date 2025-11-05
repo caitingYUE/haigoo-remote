@@ -9,6 +9,7 @@ import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { recommendationHistoryService } from '../services/recommendation-history-service'
 import { processJobDescription } from '../utils/text-formatter'
+import SingleLineTags from '../components/SingleLineTags'
 
 
 
@@ -503,20 +504,15 @@ export default function HomePage() {
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {job.skills.slice(0, 3).map((skill, skillIndex) => (
-                              <span
-                                key={skillIndex}
-                                className="px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-sm rounded-lg font-medium"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                            {job.skills.length > 3 && (
-                              <span className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm rounded-lg">
-                                +{job.skills.length - 3}
-                              </span>
-                            )}
+                          <div className="mb-4">
+                            {(() => {
+                              const tags: string[] = (Array.isArray((job as any).tags) && (job as any).tags.length > 0
+                                ? (job as any).tags
+                                : (job.skills || [])) as string[]
+                              return (
+                                <SingleLineTags tags={tags} fallback="remote" size="sm" />
+                              )
+                            })()}
                           </div>
 
                           <div className="flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">

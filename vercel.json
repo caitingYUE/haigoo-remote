@@ -15,6 +15,12 @@
     },
     "api/recommendations.js": {
       "maxDuration": 30
+    },
+    "api/health.js": {
+      "maxDuration": 10
+    },
+    "api/storage/stats.js": {
+      "maxDuration": 10
     }
   },
   "headers": [

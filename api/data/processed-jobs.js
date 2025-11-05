@@ -23,18 +23,93 @@ const JOBS_KEY = 'haigoo:processed_jobs'
 const STATS_KEY = 'haigoo:stats'
 const LAST_SYNC_KEY = 'haigoo:last_sync'
 
-// Helpers: recent filter and duplicate removal (keep last 7 days, dedupe by title+company+location)
+// Field length limits (bytes)
+const FIELD_LIMITS = {
+  title: 500,
+  company: 200,
+  location: 200,
+  description: 50000, // 50KB
+  url: 2000,
+  source: 100,
+  category: 100,
+  salary: 200,
+  jobType: 50,
+  experienceLevel: 50,
+  tags: 1000, // total for all tags
+  requirements: 10000, // total for all requirements
+  benefits: 10000 // total for all benefits
+}
+
+// HTML sanitization helper (basic)
+function sanitizeHtml(text) {
+  if (!text || typeof text !== 'string') return ''
+  // Remove script and style tags
+  return text
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '') // Remove event handlers
+    .trim()
+}
+
+// Truncate string to byte limit
+function truncateString(str, maxBytes) {
+  if (!str || typeof str !== 'string') return ''
+  const encoder = new TextEncoder()
+  const bytes = encoder.encode(str)
+  if (bytes.length <= maxBytes) return str
+  // Truncate and decode back
+  const truncated = bytes.slice(0, maxBytes)
+  const decoder = new TextDecoder()
+  let result = decoder.decode(truncated)
+  // Remove potentially incomplete UTF-8 character at the end
+  while (encoder.encode(result).length > maxBytes) {
+    result = result.slice(0, -1)
+  }
+  return result
+}
+
+// Generate stable deduplication key
+function generateDedupKey(job) {
+  // Prefer id if exists and is stable
+  if (job.id && typeof job.id === 'string' && job.id.length > 0 && !job.id.includes('random')) {
+    return `id:${job.id}`
+  }
+  // Fallback to title+company+url hash
+  const title = (job.title || '').toLowerCase().trim()
+  const company = (job.company || '').toLowerCase().trim()
+  const url = (job.url || '').toLowerCase().trim()
+  const key = `${title}|${company}|${url}`
+  // Simple hash function for stability
+  let hash = 0
+  for (let i = 0; i < key.length; i++) {
+    const char = key.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return `hash:${Math.abs(hash).toString(36)}`
+}
+
+// Helpers: recent filter and duplicate removal (keep last 7 days, dedupe by stable key)
 function filterRecentJobs(jobs, maxDays = 7) {
   const cutoff = new Date(Date.now() - maxDays * 24 * 60 * 60 * 1000)
   return jobs.filter(j => new Date(j.publishedAt) >= cutoff)
 }
 
 function removeDuplicates(jobs) {
-  const seen = new Set()
+  const seen = new Map() // Map<dedupKey, job>
   return jobs.filter(job => {
-    const key = `${job.title}-${job.company}-${job.location || ''}`
-    if (seen.has(key)) return false
-    seen.add(key)
+    const key = generateDedupKey(job)
+    if (seen.has(key)) {
+      // Keep the one with more complete data or newer updatedAt
+      const existing = seen.get(key)
+      const existingScore = (existing.description?.length || 0) + (existing.tags?.length || 0)
+      const newScore = (job.description?.length || 0) + (job.tags?.length || 0)
+      if (newScore > existingScore || (new Date(job.updatedAt || 0) > new Date(existing.updatedAt || 0))) {
+        seen.set(key, job)
+      }
+      return false
+    }
+    seen.set(key, job)
     return true
   })
 }
@@ -190,19 +265,22 @@ export default async function handler(req, res) {
 
       let jobs = []
       let provider = 'memory'
-      // 优先 KV -> 其次 Redis -> 最后内存
-      if (KV_CONFIGURED) {
+      const startTime = Date.now()
+      // 统一策略：优先 Redis -> 其次 KV -> 最后内存
+      if (REDIS_CONFIGURED) {
         try {
-          jobs = await readJobsFromKV()
-          provider = 'vercel-kv'
+          jobs = await readJobsFromRedis()
+          provider = 'redis'
+          console.log(`[processed-jobs] GET: Redis read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
         } catch (e) {
-          console.warn('KV 读取失败，尝试 Redis 回退:', e?.message || e)
-          if (REDIS_CONFIGURED) {
+          console.warn(`[processed-jobs] GET: Redis read failed, fallback to KV:`, e?.message || e)
+          if (KV_CONFIGURED) {
             try {
-              jobs = await readJobsFromRedis()
-              provider = 'redis'
+              jobs = await readJobsFromKV()
+              provider = 'vercel-kv'
+              console.log(`[processed-jobs] GET: KV read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
             } catch (er) {
-              console.warn('Redis 读取失败，使用内存回退:', er?.message || er)
+              console.warn(`[processed-jobs] GET: KV read failed, fallback to memory:`, er?.message || er)
               jobs = readJobsFromMemory()
               provider = 'memory'
             }
@@ -211,12 +289,13 @@ export default async function handler(req, res) {
             provider = 'memory'
           }
         }
-      } else if (REDIS_CONFIGURED) {
+      } else if (KV_CONFIGURED) {
         try {
-          jobs = await readJobsFromRedis()
-          provider = 'redis'
+          jobs = await readJobsFromKV()
+          provider = 'vercel-kv'
+          console.log(`[processed-jobs] GET: KV read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
         } catch (e) {
-          console.warn('Redis 读取失败，使用内存回退:', e?.message || e)
+          console.warn(`[processed-jobs] GET: KV read failed, fallback to memory:`, e?.message || e)
           jobs = readJobsFromMemory()
           provider = 'memory'
         }
@@ -262,7 +341,8 @@ export default async function handler(req, res) {
 
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       res.setHeader('X-Storage-Provider', provider)
-      try { res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED)) } catch {}
+      res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED))
+      res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
       return res.status(200).json({
         jobs: items,
         total,
@@ -291,46 +371,112 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'jobs must be an array' })
       }
 
-      // Normalize minimal required fields
-      const normalized = jobs.map(j => ({
-        id: j.id || `${(j.title || 'job')}-${(j.company || 'unknown')}-${(j.url || Math.random().toString(36).slice(2))}`,
-        title: j.title,
-        company: j.company || 'Unknown Company',
-        location: j.location || 'Remote',
-        description: j.description || '',
-        url: j.url,
-        publishedAt: j.publishedAt || new Date().toISOString(),
-        source: j.source || 'unknown',
-        category: j.category || '其他',
-        salary: j.salary || null,
-        jobType: j.jobType || 'full-time',
-        experienceLevel: j.experienceLevel || 'Mid',
-        tags: Array.isArray(j.tags) ? j.tags : [],
-        requirements: Array.isArray(j.requirements) ? j.requirements : [],
-        benefits: Array.isArray(j.benefits) ? j.benefits : [],
-        isRemote: typeof j.isRemote === 'boolean' ? j.isRemote : true,
-        status: j.status || 'active',
-        createdAt: j.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }))
+      // Normalize, validate, sanitize, and truncate fields
+      const normalized = jobs.map(j => {
+        // Sanitize and truncate fields
+        const title = truncateString(sanitizeHtml(String(j.title || '')), FIELD_LIMITS.title)
+        const company = truncateString(sanitizeHtml(String(j.company || 'Unknown Company')), FIELD_LIMITS.company)
+        const location = truncateString(sanitizeHtml(String(j.location || 'Remote')), FIELD_LIMITS.location)
+        const description = truncateString(sanitizeHtml(String(j.description || '')), FIELD_LIMITS.description)
+        const url = truncateString(String(j.url || ''), FIELD_LIMITS.url)
+        const source = truncateString(String(j.source || 'unknown'), FIELD_LIMITS.source)
+        const category = truncateString(String(j.category || '其他'), FIELD_LIMITS.category)
+        const salary = j.salary ? truncateString(String(j.salary), FIELD_LIMITS.salary) : null
+        const jobType = truncateString(String(j.jobType || 'full-time'), FIELD_LIMITS.jobType)
+        const experienceLevel = truncateString(String(j.experienceLevel || 'Mid'), FIELD_LIMITS.experienceLevel)
+        
+        // Process arrays with limits
+        let tags = Array.isArray(j.tags) ? j.tags : []
+        tags = tags.slice(0, 50).map(t => truncateString(String(t), 50)) // Max 50 tags, each 50 chars
+        const tagsTotal = tags.join('').length
+        if (tagsTotal > FIELD_LIMITS.tags) {
+          // Truncate tags if total exceeds limit
+          let truncated = []
+          let currentLength = 0
+          for (const tag of tags) {
+            if (currentLength + tag.length > FIELD_LIMITS.tags) break
+            truncated.push(tag)
+            currentLength += tag.length
+          }
+          tags = truncated
+        }
+        
+        let requirements = Array.isArray(j.requirements) ? j.requirements : []
+        requirements = requirements.slice(0, 100).map(r => truncateString(sanitizeHtml(String(r)), 500))
+        const reqTotal = requirements.join('').length
+        if (reqTotal > FIELD_LIMITS.requirements) {
+          let truncated = []
+          let currentLength = 0
+          for (const req of requirements) {
+            if (currentLength + req.length > FIELD_LIMITS.requirements) break
+            truncated.push(req)
+            currentLength += req.length
+          }
+          requirements = truncated
+        }
+        
+        let benefits = Array.isArray(j.benefits) ? j.benefits : []
+        benefits = benefits.slice(0, 100).map(b => truncateString(sanitizeHtml(String(b)), 500))
+        const benTotal = benefits.join('').length
+        if (benTotal > FIELD_LIMITS.benefits) {
+          let truncated = []
+          let currentLength = 0
+          for (const ben of benefits) {
+            if (currentLength + ben.length > FIELD_LIMITS.benefits) break
+            truncated.push(ben)
+            currentLength += ben.length
+          }
+          benefits = truncated
+        }
+        
+        // Generate stable ID if not provided
+        let id = j.id
+        if (!id || typeof id !== 'string' || id.length === 0) {
+          const dedupKey = generateDedupKey({ title, company, url })
+          id = dedupKey.startsWith('id:') ? dedupKey.slice(3) : `${title.substring(0, 30)}-${company.substring(0, 20)}-${Date.now()}`
+        }
+        
+        return {
+          id,
+          title,
+          company,
+          location,
+          description,
+          url,
+          publishedAt: j.publishedAt || new Date().toISOString(),
+          source,
+          category,
+          salary,
+          jobType,
+          experienceLevel,
+          tags,
+          requirements,
+          benefits,
+          isRemote: typeof j.isRemote === 'boolean' ? j.isRemote : true,
+          status: j.status || 'active',
+          createdAt: j.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      })
 
       let toWrite = normalized
       let provider = 'memory'
       if (mode === 'append') {
-        if (KV_CONFIGURED) {
+        // 统一策略：优先 Redis -> 其次 KV -> 最后内存
+        if (REDIS_CONFIGURED) {
           try {
-            const existing = await readJobsFromKV()
+            const existing = await readJobsFromRedis()
             toWrite = [...existing, ...normalized]
-            provider = 'vercel-kv'
+            provider = 'redis'
           } catch (e) {
-            console.warn('KV 读取失败（append），尝试 Redis 回退:', e?.message || e)
-            if (REDIS_CONFIGURED) {
+            console.warn(`[processed-jobs] POST append: Redis read failed, fallback to KV:`, e?.message || e)
+            if (KV_CONFIGURED) {
               try {
-                const existing = await readJobsFromRedis()
+                const existing = await readJobsFromKV()
                 toWrite = [...existing, ...normalized]
-                provider = 'redis'
+                provider = 'vercel-kv'
               } catch (er) {
-                console.warn('Redis 读取失败（append），改用内存回退:', er?.message || er)
+                console.warn(`[processed-jobs] POST append: KV read failed, fallback to memory:`, er?.message || er)
                 const existing = readJobsFromMemory()
                 toWrite = [...existing, ...normalized]
                 provider = 'memory'
@@ -341,13 +487,13 @@ export default async function handler(req, res) {
               provider = 'memory'
             }
           }
-        } else if (REDIS_CONFIGURED) {
+        } else if (KV_CONFIGURED) {
           try {
-            const existing = await readJobsFromRedis()
+            const existing = await readJobsFromKV()
             toWrite = [...existing, ...normalized]
-            provider = 'redis'
+            provider = 'vercel-kv'
           } catch (e) {
-            console.warn('Redis 读取失败（append），改用内存回退:', e?.message || e)
+            console.warn(`[processed-jobs] POST append: KV read failed, fallback to memory:`, e?.message || e)
             const existing = readJobsFromMemory()
             toWrite = [...existing, ...normalized]
             provider = 'memory'
@@ -396,7 +542,9 @@ export default async function handler(req, res) {
       }
 
       res.setHeader('X-Storage-Provider', provider)
-      try { res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED)) } catch {}
+      res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED))
+      res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
+      console.log(`[processed-jobs] POST: Saved ${saved.length} jobs via ${provider}, mode=${mode}`)
       return res.status(200).json({ success: true, saved: saved.length, mode, provider })
     }
 

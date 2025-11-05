@@ -445,3 +445,13 @@ renderFormattedText(displayText(section.content, true))
 4. **性能优化**：保持良好的用户体验
 
 这套方案既满足了设计需求，又保证了代码的可维护性和扩展性。
+### 单行标签组件实现说明
+
+- 组件：`src/components/SingleLineTags.tsx`
+- 目的：保证标签行在卡片内单行展示，并将超出用 `+N` 聚合显示；当无标签时使用 `remote` 兜底。
+- 关键技术点：
+  - 使用隐藏测量容器计算各标签与 `+N` 的真实宽度（包含内边距与圆角样式）。
+  - 采用贪心算法在可视容器宽度内放置尽可能多的标签，同时预留 `+N` 的宽度。
+  - 通过 `ResizeObserver` 监听容器宽度变化，实时重新计算展示数量。
+  - `flex-nowrap` 与 `overflow-hidden` 确保整行不换行。
+- 接入位置：`JobCard.tsx`（`size='xs'`）与 `RecommendationCard.tsx`（`size='sm'`）。

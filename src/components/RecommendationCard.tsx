@@ -4,6 +4,7 @@ import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
 import { JobTags } from './JobTag';
+import { SingleLineTags } from './SingleLineTags';
 import { tagUtils, JobTag as JobTagType } from '../utils/tagSystem';
 
 interface RecommendationCardProps {
@@ -207,30 +208,13 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
         )
       })()}
 
-      {/* 技能标签 - 单行显示；优先使用处理后标签 */}
-      <div className="flex flex-nowrap items-center gap-2 mt-4 mb-2 overflow-hidden">
-        {(() => {
-          const tags: string[] = (Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : (job.skills || [])) as string[]
-          if (tags.length > 0) {
-            const visible = tags.slice(0, 3)
-            return (
-              <>
-                {visible.map((skill: string, idx: number) => (
-                  <span key={idx} className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium whitespace-nowrap">
-                    {skill}
-                  </span>
-                ))}
-                {tags.length > 3 && (
-                  <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm whitespace-nowrap">+{tags.length - 3}</span>
-                )}
-              </>
-            )
-          }
-          return (
-            <span className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium whitespace-nowrap">remote</span>
-          )
-        })()}
-      </div>
+      {/* 技能标签 - 单行动态计算；优先使用处理后标签 */}
+      <SingleLineTags
+        className="mt-4 mb-2"
+        size="sm"
+        tags={(Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : (job.skills || [])) as string[]}
+        fallback="remote"
+      />
 
       {/* 底部信息与操作 */}
       <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700 mt-2">

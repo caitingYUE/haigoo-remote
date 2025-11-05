@@ -249,30 +249,18 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         </section>
       )}
 
-      {/* 技能标签 */}
-      {job.skills && job.skills.length > 0 && (
+      {/* 技能标签 - 单行动态计算显示，保持卡片高度对齐 */}
+      {(job.skills && job.skills.length > 0) && (
         <section className="mt-4 pt-4 border-t border-gray-100">
-          <div className="flex flex-wrap gap-2" role="list" aria-label="技能要求">
-            {job.skills.slice(0, 5).map((skill, index) => (
-              <span 
-                key={index}
-                className="px-2 py-1 bg-haigoo-primary/10 text-haigoo-primary text-xs font-medium rounded-md"
-                role="listitem"
-                aria-label={`技能：${skill}`}
-              >
-                {skill}
-              </span>
-            ))}
-            {job.skills.length > 5 && (
-              <span 
-                className="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-md"
-                role="listitem"
-                aria-label={`还有 ${job.skills.length - 5} 个技能要求`}
-              >
-                +{job.skills.length - 5} 更多
-              </span>
-            )}
-          </div>
+          <SingleLineTags
+            size="xs"
+            tags={(
+              Array.isArray((job as any).tags) && (job as any).tags.length > 0
+                ? (job as any).tags
+                : (job.skills || [])
+            ) as string[]}
+            fallback="remote"
+          />
         </section>
       )}
 
@@ -307,3 +295,4 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     </article>
   );
 }
+import { SingleLineTags } from './SingleLineTags';
