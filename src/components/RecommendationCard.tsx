@@ -210,12 +210,12 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
       {/* 技能标签 - 单行显示；优先使用处理后标签 */}
       <div className="flex flex-nowrap items-center gap-2 mt-4 mb-2 overflow-hidden">
         {(() => {
-          const tags = Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : job.skills || []
+          const tags: string[] = (Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : (job.skills || [])) as string[]
           if (tags.length > 0) {
             const visible = tags.slice(0, 3)
             return (
               <>
-                {visible.map((skill, idx) => (
+                {visible.map((skill: string, idx: number) => (
                   <span key={idx} className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium whitespace-nowrap">
                     {skill}
                   </span>

@@ -383,8 +383,8 @@ export default function HomePage() {
 
                         <div className="flex flex-nowrap items-center gap-2 mb-6 overflow-hidden">
                           {(() => {
-                            const tags = Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : job.skills || []
-                            return tags.slice(0, 3).map((skill, skillIndex) => (
+                            const tags: string[] = (Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : (job.skills || [])) as string[]
+                            return tags.slice(0, 3).map((skill: string, skillIndex: number) => (
                               <span
                                 key={skillIndex}
                                 className={`px-3 py-1.5 text-sm rounded-lg font-medium whitespace-nowrap ${
