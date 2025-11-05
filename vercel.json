@@ -12,6 +12,9 @@
     },
     "api/data/processed-jobs.js": {
       "maxDuration": 30
+    },
+    "api/recommendations.js": {
+      "maxDuration": 30
     }
   },
   "headers": [
