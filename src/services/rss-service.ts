@@ -18,6 +18,7 @@ export interface RSSFeedItem {
     currency?: string;
     period?: 'hourly' | 'monthly' | 'yearly';
   };
+  skills?: string[];
   remoteLocationRestriction?: string;
 }
 
@@ -243,52 +244,61 @@ class RSSService {
    * 获取单个RSS源的数据
    */
   async fetchRSSFeed(url: string): Promise<string> {
-    let response: Response;
-    let responseText: string = '';
+    let responseText = '';
 
-    try {
-      // 根据环境选择代理服务
-      const baseUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001' 
-        : 'https://haigoo.vercel.app';
-      
-      const proxyUrl = `${baseUrl}/api/rss-proxy?url=${encodeURIComponent(url)}`;
-      console.log(`Fetching RSS via Vercel proxy: ${proxyUrl}`);
-      
-      response = await fetch(proxyUrl, {
-        signal: AbortSignal.timeout(20000) // 20秒超时
-      });
-      
-      if (!response.ok) {
-        // 检查响应类型
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          throw new Error(`Proxy error: ${errorData.message || errorData.error}`);
-        } else {
-          throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
+    // 按顺序尝试多个代理基址：开发环境优先本地，其次线上；生产环境仅线上
+    const baseCandidates = process.env.NODE_ENV === 'development'
+      ? ['http://localhost:3001', 'https://haigoo.vercel.app']
+      : ['https://haigoo.vercel.app'];
+
+    let lastError: unknown = null;
+
+    for (const baseUrl of baseCandidates) {
+      try {
+        const proxyUrl = `${baseUrl}/api/rss-proxy?url=${encodeURIComponent(url)}`;
+        console.log(`Fetching RSS via proxy: ${proxyUrl}`);
+
+        const response = await fetch(proxyUrl, {
+          signal: AbortSignal.timeout(20000) // 20秒超时
+        });
+
+        if (!response.ok) {
+          // 检查响应类型
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            throw new Error(`Proxy error: ${errorData.message || errorData.error}`);
+          } else {
+            throw new Error(`Proxy fetch failed: ${response.status} ${response.statusText}`);
+          }
         }
+
+        responseText = await response.text();
+
+        // 验证响应是否为有效的XML
+        if (!responseText || responseText.trim().length === 0) {
+          throw new Error('Empty response received');
+        }
+
+        // 检查是否为XML格式
+        const trimmed = responseText.trim();
+        if (!trimmed.startsWith('<?xml') && !trimmed.startsWith('<rss') && !trimmed.startsWith('<feed')) {
+          throw new Error('Response is not valid XML/RSS format');
+        }
+
+        // 当前基址成功，直接返回
+        return responseText;
+      } catch (err) {
+        lastError = err;
+        console.warn(`RSS proxy failed at base ${baseUrl}:`, err instanceof Error ? err.message : String(err));
+        // 尝试下一个候选基址
+        continue;
       }
-      
-      responseText = await response.text();
-      
-      // 验证响应是否为有效的XML
-      if (!responseText || responseText.trim().length === 0) {
-        throw new Error('Empty response received');
-      }
-      
-      // 检查是否为XML格式
-      if (!responseText.trim().startsWith('<?xml') && !responseText.trim().startsWith('<rss') && !responseText.trim().startsWith('<feed')) {
-        throw new Error('Response is not valid XML/RSS format');
-      }
-      
-      return responseText;
-      
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Failed to fetch RSS from ${url}:`, errorMessage);
-      throw new Error(`RSS fetch failed: ${errorMessage}`);
     }
+
+    const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    console.error(`Failed to fetch RSS from ${url}:`, errorMessage);
+    throw new Error(`RSS fetch failed: ${errorMessage}`);
   }
 
   /**
@@ -312,20 +322,32 @@ class RSSService {
       cleanedXmlData = cleanedXmlData.replace(/(<\/item>)(\s*)(<item>)/g, '$1\n$3');
       
       const parser = new DOMParser();
+      // 首次尝试标准解析
       const xmlDoc = parser.parseFromString(cleanedXmlData, 'text/xml');
       
       // 检查解析错误
       const parseError = xmlDoc.querySelector('parsererror');
       if (parseError) {
         console.error('XML parsing error:', parseError.textContent);
+
         // 尝试使用application/xml MIME类型重新解析
         const xmlDoc2 = parser.parseFromString(cleanedXmlData, 'application/xml');
         const parseError2 = xmlDoc2.querySelector('parsererror');
-        if (parseError2) {
-          throw new Error(`XML parsing error: ${parseError.textContent}`);
+        if (!parseError2) {
+          return this.extractItemsFromXmlDoc(xmlDoc2, source);
         }
-        // 如果第二次解析成功，使用第二次的结果
-        return this.extractItemsFromXmlDoc(xmlDoc2, source);
+
+        // 进一步容错：自动注入常见命名空间声明后重试
+        const injectedXml = this.injectMissingNamespaces(cleanedXmlData);
+        const xmlDoc3 = parser.parseFromString(injectedXml, 'application/xml');
+        const parseError3 = xmlDoc3.querySelector('parsererror');
+        if (!parseError3) {
+          return this.extractItemsFromXmlDoc(xmlDoc3, source);
+        }
+
+        console.warn('XML still invalid after namespace injection, falling back to regex parser');
+        // 最后退路：使用正则解析基础字段，避免整体失败导致无数据
+        return this.parseItemsByRegex(cleanedXmlData, source);
       }
 
       return this.extractItemsFromXmlDoc(xmlDoc, source);
@@ -334,6 +356,95 @@ class RSSService {
       console.error('XML data preview:', xmlData.substring(0, 500));
       return [];
     }
+  }
+
+  /**
+   * 为缺失的命名空间前缀注入默认xmlns声明
+   */
+  private injectMissingNamespaces(xml: string): string {
+    try {
+      const knownNs: Record<string, string> = {
+        content: 'http://purl.org/rss/1.0/modules/content/',
+        media: 'http://search.yahoo.com/mrss/',
+        atom: 'http://www.w3.org/2005/Atom',
+        dc: 'http://purl.org/dc/elements/1.1/',
+        wfw: 'http://wellformedweb.org/CommentAPI/',
+        slash: 'http://purl.org/rss/1.0/modules/slash/',
+        sy: 'http://purl.org/rss/1.0/modules/syndication/',
+        himalayasJobs: 'https://himalayas.app/jobs/rss/namespace'
+      };
+
+      // 找出所有使用的前缀
+      const prefixMatches = Array.from(xml.matchAll(/<\/?([a-zA-Z_][\w\-.]*)\:/g)).map(m => m[1]);
+      const uniquePrefixes = Array.from(new Set(prefixMatches));
+
+      if (uniquePrefixes.length === 0) return xml;
+
+      // 定位根节点（rss或feed）
+      const rootTagMatch = xml.match(/<\s*(rss|feed)([^>]*)>/i);
+      if (!rootTagMatch) return xml;
+
+      const rootTag = rootTagMatch[0];
+      const rootName = rootTagMatch[1];
+      let rootAttrs = rootTagMatch[2] || '';
+
+      // 为每个缺失前缀添加xmlns声明
+      for (const prefix of uniquePrefixes) {
+        const xmlnsPattern = new RegExp(`xmlns:${prefix}\\s*=`, 'i');
+        if (!xmlnsPattern.test(rootAttrs)) {
+          const nsUri = knownNs[prefix] || `https://schemas.example.com/${prefix}`;
+          rootAttrs += ` xmlns:${prefix}="${nsUri}"`;
+        }
+      }
+
+      // 重建根标签
+      const newRootTag = `<${rootName}${rootAttrs}>`;
+      return xml.replace(rootTag, newRootTag);
+    } catch {
+      return xml; // 安全回退
+    }
+  }
+
+  /**
+   * 容错正则解析：提取基础字段，忽略命名空间标签
+   */
+  private parseItemsByRegex(xml: string, source: RSSSource): RSSFeedItem[] {
+    const items: RSSFeedItem[] = [];
+    const itemRegex = /<item[\s\S]*?<\/item>/gi;
+    const titleRegex = /<title>([\s\S]*?)<\/title>/i;
+    const linkRegex = /<link>([\s\S]*?)<\/link>/i;
+    const pubDateRegex = /<pubDate>([\s\S]*?)<\/pubDate>/i;
+    const descRegex = /<description[\s\S]*?>[\s\S]*?<\/description>/i;
+
+    const matches = xml.match(itemRegex) || [];
+    for (const block of matches) {
+      const title = (block.match(titleRegex)?.[1] || '').trim();
+      const link = (block.match(linkRegex)?.[1] || '').trim();
+      const pubDate = (block.match(pubDateRegex)?.[1] || '').trim();
+      // 提取description时保留CDATA内容
+      const descMatch = block.match(descRegex);
+      let description = '';
+      if (descMatch) {
+        description = descMatch[0]
+          .replace(/^<description[^>]*>/i, '')
+          .replace(/<\/description>$/i, '')
+          .trim();
+        // 清理CDATA包裹
+        description = description.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/i, '$1').trim();
+      }
+
+      if (title && link) {
+        items.push({
+          title,
+          description: this.cleanDescription(description),
+          link,
+          pubDate,
+          category: source.category
+        });
+      }
+    }
+
+    return items;
   }
 
   private extractItemsFromXmlDoc(xmlDoc: Document, source: RSSSource): RSSFeedItem[] {
@@ -365,6 +476,7 @@ class RSSService {
             company: parsedData.company,
             location: parsedData.location,
             salary,
+            skills: parsedData.skills,
             jobType: parsedData.jobType,
             workType: parsedData.workType || this.extractWorkType(title, description),
             experienceLevel: parsedData.experienceLevel || this.extractExperienceLevel(title, description),
@@ -392,6 +504,7 @@ class RSSService {
     experienceLevel?: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
     category?: string;
     salary?: string;
+    skills?: string[];
     remoteLocationRestriction?: string;
   } {
     const sourceName = source.name.toLowerCase();
@@ -421,7 +534,13 @@ class RSSService {
     const country = item.querySelector('country')?.textContent?.trim() || '';
     const state = item.querySelector('state')?.textContent?.trim() || '';
     const type = item.querySelector('type')?.textContent?.trim() || '';
-    const skills = item.querySelector('skills')?.textContent?.trim() || '';
+    const skillsText = item.querySelector('skills')?.textContent?.trim() || '';
+    const parsedSkills = skillsText
+      ? skillsText
+          .split(/[\,\|\/]\s*/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0)
+      : [];
     
     // 从标题中提取公司名（格式：Company: Job Title）
     let company = '';
@@ -468,6 +587,7 @@ class RSSService {
       location: location || this.extractLocation(title, description),
       jobType: jobType || this.extractJobType(title, description),
       workType: 'remote' as const,
+      skills: parsedSkills,
       remoteLocationRestriction
     };
   }

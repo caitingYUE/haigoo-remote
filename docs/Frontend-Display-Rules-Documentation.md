@@ -42,7 +42,7 @@
 2. **次要信息**（条件显示）
    - 薪资范围（如有）
    - 工作类型标签（合同/全职等）
-   - 技能标签抽取（最多显示5个）
+   - 技能标签（最多显示3个，超出以 +N 展示）
 
 3. **交互元素**
    - 立即申请按钮
@@ -71,12 +71,12 @@
 ```javascript
 const jobTypes = [
   { value: 'all', label: '全部类型' },
+  { value: 'remote', label: '远程' },
   { value: 'full-time', label: '全职' },
   { value: 'part-time', label: '兼职' },
-  { value: 'contract', label: '合同工' },
+  { value: 'contract', label: '合同' },
   { value: 'freelance', label: '自由职业' },
-  { value: 'internship', label: '实习' },
-  { value: 'remote', label: '远程工作' }
+  { value: 'internship', label: '实习' }
 ];
 ```
 
@@ -84,8 +84,8 @@ const jobTypes = [
 ```javascript
 const jobCategories = [
   '前端开发', '后端开发', '全栈开发', '软件开发', 'DevOps',
-  '数据科学', '产品管理', '项目管理', 'UI/UX设计', '移动开发',
-  '人工智能', '网络安全', '产品设计', '商业分析', '招聘', '会计', '其他'
+  '数据科学', '产品经理', '项目经理', 'UI/UX设计', '移动开发',
+  '算法工程师', '网络安全', '营销', '商业分析', '招聘', '营销', '其他'
 ];
 ```
 
@@ -145,7 +145,7 @@ const matchesSearch = searchTerm === '' ||
 ```javascript
 let recommendationScore = 60; // 基础分数
 
-// 远程工作加分
+// 远程工作且不限地点加分
 if (job.isRemote) recommendationScore += 20;
 
 // 技能标签加分
@@ -169,7 +169,7 @@ recommendationScore += Math.random() * 15;
 
 #### 分数权重说明
 - **基础分数**: 60分（所有职位的起始分数）
-- **远程工作**: +20分（符合目标用户需求）
+ - **远程工作**: +20分（符合目标用户需求）
 - **技能标签**: 每个标签+3分，最多+15分
 - **描述完整性**: +10分（信息丰富度）
 - **公司信息**: +5分（可信度）
@@ -205,7 +205,8 @@ const categoryKeywords = {
 interface RecommendationHistory {
   date: string; // YYYY-MM-DD格式
   jobs: PageJob[];
-  recommendationGroup: 'morning' | 'afternoon' | 'evening';
+  // 推荐分组：每天两组，每组3个职位（共6个）
+  recommendationGroup: 1 | 2;
 }
 ```
 

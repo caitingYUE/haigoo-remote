@@ -45,6 +45,8 @@
    NODE_ENV=production
    ```
 
+   说明：生产环境默认使用 Vercel Functions 提供的相对路径 API（如 `/api/rss-proxy`），无需额外配置 `VITE_API_BASE_URL` 或 `VITE_RSS_PROXY_URL`。如使用自定义域或独立后端，再根据需要添加对应变量。
+
 5. **部署**
    - 点击 "Deploy"
    - 等待部署完成（约 2-3 分钟）
@@ -74,12 +76,12 @@
 https://haigoo.vercel.app
 ```
 
-### 2. 更新环境变量
-在 Vercel 项目设置中添加：
+### 2. API 端点
+生产环境默认通过 Vercel Functions 提供：
 ```
-VITE_API_BASE_URL=https://haigoo.vercel.app
-VITE_RSS_PROXY_URL=https://haigoo.vercel.app/api/rss-proxy
+https://your-app.vercel.app/api/rss-proxy
 ```
+前端代码推荐使用相对路径 `'/api/rss-proxy'`（由平台路由到对应函数），开发环境可通过本地代理指向 `http://localhost:3001/api/rss-proxy`。
 
 ### 3. 重新部署
 更新环境变量后，触发重新部署以应用更改。
@@ -117,7 +119,7 @@ curl https://your-app.vercel.app/api/rss-proxy?url=https://remotive.com/remote-j
    - 重新部署以应用更改
 
 4. **CORS 错误**
-   - 检查代理服务是否正常运行
+   - 检查 Serverless 代理是否正常运行（`api/rss-proxy.js`）
    - 确认 RSS 源 URL 正确
 
 ## 📝 注意事项

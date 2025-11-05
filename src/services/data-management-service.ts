@@ -337,6 +337,8 @@ export class DataManagementService {
     experienceLevel?: string;
     isManuallyEdited?: boolean;
     company?: string;
+    // 新增：关键词搜索（岗位名称/公司/描述/地点/标签）
+    search?: string;
     isRemote?: boolean;
     tags?: string[];
     dateRange?: { start: Date; end: Date };
@@ -371,6 +373,19 @@ export class DataManagementService {
         filteredJobs = filteredJobs.filter(job => 
           job.company.toLowerCase().includes(filters.company!.toLowerCase())
         );
+      }
+
+      // 关键词搜索：支持岗位名称/公司/描述/地点/标签
+      if (filters?.search && filters.search.trim().length > 0) {
+        const kw = filters.search.toLowerCase().trim();
+        filteredJobs = filteredJobs.filter(job => {
+          const inTitle = job.title?.toLowerCase().includes(kw);
+          const inCompany = job.company?.toLowerCase().includes(kw);
+          const inDesc = job.description?.toLowerCase().includes(kw);
+          const inLocation = job.location?.toLowerCase().includes(kw);
+          const inTags = Array.isArray(job.tags) && job.tags.some(t => t.toLowerCase().includes(kw));
+          return inTitle || inCompany || inDesc || inLocation || inTags;
+        });
       }
       
       if (filters?.isRemote !== undefined) {
@@ -489,49 +504,61 @@ export class DataManagementService {
    */
   async getStorageStats(): Promise<StorageStats> {
     try {
-      const [rawData, processedJobs] = await Promise.all([
-        this.loadRawData(),
-        this.loadProcessedJobs()
-      ]);
+      // 优先从后端API读取真实统计信息（来源KV）
+      const resp = await fetch('/api/storage/stats')
+      if (!resp.ok) throw new Error(`GET /api/storage/stats failed: ${resp.status}`)
+      const stats = await resp.json()
 
-      const sources = rssService.getRSSSources();
-      const sourceStats = sources.map(source => {
-        const rawCount = rawData.filter(item => item.source === source.name && item.category === source.category).length;
-        const processedCount = processedJobs.filter(job => job.source === source.name).length;
-        const errorCount = rawData.filter(item => item.source === source.name && item.status === 'error').length;
-        const lastSyncItems = rawData.filter(item => item.source === source.name && item.category === source.category);
-        const lastSync = lastSyncItems.length > 0 ? 
-          new Date(Math.max(...lastSyncItems.map(item => new Date(item.fetchedAt).getTime()))) : null;
-
-        return {
-          name: `${source.name} - ${source.category}`,
-          rawCount,
-          processedCount,
-          errorCount,
-          lastSync: lastSync || undefined
-        };
-      });
-
-      const storageSize = JSON.stringify(rawData).length + JSON.stringify(processedJobs).length;
-      const lastSync = rawData.length > 0 ? 
-        new Date(Math.max(...rawData.map(item => new Date(item.fetchedAt).getTime()))) : null;
+      const sources = rssService.getRSSSources()
+      // 仅填充来源名称，其余计数由后续拓展对接到KV（当前保留0占位）
+      const sourceStats = sources.map(source => ({
+        name: `${source.name} - ${source.category}`,
+        rawCount: 0,
+        processedCount: 0,
+        errorCount: 0,
+        lastSync: stats?.lastSync ? new Date(stats.lastSync) : undefined
+      }))
 
       return {
-        totalRawData: rawData.length,
-        totalProcessedJobs: processedJobs.length,
-        storageSize,
+        totalRawData: 0, // 原始数据暂未入KV，保持0
+        totalProcessedJobs: Number(stats?.totalJobs || 0),
+        storageSize: Number(stats?.storageSize || 0),
         dataRetentionDays: this.RETENTION_DAYS,
         sources: sourceStats
-      };
+      }
     } catch (error) {
-      console.error('获取存储统计失败:', error);
-      return {
-        totalRawData: 0,
-        totalProcessedJobs: 0,
-        storageSize: 0,
-        dataRetentionDays: this.RETENTION_DAYS,
-        sources: []
-      };
+      console.warn('API获取存储统计失败，回退本地计算:', error)
+      try {
+        const [rawData, processedJobs] = await Promise.all([
+          this.loadRawData(),
+          this.loadProcessedJobs()
+        ])
+        const sources = rssService.getRSSSources()
+        const sourceStats = sources.map(source => {
+          const rawCount = rawData.filter(item => item.source === source.name && item.category === source.category).length
+          const processedCount = processedJobs.filter(job => job.source === source.name).length
+          const errorCount = rawData.filter(item => item.source === source.name && item.status === 'error').length
+          const lastSyncItems = rawData.filter(item => item.source === source.name && item.category === source.category)
+          const lastSync = lastSyncItems.length > 0 ? new Date(Math.max(...lastSyncItems.map(item => new Date(item.fetchedAt).getTime()))) : undefined
+          return { name: `${source.name} - ${source.category}`, rawCount, processedCount, errorCount, lastSync }
+        })
+        return {
+          totalRawData: rawData.length,
+          totalProcessedJobs: processedJobs.length,
+          storageSize: JSON.stringify(rawData).length + JSON.stringify(processedJobs).length,
+          dataRetentionDays: this.RETENTION_DAYS,
+          sources: sourceStats
+        }
+      } catch (fallbackError) {
+        console.error('获取存储统计失败（回退也失败）:', fallbackError)
+        return {
+          totalRawData: 0,
+          totalProcessedJobs: 0,
+          storageSize: 0,
+          dataRetentionDays: this.RETENTION_DAYS,
+          sources: []
+        }
+      }
     }
   }
 
@@ -614,25 +641,46 @@ export class DataManagementService {
   }
 
   private async saveProcessedJobs(jobs: ProcessedJobData[]): Promise<void> {
-    if (this.storageAdapter) {
-      // 这里需要实现保存处理后数据的逻辑
-      // 暂时使用localStorage作为fallback
+    try {
+      // 分片上传，避免 413（请求体过大）
+      const CHUNK_SIZE = 200;
+      for (let i = 0; i < jobs.length; i += CHUNK_SIZE) {
+        const chunk = jobs.slice(i, i + CHUNK_SIZE);
+        const mode = i === 0 ? 'replace' : 'append';
+        const resp = await fetch('/api/data/processed-jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobs: chunk, mode })
+        })
+        if (!resp.ok) {
+          const text = await resp.text()
+          throw new Error(`POST /api/data/processed-jobs failed: ${resp.status} ${text}`)
+        }
+      }
+    } catch (error) {
+      console.warn('保存处理后数据到API失败，回退到localStorage:', error)
       if (typeof window !== 'undefined') {
-        localStorage.setItem(this.PROCESSED_DATA_KEY, JSON.stringify(jobs));
+        localStorage.setItem(this.PROCESSED_DATA_KEY, JSON.stringify(jobs))
       }
     }
   }
 
   private async loadProcessedJobs(): Promise<ProcessedJobData[]> {
-    if (this.storageAdapter) {
-      // 这里需要实现加载处理后数据的逻辑
-      // 暂时使用localStorage作为fallback
-      if (typeof window !== 'undefined') {
-        const data = localStorage.getItem(this.PROCESSED_DATA_KEY);
-        return data ? JSON.parse(data) : [];
+    try {
+      const resp = await fetch('/api/data/processed-jobs?page=1&limit=1000')
+      if (!resp.ok) {
+        throw new Error(`GET /api/data/processed-jobs failed: ${resp.status}`)
       }
+      const json = await resp.json()
+      return Array.isArray(json?.jobs) ? json.jobs : []
+    } catch (error) {
+      console.warn('加载处理后数据API失败，回退到localStorage:', error)
+      if (typeof window !== 'undefined') {
+        const data = localStorage.getItem(this.PROCESSED_DATA_KEY)
+        return data ? JSON.parse(data) : []
+      }
+      return []
     }
-    return [];
   }
 
   // 辅助方法（从job-aggregator复制）

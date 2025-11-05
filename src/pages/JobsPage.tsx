@@ -8,89 +8,6 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { DateFormatter } from '../utils/date-formatter'
 import { processJobDescription } from '../utils/text-formatter'
 
-const mockJobs: Job[] = [
-  {
-    id: '1',
-    title: '高级前端工程师',
-    company: '字节跳动',
-    location: '北京/远程',
-    type: 'remote',
-    salary: {
-      min: 25000,
-      max: 40000,
-      currency: 'CNY'
-    },
-    description: '负责公司核心产品的前端开发工作，参与产品架构设计和技术选型。',
-    requirements: ['3年以上前端开发经验', '熟练掌握React/Vue', '有大型项目经验'],
-    responsibilities: ['负责前端架构设计', '参与产品需求分析', '代码审查和优化'],
-    skills: ['React', 'Vue', 'TypeScript', 'JavaScript'],
-    postedAt: '2024-01-15',
-    expiresAt: '2024-02-15',
-    source: 'Haigoo',
-    sourceUrl: 'https://haigoo.com/jobs/1'
-  },
-  {
-    id: '2',
-    title: 'React 开发工程师',
-    company: '腾讯',
-    location: '深圳/远程',
-    type: 'remote',
-    salary: {
-      min: 20000,
-      max: 35000,
-      currency: 'CNY'
-    },
-    description: '参与微信生态相关产品的前端开发，负责用户界面的设计和实现。',
-    requirements: ['熟练使用React', 'TypeScript经验', '移动端开发经验'],
-    responsibilities: ['开发微信生态产品', '用户界面设计', '性能优化'],
-    skills: ['React', 'TypeScript', 'Mobile Development'],
-    postedAt: '2024-01-14',
-    expiresAt: '2024-02-14',
-    source: 'Haigoo',
-    sourceUrl: 'https://haigoo.com/jobs/2'
-  },
-  {
-    id: '3',
-    title: 'UI/UX 设计师',
-    company: '小红书',
-    location: '上海',
-    type: 'full-time',
-    salary: {
-      min: 18000,
-      max: 30000,
-      currency: 'CNY'
-    },
-    description: '负责产品的用户体验设计，包括界面设计、交互设计等。',
-    requirements: ['3年以上设计经验', '熟练使用Figma/Sketch', '有移动端设计经验'],
-    responsibilities: ['用户体验设计', '界面设计', '交互设计'],
-    skills: ['Figma', 'Sketch', 'UI Design', 'UX Design'],
-    postedAt: '2024-01-13',
-    expiresAt: '2024-02-13',
-    source: 'Haigoo',
-    sourceUrl: 'https://haigoo.com/jobs/3'
-  },
-  {
-    id: '4',
-    title: '全栈工程师（兼职）',
-    company: '创新科技',
-    location: '全球远程',
-    type: 'part-time',
-    salary: {
-      min: 200,
-      max: 400,
-      currency: 'CNY'
-    },
-    description: '参与创新项目的全栈开发，包括前端、后端和数据库设计。',
-    requirements: ['全栈开发经验', 'Node.js/Python', '数据库设计能力'],
-    responsibilities: ['全栈开发', '数据库设计', '项目架构'],
-    skills: ['Node.js', 'Python', 'Database Design', 'Full Stack'],
-    postedAt: '2024-01-12',
-    expiresAt: '2024-02-12',
-    source: 'Haigoo',
-    sourceUrl: 'https://haigoo.com/jobs/4'
-  }
-]
-
 const jobTypes = [
   { value: 'all', label: '全部类型' },
   { value: 'full-time', label: '全职' },
@@ -227,16 +144,13 @@ export default function JobsPage() {
     }
   }, [location.search])
 
-  // 加载处理后的职位数据
+  // 加载处理后的职位数据，并在后台刷新后自动重载
   useEffect(() => {
     const loadJobs = async () => {
       try {
         setLoading(true)
-        
-        // 获取处理后的职位数据
         const response = await processedJobsService.getAllProcessedJobs()
         console.log('获取到处理后的岗位数据:', response.length, '个')
-        
         if (response.length > 0) {
           setJobs(response)
           console.log('示例岗位数据:', response.slice(0, 2).map((job: Job) => ({
@@ -249,20 +163,26 @@ export default function JobsPage() {
             })
           })))
         } else {
-          // 如果没有处理后的数据，使用mock数据
-          console.log('没有找到处理后的数据，使用mock数据')
-          setJobs(mockJobs)
+          console.log('没有找到处理后的数据')
+          setJobs([])
         }
       } catch (error) {
         console.error('Failed to load jobs:', error)
-        // 如果加载失败，使用mock数据作为后备
-        setJobs(mockJobs)
+        setJobs([])
       } finally {
         setLoading(false)
       }
     }
 
     loadJobs()
+
+    const handleUpdated = () => {
+      loadJobs()
+    }
+    window.addEventListener('processed-jobs-updated', handleUpdated)
+    return () => {
+      window.removeEventListener('processed-jobs-updated', handleUpdated)
+    }
   }, [])
 
   const toggleSaveJob = (jobId: string) => {

@@ -4,12 +4,12 @@
 
 ### 1.1 整体架构
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   前端 (React)   │────│   后端 (Node.js) │────│  外部RSS源      │
-│   - Vite        │    │   - Express     │    │  - WeWork      │
-│   - TypeScript  │    │   - CORS        │    │  - Remotive    │
-│   - Tailwind    │    │   - Proxy       │    │  - Himalayas   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────┐    ┌────────────────────────────┐    ┌─────────────────┐
+│   前端 (React)   │────│  轻服务 (Vercel Functions) │────│  外部RSS源      │
+│   - Vite        │    │  - Serverless/Edge        │    │  - WeWork      │
+│   - TypeScript  │    │  - KV(可选)               │    │  - Remotive    │
+│   - Tailwind    │    │  - Proxy/CORS             │    │  - Himalayas   │
+└─────────────────┘    └────────────────────────────┘    └─────────────────┘
          │                       │
          │              ┌─────────────────┐
          └──────────────│  本地存储        │
@@ -30,12 +30,17 @@
 - **图标**: Lucide React 0.294.0
 - **HTTP客户端**: Axios 1.6.2
 
-#### 后端技术栈
+#### 后端/轻服务技术栈（生产）
+- **平台**: Vercel Serverless Functions + Edge Functions
+- **缓存**: Vercel KV（可选）
+- **代理与跨域**: Edge Runtime 内置
+- **HTTP请求**: fetch（Edge/Node）
+- **XML解析**: xmldom 0.6.0（如在服务端解析）
+
+#### 本地开发服务器（仅开发）
 - **运行时**: Node.js 22.x
 - **框架**: Express 5.1.0
 - **跨域处理**: CORS 2.8.5
-- **HTTP请求**: Node-fetch 3.3.2
-- **XML解析**: xmldom 0.6.0
 
 ## 2. 前端架构详解
 
@@ -107,7 +112,7 @@ interface AppState {
 
 ## 3. 后端架构详解
 
-### 3.1 服务器配置 (server.js)
+### 3.1 开发环境服务器配置 (server.js，非生产)
 ```javascript
 const express = require('express');
 const cors = require('cors');
@@ -136,7 +141,8 @@ app.get('/api/rss-proxy', async (req, res) => {
   - 处理CORS问题
   - 用户代理轮换
   - 超时控制
-- **响应**: XML格式的RSS数据
+- **部署**: 生产环境由 Vercel Functions/Edge 提供该端点
+- **响应**: XML或JSON（按需求）格式的RSS数据
 
 ### 3.3 错误处理机制
 ```javascript
@@ -156,7 +162,7 @@ app.use((err, req, res, next) => {
 ```
 1. 前端发起RSS数据请求
    ↓
-2. 后端代理RSS请求
+2. 轻服务（Vercel Functions）代理RSS请求
    ↓
 3. 获取外部RSS数据
    ↓
@@ -236,8 +242,9 @@ npm run build
 npm run preview
 
 # 生产部署
-# 前端: 静态文件部署到CDN
-# 后端: Node.js服务器部署
+# 平台: Vercel
+# 前端: 由 Vercel 构建与托管静态资源
+# API: Vercel Serverless/Edge Functions（/api/rss-proxy、/api/translate、/api/recommendations）
 ```
 
 ### 6.3 环境配置
@@ -246,7 +253,7 @@ npm run preview
 const API_BASE_URL = 'http://localhost:3001';
 
 // 生产环境
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api.haigoo.com';
+const API_BASE_URL = '/api'; // 生产由Vercel Functions提供
 ```
 
 ## 7. 性能优化策略

@@ -207,22 +207,29 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
         )
       })()}
 
-      {/* 技能标签 - 最多3个 +N；当无标签时兜底显示“remote”避免卡片不对称 */}
-      <div className="flex flex-wrap gap-2 mt-4 mb-2">
-        {Array.isArray(job.skills) && job.skills.length > 0 ? (
-          <>
-            {job.skills.slice(0, 3).map((skill, idx) => (
-              <span key={idx} className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium">
-                {skill}
-              </span>
-            ))}
-            {job.skills.length > 3 && (
-              <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm">+{job.skills.length - 3}</span>
-            )}
-          </>
-        ) : (
-          <span className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium">remote</span>
-        )}
+      {/* 技能标签 - 单行显示；优先使用处理后标签 */}
+      <div className="flex flex-nowrap items-center gap-2 mt-4 mb-2 overflow-hidden">
+        {(() => {
+          const tags = Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : job.skills || []
+          if (tags.length > 0) {
+            const visible = tags.slice(0, 3)
+            return (
+              <>
+                {visible.map((skill, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium whitespace-nowrap">
+                    {skill}
+                  </span>
+                ))}
+                {tags.length > 3 && (
+                  <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm whitespace-nowrap">+{tags.length - 3}</span>
+                )}
+              </>
+            )
+          }
+          return (
+            <span className="px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium whitespace-nowrap">remote</span>
+          )
+        })()}
       </div>
 
       {/* 底部信息与操作 */}

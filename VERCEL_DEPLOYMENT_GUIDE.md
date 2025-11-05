@@ -3,6 +3,7 @@
 ## 概述
 
 本指南详细说明如何在 Vercel 上部署 Haigoo 职位聚合应用，并配置适合生产环境的数据存储解决方案。
+同时，本指南遵循轻服务架构：生产 API 由 Vercel Serverless/Edge Functions 提供，前端通过相对路径 `/api/*` 访问，无需配置后端域名环境变量。
 
 ## 当前数据存储方案分析
 
@@ -354,3 +355,20 @@ function validateJobs(jobs: Job[]): Job[] {
 - ✅ 成本可控的扩展性
 
 现在您可以放心地将应用部署到 Vercel，享受云端数据存储的所有优势！
+
+## API 路由与环境变量说明
+
+### 生产 API 路由
+- 生产环境通过 Vercel Functions/Edge 提供端点，例如：`/api/rss-proxy`、`/api/translate`。
+- 前端使用相对路径 `'/api/*'` 访问，无需指定绝对 `API_BASE_URL`。
+
+### 开发环境代理
+- 本地开发可运行本地代理服务在 `http://localhost:3001` 暴露 `/api/rss-proxy`。
+- `vite.config.ts` 已配置 `server.proxy` 将前端的 `/api` 请求转发到 `http://localhost:3001`。
+
+### 环境变量建议
+- 必需（根据你的集成）：`VITE_ALIBABA_BAILIAN_API_KEY`、`VITE_ALIBABA_BAILIAN_BASE_URL`、`VITE_APP_NAME`、`VITE_APP_VERSION`、`NODE_ENV`。
+- 可选：`VITE_API_BASE_URL`、`VITE_RSS_PROXY_URL`（仅在自定义独立后端或非 `/api/*` 路由时需要）。
+
+### 故障排查补充
+- 若遇到 CORS 错误，优先检查 `api/rss-proxy.js` 是否设置正确响应头；若使用 `vercel.json`，确保为 `/api/*` 配置了允许跨域的 headers。

@@ -5,7 +5,7 @@
 ### 项目基本信息
 - **项目名称**: Haigoo Remote Assistant
 - **项目定位**: 海外远程工作助手
-- **技术栈**: React + TypeScript + Vite + Tailwind CSS + Express
+- **技术栈**: React + TypeScript + Vite + Tailwind CSS + Zustand + Vercel Functions/Edge（Express 仅用于本地开发）
 - **部署平台**: Vercel
 - **代码仓库**: https://github.com/caitingYUE/haigoo-remote
 - **在线地址**: https://haigoo.vercel.app
@@ -31,12 +31,16 @@
 ├── Axios 1.6.2          # HTTP客户端
 └── Lucide React 0.294.0 # 图标库
 
-后端技术栈:
+轻服务/生产技术栈:
+├── Vercel Serverless Functions  # API端点（/api/*）
+├── Vercel Edge Functions        # 轻量代理/跨域处理
+├── fetch                        # HTTP请求（Edge/Node）
+└── xmldom 0.6.0                 # XML解析（如在服务端解析）
+
+本地开发服务器（仅开发）:
 ├── Node.js 22.x         # 运行环境
-├── Express 5.1.0        # Web框架
-├── CORS 2.8.5           # 跨域处理
-├── Node-fetch 3.3.2     # HTTP请求
-└── xmldom 0.6.0         # XML解析
+├── Express 5.1.0        # 本地代理（server.js）
+└── CORS 2.8.5           # 跨域处理
 
 AI服务:
 └── 阿里百炼大模型       # 核心AI能力
@@ -75,7 +79,7 @@ haigoo-assistant/
 ├── package.json         # 依赖配置
 ├── vite.config.ts      # Vite配置
 ├── vercel.json         # Vercel部署配置
-├── server.js           # 本地开发服务器
+├── server.js           # 本地开发服务器（仅开发）
 └── .env.example        # 环境变量模板
 ```
 
@@ -100,30 +104,31 @@ cp .env.example .env
 # 编辑 .env 文件，配置必要的API密钥
 
 # 4. 启动开发服务器
-npm run dev          # 前端开发服务器 (端口3000)
-node server.js       # 后端代理服务器 (端口3001)
+npm run dev           # 前端开发服务器 (端口3000)
+# 可选：启动本地RSS代理（仅开发，为解决跨源限制）
+node server.js        # 本地代理服务器 (端口3001)
 
 # 5. 访问应用
 # 前端: http://localhost:3000
-# 后端API: http://localhost:3001
+# 开发代理: http://localhost:3001 （仅本地调试）
+# 生产API: https://<your-vercel-app>.vercel.app/api/rss-proxy
 ```
 
 ### 环境变量配置
 ```bash
-# 必需配置
+# 必需配置（AI服务）
 VITE_ALIBABA_BAILIAN_API_KEY=your_api_key_here
 VITE_ALIBABA_BAILIAN_BASE_URL=https://dashscope.aliyuncs.com/api/v1
 
-# 应用配置
+# 应用信息
 VITE_APP_NAME=Haigoo Assistant
 VITE_APP_VERSION=1.0.0
 
-# 开发环境
+# 运行环境
 NODE_ENV=development
 
-# 生产环境配置
-VITE_API_BASE_URL=https://your-app-name.vercel.app
-VITE_RSS_PROXY_URL=https://your-app-name.vercel.app/api/rss-proxy
+# 说明：生产环境默认使用 Vercel Functions 提供的相对路径 API（如 /api/rss-proxy），
+# 无需配置 VITE_API_BASE_URL/VITE_RSS_PROXY_URL。若需自定义域或独立后端，再添加对应变量。
 ```
 
 ## 📦 部署流程
@@ -181,11 +186,9 @@ vercel --prod
    https://haigoo.vercel.app
    ```
 
-2. **更新环境变量**
-   ```
-   VITE_API_BASE_URL=https://haigoo.vercel.app
-   VITE_RSS_PROXY_URL=https://haigoo.vercel.app/api/rss-proxy
-   ```
+2. **API端点**
+   - 生产环境默认使用 `https://<你的Vercel域>/api/rss-proxy`
+   - 前端代码已使用相对路径 `'/api/rss-proxy'`（通过 Vercel Functions 提供）或在开发时代理到 `http://localhost:3001`
 
 3. **重新部署**
    更新环境变量后，触发重新部署以应用更改
@@ -202,7 +205,7 @@ vercel --prod
 ### 项目特殊配置
 1. **RSS 代理服务**
    - 位置: `api/rss-proxy.js`
-   - 功能: 解决跨域问题，代理RSS源请求
+   - 功能: 解决跨域问题，代理RSS源请求（生产由 Vercel Functions/Edge 提供）
    - 超时设置: 20秒
    - 用户代理轮换: 防止被封禁
 

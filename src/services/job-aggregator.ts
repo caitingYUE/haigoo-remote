@@ -1,5 +1,6 @@
 import { Job, JobCategory, JobFilter, JobStats, SyncStatus, AdminDashboardData } from '../types/rss-types';
 import { rssService, RSSFeedItem, ParsedRSSData } from './rss-service';
+import { translationMappingService } from './translation-mapping-service';
 import { getStorageAdapter } from './storage-factory';
 import { CloudStorageAdapter } from './cloud-storage-adapter';
 import { recommendationHistoryService } from './recommendation-history-service';
@@ -531,7 +532,7 @@ class JobAggregator {
       jobType: (item.jobType as Job['jobType']) || 'full-time',
       experienceLevel: item.experienceLevel || this.determineExperienceLevel(item.title, item.description),
       remoteLocationRestriction: item.remoteLocationRestriction,
-      tags: this.extractTags(item.title, item.description),
+      tags: this.extractTags(item.title, item.description, item.skills),
       requirements: this.extractRequirements(item.description),
       benefits: this.extractBenefits(item.description),
       isRemote: item.workType === 'remote' || this.isRemoteJob(item.title, item.description, item.location),
@@ -563,7 +564,7 @@ class JobAggregator {
       jobType: (item.jobType as Job['jobType']) || 'full-time',
       experienceLevel: this.determineExperienceLevel(item.title, item.description),
       remoteLocationRestriction: undefined,
-      tags: this.extractTags(item.title, item.description),
+      tags: this.extractTags(item.title, item.description, item.skills),
       requirements: this.extractRequirements(item.description),
       benefits: this.extractBenefits(item.description),
       isRemote: this.isRemoteJob(item.title, item.description, item.location),
@@ -618,7 +619,7 @@ class JobAggregator {
   /**
    * 提取标签
    */
-  private extractTags(title: string, description: string): string[] {
+  private extractTags(title: string, description: string, rssSkills?: string[]): string[] {
     const text = `${title} ${description}`.toLowerCase();
     const commonTags = [
       'remote', 'javascript', 'typescript', 'react', 'vue', 'angular', 'node.js',
@@ -627,7 +628,11 @@ class JobAggregator {
       'agile', 'scrum', 'ci/cd', 'git', 'api', 'rest', 'graphql'
     ];
 
-    return commonTags.filter(tag => text.includes(tag));
+    const matched = commonTags.filter(tag => text.includes(tag));
+    const combined = [...matched, ...(rssSkills || [])];
+    // 使用映射服务进行标准化与去重
+    const normalized = translationMappingService.normalizeSkillTags(combined);
+    return normalized;
   }
 
   /**
@@ -797,6 +802,12 @@ class JobAggregator {
       // 更新同步状态中的最后同步时间
       if (this.storageAdapter) {
         await this.storageAdapter.saveJobs(this.jobs);
+      }
+      // 通过后端API将岗位写入KV，确保生产环境使用真实数据
+      try {
+        await this.persistProcessedJobsToAPI();
+      } catch (err) {
+        console.error('通过API写入KV失败:', err);
       }
       
     } catch (error) {
@@ -985,6 +996,26 @@ class JobAggregator {
       }
     });
     return updatedCount;
+  }
+
+  /**
+   * 将当前聚合岗位通过API持久化到KV
+   */
+  private async persistProcessedJobsToAPI(): Promise<void> {
+    try {
+      const resp = await fetch('/api/data/processed-jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobs: this.jobs })
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`POST /api/data/processed-jobs failed: ${resp.status} ${text}`);
+      }
+    } catch (error) {
+      console.error('persistProcessedJobsToAPI error:', error);
+      throw error;
+    }
   }
 
   /**

@@ -3,8 +3,7 @@ import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Aw
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
-import { JobTags } from './JobTag';
-import { tagUtils, JobTag as JobTagType } from '../utils/tagSystem';
+// 移除语义标签行：不再使用 JobTags/tagUtils，仅保留描述下的处理后技能标签
 
 interface JobCardProps {
   job: Job;
@@ -15,56 +14,7 @@ interface JobCardProps {
 
 export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps) {
 
-  // 生成标签数据
-  const generateJobTags = (job: Job): JobTagType[] => {
-    const tagTexts: string[] = [];
-    
-    // 岗位类型
-    if (job.category) {
-      tagTexts.push(job.category);
-    }
-    
-    // 工作模式
-    if (job.isRemote) {
-      if (job.remoteLocationRestriction) {
-        tagTexts.push(`远程 - ${job.remoteLocationRestriction}`);
-      } else {
-        tagTexts.push('远程工作');
-      }
-    } else {
-      tagTexts.push('现场办公');
-    }
-    
-    // 经验要求
-    if (job.experienceLevel) {
-      const experienceMap: Record<string, string> = {
-        'Entry': '初级',
-        'Mid': '中级', 
-        'Senior': '高级',
-        'Lead': '资深',
-        'Executive': '专家'
-      };
-      tagTexts.push(experienceMap[job.experienceLevel] || job.experienceLevel);
-    }
-    
-    // 工作类型 - 使用type属性
-    if (job.type) {
-      const jobTypeMap: Record<string, string> = {
-        'full-time': '全职',
-        'part-time': '兼职',
-        'contract': '合同',
-        'freelance': '自由职业',
-        'internship': '实习',
-        'remote': '远程'
-      };
-      tagTexts.push(jobTypeMap[job.type] || job.type);
-    }
-    
-    // 使用tagUtils处理标签文本，转换为JobTag对象
-    return tagUtils.process(tagTexts);
-  };
-
-  const jobTags = generateJobTags(job);
+  // 不再生成语义标签，仅保留处理后数据的技能标签展示
 
   const formatSalary = (salary: Job['salary']) => {
     if (!salary || (salary.min === 0 && salary.max === 0)) return 'None';
@@ -277,15 +227,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               </div>
             </div>
             
-            {/* 标签行 - 使用新的标签系统 */}
-            <div className="mt-3" role="list" aria-label="职位标签">
-              <JobTags 
-                tags={jobTags}
-                size="small"
-                maxTags={4}
-                showMore={true}
-              />
-            </div>
+            {/* 移除地点下方的语义标签行 */}
           </div>
         </div>
       </header>

@@ -4,10 +4,14 @@ import fetch from 'node-fetch';
 
 const app = express();
 const PORT = 3001;
+// 简单的内存存储：开发环境下保存“处理后职位”数据，替代原有 mock
+let processedJobsStore = [];
 
 // 启用CORS
 app.use(cors());
-app.use(express.json());
+// 提高 JSON 与表单体积上限，避免大批量职位保存时报 413
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // RSS代理端点
 app.get('/api/rss-proxy', async (req, res) => {
@@ -223,68 +227,13 @@ app.post('/api/data/sync', async (req, res) => {
 // 获取处理后的职位数据
 app.get('/api/data/processed-jobs', async (req, res) => {
   try {
-    const { page = 1, pageSize = 50, source, category, company, isRemote, search } = req.query;
-    
-    console.log('获取处理后职位数据API被调用', { page, pageSize, source, category });
-    
-    // 模拟处理后的职位数据
-    const mockProcessedJobs = [
-      {
-        id: 'processed-1',
-        title: 'Senior Frontend Developer',
-        company: 'TechCorp',
-        location: 'Remote',
-        description: 'We are looking for an experienced Frontend Developer to join our team...',
-        url: 'https://example.com/job/1',
-        publishedAt: new Date().toISOString(),
-        source: 'WeWorkRemotely',
-        category: '前端开发',
-        salary: '$80,000 - $120,000',
-        jobType: 'full-time',
-        experienceLevel: 'Senior',
-        tags: ['React', 'TypeScript', 'CSS'],
-        requirements: ['3+ years React experience', 'TypeScript proficiency'],
-        benefits: ['Remote work', 'Health insurance'],
-        isRemote: true,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        rawDataId: 'raw-1',
-        processedAt: new Date(),
-        processingVersion: '1.0',
-        isManuallyEdited: false,
-        editHistory: []
-      },
-      {
-        id: 'processed-2',
-        title: 'Backend Engineer',
-        company: 'StartupXYZ',
-        location: 'San Francisco, CA',
-        description: 'Join our backend team to build scalable APIs...',
-        url: 'https://example.com/job/2',
-        publishedAt: new Date().toISOString(),
-        source: 'Remotive',
-        category: '后端开发',
-        salary: '$100,000 - $150,000',
-        jobType: 'full-time',
-        experienceLevel: 'Mid',
-        tags: ['Node.js', 'Python', 'AWS'],
-        requirements: ['Node.js experience', 'Python knowledge'],
-        benefits: ['Stock options', 'Flexible hours'],
-        isRemote: false,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        rawDataId: 'raw-2',
-        processedAt: new Date(),
-        processingVersion: '1.0',
-        isManuallyEdited: false,
-        editHistory: []
-      }
-    ];
+    const { page = 1, pageSize, limit, source, category, company, isRemote, search } = req.query;
+    const size = parseInt(pageSize || limit || 50);
 
-    // 应用筛选
-    let filteredJobs = mockProcessedJobs;
+    console.log('获取处理后职位数据API被调用', { page, pageSize: size, source, category });
+
+    // 使用内存存储替代 mock
+    let filteredJobs = processedJobsStore;
     if (source) {
       filteredJobs = filteredJobs.filter(job => job.source === source);
     }
@@ -292,21 +241,21 @@ app.get('/api/data/processed-jobs', async (req, res) => {
       filteredJobs = filteredJobs.filter(job => job.category === category);
     }
     if (company) {
-      filteredJobs = filteredJobs.filter(job => job.company.toLowerCase().includes(company.toLowerCase()));
+      filteredJobs = filteredJobs.filter(job => (job.company || '').toLowerCase().includes(String(company).toLowerCase()));
     }
     if (isRemote === 'true') {
       filteredJobs = filteredJobs.filter(job => job.isRemote);
     }
     if (search) {
+      const s = String(search).toLowerCase();
       filteredJobs = filteredJobs.filter(job => 
-        job.title.toLowerCase().includes(search.toLowerCase()) ||
-        job.description.toLowerCase().includes(search.toLowerCase())
+        (job.title || '').toLowerCase().includes(s) ||
+        (job.description || '').toLowerCase().includes(s)
       );
     }
 
-    // 分页
-    const startIndex = (parseInt(page) - 1) * parseInt(pageSize);
-    const endIndex = startIndex + parseInt(pageSize);
+    const startIndex = (parseInt(page) - 1) * size;
+    const endIndex = startIndex + size;
     const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
 
     res.json({
@@ -314,8 +263,8 @@ app.get('/api/data/processed-jobs', async (req, res) => {
       jobs: paginatedJobs,
       total: filteredJobs.length,
       page: parseInt(page),
-      pageSize: parseInt(pageSize),
-      totalPages: Math.ceil(filteredJobs.length / parseInt(pageSize))
+      pageSize: size,
+      totalPages: Math.ceil(filteredJobs.length / size)
     });
 
   } catch (error) {
@@ -332,55 +281,7 @@ app.get('/api/data/processed-jobs', async (req, res) => {
 app.get('/api/data/all-processed-jobs', async (req, res) => {
   try {
     console.log('获取所有处理后职位数据API被调用');
-    
-    // 重用上面的模拟数据
-    const mockProcessedJobs = [
-      {
-        id: 'processed-1',
-        title: 'Senior Frontend Developer',
-        company: 'TechCorp',
-        location: 'Remote',
-        description: 'We are looking for an experienced Frontend Developer to join our team...',
-        url: 'https://example.com/job/1',
-        publishedAt: new Date().toISOString(),
-        source: 'WeWorkRemotely',
-        category: '前端开发',
-        salary: '$80,000 - $120,000',
-        jobType: 'full-time',
-        experienceLevel: 'Senior',
-        tags: ['React', 'TypeScript', 'CSS'],
-        requirements: ['3+ years React experience', 'TypeScript proficiency'],
-        benefits: ['Remote work', 'Health insurance'],
-        isRemote: true,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'processed-2',
-        title: 'Backend Engineer',
-        company: 'StartupXYZ',
-        location: 'San Francisco, CA',
-        description: 'Join our backend team to build scalable APIs...',
-        url: 'https://example.com/job/2',
-        publishedAt: new Date().toISOString(),
-        source: 'Remotive',
-        category: '后端开发',
-        salary: '$100,000 - $150,000',
-        jobType: 'full-time',
-        experienceLevel: 'Mid',
-        tags: ['Node.js', 'Python', 'AWS'],
-        requirements: ['Node.js experience', 'Python knowledge'],
-        benefits: ['Stock options', 'Flexible hours'],
-        isRemote: false,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
-
-    res.json(mockProcessedJobs);
-
+    res.json(processedJobsStore);
   } catch (error) {
     console.error('获取所有处理后职位数据错误:', error);
     res.status(500).json({
@@ -499,51 +400,18 @@ app.get('/api/data/export/raw', async (req, res) => {
 app.get('/api/data/export/processed', async (req, res) => {
   try {
     console.log('导出处理后数据API被调用');
-    
-    // 重用处理后的职位数据
-    const processedData = [
-      {
-        id: 'processed-1',
-        title: 'Senior Frontend Developer',
-        company: 'TechCorp',
-        location: 'Remote',
-        source: 'WeWorkRemotely',
-        category: '前端开发',
-        salary: '$80,000 - $120,000',
-        jobType: 'full-time',
-        experienceLevel: 'Senior',
-        isRemote: true,
-        status: 'active',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'processed-2',
-        title: 'Backend Engineer',
-        company: 'StartupXYZ',
-        location: 'San Francisco, CA',
-        source: 'Remotive',
-        category: '后端开发',
-        salary: '$100,000 - $150,000',
-        jobType: 'full-time',
-        experienceLevel: 'Mid',
-        isRemote: false,
-        status: 'active',
-        createdAt: new Date().toISOString()
-      }
-    ];
 
-    // 设置CSV下载头
+    const processedData = processedJobsStore;
+
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="processed_jobs.csv"');
-    
-    // 生成CSV内容
+
     const csvHeader = 'ID,Title,Company,Location,Source,Category,Salary,Job Type,Experience Level,Is Remote,Status,Created At\n';
     const csvRows = processedData.map(item => 
-      `"${item.id}","${item.title}","${item.company}","${item.location}","${item.source}","${item.category}","${item.salary}","${item.jobType}","${item.experienceLevel}","${item.isRemote}","${item.status}","${item.createdAt}"`
+      `"${item.id}","${item.title}","${item.company}","${item.location}","${item.source}","${item.category}","${item.salary || ''}","${item.jobType || ''}","${item.experienceLevel || ''}","${item.isRemote}","${item.status || ''}","${item.createdAt || ''}"`
     ).join('\n');
-    
-    res.send(csvHeader + csvRows);
 
+    res.send(csvHeader + csvRows);
   } catch (error) {
     console.error('导出处理后数据错误:', error);
     res.status(500).json({
@@ -559,31 +427,27 @@ app.get('/api/data/export/processed', async (req, res) => {
 app.put('/api/data/processed-jobs/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
-    
-    console.log('更新职位API被调用', { id, updates });
-    
-    // 模拟更新操作
+    const updates = req.body || {};
+
+    console.log('更新职位API被调用', { id });
+
+    const idx = processedJobsStore.findIndex(j => String(j.id) === String(id));
+    if (idx === -1) {
+      return res.status(404).json({ success: false, error: '职位不存在' });
+    }
+
     const updatedJob = {
-      id,
+      ...processedJobsStore[idx],
       ...updates,
       updatedAt: new Date().toISOString(),
       isManuallyEdited: true
     };
-    
-    res.json({
-      success: true,
-      message: '职位更新成功',
-      job: updatedJob
-    });
+    processedJobsStore[idx] = updatedJob;
 
+    res.json({ success: true, message: '职位更新成功', job: updatedJob });
   } catch (error) {
     console.error('更新职位错误:', error);
-    res.status(500).json({
-      success: false,
-      error: '更新失败',
-      message: error.message
-    });
+    res.status(500).json({ success: false, error: '更新失败', message: error.message });
   }
 });
 
@@ -591,23 +455,89 @@ app.put('/api/data/processed-jobs/:id', async (req, res) => {
 app.delete('/api/data/processed-jobs/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
-    console.log('删除职位API被调用', { id });
-    
-    // 模拟删除操作
-    res.json({
-      success: true,
-      message: '职位删除成功',
-      deletedId: id
-    });
 
+    console.log('删除职位API被调用', { id });
+
+    const before = processedJobsStore.length;
+    processedJobsStore = processedJobsStore.filter(j => String(j.id) !== String(id));
+    const after = processedJobsStore.length;
+
+    res.json({ success: true, message: '职位删除成功', deletedId: id, total: after, removed: before - after });
   } catch (error) {
     console.error('删除职位错误:', error);
-    res.status(500).json({
-      success: false,
-      error: '删除失败',
-      message: error.message
-    });
+    res.status(500).json({ success: false, error: '删除失败', message: error.message });
+  }
+});
+
+// 保存处理后职位（支持 replace/append 模式）
+app.post('/api/data/processed-jobs', async (req, res) => {
+  try {
+    let body = req.body;
+    if (!body || typeof body !== 'object') {
+      body = await new Promise((resolve) => {
+        let data = '';
+        req.on('data', chunk => data += chunk);
+        req.on('end', () => {
+          try { resolve(JSON.parse(data || '{}')); } catch { resolve({}); }
+        });
+      });
+    }
+
+    const { jobs, mode: bodyMode } = body || {};
+    const mode = (bodyMode || req.query.mode || 'replace').toString();
+    if (!Array.isArray(jobs)) {
+      return res.status(400).json({ success: false, error: 'jobs must be an array' });
+    }
+
+    // 轻量规范化，保证常用字段存在
+    const normalized = jobs.map(j => ({
+      id: j.id || j.uuid || j.url || `job-${Date.now()}-${Math.random()}`,
+      title: j.title || '',
+      company: j.company || '',
+      location: j.location || '',
+      description: j.description || '',
+      url: j.url || j.link || '',
+      publishedAt: j.publishedAt || j.pubDate || new Date().toISOString(),
+      source: j.source || '',
+      category: j.category || '',
+      salary: j.salary || '',
+      jobType: j.jobType || j.type || '',
+      experienceLevel: j.experienceLevel || j.level || '',
+      tags: Array.isArray(j.tags) ? j.tags : [],
+      requirements: Array.isArray(j.requirements) ? j.requirements : [],
+      benefits: Array.isArray(j.benefits) ? j.benefits : [],
+      isRemote: typeof j.isRemote === 'boolean' ? j.isRemote : false,
+      status: j.status || 'active',
+      createdAt: j.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      rawDataId: j.rawDataId || null,
+      processedAt: new Date(),
+      processingVersion: j.processingVersion || 'dev',
+      isManuallyEdited: !!j.isManuallyEdited,
+      editHistory: Array.isArray(j.editHistory) ? j.editHistory : []
+    }));
+
+    // 合并策略
+    if (mode === 'append') {
+      // 先合并，再按 id 去重；无 id 的用 title+company+location 作为键
+      const existing = Array.isArray(processedJobsStore) ? processedJobsStore : [];
+      const merged = [...existing, ...normalized];
+      const seen = new Set();
+      processedJobsStore = merged.filter(j => {
+        const key = j.id || `${j.title}-${j.company}-${j.location}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    } else {
+      // replace（默认）
+      processedJobsStore = normalized;
+    }
+
+    res.json({ success: true, total: processedJobsStore.length, mode });
+  } catch (error) {
+    console.error('保存处理后职位数据错误:', error);
+    res.status(500).json({ success: false, error: '保存失败', message: error.message });
   }
 });
 

@@ -143,7 +143,7 @@ export interface RSSFeedItem {
   location?: string;                // 工作地点
   salary?: string;                  // 薪资信息
   jobType?: string;                 // 工作类型
-  workType?: 'remote' | 'hybrid' | 'onsite';  // 工作方式
+  workType?: 'remote' | 'hybrid' | 'freelance';  // 工作方式
   experienceLevel?: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';  // 经验等级
   
   // 薪资结构化信息
@@ -310,6 +310,49 @@ const CATEGORY_MAPPING: Record<string, JobCategory> = {
   'all': '全部'
 };
 ```
+### 3.4 页面展示数据 PageJob 接口
+在代码实现中，页面展示数据的接口与 `src/types/index.ts` 中的 `Job` 等同，通常在文档中称为 `PageJob`。该对象由 `JobAggregator.convertRSSJobToPageJob` 从标准化的 RSS Job 转换生成，用于前端展示与推荐。
+
+```typescript
+export interface PageJob {
+  id: string
+  title: string
+  company?: string
+  location: string
+  type: 'full-time' | 'part-time' | 'contract' | 'remote' | 'freelance' | 'internship'
+  salary?: {
+    min: number
+    max: number
+    currency: string
+  }
+  description?: string
+  requirements: string[]
+  responsibilities: string[]
+  skills: string[]
+  postedAt: string
+  expiresAt?: string
+  source: string
+  sourceUrl?: string
+  logo?: string
+  experienceLevel?: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive'
+  category?: string
+  isRemote?: boolean
+  remoteLocationRestriction?: string
+  recommendationScore?: number
+  recommendationId?: string
+  recommendedAt?: string
+  recommendationGroup?: number
+}
+```
+
+字段说明与约束:
+- `type` 为展示用工作类型，包含 `remote`；与标准化 `Job.jobType` 区分。
+- `salary` 采用结构化对象，来自对原始薪资文本的解析与过滤。
+- `postedAt` 以 `YYYY-MM-DD` 或 ISO 8601 表示；若缺失则回退到当前日期。
+- `category` 在页面层面使用字符串以兼容多来源分类。
+- 推荐相关字段仅在参与推荐/历史记录时填充。
+
+生成规则与对应关系请见“6.x RSS Job -> Page Job 映射规则”，与实际实现保持完全一致。
 
 ## 4. 数据转换和清洗规则
 
@@ -458,6 +501,61 @@ const JOB_VALIDATION_RULES: Record<keyof Job, ValidationRule> = {
   isRemote: { required: true, type: 'boolean' },
   status: { required: true, type: 'string', enum: ['active', 'inactive', 'archived'] }
 };
+
+### 4.4 RSS Job → Page Job 映射规则
+```typescript
+// 参考 src/services/job-aggregator.ts 中的 convertRSSJobToPageJob
+function mapRssJobToPageJob(rssJob: Job): PageJob {
+  const salary = parseSalary(rssJob.salary);
+  const type: PageJob['type'] = deriveJobType(rssJob.jobType, rssJob.isRemote);
+
+  let recommendationScore = 60;
+  if (rssJob.isRemote) recommendationScore += 20;
+  if (rssJob.tags?.length) recommendationScore += Math.min(rssJob.tags.length * 3, 15);
+  if (rssJob.description && rssJob.description.length > 100) recommendationScore += 10;
+  if (rssJob.company?.trim()) recommendationScore += 5;
+  recommendationScore += Math.random() * 15;
+
+  return {
+    id: rssJob.id,
+    title: rssJob.title,
+    company: rssJob.company || undefined,
+    location: rssJob.location || 'Remote',
+    type,
+    salary,
+    description: rssJob.description || undefined,
+    requirements: rssJob.requirements || [],
+    responsibilities: rssJob.benefits || [],
+    skills: rssJob.tags || [],
+    postedAt: rssJob.publishedAt || new Date().toISOString().split('T')[0],
+    expiresAt: undefined,
+    source: rssJob.source || 'RSS',
+    sourceUrl: rssJob.url || '#',
+    recommendationScore,
+    experienceLevel: rssJob.experienceLevel,
+    category: rssJob.category,
+    isRemote: rssJob.isRemote,
+    remoteLocationRestriction: rssJob.remoteLocationRestriction
+  };
+}
+```
+
+#### 字段对应关系摘要
+- `id` ← RSS `id`
+- `title` ← RSS `title`
+- `company?` ← RSS `company`
+- `location` ← RSS `location`（缺省回退为 `Remote`）
+- `type` ← RSS `jobType`，或按 `isRemote` 推断为 `remote`
+- `salary?` ← 从字符串解析的 `{min,max,currency}`
+- `description?` ← RSS `description`
+- `requirements[]` ← RSS `requirements[]`
+- `responsibilities[]` ← RSS `benefits[]`
+- `skills[]` ← RSS `tags[]`
+- `postedAt` ← RSS `publishedAt`
+- `source` ← RSS `source`
+- `sourceUrl?` ← RSS `url`
+- `experienceLevel?`、`category?`、`isRemote?`、`remoteLocationRestriction?` ← 直接映射
+- `recommendationScore?` ← 依据上述规则计算
 ```
 
 ## 5. 数据存储规范

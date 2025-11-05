@@ -4,7 +4,6 @@ import {
   Search, 
   Filter, 
   RefreshCw, 
-  Download, 
   Upload, 
   Trash2, 
   Edit3, 
@@ -43,6 +42,7 @@ import {
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { dataManagementService, RawRSSData, ProcessedJobData, StorageStats } from '../services/data-management-service';
+import { useNotificationHelpers } from './NotificationSystem';
 // 简历库相关逻辑已迁移至独立页面
 
 interface DataManagementTabsProps {
@@ -53,6 +53,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [activeTab, setActiveTab] = useState<'raw' | 'processed' | 'storage'>('processed');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const { showSuccess, showError } = useNotificationHelpers();
   
   // 原始数据状态
   const [rawData, setRawData] = useState<RawRSSData[]>([]);
@@ -80,6 +81,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [processedDataFilters, setProcessedDataFilters] = useState<{
     category?: JobCategory;
     company?: string;
+    // 新增：关键词搜索（岗位名称/公司/描述/地点/标签）
+    search?: string;
     experienceLevel?: string;
     tags?: string[];
   }>({});
@@ -146,15 +149,36 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     try {
       setSyncing(true);
       await dataManagementService.syncAllRSSData();
-      // 重新加载数据
-      if (activeTab === 'raw') {
-        await loadRawData();
-      } else if (activeTab === 'processed') {
-        await loadProcessedData();
-      }
+      // 重新加载所有相关数据，确保两个页签都更新
+      await loadRawData();
+      await loadProcessedData();
       await loadStorageStats();
+      showSuccess('同步完成', '已拉取最新RSS并更新原始与处理后数据');
     } catch (error) {
       console.error('同步数据失败:', error);
+      showError('同步失败', '请检查后端服务或网络连接');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // 手动刷新处理后数据（仅拉取RSS并更新“处理后数据”）
+  const handleRefreshProcessedOnly = async () => {
+    try {
+      setSyncing(true);
+      await dataManagementService.syncAllRSSData();
+      await loadProcessedData();
+      await loadStorageStats();
+      showSuccess('刷新完成', '处理后数据已更新至最新');
+      // 广播全局事件，通知前台页面刷新处理后数据
+      try {
+        window.dispatchEvent(new Event('processed-jobs-updated'));
+      } catch (e) {
+        console.warn('广播处理后数据更新事件失败', e);
+      }
+    } catch (error) {
+      console.error('刷新处理后数据失败:', error);
+      showError('刷新失败', '请检查后端服务或网络连接');
     } finally {
       setSyncing(false);
     }
@@ -580,9 +604,9 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             
             <input
               type="text"
-              placeholder="搜索公司名称..."
-              value={processedDataFilters.company || ''}
-              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, company: e.target.value || undefined })}
+              placeholder="搜索岗位名称或公司..."
+              value={processedDataFilters.search || ''}
+              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, search: e.target.value || undefined })}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             
@@ -929,22 +953,27 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         </div>
         
         <div className="flex gap-2">
-          <button
-            onClick={handleSyncData}
-            disabled={syncing}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-blue-300 text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? '同步中...' : '同步数据'}
-          </button>
-          
-          <button
-            onClick={() => handleExportData(activeTab as 'raw' | 'processed')}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-green-300 text-green-700 bg-green-50 rounded-md hover:bg-green-100 transition-colors"
-          >
-            <Download className="w-3 h-3" />
-            导出数据
-          </button>
+          {activeTab === 'raw' && (
+            <button
+              onClick={handleSyncData}
+              disabled={syncing}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-blue-300 text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? '同步中...' : '同步数据'}
+            </button>
+          )}
+          {activeTab === 'processed' && (
+            <button
+              onClick={handleRefreshProcessedOnly}
+              disabled={syncing}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? '刷新中...' : '刷新处理后数据'}
+            </button>
+          )}
+          {/* 按需：导出数据按钮已移除 */}
         </div>
       </div>
 

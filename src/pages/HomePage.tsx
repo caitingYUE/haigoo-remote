@@ -147,15 +147,11 @@ export default function HomePage() {
       try {
         setLoading(true)
         setError(null)
-        
         const response = await processedJobsService.getProcessedJobs(1, 50)
-        
         if (response.jobs.length > 0) {
           setJobs(response.jobs)
-          // 设置数据更新时间
           setLastUpdateTime(new Date())
         } else {
-          // 如果没有处理后的数据，设置为空数组
           setJobs([])
         }
       } catch (err) {
@@ -168,6 +164,15 @@ export default function HomePage() {
     }
 
     fetchJobs()
+
+    // 监听后台刷新事件，自动更新首页推荐数据
+    const handleUpdated = () => {
+      fetchJobs()
+    }
+    window.addEventListener('processed-jobs-updated', handleUpdated)
+    return () => {
+      window.removeEventListener('processed-jobs-updated', handleUpdated)
+    }
   }, [])
 
   // 加载今天的固定推荐
@@ -376,19 +381,22 @@ export default function HomePage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2 mb-6">
-                          {job.skills.slice(0, 3).map((skill, skillIndex) => (
-                            <span
-                              key={skillIndex}
-                              className={`px-3 py-1.5 text-sm rounded-lg font-medium ${
-                                styles.isTop 
-                                  ? 'bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 backdrop-blur-sm' 
-                                  : 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
-                              }`}
-                            >
-                              {skill}
-                            </span>
-                          ))}
+                        <div className="flex flex-nowrap items-center gap-2 mb-6 overflow-hidden">
+                          {(() => {
+                            const tags = Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : job.skills || []
+                            return tags.slice(0, 3).map((skill, skillIndex) => (
+                              <span
+                                key={skillIndex}
+                                className={`px-3 py-1.5 text-sm rounded-lg font-medium whitespace-nowrap ${
+                                  styles.isTop 
+                                    ? 'bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 backdrop-blur-sm' 
+                                    : 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                                }`}
+                              >
+                                {skill}
+                              </span>
+                            ))
+                          })()}
                         </div>
 
                         <div className="flex items-center justify-between">
