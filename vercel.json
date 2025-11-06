@@ -8,12 +8,10 @@
       "maxDuration": 30
     },
     "api/parse-resume.js": {
-      "maxDuration": 30,
-      "runtime": "nodejs18.x"
+      "maxDuration": 30
     },
     "api/parse-resume-new.js": {
-      "maxDuration": 30,
-      "runtime": "nodejs18.x"
+      "maxDuration": 30
     },
     "api/data/processed-jobs.js": {
       "maxDuration": 30
