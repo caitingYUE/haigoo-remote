@@ -1,102 +1,162 @@
-/**
- * Vercel Edge Function - 简历文件解析代理
- * 通过服务端转发到开源解析服务（建议 Apache Tika Server）
- * 支持 multipart/form-data 上传文件、或 JSON 提供 fileUrl/base64
- */
+import Busboy from 'busboy'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+const pdfParse = require('pdf-parse')
+import mammoth from 'mammoth'
+import { fileTypeFromBuffer } from 'file-type'
+import { lookup as mimeLookup } from 'mime-types'
+import { createWorker } from 'tesseract.js'
 
-export const config = {
-  runtime: 'edge',
+const ENABLE_OCR = process.env.ENABLE_OCR === 'true'
+
+function sendJson(res, body, status = 200) {
+  res.status(status).setHeader('Content-Type', 'application/json')
+  res.end(JSON.stringify(body))
 }
 
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
+async function parseMultipart(req) {
+  return new Promise((resolve, reject) => {
+    try {
+      const bb = Busboy({ headers: req.headers })
+      let filename = 'upload.file'
+      const chunks = []
+      let fileMime = ''
+
+      bb.on('file', (fieldname, file, info) => {
+        filename = info?.filename || filename
+        fileMime = info?.mimeType || ''
+        file.on('data', (data) => chunks.push(data))
+      })
+      bb.on('finish', () => {
+        const buffer = Buffer.concat(chunks)
+        resolve({ buffer, filename, fileMime })
+      })
+      bb.on('error', (err) => reject(err))
+      req.pipe(bb)
+    } catch (err) {
+      reject(err)
+    }
   })
 }
 
-function decodeBase64(base64) {
-  // Edge runtime 下可用 atob/Uint8Array
-  const binaryString = atob(base64)
-  const len = binaryString.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i)
-  return bytes.buffer
+async function detectType(buffer, filename, headerContentType) {
+  const ft = await fileTypeFromBuffer(buffer).catch(() => null)
+  if (ft) return { mime: ft.mime, ext: ft.ext }
+  const mime = headerContentType || mimeLookup(filename) || 'application/octet-stream'
+  const ext = (filename?.split('.').pop() || '').toLowerCase()
+  return { mime, ext }
 }
 
-export default async function handler(request) {
-  // CORS 预检
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 200 })
+async function ocrImageBuffer(buffer, lang = 'eng') {
+  if (!ENABLE_OCR) {
+    return ''
   }
-
-  if (request.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405)
+  const worker = await createWorker({ logger: () => {} })
+  try {
+    await worker.loadLanguage(lang)
+    await worker.initialize(lang)
+    const { data } = await worker.recognize(buffer)
+    return (data?.text || '').trim()
+  } finally {
+    await worker.terminate()
   }
+}
 
-  const TIKA_URL = process.env.TIKA_URL
-  if (!TIKA_URL) {
-    return json({ error: 'TIKA_URL not configured' }, 500)
+async function extractText({ buffer, mime, ext }) {
+  const lowerExt = (ext || '').toLowerCase()
+  if (mime === 'application/pdf' || lowerExt === 'pdf') {
+    const result = await pdfParse(buffer)
+    const text = (result?.text || '').trim()
+    return { text }
+  }
+  if (
+    mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    lowerExt === 'docx'
+  ) {
+    const result = await mammoth.extractRawText({ buffer })
+    const text = (result?.value || '').trim()
+    return { text }
+  }
+  if (mime.startsWith('image/') || ['png', 'jpg', 'jpeg'].includes(lowerExt)) {
+    const text = await ocrImageBuffer(buffer, 'eng')
+    return { text }
+  }
+  if (mime.startsWith('text/') || lowerExt === 'txt') {
+    const text = buffer.toString('utf-8').trim()
+    return { text }
+  }
+  const text = buffer.toString('utf-8').trim()
+  return { text }
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+  if (req.method !== 'POST') {
+    return sendJson(res, { error: 'Method not allowed' }, 405)
   }
 
   try {
-    const contentType = request.headers.get('content-type') || ''
-    let bodyArrayBuffer = null
+    const contentType = req.headers['content-type'] || ''
+    let buffer = null
     let filename = 'upload.file'
 
     if (contentType.includes('multipart/form-data')) {
-      const form = await request.formData()
-      const file = form.get('file')
-      if (!file || typeof file === 'string') {
-        return json({ error: 'Missing file in form-data "file" field' }, 400)
-      }
-      filename = file.name || filename
-      bodyArrayBuffer = await file.arrayBuffer()
+      const parsed = await parseMultipart(req)
+      buffer = parsed.buffer
+      filename = parsed.filename || filename
     } else if (contentType.includes('application/json')) {
-      const data = await request.json()
-      if (data?.fileUrl) {
+      const chunks = []
+      await new Promise((resolve) => {
+        req.on('data', (d) => chunks.push(d))
+        req.on('end', resolve)
+      })
+      const jsonStr = Buffer.concat(chunks).toString('utf-8')
+      const data = JSON.parse(jsonStr || '{}')
+      if (data?.base64) {
+        buffer = Buffer.from(data.base64, 'base64')
+        filename = data?.filename || filename
+      } else if (data?.fileUrl) {
         const resp = await fetch(data.fileUrl)
         if (!resp.ok) {
-          return json({ error: `Failed to fetch fileUrl: ${resp.status}` }, 400)
+          return sendJson(res, { error: `Failed to fetch fileUrl: ${resp.status}` }, 400)
         }
-        bodyArrayBuffer = await resp.arrayBuffer()
-        // 尝试保留文件名
+        const arrayBuf = await resp.arrayBuffer()
+        buffer = Buffer.from(arrayBuf)
         const url = new URL(data.fileUrl)
         filename = url.pathname.split('/').pop() || filename
-      } else if (data?.base64) {
-        bodyArrayBuffer = decodeBase64(data.base64)
-        filename = data?.filename || filename
       } else {
-        return json({ error: 'Unsupported JSON payload. Use { fileUrl } or { base64, filename }' }, 400)
+        return sendJson(res, { error: 'Unsupported JSON payload. Use { fileUrl } or { base64, filename }' }, 400)
       }
     } else {
-      // 原始二进制
-      bodyArrayBuffer = await request.arrayBuffer()
+      const chunks = []
+      await new Promise((resolve) => {
+        req.on('data', (d) => chunks.push(d))
+        req.on('end', resolve)
+      })
+      buffer = Buffer.concat(chunks)
     }
 
-    if (!bodyArrayBuffer) {
-      return json({ error: 'Empty file payload' }, 400)
+    if (!buffer || buffer.length === 0) {
+      return sendJson(res, { error: 'Empty file payload' }, 400)
     }
 
-    // 代理到 Tika Server 的 /tika 端点（返回纯文本）
-    const endpoint = `${TIKA_URL.replace(/\/$/, '')}/tika`
-    const tikaResp = await fetch(endpoint, {
-      method: 'PUT', // Tika 支持 PUT 方式上传文件
-      headers: {
-        'Accept': 'text/plain',
-        'X-File-Name': filename
-      },
-      body: bodyArrayBuffer
-    })
-
-    if (!tikaResp.ok) {
-      const errText = await tikaResp.text().catch(() => '')
-      return json({ success: false, error: 'Tika parse failed', status: tikaResp.status, details: errText }, 502)
+    const type = await detectType(buffer, filename, req.headers['content-type'])
+    try {
+      const { text } = await extractText({ buffer, mime: type.mime, ext: type.ext })
+      if (!text || !text.trim()) {
+        return sendJson(res, { success: false, error: 'Parse returned empty text' }, 200)
+      }
+      return sendJson(res, { success: true, data: { text } }, 200)
+    } catch (e) {
+      return sendJson(res, { success: false, error: e?.message || 'Parse failed' }, 200)
     }
-
-    const text = await tikaResp.text()
-    return json({ success: true, data: { text } }, 200)
   } catch (error) {
-    return json({ success: false, error: error?.message || 'Unknown error' }, 500)
+    return sendJson(res, { success: false, error: error?.message || 'Unknown error' }, 500)
   }
 }

@@ -8,9 +8,6 @@
       "maxDuration": 30
     },
     "api/parse-resume.js": {
-      "maxDuration": 30
-    },
-    "api/parse-resume-node.js": {
       "maxDuration": 30,
       "runtime": "nodejs18.x"
     },
@@ -47,7 +44,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/parse-resume", "destination": "/api/parse-resume-node" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
