@@ -11,6 +11,13 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- PDF.js CDN for resume parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

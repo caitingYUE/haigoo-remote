@@ -204,6 +204,22 @@ app.get('/api/jobs', async (req, res) => {
   }
 });
 
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: 'development',
+    endpoints: {
+      'parse-resume': '/api/parse-resume',
+      'parse-resume-new': '/api/parse-resume-new',
+      'processed-jobs': '/api/data/processed-jobs',
+      'recommendations': '/api/recommendations',
+      'rss-proxy': '/api/rss-proxy'
+    }
+  });
+});
+
 // 简历解析（本地实现）
 app.post('/api/parse-resume', async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -326,6 +342,128 @@ app.post('/api/parse-resume', async (req, res) => {
     return sendJson({ success: true, data: { text } }, 200)
   } catch (error) {
     console.error('Resume parse error:', error)
+    return sendJson({ success: false, error: error?.message || 'Unknown error' }, 500)
+  }
+})
+
+// 新的简历解析端点（与 api/parse-resume-new.js 保持一致）
+app.post('/api/parse-resume-new', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
+  const sendJson = (body, status = 200) => {
+    res.status(status).setHeader('Content-Type', 'application/json')
+    return res.end(JSON.stringify(body))
+  }
+
+  const parseMultipart = () => {
+    return new Promise((resolve, reject) => {
+      try {
+        const bb = Busboy({ headers: req.headers })
+        let filename = 'upload.file'
+        const chunks = []
+        bb.on('file', (_field, file, info) => {
+          filename = info?.filename || filename
+          file.on('data', (d) => chunks.push(d))
+        })
+        bb.on('finish', () => resolve({ buffer: Buffer.concat(chunks), filename }))
+        bb.on('error', (err) => reject(err))
+        req.pipe(bb)
+      } catch (err) {
+        reject(err)
+      }
+    })
+  }
+
+  const getFileType = (filename) => {
+    const ext = (filename || '').toLowerCase().split('.').pop()
+    if (ext === 'pdf') return 'pdf'
+    if (ext === 'docx') return 'docx'
+    if (ext === 'txt') return 'txt'
+    return 'unknown'
+  }
+
+  try {
+    const contentType = req.headers['content-type'] || ''
+    let buffer = null
+    let filename = 'upload.file'
+
+    if (contentType.includes('multipart/form-data')) {
+      const parsed = await parseMultipart()
+      buffer = parsed.buffer
+      filename = parsed.filename || filename
+    } else if (contentType.includes('application/json')) {
+      const chunks = []
+      await new Promise((resolve) => {
+        req.on('data', (d) => chunks.push(d))
+        req.on('end', resolve)
+      })
+      const data = JSON.parse(Buffer.concat(chunks).toString('utf-8') || '{}')
+      if (data?.base64) {
+        buffer = Buffer.from(data.base64, 'base64')
+        filename = data?.filename || filename
+      } else if (data?.fileUrl) {
+        const r = await fetch(data.fileUrl)
+        if (!r.ok) return sendJson({ success: false, error: `Failed to fetch fileUrl: ${r.status}` }, 400)
+        const arrayBuf = await r.arrayBuffer()
+        buffer = Buffer.from(arrayBuf)
+        const url = new URL(data.fileUrl)
+        filename = url.pathname.split('/').pop() || filename
+      } else {
+        return sendJson({ success: false, error: 'JSON payload must include "base64" or "fileUrl"' }, 400)
+      }
+    } else {
+      const chunks = []
+      await new Promise((resolve) => {
+        req.on('data', (d) => chunks.push(d))
+        req.on('end', resolve)
+      })
+      buffer = Buffer.concat(chunks)
+    }
+
+    if (!buffer || buffer.length === 0) {
+      return sendJson({ success: false, error: 'Empty file' }, 400)
+    }
+
+    const fileType = getFileType(filename)
+    console.log(`[parse-resume-new] Parsing ${filename} (${fileType}), size: ${buffer.length} bytes`)
+
+    let text = ''
+    if (fileType === 'pdf') {
+      const r = await pdfParse(buffer)
+      text = (r?.text || '').trim()
+    } else if (fileType === 'docx') {
+      const r = await mammoth.extractRawText({ buffer })
+      text = (r?.value || '').trim()
+    } else if (fileType === 'txt') {
+      text = buffer.toString('utf-8').trim()
+    } else {
+      return sendJson({ success: false, error: `Unsupported file type: ${fileType}` }, 400)
+    }
+
+    if (!text || text.length === 0) {
+      return sendJson({ success: false, error: 'Failed to extract text' }, 200)
+    }
+
+    console.log(`[parse-resume-new] Success: extracted ${text.length} chars from ${filename}`)
+
+    return sendJson({ 
+      success: true, 
+      data: { 
+        text, 
+        filename, 
+        fileType, 
+        length: text.length 
+      } 
+    }, 200)
+
+  } catch (error) {
+    console.error('[parse-resume-new] Error:', error)
     return sendJson({ success: false, error: error?.message || 'Unknown error' }, 500)
   }
 })

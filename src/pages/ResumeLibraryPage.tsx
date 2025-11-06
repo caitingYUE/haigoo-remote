@@ -1,23 +1,61 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
-import { Upload, FileText, FolderOpen, Eye, X } from 'lucide-react'
+import { Upload, FileText, FolderOpen, Eye, X, Trash2, Download } from 'lucide-react'
 import { ResumeItem } from '../types/resume-types'
-import { parseResumeFile } from '../services/resume-parser'
+import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
+import { ResumeStorageService } from '../services/resume-storage-service'
 
 const ResumeLibraryPage: React.FC = () => {
   const [resumes, setResumes] = useState<ResumeItem[]>([])
   const [showResumeModal, setShowResumeModal] = useState(false)
   const [viewingResume, setViewingResume] = useState<ResumeItem | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<string>('')
+  
+  // 从 localStorage 加载简历
+  useEffect(() => {
+    try {
+      const loadedResumes = ResumeStorageService.loadResumes()
+      setResumes(loadedResumes)
+      console.log('[ResumeLibrary] Loaded', loadedResumes.length, 'resumes from storage')
+    } catch (e) {
+      console.error('[ResumeLibrary] Failed to load:', e)
+    }
+  }, [])
+  
+  // 保存到 localStorage（当 resumes 变化时）
+  useEffect(() => {
+    if (resumes.length > 0) {
+      try {
+        ResumeStorageService.saveResumes(resumes)
+      } catch (e) {
+        console.error('[ResumeLibrary] Failed to save:', e)
+        alert('保存失败：' + (e as Error).message)
+      }
+    }
+  }, [resumes])
 
   const singleFileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
 
   const handleResumeFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return
+    
+    setIsLoading(true)
+    const totalFiles = fileList.length
+    let processed = 0
+    
     const newItems: ResumeItem[] = []
     for (const file of Array.from(fileList)) {
+      processed++
+      setUploadProgress(`正在处理 ${processed}/${totalFiles}: ${file.name}`)
+      
       const blobURL = URL.createObjectURL(file)
+      console.log(`[ResumeLibrary] Processing (${processed}/${totalFiles}): ${file.name} (${file.type}, ${file.size} bytes)`)
+      
       try {
-        const parsed = await parseResumeFile(file)
+        const parsed = await parseResumeFileEnhanced(file)
+        console.log(`[ResumeLibrary] Parse result:`, parsed)
+        
         newItems.push({
           id: `resume_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
           fileName: file.name,
@@ -37,6 +75,7 @@ const ResumeLibraryPage: React.FC = () => {
           parseStatus: parsed.success ? 'success' : 'failed'
         })
       } catch (e) {
+        console.error(`[ResumeLibrary] Parse error for ${file.name}:`, e)
         newItems.push({
           id: `resume_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
           fileName: file.name,
@@ -47,8 +86,52 @@ const ResumeLibraryPage: React.FC = () => {
           parseStatus: 'failed'
         } as ResumeItem)
       }
+      
+      // 实时更新（每处理 5 个文件更新一次）
+      if (processed % 5 === 0 || processed === totalFiles) {
+        setResumes(prev => [...newItems, ...prev])
+      }
     }
+    
+    // 最终更新
     setResumes(prev => [...newItems, ...prev])
+    setIsLoading(false)
+    setUploadProgress('')
+    
+    console.log(`[ResumeLibrary] Completed: ${newItems.length} resumes processed`)
+  }
+  
+  // 删除简历
+  const handleDeleteResume = (id: string) => {
+    if (confirm('确定要删除这份简历吗？')) {
+      setResumes(prev => prev.filter(r => r.id !== id))
+      console.log('[ResumeLibrary] Deleted resume:', id)
+    }
+  }
+  
+  // 清空所有简历
+  const handleClearAll = () => {
+    if (confirm('确定要清空所有简历吗？此操作不可恢复！')) {
+      setResumes([])
+      ResumeStorageService.clearAllResumes()
+      console.log('[ResumeLibrary] Cleared all resumes')
+    }
+  }
+  
+  // 导出简历数据
+  const handleExport = () => {
+    try {
+      const json = ResumeStorageService.exportToJSON()
+      const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `haigoo-resumes-${new Date().toISOString().split('T')[0]}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert('导出失败：' + (e as Error).message)
+    }
   }
 
   return (
@@ -57,22 +140,43 @@ const ResumeLibraryPage: React.FC = () => {
         <div className="p-6 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between">
           <div className="flex items-center gap-2">
             <Upload className="w-4 h-4 text-haigoo-primary" />
-            <span className="text-sm font-medium text-gray-700">上传简历</span>
+            <span className="text-sm font-medium text-gray-700">简历库管理</span>
+            {isLoading && (
+              <span className="text-xs text-blue-600 animate-pulse">{uploadProgress}</span>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => singleFileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              disabled={isLoading}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FileText className="w-3 h-3" />
               上传文件
             </button>
             <button
               onClick={() => folderInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              disabled={isLoading}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FolderOpen className="w-3 h-3" />
               上传文件夹
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={resumes.length === 0}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-blue-300 rounded-md hover:bg-blue-50 text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-3 h-3" />
+              导出数据
+            </button>
+            <button
+              onClick={handleClearAll}
+              disabled={resumes.length === 0}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-red-300 rounded-md hover:bg-red-50 text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-3 h-3" />
+              清空数据
             </button>
             <input
               ref={singleFileInputRef}

@@ -29,4 +29,6 @@ export interface ParsedResume {
   education?: string;
   graduationYear?: string;
   summary?: string;
+  workExperience?: string;
+  skills?: string;
 }
