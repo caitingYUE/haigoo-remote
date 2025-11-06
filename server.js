@@ -1,6 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
+import Busboy from 'busboy';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
+import mammoth from 'mammoth';
+import { fileTypeFromBuffer } from 'file-type';
+import { lookup as mimeLookup } from 'mime-types';
+import { createWorker } from 'tesseract.js';
 
 const app = express();
 const PORT = 3001;
@@ -195,6 +203,132 @@ app.get('/api/jobs', async (req, res) => {
     });
   }
 });
+
+// 简历解析（本地实现）
+app.post('/api/parse-resume', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
+  const sendJson = (body, status = 200) => {
+    res.status(status).setHeader('Content-Type', 'application/json')
+    return res.end(JSON.stringify(body))
+  }
+
+  const parseMultipart = () => {
+    return new Promise((resolve, reject) => {
+      try {
+        const bb = Busboy({ headers: req.headers })
+        let filename = 'upload.file'
+        const chunks = []
+        bb.on('file', (_field, file, info) => {
+          filename = info?.filename || filename
+          file.on('data', (d) => chunks.push(d))
+        })
+        bb.on('finish', () => resolve({ buffer: Buffer.concat(chunks), filename }))
+        bb.on('error', (err) => reject(err))
+        req.pipe(bb)
+      } catch (err) {
+        reject(err)
+      }
+    })
+  }
+
+  const detectType = async (buffer, filename) => {
+    const ft = await fileTypeFromBuffer(buffer).catch(() => null)
+    if (ft) return { mime: ft.mime, ext: ft.ext }
+    const mime = mimeLookup(filename) || 'application/octet-stream'
+    const ext = (filename?.split('.').pop() || '').toLowerCase()
+    return { mime, ext }
+  }
+
+  const ocrImageBuffer = async (buffer, lang = 'eng') => {
+    const worker = await createWorker({ logger: () => {} })
+    try {
+      await worker.loadLanguage(lang)
+      await worker.initialize(lang)
+      const { data } = await worker.recognize(buffer)
+      return (data?.text || '').trim()
+    } finally {
+      await worker.terminate()
+    }
+  }
+
+  try {
+    const contentType = req.headers['content-type'] || ''
+    let buffer = null
+    let filename = 'upload.file'
+
+    if (contentType.includes('multipart/form-data')) {
+      const parsed = await parseMultipart()
+      buffer = parsed.buffer
+      filename = parsed.filename || filename
+    } else if (contentType.includes('application/json')) {
+      const chunks = []
+      await new Promise((resolve) => {
+        req.on('data', (d) => chunks.push(d))
+        req.on('end', resolve)
+      })
+      const data = JSON.parse(Buffer.concat(chunks).toString('utf-8') || '{}')
+      if (data?.base64) {
+        buffer = Buffer.from(data.base64, 'base64')
+        filename = data?.filename || filename
+      } else if (data?.fileUrl) {
+        const r = await fetch(data.fileUrl)
+        if (!r.ok) return sendJson({ error: `Failed to fetch fileUrl: ${r.status}` }, 400)
+        const arrayBuf = await r.arrayBuffer()
+        buffer = Buffer.from(arrayBuf)
+        const url = new URL(data.fileUrl)
+        filename = url.pathname.split('/').pop() || filename
+      } else {
+        return sendJson({ error: 'Unsupported JSON payload. Use { fileUrl } or { base64, filename }' }, 400)
+      }
+    } else {
+      const chunks = []
+      await new Promise((resolve) => {
+        req.on('data', (d) => chunks.push(d))
+        req.on('end', resolve)
+      })
+      buffer = Buffer.concat(chunks)
+    }
+
+    if (!buffer || buffer.length === 0) {
+      return sendJson({ error: 'Empty file payload' }, 400)
+    }
+
+    const type = await detectType(buffer, filename)
+    let text = ''
+    if (type.mime === 'application/pdf' || type.ext === 'pdf') {
+      const r = await pdfParse(buffer)
+      text = (r?.text || '').trim()
+    } else if (
+      type.mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      type.ext === 'docx'
+    ) {
+      const r = await mammoth.extractRawText({ buffer })
+      text = (r?.value || '').trim()
+    } else if (type.mime?.startsWith('image/') || ['png', 'jpg', 'jpeg'].includes(type.ext)) {
+      text = await ocrImageBuffer(buffer, 'eng')
+    } else if (type.mime?.startsWith('text/') || type.ext === 'txt') {
+      text = buffer.toString('utf-8').trim()
+    } else {
+      text = buffer.toString('utf-8').trim()
+    }
+
+    if (!text || !text.trim()) {
+      return sendJson({ success: false, error: 'Parse returned empty text' }, 200)
+    }
+
+    return sendJson({ success: true, data: { text } }, 200)
+  } catch (error) {
+    console.error('Resume parse error:', error)
+    return sendJson({ success: false, error: error?.message || 'Unknown error' }, 500)
+  }
+})
 
 // 数据管理API路由
 // RSS同步
