@@ -11,27 +11,36 @@ const ResumeLibraryPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string>('')
   
-  // 从 localStorage 加载简历
+  // 从存储加载简历（服务端优先）
   useEffect(() => {
-    try {
-      const loadedResumes = ResumeStorageService.loadResumes()
-      setResumes(loadedResumes)
-      console.log('[ResumeLibrary] Loaded', loadedResumes.length, 'resumes from storage')
-    } catch (e) {
-      console.error('[ResumeLibrary] Failed to load:', e)
-    }
-  }, [])
-  
-  // 保存到 localStorage（当 resumes 变化时）
-  useEffect(() => {
-    if (resumes.length > 0) {
+    const loadData = async () => {
       try {
-        ResumeStorageService.saveResumes(resumes)
+        const loadedResumes = await ResumeStorageService.loadResumes()
+        setResumes(loadedResumes)
+        console.log('[ResumeLibrary] Loaded', loadedResumes.length, 'resumes')
       } catch (e) {
-        console.error('[ResumeLibrary] Failed to save:', e)
-        alert('保存失败：' + (e as Error).message)
+        console.error('[ResumeLibrary] Failed to load:', e)
       }
     }
+    loadData()
+  }, [])
+  
+  // 保存到存储（当 resumes 变化时）
+  useEffect(() => {
+    const saveData = async () => {
+      if (resumes.length > 0) {
+        try {
+          await ResumeStorageService.saveResumes(resumes)
+        } catch (e) {
+          console.error('[ResumeLibrary] Failed to save:', e)
+          alert('保存失败：' + (e as Error).message)
+        }
+      }
+    }
+    
+    // 防抖：避免频繁保存
+    const timeoutId = setTimeout(saveData, 1000)
+    return () => clearTimeout(timeoutId)
   }, [resumes])
 
   const singleFileInputRef = useRef<HTMLInputElement>(null)
@@ -110,10 +119,10 @@ const ResumeLibraryPage: React.FC = () => {
   }
   
   // 清空所有简历
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (confirm('确定要清空所有简历吗？此操作不可恢复！')) {
       setResumes([])
-      ResumeStorageService.clearAllResumes()
+      await ResumeStorageService.clearAllResumes()
       console.log('[ResumeLibrary] Cleared all resumes')
     }
   }
@@ -203,13 +212,12 @@ const ResumeLibraryPage: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
-                <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                <th className="w-20 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">性别</th>
+                <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">职位</th>
                 <th className="w-48 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">地点</th>
                 <th className="w-56 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">求职方向</th>
                 <th className="w-56 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">教育背景</th>
                 <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">毕业年限</th>
-                <th className="w-56 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">工作经历总结</th>
+                <th className="w-56 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">工作经历</th>
                 <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件</th>
                 <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">解析状态</th>
                 <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">详情</th>
@@ -226,11 +234,6 @@ const ResumeLibraryPage: React.FC = () => {
                   <td className="px-3 py-2">
                     <Tooltip content={r.title || '解析失败'} maxLines={2}>
                       <div className="text-sm text-gray-900">{r.title || <span className="text-gray-400">-</span>}</div>
-                    </Tooltip>
-                  </td>
-                  <td className="px-3 py-2">
-                    <Tooltip content={r.gender || '解析失败'} maxLines={1} clampChildren={false}>
-                      <span className="text-xs text-gray-700">{r.gender || '-'}</span>
                     </Tooltip>
                   </td>
                   <td className="px-3 py-2">

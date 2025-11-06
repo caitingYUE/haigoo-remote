@@ -1,6 +1,6 @@
 /**
  * 简历存储服务
- * 负责简历数据的本地持久化和同步
+ * 支持本地 localStorage 和远程 API 存储
  */
 
 import { ResumeItem } from '../types/resume-types'
@@ -8,12 +8,63 @@ import { ResumeItem } from '../types/resume-types'
 const STORAGE_KEY = 'haigoo_resume_library'
 const BACKUP_PREFIX = 'haigoo_resume_backup_'
 const MAX_BACKUPS = 5
+const API_ENDPOINT = '/api/resumes'
 
 export class ResumeStorageService {
   /**
-   * 保存简历到 localStorage
+   * 保存简历（优先使用服务端，回退到 localStorage）
    */
-  static saveResumes(resumes: ResumeItem[]): void {
+  static async saveResumes(resumes: ResumeItem[]): Promise<void> {
+    // 先尝试保存到服务端
+    const serverSaved = await this.saveToServer(resumes, 'replace')
+    
+    if (serverSaved) {
+      console.log('[ResumeStorage] Saved to server:', resumes.length, 'resumes')
+      // 同时保存到本地作为缓存
+      this.saveToLocalStorage(resumes)
+    } else {
+      // 服务端失败，保存到本地
+      console.warn('[ResumeStorage] Server save failed, using localStorage')
+      this.saveToLocalStorage(resumes)
+    }
+  }
+
+  /**
+   * 保存到服务端
+   */
+  private static async saveToServer(resumes: ResumeItem[], mode: 'append' | 'replace' = 'replace'): Promise<boolean> {
+    try {
+      // 移除 blobURL（不需要发送到服务器）
+      const sanitizedResumes = resumes.map(({ blobURL, ...rest }) => rest)
+      
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          resumes: sanitizedResumes,
+          mode
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('[ResumeStorage] Server save result:', result)
+      return result.success
+    } catch (error) {
+      console.error('[ResumeStorage] Server save error:', error)
+      return false
+    }
+  }
+
+  /**
+   * 保存到 localStorage
+   */
+  private static saveToLocalStorage(resumes: ResumeItem[]): void {
     try {
       const data = {
         resumes,
@@ -30,29 +81,69 @@ export class ResumeStorageService {
       // 清理旧备份
       this.cleanupOldBackups()
       
-      console.log('[ResumeStorage] Saved', resumes.length, 'resumes')
+      console.log('[ResumeStorage] Saved to localStorage:', resumes.length, 'resumes')
     } catch (error) {
-      console.error('[ResumeStorage] Save failed:', error)
-      throw new Error('保存简历失败，请检查浏览器存储空间')
+      console.error('[ResumeStorage] localStorage save failed:', error)
+      throw new Error('保存简历失败：存储空间不足，请清理浏览器缓存或删除部分简历')
     }
   }
 
   /**
-   * 从 localStorage 加载简历
+   * 加载简历（优先从服务端，回退到 localStorage）
    */
-  static loadResumes(): ResumeItem[] {
+  static async loadResumes(): Promise<ResumeItem[]> {
+    // 先尝试从服务端加载
+    const serverResumes = await this.loadFromServer()
+    
+    if (serverResumes && serverResumes.length > 0) {
+      console.log('[ResumeStorage] Loaded from server:', serverResumes.length, 'resumes')
+      return serverResumes
+    }
+    
+    // 服务端没有数据，从本地加载
+    console.log('[ResumeStorage] Loading from localStorage')
+    return this.loadFromLocalStorage()
+  }
+
+  /**
+   * 从服务端加载
+   */
+  private static async loadFromServer(): Promise<ResumeItem[] | null> {
+    try {
+      const response = await fetch(API_ENDPOINT)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const result = await response.json()
+      if (result.success && Array.isArray(result.data)) {
+        return result.data
+      }
+      
+      return null
+    } catch (error) {
+      console.error('[ResumeStorage] Server load error:', error)
+      return null
+    }
+  }
+
+  /**
+   * 从 localStorage 加载
+   */
+  private static loadFromLocalStorage(): ResumeItem[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (!stored) {
-        console.log('[ResumeStorage] No data found')
+        console.log('[ResumeStorage] No local data found')
         return []
       }
       
       const data = JSON.parse(stored)
-      console.log('[ResumeStorage] Loaded', data.resumes?.length || 0, 'resumes')
+      console.log('[ResumeStorage] Loaded from localStorage:', data.resumes?.length || 0, 'resumes')
       return data.resumes || []
     } catch (error) {
-      console.error('[ResumeStorage] Load failed:', error)
+      console.error('[ResumeStorage] localStorage load failed:', error)
       
       // 尝试从备份恢复
       const backup = this.loadFromBackup()
@@ -68,38 +159,46 @@ export class ResumeStorageService {
   /**
    * 添加简历
    */
-  static addResume(resume: ResumeItem): void {
-    const resumes = this.loadResumes()
+  static async addResume(resume: ResumeItem): Promise<void> {
+    const resumes = await this.loadResumes()
     resumes.unshift(resume) // 添加到开头
-    this.saveResumes(resumes)
+    await this.saveResumes(resumes)
   }
 
   /**
    * 批量添加简历
    */
-  static addResumes(newResumes: ResumeItem[]): void {
-    const existingResumes = this.loadResumes()
+  static async addResumes(newResumes: ResumeItem[]): Promise<void> {
+    const existingResumes = await this.loadResumes()
     const combinedResumes = [...newResumes, ...existingResumes]
     
-    // 去重（基于文件名和上传时间）
+    // 去重（基于文件名和大小）
     const uniqueResumes = this.deduplicateResumes(combinedResumes)
     
-    this.saveResumes(uniqueResumes)
+    await this.saveResumes(uniqueResumes)
   }
 
   /**
    * 删除简历
    */
-  static deleteResume(id: string): void {
-    const resumes = this.loadResumes()
+  static async deleteResume(id: string): Promise<void> {
+    const resumes = await this.loadResumes()
     const filtered = resumes.filter(r => r.id !== id)
-    this.saveResumes(filtered)
+    await this.saveResumes(filtered)
   }
 
   /**
    * 清空所有简历
    */
-  static clearAllResumes(): void {
+  static async clearAllResumes(): Promise<void> {
+    // 清空服务端
+    try {
+      await fetch(API_ENDPOINT, { method: 'DELETE' })
+    } catch (error) {
+      console.error('[ResumeStorage] Server clear failed:', error)
+    }
+    
+    // 清空本地
     localStorage.removeItem(STORAGE_KEY)
     console.log('[ResumeStorage] Cleared all resumes')
   }

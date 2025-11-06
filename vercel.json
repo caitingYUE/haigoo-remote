@@ -13,6 +13,9 @@
     "api/parse-resume-new.js": {
       "maxDuration": 30
     },
+    "api/resumes.js": {
+      "maxDuration": 30
+    },
     "api/data/processed-jobs.js": {
       "maxDuration": 30
     },
