@@ -47,7 +47,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/parse-resume", "destination": "/api/parse-resume-node.js" },
+    { "source": "/api/parse-resume", "destination": "/api/parse-resume-node" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
