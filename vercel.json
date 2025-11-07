@@ -27,6 +27,27 @@
     },
     "api/storage/stats.js": {
       "maxDuration": 10
+    },
+    "api/auth/register.js": {
+      "maxDuration": 30
+    },
+    "api/auth/login.js": {
+      "maxDuration": 10
+    },
+    "api/auth/google.js": {
+      "maxDuration": 30
+    },
+    "api/auth/verify-email.js": {
+      "maxDuration": 10
+    },
+    "api/auth/resend-verification.js": {
+      "maxDuration": 30
+    },
+    "api/auth/me.js": {
+      "maxDuration": 10
+    },
+    "api/auth/update-profile.js": {
+      "maxDuration": 10
     }
   },
   "headers": [
