@@ -173,84 +173,12 @@ export default function ProfilePage() {
     experience: [], // 用户自己添加工作经历
     education: [], // 用户自己添加教育经历
 
-    skills: [
-      { id: '1', name: 'React', level: 90, category: '前端框架' },
-      { id: '2', name: 'TypeScript', level: 85, category: '编程语言' },
-      { id: '3', name: 'Node.js', level: 75, category: '后端技术' },
-      { id: '4', name: 'Vue.js', level: 80, category: '前端框架' },
-      { id: '5', name: 'Python', level: 70, category: '编程语言' }
-    ],
-    resumeFiles: [
-      {
-        id: '1',
-        name: '张三_前端工程师简历.pdf',
-        size: 1024000,
-        type: 'application/pdf',
-        uploadDate: '2024-01-15',
-        aiScore: 85,
-        suggestions: ['添加更多项目经验', '优化技能描述', '增加量化成果']
-      }
-    ],
-    aiSuggestions: [
-      {
-        id: '1',
-        type: 'add',
-        section: 'skills',
-        suggested: 'GraphQL',
-        reason: '基于您的前端经验，学习GraphQL将提升您的竞争力'
-      },
-      {
-        id: '2',
-        type: 'modify',
-        section: 'summary',
-        original: '拥有5年前端开发经验',
-        suggested: '拥有5年+前端开发经验，专注于大型项目架构设计',
-        reason: '更具体地描述您的专业领域'
-      }
-    ],
-    resumeScore: 85,
-    jobApplications: [
-      {
-        id: '1',
-        jobTitle: '高级前端架构师',
-        company: '字节跳动',
-        status: 'interview',
-        appliedDate: '2024-01-20',
-        location: '北京',
-        salary: '30-50K'
-      },
-      {
-        id: '2',
-        jobTitle: '前端技术专家',
-        company: '美团',
-        status: 'applied',
-        appliedDate: '2024-01-18',
-        location: '北京',
-        salary: '35-55K'
-      }
-    ],
-    savedJobs: [
-      {
-        id: '1',
-        title: 'React高级工程师',
-        company: '小米科技',
-        location: '北京',
-        salary: '25-40K',
-        type: '全职',
-        savedDate: '2024-01-22',
-        description: '负责小米生态链产品的前端开发工作'
-      },
-      {
-        id: '2',
-        title: '前端架构师',
-        company: '京东',
-        location: '北京',
-        salary: '40-60K',
-        type: '全职',
-        savedDate: '2024-01-21',
-        description: '负责电商平台前端架构设计和团队管理'
-      }
-    ],
+    skills: [], // 清空默认技能
+    resumeFiles: [], // 清空默认简历文件
+    aiSuggestions: [], // 清空默认AI建议
+    resumeScore: 0, // 清空默认评分
+    jobApplications: [], // 清空默认申请记录
+    savedJobs: [], // 清空默认收藏职位
     notifications: {
       email: true,
       push: true,
@@ -596,8 +524,26 @@ export default function ProfilePage() {
         </div>
         
         <div className="grid gap-4">
-          {user.resumeFiles.map(file => (
-            <div key={file.id} className="p-4 border border-gray-200 rounded-lg">
+          {user.resumeFiles.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                <FileText className="w-8 h-8 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">还没有上传简历</h4>
+              <p className="text-gray-500 mb-6">
+                上传您的简历，AI 将为您提供专业的优化建议
+              </p>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-haigoo-primary text-white rounded-lg hover:bg-haigoo-primary/90 transition-colors"
+              >
+                <Upload className="w-5 h-5" />
+                立即上传简历
+              </button>
+            </div>
+          ) : (
+            user.resumeFiles.map(file => (
+              <div key={file.id} className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <FileText className="w-6 h-6 text-haigoo-primary" />
@@ -644,7 +590,8 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -653,7 +600,18 @@ export default function ProfilePage() {
         <h3 className="text-xl font-semibold text-gray-900 mb-6">AI优化建议</h3>
         
         <div className="space-y-4">
-          {user.aiSuggestions.map(suggestion => (
+          {user.aiSuggestions.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                <Lightbulb className="w-8 h-8 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">暂无AI优化建议</h4>
+              <p className="text-gray-500">
+                上传简历后，AI 将自动分析并提供专业的优化建议
+              </p>
+            </div>
+          ) : (
+            user.aiSuggestions.map(suggestion => (
             <div key={suggestion.id} className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
@@ -702,7 +660,8 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -716,7 +675,18 @@ export default function ProfilePage() {
         <h3 className="text-xl font-semibold text-gray-900 mb-6">申请记录</h3>
         
         <div className="space-y-4">
-          {user.jobApplications.map(application => (
+          {user.jobApplications.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                <Briefcase className="w-8 h-8 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">还没有申请记录</h4>
+              <p className="text-gray-500">
+                浏览职位并开始申请，您的申请记录会在这里显示
+              </p>
+            </div>
+          ) : (
+            user.jobApplications.map(application => (
             <div key={application.id} className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -755,7 +725,8 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -764,7 +735,18 @@ export default function ProfilePage() {
         <h3 className="text-xl font-semibold text-gray-900 mb-6">收藏职位</h3>
         
         <div className="space-y-4">
-          {user.savedJobs.map(job => (
+          {user.savedJobs.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                <Heart className="w-8 h-8 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">还没有收藏职位</h4>
+              <p className="text-gray-500">
+                浏览职位时点击收藏按钮，收藏的职位会在这里显示
+              </p>
+            </div>
+          ) : (
+            user.savedJobs.map(job => (
             <div key={job.id} className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex-1">
@@ -799,7 +781,8 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -1283,18 +1266,16 @@ export default function ProfilePage() {
           <nav className="p-8">
             <div className="space-y-2">
               {sidebarItems.map((item) => {
-                const Icon = item.icon
                 return (
                   <button
                     key={item.id}
                     onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                    className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                       activeSection === item.id
                         ? 'bg-haigoo-primary text-white shadow-md'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
                     <span className="font-medium">{item.label}</span>
                   </button>
                 )
