@@ -18,9 +18,9 @@ import {
   isValidPassword,
   sanitizeUser,
   isTokenExpired
-} from './utils/auth-helpers.js'
-import { getUserByEmail, getUserById, saveUser } from './utils/user-storage.js'
-import { sendVerificationEmail, isEmailServiceConfigured } from './utils/email-service.js'
+} from '../server-utils/auth-helpers.js'
+import { getUserByEmail, getUserById, saveUser } from '../server-utils/user-storage.js'
+import { sendVerificationEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
 

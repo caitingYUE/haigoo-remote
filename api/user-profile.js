@@ -4,8 +4,8 @@
  * 包括工作经历、教育背景、技能、简历等
  */
 
-import { verifyToken, extractToken } from './utils/auth-helpers.js'
-import { getUserById, saveUser } from './utils/user-storage.js'
+import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'
+import { getUserById, saveUser } from '../server-utils/user-storage.js'
 import { kv } from '@vercel/kv'
 import { createClient } from 'redis'
 
