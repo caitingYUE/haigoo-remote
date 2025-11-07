@@ -5,6 +5,8 @@ export interface ResumeItem {
   size: number;
   uploadedAt: string;
   blobURL: string;
+  // Derived fields
+  jobCategory?: string;
   // Parsed fields
   name?: string;
   title?: string;
