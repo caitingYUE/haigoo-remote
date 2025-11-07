@@ -885,127 +885,133 @@ app.post('/api/recommendations', async (req, res) => {
 });
 
 // ================== 用户认证 API（本地开发模拟） ==================
+// 统一路由处理: /api/auth?action=xxx
 
-// 注册
-app.post('/api/auth/register', async (req, res) => {
-  const { email, password, username } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ success: false, error: '邮箱和密码不能为空' });
-  }
+app.all('/api/auth', (req, res) => {
+  const { action } = req.query;
   
-  if (usersStore.has(email)) {
-    return res.status(409).json({ success: false, error: '该邮箱已被注册' });
-  }
-
-  const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const user = {
-    id: userId,
-    email,
-    username: username || `User_${Math.random().toString(36).substr(2, 6)}`,
-    avatar: `https://api.dicebear.com/7.x/personas/svg?seed=${userId}`,
-    authProvider: 'email',
-    emailVerified: false, // 本地环境直接设为 true 以方便测试
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    status: 'active'
-  };
-  usersStore.set(email, user);
-  
-  const token = `dev_token_${userId}`;
-  return res.status(201).json({
-    success: true,
-    token,
-    user,
-    message: '注册成功（开发环境）'
-  });
-});
-
-// 登录
-app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ success: false, error: '邮箱和密码不能为空' });
-  }
-
-  const user = usersStore.get(email);
-  if (!user) {
-    return res.status(401).json({ success: false, error: '邮箱或密码错误' });
-  }
-
-  user.lastLoginAt = new Date().toISOString();
-  const token = `dev_token_${user.id}`;
-  return res.json({
-    success: true,
-    token,
-    user,
-    message: '登录成功（开发环境）'
-  });
-});
-
-// 获取当前用户
-app.get('/api/auth/me', (req, res) => {
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer dev_token_')) {
-    return res.status(401).json({ success: false, error: '未提供认证令牌' });
-  }
-  
-  // 简单模拟：从 token 中提取 userId，查找用户
-  const token = authHeader.substring(7);
-  const userId = token.replace('dev_token_', '');
-  
-  // 遍历 usersStore 查找
-  for (const [email, user] of usersStore.entries()) {
-    if (user.id === userId) {
-      return res.json({ success: true, user });
+  // 注册
+  if (action === 'register' && req.method === 'POST') {
+    const { email, password, username } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: '邮箱和密码不能为空' });
     }
-  }
-  
-  return res.status(404).json({ success: false, error: '用户不存在' });
-});
-
-// 更新用户资料
-app.patch('/api/auth/update-profile', (req, res) => {
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer dev_token_')) {
-    return res.status(401).json({ success: false, error: '未提供认证令牌' });
-  }
-
-  const token = authHeader.substring(7);
-  const userId = token.replace('dev_token_', '');
-  
-  for (const [email, user] of usersStore.entries()) {
-    if (user.id === userId) {
-      const updates = req.body;
-      if (!user.profile) user.profile = {};
-      Object.assign(user.profile, updates);
-      user.updatedAt = new Date().toISOString();
-      usersStore.set(email, user);
-      return res.json({ success: true, user, message: '资料更新成功' });
+    
+    if (usersStore.has(email)) {
+      return res.status(409).json({ success: false, error: '该邮箱已被注册' });
     }
+
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const user = {
+      id: userId,
+      email,
+      username: username || `User_${Math.random().toString(36).substr(2, 6)}`,
+      avatar: `https://api.dicebear.com/7.x/personas/svg?seed=${userId}`,
+      authProvider: 'email',
+      emailVerified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'active'
+    };
+    usersStore.set(email, user);
+    
+    const token = `dev_token_${userId}`;
+    return res.status(201).json({
+      success: true,
+      token,
+      user,
+      message: '注册成功（开发环境）'
+    });
   }
   
-  return res.status(404).json({ success: false, error: '用户不存在' });
-});
+  // 登录
+  if (action === 'login' && req.method === 'POST') {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: '邮箱和密码不能为空' });
+    }
 
-// 邮箱验证（本地环境直接成功）
-app.post('/api/auth/verify-email', (req, res) => {
-  const { email, token } = req.body;
-  const user = usersStore.get(email);
-  if (!user) {
+    const user = usersStore.get(email);
+    if (!user) {
+      return res.status(401).json({ success: false, error: '邮箱或密码错误' });
+    }
+
+    user.lastLoginAt = new Date().toISOString();
+    const token = `dev_token_${user.id}`;
+    return res.json({
+      success: true,
+      token,
+      user,
+      message: '登录成功（开发环境）'
+    });
+  }
+  
+  // 获取当前用户
+  if (action === 'me' && req.method === 'GET') {
+    const authHeader = req.headers.authorization || '';
+    if (!authHeader.startsWith('Bearer dev_token_')) {
+      return res.status(401).json({ success: false, error: '未提供认证令牌' });
+    }
+    
+    const token = authHeader.substring(7);
+    const userId = token.replace('dev_token_', '');
+    
+    for (const [email, user] of usersStore.entries()) {
+      if (user.id === userId) {
+        return res.json({ success: true, user });
+      }
+    }
+    
     return res.status(404).json({ success: false, error: '用户不存在' });
   }
-  user.emailVerified = true;
-  return res.json({ success: true, message: '邮箱验证成功（开发环境）', user });
-});
+  
+  // 更新用户资料
+  if (action === 'update-profile' && req.method === 'PATCH') {
+    const authHeader = req.headers.authorization || '';
+    if (!authHeader.startsWith('Bearer dev_token_')) {
+      return res.status(401).json({ success: false, error: '未提供认证令牌' });
+    }
 
-// 重新发送验证邮件
-app.post('/api/auth/resend-verification', (req, res) => {
-  return res.json({ success: true, message: '验证邮件已发送（开发环境模拟）' });
-});
-
-// Google 登录
-app.post('/api/auth/google', (req, res) => {
-  return res.status(501).json({ success: false, error: 'Google OAuth 在本地开发环境不可用' });
+    const token = authHeader.substring(7);
+    const userId = token.replace('dev_token_', '');
+    
+    for (const [email, user] of usersStore.entries()) {
+      if (user.id === userId) {
+        const updates = req.body;
+        if (!user.profile) user.profile = {};
+        Object.assign(user.profile, updates);
+        user.updatedAt = new Date().toISOString();
+        usersStore.set(email, user);
+        return res.json({ success: true, user, message: '资料更新成功' });
+      }
+    }
+    
+    return res.status(404).json({ success: false, error: '用户不存在' });
+  }
+  
+  // 邮箱验证
+  if (action === 'verify-email' && req.method === 'POST') {
+    const { email, token } = req.body;
+    const user = usersStore.get(email);
+    if (!user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+    user.emailVerified = true;
+    return res.json({ success: true, message: '邮箱验证成功（开发环境）', user });
+  }
+  
+  // 重新发送验证邮件
+  if (action === 'resend-verification' && req.method === 'POST') {
+    return res.json({ success: true, message: '验证邮件已发送（开发环境模拟）' });
+  }
+  
+  // Google 登录
+  if (action === 'google' && req.method === 'POST') {
+    return res.status(501).json({ success: false, error: 'Google OAuth 在本地开发环境不可用' });
+  }
+  
+  // 无效的 action
+  return res.status(400).json({ success: false, error: 'Invalid action' });
 });
 
 app.listen(PORT, () => {

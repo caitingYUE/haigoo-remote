@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 静默刷新用户信息（不显示loading）
   const refreshUserSilently = async (authToken: string) => {
     try {
-      const response = await fetch(`${API_BASE}/me`, {
+      const response = await fetch(`${API_BASE}?action=me`, {
         headers: { Authorization: `Bearer ${authToken}` }
       })
       if (response.ok) {
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token) return
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_BASE}/me`, {
+      const response = await fetch(`${API_BASE}?action=me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 邮箱密码登录
   const login = useCallback(async (email: string, password: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE}/login`, {
+      const response = await fetch(`${API_BASE}?action=login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Google 登录
   const loginWithGoogle = useCallback(async (idToken: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE}/google`, {
+      const response = await fetch(`${API_BASE}?action=google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken })
@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 注册
   const register = useCallback(async (email: string, password: string, username?: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE}/register`, {
+      const response = await fetch(`${API_BASE}?action=register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, username })
@@ -182,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 验证邮箱
   const verifyEmail = useCallback(async (email: string, verificationToken: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE}/verify-email`, {
+      const response = await fetch(`${API_BASE}?action=verify-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, token: verificationToken })
@@ -205,7 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 发送验证邮件
   const sendVerificationEmail = useCallback(async (email: string): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/resend-verification`, {
+      const response = await fetch(`${API_BASE}?action=resend-verification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -223,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token) return false
 
     try {
-      const response = await fetch(`${API_BASE}/update-profile`, {
+      const response = await fetch(`${API_BASE}?action=update-profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
