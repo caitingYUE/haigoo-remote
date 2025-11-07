@@ -13,6 +13,7 @@ import RegisterPage from './pages/RegisterPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPanel from './components/AdminPanel'
 import AdminTeamPage from './pages/AdminTeamPage'
+import UserManagementPage from './pages/UserManagementPage'
 import { AppProvider } from './contexts/AppContext'
 import { AuthProvider } from './contexts/AuthContext'
 import NotificationProvider from './components/NotificationSystem'
@@ -54,6 +55,13 @@ function App() {
             <Route path="/admin_team" element={
               <ProtectedRoute>
                 <AdminTeamPage />
+              </ProtectedRoute>
+            } />
+            
+            {/* 用户管理页面（需要登录） */}
+            <Route path="/admin/users" element={
+              <ProtectedRoute>
+                <UserManagementPage />
               </ProtectedRoute>
             } />
             

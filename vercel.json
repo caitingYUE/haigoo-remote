@@ -30,6 +30,9 @@
     },
     "api/auth.js": {
       "maxDuration": 30
+    },
+    "api/users.js": {
+      "maxDuration": 10
     }
   },
   "headers": [

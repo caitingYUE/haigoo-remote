@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { processJobDescription } from '../utils/text-formatter'
 import {
   Mail,
@@ -151,53 +152,27 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const location = useLocation()
+  const { user: authUser } = useAuth()
   const [activeSection, setActiveSection] = useState('profile')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)
   
+  // 从登录用户数据初始化，如果没有则使用默认值
   const [user, setUser] = useState<UserProfile>({
-    name: '张三',
-    email: 'zhangsan@example.com',
-    phone: '+86 138 0013 8000',
-    location: '北京市朝阳区',
-    title: '高级前端工程师',
-    summary: '拥有5年前端开发经验，精通React、Vue等现代前端框架，具备良好的用户体验设计能力和团队协作精神。',
-    avatar: '',
-    website: 'https://zhangsan.dev',
-    linkedin: 'https://linkedin.com/in/zhangsan',
-    github: 'https://github.com/zhangsan',
-    experience: [
-      {
-        id: '1',
-        company: '阿里巴巴',
-        position: '高级前端工程师',
-        startDate: '2021-03',
-        endDate: '',
-        current: true,
-        description: '负责电商平台前端架构设计和开发，参与多个大型项目的技术选型和实施。'
-      },
-      {
-        id: '2',
-        company: '腾讯',
-        position: '前端工程师',
-        startDate: '2019-06',
-        endDate: '2021-02',
-        current: false,
-        description: '参与微信小程序开发，负责用户界面优化和性能提升。'
-      }
-    ],
-    education: [
-      {
-        id: '1',
-        school: '清华大学',
-        degree: '学士',
-        field: '计算机科学与技术',
-        startDate: '2016-09',
-        endDate: '2020-06',
-        gpa: '3.8'
-      }
-    ],
+    name: authUser?.username || authUser?.profile?.fullName || '用户',
+    email: authUser?.email || '',
+    phone: authUser?.profile?.phone || '',
+    location: authUser?.profile?.location || '',
+    title: authUser?.profile?.title || '',
+    summary: authUser?.profile?.bio || '',
+    avatar: authUser?.avatar || '',
+    website: '',
+    linkedin: '',
+    github: '',
+    experience: [], // 用户自己添加工作经历
+    education: [], // 用户自己添加教育经历
+
     skills: [
       { id: '1', name: 'React', level: 90, category: '前端框架' },
       { id: '2', name: 'TypeScript', level: 85, category: '编程语言' },
@@ -288,6 +263,22 @@ export default function ProfilePage() {
       resumeVisible: true
     }
   })
+
+  // 监听登录用户变化，更新本地状态
+  useEffect(() => {
+    if (authUser) {
+      setUser(prev => ({
+        ...prev,
+        name: authUser.username || authUser.profile?.fullName || '用户',
+        email: authUser.email || '',
+        phone: authUser.profile?.phone || '',
+        location: authUser.profile?.location || '',
+        title: authUser.profile?.title || '',
+        summary: authUser.profile?.bio || '',
+        avatar: authUser.avatar || ''
+      }))
+    }
+  }, [authUser])
 
   const sidebarItems = [
     { id: 'profile', label: '个人资料', icon: User },

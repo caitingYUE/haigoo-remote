@@ -1014,6 +1014,32 @@ app.all('/api/auth', (req, res) => {
   return res.status(400).json({ success: false, error: 'Invalid action' });
 });
 
+// ================== 用户列表 API（本地开发） ==================
+app.get('/api/users', (req, res) => {
+  const { id } = req.query;
+  
+  // 如果提供了 id，返回特定用户
+  if (id) {
+    for (const [email, user] of usersStore.entries()) {
+      if (user.id === id) {
+        return res.json({ success: true, user, provider: 'memory' });
+      }
+    }
+    return res.status(404).json({ success: false, error: 'User not found' });
+  }
+  
+  // 返回所有用户
+  const users = Array.from(usersStore.values());
+  users.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  
+  return res.json({
+    success: true,
+    users,
+    total: users.length,
+    provider: 'memory'
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`RSS Proxy server running on http://localhost:${PORT}`);
 });
