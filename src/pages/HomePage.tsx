@@ -148,7 +148,8 @@ export default function HomePage() {
       try {
         setLoading(true)
         setError(null)
-        const response = await processedJobsService.getProcessedJobs(1, 50)
+        // 性能优化：首页只加载30条用于推荐
+        const response = await processedJobsService.getProcessedJobs(1, 30)
         if (response.jobs.length > 0) {
           setJobs(response.jobs)
           setLastUpdateTime(new Date())

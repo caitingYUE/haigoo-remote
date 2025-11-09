@@ -121,10 +121,12 @@ class ProcessedJobsService {
     }
   }
 
-  async getAllProcessedJobs(): Promise<Job[]> {
+  async getAllProcessedJobs(limit: number = 200): Promise<Job[]> {
     try {
-      // 获取所有数据，不分页
-      const response = await this.getProcessedJobs(1, 1000)
+      // 限制数据量，优化性能（默认200条）
+      // 避免一次性加载过多数据导致内存和带宽问题
+      const response = await this.getProcessedJobs(1, limit)
+      console.log(`[processed-jobs-service] 加载职位数据: ${response.jobs.length}/${response.total} 条`)
       return response.jobs
     } catch (error) {
       console.error('获取所有处理后职位数据失败:', error)

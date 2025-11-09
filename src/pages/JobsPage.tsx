@@ -149,7 +149,8 @@ export default function JobsPage() {
     const loadJobs = async () => {
       try {
         setLoading(true)
-        const response = await processedJobsService.getAllProcessedJobs()
+        // 性能优化：限制加载数量为200条，避免内存和带宽问题
+        const response = await processedJobsService.getAllProcessedJobs(200)
         console.log('获取到处理后的岗位数据:', response.length, '个')
         if (response.length > 0) {
           setJobs(response)
