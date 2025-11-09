@@ -3,22 +3,98 @@
  * 支持邮箱密码登录和 Google OAuth 登录
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import logoSvg from '../assets/logo.svg'
+
+// Google Client ID from environment
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [googleReady, setGoogleReady] = useState(false)
   const { login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
   // 获取重定向目标（登录后跳转到原页面）
   const from = (location.state as any)?.from?.pathname || '/'
+
+  // 初始化 Google Identity Services
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) {
+      console.warn('[LoginPage] Google Client ID not configured')
+      return
+    }
+
+    // 等待 Google Identity Services 库加载
+    const checkGoogleLoaded = setInterval(() => {
+      if (window.google?.accounts?.id) {
+        clearInterval(checkGoogleLoaded)
+        initializeGoogleSignIn()
+      }
+    }, 100)
+
+    // 10秒超时
+    const timeout = setTimeout(() => {
+      clearInterval(checkGoogleLoaded)
+      if (!window.google?.accounts?.id) {
+        console.error('[LoginPage] Google Identity Services failed to load')
+      }
+    }, 10000)
+
+    return () => {
+      clearInterval(checkGoogleLoaded)
+      clearTimeout(timeout)
+    }
+  }, [])
+
+  const initializeGoogleSignIn = () => {
+    try {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCallback,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      })
+      setGoogleReady(true)
+      console.log('[LoginPage] Google Sign-In initialized')
+    } catch (error) {
+      console.error('[LoginPage] Failed to initialize Google Sign-In:', error)
+    }
+  }
+
+  const handleGoogleCallback = async (response: any) => {
+    if (!response.credential) {
+      setError('Google 登录失败：未获取到凭证')
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+
+    try {
+      console.log('[LoginPage] Processing Google login...')
+      const result = await loginWithGoogle(response.credential)
+      
+      if (result.success) {
+        console.log('[LoginPage] Google login successful')
+        navigate(from, { replace: true })
+      } else {
+        console.error('[LoginPage] Google login failed:', result.error)
+        setError(result.error || 'Google 登录失败')
+      }
+    } catch (err) {
+      console.error('[LoginPage] Google login error:', err)
+      setError('Google 登录失败，请稍后重试')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,10 +115,19 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleLogin = async () => {
-    setError('Google 登录功能开发中，请使用邮箱登录')
-    // TODO: 集成 Google OAuth SDK
-    // 参考: https://developers.google.com/identity/gsi/web/guides/overview
+  const handleGoogleLogin = () => {
+    if (!googleReady || !window.google?.accounts?.id) {
+      setError('Google 登录服务未就绪，请稍后重试')
+      return
+    }
+
+    try {
+      // 触发 Google One Tap 登录
+      window.google.accounts.id.prompt()
+    } catch (error) {
+      console.error('[LoginPage] Failed to trigger Google login:', error)
+      setError('无法启动 Google 登录，请稍后重试')
+    }
   }
 
   return (
