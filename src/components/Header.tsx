@@ -87,12 +87,14 @@ export default function Header() {
     }
   }
 
-  // 简化用户菜单选项，保留核心功能（移除图标）
+  // 用户菜单选项 - 与个人资料页面侧边栏保持一致
   const userMenuItems = [
     { id: 'profile', label: '个人资料', href: '/profile?tab=profile' },
-    { id: 'resume', label: '简历优化', href: '/profile?tab=resume' },
-    { id: 'applications', label: '申请记录', href: '/profile?tab=applications' },
-    { id: 'insights', label: 'AI洞察', href: '/profile?tab=insights' },
+    { id: 'resume', label: '简历管理', href: '/profile?tab=resume' },
+    { id: 'subscriptions', label: '职位订阅', href: '/profile?tab=subscriptions' },
+    { id: 'recommendations', label: '推荐墙', href: '/profile?tab=recommendations' },
+    { id: 'insights', label: 'AI职业洞察', href: '/profile?tab=insights' },
+    { id: 'applications', label: '我的申请', href: '/profile?tab=applications' },
     { id: 'settings', label: '设置', href: '/profile?tab=settings' }
   ]
 

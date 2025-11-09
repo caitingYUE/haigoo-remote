@@ -153,7 +153,12 @@ interface UserProfile {
 export default function ProfilePage() {
   const location = useLocation()
   const { user: authUser } = useAuth()
-  const [activeSection, setActiveSection] = useState('profile')
+  
+  // 从 URL 参数中读取 tab，如果没有则默认为 'profile'
+  const searchParams = new URLSearchParams(location.search)
+  const urlTab = searchParams.get('tab') || 'profile'
+  
+  const [activeSection, setActiveSection] = useState(urlTab)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)
@@ -191,6 +196,15 @@ export default function ProfilePage() {
       resumeVisible: true
     }
   })
+
+  // 监听 URL 参数变化，切换到对应的 tab
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const tab = searchParams.get('tab')
+    if (tab) {
+      setActiveSection(tab)
+    }
+  }, [location.search])
 
   // 监听登录用户变化，更新本地状态
   useEffect(() => {
