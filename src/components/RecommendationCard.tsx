@@ -121,13 +121,13 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
     }
   };
 
-  // 生成职位卡片的 ARIA 标签
+  // 生成职位卡片的 ARIA 标签（使用翻译后的内容）
   const getJobCardAriaLabel = () => {
     const parts = [
-      `推荐职位：${job.title}`,
-      `公司：${job.company}`,
+      `推荐职位：${job.translations?.title || job.title}`,
+      `公司：${job.translations?.company || job.company}`,
       `薪资：${formatSalary(job.salary)}`,
-      `地点：${job.location}`,
+      `地点：${job.translations?.location || job.location}`,
       `发布时间：${DateFormatter.formatPublishTime(job.postedAt)}`
     ];
     
@@ -153,13 +153,13 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
           <div className="flex-1 min-w-0">
             <h3 
               className="font-bold text-gray-900 dark:text-white text-lg group-hover:text-haigoo-primary transition-colors mb-1 line-clamp-1"
-              title={job.title}
+              title={job.translations?.title || job.title}
             >
-              {job.title}
+              {job.translations?.title || job.title}
             </h3>
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <Building className="w-4 h-4" />
-              <span className="font-medium truncate">{job.company}</span>
+              <span className="font-medium truncate">{job.translations?.company || job.company}</span>
             </div>
           </div>
         </div>
@@ -179,10 +179,10 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
       {/* 关键信息：按当天卡布局，将地点（以及可选薪资）放在描述下方 */}
       {/* 注意：不在此处展示类型，保持与当天卡一致 */}
 
-      {/* 描述 */}
-      {job.description && (
+      {/* 描述 - 优先显示翻译 */}
+      {(job.translations?.description || job.description) && (
         <p id={`job-${job.id}-description`} className="mt-3 text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
-          {processJobDescription(job.description, { formatMarkdown: false, maxLength: 120, preserveHtml: false })}
+          {processJobDescription(job.translations?.description || job.description || '', { formatMarkdown: false, maxLength: 120, preserveHtml: false })}
         </p>
       )}
 
@@ -195,7 +195,7 @@ export default function RecommendationCard({ job, onClick, className = '', onApp
             {showLocationFinal && (
               <div className="flex items-center gap-1 min-w-0">
                 <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                <span className="text-sm text-gray-600 dark:text-gray-300 truncate whitespace-nowrap overflow-hidden" title={job.location}>{job.location}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300 truncate whitespace-nowrap overflow-hidden" title={job.translations?.location || job.location}>{job.translations?.location || job.location}</span>
               </div>
             )}
             {showSalaryFinal && (

@@ -10,6 +10,7 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { recommendationHistoryService } from '../services/recommendation-history-service'
 import { processJobDescription } from '../utils/text-formatter'
 import SingleLineTags from '../components/SingleLineTags'
+import { jobTranslationService } from '../services/job-translation-service'
 
 
 
@@ -151,7 +152,9 @@ export default function HomePage() {
         // 性能优化：首页只加载30条用于推荐
         const response = await processedJobsService.getProcessedJobs(1, 30)
         if (response.jobs.length > 0) {
-          setJobs(response.jobs)
+          // 翻译岗位数据为中文
+          const translatedJobs = await jobTranslationService.translateJobs(response.jobs)
+          setJobs(translatedJobs)
           setLastUpdateTime(new Date())
         } else {
           setJobs([])
@@ -183,7 +186,9 @@ export default function HomePage() {
       try {
         const todayRec = recommendationHistoryService.getTodayRecommendation()
         if (todayRec && todayRec.jobs) {
-          setTodayRecommendations(todayRec.jobs)
+          // 翻译今日推荐岗位
+          const translatedJobs = await jobTranslationService.translateJobs(todayRec.jobs)
+          setTodayRecommendations(translatedJobs)
         }
       } catch (error) {
         console.error('加载今日推荐失败:', error)
@@ -203,11 +208,12 @@ export default function HomePage() {
      setLoadingHistory(true)
      try {
        const history = await recommendationHistoryService.getRecommendationsForPastDays(level)
-       // 转换为 {[date]: Job[]} 格式
+       // 转换为 {[date]: Job[]} 格式并翻译
        const historyMap: {[key: string]: Job[]} = {}
-       history.forEach(item => {
-         historyMap[item.date] = item.jobs
-       })
+       for (const item of history) {
+         const translatedJobs = await jobTranslationService.translateJobs(item.jobs)
+         historyMap[item.date] = translatedJobs
+       }
        setPastRecommendations(historyMap)
      } catch (error) {
        console.error('加载历史推荐失败:', error)
@@ -348,12 +354,12 @@ export default function HomePage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className={`font-bold text-lg mb-1 truncate ${styles.isTop ? 'text-gray-800 dark:text-white' : 'text-gray-900 dark:text-white'}`}>
-                                {job.title}
+                                {job.translations?.title || job.title}
                               </h3>
                               {job.company && (
                                 <div className={`flex items-center gap-1 text-sm min-w-0 ${styles.isTop ? 'text-gray-600 dark:text-gray-300' : 'text-gray-600 dark:text-gray-400'}`}>
                                   <Building className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                  <span className="truncate" title={job.company}>{job.company}</span>
+                                  <span className="truncate" title={job.translations?.company || job.company}>{job.translations?.company || job.company}</span>
                                 </div>
                               )}
                             </div>
@@ -361,9 +367,9 @@ export default function HomePage() {
                         </div>
 
                         <div className="space-y-4 mb-6">
-                          {job.description && (
+                          {(job.translations?.description || job.description) && (
                             <p className={`text-sm line-clamp-2 leading-relaxed ${styles.isTop ? 'text-gray-700 dark:text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>
-                              {processJobDescription(job.description, { 
+                              {processJobDescription(job.translations?.description || job.description || '', { 
                                 formatMarkdown: false, 
                                 maxLength: 120, 
                                 preserveHtml: false 
@@ -373,7 +379,7 @@ export default function HomePage() {
                           <div className="flex items-center justify-between">
                             <div className={`flex items-center gap-1 text-sm flex-1 mr-4 min-w-0 whitespace-nowrap overflow-hidden ${styles.isTop ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-400'}`}>
                               <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                              <span className="truncate" title={job.location}>{job.location}</span>
+                              <span className="truncate" title={job.translations?.location || job.location}>{job.translations?.location || job.location}</span>
                             </div>
                             {job.salary && job.salary.min > 0 && (
                               <p className={`font-bold text-xl flex-shrink-0 ${styles.isTop ? `bg-gradient-to-r ${styles.accentColor} bg-clip-text text-transparent` : 'text-violet-600 dark:text-violet-400'}`}>

@@ -30,7 +30,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 }) => {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'description' | 'company' | 'similar'>('description')
-  const [isOriginalLanguage, setIsOriginalLanguage] = useState(true)
+  // 默认显示中文翻译（false = 显示翻译，true = 显示原文）
+  const [isOriginalLanguage, setIsOriginalLanguage] = useState(false)
   const [translatedContent, setTranslatedContent] = useState<Record<string, string>>({})
   const [isTranslating, setIsTranslating] = useState(false)
   const [translationError, setTranslationError] = useState<string | null>(null)
@@ -162,50 +163,48 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     }
   }
 
-  // AI 翻译功能
-  const toggleLanguage = async () => {
-    if (isOriginalLanguage && Object.keys(translatedContent).length === 0) {
-      setIsTranslating(true)
-      setTranslationError(null)
-      
-      try {
-        const textsToTranslate = [
-          job.title || '',
-          job.company || '',
-          job.location || '',
-          job.type || '',
-          job.description || ''
-        ].filter(text => text.trim() !== '')
-        
-        const results = await multiTranslationService.batchTranslate(textsToTranslate, 'zh')
-        
-        if (results.success && results.data) {
-          const [title, company, location, type, description] = results.data
-          setTranslatedContent({ title, company, location, type, description })
-        } else {
-          setTranslationError('翻译服务暂时不可用')
-        }
-      } catch (error) {
-        console.error('翻译失败:', error)
-        setTranslationError('翻译服务暂时不可用')
-      } finally {
-        setIsTranslating(false)
-      }
-    }
-    
+  // 语言切换功能（在中文翻译和英文原文之间切换）
+  const toggleLanguage = () => {
+    // 简单切换显示状态，不需要额外翻译，因为数据已经包含translations字段
     setIsOriginalLanguage(!isOriginalLanguage)
   }
 
   // 显示文本的辅助函数
+  // isOriginalLanguage = false 时显示翻译（中文），true 时显示原文（英文）
   const displayText = (originalText: string, isLongText = false, key?: string): string => {
     if (isOriginalLanguage) {
+      // 显示原文（英文）
       return originalText
     }
     
-    if (key && translatedContent[key]) {
-      return translatedContent[key]
+    // 显示翻译（中文），优先使用job.translations字段
+    if (key && job.translations) {
+      const translationKey = key as keyof typeof job.translations
+      if (job.translations[translationKey]) {
+        return job.translations[translationKey] as string
+      }
     }
     
+    // 如果没有对应的翻译key，但有translations字段，尝试匹配
+    if (job.translations) {
+      if (originalText === job.title && job.translations.title) {
+        return job.translations.title
+      }
+      if (originalText === job.company && job.translations.company) {
+        return job.translations.company
+      }
+      if (originalText === job.location && job.translations.location) {
+        return job.translations.location
+      }
+      if (originalText === job.type && job.translations.type) {
+        return job.translations.type
+      }
+      if (originalText === job.description && job.translations.description) {
+        return job.translations.description
+      }
+    }
+    
+    // 没有翻译时返回原文
     return originalText
   }
 
@@ -342,20 +341,19 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 {displayText(job.company || '', false, 'company')} • {displayText(job.location || '', false, 'location')}
               </p>
               <div className="flex items-center gap-2" role="toolbar" aria-label="职位操作">
-                {/* 翻译开关 */}
+                {/* 翻译/原文切换按钮 - 默认显示翻译（中文） */}
                 <button
                   onClick={toggleLanguage}
                   onKeyDown={(e) => handleKeyDown(e, toggleLanguage)}
-                  disabled={isTranslating}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/70 dark:bg-zinc-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-zinc-700/50 rounded-lg transition-all duration-200 hover:bg-white/90 dark:hover:bg-zinc-800/90 hover:border-slate-300/60 dark:hover:border-zinc-600/60 group disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={translationError ? `翻译失败：${translationError}` : (isOriginalLanguage ? '切换到翻译版本' : '切换到原文版本')}
-                  aria-label={`语言切换，当前显示${isOriginalLanguage ? '原文' : '翻译'}版本`}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/70 dark:bg-zinc-800/70 backdrop-blur-sm border border-slate-200/50 dark:border-zinc-700/50 rounded-lg transition-all duration-200 hover:bg-white/90 dark:hover:bg-zinc-800/90 hover:border-slate-300/60 dark:hover:border-zinc-600/60 group"
+                  title={isOriginalLanguage ? '切换到中文翻译' : '切换到英文原文'}
+                  aria-label={`语言切换，当前显示${isOriginalLanguage ? '英文原文' : '中文翻译'}版本`}
                   aria-pressed={!isOriginalLanguage}
                 >
-                  <Languages className={`h-3 w-3 ${isTranslating ? 'text-blue-500 dark:text-blue-400 animate-pulse' : 'text-slate-500 dark:text-slate-400'}`} />
-                  <span className={`text-xs font-medium ${isOriginalLanguage ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>原</span>
-                  <span className="text-slate-300 dark:text-slate-600 mx-0.5">/</span>
+                  <Languages className="h-3 w-3 text-slate-500 dark:text-slate-400" />
                   <span className={`text-xs font-medium ${!isOriginalLanguage ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>译</span>
+                  <span className="text-slate-300 dark:text-slate-600 mx-0.5">/</span>
+                  <span className={`text-xs font-medium ${isOriginalLanguage ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>原</span>
                 </button>
 
                 {/* 分享 */}

@@ -90,13 +90,13 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     }
   };
 
-  // 生成职位卡片的 ARIA 标签
+  // 生成职位卡片的 ARIA 标签（使用翻译后的内容）
   const getJobCardAriaLabel = () => {
     const parts = [
-      `职位：${job.title}`,
-      `公司：${job.company}`,
+      `职位：${job.translations?.title || job.title}`,
+      `公司：${job.translations?.company || job.company}`,
       `薪资：${formatSalary(job.salary)}`,
-      `地点：${job.location}`,
+      `地点：${job.translations?.location || job.location}`,
       `类型：${getJobTypeLabel(job.type)}`,
       `发布时间：${DateFormatter.formatPublishTime(job.postedAt)}`
     ];
@@ -162,16 +162,16 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             <h2 
               id={`job-${job.id}-title`}
               className="font-semibold text-gray-900 text-lg group-hover:text-haigoo-primary transition-colors mb-1 line-clamp-1"
-              title={job.title}
+              title={job.translations?.title || job.title}
             >
-              {job.title}
+              {job.translations?.title || job.title}
             </h2>
             
             {/* 公司信息行 - 移除来源标签，避免与底部重复 */}
             <div className="flex items-center gap-3 text-gray-600 text-sm mb-3 flex-wrap">
               <div className="flex items-center font-medium">
                 <Building className="w-4 h-4 mr-1.5" aria-hidden="true" />
-                <span>{job.company}</span>
+                <span>{job.translations?.company || job.company}</span>
               </div>
             </div>
             
@@ -192,10 +192,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
                 <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" aria-hidden="true" />
                 <span 
                   className="truncate" 
-                  title={job.location}
-                  aria-label={`工作地点：${job.location}`}
+                  title={job.translations?.location || job.location}
+                  aria-label={`工作地点：${job.translations?.location || job.location}`}
                 >
-                  {job.location}
+                  {job.translations?.location || job.location}
                 </span>
               </div>
               
@@ -232,15 +232,15 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         </div>
       </header>
 
-      {/* 职位描述 - 优化HTML标签处理 */}
-      {job.description && (
+      {/* 职位描述 - 优化HTML标签处理，优先显示翻译 */}
+      {(job.translations?.description || job.description) && (
         <section className="mt-4 pt-4 border-t border-gray-100">
           <p 
             id={`job-${job.id}-description`}
             className="text-gray-600 text-sm line-clamp-2 leading-relaxed"
             aria-label="职位描述"
           >
-            {processJobDescription(job.description, { 
+            {processJobDescription(job.translations?.description || job.description || '', { 
               formatMarkdown: false, 
               maxLength: 120, 
               preserveHtml: false 

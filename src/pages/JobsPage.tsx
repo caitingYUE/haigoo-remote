@@ -7,6 +7,7 @@ import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { DateFormatter } from '../utils/date-formatter'
 import { processJobDescription } from '../utils/text-formatter'
+import { jobTranslationService } from '../services/job-translation-service'
 
 const jobTypes = [
   { value: 'all', label: '全部类型' },
@@ -153,11 +154,16 @@ export default function JobsPage() {
         const response = await processedJobsService.getAllProcessedJobs(200)
         console.log('获取到处理后的岗位数据:', response.length, '个')
         if (response.length > 0) {
-          setJobs(response)
-          console.log('示例岗位数据:', response.slice(0, 2).map((job: Job) => ({
-            title: job.title,
-            company: job.company,
-            description: processJobDescription(job.description || '', {
+          // 翻译岗位数据为中文
+          console.log('开始翻译岗位数据...')
+          const translatedJobs = await jobTranslationService.translateJobs(response)
+          setJobs(translatedJobs)
+          console.log('示例岗位数据（已翻译）:', translatedJobs.slice(0, 2).map((job: Job) => ({
+            title: job.translations?.title || job.title,
+            titleOriginal: job.title,
+            company: job.translations?.company || job.company,
+            companyOriginal: job.company,
+            description: processJobDescription(job.translations?.description || job.description || '', {
               formatMarkdown: false,
               maxLength: 100,
               preserveHtml: false

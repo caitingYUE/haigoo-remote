@@ -29,6 +29,16 @@ export interface Job {
   recommendationId?: string  // 推荐唯一ID，用于关联推荐时间
   recommendedAt?: string     // 推荐时间戳 (ISO 8601 format)
   recommendationGroup?: number // 推荐组别 (1或2，每天2组推荐)
+  // 翻译字段 - 用于存储中文翻译，优先显示翻译内容
+  translations?: {
+    title?: string
+    company?: string
+    description?: string
+    location?: string
+    type?: string
+    requirements?: string[]
+    responsibilities?: string[]
+  }
 }
 
 export interface User {
