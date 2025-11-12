@@ -35,15 +35,24 @@ export default async function handler(req, res) {
   const authHeader = req.headers.authorization
   const cronSecret = process.env.CRON_SECRET
   const isVercelCron = req.headers['x-vercel-cron'] === '1'
+  const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production'
   
-  // Vercel Cron自动调用或有效的授权令牌
-  if (!isVercelCron && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return res.status(401).json({ 
-      success: false,
-      error: 'Unauthorized',
-      message: '需要有效的授权令牌'
-    })
+  // 验证逻辑：
+  // 1. Vercel Cron自动调用 - 总是允许
+  // 2. 生产环境 + 配置了CRON_SECRET - 需要验证令牌
+  // 3. 非生产环境或未配置CRON_SECRET - 允许（开发/预发环境）
+  if (!isVercelCron && isProduction && cronSecret) {
+    // 生产环境：严格验证
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return res.status(401).json({ 
+        success: false,
+        error: 'Unauthorized',
+        message: '需要有效的授权令牌'
+      })
+    }
   }
+  // 非生产环境：允许直接调用（方便测试和开发）
+  console.log(`🔓 授权检查: ${isVercelCron ? 'Vercel Cron' : isProduction ? '生产环境手动触发' : '预发/开发环境手动触发'}`)
 
   // 检查翻译服务是否可用
   if (!translateJobs) {
