@@ -1,16 +1,5 @@
 {
   "version": 2,
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 30
-    },
-    "api/data/processed-jobs.js": {
-      "maxDuration": 60
-    },
-    "api/cron/sync-jobs.js": {
-      "maxDuration": 300
-    }
-  },
   "crons": [
     {
       "path": "/api/cron/sync-jobs",
