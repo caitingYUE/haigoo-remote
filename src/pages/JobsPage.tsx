@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase } from 'lucide-react'
+import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase, RefreshCw } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import JobDetailModal from '../components/JobDetailModal'
 import JobCard from '../components/JobCard'
@@ -8,6 +8,7 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { DateFormatter } from '../utils/date-formatter'
 import { processJobDescription } from '../utils/text-formatter'
 import { jobTranslationService } from '../services/job-translation-service'
+import { usePageCache } from '../hooks/usePageCache'
 
 const jobTypes = [
   { value: 'all', label: '全部类型' },
@@ -101,9 +102,37 @@ export default function JobsPage() {
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [loading, setLoading] = useState(true)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
+  
+  // 使用页面缓存 Hook
+  const {
+    data: jobs,
+    loading,
+    error: loadError,
+    refresh,
+    isFromCache,
+    cacheAge
+  } = usePageCache<Job[]>('jobs-all-list', {
+    fetcher: async () => {
+      // 性能优化：限制加载数量为200条
+      const response = await processedJobsService.getAllProcessedJobs(200)
+      console.log('获取到处理后的岗位数据:', response.length, '个')
+      if (response.length > 0) {
+        // 翻译岗位数据为中文
+        console.log('开始翻译岗位数据...')
+        const translatedJobs = await jobTranslationService.translateJobs(response)
+        console.log('翻译完成，共', translatedJobs.length, '个岗位')
+        return translatedJobs
+      }
+      return []
+    },
+    ttl: 10 * 60 * 1000, // 10分钟缓存
+    persist: true, // 持久化到 localStorage
+    namespace: 'jobs',
+    onSuccess: (jobs) => {
+      console.log(`✅ 岗位列表加载完成，共 ${jobs.length} 个${isFromCache ? '（来自缓存）' : '（新数据）'}`)
+    }
+  })
 
   // Keyboard navigation handler
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -145,52 +174,17 @@ export default function JobsPage() {
     }
   }, [location.search])
 
-  // 加载处理后的职位数据，并在后台刷新后自动重载
+  // 监听处理后岗位数据的更新事件（从后台管理触发）
   useEffect(() => {
-    const loadJobs = async () => {
-      try {
-        setLoading(true)
-        // 性能优化：限制加载数量为200条，避免内存和带宽问题
-        const response = await processedJobsService.getAllProcessedJobs(200)
-        console.log('获取到处理后的岗位数据:', response.length, '个')
-        if (response.length > 0) {
-          // 翻译岗位数据为中文
-          console.log('开始翻译岗位数据...')
-          const translatedJobs = await jobTranslationService.translateJobs(response)
-          setJobs(translatedJobs)
-          console.log('示例岗位数据（已翻译）:', translatedJobs.slice(0, 2).map((job: Job) => ({
-            title: job.translations?.title || job.title,
-            titleOriginal: job.title,
-            company: job.translations?.company || job.company,
-            companyOriginal: job.company,
-            description: processJobDescription(job.translations?.description || job.description || '', {
-              formatMarkdown: false,
-              maxLength: 100,
-              preserveHtml: false
-            })
-          })))
-        } else {
-          console.log('没有找到处理后的数据')
-          setJobs([])
-        }
-      } catch (error) {
-        console.error('Failed to load jobs:', error)
-        setJobs([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadJobs()
-
     const handleUpdated = () => {
-      loadJobs()
+      console.log('收到岗位数据更新事件，重新加载...')
+      refresh()
     }
     window.addEventListener('processed-jobs-updated', handleUpdated)
     return () => {
       window.removeEventListener('processed-jobs-updated', handleUpdated)
     }
-  }, [])
+  }, [refresh])
 
   const toggleSaveJob = (jobId: string) => {
     setSavedJobs(prev => {

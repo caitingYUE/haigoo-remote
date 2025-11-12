@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Briefcase, Bookmark, AlertTriangle, ChevronDown, Clock, MapPin, Building } from 'lucide-react'
+import { Briefcase, Bookmark, AlertTriangle, ChevronDown, Clock, MapPin, Building, RefreshCw } from 'lucide-react'
 import JobDetailModal from '../components/JobDetailModal'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
 import JobCard from '../components/JobCard'
@@ -11,6 +11,7 @@ import { recommendationHistoryService } from '../services/recommendation-history
 import { processJobDescription } from '../utils/text-formatter'
 import SingleLineTags from '../components/SingleLineTags'
 import { jobTranslationService } from '../services/job-translation-service'
+import { usePageCache } from '../hooks/usePageCache'
 
 
 
@@ -88,9 +89,38 @@ const getRecommendationStyles = (score?: number, index?: number) => {
 export default function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  
+  // 使用页面缓存 Hook
+  const {
+    data: jobs,
+    loading,
+    error: loadError,
+    refresh,
+    isFromCache,
+    cacheAge
+  } = usePageCache<Job[]>('homepage-recommendations', {
+    fetcher: async () => {
+      // 性能优化：首页只加载30条用于推荐
+      const response = await processedJobsService.getProcessedJobs(1, 30)
+      if (response.jobs.length > 0) {
+        // 翻译岗位数据为中文
+        const translatedJobs = await jobTranslationService.translateJobs(response.jobs)
+        return translatedJobs
+      }
+      return []
+    },
+    ttl: 0, // 永不过期，只有手动刷新才更新
+    persist: true, // 持久化到 localStorage
+    namespace: 'homepage',
+    onSuccess: (jobs) => {
+      setLastUpdateTime(new Date())
+      console.log(`✅ 首页加载了 ${jobs.length} 个岗位推荐${isFromCache ? '（来自缓存）' : '（新数据）'}`)
+    }
+  })
+  
+  // 将 error 转换为字符串格式（保持原有逻辑兼容）
+  const error = loadError?.message || null
+  
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
@@ -109,7 +139,7 @@ export default function HomePage() {
   // 筛选职位 - 使用今天的固定推荐
   const filteredJobs = useMemo(() => {
     // 优先使用今天的固定推荐
-    const jobsToFilter = todayRecommendations.length > 0 ? todayRecommendations : jobs
+    const jobsToFilter = todayRecommendations.length > 0 ? todayRecommendations : (jobs || [])
     
     let filtered = jobsToFilter
 
@@ -143,42 +173,16 @@ export default function HomePage() {
     }
   }, [todayRecommendations, jobs, locationFilter, typeFilter, skillsFilter])
 
-  // 获取处理后的职位数据
+  // 监听后台刷新事件，自动更新首页推荐数据
   useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        // 性能优化：首页只加载30条用于推荐
-        const response = await processedJobsService.getProcessedJobs(1, 30)
-        if (response.jobs.length > 0) {
-          // 翻译岗位数据为中文
-          const translatedJobs = await jobTranslationService.translateJobs(response.jobs)
-          setJobs(translatedJobs)
-          setLastUpdateTime(new Date())
-        } else {
-          setJobs([])
-        }
-      } catch (err) {
-        console.error('获取职位数据失败:', err)
-        setError('获取职位数据失败')
-        setJobs([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchJobs()
-
-    // 监听后台刷新事件，自动更新首页推荐数据
     const handleUpdated = () => {
-      fetchJobs()
+      refresh() // 使用缓存的 refresh 方法
     }
     window.addEventListener('processed-jobs-updated', handleUpdated)
     return () => {
       window.removeEventListener('processed-jobs-updated', handleUpdated)
     }
-  }, [])
+  }, [refresh])
 
   // 加载今天的固定推荐
   useEffect(() => {
@@ -279,12 +283,30 @@ export default function HomePage() {
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-4">
             专业的远程求职工具，每天为你精选一组最匹配的岗位，Go！
           </p>
-          {/* 数据更新时间提示 */}
-          {lastUpdateTime && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              今日推荐岗位数据已于{lastUpdateTime.getMonth() + 1}月{lastUpdateTime.getDate()}日{lastUpdateTime.getHours()}点{lastUpdateTime.getMinutes().toString().padStart(2, '0')}分更新
-            </p>
-          )}
+          
+          {/* 数据更新时间和刷新按钮 */}
+          <div className="flex items-center justify-center gap-4 mb-2">
+            {lastUpdateTime && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                今日推荐岗位数据已于{lastUpdateTime.getMonth() + 1}月{lastUpdateTime.getDate()}日{lastUpdateTime.getHours()}点{lastUpdateTime.getMinutes().toString().padStart(2, '0')}分更新
+              </p>
+            )}
+            {isFromCache && cacheAge && (
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                （缓存数据，{Math.floor(cacheAge / 1000 / 60)}分钟前）
+              </span>
+            )}
+            <button
+              onClick={refresh}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-haigoo-primary text-white rounded-lg hover:bg-haigoo-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+              aria-label="刷新推荐岗位"
+              title="刷新推荐岗位"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? '刷新中...' : '刷新数据'}
+            </button>
+          </div>
         </div>
 
         {/* 职位区域 */}
