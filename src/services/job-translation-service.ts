@@ -102,12 +102,12 @@ class JobTranslationService {
       
       if (result.success && result.data) {
         // 构建翻译对象
-        const translations: Job['translations'] = {}
+        const translations: Partial<Job['translations']> = {}
         
         result.data.forEach((translatedText, index) => {
           const key = textKeys[index] as keyof Job['translations']
           if (key === 'title' || key === 'company' || key === 'description' || key === 'location' || key === 'type') {
-            translations[key] = translatedText
+            (translations as any)[key] = translatedText
           }
         })
         

@@ -482,7 +482,7 @@ export default function HomePage() {
                           <div className="space-y-3 mb-4">
                             {(job.translations?.description || job.description) && (
                               <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-2 leading-relaxed">
-                                {processJobDescription(job.translations?.description || job.description, { 
+                                {processJobDescription((job.translations?.description || job.description) || '', { 
                                   formatMarkdown: false, 
                                   maxLength: 120, 
                                   preserveHtml: false 

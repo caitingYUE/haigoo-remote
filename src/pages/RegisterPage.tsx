@@ -53,6 +53,10 @@ export default function RegisterPage() {
 
   const initializeGoogleSignIn = () => {
     try {
+      if (!window.google?.accounts?.id) {
+        console.error('Google Sign-In SDK not loaded')
+        return
+      }
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCallback,
