@@ -3,14 +3,17 @@
  * 用于诊断翻译功能的问题
  */
 
+// 使用 CommonJS 导入翻译服务
 let translateService = null
 try {
   translateService = require('../lib/services/translation-service')
+  console.log('✅ 测试接口：翻译服务加载成功', Object.keys(translateService))
 } catch (error) {
-  console.error('无法加载翻译服务:', error)
+  console.error('❌ 测试接口：无法加载翻译服务:', error.message, error.stack)
 }
 
-export default async function handler(req, res) {
+// 使用 CommonJS 导出
+module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json')
   res.setHeader('Access-Control-Allow-Origin', '*')
   

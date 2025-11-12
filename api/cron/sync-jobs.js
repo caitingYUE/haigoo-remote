@@ -13,15 +13,18 @@
  * - 手动触发：POST /api/cron/sync-jobs（需要授权）
  */
 
+// 导入翻译服务（使用 CommonJS）
 let translateJobs = null
 try {
   const translationService = require('../../lib/services/translation-service')
   translateJobs = translationService.translateJobs
+  console.log('✅ 翻译服务加载成功')
 } catch (error) {
-  console.error('无法加载翻译服务:', error.message)
+  console.error('❌ 无法加载翻译服务:', error.message, error.stack)
 }
 
-export default async function handler(req, res) {
+// 使用 CommonJS 导出（与 Vercel Serverless Functions 兼容）
+module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
