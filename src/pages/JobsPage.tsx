@@ -227,7 +227,7 @@ export default function JobsPage() {
   }
 
   // 筛选逻辑
-  const filteredJobs = jobs.filter(job => {
+  const filteredJobs = (jobs || []).filter(job => {
     // 搜索匹配
     const matchesSearch = searchTerm === '' || 
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

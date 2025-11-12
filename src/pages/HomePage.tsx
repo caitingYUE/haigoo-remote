@@ -249,7 +249,7 @@ export default function HomePage() {
     if (!job) {
       job =
         todayRecommendations.find(j => j.id === jobId) ||
-        jobs.find(j => j.id === jobId) ||
+        jobs?.find(j => j.id === jobId) ||
         Object.values(pastRecommendations).flat().find(j => j.id === jobId) ||
         null
     }
