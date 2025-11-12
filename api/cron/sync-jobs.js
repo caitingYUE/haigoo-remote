@@ -324,7 +324,10 @@ export default async function handler(req, res) {
     })
 
     // 5. 保存回数据库（分批保存，避免请求过大）
+    currentStep = 'save-translated-jobs'
     console.log('💾 保存翻译后的数据...')
+    console.log(`  总岗位数: ${allJobs.length}`)
+    console.log(`  保存URL: ${baseUrl}/api/data/processed-jobs`)
     const saveStartTime = Date.now()
     
     const CHUNK_SIZE = 200
@@ -332,23 +335,33 @@ export default async function handler(req, res) {
       const chunk = allJobs.slice(i, i + CHUNK_SIZE)
       const mode = i === 0 ? 'replace' : 'append'
       
-      const saveResponse = await fetch(`${baseUrl}/api/data/processed-jobs`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          jobs: chunk, 
-          mode 
+      console.log(`  保存批次 ${Math.floor(i / CHUNK_SIZE) + 1}: ${chunk.length} 个岗位, mode=${mode}`)
+      
+      let saveResponse
+      try {
+        saveResponse = await fetch(`${baseUrl}/api/data/processed-jobs`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            jobs: chunk, 
+            mode 
+          })
         })
-      })
+      } catch (fetchError) {
+        console.error(`❌ 保存请求失败 (chunk ${i}):`, fetchError.message)
+        throw new Error(`保存数据失败 (chunk ${i}): 网络错误 - ${fetchError.message}`)
+      }
 
       if (!saveResponse.ok) {
-        const errorText = await saveResponse.text()
-        throw new Error(`保存数据失败 (chunk ${i}): ${saveResponse.status} - ${errorText}`)
+        const errorText = await saveResponse.text().catch(() => '无法读取错误响应')
+        console.error(`❌ 保存API返回错误 (chunk ${i}): ${saveResponse.status}`, errorText.substring(0, 500))
+        throw new Error(`保存数据失败 (chunk ${i}): ${saveResponse.status} - ${errorText.substring(0, 200)}`)
       }
       
-      console.log(`  保存进度: ${Math.min(i + CHUNK_SIZE, allJobs.length)}/${allJobs.length}`)
+      const saveResult = await saveResponse.json().catch(() => ({}))
+      console.log(`  ✅ 批次 ${Math.floor(i / CHUNK_SIZE) + 1} 保存成功`, saveResult.message || '')
     }
 
     const saveDuration = Date.now() - saveStartTime
