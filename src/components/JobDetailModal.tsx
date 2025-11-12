@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { translateText, formatJobDescription, segmentJobDescription } from '../utils/translation'
 import { multiTranslationService } from '../services/multi-translation-service'
+import { SingleLineTags } from './SingleLineTags'
 
 interface JobDetailModalProps {
   job: Job | null
@@ -532,6 +533,24 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                       </div>
                     </div>
                   </section>
+
+                  {/* 技能标签模块 */}
+                  {(((job as any).tags && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0)) && (
+                    <section>
+                      <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">
+                        {isOriginalLanguage ? 'Required Skills' : '技能要求'}
+                      </h3>
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                        <SingleLineTags
+                          tags={(Array.isArray((job as any).tags) && (job as any).tags.length > 0 
+                            ? (job as any).tags 
+                            : (job.skills || [])) as string[]}
+                          fallback="remote"
+                          size="sm"
+                        />
+                      </div>
+                    </section>
+                  )}
                   
                   {jobDescriptionData.sections.map((section, index) => (
                     <section key={index}>

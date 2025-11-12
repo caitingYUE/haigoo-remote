@@ -65,11 +65,12 @@ class JobTranslationService {
         textKeys.push('title')
       }
       
-      // 公司名（如果不是知名公司，可以翻译）
-      if (job.company && !this.isWellKnownCompany(job.company)) {
-        textsToTranslate.push(job.company)
-        textKeys.push('company')
-      }
+      // 公司名 - 不翻译，直接保留原文（避免误解）
+      // 企业名称、特殊代名词不适合翻译，可能造成误解
+      // if (job.company && !this.isWellKnownCompany(job.company)) {
+      //   textsToTranslate.push(job.company)
+      //   textKeys.push('company')
+      // }
       
       // 描述
       if (job.description) {
@@ -91,10 +92,16 @@ class JobTranslationService {
         textKeys.push('type')
       }
 
-      // 如果没有需要翻译的内容，直接返回
+      // 如果没有需要翻译的内容，直接返回（但保留公司原文）
       if (textsToTranslate.length === 0) {
         this.translating.delete(job.id)
-        return job
+        return {
+          ...job,
+          translations: {
+            ...job.translations,
+            company: job.company
+          }
+        }
       }
 
       // 批量翻译
@@ -106,13 +113,13 @@ class JobTranslationService {
         
         result.data.forEach((translatedText, index) => {
           const key = textKeys[index] as keyof Job['translations']
-          if (key === 'title' || key === 'company' || key === 'description' || key === 'location' || key === 'type') {
+          if (key === 'title' || key === 'description' || key === 'location' || key === 'type') {
             (translations as any)[key] = translatedText
           }
         })
         
-        // 如果公司名没有翻译（知名公司），保留原文
-        if (job.company && !translations.company) {
+        // 公司名称始终保留原文，不翻译
+        if (job.company) {
           translations.company = job.company
         }
         
