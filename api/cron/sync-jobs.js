@@ -21,6 +21,15 @@ const require = createRequire(import.meta.url)
 const realServicePath = path.join(process.cwd(), 'lib/services/translation-service.cjs')
 const mockServicePath = path.join(process.cwd(), 'lib/services/translation-service-mock.cjs')
 
+let mockServiceModule = null
+
+const ensureMockService = () => {
+  if (!mockServiceModule) {
+    mockServiceModule = require(mockServicePath)
+  }
+  return mockServiceModule
+}
+
 // 导入翻译服务（使用 CommonJS，通过 createRequire 兼容 ESM）
 // 优先使用真实翻译服务，失败则使用Mock服务
 let translateJobs = null
@@ -108,12 +117,15 @@ export default async function handler(req, res) {
     console.log('⚠️ 注意：当前使用Mock翻译服务，仅用于测试目的')
   }
 
+  let currentStep = 'init'
+
   try {
     console.log('🔄 开始定时任务: 同步和翻译岗位数据')
     console.log(`触发方式: ${isVercelCron ? 'Vercel Cron' : '手动触发'}`)
     const startTime = Date.now()
 
     // 1. 获取处理后的岗位数据
+    currentStep = 'fetch-processed-jobs'
     const baseUrl = process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}` 
       : 'http://localhost:3000'
@@ -172,6 +184,7 @@ export default async function handler(req, res) {
     }
 
     // 3. 批量翻译
+    currentStep = 'translate-jobs'
     console.log(`🌍 开始翻译 ${untranslatedJobs.length} 个岗位...`)
     const translationStartTime = Date.now()
     
@@ -180,21 +193,49 @@ export default async function handler(req, res) {
       translatedJobs = await translateJobs(untranslatedJobs)
     } catch (translationError) {
       console.error('❌ 翻译过程失败:', translationError)
-      // 翻译失败但不中断整个流程
-      return res.status(500).json({
-        success: false,
-        error: '翻译过程失败',
-        message: translationError.message,
-        details: translationError.stack,
-        stats: {
-          totalJobs: jobs.length,
-          translatedJobs: 0,
-          skippedJobs: alreadyTranslated,
-          failedJobs: untranslatedJobs.length,
-          duration: `${Date.now() - startTime}ms`
-        },
-        timestamp: new Date().toISOString()
-      })
+      
+      if (translationServiceType !== 'mock') {
+        console.warn('🔁 尝试回退到 Mock 翻译服务继续执行')
+        try {
+          currentStep = 'translate-jobs (fallback-mock)'
+          const mockService = ensureMockService()
+          translateJobs = mockService.translateJobs
+          translationServiceType = 'mock'
+          translatedJobs = await translateJobs(untranslatedJobs)
+          console.log('✅ Mock 翻译服务完成翻译')
+        } catch (mockError) {
+          console.error('❌ Mock 翻译服务也失败:', mockError)
+          return res.status(500).json({
+            success: false,
+            error: '翻译过程失败',
+            message: mockError.message || translationError.message,
+            details: mockError.stack || translationError.stack,
+            stats: {
+              totalJobs: jobs.length,
+              translatedJobs: 0,
+              skippedJobs: alreadyTranslated,
+              failedJobs: untranslatedJobs.length,
+              duration: `${Date.now() - startTime}ms`
+            },
+            timestamp: new Date().toISOString()
+          })
+        }
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: '翻译过程失败',
+          message: translationError.message,
+          details: translationError.stack,
+          stats: {
+            totalJobs: jobs.length,
+            translatedJobs: 0,
+            skippedJobs: alreadyTranslated,
+            failedJobs: untranslatedJobs.length,
+            duration: `${Date.now() - startTime}ms`
+          },
+          timestamp: new Date().toISOString()
+        })
+      }
     }
     
     const translationDuration = Date.now() - translationStartTime
@@ -204,6 +245,7 @@ export default async function handler(req, res) {
     console.log(`✅ 翻译完成: ${successCount} 成功, ${failedCount} 失败, 耗时 ${translationDuration}ms`)
 
     // 4. 合并并保存
+    currentStep = 'merge-and-save'
     const allJobs = jobs.map(job => {
       if (job.isTranslated) {
         // 已翻译的保持不变
@@ -265,11 +307,14 @@ export default async function handler(req, res) {
     })
 
   } catch (error) {
-    console.error('❌ 定时任务失败:', error)
+    console.error(`❌ 定时任务失败（步骤: ${currentStep}）:`, error)
     return res.status(500).json({
       success: false,
       error: error.message || 'Unknown error',
       message: '定时任务执行失败',
+      step: currentStep,
+      translationServiceType,
+      details: error.stack,
       timestamp: new Date().toISOString()
     })
   }
