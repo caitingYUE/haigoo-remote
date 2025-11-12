@@ -73,7 +73,8 @@ export default async function handler(req, res) {
     }
 
     const jobsData = await jobsResponse.json()
-    const jobs = jobsData.data || []
+    // 修复：API返回的数据格式是 { jobs: [...], total, page, pageSize, totalPages }
+    const jobs = jobsData.jobs || []
 
     console.log(`获取到 ${jobs.length} 个岗位`)
 
