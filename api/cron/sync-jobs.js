@@ -164,23 +164,57 @@ export default async function handler(req, res) {
 
     // 1. 获取处理后的岗位数据
     currentStep = 'fetch-processed-jobs'
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000'
     
+    // 构建baseUrl：优先使用SITE_URL，其次VERCEL_URL，最后从请求头推断
+    let baseUrl = process.env.SITE_URL
+    if (!baseUrl && process.env.VERCEL_URL) {
+      baseUrl = `https://${process.env.VERCEL_URL}`
+    }
+    if (!baseUrl && req.headers.host) {
+      const protocol = req.headers['x-forwarded-proto'] || 'https'
+      baseUrl = `${protocol}://${req.headers.host}`
+    }
+    if (!baseUrl) {
+      baseUrl = 'http://localhost:3000'
+    }
+    
+    console.log(`📍 环境变量检查:`)
+    console.log(`  - SITE_URL: ${process.env.SITE_URL || '(未设置)'}`)
+    console.log(`  - VERCEL_URL: ${process.env.VERCEL_URL || '(未设置)'}`)
+    console.log(`  - 请求Host: ${req.headers.host || '(无)'}`)
+    console.log(`  - 最终baseUrl: ${baseUrl}`)
     console.log(`从 ${baseUrl} 获取岗位数据...`)
     
-    const jobsResponse = await fetch(`${baseUrl}/api/data/processed-jobs?limit=1000`)
+    let jobsResponse
+    try {
+      jobsResponse = await fetch(`${baseUrl}/api/data/processed-jobs?limit=1000`, {
+        headers: {
+          'User-Agent': 'Vercel-Cron-Job/1.0'
+        }
+      })
+    } catch (fetchError) {
+      console.error('❌ fetch请求失败:', fetchError.message)
+      throw new Error(`无法连接到后端API (${baseUrl}): ${fetchError.message}`)
+    }
     
     if (!jobsResponse.ok) {
-      throw new Error(`获取岗位数据失败: ${jobsResponse.status}`)
+      const errorText = await jobsResponse.text().catch(() => '无法读取错误响应')
+      console.error(`❌ API返回错误: ${jobsResponse.status}`, errorText)
+      throw new Error(`获取岗位数据失败: ${jobsResponse.status} - ${errorText.substring(0, 200)}`)
     }
 
-    const jobsData = await jobsResponse.json()
+    let jobsData
+    try {
+      jobsData = await jobsResponse.json()
+    } catch (parseError) {
+      console.error('❌ JSON解析失败:', parseError.message)
+      throw new Error(`解析岗位数据失败: ${parseError.message}`)
+    }
+    
     // 修复：API返回的数据格式是 { jobs: [...], total, page, pageSize, totalPages }
     const jobs = jobsData.jobs || []
 
-    console.log(`获取到 ${jobs.length} 个岗位`)
+    console.log(`✅ 获取到 ${jobs.length} 个岗位`)
 
     if (jobs.length === 0) {
       return res.json({ 
