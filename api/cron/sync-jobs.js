@@ -15,17 +15,34 @@
 
 import path from 'path'
 import { createRequire } from 'module'
+import { fileURLToPath } from 'url'
 
 const require = createRequire(import.meta.url)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-const realServicePath = path.join(process.cwd(), 'lib/services/translation-service.cjs')
-const mockServicePath = path.join(process.cwd(), 'lib/services/translation-service-mock.cjs')
+// 尝试多个可能的路径
+const possibleMockPaths = [
+  path.join(process.cwd(), 'lib/services/translation-service-mock.cjs'),
+  path.join(__dirname, '../../lib/services/translation-service-mock.cjs'),
+  path.resolve(process.cwd(), 'lib/services/translation-service-mock.cjs'),
+]
 
 let mockServiceModule = null
 
 const ensureMockService = () => {
   if (!mockServiceModule) {
-    mockServiceModule = require(mockServicePath)
+    for (const mockPath of possibleMockPaths) {
+      try {
+        mockServiceModule = require(mockPath)
+        if (mockServiceModule && typeof mockServiceModule.translateJobs === 'function') {
+          console.log('✅ ensureMockService 加载成功:', mockPath)
+          break
+        }
+      } catch (error) {
+        console.warn(`⚠️ ensureMockService 尝试 [${mockPath}] 失败:`, error.message)
+      }
+    }
   }
   return mockServiceModule
 }
@@ -34,15 +51,36 @@ const ensureMockService = () => {
 // 直接使用Mock翻译服务（稳定、快速、免费）
 let translateJobs = null
 let translationServiceType = 'none'
+let loadedFrom = null
 
-try {
-  const mockService = require(mockServicePath)
-  translateJobs = mockService.translateJobs
-  translationServiceType = 'mock'
-  console.log('✅ Mock翻译服务加载成功')
-  console.log('📝 使用内置翻译字典，包含50+常用职位术语')
-} catch (mockError) {
-  console.error('❌ Mock翻译服务加载失败:', mockError.message)
+console.log('🔍 当前工作目录:', process.cwd())
+console.log('🔍 当前文件目录:', __dirname)
+
+for (const mockPath of possibleMockPaths) {
+  try {
+    console.log(`🔄 尝试加载: ${mockPath}`)
+    const mockService = require(mockPath)
+    
+    if (mockService && typeof mockService.translateJobs === 'function') {
+      translateJobs = mockService.translateJobs
+      translationServiceType = 'mock'
+      loadedFrom = mockPath
+      mockServiceModule = mockService
+      console.log('✅ Mock翻译服务加载成功')
+      console.log('📍 加载路径:', mockPath)
+      console.log('📝 使用内置翻译字典，包含150+常用职位术语')
+      break
+    } else {
+      console.warn(`⚠️ 模块加载成功但缺少 translateJobs 方法:`, Object.keys(mockService || {}))
+    }
+  } catch (error) {
+    console.warn(`⚠️ 路径加载失败 [${mockPath}]:`, error.message)
+  }
+}
+
+if (!translateJobs) {
+  console.error('❌ 所有路径都无法加载Mock翻译服务')
+  console.error('尝试的路径:', possibleMockPaths)
 }
 
 // 导出处理函数（ESM）
@@ -62,11 +100,19 @@ export default async function handler(req, res) {
       success: !!translateJobs,
       translationServiceType,
       isMock: translationServiceType === 'mock',
+      loadedFrom,
       message: translateJobs
         ? translationServiceType === 'mock'
-          ? '使用 Mock 翻译服务（测试用途）'
+          ? '使用 Mock 翻译服务（内置150+词条）'
           : '使用真实翻译服务'
         : '翻译服务未加载',
+      environment: {
+        cwd: process.cwd(),
+        dirname: __dirname,
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV
+      },
+      possiblePaths: possibleMockPaths,
       timestamp: new Date().toISOString()
     })
   }
