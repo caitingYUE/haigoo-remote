@@ -1,16 +1,24 @@
 /**
  * 后端翻译服务
- * 使用 DeepL API 进行批量翻译
+ * 使用免费的 Google Translate API 进行批量翻译
  * 
  * 核心功能：
  * 1. 批量翻译文本
  * 2. 翻译单个岗位数据
  * 3. 批量翻译岗位数据
+ * 
+ * 使用 @vitalets/google-translate-api 免费库
  */
 
-// 翻译API配置
-const DEEPL_API_KEY = process.env.DEEPL_API_KEY || process.env.VITE_DEEPL_API_KEY
-const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate'
+// 动态导入 google-translate-api
+let translate = null
+try {
+  // 尝试导入翻译库
+  const translationModule = require('@vitalets/google-translate-api')
+  translate = translationModule.translate || translationModule.default?.translate || translationModule.default
+} catch (error) {
+  console.error('⚠️ 无法加载 google-translate-api，翻译功能将不可用')
+}
 
 // 缓存翻译结果（内存缓存，减少重复翻译）
 const translationCache = new Map()
@@ -23,20 +31,20 @@ function getCacheKey(text, targetLang, sourceLang) {
 }
 
 /**
- * 批量翻译文本
+ * 批量翻译文本（使用免费的 Google Translate API）
  * @param {string[]} texts - 需要翻译的文本数组
- * @param {string} targetLang - 目标语言 (默认: 'ZH')
- * @param {string} sourceLang - 源语言 (默认: 'EN')
+ * @param {string} targetLang - 目标语言 (默认: 'zh-CN')
+ * @param {string} sourceLang - 源语言 (默认: 'en')
  * @returns {Promise<string[]>} 翻译后的文本数组
  */
-async function translateBatch(texts, targetLang = 'ZH', sourceLang = 'EN') {
+async function translateBatch(texts, targetLang = 'zh-CN', sourceLang = 'en') {
   if (!texts || texts.length === 0) {
     return []
   }
 
-  // 检查API Key
-  if (!DEEPL_API_KEY) {
-    console.warn('⚠️ DEEPL_API_KEY 未配置，返回原文')
+  // 检查翻译库是否可用
+  if (!translate) {
+    console.warn('⚠️ Google Translate API 不可用，返回原文')
     return texts
   }
 
@@ -72,50 +80,35 @@ async function translateBatch(texts, targetLang = 'ZH', sourceLang = 'EN') {
 
     console.log(`🔄 需要翻译 ${textsToTranslate.length}/${validTexts.length} 个文本`)
 
-    // DeepL API 支持批量翻译，最多50个文本
-    const chunks = chunkArray(textsToTranslate, 50)
+    // Google Translate API 免费版需要逐个翻译
     const allTranslations = []
 
-    for (const chunk of chunks) {
-      const formData = new URLSearchParams()
-      formData.append('auth_key', DEEPL_API_KEY)
-      formData.append('target_lang', targetLang)
-      
-      chunk.forEach(text => {
-        formData.append('text', text)
-      })
-
-      const response = await fetch(DEEPL_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: formData
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`DeepL API error: ${response.status} - ${errorText}`)
-      }
-
-      const data = await response.json()
-      const translations = data.translations.map(t => t.text)
-      allTranslations.push(...translations)
-
-      // 延迟避免超过API速率限制
-      if (chunks.length > 1) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+    for (const text of textsToTranslate) {
+      try {
+        const result = await translate(text, { 
+          from: sourceLang, 
+          to: targetLang 
+        })
+        
+        const translatedText = result.text || result
+        allTranslations.push(translatedText)
+        
+        // 更新缓存
+        const cacheKey = getCacheKey(text, targetLang, sourceLang)
+        translationCache.set(cacheKey, translatedText)
+        
+        // 添加小延迟，避免请求过于频繁
+        await new Promise(resolve => setTimeout(resolve, 100))
+      } catch (error) {
+        console.error(`翻译失败: ${text.substring(0, 50)}...`, error.message)
+        // 翻译失败，使用原文
+        allTranslations.push(text)
       }
     }
 
-    // 填充结果并更新缓存
+    // 填充结果
     indexMap.forEach((resultIndex, translationIndex) => {
-      const translation = allTranslations[translationIndex]
-      results[resultIndex] = translation
-      
-      // 更新缓存
-      const cacheKey = getCacheKey(textsToTranslate[translationIndex], targetLang, sourceLang)
-      translationCache.set(cacheKey, translation)
+      results[resultIndex] = allTranslations[translationIndex]
     })
 
     return results

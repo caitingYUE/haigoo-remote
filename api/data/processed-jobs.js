@@ -473,16 +473,20 @@ export default async function handler(req, res) {
         }
       })
 
-      // 🆕 自动翻译功能
-      if (translateJobs && process.env.ENABLE_AUTO_TRANSLATION === 'true') {
+      // 🆕 自动翻译功能（仅在明确启用时）
+      const shouldTranslate = process.env.ENABLE_AUTO_TRANSLATION === 'true'
+      
+      if (translateJobs && shouldTranslate) {
         try {
-          console.log('🌍 启动自动翻译...')
+          console.log('🌍 启动自动翻译（免费 Google Translate）...')
           normalized = await translateJobs(normalized)
           console.log('✅ 自动翻译完成')
         } catch (translationError) {
           console.error('❌ 自动翻译失败:', translationError.message)
           // 翻译失败不影响保存流程
         }
+      } else if (!shouldTranslate) {
+        console.log('ℹ️ 自动翻译已禁用（ENABLE_AUTO_TRANSLATION != true）')
       }
 
       let toWrite = normalized
