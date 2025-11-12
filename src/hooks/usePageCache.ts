@@ -117,26 +117,26 @@ export function usePageCache<T>(
     }
     
     try {
-      isLoadingRef.current = true
-      setLoading(true)
       setError(null)
       
-      // 1. 如果不是强制刷新，尝试从缓存获取
+      // 1. 如果不是强制刷新，优先从缓存获取（同步操作，不显示loading）
       if (!forceRefresh) {
         const cachedData = pageCacheService.get<T>(key, cacheOptions)
         if (cachedData !== null) {
+          // 从缓存加载，立即显示，不设置loading状态
           setData(cachedData)
           setIsFromCache(true)
           setCacheAge(pageCacheService.getAge(key, cacheOptions))
-          setLoading(false)
-          isLoadingRef.current = false
           onSuccess?.(cachedData)
           return
         }
       }
       
-      // 2. 缓存未命中或强制刷新，从服务器加载
+      // 2. 缓存未命中或强制刷新，从服务器加载（显示loading）
+      isLoadingRef.current = true
+      setLoading(true)
       setIsFromCache(false)
+      
       const fetchedData = await fetcher()
       
       // 3. 保存到缓存

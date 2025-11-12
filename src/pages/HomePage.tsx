@@ -90,6 +90,9 @@ export default function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
   
+  // 加载阶段状态
+  const [loadingStage, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
+  
   // 使用页面缓存 Hook
   const {
     data: jobs,
@@ -100,20 +103,31 @@ export default function HomePage() {
     cacheAge
   } = usePageCache<Job[]>('homepage-recommendations', {
     fetcher: async () => {
-      // 性能优化：首页只加载30条用于推荐
-      const response = await processedJobsService.getProcessedJobs(1, 30)
-      if (response.jobs.length > 0) {
-        // 翻译岗位数据为中文
-        const translatedJobs = await jobTranslationService.translateJobs(response.jobs)
-        return translatedJobs
+      try {
+        // 阶段1: 获取数据
+        setLoadingStage('fetching')
+        const response = await processedJobsService.getProcessedJobs(1, 30)
+        
+        if (response.jobs.length > 0) {
+          // 阶段2: 翻译数据
+          setLoadingStage('translating')
+          const translatedJobs = await jobTranslationService.translateJobs(response.jobs)
+          setLoadingStage('idle')
+          return translatedJobs
+        }
+        setLoadingStage('idle')
+        return []
+      } catch (error) {
+        setLoadingStage('idle')
+        throw error
       }
-      return []
     },
     ttl: 0, // 永不过期，只有手动刷新才更新
     persist: true, // 持久化到 localStorage
     namespace: 'homepage',
     onSuccess: (jobs) => {
       setLastUpdateTime(new Date())
+      setLoadingStage('idle')
       console.log(`✅ 首页加载了 ${jobs.length} 个岗位推荐${isFromCache ? '（来自缓存）' : '（新数据）'}`)
     }
   })
@@ -284,36 +298,33 @@ export default function HomePage() {
             专业的远程求职工具，每天为你精选一组最匹配的岗位，Go！
           </p>
           
-          {/* 数据更新时间和刷新按钮 */}
-          <div className="flex items-center justify-center gap-4 mb-2">
-            {lastUpdateTime && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                今日推荐岗位数据已于{lastUpdateTime.getMonth() + 1}月{lastUpdateTime.getDate()}日{lastUpdateTime.getHours()}点{lastUpdateTime.getMinutes().toString().padStart(2, '0')}分更新
-              </p>
-            )}
-            {isFromCache && cacheAge && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                （缓存数据，{Math.floor(cacheAge / 1000 / 60)}分钟前）
-              </span>
-            )}
-            <button
-              onClick={refresh}
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-haigoo-primary text-white rounded-lg hover:bg-haigoo-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
-              aria-label="刷新推荐岗位"
-              title="刷新推荐岗位"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? '刷新中...' : '刷新数据'}
-            </button>
-          </div>
+          {/* 数据更新时间 */}
+          {lastUpdateTime && !loading && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              今日推荐岗位数据已于{lastUpdateTime.getMonth() + 1}月{lastUpdateTime.getDate()}日{lastUpdateTime.getHours()}点{lastUpdateTime.getMinutes().toString().padStart(2, '0')}分更新
+            </p>
+          )}
         </div>
 
         {/* 职位区域 */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           {loading ? (
-            <div className="flex justify-center items-center py-12">
+            <div className="flex flex-col justify-center items-center py-12 space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div>
+              <div className="text-center">
+                {loadingStage === 'fetching' && (
+                  <p className="text-gray-600 dark:text-gray-400">正在加载岗位数据...</p>
+                )}
+                {loadingStage === 'translating' && (
+                  <div className="space-y-2">
+                    <p className="text-gray-600 dark:text-gray-400 font-medium">正在将内容翻译成中文...</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500">为了更好的阅读体验</p>
+                  </div>
+                )}
+                {loadingStage === 'idle' && (
+                  <p className="text-gray-600 dark:text-gray-400">加载中...</p>
+                )}
+              </div>
             </div>
           ) : error ? (
             <div className="text-center py-12">
