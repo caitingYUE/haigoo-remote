@@ -7,7 +7,8 @@ import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { DateFormatter } from '../utils/date-formatter'
 import { processJobDescription } from '../utils/text-formatter'
-import { jobTranslationService } from '../services/job-translation-service'
+// ❌ 不再前端实时翻译，数据从后端API获取已翻译
+// import { jobTranslationService } from '../services/job-translation-service'
 import { usePageCache } from '../hooks/usePageCache'
 
 const jobTypes = [

@@ -10,7 +10,8 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { recommendationHistoryService } from '../services/recommendation-history-service'
 import { processJobDescription } from '../utils/text-formatter'
 import SingleLineTags from '../components/SingleLineTags'
-import { jobTranslationService } from '../services/job-translation-service'
+// ❌ 不再前端实时翻译，数据从后端API获取已翻译
+// import { jobTranslationService } from '../services/job-translation-service'
 import { usePageCache } from '../hooks/usePageCache'
 
 
@@ -199,9 +200,9 @@ export default function HomePage() {
       try {
         const todayRec = recommendationHistoryService.getTodayRecommendation()
         if (todayRec && todayRec.jobs) {
-          // 翻译今日推荐岗位
-          const translatedJobs = await jobTranslationService.translateJobs(todayRec.jobs)
-          setTodayRecommendations(translatedJobs)
+          // ✅ 后端已翻译，直接使用
+          // 不再前端实时翻译，数据已经包含 translations 字段
+          setTodayRecommendations(todayRec.jobs)
         }
       } catch (error) {
         console.error('加载今日推荐失败:', error)
@@ -221,11 +222,11 @@ export default function HomePage() {
      setLoadingHistory(true)
      try {
        const history = await recommendationHistoryService.getRecommendationsForPastDays(level)
-       // 转换为 {[date]: Job[]} 格式并翻译
+       // ✅ 后端已翻译，直接使用
+       // 不再前端实时翻译，转换为 {[date]: Job[]} 格式
        const historyMap: {[key: string]: Job[]} = {}
        for (const item of history) {
-         const translatedJobs = await jobTranslationService.translateJobs(item.jobs)
-         historyMap[item.date] = translatedJobs
+         historyMap[item.date] = item.jobs
        }
        setPastRecommendations(historyMap)
      } catch (error) {
