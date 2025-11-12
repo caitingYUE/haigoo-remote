@@ -105,7 +105,11 @@ class ProcessedJobsService {
         status: job.status,
         isRemote: job.isRemote,
         category: job.category,
-        recommendationScore: 0
+        recommendationScore: 0,
+        // 🆕 保留翻译字段，让前端组件可以使用
+        translations: job.translations || undefined,
+        isTranslated: job.isTranslated || false,
+        translatedAt: job.translatedAt || undefined
       }))
 
       return {
