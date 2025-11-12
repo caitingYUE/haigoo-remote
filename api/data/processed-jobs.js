@@ -1,9 +1,9 @@
 import { kv } from '@vercel/kv'
 
-// 🆕 导入翻译服务
+// 🆕 导入翻译服务（从 lib 目录）
 let translateJobs = null
 try {
-  const translationService = require('../services/translation-service')
+  const translationService = require('../../lib/services/translation-service')
   translateJobs = translationService.translateJobs
   console.log('✅ 翻译服务已加载')
 } catch (error) {

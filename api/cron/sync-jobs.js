@@ -15,7 +15,7 @@
 
 let translateJobs = null
 try {
-  const translationService = require('../services/translation-service')
+  const translationService = require('../../lib/services/translation-service')
   translateJobs = translationService.translateJobs
 } catch (error) {
   console.error('无法加载翻译服务:', error.message)
