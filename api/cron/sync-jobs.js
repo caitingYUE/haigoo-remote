@@ -14,13 +14,26 @@
  */
 
 // 导入翻译服务（使用 CommonJS）
+// 优先使用真实翻译服务，失败则使用Mock服务
 let translateJobs = null
+let translationServiceType = 'none'
+
 try {
   const translationService = require('../../lib/services/translation-service')
   translateJobs = translationService.translateJobs
-  console.log('✅ 翻译服务加载成功')
+  translationServiceType = 'real'
+  console.log('✅ 真实翻译服务加载成功')
 } catch (error) {
-  console.error('❌ 无法加载翻译服务:', error.message, error.stack)
+  console.warn('⚠️ 真实翻译服务加载失败，尝试使用Mock服务:', error.message)
+  
+  try {
+    const mockService = require('../../lib/services/translation-service-mock')
+    translateJobs = mockService.translateJobs
+    translationServiceType = 'mock'
+    console.log('✅ Mock翻译服务加载成功（用于测试）')
+  } catch (mockError) {
+    console.error('❌ Mock翻译服务也加载失败:', mockError.message)
+  }
 }
 
 // 使用 CommonJS 导出（与 Vercel Serverless Functions 兼容）
@@ -62,8 +75,14 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({
       success: false,
       error: '翻译服务不可用',
-      message: '无法加载翻译服务，请检查配置'
+      message: '无法加载任何翻译服务（包括Mock服务）'
     })
+  }
+
+  // 记录使用的翻译服务类型
+  console.log(`🔧 使用翻译服务类型: ${translationServiceType}`)
+  if (translationServiceType === 'mock') {
+    console.log('⚠️ 注意：当前使用Mock翻译服务，仅用于测试目的')
   }
 
   try {
@@ -209,6 +228,7 @@ module.exports = async function handler(req, res) {
     return res.json({
       success: true,
       message: '定时任务完成',
+      translationServiceType, // 告知前端使用的翻译服务类型
       stats: {
         totalJobs: jobs.length,
         translatedJobs: successCount,

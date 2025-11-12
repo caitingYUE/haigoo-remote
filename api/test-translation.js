@@ -4,12 +4,24 @@
  */
 
 // 使用 CommonJS 导入翻译服务
+// 优先使用真实翻译服务，失败则使用Mock服务
 let translateService = null
+let serviceType = 'none'
+
 try {
   translateService = require('../lib/services/translation-service')
-  console.log('✅ 测试接口：翻译服务加载成功', Object.keys(translateService))
+  serviceType = 'real'
+  console.log('✅ 测试接口：真实翻译服务加载成功', Object.keys(translateService))
 } catch (error) {
-  console.error('❌ 测试接口：无法加载翻译服务:', error.message, error.stack)
+  console.warn('⚠️ 测试接口：真实翻译服务加载失败，尝试Mock服务:', error.message)
+  
+  try {
+    translateService = require('../lib/services/translation-service-mock')
+    serviceType = 'mock'
+    console.log('✅ 测试接口：Mock翻译服务加载成功', Object.keys(translateService))
+  } catch (mockError) {
+    console.error('❌ 测试接口：Mock翻译服务也加载失败:', mockError.message, mockError.stack)
+  }
 }
 
 // 使用 CommonJS 导出
@@ -57,13 +69,15 @@ module.exports = async function handler(req, res) {
 
     return res.json({
       success: true,
-      message: '翻译服务正常',
+      message: `翻译服务正常 (使用${serviceType === 'mock' ? 'Mock' : '真实'}翻译)`,
+      serviceType,
       testInput: testJob,
       testOutput: result[0],
       serviceInfo: {
         moduleLoaded: true,
         functionExists: true,
-        availableFunctions: Object.keys(translateService)
+        availableFunctions: Object.keys(translateService),
+        isMock: serviceType === 'mock'
       }
     })
   } catch (error) {
