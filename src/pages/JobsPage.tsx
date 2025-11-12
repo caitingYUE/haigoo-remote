@@ -118,22 +118,14 @@ export default function JobsPage() {
   } = usePageCache<Job[]>('jobs-all-list', {
     fetcher: async () => {
       try {
-        // 阶段1: 获取数据
+        // 获取数据（后端已翻译）
         setLoadingStage('fetching')
         const response = await processedJobsService.getAllProcessedJobs(200)
-        console.log('获取到处理后的岗位数据:', response.length, '个')
-        
-        if (response.length > 0) {
-          // 阶段2: 翻译数据
-          setLoadingStage('translating')
-          console.log('开始翻译岗位数据...')
-          const translatedJobs = await jobTranslationService.translateJobs(response)
-          console.log('翻译完成，共', translatedJobs.length, '个岗位')
-          setLoadingStage('idle')
-          return translatedJobs
-        }
         setLoadingStage('idle')
-        return []
+        
+        // 🎉 后端已处理翻译，前端直接使用
+        console.log(`✅ 获取到 ${response.length} 个岗位（后端已翻译）`)
+        return response
       } catch (error) {
         setLoadingStage('idle')
         throw error
@@ -540,18 +532,7 @@ export default function JobsPage() {
                   >
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600" aria-hidden="true"></div>
                     <div className="text-center">
-                      {loadingStage === 'fetching' && (
-                        <p className="text-gray-600 dark:text-gray-400 font-medium">正在加载岗位数据...</p>
-                      )}
-                      {loadingStage === 'translating' && (
-                        <div className="space-y-2">
-                          <p className="text-gray-600 dark:text-gray-400 font-medium">正在将内容翻译成中文...</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-500">为了更好的阅读体验</p>
-                        </div>
-                      )}
-                      {loadingStage === 'idle' && (
-                        <p className="text-gray-600 dark:text-gray-400">加载中...</p>
-                      )}
+                      <p className="text-gray-600 dark:text-gray-400 font-medium">正在加载岗位数据...</p>
                     </div>
                   </div>
                 ) : filteredJobs.length === 0 ? (

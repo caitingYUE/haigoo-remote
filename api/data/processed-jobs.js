@@ -1,5 +1,15 @@
 import { kv } from '@vercel/kv'
 
+// 🆕 导入翻译服务
+let translateJobs = null
+try {
+  const translationService = require('../services/translation-service')
+  translateJobs = translationService.translateJobs
+  console.log('✅ 翻译服务已加载')
+} catch (error) {
+  console.warn('⚠️ 翻译服务未找到，将跳过自动翻译')
+}
+
 // Detect KV configuration (REST-only). Avoid misinterpreting KV_URL without REST creds.
 const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
 
@@ -455,9 +465,25 @@ export default async function handler(req, res) {
           isRemote: typeof j.isRemote === 'boolean' ? j.isRemote : true,
           status: j.status || 'active',
           createdAt: j.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          // 🆕 翻译字段
+          translations: j.translations || null,
+          isTranslated: j.isTranslated || false,
+          translatedAt: j.translatedAt || null
         }
       })
+
+      // 🆕 自动翻译功能
+      if (translateJobs && process.env.ENABLE_AUTO_TRANSLATION === 'true') {
+        try {
+          console.log('🌍 启动自动翻译...')
+          normalized = await translateJobs(normalized)
+          console.log('✅ 自动翻译完成')
+        } catch (translationError) {
+          console.error('❌ 自动翻译失败:', translationError.message)
+          // 翻译失败不影响保存流程
+        }
+      }
 
       let toWrite = normalized
       let provider = 'memory'

@@ -17,7 +17,7 @@
       "maxDuration": 30
     },
     "api/data/processed-jobs.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "api/recommendations.js": {
       "maxDuration": 30
@@ -33,8 +33,17 @@
     },
     "api/users.js": {
       "maxDuration": 10
+    },
+    "api/cron/sync-jobs.js": {
+      "maxDuration": 300
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/sync-jobs",
+      "schedule": "0 2 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
