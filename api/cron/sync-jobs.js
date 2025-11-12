@@ -130,7 +130,27 @@ export default async function handler(req, res) {
     console.log(`🌍 开始翻译 ${untranslatedJobs.length} 个岗位...`)
     const translationStartTime = Date.now()
     
-    const translatedJobs = await translateJobs(untranslatedJobs)
+    let translatedJobs = []
+    try {
+      translatedJobs = await translateJobs(untranslatedJobs)
+    } catch (translationError) {
+      console.error('❌ 翻译过程失败:', translationError)
+      // 翻译失败但不中断整个流程
+      return res.status(500).json({
+        success: false,
+        error: '翻译过程失败',
+        message: translationError.message,
+        details: translationError.stack,
+        stats: {
+          totalJobs: jobs.length,
+          translatedJobs: 0,
+          skippedJobs: alreadyTranslated,
+          failedJobs: untranslatedJobs.length,
+          duration: `${Date.now() - startTime}ms`
+        },
+        timestamp: new Date().toISOString()
+      })
+    }
     
     const translationDuration = Date.now() - translationStartTime
     const successCount = translatedJobs.filter(j => j.isTranslated).length

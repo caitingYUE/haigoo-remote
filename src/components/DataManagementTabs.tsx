@@ -53,6 +53,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [activeTab, setActiveTab] = useState<'raw' | 'processed' | 'storage'>('processed');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [translating, setTranslating] = useState(false); // 🆕 翻译按钮专用状态
   const { showSuccess, showError } = useNotificationHelpers();
   
   // 原始数据状态
@@ -187,7 +188,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   // 🆕 手动触发后端翻译任务
   const handleTriggerTranslation = async () => {
     try {
-      setSyncing(true);
+      setTranslating(true); // 使用独立的翻译状态
       console.log('🌍 触发后端翻译任务...');
       
       // 调用后端cron job API进行翻译
@@ -199,7 +200,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       });
 
       if (!response.ok) {
-        throw new Error(`翻译任务失败: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `翻译任务失败: ${response.status}`);
       }
 
       const result = await response.json();
@@ -226,7 +228,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       console.error('❌ 翻译任务失败:', error);
       showError('翻译失败', error instanceof Error ? error.message : '请检查后端服务或网络连接');
     } finally {
-      setSyncing(false);
+      setTranslating(false); // 使用独立的翻译状态
     }
   };
   
@@ -1021,14 +1023,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               </button>
               <button
                 onClick={handleTriggerTranslation}
-                disabled={syncing}
+                disabled={translating || syncing} // 翻译或刷新时都禁用
                 className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-green-300 text-green-700 bg-green-50 rounded-md hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="将现有岗位数据翻译成中文"
               >
-                <svg className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-3 h-3 ${translating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                 </svg>
-                {syncing ? '翻译中...' : '翻译数据'}
+                {translating ? '翻译中...' : '翻译数据'}
               </button>
             </div>
           )}
