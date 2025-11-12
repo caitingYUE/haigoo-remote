@@ -104,6 +104,9 @@ export default function JobsPage() {
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
   
+  // 加载阶段状态
+  const [loadingStage, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
+  
   // 使用页面缓存 Hook
   const {
     data: jobs,
@@ -114,22 +117,33 @@ export default function JobsPage() {
     cacheAge
   } = usePageCache<Job[]>('jobs-all-list', {
     fetcher: async () => {
-      // 性能优化：限制加载数量为200条
-      const response = await processedJobsService.getAllProcessedJobs(200)
-      console.log('获取到处理后的岗位数据:', response.length, '个')
-      if (response.length > 0) {
-        // 翻译岗位数据为中文
-        console.log('开始翻译岗位数据...')
-        const translatedJobs = await jobTranslationService.translateJobs(response)
-        console.log('翻译完成，共', translatedJobs.length, '个岗位')
-        return translatedJobs
+      try {
+        // 阶段1: 获取数据
+        setLoadingStage('fetching')
+        const response = await processedJobsService.getAllProcessedJobs(200)
+        console.log('获取到处理后的岗位数据:', response.length, '个')
+        
+        if (response.length > 0) {
+          // 阶段2: 翻译数据
+          setLoadingStage('translating')
+          console.log('开始翻译岗位数据...')
+          const translatedJobs = await jobTranslationService.translateJobs(response)
+          console.log('翻译完成，共', translatedJobs.length, '个岗位')
+          setLoadingStage('idle')
+          return translatedJobs
+        }
+        setLoadingStage('idle')
+        return []
+      } catch (error) {
+        setLoadingStage('idle')
+        throw error
       }
-      return []
     },
     ttl: 10 * 60 * 1000, // 10分钟缓存
     persist: true, // 持久化到 localStorage
     namespace: 'jobs',
     onSuccess: (jobs) => {
+      setLoadingStage('idle')
       console.log(`✅ 岗位列表加载完成，共 ${jobs.length} 个${isFromCache ? '（来自缓存）' : '（新数据）'}`)
     }
   })
@@ -519,13 +533,26 @@ export default function JobsPage() {
                 
                 {loading ? (
                   <div 
-                    className="flex items-center justify-center py-12"
+                    className="flex flex-col items-center justify-center py-12 space-y-4"
                     role="status"
                     aria-live="polite"
                     aria-label="正在加载职位数据"
                   >
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-haigoo-primary" aria-hidden="true"></div>
-                    <span className="ml-3 text-gray-600">正在加载职位数据...</span>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600" aria-hidden="true"></div>
+                    <div className="text-center">
+                      {loadingStage === 'fetching' && (
+                        <p className="text-gray-600 dark:text-gray-400 font-medium">正在加载岗位数据...</p>
+                      )}
+                      {loadingStage === 'translating' && (
+                        <div className="space-y-2">
+                          <p className="text-gray-600 dark:text-gray-400 font-medium">正在将内容翻译成中文...</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-500">为了更好的阅读体验</p>
+                        </div>
+                      )}
+                      {loadingStage === 'idle' && (
+                        <p className="text-gray-600 dark:text-gray-400">加载中...</p>
+                      )}
+                    </div>
                   </div>
                 ) : filteredJobs.length === 0 ? (
                   <div 
