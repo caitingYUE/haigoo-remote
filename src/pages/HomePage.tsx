@@ -389,22 +389,13 @@ export default function HomePage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-nowrap items-center gap-2 mb-6 overflow-hidden">
-                          {(() => {
-                            const tags: string[] = (Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : (job.skills || [])) as string[]
-                            return tags.slice(0, 3).map((skill: string, skillIndex: number) => (
-                              <span
-                                key={skillIndex}
-                                className={`px-3 py-1.5 text-sm rounded-lg font-medium whitespace-nowrap ${
-                                  styles.isTop 
-                                    ? 'bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 backdrop-blur-sm' 
-                                    : 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
-                                }`}
-                              >
-                                {skill}
-                              </span>
-                            ))
-                          })()}
+                        <div className="mb-6">
+                          <SingleLineTags 
+                            tags={(Array.isArray((job as any).tags) && (job as any).tags.length > 0 ? (job as any).tags : (job.skills || [])) as string[]}
+                            fallback="remote"
+                            size="sm"
+                            className=""
+                          />
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -476,12 +467,12 @@ export default function HomePage() {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <h3 className="font-bold text-gray-900 dark:text-white text-lg leading-tight truncate mb-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
-                                  {job.title}
+                                  {job.translations?.title || job.title}
                                 </h3>
                                 {job.company && (
                                   <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 text-sm font-medium min-w-0">
                                     <Building className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                    <span className="truncate" title={job.company}>{job.company}</span>
+                                    <span className="truncate" title={job.translations?.company || job.company}>{job.translations?.company || job.company}</span>
                                   </div>
                                 )}
                               </div>
@@ -489,9 +480,9 @@ export default function HomePage() {
                           </div>
 
                           <div className="space-y-3 mb-4">
-                            {job.description && (
+                            {(job.translations?.description || job.description) && (
                               <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-2 leading-relaxed">
-                                {processJobDescription(job.description, { 
+                                {processJobDescription(job.translations?.description || job.description, { 
                                   formatMarkdown: false, 
                                   maxLength: 120, 
                                   preserveHtml: false 
@@ -501,7 +492,7 @@ export default function HomePage() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 text-sm min-w-0">
                                 <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                <span className="truncate" title={job.location}>{job.location}</span>
+                                <span className="truncate" title={job.translations?.location || job.location}>{job.translations?.location || job.location}</span>
                               </div>
                               {job.salary && job.salary.min > 0 && (
                                 <p className="text-violet-600 dark:text-violet-400 font-bold text-xl">
