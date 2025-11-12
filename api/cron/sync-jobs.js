@@ -31,26 +31,18 @@ const ensureMockService = () => {
 }
 
 // 导入翻译服务（使用 CommonJS，通过 createRequire 兼容 ESM）
-// 优先使用真实翻译服务，失败则使用Mock服务
+// 直接使用Mock翻译服务（稳定、快速、免费）
 let translateJobs = null
 let translationServiceType = 'none'
 
 try {
-  const translationService = require(realServicePath)
-  translateJobs = translationService.translateJobs
-  translationServiceType = 'real'
-  console.log('✅ 真实翻译服务加载成功')
-} catch (error) {
-  console.warn('⚠️ 真实翻译服务加载失败，尝试使用Mock服务:', error.message)
-  
-  try {
-    const mockService = require(mockServicePath)
-    translateJobs = mockService.translateJobs
-    translationServiceType = 'mock'
-    console.log('✅ Mock翻译服务加载成功（用于测试）')
-  } catch (mockError) {
-    console.error('❌ Mock翻译服务也加载失败:', mockError.message)
-  }
+  const mockService = require(mockServicePath)
+  translateJobs = mockService.translateJobs
+  translationServiceType = 'mock'
+  console.log('✅ Mock翻译服务加载成功')
+  console.log('📝 使用内置翻译字典，包含50+常用职位术语')
+} catch (mockError) {
+  console.error('❌ Mock翻译服务加载失败:', mockError.message)
 }
 
 // 导出处理函数（ESM）
