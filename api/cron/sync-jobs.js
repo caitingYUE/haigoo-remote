@@ -13,13 +13,21 @@
  * - 手动触发：POST /api/cron/sync-jobs（需要授权）
  */
 
-// 导入翻译服务（使用 CommonJS）
+import path from 'path'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
+
+const realServicePath = path.join(process.cwd(), 'lib/services/translation-service.cjs')
+const mockServicePath = path.join(process.cwd(), 'lib/services/translation-service-mock.cjs')
+
+// 导入翻译服务（使用 CommonJS，通过 createRequire 兼容 ESM）
 // 优先使用真实翻译服务，失败则使用Mock服务
 let translateJobs = null
 let translationServiceType = 'none'
 
 try {
-  const translationService = require('../../lib/services/translation-service')
+  const translationService = require(realServicePath)
   translateJobs = translationService.translateJobs
   translationServiceType = 'real'
   console.log('✅ 真实翻译服务加载成功')
@@ -27,7 +35,7 @@ try {
   console.warn('⚠️ 真实翻译服务加载失败，尝试使用Mock服务:', error.message)
   
   try {
-    const mockService = require('../../lib/services/translation-service-mock')
+    const mockService = require(mockServicePath)
     translateJobs = mockService.translateJobs
     translationServiceType = 'mock'
     console.log('✅ Mock翻译服务加载成功（用于测试）')
@@ -36,8 +44,8 @@ try {
   }
 }
 
-// 使用 CommonJS 导出（与 Vercel Serverless Functions 兼容）
-module.exports = async function handler(req, res) {
+// 导出处理函数（ESM）
+export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
