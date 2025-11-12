@@ -224,56 +224,51 @@ export default async function handler(req, res) {
     // 3. 批量翻译
     currentStep = 'translate-jobs'
     console.log(`🌍 开始翻译 ${untranslatedJobs.length} 个岗位...`)
+    console.log(`📝 使用翻译服务类型: ${translationServiceType}`)
+    console.log(`📝 translateJobs 函数存在: ${typeof translateJobs === 'function'}`)
+    
     const translationStartTime = Date.now()
     
     let translatedJobs = []
     try {
+      if (typeof translateJobs !== 'function') {
+        throw new Error(`translateJobs 不是一个函数，当前类型: ${typeof translateJobs}`)
+      }
+      
+      console.log(`🚀 调用 translateJobs，输入 ${untranslatedJobs.length} 个岗位`)
       translatedJobs = await translateJobs(untranslatedJobs)
+      console.log(`✅ translateJobs 执行完成，返回 ${translatedJobs?.length || 0} 个结果`)
+      
+      if (!Array.isArray(translatedJobs)) {
+        throw new Error(`translateJobs 返回值不是数组，类型: ${typeof translatedJobs}`)
+      }
+      
     } catch (translationError) {
       console.error('❌ 翻译过程失败:', translationError)
+      console.error('错误详情:', translationError.stack)
       
-      if (translationServiceType !== 'mock') {
-        console.warn('🔁 尝试回退到 Mock 翻译服务继续执行')
-        try {
-          currentStep = 'translate-jobs (fallback-mock)'
-          const mockService = ensureMockService()
-          translateJobs = mockService.translateJobs
-          translationServiceType = 'mock'
-          translatedJobs = await translateJobs(untranslatedJobs)
-          console.log('✅ Mock 翻译服务完成翻译')
-        } catch (mockError) {
-          console.error('❌ Mock 翻译服务也失败:', mockError)
-          return res.status(500).json({
-            success: false,
-            error: '翻译过程失败',
-            message: mockError.message || translationError.message,
-            details: mockError.stack || translationError.stack,
-            stats: {
-              totalJobs: jobs.length,
-              translatedJobs: 0,
-              skippedJobs: alreadyTranslated,
-              failedJobs: untranslatedJobs.length,
-              duration: `${Date.now() - startTime}ms`
-            },
-            timestamp: new Date().toISOString()
-          })
-        }
-      } else {
-        return res.status(500).json({
-          success: false,
-          error: '翻译过程失败',
-          message: translationError.message,
-          details: translationError.stack,
-          stats: {
-            totalJobs: jobs.length,
-            translatedJobs: 0,
-            skippedJobs: alreadyTranslated,
-            failedJobs: untranslatedJobs.length,
-            duration: `${Date.now() - startTime}ms`
-          },
-          timestamp: new Date().toISOString()
-        })
-      }
+      // 直接返回错误，不再尝试回退（因为已经在用Mock了）
+      return res.status(500).json({
+        success: false,
+        error: '翻译过程失败',
+        message: translationError.message || 'Unknown translation error',
+        details: translationError.stack || 'No stack trace',
+        context: {
+          translationServiceType,
+          translateJobsType: typeof translateJobs,
+          untranslatedJobsCount: untranslatedJobs.length,
+          loadedFrom
+        },
+        stats: {
+          totalJobs: jobs.length,
+          translatedJobs: 0,
+          skippedJobs: alreadyTranslated,
+          failedJobs: untranslatedJobs.length,
+          duration: `${Date.now() - startTime}ms`
+        },
+        step: currentStep,
+        timestamp: new Date().toISOString()
+      })
     }
     
     const translationDuration = Date.now() - translationStartTime
