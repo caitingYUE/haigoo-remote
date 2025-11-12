@@ -47,6 +47,21 @@ module.exports = async function handler(req, res) {
     return res.status(200).end()
   }
 
+  // 诊断模式：GET 请求返回当前翻译服务状态
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      success: !!translateJobs,
+      translationServiceType,
+      isMock: translationServiceType === 'mock',
+      message: translateJobs
+        ? translationServiceType === 'mock'
+          ? '使用 Mock 翻译服务（测试用途）'
+          : '使用真实翻译服务'
+        : '翻译服务未加载',
+      timestamp: new Date().toISOString()
+    })
+  }
+
   // 验证授权（支持Vercel Cron和手动触发）
   const authHeader = req.headers.authorization
   const cronSecret = process.env.CRON_SECRET
