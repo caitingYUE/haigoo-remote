@@ -3,6 +3,21 @@
  * 增强版：显示环境配置和功能状态，便于调试预发/生产环境
  */
 export default async function handler(req, res) {
+  const resolveEnv = (name) => {
+    const variants = [
+      name,
+      `haigoo_${name}`,
+      `HAIGOO_${name}`,
+      `pre_${name}`,
+      `PRE_${name}`,
+      `pre_haigoo_${name}`,
+      `PRE_HAIGOO_${name}`
+    ]
+    for (const key of variants) {
+      if (process.env[key]) return process.env[key]
+    }
+    return null
+  }
   res.setHeader('Content-Type', 'application/json')
   res.setHeader('Access-Control-Allow-Origin', '*')
   
@@ -45,20 +60,26 @@ export default async function handler(req, res) {
     
     // 🆕 关键功能配置状态
     features: {
+      // 统一环境变量解析
+      _envDetectVersion: 'v2-pre_haigoo-aware',
       // 数据存储
+      upstashRedisRest: Boolean(
+        (resolveEnv('UPSTASH_REDIS_REST_URL') || resolveEnv('UPSTASH_REST_URL') || resolveEnv('REDIS_REST_API_URL')) &&
+        (resolveEnv('UPSTASH_REDIS_REST_TOKEN') || resolveEnv('UPSTASH_REST_TOKEN') || resolveEnv('REDIS_REST_API_TOKEN'))
+      ),
       redis: Boolean(
-        process.env.REDIS_URL || 
-        process.env.haigoo_REDIS_URL || 
-        process.env.HAIGOO_REDIS_URL || 
-        process.env.UPSTASH_REDIS_URL
+        resolveEnv('REDIS_URL') ||
+        resolveEnv('UPSTASH_REDIS_URL') ||
+        process.env.haigoo_REDIS_URL ||
+        process.env.HAIGOO_REDIS_URL
       ),
       vercelKV: Boolean(
-        process.env.KV_REST_API_URL && 
-        process.env.KV_REST_API_TOKEN
+        resolveEnv('KV_REST_API_URL') && resolveEnv('KV_REST_API_TOKEN')
       ),
       
       // 🆕 翻译功能（关键）
       autoTranslation: process.env.ENABLE_AUTO_TRANSLATION === 'true',
+      preferredTranslationProvider: (process.env.PREFERRED_TRANSLATION_PROVIDER || 'libretranslate'),
       
       // 🆕 Cron任务
       cronSecret: Boolean(process.env.CRON_SECRET),
@@ -111,8 +132,12 @@ export default async function handler(req, res) {
     }
   }
   
-  // 添加状态总结
-  health.summary = `Environment: ${environmentName} | Translation: ${health.features.autoTranslation ? '✅' : '❌'} | Storage: ${health.features.vercelKV ? 'KV✅' : health.features.redis ? 'Redis✅' : '❌'}`
-  
+  // 添加状态总结（优先显示 Upstash REST）
+  const storageSummary = health.features.upstashRedisRest
+    ? 'UpstashREST✅'
+    : (health.features.redis ? 'Redis✅' : (health.features.vercelKV ? 'KV✅' : '❌'))
+  const translationProvider = health.features.preferredTranslationProvider
+  health.summary = `Environment: ${environmentName} | Translation: ${health.features.autoTranslation ? '✅' : '❌'} (${translationProvider}) | Storage: ${storageSummary}`
+
   res.status(200).json(health)
 }

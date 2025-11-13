@@ -64,12 +64,17 @@
 4. 确保这些变量绑定到 Preview 环境
 ```
 
-**选项B：使用Upstash Redis**
+**选项B：使用Upstash Redis（推荐 REST 方式）**
 
 ```bash
-变量名: REDIS_URL
-值: redis://preview-redis.upstash.io:6379  (Preview专用Redis实例)
+# REST 方式（Vercel/无持久连接环境更稳定）
+UPSTASH_REDIS_REST_URL=https://eu2-rest-YOURDB.upstash.io
+UPSTASH_REDIS_REST_TOKEN=YOUR_UPSTASH_TOKEN
 环境: ☑️ Preview  ☑️ Development
+
+# 如需 TCP（不推荐在 Serverless/Edge 环境）
+REDIS_URL=redis://preview-redis.upstash.io:6379
+环境: 可选
 ```
 
 #### 2.4 其他可选变量
@@ -103,6 +108,8 @@
 | `CRON_SECRET` | ✅ `prod_secret_xxx` | ✅ `preview_secret_xxx` | ✅ `dev_secret_xxx` | **必需** |
 | `KV_REST_API_URL` | ✅ (生产KV) | ✅ (预发KV) | ❌ | 推荐 |
 | `KV_REST_API_TOKEN` | ✅ (生产Token) | ✅ (预发Token) | ❌ | 推荐 |
+| `UPSTASH_REDIS_REST_URL` | ✅ (生产) | ✅ (预发) | ✅ (开发) | 推荐 |
+| `UPSTASH_REDIS_REST_TOKEN` | ✅ (生产) | ✅ (预发) | ✅ (开发) | 推荐 |
 | `REDIS_URL` | ✅ (生产Redis) | ✅ (预发Redis) | ❌ | 可选 |
 | `JWT_SECRET` | ✅ (生产密钥) | ✅ (预发密钥) | ✅ (开发密钥) | 如有认证 |
 | `GOOGLE_CLIENT_ID` | ✅ | ✅ | ✅ | 如有OAuth |
@@ -139,14 +146,16 @@ curl https://haigoo-git-develop-your-team.vercel.app/api/health
   "status": "healthy",
   "environment": "development",  // 或 "preview"
   "timestamp": "2025-11-12T...",
-  "storage": {
-    "redis": true,  // 或 false
-    "kv": true      // 或 false
+  "features": {
+    "upstashRedisRest": true,   // 或 false
+    "redis": false,             // 如使用 TCP 则为 true
+    "vercelKV": false,          // 如使用 KV 则为 true
+    "preferredTranslationProvider": "libretranslate"
   }
 }
 ```
 
-### 3. 测试后端翻译功能
+### 3. 测试后端翻译功能（LibreTranslate 优先，经 /api/translate 代理）
 
 在预发环境的管理后台测试：
 
@@ -159,7 +168,7 @@ https://haigoo-git-develop-your-team.vercel.app/admin_team
 2. 进入 "职位数据" → "处理后数据" 标签
 3. 点击 "翻译数据" 按钮
 4. 观察控制台日志和返回结果
-5. 检查数据是否成功翻译为中文
+5. 检查数据是否成功翻译为中文（响应头含 `X-Storage-Provider` 与 `X-Diag-Upstash-REST-Configured`）
 ```
 
 ### 4. 验证前端数据展示
@@ -274,10 +283,13 @@ CRON_SECRET=any-secret-string  (Preview环境)
 ENABLE_AUTO_TRANSLATION=true
 CRON_SECRET=preview-cron-secret-2024
 
-# 数据存储（选择一种）
+# 数据存储（优先选择 Upstash REST 或 Vercel KV）
 KV_REST_API_URL=https://...  (Vercel KV自动生成)
 KV_REST_API_TOKEN=...  (Vercel KV自动生成)
-# 或
+# 或（推荐）
+UPSTASH_REDIS_REST_URL=https://eu2-rest-YOURDB.upstash.io
+UPSTASH_REDIS_REST_TOKEN=YOUR_UPSTASH_TOKEN
+# 备用（如确有 TCP 需求）
 REDIS_URL=redis://preview.upstash.io:6379
 
 # 可选功能
@@ -332,4 +344,14 @@ GOOGLE_CLIENT_ID=your-google-client-id
 
 **最后更新**: 2025-11-12
 **适用版本**: Haigoo v2.0+
+# 翻译服务提供商（可选覆盖）
+
+```bash
+# 默认优先 LibreTranslate，通过 /api/translate 代理
+PREFERRED_TRANSLATION_PROVIDER=libretranslate
+
+# 如需切换为 Google 或 MyMemory：
+# PREFERRED_TRANSLATION_PROVIDER=google
+# PREFERRED_TRANSLATION_PROVIDER=mymemory
+```
 

@@ -330,8 +330,8 @@ export default async function handler(req, res) {
     console.log(`  保存URL: ${baseUrl}/api/data/processed-jobs`)
     const saveStartTime = Date.now()
     
-    const CHUNK_SIZE = 200
-    for (let i = 0; i < allJobs.length; i += CHUNK_SIZE) {
+    let CHUNK_SIZE = 200
+    for (let i = 0; i < allJobs.length;) {
       const chunk = allJobs.slice(i, i + CHUNK_SIZE)
       const mode = i === 0 ? 'replace' : 'append'
       
@@ -356,12 +356,23 @@ export default async function handler(req, res) {
 
       if (!saveResponse.ok) {
         const errorText = await saveResponse.text().catch(() => '无法读取错误响应')
-        console.error(`❌ 保存API返回错误 (chunk ${i}): ${saveResponse.status}`, errorText.substring(0, 500))
-        throw new Error(`保存数据失败 (chunk ${i}): ${saveResponse.status} - ${errorText.substring(0, 200)}`)
+        console.error(`❌ 保存API返回错误 (chunk ${i}, size=${CHUNK_SIZE}): ${saveResponse.status}`, errorText.substring(0, 500))
+        // 针对体积过大/限流等问题，动态缩小分片后重试
+        if (saveResponse.status === 413 || /Payload Too Large|entity too large|body too large/i.test(errorText)) {
+          const newSize = Math.max(25, Math.floor(CHUNK_SIZE / 2))
+          if (newSize === CHUNK_SIZE) {
+            throw new Error(`保存数据失败 (chunk ${i}): ${saveResponse.status} - ${errorText.substring(0, 200)}`)
+          }
+          console.warn(`📦 检测到请求体过大，分片从 ${CHUNK_SIZE} 缩小到 ${newSize} 并重试...`)
+          CHUNK_SIZE = newSize
+          continue // 重新尝试当前 i 的较小分片
+        }
+        throw new Error(`保存数据失败 (chunk ${i}, size=${CHUNK_SIZE}): ${saveResponse.status} - ${errorText.substring(0, 200)}`)
       }
       
       const saveResult = await saveResponse.json().catch(() => ({}))
       console.log(`  ✅ 批次 ${Math.floor(i / CHUNK_SIZE) + 1} 保存成功`, saveResult.message || '')
+      i += CHUNK_SIZE
     }
 
     const saveDuration = Date.now() - saveStartTime

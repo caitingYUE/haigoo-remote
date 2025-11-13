@@ -217,11 +217,24 @@ async function translateText(text, targetLang, sourceLang = 'auto') {
   const normalizedSourceLang = sourceLang === 'auto' ? 'auto' : (LANGUAGE_MAP[sourceLang] || sourceLang)
 
   // 按优先级尝试各个翻译服务
-  const services = [
-    () => translateWithMyMemory(text, normalizedTargetLang, normalizedSourceLang),
-    () => translateWithLibreTranslate(text, normalizedTargetLang, normalizedSourceLang),
-    () => translateWithGoogle(text, normalizedTargetLang, normalizedSourceLang)
-  ]
+  // 优先使用 LibreTranslate，其次 Google，最后 MyMemory
+  const preferred = (process.env.PREFERRED_TRANSLATION_PROVIDER || '').toLowerCase()
+  const byProvider = {
+    libretranslate: () => translateWithLibreTranslate(text, normalizedTargetLang, normalizedSourceLang),
+    google: () => translateWithGoogle(text, normalizedTargetLang, normalizedSourceLang),
+    mymemory: () => translateWithMyMemory(text, normalizedTargetLang, normalizedSourceLang)
+  }
+
+  // 构建服务顺序：ENV 优先，否则默认 [LibreTranslate, Google, MyMemory]
+  const services = preferred && byProvider[preferred]
+    ? [byProvider[preferred], ...Object.entries(byProvider)
+        .filter(([k]) => k !== preferred)
+        .map(([_, fn]) => fn)]
+    : [
+        byProvider.libretranslate,
+        byProvider.google,
+        byProvider.mymemory
+      ]
 
   let lastError = null
 

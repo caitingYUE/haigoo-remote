@@ -1,5 +1,24 @@
 import { kv } from '@vercel/kv'
 
+// 统一环境变量解析：兼容 preview 专用前缀（pre_haigoo_*、pre_*、haigoo_* 等）
+function getEnv(...names) {
+  const variants = (name) => [
+    name,
+    `haigoo_${name}`,
+    `HAIGOO_${name}`,
+    `pre_${name}`,
+    `PRE_${name}`,
+    `pre_haigoo_${name}`,
+    `PRE_HAIGOO_${name}`
+  ]
+  for (const base of names) {
+    for (const key of variants(base)) {
+      if (process.env[key]) return process.env[key]
+    }
+  }
+  return null
+}
+
 // 🆕 导入翻译服务（从 lib 目录）
 let translateJobs = null
 try {
@@ -11,15 +30,22 @@ try {
 }
 
 // Detect KV configuration (REST-only). Avoid misinterpreting KV_URL without REST creds.
-const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+const KV_REST_API_URL = getEnv('KV_REST_API_URL')
+const KV_REST_API_TOKEN = getEnv('KV_REST_API_TOKEN')
+if (KV_REST_API_URL && !process.env.KV_REST_API_URL) process.env.KV_REST_API_URL = KV_REST_API_URL
+if (KV_REST_API_TOKEN && !process.env.KV_REST_API_TOKEN) process.env.KV_REST_API_TOKEN = KV_REST_API_TOKEN
+const KV_CONFIGURED = !!(KV_REST_API_URL && KV_REST_API_TOKEN)
+
+// Detect Upstash Redis REST configuration (Preview 优先)
+const UPSTASH_REST_URL = getEnv('UPSTASH_REDIS_REST_URL', 'UPSTASH_REST_URL', 'REDIS_REST_API_URL')
+const UPSTASH_REST_TOKEN = getEnv('UPSTASH_REDIS_REST_TOKEN', 'UPSTASH_REST_TOKEN', 'REDIS_REST_API_TOKEN')
+const UPSTASH_REST_CONFIGURED = !!(UPSTASH_REST_URL && UPSTASH_REST_TOKEN)
 
 // Detect Redis configuration (accept multiple env var names)
 // Prefer standard REDIS_URL, but also support project-specific or provider-specific names
-const REDIS_URL =
-  process.env.REDIS_URL ||
+const REDIS_URL = getEnv('REDIS_URL', 'UPSTASH_REDIS_URL') ||
   process.env.haigoo_REDIS_URL ||
   process.env.HAIGOO_REDIS_URL ||
-  process.env.UPSTASH_REDIS_URL ||
   null
 const REDIS_CONFIGURED = !!REDIS_URL
 let __redisClient = globalThis.__haigoo_redis_client || null
@@ -177,6 +203,76 @@ async function readJobsFromKV() {
   return jobs
 }
 
+// --- Upstash Redis REST helpers ---
+async function upstashGet(key) {
+  if (!UPSTASH_REST_CONFIGURED) throw new Error('Upstash REST not configured')
+  try {
+    const res = await fetch(`${UPSTASH_REST_URL}/get/${encodeURIComponent(key)}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${UPSTASH_REST_TOKEN}` }
+    })
+    if (res.ok) {
+      const json = await res.json().catch(() => null)
+      if (json && typeof json.result !== 'undefined') return json.result
+    }
+  } catch (e) {
+    // ignore, try POST fallback
+  }
+  const res2 = await fetch(`${UPSTASH_REST_URL}/get`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_REST_TOKEN}` },
+    body: JSON.stringify({ key })
+  })
+  const json2 = await res2.json().catch(() => null)
+  return json2?.result ?? null
+}
+
+async function upstashSet(key, value) {
+  if (!UPSTASH_REST_CONFIGURED) throw new Error('Upstash REST not configured')
+  const serialized = typeof value === 'string' ? value : JSON.stringify(value)
+  try {
+    const res = await fetch(`${UPSTASH_REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(serialized)}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${UPSTASH_REST_TOKEN}` }
+    })
+    if (res.ok) return true
+  } catch (e) {
+    // try JSON endpoint
+  }
+  const res2 = await fetch(`${UPSTASH_REST_URL}/set`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_REST_TOKEN}` },
+    body: JSON.stringify({ key, value: serialized })
+  })
+  return res2.ok
+}
+
+async function readJobsFromUpstashREST() {
+  const data = await upstashGet(JOBS_KEY)
+  if (!data) return []
+  try {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data
+    return Array.isArray(parsed) ? parsed : []
+  } catch (e) {
+    console.warn('Upstash REST get parse error:', e?.message || e)
+    return []
+  }
+}
+
+async function writeJobsToUpstashREST(jobs) {
+  const recent = filterRecentJobs(jobs)
+  const unique = removeDuplicates(recent)
+  await upstashSet(JOBS_KEY, JSON.stringify(unique))
+  await upstashSet(LAST_SYNC_KEY, new Date().toISOString())
+  await upstashSet(STATS_KEY, JSON.stringify({
+    totalJobs: unique.length,
+    storageSize: JSON.stringify(unique).length,
+    lastSync: new Date().toISOString(),
+    provider: 'upstash-rest'
+  }))
+  return unique
+}
+
 async function getRedisClient() {
   if (!REDIS_CONFIGURED) throw new Error('Redis not configured')
   if (__redisClient) return __redisClient
@@ -276,8 +372,52 @@ export default async function handler(req, res) {
       let jobs = []
       let provider = 'memory'
       const startTime = Date.now()
-      // 统一策略：优先 Redis -> 其次 KV -> 最后内存
-      if (REDIS_CONFIGURED) {
+      // 统一策略：优先 Upstash REST -> 其次 Redis TCP -> 再次 KV -> 最后内存
+      if (UPSTASH_REST_CONFIGURED) {
+        try {
+          jobs = await readJobsFromUpstashREST()
+          provider = 'upstash-rest'
+          console.log(`[processed-jobs] GET: Upstash REST read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
+        } catch (e) {
+          console.warn(`[processed-jobs] GET: Upstash REST read failed, fallback to Redis:`, e?.message || e)
+          if (REDIS_CONFIGURED) {
+            try {
+              jobs = await readJobsFromRedis()
+              provider = 'redis'
+              console.log(`[processed-jobs] GET: Redis read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
+            } catch (er) {
+              console.warn(`[processed-jobs] GET: Redis read failed, fallback to KV:`, er?.message || er)
+              if (KV_CONFIGURED) {
+                try {
+                  jobs = await readJobsFromKV()
+                  provider = 'vercel-kv'
+                  console.log(`[processed-jobs] GET: KV read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
+                } catch (err2) {
+                  console.warn(`[processed-jobs] GET: KV read failed, fallback to memory:`, err2?.message || err2)
+                  jobs = readJobsFromMemory()
+                  provider = 'memory'
+                }
+              } else {
+                jobs = readJobsFromMemory()
+                provider = 'memory'
+              }
+            }
+          } else if (KV_CONFIGURED) {
+            try {
+              jobs = await readJobsFromKV()
+              provider = 'vercel-kv'
+              console.log(`[processed-jobs] GET: KV read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
+            } catch (err3) {
+              console.warn(`[processed-jobs] GET: KV read failed, fallback to memory:`, err3?.message || err3)
+              jobs = readJobsFromMemory()
+              provider = 'memory'
+            }
+          } else {
+            jobs = readJobsFromMemory()
+            provider = 'memory'
+          }
+        }
+      } else if (REDIS_CONFIGURED) {
         try {
           jobs = await readJobsFromRedis()
           provider = 'redis'
@@ -353,6 +493,7 @@ export default async function handler(req, res) {
       res.setHeader('X-Storage-Provider', provider)
       res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED))
       res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
+      res.setHeader('X-Diag-Upstash-REST-Configured', String(!!UPSTASH_REST_CONFIGURED))
       return res.status(200).json({
         jobs: items,
         total,
@@ -382,7 +523,7 @@ export default async function handler(req, res) {
       }
 
       // Normalize, validate, sanitize, and truncate fields
-      const normalized = jobs.map(j => {
+      let normalized = jobs.map(j => {
         // Sanitize and truncate fields
         const title = truncateString(sanitizeHtml(String(j.title || '')), FIELD_LIMITS.title)
         const company = truncateString(sanitizeHtml(String(j.company || 'Unknown Company')), FIELD_LIMITS.company)
@@ -478,7 +619,7 @@ export default async function handler(req, res) {
       
       if (translateJobs && shouldTranslate) {
         try {
-          console.log('🌍 启动自动翻译（免费 Google Translate）...')
+          console.log('🌍 启动自动翻译（LibreTranslate 优先，经代理）...')
           normalized = await translateJobs(normalized)
           console.log('✅ 自动翻译完成')
         } catch (translationError) {
@@ -492,8 +633,56 @@ export default async function handler(req, res) {
       let toWrite = normalized
       let provider = 'memory'
       if (mode === 'append') {
-        // 统一策略：优先 Redis -> 其次 KV -> 最后内存
-        if (REDIS_CONFIGURED) {
+        // 统一策略：优先 Upstash REST -> 其次 Redis -> 再次 KV -> 最后内存
+        if (UPSTASH_REST_CONFIGURED) {
+          try {
+            const existing = await readJobsFromUpstashREST()
+            toWrite = [...existing, ...normalized]
+            provider = 'upstash-rest'
+          } catch (e) {
+            console.warn(`[processed-jobs] POST append: Upstash REST read failed, fallback to Redis:`, e?.message || e)
+            if (REDIS_CONFIGURED) {
+              try {
+                const existing = await readJobsFromRedis()
+                toWrite = [...existing, ...normalized]
+                provider = 'redis'
+              } catch (er) {
+                console.warn(`[processed-jobs] POST append: Redis read failed, fallback to KV:`, er?.message || er)
+                if (KV_CONFIGURED) {
+                  try {
+                    const existing = await readJobsFromKV()
+                    toWrite = [...existing, ...normalized]
+                    provider = 'vercel-kv'
+                  } catch (er2) {
+                    console.warn(`[processed-jobs] POST append: KV read failed, fallback to memory:`, er2?.message || er2)
+                    const existing = readJobsFromMemory()
+                    toWrite = [...existing, ...normalized]
+                    provider = 'memory'
+                  }
+                } else {
+                  const existing = readJobsFromMemory()
+                  toWrite = [...existing, ...normalized]
+                  provider = 'memory'
+                }
+              }
+            } else if (KV_CONFIGURED) {
+              try {
+                const existing = await readJobsFromKV()
+                toWrite = [...existing, ...normalized]
+                provider = 'vercel-kv'
+              } catch (er3) {
+                console.warn(`[processed-jobs] POST append: KV read failed, fallback to memory:`, er3?.message || er3)
+                const existing = readJobsFromMemory()
+                toWrite = [...existing, ...normalized]
+                provider = 'memory'
+              }
+            } else {
+              const existing = readJobsFromMemory()
+              toWrite = [...existing, ...normalized]
+              provider = 'memory'
+            }
+          }
+        } else if (REDIS_CONFIGURED) {
           try {
             const existing = await readJobsFromRedis()
             toWrite = [...existing, ...normalized]
@@ -537,7 +726,47 @@ export default async function handler(req, res) {
 
       let saved = [];
 
-      if (REDIS_CONFIGURED) {
+      if (UPSTASH_REST_CONFIGURED) {
+        try {
+          saved = await writeJobsToUpstashREST(toWrite);
+          provider = 'upstash-rest';
+        } catch (e) {
+          console.warn('Upstash REST 写入失败，尝试写入 Redis:', e?.message || e);
+          if (REDIS_CONFIGURED) {
+            try {
+              saved = await writeJobsToRedis(toWrite);
+              provider = 'redis';
+            } catch (er) {
+              console.warn('Redis 写入失败，尝试写入 KV:', er?.message || er);
+              if (KV_CONFIGURED) {
+                try {
+                  saved = await writeJobsToKV(toWrite);
+                  provider = 'vercel-kv';
+                } catch (er2) {
+                  console.warn('KV 写入失败，写入到内存:', er2?.message || er2);
+                  saved = writeJobsToMemory(toWrite);
+                  provider = 'memory';
+                }
+              } else {
+                saved = writeJobsToMemory(toWrite);
+                provider = 'memory';
+              }
+            }
+          } else if (KV_CONFIGURED) {
+            try {
+              saved = await writeJobsToKV(toWrite);
+              provider = 'vercel-kv';
+            } catch (er3) {
+              console.warn('KV 写入失败，写入到内存:', er3?.message || er3);
+              saved = writeJobsToMemory(toWrite);
+              provider = 'memory';
+            }
+          } else {
+            saved = writeJobsToMemory(toWrite);
+            provider = 'memory';
+          }
+        }
+      } else if (REDIS_CONFIGURED) {
         try {
           saved = await writeJobsToRedis(toWrite);
           provider = 'redis';
@@ -574,6 +803,7 @@ export default async function handler(req, res) {
       res.setHeader('X-Storage-Provider', provider)
       res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED))
       res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
+      res.setHeader('X-Diag-Upstash-REST-Configured', String(!!UPSTASH_REST_CONFIGURED))
       console.log(`[processed-jobs] POST: Saved ${saved.length} jobs via ${provider}, mode=${mode}`)
       return res.status(200).json({ success: true, saved: saved.length, mode, provider })
     }
@@ -584,6 +814,7 @@ export default async function handler(req, res) {
     try {
       res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED))
       res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
+      res.setHeader('X-Diag-Upstash-REST-Configured', String(!!UPSTASH_REST_CONFIGURED))
     } catch {}
     return res.status(500).json({ error: 'Failed to process jobs', message: error?.message || String(error) })
   }
