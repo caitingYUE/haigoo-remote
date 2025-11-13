@@ -21,7 +21,12 @@ const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// 尝试多个可能的路径
+// 尝试多个可能的路径（真实服务优先，失败再回退到 Mock）
+const possibleRealPaths = [
+  path.join(process.cwd(), 'lib/services/translation-service.cjs'),
+  path.join(__dirname, '../../lib/services/translation-service.cjs'),
+  path.resolve(process.cwd(), 'lib/services/translation-service.cjs'),
+]
 const possibleMockPaths = [
   path.join(process.cwd(), 'lib/services/translation-service-mock.cjs'),
   path.join(__dirname, '../../lib/services/translation-service-mock.cjs'),
@@ -29,6 +34,7 @@ const possibleMockPaths = [
 ]
 
 let mockServiceModule = null
+let realServiceModule = null
 
 const ensureMockService = () => {
   if (!mockServiceModule) {
@@ -47,40 +53,65 @@ const ensureMockService = () => {
   return mockServiceModule
 }
 
+const ensureRealService = () => {
+  if (!realServiceModule) {
+    for (const realPath of possibleRealPaths) {
+      try {
+        realServiceModule = require(realPath)
+        if (realServiceModule && typeof realServiceModule.translateJobs === 'function') {
+          console.log('✅ ensureRealService 加载成功:', realPath)
+          break
+        } else {
+          console.warn(`⚠️ 真实服务模块缺少 translateJobs 方法:`, Object.keys(realServiceModule || {}))
+        }
+      } catch (error) {
+        console.warn(`⚠️ ensureRealService 尝试 [${realPath}] 失败:`, error.message)
+      }
+    }
+  }
+  return realServiceModule
+}
+
 // 导入翻译服务（使用 CommonJS，通过 createRequire 兼容 ESM）
-// 直接使用Mock翻译服务（稳定、快速、免费）
+// 策略：
+// 1) 若设置 FORCE_MOCK_TRANSLATION 为真 → 强制使用 Mock
+// 2) 否则优先加载真实服务 translation-service.cjs，失败再回退到 Mock
 let translateJobs = null
 let translationServiceType = 'none'
 let loadedFrom = null
+const forceMock = /^(1|true|yes|on|mock)$/i.test(String(process.env.FORCE_MOCK_TRANSLATION || ''))
 
 console.log('🔍 当前工作目录:', process.cwd())
 console.log('🔍 当前文件目录:', __dirname)
 
-for (const mockPath of possibleMockPaths) {
-  try {
-    console.log(`🔄 尝试加载: ${mockPath}`)
-    const mockService = require(mockPath)
-    
-    if (mockService && typeof mockService.translateJobs === 'function') {
-      translateJobs = mockService.translateJobs
-      translationServiceType = 'mock'
-      loadedFrom = mockPath
-      mockServiceModule = mockService
-      console.log('✅ Mock翻译服务加载成功')
-      console.log('📍 加载路径:', mockPath)
-      console.log('📝 使用内置翻译字典，包含150+常用职位术语')
-      break
-    } else {
-      console.warn(`⚠️ 模块加载成功但缺少 translateJobs 方法:`, Object.keys(mockService || {}))
-    }
-  } catch (error) {
-    console.warn(`⚠️ 路径加载失败 [${mockPath}]:`, error.message)
+if (!forceMock) {
+  // 先尝试真实服务
+  const realSvc = ensureRealService()
+  if (realSvc && typeof realSvc.translateJobs === 'function') {
+    translateJobs = realSvc.translateJobs
+    translationServiceType = 'real'
+    loadedFrom = possibleRealPaths.find(p => {
+      try { return require(p) === realSvc } catch { return false }
+    }) || '(resolved-real)'
+  }
+}
+
+// 若未加载到真实服务，回退到 Mock
+if (!translateJobs) {
+  const mockSvc = ensureMockService()
+  if (mockSvc && typeof mockSvc.translateJobs === 'function') {
+    translateJobs = mockSvc.translateJobs
+    translationServiceType = 'mock'
+    loadedFrom = possibleMockPaths.find(p => {
+      try { return require(p) === mockSvc } catch { return false }
+    }) || '(resolved-mock)'
   }
 }
 
 if (!translateJobs) {
-  console.error('❌ 所有路径都无法加载Mock翻译服务')
-  console.error('尝试的路径:', possibleMockPaths)
+  console.error('❌ 无法加载任何翻译服务（真实/Mock 均失败）')
+  console.error('尝试的真实服务路径:', possibleRealPaths)
+  console.error('尝试的 Mock 服务路径:', possibleMockPaths)
 }
 
 // 导出处理函数（ESM）
@@ -101,6 +132,7 @@ export default async function handler(req, res) {
       translationServiceType,
       isMock: translationServiceType === 'mock',
       loadedFrom,
+      forceMock,
       message: translateJobs
         ? translationServiceType === 'mock'
           ? '使用 Mock 翻译服务（内置150+词条）'
@@ -112,7 +144,7 @@ export default async function handler(req, res) {
         nodeEnv: process.env.NODE_ENV,
         vercelEnv: process.env.VERCEL_ENV
       },
-      possiblePaths: possibleMockPaths,
+      possiblePaths: translationServiceType === 'mock' ? possibleMockPaths : possibleRealPaths,
       timestamp: new Date().toISOString()
     })
   }

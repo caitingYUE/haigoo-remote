@@ -355,3 +355,11 @@ PREFERRED_TRANSLATION_PROVIDER=libretranslate
 # PREFERRED_TRANSLATION_PROVIDER=mymemory
 ```
 
+### 强制启用/关闭 Mock 翻译（预发/调试用）
+
+```bash
+# 默认关闭；当设置为以下任意真值时，将强制使用 Mock：1/true/yes/on/mock
+# 关闭时：系统会优先加载真实服务 lib/services/translation-service.cjs，失败才回退到 Mock
+FORCE_MOCK_TRANSLATION=false
+```
+
