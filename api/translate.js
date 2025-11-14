@@ -51,8 +51,10 @@ const LANGUAGE_MAP = {
  */
 async function translateWithMyMemory(text, targetLang, sourceLang = 'auto') {
   try {
+    const maxLen = TRANSLATION_SERVICES.mymemory.maxLength
+    const clipped = typeof text === 'string' ? text.substring(0, maxLen) : ''
     const langPair = sourceLang === 'auto' ? `auto|${targetLang}` : `${sourceLang}|${targetLang}`
-    const url = `${TRANSLATION_SERVICES.mymemory.baseUrl}?q=${encodeURIComponent(text)}&langpair=${langPair}`
+    const url = `${TRANSLATION_SERVICES.mymemory.baseUrl}?q=${encodeURIComponent(clipped)}&langpair=${langPair}`
     
     const response = await fetch(url, {
       method: 'GET',
@@ -96,6 +98,8 @@ async function translateWithMyMemory(text, targetLang, sourceLang = 'auto') {
  */
 async function translateWithLibreTranslate(text, targetLang, sourceLang = 'auto') {
   try {
+    const maxLen = TRANSLATION_SERVICES.libretranslate.maxLength
+    const clipped = typeof text === 'string' ? text.substring(0, maxLen) : ''
     const response = await fetch(TRANSLATION_SERVICES.libretranslate.baseUrl, {
       method: 'POST',
       headers: {
@@ -103,7 +107,7 @@ async function translateWithLibreTranslate(text, targetLang, sourceLang = 'auto'
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        q: text,
+        q: clipped,
         source: sourceLang,
         target: targetLang,
         format: 'text'
@@ -140,12 +144,14 @@ async function translateWithLibreTranslate(text, targetLang, sourceLang = 'auto'
  */
 async function translateWithGoogle(text, targetLang, sourceLang = 'auto') {
   try {
+    const maxLen = TRANSLATION_SERVICES.google.maxLength
+    const clipped = typeof text === 'string' ? text.substring(0, maxLen) : ''
     const params = new URLSearchParams({
       client: 'gtx',
       sl: sourceLang === 'auto' ? 'auto' : sourceLang,
       tl: targetLang,
       dt: 't',
-      q: text
+      q: clipped
     })
 
     const response = await fetch(`${TRANSLATION_SERVICES.google.baseUrl}?${params}`, {
@@ -354,11 +360,14 @@ export default async function handler(request) {
     })
   }
 
-  // Rate limiting
+  // Rate limiting（支持内部鉴权绕过）
   const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
                    request.headers.get('x-real-ip') || 
                    'unknown';
-  if (!checkRateLimit(clientIp)) {
+  const internalSecret = process.env.TRANSLATE_INTERNAL_SECRET || ''
+  const authHeader = request.headers.get('authorization') || ''
+  const isInternal = internalSecret && authHeader === `Bearer ${internalSecret}`
+  if (!isInternal && !checkRateLimit(clientIp)) {
     console.warn(`[translate] Rate limit exceeded for ${clientIp}`);
     return new Response(JSON.stringify({
       success: false,

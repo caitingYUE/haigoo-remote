@@ -283,6 +283,22 @@ CRON_SECRET=any-secret-string  (Preview环境)
 ENABLE_AUTO_TRANSLATION=true
 CRON_SECRET=preview-cron-secret-2024
 
+# 翻译任务控制（新增，建议设置）
+# 减少429与500：服务端串行请求，约18次/分钟
+TRANSLATE_CONCURRENCY=1
+TRANSLATE_REQUESTS_PER_MINUTE=18
+
+# 内部鉴权（新增，可选）
+# 设置后，后端调用 /api/translate 时将携带 Authorization 头，
+# Edge 代理会跳过基于IP的限流，避免与浏览器用户混淆。
+TRANSLATE_INTERNAL_SECRET=preview-internal-secret-2024
+
+# 分页与保存分片（新增，可选）
+# 每页拉取的岗位数量；建议 200。
+CRON_PAGE_SIZE=200
+# 每次保存的分片大小；建议从 100 开始，遇到 413 会自动缩小。
+CRON_SAVE_CHUNK=100
+
 # 数据存储（优先选择 Upstash REST 或 Vercel KV）
 KV_REST_API_URL=https://...  (Vercel KV自动生成)
 KV_REST_API_TOKEN=...  (Vercel KV自动生成)
@@ -309,6 +325,9 @@ GOOGLE_CLIENT_ID=your-google-client-id
 - [ ] 在前台验证了"推荐页面"显示中文数据
 - [ ] 在前台验证了"全部岗位"页面显示中文数据
 - [ ] 控制台无严重错误（可忽略"存储适配器未初始化"警告）
+- [ ] 访问 `GET /api/cron/sync-jobs`（诊断）返回 `translationServiceType=real`
+- [ ] `POST /api/cron/sync-jobs` 执行成功且统计中无大规模失败
+- [ ] 若设置了 `TRANSLATE_INTERNAL_SECRET`，代理日志无 429（内部调用已绕过IP限流）
 
 ---
 

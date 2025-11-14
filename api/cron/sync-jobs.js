@@ -194,7 +194,7 @@ export default async function handler(req, res) {
     console.log(`触发方式: ${isVercelCron ? 'Vercel Cron' : '手动触发'}`)
     const startTime = Date.now()
 
-    // 1. 获取处理后的岗位数据
+    // 1. 分页获取处理后的岗位数据
     currentStep = 'fetch-processed-jobs'
     
     // 构建baseUrl：优先使用SITE_URL，其次VERCEL_URL，最后从请求头推断
@@ -215,216 +215,132 @@ export default async function handler(req, res) {
     console.log(`  - VERCEL_URL: ${process.env.VERCEL_URL || '(未设置)'}`)
     console.log(`  - 请求Host: ${req.headers.host || '(无)'}`)
     console.log(`  - 最终baseUrl: ${baseUrl}`)
-    console.log(`从 ${baseUrl} 获取岗位数据...`)
-    
-    let jobsResponse
+
+    const pageSize = Number(process.env.CRON_PAGE_SIZE || '200')
+    let totalJobs = 0
+    let translatedJobsCount = 0
+    let skippedJobsCount = 0
+    let failedJobsCount = 0
+
+    // 先拉取第一页，获得总页数
+    let firstPageResp
     try {
-      jobsResponse = await fetch(`${baseUrl}/api/data/processed-jobs?limit=1000`, {
-        headers: {
-          'User-Agent': 'Vercel-Cron-Job/1.0'
-        }
+      firstPageResp = await fetch(`${baseUrl}/api/data/processed-jobs?limit=${pageSize}&page=1`, {
+        headers: { 'User-Agent': 'Vercel-Cron-Job/1.0' }
       })
     } catch (fetchError) {
-      console.error('❌ fetch请求失败:', fetchError.message)
+      console.error('❌ fetch第一页失败:', fetchError.message)
       throw new Error(`无法连接到后端API (${baseUrl}): ${fetchError.message}`)
     }
-    
-    if (!jobsResponse.ok) {
-      const errorText = await jobsResponse.text().catch(() => '无法读取错误响应')
-      console.error(`❌ API返回错误: ${jobsResponse.status}`, errorText)
-      throw new Error(`获取岗位数据失败: ${jobsResponse.status} - ${errorText.substring(0, 200)}`)
+    if (!firstPageResp.ok) {
+      const errorText = await firstPageResp.text().catch(() => '无法读取错误响应')
+      console.error(`❌ API返回错误: ${firstPageResp.status}`, errorText)
+      throw new Error(`获取岗位数据失败: ${firstPageResp.status} - ${errorText.substring(0, 200)}`)
     }
+    const firstPageData = await firstPageResp.json().catch(() => ({ jobs: [], totalPages: 1, total: 0 }))
+    const totalPages = Number(firstPageData.totalPages || 1)
+    console.log(`🗂️ 预计总页数: ${totalPages}，每页 ${pageSize}`)
 
-    let jobsData
-    try {
-      jobsData = await jobsResponse.json()
-    } catch (parseError) {
-      console.error('❌ JSON解析失败:', parseError.message)
-      throw new Error(`解析岗位数据失败: ${parseError.message}`)
-    }
-    
-    // 修复：API返回的数据格式是 { jobs: [...], total, page, pageSize, totalPages }
-    const jobs = jobsData.jobs || []
+    // 将第一页的 jobs 放入迭代处理（其余页逐页拉取）
+    const processPageJobs = async (jobs, pageIndex) => {
+      console.log(`✅ 获取到第 ${pageIndex}/${totalPages} 页，${jobs.length} 个岗位`)
+      totalJobs += jobs.length
+      // 2. 筛选未翻译
+      const untranslated = jobs.filter(job => !job.isTranslated)
+      const alreadyTranslated = jobs.length - untranslated.length
+      skippedJobsCount += alreadyTranslated
+      console.log(`📊 第 ${pageIndex} 页：已翻译 ${alreadyTranslated}，待翻译 ${untranslated.length}`)
+      if (untranslated.length === 0) return
 
-    console.log(`✅ 获取到 ${jobs.length} 个岗位`)
-
-    if (jobs.length === 0) {
-      return res.json({ 
-        success: true, 
-        message: '没有需要处理的岗位数据',
-        stats: {
-          totalJobs: 0,
-          translatedJobs: 0,
-          skippedJobs: 0,
-          failedJobs: 0,
-          duration: `${Date.now() - startTime}ms`
-        },
-        timestamp: new Date().toISOString()
-      })
-    }
-
-    // 2. 筛选出未翻译的岗位
-    const untranslatedJobs = jobs.filter(job => !job.isTranslated)
-    const alreadyTranslated = jobs.length - untranslatedJobs.length
-    
-    console.log(`📊 翻译状态统计:`)
-    console.log(`  - 总数: ${jobs.length}`)
-    console.log(`  - 已翻译: ${alreadyTranslated}`)
-    console.log(`  - 待翻译: ${untranslatedJobs.length}`)
-
-    if (untranslatedJobs.length === 0) {
-      return res.json({
-        success: true,
-        message: '所有岗位已翻译',
-        stats: {
-          totalJobs: jobs.length,
-          translatedJobs: 0,
-          skippedJobs: alreadyTranslated,
-          failedJobs: 0,
-          duration: `${Date.now() - startTime}ms`
-        },
-        timestamp: new Date().toISOString()
-      })
-    }
-
-    // 3. 批量翻译
-    currentStep = 'translate-jobs'
-    console.log(`🌍 开始翻译 ${untranslatedJobs.length} 个岗位...`)
-    console.log(`📝 使用翻译服务类型: ${translationServiceType}`)
-    console.log(`📝 translateJobs 函数存在: ${typeof translateJobs === 'function'}`)
-    
-    const translationStartTime = Date.now()
-    
-    let translatedJobs = []
-    try {
-      if (typeof translateJobs !== 'function') {
-        throw new Error(`translateJobs 不是一个函数，当前类型: ${typeof translateJobs}`)
-      }
-      
-      console.log(`🚀 调用 translateJobs，输入 ${untranslatedJobs.length} 个岗位`)
-      translatedJobs = await translateJobs(untranslatedJobs)
-      console.log(`✅ translateJobs 执行完成，返回 ${translatedJobs?.length || 0} 个结果`)
-      
-      if (!Array.isArray(translatedJobs)) {
-        throw new Error(`translateJobs 返回值不是数组，类型: ${typeof translatedJobs}`)
-      }
-      
-    } catch (translationError) {
-      console.error('❌ 翻译过程失败:', translationError)
-      console.error('错误详情:', translationError.stack)
-      
-      // 直接返回错误，不再尝试回退（因为已经在用Mock了）
-      return res.status(500).json({
-        success: false,
-        error: '翻译过程失败',
-        message: translationError.message || 'Unknown translation error',
-        details: translationError.stack || 'No stack trace',
-        context: {
-          translationServiceType,
-          translateJobsType: typeof translateJobs,
-          untranslatedJobsCount: untranslatedJobs.length,
-          loadedFrom
-        },
-        stats: {
-          totalJobs: jobs.length,
-          translatedJobs: 0,
-          skippedJobs: alreadyTranslated,
-          failedJobs: untranslatedJobs.length,
-          duration: `${Date.now() - startTime}ms`
-        },
-        step: currentStep,
-        timestamp: new Date().toISOString()
-      })
-    }
-    
-    const translationDuration = Date.now() - translationStartTime
-    const successCount = translatedJobs.filter(j => j.isTranslated).length
-    const failedCount = translatedJobs.length - successCount
-    
-    console.log(`✅ 翻译完成: ${successCount} 成功, ${failedCount} 失败, 耗时 ${translationDuration}ms`)
-
-    // 4. 合并并保存
-    currentStep = 'merge-and-save'
-    const allJobs = jobs.map(job => {
-      if (job.isTranslated) {
-        // 已翻译的保持不变
-        return job
-      }
-      // 找到对应的翻译结果
-      const translated = translatedJobs.find(t => t.id === job.id)
-      return translated || job
-    })
-
-    // 5. 保存回数据库（分批保存，避免请求过大）
-    currentStep = 'save-translated-jobs'
-    console.log('💾 保存翻译后的数据...')
-    console.log(`  总岗位数: ${allJobs.length}`)
-    console.log(`  保存URL: ${baseUrl}/api/data/processed-jobs`)
-    const saveStartTime = Date.now()
-    
-    let CHUNK_SIZE = 200
-    for (let i = 0; i < allJobs.length;) {
-      const chunk = allJobs.slice(i, i + CHUNK_SIZE)
-      const mode = i === 0 ? 'replace' : 'append'
-      
-      console.log(`  保存批次 ${Math.floor(i / CHUNK_SIZE) + 1}: ${chunk.length} 个岗位, mode=${mode}`)
-      
-      let saveResponse
+      // 3. 翻译（使用服务内部限速）
+      currentStep = `translate-jobs(page:${pageIndex})`
+      let translated = []
       try {
-        saveResponse = await fetch(`${baseUrl}/api/data/processed-jobs`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            jobs: chunk, 
-            mode 
-          })
-        })
-      } catch (fetchError) {
-        console.error(`❌ 保存请求失败 (chunk ${i}):`, fetchError.message)
-        throw new Error(`保存数据失败 (chunk ${i}): 网络错误 - ${fetchError.message}`)
+        translated = await translateJobs(untranslated)
+      } catch (translationError) {
+        console.error(`❌ 第 ${pageIndex} 页翻译失败:`, translationError)
+        failedJobsCount += untranslated.length
+        return
       }
+      const successCount = translated.filter(j => j.isTranslated).length
+      const failCount = translated.length - successCount
+      translatedJobsCount += successCount
+      failedJobsCount += failCount
+      console.log(`✅ 第 ${pageIndex} 页翻译完成: 成功 ${successCount}, 失败 ${failCount}`)
 
-      if (!saveResponse.ok) {
-        const errorText = await saveResponse.text().catch(() => '无法读取错误响应')
-        console.error(`❌ 保存API返回错误 (chunk ${i}, size=${CHUNK_SIZE}): ${saveResponse.status}`, errorText.substring(0, 500))
-        // 针对体积过大/限流等问题，动态缩小分片后重试
-        if (saveResponse.status === 413 || /Payload Too Large|entity too large|body too large/i.test(errorText)) {
-          const newSize = Math.max(25, Math.floor(CHUNK_SIZE / 2))
-          if (newSize === CHUNK_SIZE) {
-            throw new Error(`保存数据失败 (chunk ${i}): ${saveResponse.status} - ${errorText.substring(0, 200)}`)
-          }
-          console.warn(`📦 检测到请求体过大，分片从 ${CHUNK_SIZE} 缩小到 ${newSize} 并重试...`)
-          CHUNK_SIZE = newSize
-          continue // 重新尝试当前 i 的较小分片
+      // 4. 合并原数据与翻译结果
+      const merged = jobs.map(job => job.isTranslated ? job : (translated.find(t => t.id === job.id) || job))
+
+      // 5. 分批保存（从较小分片开始，避免 413）
+      currentStep = `save-translated-jobs(page:${pageIndex})`
+      let CHUNK_SIZE = Number(process.env.CRON_SAVE_CHUNK || '100')
+      for (let i = 0; i < merged.length;) {
+        const chunk = merged.slice(i, i + CHUNK_SIZE)
+        const mode = (pageIndex === 1 && i === 0) ? 'replace' : 'append'
+        let saveResponse
+        try {
+          saveResponse = await fetch(`${baseUrl}/api/data/processed-jobs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jobs: chunk, mode })
+          })
+        } catch (fetchError) {
+          console.error(`❌ 保存请求失败 (page ${pageIndex}, chunk ${i}):`, fetchError.message)
+          throw new Error(`保存数据失败 (page ${pageIndex}, chunk ${i}): 网络错误 - ${fetchError.message}`)
         }
-        throw new Error(`保存数据失败 (chunk ${i}, size=${CHUNK_SIZE}): ${saveResponse.status} - ${errorText.substring(0, 200)}`)
+        if (!saveResponse.ok) {
+          const errorText = await saveResponse.text().catch(() => '无法读取错误响应')
+          console.error(`❌ 保存API返回错误 (page ${pageIndex}, chunk ${i}, size=${CHUNK_SIZE}): ${saveResponse.status}`, errorText.substring(0, 500))
+          if (saveResponse.status === 413 || /Payload Too Large|entity too large|body too large/i.test(errorText)) {
+            const newSize = Math.max(25, Math.floor(CHUNK_SIZE / 2))
+            if (newSize === CHUNK_SIZE) throw new Error(`保存数据失败 (page ${pageIndex}, chunk ${i}): ${saveResponse.status} - ${errorText.substring(0, 200)}`)
+            console.warn(`📦 请求体过大，分片从 ${CHUNK_SIZE} 缩小到 ${newSize} 后重试...`)
+            CHUNK_SIZE = newSize
+            continue
+          }
+          throw new Error(`保存数据失败 (page ${pageIndex}, chunk ${i}, size=${CHUNK_SIZE}): ${saveResponse.status} - ${errorText.substring(0, 200)}`)
+        }
+        await saveResponse.json().catch(() => ({}))
+        i += CHUNK_SIZE
       }
-      
-      const saveResult = await saveResponse.json().catch(() => ({}))
-      console.log(`  ✅ 批次 ${Math.floor(i / CHUNK_SIZE) + 1} 保存成功`, saveResult.message || '')
-      i += CHUNK_SIZE
     }
 
-    const saveDuration = Date.now() - saveStartTime
-    console.log(`✅ 数据保存完成, 耗时 ${saveDuration}ms`)
+    // 处理第一页
+    await processPageJobs(firstPageData.jobs || [], 1)
+    // 处理剩余页
+    for (let page = 2; page <= totalPages; page++) {
+      let pageResp
+      try {
+        pageResp = await fetch(`${baseUrl}/api/data/processed-jobs?limit=${pageSize}&page=${page}`, {
+          headers: { 'User-Agent': 'Vercel-Cron-Job/1.0' }
+        })
+      } catch (error) {
+        console.error(`❌ 拉取第 ${page} 页失败:`, error.message)
+        continue
+      }
+      if (!pageResp.ok) {
+        const txt = await pageResp.text().catch(() => '')
+        console.error(`❌ 第 ${page} 页 API错误: ${pageResp.status}`, txt.substring(0, 200))
+        continue
+      }
+      const pageData = await pageResp.json().catch(() => ({ jobs: [] }))
+      await processPageJobs(pageData.jobs || [], page)
+    }
 
-    const totalDuration = Date.now() - startTime
+    // ✅ 已改为分页翻译与分批保存，上述流程已完成
+    // 旧的“一次性再翻译/再保存”逻辑移除，避免未定义变量与重复写入
 
-    // 返回成功结果
+    // 返回成功结果（聚合统计）
     return res.json({
       success: true,
-      message: '定时任务完成',
-      translationServiceType, // 告知前端使用的翻译服务类型
+      message: '定时任务完成（分页翻译+分批保存）',
+      translationServiceType,
       stats: {
-        totalJobs: jobs.length,
-        translatedJobs: successCount,
-        skippedJobs: alreadyTranslated,
-        failedJobs: failedCount,
-        duration: `${totalDuration}ms`,
-        translationDuration: `${translationDuration}ms`,
-        saveDuration: `${saveDuration}ms`
+        totalJobs,
+        translatedJobs: translatedJobsCount,
+        skippedJobs: skippedJobsCount,
+        failedJobs: failedJobsCount,
+        duration: `${Date.now() - startTime}ms`
       },
       timestamp: new Date().toISOString()
     })

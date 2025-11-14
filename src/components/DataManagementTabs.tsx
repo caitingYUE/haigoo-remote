@@ -1013,14 +1013,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           )}
           {activeTab === 'processed' && (
             <div className="flex gap-2">
-              <button
-                onClick={handleRefreshProcessedOnly}
-                disabled={syncing}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? '刷新中...' : '刷新处理后数据'}
-              </button>
+            <button
+              onClick={handleRefreshProcessedOnly}
+              disabled={syncing}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? '刷新中...' : '刷新处理后数据'}
+            </button>
               <button
                 onClick={handleTriggerTranslation}
                 disabled={translating || syncing} // 翻译或刷新时都禁用
