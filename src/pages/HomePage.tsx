@@ -248,9 +248,9 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="space-y-10">
-              {/* 职位Tabs：无边框文本样式，采用岗位类别 */}
+              {/* 职位Tabs：胶囊样式，采用岗位类别 */}
               <div className="flex items-center justify-between">
-                <div className="flex gap-6 overflow-x-auto whitespace-nowrap py-1" role="tablist" aria-label="岗位分类切换">
+                <div className="flex gap-2 overflow-x-auto whitespace-nowrap py-1" role="tablist" aria-label="岗位分类切换">
                   {dynamicTabs.map(tab => {
                     const isActive = activeTab === tab
                     const count = tab === '全部'
@@ -260,7 +260,7 @@ export default function HomePage() {
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`text-sm md:text-base font-medium transition-colors duration-200 ${isActive ? 'text-gray-900 dark:text-white border-b-2 border-gray-900 dark:border-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'} pb-1`}
+                        className={`text-sm md:text-base font-medium transition-all duration-200 rounded-full px-3 py-1 ${isActive ? 'bg-haigoo-primary/10 text-haigoo-primary' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100'}`}
                         role="tab"
                         aria-selected={isActive}
                       >
@@ -274,7 +274,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
                 {displayedJobs.map(job => (
                   <JobCard
                     key={job.id}
