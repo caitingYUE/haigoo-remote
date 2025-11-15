@@ -211,7 +211,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     >
       <div 
         ref={modalRef}
-        className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-4xl h-[90vh] flex flex-col relative transform transition-all duration-300 ${
+        className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl max-h-[85vh] flex flex-col relative transform transition-all duration-300 ${
           isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -618,8 +618,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           </div>
         </main>
         
-        {/* 底部固定申请按钮 - 科技感设计 */}
-        <footer className="border-t border-slate-200/60 dark:border-zinc-700/60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-4">
+        {/* 底部申请按钮 - 根据内容自适应，保持在视窗内 */}
+        <footer className="border-t border-slate-200/60 dark:border-zinc-700/60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-4 sticky bottom-0">
           <button
             ref={applyButtonRef}
             onClick={handleApply}
