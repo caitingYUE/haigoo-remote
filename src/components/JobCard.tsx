@@ -122,7 +122,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
 
   return (
     <article 
-      className="group bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-lg hover:border-haigoo-primary/30 transition-all duration-300 cursor-pointer relative focus-ring"
+      className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-haigoo-primary/30 transition-all duration-300 cursor-pointer relative focus-ring hover:-translate-y-0.5"
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       tabIndex={0}
@@ -168,7 +168,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             </h2>
             
             {/* 公司信息行 - 移除来源标签，避免与底部重复 */}
-            <div className="flex items-center gap-3 text-gray-600 text-sm mb-3 flex-wrap">
+            <div className="flex items-center gap-3 text-gray-600 text-sm mb-2 flex-wrap">
               <div className="flex items-center font-medium">
                 <Building className="w-4 h-4 mr-1.5" aria-hidden="true" />
                 <span>{job.translations?.company || job.company}</span>
@@ -176,7 +176,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             </div>
             
             {/* 核心信息行 */}
-            <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
               {/* 薪资 - 只有当薪资数据存在且大于0时才显示 */}
               {job.salary && job.salary.min > 0 && (
                 <div className="flex items-center text-haigoo-primary font-semibold">
@@ -249,23 +249,21 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         </section>
       )}
 
-      {/* 技能标签 - 单行动态计算显示，保持卡片高度对齐 */}
-      {(job.skills && job.skills.length > 0) && (
-        <section className="mt-4 pt-4 border-t border-gray-100">
-          <SingleLineTags
-            size="xs"
-            tags={(
-              Array.isArray((job as any).tags) && (job as any).tags.length > 0
-                ? (job as any).tags
-                : (job.skills || [])
-            ) as string[]}
-            fallback="remote"
-          />
-        </section>
-      )}
+      {/* 技能/标签行 - 永远渲染以保证卡片高度一致；当无标签时使用兜底 */}
+      <section className="mt-3 pt-3 border-t border-gray-100">
+        <SingleLineTags
+          size="xs"
+          tags={(
+            Array.isArray((job as any).tags) && (job as any).tags.length > 0
+              ? (job as any).tags
+              : (job.skills || [])
+          ) as string[]}
+          fallback="remote"
+        />
+      </section>
 
       {/* 底部操作栏 - 简化布局，移除重复按钮 */}
-      <footer className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+      <footer className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
         <div className="flex items-center space-x-4 text-xs text-gray-500">
           {job.source && job.sourceUrl && (
             <button

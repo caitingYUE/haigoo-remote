@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import logoSvg from '../assets/logo.svg'
+const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || logoSvg
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -112,7 +113,7 @@ export default function Header() {
               aria-label="Haigoo 首页"
             >
               <img 
-                src={logoSvg} 
+                src={BRAND_LOGO} 
                 alt="Haigoo - 海外远程工作助手" 
                 className="h-10 w-auto" 
               />
@@ -121,7 +122,7 @@ export default function Header() {
             <div className="ml-4">
               <p className="text-lg font-medium text-slate-700 italic tracking-wide transform hover:scale-105 transition-transform duration-300" 
                  style={{ fontFamily: "'Inter', 'Helvetica Neue', 'Arial', sans-serif", fontWeight: 500 }}>
-                Go Higher with Haigoo
+                open to the world
               </p>
             </div>
           </div>
