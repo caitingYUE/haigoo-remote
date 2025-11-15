@@ -75,7 +75,6 @@ export default function LoginPage() {
         })
       }
       setGoogleReady(true)
-      window.google.accounts.id.prompt()
     } catch (error) {
       console.error('[LoginPage] Failed to initialize Google Sign-In:', error)
     }
@@ -214,13 +213,6 @@ export default function LoginPage() {
 
           <div className="w-full">
             <div id="googleSignInBtn" className="flex justify-center" />
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="w-full mt-3 flex items-center justify-center gap-3 border border-gray-300 py-3 rounded-lg font-medium hover:bg-gray-50 transition-all"
-            >
-              使用 Google 登录
-            </button>
           </div>
 
           {/* 注册链接 */}

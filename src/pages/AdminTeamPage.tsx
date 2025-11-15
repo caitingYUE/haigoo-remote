@@ -41,6 +41,7 @@ import DataManagementTabs from '../components/DataManagementTabs';
 import ResumeLibraryPage from './ResumeLibraryPage';
 import UserManagementPage from './UserManagementPage';
 import '../components/AdminPanel.css';
+import { useAuth } from '../contexts/AuthContext';
 
 // 扩展RSSSource接口以包含管理所需的字段
 interface ExtendedRSSSource extends RSSSource {
@@ -89,6 +90,8 @@ const AdminTeamPage: React.FC = () => {
   
   // 侧边栏折叠状态
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const { user, logout } = useAuth();
 
   // 加载数据
   const loadData = useCallback(async () => {
@@ -538,6 +541,23 @@ const AdminTeamPage: React.FC = () => {
           {/* 页面头部 */}
           <header className="admin-header">
             <h1>海狗招聘团队管理后台</h1>
+            <div className="flex items-center gap-4">
+              {user && (
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.username || ''} className="w-8 h-8 rounded-full" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 flex items-center justify-center text-white">
+                      {(user.username || 'U')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <span>{user.username}</span>
+                  <span className="text-gray-400">|</span>
+                  <span>{user.email}</span>
+                </div>
+              )}
+              <button onClick={logout} className="px-3 py-1.5 border rounded-lg hover:bg-gray-50">退出登录</button>
+            </div>
           </header>
 
           {/* 内容区域 */}
