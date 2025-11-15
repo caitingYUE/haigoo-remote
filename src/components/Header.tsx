@@ -92,7 +92,6 @@ export default function Header() {
     { id: 'profile', label: '个人资料', href: '/profile?tab=profile' },
     { id: 'resume', label: '简历管理', href: '/profile?tab=resume' },
     { id: 'subscriptions', label: '职位订阅', href: '/profile?tab=subscriptions' },
-    { id: 'recommendations', label: '推荐墙', href: '/profile?tab=recommendations' },
     { id: 'insights', label: 'AI职业洞察', href: '/profile?tab=insights' },
     { id: 'applications', label: '我的申请', href: '/profile?tab=applications' },
     { id: 'settings', label: '设置', href: '/profile?tab=settings' }
@@ -127,46 +126,8 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Desktop Navigation - 优化导航样式，移除深色背景和下划线 */}
-          <nav 
-            className="hidden md:flex items-center space-x-1"
-            role="navigation"
-            aria-label="主导航"
-          >
-            <Link 
-              to="/" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transform hover:scale-105 ${
-                isActive('/') 
-                  ? 'text-violet-600 bg-violet-50 font-semibold shadow-sm' 
-                  : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50'
-              }`}
-              aria-current={isActive('/') ? 'page' : undefined}
-            >
-              智能推荐
-            </Link>
-            <Link 
-              to="/jobs" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transform hover:scale-105 ${
-                isActive('/jobs') 
-                  ? 'text-violet-600 bg-violet-50 font-semibold shadow-sm' 
-                  : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50'
-              }`}
-              aria-current={isActive('/jobs') ? 'page' : undefined}
-            >
-              全部职位
-            </Link>
-            <Link 
-              to="/remote-experience" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transform hover:scale-105 ${
-                isActive('/remote-experience') 
-                  ? 'text-violet-600 bg-violet-50 font-semibold shadow-sm' 
-                  : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50'
-              }`}
-              aria-current={isActive('/remote-experience') ? 'page' : undefined}
-            >
-              远程指南
-            </Link>
-          </nav>
+          {/* Desktop Navigation - 按要求移除顶部三个 Tab */}
+          <div className="hidden md:flex items-center" aria-label="主导航" />
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
@@ -326,7 +287,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation - 按要求移除顶部三个 Tab */}
         {isMenuOpen && (
           <nav 
             className="md:hidden"
@@ -335,42 +296,7 @@ export default function Header() {
             aria-label="移动端导航"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
-              <Link 
-                to="/" 
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
-                  isActive('/') 
-                    ? 'text-white bg-haigoo-primary shadow-lg shadow-haigoo-primary/25' 
-                    : 'text-gray-600 hover:text-haigoo-primary hover:bg-haigoo-primary/5'
-                }`}
-                aria-current={isActive('/') ? 'page' : undefined}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                专属推荐
-              </Link>
-              <Link 
-                to="/jobs" 
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
-                  isActive('/jobs') 
-                    ? 'text-white bg-haigoo-primary shadow-lg shadow-haigoo-primary/25' 
-                    : 'text-gray-600 hover:text-haigoo-primary hover:bg-haigoo-primary/5'
-                }`}
-                aria-current={isActive('/jobs') ? 'page' : undefined}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                全部岗位
-              </Link>
-              <Link 
-                to="/remote-experience" 
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
-                  isActive('/remote-experience') 
-                    ? 'text-white bg-haigoo-primary shadow-lg shadow-haigoo-primary/25' 
-                    : 'text-gray-600 hover:text-haigoo-primary hover:bg-haigoo-primary/5'
-                }`}
-                aria-current={isActive('/remote-experience') ? 'page' : undefined}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                远程经验
-              </Link>
+              {/* 顶部三个 Tab 已移除 */}
               
               {/* 移动端用户菜单 */}
               {isAuthenticated && (
