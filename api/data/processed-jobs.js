@@ -66,6 +66,13 @@ const JOBS_KEY = 'haigoo:processed_jobs'
 const STATS_KEY = 'haigoo:stats'
 const LAST_SYNC_KEY = 'haigoo:last_sync'
 
+// Retention window in days (env-configurable, defaults to 30)
+const RETAIN_DAYS_ENV = getEnv('PROCESSED_JOBS_RETAIN_DAYS', 'RETAIN_DAYS', 'MAX_DAYS')
+const RETAIN_DAYS = (() => {
+  const n = Number(RETAIN_DAYS_ENV)
+  return Number.isFinite(n) && n > 0 ? n : 30
+})()
+
 // Field length limits (bytes)
 const FIELD_LIMITS = {
   title: 500,
@@ -133,9 +140,15 @@ function generateDedupKey(job) {
 }
 
 // Helpers: recent filter and duplicate removal (keep last 7 days, dedupe by stable key)
-function filterRecentJobs(jobs, maxDays = 7) {
+function filterRecentJobs(jobs, maxDays = RETAIN_DAYS) {
   const cutoff = new Date(Date.now() - maxDays * 24 * 60 * 60 * 1000)
-  return jobs.filter(j => new Date(j.publishedAt) >= cutoff)
+  return jobs.filter(j => {
+    const d = new Date(j.publishedAt)
+    const t = d.getTime()
+    // 如果发布时间不可解析，则保留该记录，避免错误数据被误删
+    if (!Number.isFinite(t)) return true
+    return d >= cutoff
+  })
 }
 
 function removeDuplicates(jobs) {
@@ -268,7 +281,7 @@ async function readJobsFromUpstashREST() {
 }
 
 async function writeJobsToUpstashREST(jobs) {
-  const recent = filterRecentJobs(jobs)
+  const recent = filterRecentJobs(jobs, RETAIN_DAYS)
   const unique = removeDuplicates(recent)
   await upstashSet(JOBS_KEY, JSON.stringify(unique))
   await upstashSet(LAST_SYNC_KEY, new Date().toISOString())
@@ -318,7 +331,7 @@ function writeJobsToMemory(jobs) {
 
 async function writeJobsToKV(jobs) {
   if (!kv) return jobs
-  const recent = filterRecentJobs(jobs)
+  const recent = filterRecentJobs(jobs, RETAIN_DAYS)
   const unique = removeDuplicates(recent)
   await kv.set(JOBS_KEY, unique)
   await kv.set(LAST_SYNC_KEY, new Date().toISOString())
@@ -332,7 +345,7 @@ async function writeJobsToKV(jobs) {
 }
 
 async function writeJobsToRedis(jobs) {
-  const recent = filterRecentJobs(jobs)
+  const recent = filterRecentJobs(jobs, RETAIN_DAYS)
   const unique = removeDuplicates(recent)
   const client = await getRedisClient()
   await client.set(JOBS_KEY, JSON.stringify(unique))
@@ -360,7 +373,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const {
         page = '1',
-        limit = '20',
+        limit = '50',
         source,
         category,
         status,
@@ -376,7 +389,7 @@ export default async function handler(req, res) {
       } = req.query || {}
 
       const pageNum = Number(page) || 1
-      const pageSize = Number(limit) || 20
+      const pageSize = Number(limit) || 50
 
       let jobs = []
       let provider = 'memory'
