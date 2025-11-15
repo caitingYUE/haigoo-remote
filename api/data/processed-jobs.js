@@ -1,4 +1,11 @@
-import { kv } from '@vercel/kv'
+// 安全加载 Vercel KV：避免顶层导入在本地环境报错
+let kv = null
+try {
+  const kvModule = require('@vercel/kv')
+  kv = kvModule?.kv || null
+} catch (e) {
+  console.warn('[processed-jobs] Vercel KV module not available, will use fallbacks')
+}
 
 // 统一环境变量解析：兼容 preview 专用前缀（pre_haigoo_*、pre_*、haigoo_* 等）
 function getEnv(...names) {
@@ -197,6 +204,7 @@ function paginate(jobs, pageNum, pageSize) {
 }
 
 async function readJobsFromKV() {
+  if (!kv) return []
   const data = await kv.get(JOBS_KEY)
   if (!data) return []
   const jobs = Array.isArray(data) ? data : JSON.parse(typeof data === 'string' ? data : '[]')
@@ -309,6 +317,7 @@ function writeJobsToMemory(jobs) {
 }
 
 async function writeJobsToKV(jobs) {
+  if (!kv) return jobs
   const recent = filterRecentJobs(jobs)
   const unique = removeDuplicates(recent)
   await kv.set(JOBS_KEY, unique)
@@ -614,8 +623,8 @@ export default async function handler(req, res) {
         }
       })
 
-      // 🆕 自动翻译功能（仅在明确启用时）
-      const shouldTranslate = process.env.ENABLE_AUTO_TRANSLATION === 'true'
+      // 自动翻译强制禁用
+      const shouldTranslate = false
       
       if (translateJobs && shouldTranslate) {
         try {

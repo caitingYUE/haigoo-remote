@@ -765,9 +765,9 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       <span className="font-medium text-gray-900 text-sm">{job.company}</span>
                     </div>
                   </Tooltip>
-                  {job.url && (
+                  {(job.companyWebsite || job.url) && (
                     <a
-                      href={job.url}
+                      href={job.companyWebsite || job.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs mt-1"

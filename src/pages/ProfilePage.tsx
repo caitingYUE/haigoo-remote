@@ -226,7 +226,6 @@ export default function ProfilePage() {
     { id: 'profile', label: '个人资料', icon: User },
     { id: 'resume', label: '简历管理', icon: FileText },
     { id: 'subscriptions', label: '职位订阅', icon: Bell },
-    { id: 'recommendations', label: '推荐墙', icon: Star },
     { id: 'insights', label: 'AI职业洞察', icon: TrendingUp },
     { id: 'applications', label: '我的申请', icon: Briefcase },
     { id: 'settings', label: '设置', icon: Settings }
@@ -449,35 +448,7 @@ export default function ProfilePage() {
     </div>
   )
 
-  // 渲染推荐墙
-  const renderRecommendationWall = () => (
-    <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold text-gray-900">推荐墙</h3>
-        <Star className="w-6 h-6 text-gray-400" />
-      </div>
-      
-      <div className="space-y-4">
-        <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-3 mb-2">
-            <Star className="w-5 h-5 text-blue-600" />
-            <span className="font-medium text-blue-900">李经理</span>
-            <span className="text-sm text-blue-700">技术总监</span>
-          </div>
-          <p className="text-sm text-blue-800">"张三是一位非常优秀的前端工程师，技术能力强，学习能力出色。"</p>
-        </div>
-        
-        <div className="p-4 bg-gradient-to-r from-green-50 to-teal-50 rounded-lg border border-green-200">
-          <div className="flex items-center gap-3 mb-2">
-            <Star className="w-5 h-5 text-green-600" />
-            <span className="font-medium text-green-900">王总</span>
-            <span className="text-sm text-green-700">产品总监</span>
-          </div>
-          <p className="text-sm text-green-800">"合作过程中展现出了极强的responsibility和专业素养，值得推荐。"</p>
-        </div>
-      </div>
-    </div>
-  )
+  // 推荐墙功能已移除
 
   // 渲染AI职业洞察
   const renderAICareerInsights = () => (
@@ -1210,15 +1181,6 @@ export default function ProfilePage() {
             <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">职位订阅</h2>
             <p className="text-gray-600">管理您的职位订阅和推送设置</p>
-          </div>
-        )
-      
-      case 'recommendations':
-        return (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">推荐墙</h2>
-            <p className="text-gray-600">查看为您推荐的优质职位</p>
           </div>
         )
       

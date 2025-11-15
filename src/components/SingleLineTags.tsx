@@ -53,7 +53,7 @@ export const SingleLineTags: React.FC<SingleLineTagsProps> = ({ tags, size = 'sm
 
       let used = 0;
       let count = 0;
-      
+
       // 定义最少显示标签数量
       const MIN_VISIBLE_TAGS = 2;
 
@@ -81,8 +81,8 @@ export const SingleLineTags: React.FC<SingleLineTagsProps> = ({ tags, size = 'sm
             } else {
               break;
             }
-          } else {
-            break;
+        } else {
+          break;
           }
         }
       }

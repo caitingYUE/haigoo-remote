@@ -1,4 +1,11 @@
-import { kv } from '@vercel/kv'
+// 安全加载 Vercel KV：避免顶层导入在本地环境报错
+let kv = null
+try {
+  const kvModule = require('@vercel/kv')
+  kv = kvModule?.kv || null
+} catch (e) {
+  console.warn('[storage-stats] Vercel KV module not available, will use fallbacks')
+}
 
 // 统一环境变量解析，兼容预发命名（pre_haigoo_*、pre_*、haigoo_*）
 function getEnv(...names) {
@@ -182,7 +189,7 @@ export default async function handler(req, res) {
             console.log(`[storage-stats] Redis read success: ${jobsCount} jobs, ${storageSize} bytes`)
           } catch (er) {
             console.warn(`[storage-stats] Redis read failed, fallback to KV:`, er?.message || er)
-            if (KV_CONFIGURED) {
+            if (KV_CONFIGURED && kv) {
               try {
                 const stats = await kv.get(STATS_KEY)
                 lastSync = await kv.get(LAST_SYNC_KEY)
@@ -205,7 +212,7 @@ export default async function handler(req, res) {
               provider = 'memory'
             }
           }
-        } else if (KV_CONFIGURED) {
+        } else if (KV_CONFIGURED && kv) {
           try {
             const stats = await kv.get(STATS_KEY)
             lastSync = await kv.get(LAST_SYNC_KEY)
@@ -238,7 +245,7 @@ export default async function handler(req, res) {
         console.log(`[storage-stats] Redis read success: ${jobsCount} jobs, ${storageSize} bytes`)
       } catch (e) {
         console.warn(`[storage-stats] Redis read failed, fallback to KV:`, e?.message || e)
-        if (KV_CONFIGURED) {
+        if (KV_CONFIGURED && kv) {
           try {
             const stats = await kv.get(STATS_KEY)
             lastSync = await kv.get(LAST_SYNC_KEY)
@@ -261,7 +268,7 @@ export default async function handler(req, res) {
           provider = 'memory'
         }
       }
-    } else if (KV_CONFIGURED) {
+    } else if (KV_CONFIGURED && kv) {
       try {
         const stats = await kv.get(STATS_KEY)
         lastSync = await kv.get(LAST_SYNC_KEY)

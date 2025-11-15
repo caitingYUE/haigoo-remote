@@ -63,7 +63,7 @@ export class DataManagementService {
   private readonly RAW_DATA_KEY = 'haigoo:raw_data';
   private readonly PROCESSED_DATA_KEY = 'haigoo:processed_data';
   private readonly STATS_KEY = 'haigoo:data_stats';
-  private readonly RETENTION_DAYS = 5;
+  private readonly RETENTION_DAYS = 7;
   private readonly MAX_STORAGE_SIZE = 20 * 1024 * 1024; // 20MB
 
   constructor() {
@@ -180,8 +180,8 @@ export class DataManagementService {
         status: 'raw'
       }));
 
-      // 存储原始数据
-      await this.saveRawData(rawDataList);
+      // 存储原始数据（增量追加）
+      await this.saveRawData(rawDataList, 'append');
       
       return rawDataList;
     } catch (error) {
@@ -214,8 +214,8 @@ export class DataManagementService {
       }
     }
 
-    // 保存处理后的数据
-    await this.saveProcessedJobs(processedJobs);
+    // 保存处理后的数据（增量追加）
+    await this.saveProcessedJobs(processedJobs, 'append');
     
     return processedJobs;
   }
@@ -237,6 +237,7 @@ export class DataManagementService {
       publishedAt: new Date(item.pubDate).toISOString(),
       source: rawData.source,
       url: item.link,
+      companyWebsite: this.extractCompanyWebsite(item.description, item.link),
       category: this.categorizeJob(item.title, item.description, rawData.category),
       tags: this.extractTags(item.title, item.description),
       requirements: this.extractRequirements(item.description),
@@ -470,7 +471,7 @@ export class DataManagementService {
       updatedJob.updatedAt = new Date().toISOString();
 
       allJobs[jobIndex] = updatedJob;
-      await this.saveProcessedJobs(allJobs);
+      await this.saveProcessedJobs(allJobs, 'replace');
 
       return true;
     } catch (error) {
@@ -491,7 +492,7 @@ export class DataManagementService {
         return false; // 没有找到要删除的职位
       }
 
-      await this.saveProcessedJobs(filteredJobs);
+      await this.saveProcessedJobs(filteredJobs, 'replace');
       return true;
     } catch (error) {
       console.error('删除职位数据失败:', error);
@@ -582,8 +583,8 @@ export class DataManagementService {
       const recentProcessedJobs = processedJobs.filter(job => new Date(job.publishedAt) > cutoffDate);
 
       await Promise.all([
-        this.saveRawData(recentRawData),
-        this.saveProcessedJobs(recentProcessedJobs)
+        this.saveRawData(recentRawData, 'replace'),
+        this.saveProcessedJobs(recentProcessedJobs, 'replace')
       ]);
 
       const removedRaw = rawData.length - recentRawData.length;
@@ -618,39 +619,73 @@ export class DataManagementService {
   }
 
   // 私有辅助方法
-  private async saveRawData(data: RawRSSData[]): Promise<void> {
-    if (this.storageAdapter) {
-      // 这里需要实现保存原始数据的逻辑
-      // 暂时使用localStorage作为fallback
+  private async saveRawData(data: RawRSSData[], mode: 'append' | 'replace' = 'append'): Promise<void> {
+    try {
+      const CHUNK_SIZE = 200
+      for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+        const chunk = data.slice(i, i + CHUNK_SIZE)
+        const resp = await fetch('/api/data/raw-rss', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: chunk, mode })
+        })
+        if (!resp.ok) {
+          const text = await resp.text()
+          throw new Error(`POST /api/data/raw-rss failed: ${resp.status} ${text}`)
+        }
+      }
+    } catch (error) {
+      console.warn('保存原始数据到API失败，回退到localStorage:', error)
       if (typeof window !== 'undefined') {
-        localStorage.setItem(this.RAW_DATA_KEY, JSON.stringify(data));
+        const existingStr = localStorage.getItem(this.RAW_DATA_KEY)
+        const existing = existingStr ? JSON.parse(existingStr) : []
+        let merged = []
+        if (mode === 'append') {
+          merged = [...existing, ...data]
+        } else {
+          merged = [...data]
+        }
+        const cutoff = new Date(Date.now() - this.RETENTION_DAYS * 24 * 60 * 60 * 1000)
+        const seen = new Set()
+        const unique = merged.filter(item => {
+          const key = (item.id || `${item.link}|${item.title}|${item.source}`).toLowerCase()
+          if (seen.has(key)) return false
+          seen.add(key)
+          const ts = new Date(item.fetchedAt || item.pubDate)
+          return ts >= cutoff
+        })
+        localStorage.setItem(this.RAW_DATA_KEY, JSON.stringify(unique))
       }
     }
   }
 
   private async loadRawData(): Promise<RawRSSData[]> {
-    if (this.storageAdapter) {
-      // 这里需要实现加载原始数据的逻辑
-      // 暂时使用localStorage作为fallback
+    try {
+      const resp = await fetch('/api/data/raw-rss?page=1&limit=10000')
+      if (!resp.ok) throw new Error(`GET /api/data/raw-rss failed: ${resp.status}`)
+      const json = await resp.json()
+      return Array.isArray(json?.items) ? json.items : (Array.isArray(json?.data) ? json.data : [])
+    } catch (error) {
+      console.warn('加载原始数据API失败，回退到localStorage:', error)
       if (typeof window !== 'undefined') {
-        const data = localStorage.getItem(this.RAW_DATA_KEY);
-        return data ? JSON.parse(data) : [];
+        const data = localStorage.getItem(this.RAW_DATA_KEY)
+        return data ? JSON.parse(data) : []
       }
+      return []
     }
-    return [];
   }
 
-  private async saveProcessedJobs(jobs: ProcessedJobData[]): Promise<void> {
+  private async saveProcessedJobs(jobs: ProcessedJobData[], mode: 'append' | 'replace' = 'append'): Promise<void> {
     try {
       // 分片上传，避免 413（请求体过大）
       const CHUNK_SIZE = 200;
       for (let i = 0; i < jobs.length; i += CHUNK_SIZE) {
         const chunk = jobs.slice(i, i + CHUNK_SIZE);
-        const mode = i === 0 ? 'replace' : 'append';
+        const chunkMode = mode;
         const resp = await fetch('/api/data/processed-jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobs: chunk, mode })
+          body: JSON.stringify({ jobs: chunk, mode: chunkMode })
         })
         if (!resp.ok) {
           const text = await resp.text()
@@ -717,6 +752,30 @@ export class DataManagementService {
                          description.match(/Remote.*?from\s+([^,\n]+)/i);
     
     return locationMatch ? locationMatch[1].trim() : 'Remote';
+  }
+
+  private extractCompanyWebsite(description?: string, jobLink?: string): string | undefined {
+    if (!description) return undefined;
+    const urlRegex = /(https?:\/\/[^\s"'<]+)/g;
+    const matches = description.match(urlRegex) || [];
+    if (matches.length === 0) return undefined;
+    const jobDomain = jobLink ? this.getDomain(jobLink) : undefined;
+    for (const u of matches) {
+      const d = this.getDomain(u);
+      if (!jobDomain || (d && d !== jobDomain)) {
+        return u;
+      }
+    }
+    return matches[0];
+  }
+
+  private getDomain(url: string): string | undefined {
+    try {
+      const { hostname } = new URL(url);
+      return hostname.replace(/^www\./, '');
+    } catch {
+      return undefined;
+    }
   }
 
   private isRemoteJob(title: string, description: string): boolean {

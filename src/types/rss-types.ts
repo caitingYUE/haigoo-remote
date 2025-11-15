@@ -11,6 +11,7 @@ export interface Job {
   location: string;
   description: string;
   url: string;
+  companyWebsite?: string;
   publishedAt: string;
   source: string;
   category: JobCategory;
@@ -130,6 +131,7 @@ export interface Job {
   location: string;
   description: string;
   url: string;
+  companyWebsite?: string;
   publishedAt: string;
   source: string;
   category: JobCategory;
