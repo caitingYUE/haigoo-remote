@@ -15,7 +15,7 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
 
   const isAdmin = !!(user?.roles?.admin || user?.email === 'caitlinyct@gmail.com')
   if (!isAdmin) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" state={{ from: location }} replace />
   }
 
   return <>{children}</>

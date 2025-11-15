@@ -130,6 +130,8 @@ function sanitizeUser(user) {
   return safeUser
 }
 
+const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
+
 /**
  * 主处理器
  */
@@ -167,7 +169,12 @@ export default async function handler(req, res) {
         user.username = username.trim()
       }
       if (roles && typeof roles === 'object') {
-        user.roles = { ...(user.roles || {}), ...roles }
+        // 超级管理员不可更改权限
+        if (user.email === SUPER_ADMIN_EMAIL) {
+          user.roles = { ...(user.roles || {}), admin: true }
+        } else {
+          user.roles = { ...(user.roles || {}), ...roles }
+        }
       }
       user.updatedAt = new Date().toISOString()
 
@@ -188,6 +195,10 @@ export default async function handler(req, res) {
       const { id } = req.query
       if (!id) {
         return res.status(400).json({ success: false, error: '缺少用户ID' })
+      }
+      const target = await getUserById(String(id))
+      if (target?.email === SUPER_ADMIN_EMAIL) {
+        return res.status(400).json({ success: false, error: '不可删除超级管理员' })
       }
       const ok = await deleteUserById(String(id))
       return res.status(ok ? 200 : 500).json({ success: !!ok })

@@ -50,6 +50,7 @@ export default function UserManagementPage() {
     newThisWeek: 0
   })
   const { token } = useAuth()
+  const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editUsername, setEditUsername] = useState('')
   const [editAdmin, setEditAdmin] = useState(false)
@@ -456,13 +457,15 @@ export default function UserManagementPage() {
                           >
                             <Eye className="w-4 h-4" /> 编辑
                           </button>
-                          <button
-                            disabled={updatingId === user.id}
-                            onClick={() => deleteUser(user.id)}
-                            className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-red-50 border-red-200 text-red-600"
-                          >
-                            <XCircle className="w-4 h-4" /> 删除
-                          </button>
+                          {user.email !== SUPER_ADMIN_EMAIL && (
+                            <button
+                              disabled={updatingId === user.id}
+                              onClick={() => deleteUser(user.id)}
+                              className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-red-50 border-red-200 text-red-600"
+                            >
+                              <XCircle className="w-4 h-4" /> 删除
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -493,8 +496,8 @@ export default function UserManagementPage() {
                 />
               </div>
               <label className="inline-flex items-center gap-2">
-                <input type="checkbox" checked={editAdmin} onChange={(e) => setEditAdmin(e.target.checked)} />
-                <span>管理员权限</span>
+                <input type="checkbox" disabled={editingUser?.email === SUPER_ADMIN_EMAIL} checked={editAdmin} onChange={(e) => setEditAdmin(e.target.checked)} />
+                <span>{editingUser?.email === SUPER_ADMIN_EMAIL ? '超级管理员（不可更改）' : '管理员权限'}</span>
               </label>
             </div>
             <div className="mt-6 flex justify-end gap-2">
