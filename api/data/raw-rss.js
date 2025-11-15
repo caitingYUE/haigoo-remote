@@ -346,6 +346,10 @@ export default async function handler(req, res) {
         filtered = Array.isArray(items) ? items : []
       }
       const paged = paginate(filtered, pageNum, pageSize)
+      // 强制禁用缓存，确保前端刷新拿到最新数据
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+      res.setHeader('Pragma', 'no-cache')
+      res.setHeader('Expires', '0')
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       res.setHeader('X-Storage-Provider', provider)
       res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))

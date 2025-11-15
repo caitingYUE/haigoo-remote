@@ -506,7 +506,8 @@ export class DataManagementService {
   async getStorageStats(): Promise<StorageStats> {
     try {
       // 优先从后端API读取真实统计信息（来源KV）
-      const resp = await fetch('/api/storage/stats')
+      const t = Date.now()
+      const resp = await fetch(`/api/storage/stats?t=${t}`, { cache: 'no-store' })
       if (!resp.ok) throw new Error(`GET /api/storage/stats failed: ${resp.status}`)
       const stats = await resp.json()
 
@@ -661,7 +662,8 @@ export class DataManagementService {
 
   private async loadRawData(): Promise<RawRSSData[]> {
     try {
-      const resp = await fetch('/api/data/raw-rss?page=1&limit=10000')
+      const t = Date.now()
+      const resp = await fetch(`/api/data/raw-rss?page=1&limit=10000&t=${t}`, { cache: 'no-store' })
       if (!resp.ok) throw new Error(`GET /api/data/raw-rss failed: ${resp.status}`)
       const json = await resp.json()
       return Array.isArray(json?.items) ? json.items : (Array.isArray(json?.data) ? json.data : [])
@@ -702,7 +704,8 @@ export class DataManagementService {
 
   private async loadProcessedJobs(): Promise<ProcessedJobData[]> {
     try {
-      const resp = await fetch('/api/data/processed-jobs?page=1&limit=1000')
+      const t = Date.now()
+      const resp = await fetch(`/api/data/processed-jobs?page=1&limit=1000&t=${t}`, { cache: 'no-store' })
       if (!resp.ok) {
         throw new Error(`GET /api/data/processed-jobs failed: ${resp.status}`)
       }
@@ -756,17 +759,51 @@ export class DataManagementService {
 
   private extractCompanyWebsite(description?: string, jobLink?: string): string | undefined {
     if (!description) return undefined;
-    const urlRegex = /(https?:\/\/[^\s"'<]+)/g;
-    const matches = description.match(urlRegex) || [];
-    if (matches.length === 0) return undefined;
-    const jobDomain = jobLink ? this.getDomain(jobLink) : undefined;
-    for (const u of matches) {
-      const d = this.getDomain(u);
-      if (!jobDomain || (d && d !== jobDomain)) {
-        return u;
-      }
+    // 1) 先尝试从“公司官网/Website/Official”等标签附近提取URL
+    const labeledUrlRegex = /(?:公司官网|企业官网|公司网站|官网|company\s*(?:website|site|page)?|official\s*(?:site|page)|website)\s*[:：]?\s*(https?:\/\/[^\s"'<)\]\u3002\uFF0C\uFF1B]+)/i;
+    const labeledMatch = description.match(labeledUrlRegex);
+    const cleanUrl = (u: string): string => {
+      // 去除结尾多余标点或括号/方括号
+      return u.replace(/[\)\]\.,;:!\u3002\uFF0C\uFF1B]+$/,'');
     }
-    return matches[0];
+    if (labeledMatch && labeledMatch[1]) {
+      return cleanUrl(labeledMatch[1]);
+    }
+
+    // 2) 否则匹配所有URL，按域名和路径进行优先级筛选
+    const urlRegex = /(https?:\/\/[^\s"'<)\]\u3002\uFF0C\uFF1B]+)/g;
+    const rawMatches = description.match(urlRegex) || [];
+    if (rawMatches.length === 0) return undefined;
+    const jobDomain = jobLink ? this.getDomain(jobLink) : undefined;
+    const excludeDomains = new Set([
+      'weworkremotely.com','remotive.com','himalayas.app','nodesk.co','remoteok.com','indeed.com','linkedin.com',
+      'lever.co','greenhouse.io','workable.com','ashbyhq.com','jobs.github.com','stackoverflow.com','angel.co',
+      'medium.com','twitter.com','facebook.com','instagram.com','youtube.com','t.co','bit.ly','goo.gl'
+    ]);
+
+    // 评分：排除聚合/社交域，排除与jobLink相同域；优先路径短且无查询参数
+    const candidates = rawMatches
+      .map(u => cleanUrl(u))
+      .map(u => {
+        let hostname = this.getDomain(u) || '';
+        let score = 0;
+        // 排除项给负分
+        if (excludeDomains.has(hostname)) score -= 100;
+        if (jobDomain && hostname === jobDomain) score -= 50;
+        try {
+          const parsed = new URL(u);
+          const pathSegs = parsed.pathname.split('/').filter(Boolean).length;
+          const hasQuery = !!parsed.search;
+          // 路径越短、无查询分数越高
+          score += (5 - Math.min(pathSegs, 5));
+          if (!hasQuery) score += 2;
+        } catch {}
+        return { url: u, hostname, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    // 返回最高分候选
+    return candidates[0]?.url || rawMatches[0];
   }
 
   private getDomain(url: string): string | undefined {
