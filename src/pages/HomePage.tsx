@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Briefcase, AlertTriangle, RefreshCw } from 'lucide-react'
 import JobDetailModal from '../components/JobDetailModal'
+import BrandHero from '../components/BrandHero'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
 import JobCard from '../components/JobCard'
 import { Job } from '../types'
@@ -199,9 +200,10 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen">
       <main className="container mx-auto px-4 pt-16 pb-8">
         {/* Hero Section */}
+        <BrandHero />
         <div className="text-center mb-6">
           <div className="flex items-center justify-center mb-4">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight">
