@@ -2,21 +2,19 @@ import React from 'react'
 
 export default function BrandHero() {
   return (
-    <section className="container-fluid mt-6 mb-4">
-      <div className="relative mx-auto max-w-4xl">
-        {/* 轻盈的品牌横幅 */}
-        <div className="relative rounded-3xl p-8 text-center bg-gradient-to-r from-haigoo-primary/10 via-haigoo-primary/6 to-haigoo-accent/10 border border-white/60 shadow-primary">
-          {/* 极淡世界线稿 */}
-          <svg className="absolute inset-0 w-full h-full opacity-[0.05]" viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <path key={i} d={`M 0 ${i * 25} Q 400 ${150 + (i%2===0?14:-14)} 800 ${i * 25}`} stroke="#8B5CF6" strokeWidth="0.8" fill="none" />
-            ))}
-          </svg>
-          <div className="relative z-10">
-            <h2 className="text-3xl md:text-4xl font-semibold haigoo-gradient-text">open to the world</h2>
-            <p className="mt-2 text-gray-600">Where remote work meets endless possibilities</p>
-          </div>
-        </div>
+    <section className="container-fluid mt-6 mb-2">
+      <div className="relative mx-auto max-w-7xl h-[180px]">
+        <img
+          src={(import.meta as any).env?.VITE_HERO_LEFT_URL || 'https://images.unsplash.com/photo-1516397281156-ca07cf9746fc?q=80&w=1200&auto=format&fit=crop'}
+          alt="remote lifestyle"
+          className="absolute left-0 top-0 h-full w-[42%] object-cover rounded-3xl opacity-70 edge-fade-right blur-[0.3px]"
+        />
+        <img
+          src={(import.meta as any).env?.VITE_HERO_RIGHT_URL || 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop'}
+          alt="world exploration"
+          className="absolute right-0 top-0 h-full w-[42%] object-cover rounded-3xl opacity-70 edge-fade-left blur-[0.3px]"
+        />
+        <div className="absolute inset-0 soft-overlay rounded-3xl" />
       </div>
     </section>
   )

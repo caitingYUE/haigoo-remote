@@ -748,6 +748,20 @@
   );
 }
 
+.edge-fade-left {
+  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,1) 60%, rgba(0,0,0,1) 100%);
+  mask-image: linear-gradient(to left, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,1) 60%, rgba(0,0,0,1) 100%);
+}
+
+.edge-fade-right {
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,1) 60%, rgba(0,0,0,1) 100%);
+  mask-image: linear-gradient(to right, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,1) 60%, rgba(0,0,0,1) 100%);
+}
+
+.soft-overlay {
+  background: linear-gradient(90deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0.85) 100%);
+}
+
 /* 优化的按钮样式 */
 .btn-primary-enhanced {
   background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
