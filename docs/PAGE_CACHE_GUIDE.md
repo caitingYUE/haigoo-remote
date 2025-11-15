@@ -272,14 +272,14 @@ function UserProfilePage() {
 
 | 属性 | 类型 | 说明 |
 |------|------|------|
-| `data` | `T \| null` | 缓存的数据 |
+| `data` | `T | null` | 缓存的数据 |
 | `loading` | `boolean` | 是否正在加载 |
-| `error` | `Error \| null` | 错误信息 |
+| `error` | `Error | null` | 错误信息 |
 | `refresh` | `() => Promise<void>` | 强制刷新（清除缓存并重新加载） |
 | `reload` | `() => Promise<void>` | 重新加载（使用缓存） |
 | `clearCache` | `() => void` | 仅清除缓存 |
 | `isFromCache` | `boolean` | 是否来自缓存 |
-| `cacheAge` | `number \| null` | 缓存年龄（毫秒） |
+| `cacheAge` | `number | null` | 缓存年龄（毫秒） |
 
 ## 最佳实践
 
@@ -539,4 +539,3 @@ pageCacheService.clear()
 - 🛠️ **可调试**: 完善的调试工具
 
 按照本指南集成缓存机制后，用户在切换页面时将获得流畅的体验！
-

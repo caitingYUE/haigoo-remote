@@ -37,6 +37,9 @@ export interface User {
   
   // 状态
   status: 'active' | 'suspended' | 'deleted' // 账户状态
+  roles?: {
+    admin?: boolean
+  }
 }
 
 // 登录请求

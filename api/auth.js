@@ -104,7 +104,8 @@ async function handleRegister(req, res) {
     verificationExpires,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    status: 'active'
+    status: 'active',
+    roles: { admin: email === 'caitlinyct@gmail.com' }
   }
 
   const { success } = await saveUser(user)
@@ -215,7 +216,8 @@ async function handleGoogleLogin(req, res) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
-      status: 'active'
+      status: 'active',
+      roles: { admin: googleUser.email === 'caitlinyct@gmail.com' }
     }
     await saveUser(user)
   }

@@ -39,6 +39,7 @@ import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
 import DataManagementTabs from '../components/DataManagementTabs';
 import ResumeLibraryPage from './ResumeLibraryPage';
+import UserManagementPage from './UserManagementPage';
 import '../components/AdminPanel.css';
 
 // 扩展RSSSource接口以包含管理所需的字段
@@ -470,6 +471,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
     { id: 'resumes', label: '简历库', icon: Users },
+    { id: 'users', label: '用户管理', icon: Users },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'settings', label: '系统设置', icon: Settings }
   ];
@@ -551,6 +553,7 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'jobs' && renderJobDataManagement()}
               {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'analytics' && renderAnalytics()}
+              {activeTab === 'users' && <UserManagementPage />}
               {activeTab === 'settings' && renderSettings()}
             </div>
           )}

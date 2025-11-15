@@ -24,6 +24,7 @@ import {
   Clock
 } from 'lucide-react'
 import type { User } from '../types/auth-types'
+import { useAuth } from '../contexts/AuthContext'
 
 interface UserStats {
   total: number
@@ -37,6 +38,7 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all')
   const [providerFilter, setProviderFilter] = useState<'all' | 'email' | 'google'>('all')
@@ -47,6 +49,10 @@ export default function UserManagementPage() {
     newToday: 0,
     newThisWeek: 0
   })
+  const { token } = useAuth()
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editUsername, setEditUsername] = useState('')
+  const [editAdmin, setEditAdmin] = useState(false)
 
   // 加载用户列表
   useEffect(() => {
@@ -82,7 +88,9 @@ export default function UserManagementPage() {
   const fetchUsers = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/users')
+      const response = await fetch('/api/users', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      })
       const data = await response.json()
       if (data.success) {
         setUsers(data.users)
@@ -109,6 +117,75 @@ export default function UserManagementPage() {
     }
 
     setStats(stats)
+  }
+
+  const updateUserStatus = async (userId: string, nextStatus: 'active' | 'suspended') => {
+    try {
+      setUpdatingId(userId)
+      const resp = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ id: userId, status: nextStatus })
+      })
+      const data = await resp.json()
+      if (!data.success) {
+        console.error('[UserManagement] 更新状态失败:', data.error)
+        return
+      }
+      // 局部更新并重算统计
+      setUsers(prev => {
+        const next = prev.map(u => (u.id === userId ? { ...u, status: nextStatus, updatedAt: new Date().toISOString() } : u))
+        calculateStats(next)
+        return next
+      })
+    } catch (err) {
+      console.error('[UserManagement] 调用 PATCH /api/users 失败:', err)
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  const openEdit = (user: User) => {
+    setEditingUser(user)
+    setEditUsername(user.username)
+    setEditAdmin(!!user.roles?.admin)
+  }
+
+  const saveEdit = async () => {
+    if (!editingUser) return
+    try {
+      setUpdatingId(editingUser.id)
+      const resp = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ id: editingUser.id, username: editUsername, roles: { admin: editAdmin } })
+      })
+      const data = await resp.json()
+      if (data.success && data.user) {
+        setUsers(prev => prev.map(u => (u.id === editingUser.id ? { ...u, ...data.user } as User : u)))
+      }
+    } finally {
+      setUpdatingId(null)
+      setEditingUser(null)
+    }
+  }
+
+  const deleteUser = async (userId: string) => {
+    if (!confirm('确认删除该用户？')) return
+    try {
+      setUpdatingId(userId)
+      const resp = await fetch(`/api/users?id=${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      })
+      const data = await resp.json()
+      if (data.success) {
+        setUsers(prev => prev.filter(u => u.id !== userId))
+        calculateStats(users.filter(u => u.id !== userId))
+      }
+    } finally {
+      setUpdatingId(null)
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -286,6 +363,7 @@ export default function UserManagementPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">注册时间</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最后登录</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -348,6 +426,45 @@ export default function UserManagementPage() {
                           {user.status === 'active' ? '活跃' : user.status === 'suspended' ? '已停用' : user.status}
                         </span>
                       </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {user.status === 'active' ? (
+                            <button
+                              disabled={updatingId === user.id}
+                              onClick={() => updateUserStatus(user.id, 'suspended')}
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${
+                                updatingId === user.id ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'
+                              }`}
+                            >
+                              <Ban className="w-4 h-4" /> 停用
+                            </button>
+                          ) : (
+                            <button
+                              disabled={updatingId === user.id}
+                              onClick={() => updateUserStatus(user.id, 'active')}
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${
+                                updatingId === user.id ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-green-50 border-green-200 text-green-600'
+                              }`}
+                            >
+                              <CheckCircle className="w-4 h-4" /> 启用
+                            </button>
+                          )}
+                          <button
+                            disabled={updatingId === user.id}
+                            onClick={() => openEdit(user)}
+                            className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-gray-50"
+                          >
+                            <Eye className="w-4 h-4" /> 编辑
+                          </button>
+                          <button
+                            disabled={updatingId === user.id}
+                            onClick={() => deleteUser(user.id)}
+                            className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-red-50 border-red-200 text-red-600"
+                          >
+                            <XCircle className="w-4 h-4" /> 删除
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -361,6 +478,32 @@ export default function UserManagementPage() {
           显示 {filteredUsers.length} / {users.length} 个用户
         </div>
       </div>
+
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4">编辑用户</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">用户名</label>
+                <input
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={editAdmin} onChange={(e) => setEditAdmin(e.target.checked)} />
+                <span>管理员权限</span>
+              </label>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button onClick={() => setEditingUser(null)} className="px-4 py-2 border rounded-lg">取消</button>
+              <button onClick={saveEdit} className="px-4 py-2 bg-violet-600 text-white rounded-lg">保存</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

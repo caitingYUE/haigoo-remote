@@ -121,9 +121,9 @@ git push origin develop
 ### Test 1: 后台管理 - 数据处理和翻译
 
 1. **访问后台管理页面**
-   ```
-   https://haigoo.vercel.app/admin_team
-   ```
+```
+https://haigoo.vercel.app/admin_team
+```
 
 2. **处理原始数据**
    - 点击「处理数据」按钮
@@ -160,25 +160,25 @@ git push origin develop
    - 从 Vercel 环境变量中获取
 
 2. **手动触发定时任务**
-   ```bash
-   curl -X POST https://haigoo.vercel.app/api/cron/sync-jobs \
-     -H "Authorization: Bearer your_cron_secret"
-   ```
+```bash
+curl -X POST https://haigoo.vercel.app/api/cron/sync-jobs \
+  -H "Authorization: Bearer your_cron_secret"
+```
 
 3. **检查响应**
-   ```json
-   {
-     "success": true,
-     "message": "定时任务完成",
-     "stats": {
-       "totalJobs": 100,
-       "translatedJobs": 50,
-       "skippedJobs": 50,
-       "failedJobs": 0,
-       "duration": "30000ms"
-     }
-   }
-   ```
+```json
+{
+  "success": true,
+  "message": "定时任务完成",
+  "stats": {
+    "totalJobs": 100,
+    "translatedJobs": 50,
+    "skippedJobs": 50,
+    "failedJobs": 0,
+    "duration": "30000ms"
+  }
+}
+```
 
 4. **检查自动执行**
    - 定时任务应该每天凌晨 2:00 自动执行
@@ -360,4 +360,3 @@ const translatedJobs = await jobTranslationService.translateJobs(response.jobs)
 - 测试结果：所有测试通过
 - 备注：页面加载时间从 8秒 降至 0.8秒
 ```
-

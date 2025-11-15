@@ -54,20 +54,20 @@
 1. **Application type**: 选择 **"Web application"**
 2. **Name**: 输入 `Haigoo - All Environments`
 3. **Authorized JavaScript origins**: 添加以下 URLs
-   ```
-   http://localhost:3000
-   http://localhost:3001
-   https://haigoo.vercel.app
-   https://haigoo-remote-git-develop-caitlinyct.vercel.app
-   ```
+```
+http://localhost:3000
+http://localhost:3001
+https://haigoo.vercel.app
+https://haigoo-remote-git-develop-caitlinyct.vercel.app
+```
 
 4. **Authorized redirect URIs**: 添加以下 URLs
-   ```
-   http://localhost:3000
-   http://localhost:3001
-   https://haigoo.vercel.app
-   https://haigoo-remote-git-develop-caitlinyct.vercel.app
-   ```
+```
+http://localhost:3000
+http://localhost:3001
+https://haigoo.vercel.app
+https://haigoo-remote-git-develop-caitlinyct.vercel.app
+```
 
 5. 点击 **"Create"**
 
@@ -187,9 +187,9 @@ https://haigoo-remote-git-develop-caitlinyct.vercel.app/api/health
 ### 2. 测试登录功能
 
 1. 访问登录页面：
-   ```
-   https://haigoo-remote-git-develop-caitlinyct.vercel.app/login
-   ```
+```
+https://haigoo-remote-git-develop-caitlinyct.vercel.app/login
+```
 
 2. 点击 **"使用 Google 登录"**
 
@@ -201,9 +201,9 @@ https://haigoo-remote-git-develop-caitlinyct.vercel.app/api/health
 ### 3. 测试注册功能
 
 1. 访问注册页面：
-   ```
-   https://haigoo-remote-git-develop-caitlinyct.vercel.app/register
-   ```
+```
+https://haigoo-remote-git-develop-caitlinyct.vercel.app/register
+```
 
 2. 使用邮箱注册或 Google 登录
 
@@ -230,9 +230,9 @@ https://haigoo-remote-git-develop-caitlinyct.vercel.app/api/health
 1. 返回 Google Cloud Console
 2. 编辑 OAuth Client ID
 3. 确认 **Authorized redirect URIs** 包含：
-   ```
-   https://haigoo-remote-git-develop-caitlinyct.vercel.app
-   ```
+```
+https://haigoo-remote-git-develop-caitlinyct.vercel.app
+```
 4. 保存后等待 5 分钟生效
 
 ### 问题 3: "Access blocked: This app's request is invalid"
@@ -283,12 +283,12 @@ https://haigoo-remote-git-develop-caitlinyct.vercel.app/api/health
 ### 安全建议
 
 1. **不要提交凭据到代码库**
-   ```bash
-   # 确认 .gitignore 包含
-   .env
-   .env.local
-   .env.*.local
-   ```
+```bash
+# 确认 .gitignore 包含
+.env
+.env.local
+.env.*.local
+```
 
 2. **定期轮换 Client Secret**
    - 每 3-6 个月更换一次
@@ -330,9 +330,9 @@ https://haigoo-remote-git-develop-caitlinyct.vercel.app/api/health
 如果遇到问题：
 
 1. 检查 Vercel 部署日志
-   ```
-   vercel logs <deployment-url>
-   ```
+```
+vercel logs <deployment-url>
+```
 
 2. 检查浏览器控制台（F12）的错误信息
 
@@ -345,4 +345,3 @@ https://haigoo-remote-git-develop-caitlinyct.vercel.app/api/health
 ---
 
 **祝配置顺利！** 🎉
-

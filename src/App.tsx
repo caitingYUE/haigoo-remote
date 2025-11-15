@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import HomePage from './pages/HomePage'
 import JobsPage from './pages/JobsPage'
 import RemoteExperiencePage from './pages/RemoteExperiencePage'
@@ -53,16 +54,16 @@ function App() {
             
             {/* AdminTeamPage 统一后台管理页面（需要登录） */}
             <Route path="/admin_team" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminTeamPage />
-              </ProtectedRoute>
+              </AdminRoute>
             } />
             
             {/* 用户管理页面（需要登录） */}
             <Route path="/admin/users" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <UserManagementPage />
-              </ProtectedRoute>
+              </AdminRoute>
             } />
             
             {/* 其他页面使用标准布局 */}

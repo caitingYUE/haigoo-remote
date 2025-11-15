@@ -415,4 +415,3 @@ open http://localhost:3000/test-resume-parser.html
 4. 检查 Vercel 部署日志
 
 **🎊 祝使用愉快！**
-

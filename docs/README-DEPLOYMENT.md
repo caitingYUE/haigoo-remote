@@ -37,15 +37,15 @@
    - Output Directory: `dist`
 
 4. **环境变量配置**
-   ```
-   VITE_ALIBABA_BAILIAN_API_KEY=your_api_key_here
-   VITE_ALIBABA_BAILIAN_BASE_URL=https://dashscope.aliyuncs.com/api/v1
-   VITE_APP_NAME=Haigoo Assistant
-   VITE_APP_VERSION=1.0.0
-   NODE_ENV=production
-   ```
+```
+VITE_ALIBABA_BAILIAN_API_KEY=your_api_key_here
+VITE_ALIBABA_BAILIAN_BASE_URL=https://dashscope.aliyuncs.com/api/v1
+VITE_APP_NAME=Haigoo Assistant
+VITE_APP_VERSION=1.0.0
+NODE_ENV=production
+```
 
-   说明：生产环境默认使用 Vercel Functions 提供的相对路径 API（如 `/api/rss-proxy`），无需额外配置 `VITE_API_BASE_URL` 或 `VITE_RSS_PROXY_URL`。如使用自定义域或独立后端，再根据需要添加对应变量。
+说明：生产环境默认使用 Vercel Functions 提供的相对路径 API（如 `/api/rss-proxy`），无需额外配置 `VITE_API_BASE_URL` 或 `VITE_RSS_PROXY_URL`。如使用自定义域或独立后端，再根据需要添加对应变量。
 
 5. **部署**
    - 点击 "Deploy"
@@ -54,19 +54,19 @@
 ### 方式二：通过 Vercel CLI 部署
 
 1. **安装 Vercel CLI**
-   ```bash
-   npm i -g vercel
-   ```
+```bash
+npm i -g vercel
+```
 
 2. **登录 Vercel**
-   ```bash
-   vercel login
-   ```
+```bash
+vercel login
+```
 
 3. **部署项目**
-   ```bash
-   vercel --prod
-   ```
+```bash
+vercel --prod
+```
 
 ## 🌐 部署后配置
 

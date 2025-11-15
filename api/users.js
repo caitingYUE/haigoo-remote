@@ -6,6 +6,8 @@
 
 import { kv } from '@vercel/kv'
 import { createClient } from 'redis'
+import { getUserById, saveUser, deleteUserById } from '../server-utils/user-storage.js'
+import { extractToken, verifyToken } from '../server-utils/auth-helpers.js'
 
 // Redis配置检测
 const REDIS_URL =
@@ -33,7 +35,7 @@ const memoryStore = {
 // CORS headers
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, PATCH, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
 
@@ -136,6 +138,62 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
+  }
+
+  const token = extractToken(req)
+  const payload = token ? verifyToken(token) : null
+  const requester = payload?.userId ? await getUserById(payload.userId) : null
+  const isAdmin = !!(requester?.roles?.admin || requester?.email === 'caitlinyct@gmail.com')
+  if (!isAdmin) {
+    return res.status(403).json({ success: false, error: 'Forbidden' })
+  }
+
+  if (req.method === 'PATCH') {
+    try {
+      const { id, status, username, roles } = req.body || {}
+      if (!id) {
+        return res.status(400).json({ success: false, error: '缺少用户ID' })
+      }
+
+      const user = await getUserById(id)
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'User not found' })
+      }
+
+      if (status && ['active', 'suspended'].includes(status)) {
+        user.status = status
+      }
+      if (typeof username === 'string' && username.trim()) {
+        user.username = username.trim()
+      }
+      if (roles && typeof roles === 'object') {
+        user.roles = { ...(user.roles || {}), ...roles }
+      }
+      user.updatedAt = new Date().toISOString()
+
+      const { success } = await saveUser(user)
+      if (!success) {
+        return res.status(500).json({ success: false, error: '更新失败，请稍后重试' })
+      }
+
+      return res.status(200).json({ success: true, user: sanitizeUser(user) })
+    } catch (error) {
+      console.error('[users] PATCH error:', error)
+      return res.status(500).json({ success: false, error: '服务器错误' })
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    try {
+      const { id } = req.query
+      if (!id) {
+        return res.status(400).json({ success: false, error: '缺少用户ID' })
+      }
+      const ok = await deleteUserById(String(id))
+      return res.status(ok ? 200 : 500).json({ success: !!ok })
+    } catch (e) {
+      return res.status(500).json({ success: false, error: '服务器错误' })
+    }
   }
 
   if (req.method !== 'GET') {
