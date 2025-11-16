@@ -764,6 +764,10 @@
 
 .partner-card {
   @apply inline-flex items-center justify-center h-14 w-24 rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5;
+  }
+
+.partner-card img{
+  filter: saturate(0.95) contrast(1.02);
 }
 
 /* 优化的按钮样式 */

@@ -46,8 +46,22 @@ export default function BrandHero() {
 
   return (
     <section className="container-fluid mt-4 mb-4">
-      <div className="relative mx-auto max-w-7xl h-[180px] rounded-3xl">
-        <div className="absolute right-0 top-0 w-[70%] h-full rounded-3xl bg-gradient-to-l from-haigoo-primary/8 via-haigoo-accent/8 to-transparent" />
+      <div className="relative mx-auto max-w-7xl h-[200px] rounded-3xl">
+        {/* 右侧柔和渐变背景 */}
+        <div className="absolute right-0 top-0 w-[72%] h-full rounded-3xl bg-gradient-to-l from-haigoo-primary/10 via-haigoo-accent/8 to-transparent" />
+        {/* 网络线稿 */}
+        <svg className="absolute right-0 top-0 w-[72%] h-full opacity-[0.25]" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+          <defs>
+            <linearGradient id="net" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#8B5CF6" />
+              <stop offset="1" stopColor="#06B6D4" />
+            </linearGradient>
+          </defs>
+          <path d="M 50 150 C 200 60, 400 60, 750 150" stroke="url(#net)" strokeWidth="1.2" fill="none" />
+          <path d="M 80 120 C 240 40, 420 40, 770 120" stroke="url(#net)" strokeWidth="0.8" fill="none" />
+          <path d="M 100 170 C 260 90, 420 90, 780 170" stroke="url(#net)" strokeWidth="0.8" fill="none" />
+        </svg>
+        {/* Logo 卡片沿着网络分布 */}
         <div className="absolute inset-0">
           {partners.slice(0, positions.length).map((p, i) => (
             <a
