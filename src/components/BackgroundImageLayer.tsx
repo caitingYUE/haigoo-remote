@@ -12,7 +12,6 @@ export default function BackgroundImageLayer({ imageUrl }: { imageUrl?: string }
           backgroundPosition: 'center'
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/10 to-white/30" />
     </div>
   )
 }

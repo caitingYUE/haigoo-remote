@@ -5,17 +5,15 @@ import AbstractTechBackground from '../components/AbstractTechBackground'
 import HeroIllustration from '../components/HeroIllustration'
 import '../styles/landing.css'
 import BackgroundImageLayer from '../components/BackgroundImageLayer'
+import homeBg from '../assets/home_bg.png'
 
 export default function LandingPage() {
   const navigate = useNavigate()
 
   return (
     <div className="min-h-screen relative">
-      { (import.meta as any).env?.VITE_LANDING_BG_IMAGE_URL
-        ? <BackgroundImageLayer imageUrl={(import.meta as any).env?.VITE_LANDING_BG_IMAGE_URL} />
-        : <AbstractTechBackground />
-      }
-      <section className="container-fluid section-padding relative z-10 landing-bg">
+      <BackgroundImageLayer imageUrl={homeBg} />
+      <section className="container-fluid section-padding relative z-10">
         <div className="landing-hero">
           <div className="grid grid-cols-1 gap-8">
             <h1 className="landing-title">
