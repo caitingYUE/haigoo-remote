@@ -762,6 +762,10 @@
   background: linear-gradient(90deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0.85) 100%);
 }
 
+.partner-card {
+  @apply inline-flex items-center justify-center h-14 w-24 rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5;
+}
+
 /* 优化的按钮样式 */
 .btn-primary-enhanced {
   background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
