@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage'
 import ResumeOptimizationPage from './pages/ResumeOptimizationPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import CopilotPage from './pages/CopilotPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPanel from './components/AdminPanel'
 import AdminTeamPage from './pages/AdminTeamPage'
@@ -73,6 +74,7 @@ function App() {
                   {/* 公开页面 */}
                   <Route path="/" element={<HomePage />} />
                   <Route path="/jobs" element={<JobsPage />} />
+                  <Route path="/copilot" element={<CopilotPage />} />
                   <Route path="/remote-experience" element={<RemoteExperiencePage />} />
                   <Route path="/job/:id" element={<JobDetailPage />} />
                   

@@ -3,6 +3,7 @@ import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase, Re
 import { useNavigate, useLocation } from 'react-router-dom'
 import JobDetailModal from '../components/JobDetailModal'
 import JobCard from '../components/JobCard'
+import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { DateFormatter } from '../utils/date-formatter'
@@ -510,6 +511,9 @@ export default function JobsPage() {
                 >
                   找到 <span className="font-semibold text-gray-900 text-base">{filteredJobs.length}</span> 个岗位
                 </div>
+              </div>
+              <div className="mb-6">
+                <JobAlertSubscribe />
               </div>
 
               {/* 岗位列表 */}

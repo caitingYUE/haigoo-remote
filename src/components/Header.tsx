@@ -120,10 +120,11 @@ export default function Header() {
             </Link>
             {/* Brand Slogan */}
             <div className="ml-4">
-              <p className="text-lg font-medium text-slate-700 italic tracking-wide transform hover:scale-105 transition-transform duration-300" 
-                 style={{ fontFamily: "'Inter', 'Helvetica Neue', 'Arial', sans-serif", fontWeight: 500 }}>
-                open to the world
-              </p>
+              <nav className="ml-6 hidden md:flex items-center gap-6 text-slate-700">
+                <a href="/jobs" className="hover:text-black">Job Search</a>
+                <a href="/copilot" className="hover:text-black">AI Copilot</a>
+                <a href="/community" className="hover:text-black">Community</a>
+              </nav>
             </div>
           </div>
 

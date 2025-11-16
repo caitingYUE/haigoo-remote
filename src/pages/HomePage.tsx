@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Briefcase, AlertTriangle, RefreshCw } from 'lucide-react'
 import JobDetailModal from '../components/JobDetailModal'
 import BrandHero from '../components/BrandHero'
+import HeroVisual from '../components/HeroVisual'
 import RSSStatusIndicator from '../components/RSSStatusIndicator'
 import JobCard from '../components/JobCard'
 import { Job } from '../types'
@@ -204,6 +205,7 @@ export default function HomePage() {
       <main className="container mx-auto px-4 pt-16 pb-8">
         {/* Hero Section */}
         <BrandHero />
+        <HeroVisual onExplore={() => navigate('/jobs')} onCopilot={() => navigate('/copilot')} />
         <div className="text-center mb-6">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight">
             发现海内外优质远程岗位

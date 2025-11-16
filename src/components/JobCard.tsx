@@ -161,7 +161,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
           <div className="flex-1 min-w-0">
             <h2 
               id={`job-${job.id}-title`}
-              className="font-semibold text-gray-900 text-lg group-hover:text-haigoo-primary transition-colors mb-1 line-clamp-1"
+              className="font-semibold text-gray-900 text-base md:text-lg group-hover:text-haigoo-primary transition-colors mb-1 line-clamp-2"
               title={job.translations?.title || job.title}
             >
               {job.translations?.title || job.title}
@@ -250,7 +250,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       )}
 
       {/* 技能/标签行 - 永远渲染以保证卡片高度一致；当无标签时使用兜底 */}
-      <section className="mt-3 pt-3 border-t border-gray-100">
+      <section className="mt-2 pt-2 border-t border-gray-100">
         <SingleLineTags
           size="xs"
           tags={(
