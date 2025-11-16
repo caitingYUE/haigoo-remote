@@ -33,21 +33,34 @@ function buildPartners(): { logoUrl: string; href: string; name: string }[] {
 
 export default function BrandHero() {
   const partners = buildPartners()
+  const positions = [
+    { top: '8%', left: '5%', rotate: '-2deg' },
+    { top: '28%', left: '14%', rotate: '3deg' },
+    { top: '10%', left: '26%', rotate: '-4deg' },
+    { top: '38%', left: '32%', rotate: '2deg' },
+    { top: '16%', left: '48%', rotate: '-3deg' },
+    { top: '34%', left: '58%', rotate: '4deg' },
+    { top: '12%', left: '70%', rotate: '-2deg' },
+    { top: '30%', left: '82%', rotate: '2deg' }
+  ]
+
   return (
-    <section className="container-fluid mt-6 mb-6">
-      <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-        <div className="space-y-2">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight haigoo-gradient-text">发现海内外优质远程岗位</h1>
-          <p className="text-gray-600">每日更新数千个远程岗位</p>
-        </div>
-        <div className="relative">
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 justify-items-center">
-            {partners.map((p, i) => (
-              <a key={i} href={p.href} target="_blank" rel="noreferrer" className="partner-card">
-                <img src={p.logoUrl} alt={p.name} className="h-8 w-auto" />
-              </a>
-            ))}
-          </div>
+    <section className="container-fluid mt-4 mb-4">
+      <div className="relative mx-auto max-w-7xl h-[180px] rounded-3xl">
+        <div className="absolute right-0 top-0 w-[70%] h-full rounded-3xl bg-gradient-to-l from-haigoo-primary/8 via-haigoo-accent/8 to-transparent" />
+        <div className="absolute inset-0">
+          {partners.slice(0, positions.length).map((p, i) => (
+            <a
+              key={i}
+              href={p.href}
+              target="_blank"
+              rel="noreferrer"
+              className="partner-card absolute"
+              style={{ top: positions[i].top, left: positions[i].left, transform: `rotate(${positions[i].rotate})` }}
+            >
+              <img src={p.logoUrl} alt={p.name} className="h-8 w-auto" />
+            </a>
+          ))}
         </div>
       </div>
     </section>

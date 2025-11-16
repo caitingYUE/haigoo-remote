@@ -205,12 +205,10 @@ export default function HomePage() {
         {/* Hero Section */}
         <BrandHero />
         <div className="text-center mb-6">
-          <div className="flex items-center justify-center mb-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight">
-              发现海内外优质远程岗位
-            </h1>
-          </div>
-          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight">
+            发现海内外优质远程岗位
+          </h1>
+          <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 mt-2">
             每日更新数千个远程岗位
           </p>
           
