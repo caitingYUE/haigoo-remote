@@ -10,7 +10,7 @@ export default function JobAlertSubscribe() {
     if (!identifier.trim()) return
     setStatus('loading')
     try {
-      const resp = await fetch('/api/subscribe', {
+      const resp = await fetch('/api/auth?action=subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channel, identifier, topic })

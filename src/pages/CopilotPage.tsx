@@ -9,7 +9,7 @@ export default function CopilotPage() {
     if (!resume.trim()) return
     setLoading(true)
     try {
-      const resp = await fetch('/api/copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resume }) })
+      const resp = await fetch('/api/auth?action=copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resume }) })
       const json = await resp.json()
       setResult(json)
     } finally { setLoading(false) }
