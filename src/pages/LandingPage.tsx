@@ -14,7 +14,16 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             {/* 左侧：品牌插画占位与主标语 */}
             <div>
-              <div className="h-64 md:h-80 rounded-2xl bg-white/60 border border-white/80" />
+              <div
+                className="h-64 md:h-80 rounded-2xl border overflow-hidden"
+                style={{
+                  backgroundImage: `url(${(import.meta as any).env?.VITE_LANDING_HERO_IMAGE_URL || ''})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
+                <div className="w-full h-full bg-gradient-to-br from-white/50 via-white/30 to-transparent" />
+              </div>
               <h1 className="mt-6 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
                 WORK YOUR BRAIN,
                 <br /> LEAVE YOUR BODY TO BE HAPPY
@@ -59,15 +68,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 品牌页脚（简版） */}
-      <footer className="container-fluid py-8 text-sm text-gray-600">
-        <div className="flex flex-wrap items-center gap-6">
-          <a href="/about" className="hover:text-gray-900">About Us</a>
-          <a href="/help" className="hover:text-gray-900">Help Center</a>
-          <a href="/terms" className="hover:text-gray-900">Terms</a>
-          <a href="/privacy" className="hover:text-gray-900">Privacy</a>
-        </div>
-      </footer>
+      {/* 页脚由全局 Footer 统一渲染，这里不重复 */}
     </div>
   )
 }
