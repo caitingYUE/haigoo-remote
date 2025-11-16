@@ -2,6 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Rocket, Bot } from 'lucide-react'
 import AbstractTechBackground from '../components/AbstractTechBackground'
+import HeroIllustration from '../components/HeroIllustration'
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -14,15 +15,11 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             {/* 左侧：品牌插画占位与主标语 */}
             <div>
-              <div
-                className="h-64 md:h-80 rounded-2xl border overflow-hidden"
-                style={{
-                  backgroundImage: `url(${(import.meta as any).env?.VITE_LANDING_HERO_IMAGE_URL || ''})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
-              >
-                <div className="w-full h-full bg-gradient-to-br from-white/50 via-white/30 to-transparent" />
+              <div className="h-64 md:h-80 rounded-2xl border overflow-hidden bg-white/70">
+                { (import.meta as any).env?.VITE_LANDING_HERO_IMAGE_URL
+                  ? <div style={{backgroundImage:`url(${(import.meta as any).env?.VITE_LANDING_HERO_IMAGE_URL})`,backgroundSize:'cover',backgroundPosition:'center'}} className="w-full h-full" />
+                  : <HeroIllustration />
+                }
               </div>
               <h1 className="mt-6 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
                 WORK YOUR BRAIN,
