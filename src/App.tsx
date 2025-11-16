@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import HomePage from './pages/HomePage'
+import LandingPage from './pages/LandingPage'
 import JobsPage from './pages/JobsPage'
 import RemoteExperiencePage from './pages/RemoteExperiencePage'
 import JobApplicationPage from './pages/JobApplicationPage'
@@ -72,7 +73,7 @@ function App() {
               <Layout>
                 <Routes>
                   {/* 公开页面 */}
-                  <Route path="/" element={<HomePage />} />
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/jobs" element={<JobsPage />} />
                   <Route path="/copilot" element={<CopilotPage />} />
                   <Route path="/remote-experience" element={<RemoteExperiencePage />} />
