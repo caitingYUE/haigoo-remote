@@ -1,14 +1,16 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Rocket, Bot } from 'lucide-react'
+import AbstractTechBackground from '../components/AbstractTechBackground'
 
 export default function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen">
-      <section className="container-fluid section-padding">
-        <div className="mx-auto max-w-7xl rounded-3xl p-8 bg-gradient-to-br from-orange-50 via-indigo-50 to-emerald-50 border border-gray-200">
+    <div className="min-h-screen relative">
+      <AbstractTechBackground />
+      <section className="container-fluid section-padding relative z-10">
+        <div className="mx-auto max-w-7xl rounded-3xl p-8 bg-white/70 backdrop-blur-md border border-white/60 shadow-primary">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             {/* 左侧：品牌插画占位与主标语 */}
             <div>
