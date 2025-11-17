@@ -9,7 +9,7 @@ export default function BackgroundImageLayer({ imageUrl }: { imageUrl?: string }
         style={{
           backgroundImage: `url(${imageUrl})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          backgroundPosition: 'right center'
         }}
       />
     </div>
