@@ -71,3 +71,10 @@
 .hero-one .fade-bottom{ position:absolute; left:0; right:0; bottom:0; height:120px; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #F5F5DC 60%, #FFFFFF 100%); }
 .hero-one .content{ position:relative; z-index:1; width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-end; }
 @media (max-width:1024px){ .hero-one{ height:50vh } }
+
+/* SVG前景元素覆盖层（不拦截事件） */
+.hero-foreground{ position:absolute; right:2vw; top:6vh; width:50vw; max-width:860px; pointer-events:none; z-index:0; }
+.hero-foreground img{ width:100%; height:auto; display:block; }
+.hero-safe-content .title-wrap{ width:40%; min-width:520px; text-align:right; }
+@media (max-width:1280px){ .hero-safe-content .title-wrap{ width:48%; min-width:480px } }
+@media (max-width:1024px){ .hero-safe-content .title-wrap{ width:60%; min-width:420px } }

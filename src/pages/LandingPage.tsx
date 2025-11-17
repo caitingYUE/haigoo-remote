@@ -7,6 +7,7 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 import '../styles/landing.css'
 import homeBg from '../assets/home_bg.png'
+import homeBgSvg from '../assets/home_bg.svg'
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -35,9 +36,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
+      {/* 新：单背景图 + 前景SVG分层，文字使用安全宽度，避免互相干扰 */}
       <div className="hero-one" style={{ backgroundImage: `url(${homeBg})` }}>
-        <div className="content">
-          <div className="w-full max-w-3xl text-right">
+        <div className="hero-foreground"><img src={homeBgSvg} alt="illustration" /></div>
+        <div className="content hero-safe-content">
+          <div className="title-wrap">
             <h1 className="landing-title">WORK YOUR BRAIN,<br /> LEAVE YOUR BODY TO BE HAPPY</h1>
             <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>
           </div>
