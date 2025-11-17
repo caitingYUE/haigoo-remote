@@ -44,8 +44,8 @@
 }
 
 .landing-search{ display:flex; align-items:center; gap:16px; margin-top:24px; justify-content:center; }
-.landing-search-bar{ display:flex; align-items:center; height:56px; border-radius:28px; background:#FFFFFF; box-shadow:0 4px 12px rgba(0,0,0,0.1); padding:0 20px; width:100%; max-width:640px; }
-.landing-search-input{ flex:1; border:none; outline:none; font-size:16px; color:#1A365D; }
+.landing-search-bar{ display:flex; align-items:center; gap:12px; height:56px; border-radius:28px; background:#FFFFFF; box-shadow:0 6px 16px rgba(15,23,42,0.08); padding:0 20px; width:100%; max-width:640px; border:1px solid #E2E8F0; overflow:hidden; }
+.landing-search-input{ flex:1; border:none; outline:none; font-size:16px; color:#1A365D; padding:0 8px; }
 .landing-explore{ height:56px; min-width:160px; padding:0 24px; border-radius:28px; background: var(--brand-blue); color:#FFFFFF; font-weight:600; display:flex; align-items:center; gap:8px; box-shadow:0 8px 16px rgba(15,23,42,.2); border:none; }
 .landing-search-bar svg{ margin-right:8px; }
 
@@ -81,14 +81,14 @@
 .tag-plus-sm{ padding:4px 12px; background:#F1F5F9; color:#64748B; border-radius:9999px; font-size:14px; }
 
 /* 列表区域背景与头图自然衔接 */
-.list-section{ background: linear-gradient(180deg, var(--brand-sand) 0%, #FFFFFF 20%); }
+.list-section{ background: transparent; }
 .hero-bg{ height:60vh; background-repeat:no-repeat; background-size:cover; background-position:right center; display:flex; align-items:center; }
 .hero-content{ width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-end; }
 .page-extension{ background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #F5F5DC 40%, #FFFFFF 100%); }
 @media (max-width:1024px){ .hero-bg{ height:50vh } }
 
 /* 新版：将插画与渐变分层，避免文字叠在插画上 */
-.hero-gradient{ position:relative; height:60vh; background: linear-gradient(180deg,#4A90E2 0%, #F5F5DC 100%); overflow:hidden; }
+.hero-gradient{ position:relative; height:60vh; background: transparent; overflow:hidden; }
 .hero-layer-left{ position:absolute; left:0; top:6vh; width:42vw; height:48vh; background-repeat:no-repeat; background-size:contain; background-position:left center; pointer-events:none; }
 .hero-layer-right{ position:absolute; right:0; top:12vh; width:46vw; height:46vh; background-repeat:no-repeat; background-size:contain; background-position:right center; pointer-events:none; }
 .hero-safe-content{ position:relative; z-index:1; width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-start; }

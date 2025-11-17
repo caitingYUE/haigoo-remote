@@ -40,7 +40,7 @@ export default function LandingPage() {
   const displayedJobs = useMemo(()=> (activeTab==='全部'? latestJobs : categoryJobs).slice(0, displayLimit), [activeTab, latestJobs, categoryJobs, displayLimit])
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen landing-bg-page">
       {/* 新：渐变背景 + 前景SVG分层，文字使用安全区，避免遮挡 */}
       <div className="hero-gradient">
         <div className="hero-foreground"><img src={homeBgSvg} alt="illustration" /></div>
@@ -57,12 +57,7 @@ export default function LandingPage() {
                 <span>Explore Jobs</span>
               </button>
             </div>
-            <div className="landing-quick-keywords">
-              <button className="chip" onClick={()=>navigate('/jobs?search=React Remote')}>React Remote</button>
-              <button className="chip" onClick={()=>navigate('/jobs?search=Product Manager')}>Product Manager</button>
-              <button className="chip" onClick={()=>navigate('/jobs?search=AI Prompt')}>AI Prompt</button>
-              <button className="chip" onClick={()=>navigate('/jobs?search=Design Systems')}>Design Systems</button>
-            </div>
+            
           </div>
           {/* Feature strip */}
           <div className="feature-strip">
@@ -71,7 +66,7 @@ export default function LandingPage() {
             <div className="feature-item"><div className="icon">🌍</div><div className="text">全球岗位、全行业覆盖</div></div>
           </div>
         </div>
-        <div className="fade-bottom" />
+        
       </div>
 
       <section className="container-fluid section-padding list-section">
