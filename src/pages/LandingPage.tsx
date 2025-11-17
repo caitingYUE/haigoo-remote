@@ -27,7 +27,12 @@ export default function LandingPage() {
     return Array.from(set).sort()
   }, [jobs])
 
-  const dynamicTabs = useMemo(() => ['全部', ...categories], [categories])
+  const dynamicTabs = useMemo(() => {
+    const counts: Record<string, number> = {}
+    ;(jobs || []).forEach(j => { if (j.category) counts[j.category] = (counts[j.category]||0)+1 })
+    const top = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,6)
+    return ['全部', ...top]
+  }, [jobs])
   const latestJobs = useMemo(() => [...(jobs || [])].sort((a,b)=>{
     const ta = new Date(a.postedAt || 0).getTime(); const tb = new Date(b.postedAt || 0).getTime(); return tb - ta
   }), [jobs])
@@ -44,13 +49,19 @@ export default function LandingPage() {
             <h1 className="landing-title">WORK YOUR BRAIN,<br /> LEAVE YOUR BODY TO BE HAPPY</h1>
             <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>
           </div>
-          <div className="landing-search mt-4 justify-end">
+          <div className="landing-search mt-4">
             <div className="landing-search-bar">
               <Search className="w-5 h-5 text-gray-500" />
               <input className="landing-search-input" placeholder="Search for remote jobs..." />
               <button onClick={() => navigate('/jobs')} className="landing-explore">
                 <span>Explore Jobs</span>
               </button>
+            </div>
+            <div className="landing-quick-keywords">
+              <button className="chip" onClick={()=>navigate('/jobs?search=React Remote')}>React Remote</button>
+              <button className="chip" onClick={()=>navigate('/jobs?search=Product Manager')}>Product Manager</button>
+              <button className="chip" onClick={()=>navigate('/jobs?search=AI Prompt')}>AI Prompt</button>
+              <button className="chip" onClick={()=>navigate('/jobs?search=Design Systems')}>Design Systems</button>
             </div>
           </div>
           {/* Feature strip */}
@@ -80,7 +91,7 @@ export default function LandingPage() {
                       const isActive = activeTab === tab
                       const count = tab === '全部' ? (jobs||[]).length : (jobs||[]).filter(j=>j.category===tab).length
                       return (
-                        <button key={tab} onClick={()=>setActiveTab(tab)} className={`text-sm md:text-base font-medium transition-all duration-200 rounded-full px-3 py-1 ${isActive ? 'bg-haigoo-primary/10 text-haigoo-primary' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`} role="tab" aria-selected={isActive}>
+                        <button key={tab} onClick={()=>setActiveTab(tab)} className={`tab-pill ${isActive ? 'active' : ''}`} role="tab" aria-selected={isActive}>
                           {tab}{count ? `（${count}）` : ''}
                         </button>
                       )
