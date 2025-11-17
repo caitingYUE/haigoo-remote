@@ -5,10 +5,7 @@ import JobCard from '../components/JobCard'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
-import AbstractTechBackground from '../components/AbstractTechBackground'
-import HeroIllustration from '../components/HeroIllustration'
 import '../styles/landing.css'
-import BackgroundImageLayer from '../components/BackgroundImageLayer'
 import homeBg from '../assets/home_bg.png'
 
 export default function LandingPage() {
@@ -37,28 +34,28 @@ export default function LandingPage() {
   const displayedJobs = useMemo(()=> (activeTab==='全部'? latestJobs : categoryJobs).slice(0, displayLimit), [activeTab, latestJobs, categoryJobs, displayLimit])
 
   return (
-    <div className="min-h-screen relative">
-      <BackgroundImageLayer imageUrl={homeBg} />
-      <section className="container-fluid section-padding relative z-10">
-        <div className="landing-hero">
-          <div className="flex flex-col items-end">
-            <div className="w-full max-w-3xl text-right">
-              <h1 className="landing-title">WORK YOUR BRAIN,<br /> LEAVE YOUR BODY TO BE HAPPY</h1>
-              <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>
-            </div>
-            <div className="landing-search mt-4 justify-end">
-              <div className="landing-search-bar">
-                <Search className="w-5 h-5 text-gray-500" />
-                <input className="landing-search-input" placeholder="Search for remote jobs..." />
-                <button onClick={() => navigate('/jobs')} className="landing-explore">
-                  <span>Explore Jobs</span>
-                </button>
-              </div>
+    <div className="min-h-screen">
+      <div className="hero-bg" style={{ backgroundImage: `url(${homeBg})` }}>
+        <div className="hero-content">
+          <div className="w-full max-w-3xl text-right">
+            <h1 className="landing-title">WORK YOUR BRAIN,<br /> LEAVE YOUR BODY TO BE HAPPY</h1>
+            <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>
+          </div>
+          <div className="landing-search mt-4 justify-end">
+            <div className="landing-search-bar">
+              <Search className="w-5 h-5 text-gray-500" />
+              <input className="landing-search-input" placeholder="Search for remote jobs..." />
+              <button onClick={() => navigate('/jobs')} className="landing-explore">
+                <span>Explore Jobs</span>
+              </button>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* 岗位列表合入首页 */}
-          <div className="mt-10">
+      <section className="container-fluid section-padding page-extension">
+        <div className="landing-hero">
+          <div className="mt-4 w-full">
             {loading ? (
               <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div></div>
             ) : error ? (
