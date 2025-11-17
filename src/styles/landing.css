@@ -55,3 +55,14 @@
 .hero-content{ width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-end; }
 .page-extension{ background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #F5F5DC 40%, #FFFFFF 100%); }
 @media (max-width:1024px){ .hero-bg{ height:50vh } }
+
+/* 新版：将插画与渐变分层，避免文字叠在插画上 */
+.hero-gradient{ position:relative; height:60vh; background: linear-gradient(180deg,#4A90E2 0%, #F5F5DC 100%); overflow:hidden; }
+.hero-layer-left{ position:absolute; left:0; top:6vh; width:42vw; height:48vh; background-repeat:no-repeat; background-size:contain; background-position:left center; pointer-events:none; }
+.hero-layer-right{ position:absolute; right:0; top:12vh; width:46vw; height:46vh; background-repeat:no-repeat; background-size:contain; background-position:right center; pointer-events:none; }
+.hero-safe-content{ position:relative; z-index:1; width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-end; }
+@media (max-width:1024px){
+  .hero-gradient{ height:50vh }
+  .hero-layer-left{ top:4vh; width:48vw; height:40vh }
+  .hero-layer-right{ top:10vh; width:52vw; height:40vh }
+}
