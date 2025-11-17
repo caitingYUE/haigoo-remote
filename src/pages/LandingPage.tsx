@@ -88,7 +88,7 @@ export default function LandingPage() {
         
       </div>
 
-      <section className="container-fluid section-padding list-section list-tight">
+      <section className="container-fluid section-padding-sm list-section">
         <div className="landing-hero">
           <div className="mt-4 w-full">
             {loading ? (

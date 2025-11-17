@@ -128,17 +128,17 @@
 /* 搜索区与亮点条间距收敛 */
 .hero-safe-content .landing-search{ margin-top:28px; }
 .feature-strip{ margin-top:16px; }
-.hero-safe-content .landing-search{ width:42%; min-width:520px; justify-content:flex-start; }
-@media (max-width:1280px){ .hero-safe-content .landing-search{ width:48%; min-width:480px } }
-@media (max-width:1024px){ .hero-safe-content .landing-search{ width:60%; min-width:420px } }
+.hero-safe-content .landing-search{ width:100%; justify-content:center; }
+@media (max-width:1280px){ .hero-safe-content .landing-search{ width:100% } }
+@media (max-width:1024px){ .hero-safe-content .landing-search{ width:100% } }
 
 /* 亮点条：极简三短句，无符号 */
 .feature-strip{ margin-top:16px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
 .feature-item{ color:var(--brand-navy); font-size:14px; font-weight:500; }
-.filter-fig2{ display:flex; align-items:center; gap:12px; width:100%; max-width:840px; height:56px; border-radius:28px; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 6px 16px rgba(15,23,42,0.08); padding:0 16px; }
+.filter-fig2{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center; width:100%; max-width:1060px; min-height:56px; border-radius:28px; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 6px 16px rgba(15,23,42,0.08); padding:8px 16px; }
 .filter-label{ color:#1A365D; font-weight:600; margin-right:8px; }
-.filter-input{ flex:1; min-width:120px; border:none; outline:none; font-size:16px; color:#1A365D; background:transparent; }
-.filter-select{ height:40px; border:none; outline:none; background:transparent; color:#1A365D; }
+.filter-input{ flex:1; min-width:220px; border:none; outline:none; font-size:16px; color:#1A365D; background:transparent; }
+.filter-select{ height:40px; min-width:180px; border:none; outline:none; background:transparent; color:#1A365D; }
 .filter-btn{ height:40px; padding:0 20px; border-radius:20px; background:var(--brand-blue); color:#FFFFFF; font-weight:600; border:none; }
 .filter-clear{ height:40px; padding:0 8px; background:transparent; color:#64748B; font-weight:500; }
 
