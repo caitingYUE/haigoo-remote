@@ -25,13 +25,40 @@ export default function LandingPage() {
 
   // categories 仅用于 Top6 逻辑，后续可复用
 
+  // 地点别名与分词函数：将“中国, 美国 / Europe | Remote”等拆分为独立关键词
+  const normalizeLocation = (raw: string) => {
+    const s = (raw || '').trim().toLowerCase()
+    const map: Record<string,string> = {
+      'china': '中国', 'mainland china': '中国', 'cn': '中国', '中国': '中国',
+      'usa': '美国', 'united states': '美国', 'u.s.': '美国', 'us': '美国', 'america': '美国', '美国': '美国',
+      'remote': '远程', 'anywhere': '远程', 'worldwide': '全球', 'world wide': '全球', 'global': '全球', 'remote-friendly': '远程', '远程': '远程',
+      'europe': '欧洲', 'eu': '欧洲', '欧洲': '欧洲',
+      'uk': '英国', 'united kingdom': '英国', 'britain': '英国', 'england': '英国', '英国': '英国',
+      'canada': '加拿大', 'ca': '加拿大', '加拿大': '加拿大'
+    }
+    return map[s] || raw.trim()
+  }
+
+  const tokenizeLocations = (location: string): string[] => {
+    if (!location) return []
+    // 按常见分隔符拆分
+    const parts = location
+      .split(/[,/|;、，·•\-–—\s]+/)
+      .map(p => normalizeLocation(p))
+      .filter(Boolean)
+    // 去重
+    const set = new Set<string>()
+    parts.forEach(p => set.add(p))
+    return Array.from(set)
+  }
+
   // 聚合地点选项（去重、按出现次数排序，最多50项）
   const locationOptions = useMemo(() => {
     const counter = new Map<string, number>()
     ;(jobs || []).forEach(j => {
-      const raw = (j.location || '').trim()
-      if (!raw) return
-      counter.set(raw, (counter.get(raw) || 0) + 1)
+      tokenizeLocations(j.location || '').forEach(loc => {
+        counter.set(loc, (counter.get(loc) || 0) + 1)
+      })
     })
     return Array.from(counter.entries())
       .sort((a, b) => b[1] - a[1])
@@ -53,14 +80,15 @@ export default function LandingPage() {
   // 在首页就地搜索，不跳转页面
   const searchedJobs = useMemo(() => {
     const t = titleQuery.trim().toLowerCase()
-    const l = locationQuery.trim().toLowerCase()
+    const lNorm = normalizeLocation(locationQuery.trim().toLowerCase())
     const type = typeQuery.trim()
     return (activeTab==='全部' ? latestJobs : categoryJobs).filter(job => {
       const matchTitle = t === '' ||
         job.title?.toLowerCase().includes(t) ||
         (job.company || '').toLowerCase().includes(t) ||
         (job.skills || []).some(s => s.toLowerCase().includes(t))
-      const matchLoc = l === '' || (job.location || '').toLowerCase().includes(l)
+      const tokens = tokenizeLocations(job.location || '')
+      const matchLoc = lNorm === '' || tokens.some(tok => tok === lNorm || tok.toLowerCase().includes(lNorm.toLowerCase()))
       const matchType = type === '' || job.type === type
       return matchTitle && matchLoc && matchType
     })
