@@ -1,12 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Zap, Bot, Globe } from 'lucide-react'
+// 搜索图标暂不使用，已按图2样式重构
 import JobCard from '../components/JobCard'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 import '../styles/landing.css'
-import homeBg from '../assets/home_bg.png'
 import homeBgSvg from '../assets/home_bg.svg'
 
 export default function LandingPage() {
@@ -21,11 +20,7 @@ export default function LandingPage() {
     namespace: 'landing'
   })
 
-  const categories = useMemo(() => {
-    const set = new Set<string>()
-    ;(jobs || []).forEach(j => { if (j.category) set.add(j.category) })
-    return Array.from(set).sort()
-  }, [jobs])
+  // categories 仅用于 Top6 逻辑，后续可复用
 
   const dynamicTabs = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -50,29 +45,19 @@ export default function LandingPage() {
             <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>
           </div>
           <div className="landing-search mt-4">
-            <div className="landing-search-bar">
-              <Search className="w-5 h-5 text-gray-500" />
-              <input className="landing-search-input" placeholder="Search for remote jobs..." />
-              <button onClick={() => navigate('/jobs')} className="landing-explore">
-                <span>Explore Jobs</span>
+            <div className="search-fig2">
+              <input className="search-fig2-input" placeholder="Search for remote jobs..." />
+              <button onClick={() => navigate('/jobs')} className="search-fig2-btn">
+                Search
               </button>
             </div>
             
           </div>
           {/* Feature strip */}
           <div className="feature-strip">
-            <div className="feature-item">
-              <div className="icon"><Zap className="w-4 h-4" /></div>
-              <div className="text">日更数千个远程岗位</div>
-            </div>
-            <div className="feature-item">
-              <div className="icon"><Bot className="w-4 h-4" /></div>
-              <div className="text">AI为你求职保驾护航</div>
-            </div>
-            <div className="feature-item">
-              <div className="icon"><Globe className="w-4 h-4" /></div>
-              <div className="text">全球岗位、全行业覆盖</div>
-            </div>
+            <div className="feature-item">日更数千个远程岗位</div>
+            <div className="feature-item">AI为你求职保驾护航</div>
+            <div className="feature-item">全球岗位、全行业覆盖</div>
           </div>
         </div>
         
