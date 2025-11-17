@@ -66,3 +66,8 @@
   .hero-layer-left{ top:4vh; width:48vw; height:40vh }
   .hero-layer-right{ top:10vh; width:52vw; height:40vh }
 }
+
+.hero-one{ position:relative; height:60vh; background-repeat:no-repeat; background-size:cover; background-position:right center; }
+.hero-one .fade-bottom{ position:absolute; left:0; right:0; bottom:0; height:120px; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #F5F5DC 60%, #FFFFFF 100%); }
+.hero-one .content{ position:relative; z-index:1; width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-end; }
+@media (max-width:1024px){ .hero-one{ height:50vh } }

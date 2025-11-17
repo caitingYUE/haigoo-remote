@@ -35,11 +35,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      {/* 上半部分：渐变背景 + 插画分层，避免文字被遮挡 */}
-      <div className="hero-gradient">
-        <div className="hero-layer-left" style={{ backgroundImage: `url(${homeBg})` }} />
-        <div className="hero-layer-right" style={{ backgroundImage: `url(${homeBg})` }} />
-        <div className="hero-safe-content">
+      <div className="hero-one" style={{ backgroundImage: `url(${homeBg})` }}>
+        <div className="content">
           <div className="w-full max-w-3xl text-right">
             <h1 className="landing-title">WORK YOUR BRAIN,<br /> LEAVE YOUR BODY TO BE HAPPY</h1>
             <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>
@@ -54,6 +51,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+        <div className="fade-bottom" />
       </div>
 
       <section className="container-fluid section-padding page-extension">
