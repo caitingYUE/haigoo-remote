@@ -27,6 +27,9 @@
   background: linear-gradient(180deg,var(--landing-bg-start) 0%, var(--landing-bg-end) 100%);
 }
 
+/* 全页统一渐变（应用于首页外层容器） */
+.landing-bg-page{ background: linear-gradient(180deg, var(--landing-bg-start) 0%, var(--landing-bg-end) 60%, #FFFFFF 100%); }
+
 .landing-illustration{ display:none; }
 
 .landing-title{
@@ -44,9 +47,9 @@
 }
 
 .landing-search{ display:flex; align-items:center; gap:16px; margin-top:24px; justify-content:center; }
-.landing-search-bar{ display:flex; align-items:center; gap:12px; height:56px; border-radius:28px; background:#FFFFFF; box-shadow:0 6px 16px rgba(15,23,42,0.08); padding:0 20px; width:100%; max-width:640px; border:1px solid #E2E8F0; overflow:hidden; }
+.landing-search-bar{ display:flex; align-items:center; gap:0; height:56px; border-radius:28px; background:#FFFFFF; box-shadow:0 6px 16px rgba(15,23,42,0.08); padding:0 20px; width:100%; max-width:640px; border:1px solid #E2E8F0; overflow:hidden; }
 .landing-search-input{ flex:1; border:none; outline:none; font-size:16px; color:#1A365D; padding:0 8px; }
-.landing-explore{ height:56px; min-width:160px; padding:0 24px; border-radius:28px; background: var(--brand-blue); color:#FFFFFF; font-weight:600; display:flex; align-items:center; gap:8px; box-shadow:0 8px 16px rgba(15,23,42,.2); border:none; }
+.landing-explore{ height:56px; min-width:160px; padding:0 24px; border-radius:28px; background: var(--brand-blue); color:#FFFFFF; font-weight:600; display:flex; align-items:center; gap:8px; box-shadow:0 8px 16px rgba(15,23,42,.2); border:none; border-left:1px solid #E2E8F0; }
 .landing-search-bar svg{ margin-right:8px; }
 
 .landing-quick-keywords{ margin-top:12px; display:flex; align-items:center; gap:10px; justify-content:flex-start; flex-wrap:wrap; }

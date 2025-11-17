@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search } from 'lucide-react'
+import { Search, Zap, Bot, Globe } from 'lucide-react'
 import JobCard from '../components/JobCard'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -61,9 +61,18 @@ export default function LandingPage() {
           </div>
           {/* Feature strip */}
           <div className="feature-strip">
-            <div className="feature-item"><div className="icon">⚡</div><div className="text">日更数千个远程岗位</div></div>
-            <div className="feature-item"><div className="icon">🤖</div><div className="text">AI为你求职保驾护航</div></div>
-            <div className="feature-item"><div className="icon">🌍</div><div className="text">全球岗位、全行业覆盖</div></div>
+            <div className="feature-item">
+              <div className="icon"><Zap className="w-4 h-4" /></div>
+              <div className="text">日更数千个远程岗位</div>
+            </div>
+            <div className="feature-item">
+              <div className="icon"><Bot className="w-4 h-4" /></div>
+              <div className="text">AI为你求职保驾护航</div>
+            </div>
+            <div className="feature-item">
+              <div className="icon"><Globe className="w-4 h-4" /></div>
+              <div className="text">全球岗位、全行业覆盖</div>
+            </div>
           </div>
         </div>
         
