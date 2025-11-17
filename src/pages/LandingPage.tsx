@@ -54,10 +54,8 @@ export default function LandingPage() {
 
   const displayedJobs = useMemo(()=> searchedJobs.slice(0, displayLimit), [searchedJobs, displayLimit])
 
-  const applySearch = () => {
-    // 就地过滤；重置显示数量
-    setDisplayLimit(24)
-  }
+  // 即时筛选，无需按钮
+  // 输入变化时已通过 searchedJobs 生效
 
   const clearAll = () => {
     setTitleQuery('')
@@ -92,8 +90,8 @@ export default function LandingPage() {
           <div className="mb-6">
             <div className="filter-fig2" role="search" aria-label="职位筛选">
               <span className="filter-label">筛选</span>
-              <input className="filter-input" placeholder="岗位名称" value={titleQuery} onChange={(e)=>setTitleQuery(e.target.value)} onKeyDown={(e)=>{ if(e.key==='Enter') applySearch() }} />
-              <input className="filter-input" placeholder="地点" value={locationQuery} onChange={(e)=>setLocationQuery(e.target.value)} onKeyDown={(e)=>{ if(e.key==='Enter') applySearch() }} />
+              <input className="filter-input" placeholder="岗位名称" value={titleQuery} onChange={(e)=>setTitleQuery(e.target.value)} />
+              <input className="filter-input" placeholder="地点" value={locationQuery} onChange={(e)=>setLocationQuery(e.target.value)} />
               <select className="filter-select" value={typeQuery} onChange={(e)=>setTypeQuery(e.target.value)}>
                 <option value="">全部类型</option>
                 <option value="full-time">全职</option>
@@ -101,7 +99,6 @@ export default function LandingPage() {
                 <option value="contract">合同工</option>
                 <option value="remote">远程</option>
               </select>
-              <button onClick={applySearch} className="filter-btn">搜索</button>
               <button onClick={clearAll} className="filter-clear">清除</button>
             </div>
           </div>
