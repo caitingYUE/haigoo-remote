@@ -27,11 +27,11 @@ export const SingleLineTags: React.FC<SingleLineTagsProps> = ({ tags, size = 'sm
 
   // 样式常量（与现有卡片风格保持一致）
   const badgeBase = size === 'xs'
-    ? 'px-2 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-md text-xs font-medium whitespace-nowrap flex-shrink-0'
-    : 'px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0';
+    ? 'tag-badge-xs'
+    : 'tag-badge-sm';
   const plusBase = size === 'xs'
-    ? 'px-2 py-1 bg-gray-100 text-gray-500 rounded-md text-xs whitespace-nowrap flex-shrink-0'
-    : 'px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm whitespace-nowrap flex-shrink-0';
+    ? 'tag-plus-xs'
+    : 'tag-plus-sm';
   const GAP = 8; // 与 tailwind gap-2 对齐
 
   useLayoutEffect(() => {

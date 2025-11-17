@@ -120,7 +120,7 @@ export default function Header() {
             </Link>
             {/* Brand Slogan */}
             <div className="ml-4">
-              <nav className="ml-6 hidden md:flex items-center gap-6 text-slate-700">
+              <nav className="ml-6 hidden md:flex items-center gap-6 header-nav">
                 <a href="/jobs" className="hover:text-black">Job Search</a>
                 <a href="/copilot" className="hover:text-black">AI Copilot</a>
                 <a href="/community" className="hover:text-black">Community</a>

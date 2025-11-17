@@ -36,12 +36,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
 
   const getCompanyLogo = (company: string) => {
     const colors = [
-      'bg-blue-500',
-      'bg-green-500', 
-      'bg-purple-500',
-      'bg-orange-500',
-      'bg-pink-500',
-      'bg-indigo-500'
+      'bg-[#3182CE]', // brand blue
+      'bg-[#0EA5A3]', // brand teal
+      'bg-[#F59F0B]', // brand orange
+      'bg-[#1A365D]'  // brand navy
     ];
     const colorIndex = company.length % colors.length;
     return colors[colorIndex];
@@ -161,7 +159,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
           <div className="flex-1 min-w-0">
             <h2 
               id={`job-${job.id}-title`}
-              className="font-semibold text-gray-900 text-base md:text-lg group-hover:text-haigoo-primary transition-colors mb-1 line-clamp-2"
+              className="font-semibold text-brand-navy text-base md:text-lg hover:text-brand-blue transition-colors mb-1 line-clamp-2"
               title={job.translations?.title || job.title}
             >
               {job.translations?.title || job.title}

@@ -5,6 +5,14 @@
   --landing-accent-orange:#F59F0B;
   --landing-navy:#0F172A;
   --landing-card-stroke:#1F5E55; /* 深青描边 */
+  --brand-blue:#3182CE;
+  --brand-navy:#1A365D;
+  --brand-teal:#0EA5A3;
+  --brand-orange:#F59F0B;
+  --brand-sand:#F5F5DC;
+  --brand-blue-10:#EAF3FF;
+  --brand-teal-10:#D9F6F3;
+  --brand-orange-10:#FFEAD1;
 }
 
 .landing-hero{
@@ -26,7 +34,7 @@
   line-height: 1.2;
   font-weight: 700;
   letter-spacing: .2px;
-  color:#1A365D;
+  color: var(--brand-navy);
   margin-top: 60px;
 }
 
@@ -38,7 +46,7 @@
 .landing-search{ display:flex; align-items:center; gap:16px; margin-top:24px; justify-content:center; }
 .landing-search-bar{ display:flex; align-items:center; height:56px; border-radius:28px; background:#FFFFFF; box-shadow:0 4px 12px rgba(0,0,0,0.1); padding:0 20px; width:400px; }
 .landing-search-input{ flex:1; border:none; outline:none; font-size:16px; color:#1A365D; }
-.landing-explore{ height:56px; min-width:160px; padding:0 24px; border-radius:28px; background:#3182CE; color:#FFFFFF; font-weight:600; display:flex; align-items:center; gap:8px; box-shadow:0 8px 16px rgba(15,23,42,.2); border:none; }
+.landing-explore{ height:56px; min-width:160px; padding:0 24px; border-radius:28px; background: var(--brand-blue); color:#FFFFFF; font-weight:600; display:flex; align-items:center; gap:8px; box-shadow:0 8px 16px rgba(15,23,42,.2); border:none; }
 
 .landing-pills{ margin-top:24px; }
 .landing-pill{ display:inline-flex; align-items:center; gap:8px; height:56px; padding:0 24px; border-radius:28px; background:#FFFFFF; border:2px solid #3182CE; color:#3182CE; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
@@ -51,6 +59,24 @@
 .landing-icon{ height:40px; width:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; }
 .landing-icon.orange{ background:#FFEAD1; color:var(--landing-accent-orange); }
 .landing-icon.teal{ background:#D9F6F3; color:var(--landing-accent-teal); }
+
+/* Header 背景与色彩衔接 */
+.header-glass{ background: rgba(255,255,255,0.85); backdrop-filter: saturate(160%) blur(8px); border-bottom:1px solid rgba(226,232,240,0.6); }
+.header-nav a{ color:#4A5568; font-weight:500; }
+.header-nav a:hover{ color: var(--brand-blue); }
+
+/* Tabs 强调色与和谐衔接 */
+.tab-pill{ color:#64748B; background:transparent; border-radius:9999px; padding:4px 12px; }
+.tab-pill.active{ color: var(--brand-blue); background: var(--brand-blue-10); }
+
+/* Tags 统一品牌色 */
+.tag-badge-xs{ padding:4px 8px; background: var(--brand-blue-10); color: var(--brand-blue); border-radius:6px; font-size:12px; font-weight:500; }
+.tag-badge-sm{ padding:4px 12px; background: var(--brand-blue-10); color: var(--brand-blue); border-radius:9999px; font-size:14px; font-weight:500; }
+.tag-plus-xs{ padding:4px 8px; background:#F1F5F9; color:#64748B; border-radius:6px; font-size:12px; }
+.tag-plus-sm{ padding:4px 12px; background:#F1F5F9; color:#64748B; border-radius:9999px; font-size:14px; }
+
+/* 列表区域背景与头图自然衔接 */
+.list-section{ background: linear-gradient(180deg, var(--brand-sand) 0%, #FFFFFF 40%); }
 .hero-bg{ height:60vh; background-repeat:no-repeat; background-size:cover; background-position:right center; display:flex; align-items:center; }
 .hero-content{ width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-end; }
 .page-extension{ background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #F5F5DC 40%, #FFFFFF 100%); }
