@@ -35,22 +35,36 @@ export default function LandingPage() {
     const ta = new Date(a.postedAt || 0).getTime(); const tb = new Date(b.postedAt || 0).getTime(); return tb - ta
   }), [jobs])
   const categoryJobs = useMemo(() => activeTab==='全部' ? (jobs||[]) : (jobs||[]).filter(j=>j.category===activeTab), [jobs, activeTab])
-  const displayedJobs = useMemo(()=> (activeTab==='全部'? latestJobs : categoryJobs).slice(0, displayLimit), [activeTab, latestJobs, categoryJobs, displayLimit])
+
+  // 在首页就地搜索，不跳转页面
+  const searchedJobs = useMemo(() => {
+    const t = titleQuery.trim().toLowerCase()
+    const l = locationQuery.trim().toLowerCase()
+    const type = typeQuery.trim()
+    return (activeTab==='全部' ? latestJobs : categoryJobs).filter(job => {
+      const matchTitle = t === '' ||
+        job.title?.toLowerCase().includes(t) ||
+        (job.company || '').toLowerCase().includes(t) ||
+        (job.skills || []).some(s => s.toLowerCase().includes(t))
+      const matchLoc = l === '' || (job.location || '').toLowerCase().includes(l)
+      const matchType = type === '' || job.type === type
+      return matchTitle && matchLoc && matchType
+    })
+  }, [latestJobs, categoryJobs, activeTab, titleQuery, locationQuery, typeQuery])
+
+  const displayedJobs = useMemo(()=> searchedJobs.slice(0, displayLimit), [searchedJobs, displayLimit])
 
   const applySearch = () => {
-    const params = new URLSearchParams()
-    if (titleQuery) params.set('search', titleQuery)
-    if (locationQuery) params.set('location', locationQuery)
-    if (typeQuery) params.set('type', typeQuery)
-    const qs = params.toString()
-    navigate(qs ? `/jobs?${qs}` : '/jobs')
+    // 就地过滤；重置显示数量
+    setDisplayLimit(24)
   }
 
   const clearAll = () => {
     setTitleQuery('')
     setLocationQuery('')
     setTypeQuery('')
-    navigate('/jobs')
+    setActiveTab('全部')
+    setDisplayLimit(24)
   }
 
   return (
@@ -78,8 +92,8 @@ export default function LandingPage() {
           <div className="mb-6">
             <div className="filter-fig2" role="search" aria-label="职位筛选">
               <span className="filter-label">筛选</span>
-              <input className="filter-input" placeholder="岗位名称" value={titleQuery} onChange={(e)=>setTitleQuery(e.target.value)} />
-              <input className="filter-input" placeholder="地点" value={locationQuery} onChange={(e)=>setLocationQuery(e.target.value)} />
+              <input className="filter-input" placeholder="岗位名称" value={titleQuery} onChange={(e)=>setTitleQuery(e.target.value)} onKeyDown={(e)=>{ if(e.key==='Enter') applySearch() }} />
+              <input className="filter-input" placeholder="地点" value={locationQuery} onChange={(e)=>setLocationQuery(e.target.value)} onKeyDown={(e)=>{ if(e.key==='Enter') applySearch() }} />
               <select className="filter-select" value={typeQuery} onChange={(e)=>setTypeQuery(e.target.value)}>
                 <option value="">全部类型</option>
                 <option value="full-time">全职</option>

@@ -103,7 +103,7 @@
 @media (max-width:1024px){ .hero-bg{ height:50vh } }
 
 /* 新版：将插画与渐变分层，避免文字叠在插画上 */
-.hero-gradient{ position:relative; min-height:60vh; background: transparent; overflow:hidden; }
+.hero-gradient{ position:relative; min-height:48vh; background: transparent; overflow:hidden; }
 .hero-layer-left{ position:absolute; left:0; top:6vh; width:42vw; height:48vh; background-repeat:no-repeat; background-size:contain; background-position:left center; pointer-events:none; }
 .hero-layer-right{ position:absolute; right:0; top:12vh; width:46vw; height:46vh; background-repeat:no-repeat; background-size:contain; background-position:right center; pointer-events:none; }
 .hero-safe-content{ position:relative; z-index:1; width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-start; }
@@ -119,9 +119,9 @@
 @media (max-width:1024px){ .hero-one{ height:50vh } }
 
 /* SVG前景元素覆盖层（不拦截事件） */
-.hero-foreground{ position:absolute; right:2vw; bottom:3vh; width:50vw; max-width:860px; pointer-events:none; z-index:0; }
+.hero-foreground{ position:absolute; right:2vw; bottom:0; width:44vw; max-width:780px; pointer-events:none; z-index:0; }
 .hero-foreground img{ width:100%; height:auto; display:block; }
-.hero-safe-content .title-wrap{ width:48%; min-width:520px; text-align:left; }
+.hero-safe-content .title-wrap{ width:44%; min-width:480px; text-align:left; }
 @media (max-width:1280px){ .hero-safe-content .title-wrap{ width:48%; min-width:480px } }
 @media (max-width:1024px){ .hero-safe-content .title-wrap{ width:60%; min-width:420px } }
 
@@ -135,7 +135,7 @@
 /* 亮点条：极简三短句，无符号 */
 .feature-strip{ margin-top:16px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
 .feature-item{ color:var(--brand-navy); font-size:14px; font-weight:500; }
-.filter-fig2{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:center; width:100%; max-width:1080px; min-height:56px; border-radius:28px; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 10px 24px rgba(49,130,206,0.18); padding:10px 18px; }
+.filter-fig2{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:flex-start; width:100%; max-width:100%; min-height:56px; border-radius:28px; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 10px 24px rgba(49,130,206,0.18); padding:10px 18px; box-sizing:border-box; }
 .filter-label{ color:#1A365D; font-weight:600; margin-right:8px; }
 .filter-input{ flex:1; min-width:240px; border:none; outline:none; font-size:16px; color:#1A365D; background:transparent; padding:6px 8px; }
 .filter-select{ height:40px; min-width:200px; border:none; outline:none; background:transparent; color:#1A365D; }
