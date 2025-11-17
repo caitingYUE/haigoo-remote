@@ -15,6 +15,7 @@ export default function LandingPage() {
       <BackgroundImageLayer imageUrl={homeBg} />
       <section className="container-fluid section-padding relative z-10">
         <div className="landing-hero">
+          <div className="landing-shield" />
           <div className="grid grid-cols-1 gap-8">
             <h1 className="landing-title">
               WORK YOUR BRAIN,
@@ -24,11 +25,12 @@ export default function LandingPage() {
 
             {/* 搜索与功能入口 */}
             <div className="space-y-4">
-              <div className="landing-search">
-                <div className="landing-search-bar">
-                  <Search className="w-5 h-5 text-gray-500" />
-                  <input className="landing-search-input" placeholder="Search for remote jobs..." />
-                  <button onClick={() => navigate('/jobs')} className="landing-explore">
+              <div className="landing-search" role="search">
+                <label className="sr-only" htmlFor="landing-search-input">Search for remote jobs</label>
+                <div className="landing-search-bar" aria-label="Search for remote jobs">
+                  <Search className="w-5 h-5 text-gray-500" aria-hidden />
+                  <input id="landing-search-input" className="landing-search-input" placeholder="Search for remote jobs..." />
+                  <button onClick={() => navigate('/jobs')} className="landing-explore" aria-label="Explore jobs">
                     <span>Explore Jobs</span>
                   </button>
                 </div>
@@ -39,7 +41,7 @@ export default function LandingPage() {
                 </button>
               </div>
               <div className="landing-features">
-                <div className="landing-card">
+                <div className="landing-card" role="link" tabIndex={0} onClick={() => navigate('/jobs')} onKeyDown={(e)=>{ if(e.key==='Enter') navigate('/jobs') }} aria-label="Global opportunities">
                   <div className="flex items-center gap-3">
                     <span className="landing-icon orange"><Rocket className="w-5 h-5" /></span>
                     <div>
@@ -48,7 +50,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                <div className="landing-card">
+                <div className="landing-card" role="link" tabIndex={0} onClick={() => navigate('/copilot')} onKeyDown={(e)=>{ if(e.key==='Enter') navigate('/copilot') }} aria-label="Smart career path">
                   <div className="flex items-center gap-3">
                     <span className="landing-icon teal"><Bot className="w-5 h-5" /></span>
                     <div>
