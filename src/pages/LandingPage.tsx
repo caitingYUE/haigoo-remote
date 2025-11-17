@@ -67,8 +67,8 @@ export default function LandingPage() {
         <div className="landing-hero">
           <div className="mt-4 w-full">
             {loading ? (
-              <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div></div>
-            ) : error ? (
+              <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3182CE]"></div></div>
+              ) : error ? (
               <div className="text-center py-12 text-red-600">{String(error)}</div>
             ) : displayedJobs.length === 0 ? (
               <div className="text-center py-16 text-gray-600">暂无匹配的职位</div>

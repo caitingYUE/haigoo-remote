@@ -129,7 +129,7 @@ export default function Header() {
           {/* Right side actions */}
           <div className="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
             {/* 未登录：显示登录/注册按钮 */}
-            {!isAuthenticated && (
+              {!isAuthenticated && (
               <>
                 <Link
                   to="/login"
@@ -144,7 +144,7 @@ export default function Header() {
                   注册
                 </Link>
               </>
-            )}
+              )}
 
             {/* 已登录：显示通知和用户菜单 */}
             {isAuthenticated && (
@@ -360,7 +360,7 @@ export default function Header() {
                   </Link>
                   <Link
                     to="/register"
-                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all"
+                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-[#3182CE] rounded-lg hover:bg-[#256bb0] transition-all"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     注册

@@ -340,7 +340,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 {/* 公司Logo */}
                 <div className="flex-shrink-0">
                   <div 
-                    className="w-16 h-16 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-haigoo-primary/20"
+                    className="w-16 h-16 bg-gradient-to-br from-[#3182CE] via-[#256bb0] to-[#1A365D] rounded-2xl flex items-center justify-center shadow-lg shadow-[#3182CE]/20"
                     role="img"
                     aria-label={`${job.company || '未知公司'} 公司标志`}
                   >
@@ -372,7 +372,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                             href={job.sourceUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-haigoo-primary dark:text-purple-400 hover:text-haigoo-primary/80 dark:hover:text-purple-300 underline decoration-1 underline-offset-2 transition-colors"
+                            className="text-sm text-haigoo-primary dark:text-[#3182CE] hover:text-haigoo-primary/80 dark:hover:text-[#256bb0] underline decoration-1 underline-offset-2 transition-colors"
                             title={'查看原始职位信息'}
                           >
                             {job.source || new URL(job.sourceUrl).hostname}
@@ -433,9 +433,9 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}
                   onKeyDown={(e) => handleKeyDown(e, () => setActiveTab(tab.key as any))}
-                  className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 ${
+                  className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 ${
                     activeTab === tab.key 
-                      ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm border border-gray-200 dark:border-gray-600' 
+                      ? 'bg-white dark:bg-gray-700 text-[#3182CE] dark:text-[#3182CE] shadow-sm border border-gray-200 dark:border-gray-600' 
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                   role="tab"
@@ -581,7 +581,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                       >
                         <div className="flex items-center gap-4">
                           <div 
-                            className="w-12 h-12 bg-gradient-to-br from-haigoo-primary via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-haigoo-primary/25 group-hover:shadow-haigoo-primary/40 transition-all duration-300"
+                            className="w-12 h-12 bg-gradient-to-br from-[#3182CE] via-[#256bb0] to-[#1A365D] rounded-xl flex items-center justify-center shadow-lg shadow-[#3182CE]/25 group-hover:shadow-[#3182CE]/40 transition-all duration-300"
                             role="img"
                             aria-hidden="true"
                           >
@@ -590,7 +590,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                             </span>
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-haigoo-primary dark:group-hover:text-purple-400 transition-colors">
+                            <h4 className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#3182CE] dark:group-hover:text-[#3182CE] transition-colors">
                               {job.title} {index + 1}
                             </h4>
                             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
@@ -599,7 +599,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                           </div>
                           <div className="text-right">
                             <div 
-                              className="text-sm font-medium text-haigoo-primary dark:text-purple-400"
+                              className="text-sm font-medium text-[#3182CE] dark:text-[#3182CE]"
                               aria-label={`匹配度 ${85 + index * 2} 百分比`}
                             >
                               {85 + index * 2}% 匹配
