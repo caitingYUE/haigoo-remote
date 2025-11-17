@@ -103,7 +103,7 @@
 @media (max-width:1024px){ .hero-bg{ height:50vh } }
 
 /* 新版：将插画与渐变分层，避免文字叠在插画上 */
-.hero-gradient{ position:relative; height:60vh; background: transparent; overflow:hidden; }
+.hero-gradient{ position:relative; height:52vh; background: transparent; overflow:hidden; }
 .hero-layer-left{ position:absolute; left:0; top:6vh; width:42vw; height:48vh; background-repeat:no-repeat; background-size:contain; background-position:left center; pointer-events:none; }
 .hero-layer-right{ position:absolute; right:0; top:12vh; width:46vw; height:46vh; background-repeat:no-repeat; background-size:contain; background-position:right center; pointer-events:none; }
 .hero-safe-content{ position:relative; z-index:1; width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-start; }
@@ -126,7 +126,7 @@
 @media (max-width:1024px){ .hero-safe-content .title-wrap{ width:60%; min-width:420px } }
 
 /* 搜索区与亮点条间距收敛 */
-.hero-safe-content .landing-search{ margin-top:20px; }
+.hero-safe-content .landing-search{ margin-top:28px; }
 .feature-strip{ margin-top:16px; }
 .hero-safe-content .landing-search{ width:42%; min-width:520px; justify-content:flex-start; }
 @media (max-width:1280px){ .hero-safe-content .landing-search{ width:48%; min-width:480px } }
@@ -135,3 +135,11 @@
 /* 亮点条：极简三短句，无符号 */
 .feature-strip{ margin-top:16px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
 .feature-item{ color:var(--brand-navy); font-size:14px; font-weight:500; }
+.filter-fig2{ display:flex; align-items:center; gap:12px; width:100%; max-width:840px; height:56px; border-radius:28px; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 6px 16px rgba(15,23,42,0.08); padding:0 16px; }
+.filter-label{ color:#1A365D; font-weight:600; margin-right:8px; }
+.filter-input{ flex:1; min-width:120px; border:none; outline:none; font-size:16px; color:#1A365D; background:transparent; }
+.filter-select{ height:40px; border:none; outline:none; background:transparent; color:#1A365D; }
+.filter-btn{ height:40px; padding:0 20px; border-radius:20px; background:var(--brand-blue); color:#FFFFFF; font-weight:600; border:none; }
+.filter-clear{ height:40px; padding:0 8px; background:transparent; color:#64748B; font-weight:500; }
+
+.list-tight{ margin-top:-12px; }

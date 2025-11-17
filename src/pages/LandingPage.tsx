@@ -12,6 +12,9 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<string>('全部')
   const [displayLimit, setDisplayLimit] = useState<number>(24)
+  const [titleQuery, setTitleQuery] = useState<string>('')
+  const [locationQuery, setLocationQuery] = useState<string>('')
+  const [typeQuery, setTypeQuery] = useState<string>('')
 
   const { data: jobs, loading, error } = usePageCache<Job[]>('landing-all-jobs', {
     fetcher: async () => await processedJobsService.getAllProcessedJobsFull(100),
@@ -34,6 +37,22 @@ export default function LandingPage() {
   const categoryJobs = useMemo(() => activeTab==='全部' ? (jobs||[]) : (jobs||[]).filter(j=>j.category===activeTab), [jobs, activeTab])
   const displayedJobs = useMemo(()=> (activeTab==='全部'? latestJobs : categoryJobs).slice(0, displayLimit), [activeTab, latestJobs, categoryJobs, displayLimit])
 
+  const applySearch = () => {
+    const params = new URLSearchParams()
+    if (titleQuery) params.set('search', titleQuery)
+    if (locationQuery) params.set('location', locationQuery)
+    if (typeQuery) params.set('type', typeQuery)
+    const qs = params.toString()
+    navigate(qs ? `/jobs?${qs}` : '/jobs')
+  }
+
+  const clearAll = () => {
+    setTitleQuery('')
+    setLocationQuery('')
+    setTypeQuery('')
+    navigate('/jobs')
+  }
+
   return (
     <div className="min-h-screen landing-bg-page">
       {/* 新：渐变背景 + 前景SVG分层，文字使用安全区，避免遮挡 */}
@@ -42,16 +61,22 @@ export default function LandingPage() {
         <div className="hero-safe-content">
           <div className="title-wrap">
             <h1 className="landing-title">WORK YOUR BRAIN,<br /> LEAVE YOUR BODY TO BE HAPPY</h1>
-            <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>
           </div>
-          <div className="landing-search mt-4">
-            <div className="search-fig2">
-              <input className="search-fig2-input" placeholder="Search for remote jobs..." />
-              <button onClick={() => navigate('/jobs')} className="search-fig2-btn">
-                Search
-              </button>
+          <div className="landing-search mt-8">
+            <div className="filter-fig2">
+              <span className="filter-label">筛选</span>
+              <input className="filter-input" placeholder="岗位名称" value={titleQuery} onChange={(e)=>setTitleQuery(e.target.value)} />
+              <input className="filter-input" placeholder="地点" value={locationQuery} onChange={(e)=>setLocationQuery(e.target.value)} />
+              <select className="filter-select" value={typeQuery} onChange={(e)=>setTypeQuery(e.target.value)}>
+                <option value="">全部类型</option>
+                <option value="full-time">全职</option>
+                <option value="part-time">兼职</option>
+                <option value="contract">合同工</option>
+                <option value="remote">远程</option>
+              </select>
+              <button onClick={applySearch} className="filter-btn">搜索</button>
+              <button onClick={clearAll} className="filter-clear">清除</button>
             </div>
-            
           </div>
           {/* Feature strip */}
           <div className="feature-strip">
@@ -63,7 +88,7 @@ export default function LandingPage() {
         
       </div>
 
-      <section className="container-fluid section-padding list-section">
+      <section className="container-fluid section-padding list-section list-tight">
         <div className="landing-hero">
           <div className="mt-4 w-full">
             {loading ? (
