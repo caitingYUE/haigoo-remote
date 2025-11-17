@@ -119,7 +119,8 @@ export default function Header() {
               />
               <span className="ml-3 text-[#1A365D] font-semibold text-lg">Haigoo Remote Club</span>
             </Link>
-            <div className="ml-4 hidden md:flex items-center gap-6"></div>
+            {/* 移除顶部导航 Tabs：统一为单一首页入口 */}
+            <div className="ml-4 hidden md:flex items-center gap-6" />
           </div>
 
           {/* Desktop Navigation - 按要求移除顶部三个 Tab */}

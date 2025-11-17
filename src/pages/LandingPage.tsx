@@ -53,6 +53,12 @@ export default function LandingPage() {
               </button>
             </div>
           </div>
+          {/* Feature strip */}
+          <div className="feature-strip">
+            <div className="feature-item"><div className="icon">⚡</div><div className="text">日更数千个远程岗位</div></div>
+            <div className="feature-item"><div className="icon">🤖</div><div className="text">AI为你求职保驾护航</div></div>
+            <div className="feature-item"><div className="icon">🌍</div><div className="text">全球岗位、全行业覆盖</div></div>
+          </div>
         </div>
         <div className="fade-bottom" />
       </div>

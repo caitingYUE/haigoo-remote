@@ -250,7 +250,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
               <div className="flex items-center gap-4 min-w-0">
                 <div className="flex-shrink-0">
                   <div 
-                    className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/15 dark:shadow-blue-500/10 relative"
+                    className="w-12 h-12 bg-[#3182CE] rounded-xl flex items-center justify-center shadow-md shadow-blue-500/15 dark:shadow-blue-500/10 relative"
                     role="img"
                     aria-label={`${job.company || '未知公司'} 公司标志`}
                   >
@@ -259,7 +259,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                     </span>
                     {/* 推荐标识集成到右上角 */}
                     <div 
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-emerald-400 to-green-500 rounded-md flex items-center justify-center shadow-sm"
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-md flex items-center justify-center shadow-sm"
                       role="img"
                       aria-label="推荐职位标识"
                     >
