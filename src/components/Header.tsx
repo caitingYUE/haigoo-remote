@@ -100,7 +100,7 @@ export default function Header() {
 
   return (
     <header 
-      className="bg-transparent relative z-50"
+      className="relative z-50 bg-gradient-to-b from-[#4A90E2] to-[#F5F5DC]"
       role="banner"
     >
       <div className="px-6 md:px-10 lg:px-20">

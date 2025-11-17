@@ -535,7 +535,7 @@ export default function JobsPage() {
                     aria-live="polite"
                     aria-label="正在加载职位数据"
                   >
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600" aria-hidden="true"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3182CE]" aria-hidden="true"></div>
                     <div className="text-center">
                       <p className="text-gray-600 dark:text-gray-400 font-medium">正在加载岗位数据...</p>
                     </div>
