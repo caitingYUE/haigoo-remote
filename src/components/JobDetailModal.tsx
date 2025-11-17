@@ -198,7 +198,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-stretch justify-end"
       role="dialog"
       aria-modal="true"
       aria-labelledby="job-modal-title"
@@ -211,8 +211,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     >
       <div 
         ref={modalRef}
-        className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl max-h-[85vh] flex flex-col relative transform transition-all duration-300 ${
-          isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        className={`bg-white dark:bg-zinc-900 shadow-xl h-full w-full max-w-[560px] md:max-w-[640px] flex flex-col relative transform transition-all duration-300 ${
+          isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -624,7 +624,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             ref={applyButtonRef}
             onClick={handleApply}
             onKeyDown={(e) => handleKeyDown(e, handleApply)}
-            className="w-full bg-gradient-to-r from-haigoo-primary via-purple-600 to-indigo-600 hover:from-haigoo-primary/90 hover:via-purple-600/90 hover:to-indigo-600/90 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:shadow-haigoo-primary/25 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group"
+            className="w-full bg-[#3182CE] hover:bg-[#256bb0] text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 group"
             aria-label={`申请 ${job.title} 职位`}
           >
             <Zap className="w-4 h-4 group-hover:animate-pulse" aria-hidden="true" />

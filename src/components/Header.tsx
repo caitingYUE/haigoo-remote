@@ -100,7 +100,7 @@ export default function Header() {
 
   return (
     <header 
-      className="bg-white border-b border-gray-200 relative z-50"
+      className="bg-transparent relative z-50"
       role="banner"
     >
       <div className="px-6 md:px-10 lg:px-20">
@@ -109,23 +109,17 @@ export default function Header() {
           <div className="flex items-center">
             <Link 
               to="/" 
-              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 rounded-lg transition-all duration-200 hover:opacity-80"
+              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 rounded-lg transition-all duration-200 hover:opacity-80"
               aria-label="Haigoo 首页"
             >
               <img 
                 src={BRAND_LOGO} 
                 alt="Haigoo - 海外远程工作助手" 
-                className="h-10 w-auto" 
+                className="h-12 w-auto" 
               />
+              <span className="ml-3 text-[#1A365D] font-semibold text-lg">Haigoo Remote Club</span>
             </Link>
-            {/* Brand Slogan */}
-            <div className="ml-4">
-              <nav className="ml-6 hidden md:flex items-center gap-6 header-nav">
-                <a href="/jobs" className="hover:text-black">Job Search</a>
-                <a href="/copilot" className="hover:text-black">AI Copilot</a>
-                <a href="/community" className="hover:text-black">Community</a>
-              </nav>
-            </div>
+            <div className="ml-4 hidden md:flex items-center gap-6"></div>
           </div>
 
           {/* Desktop Navigation - 按要求移除顶部三个 Tab */}
@@ -138,13 +132,13 @@ export default function Header() {
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-[#1A365D] hover:text-[#3182CE] transition-colors"
                 >
                   登录
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#3182CE] rounded-lg hover:bg-[#256bb0] transition-all"
                 >
                   注册
                 </Link>

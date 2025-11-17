@@ -120,7 +120,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
 
   return (
     <article 
-      className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-haigoo-primary/30 transition-all duration-300 cursor-pointer relative focus-ring hover:-translate-y-0.5"
+      className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-[#3182CE]/30 transition-all duration-300 cursor-pointer relative hover:-translate-y-0.5"
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       tabIndex={0}
@@ -137,7 +137,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
           <button
             onClick={handleSourceClick}
             onKeyDown={handleSourceKeyDown}
-            className="p-3 text-gray-400 hover:text-haigoo-primary hover:bg-haigoo-primary/10 rounded-lg transition-all duration-200 focus-ring min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-3 text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
             title={`在 ${job.source} 查看原始职位`}
             aria-label={`在 ${job.source} 查看原始职位`}
             tabIndex={0}

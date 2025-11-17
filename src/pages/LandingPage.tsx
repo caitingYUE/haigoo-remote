@@ -57,7 +57,7 @@ export default function LandingPage() {
         <div className="fade-bottom" />
       </div>
 
-      <section className="container-fluid section-padding page-extension">
+      <section className="container-fluid section-padding list-section">
         <div className="landing-hero">
           <div className="mt-4 w-full">
             {loading ? (
