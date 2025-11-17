@@ -1,6 +1,10 @@
-import React from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Rocket, Bot } from 'lucide-react'
+import { Search } from 'lucide-react'
+import JobCard from '../components/JobCard'
+import { Job } from '../types'
+import { processedJobsService } from '../services/processed-jobs-service'
+import { usePageCache } from '../hooks/usePageCache'
 import AbstractTechBackground from '../components/AbstractTechBackground'
 import HeroIllustration from '../components/HeroIllustration'
 import '../styles/landing.css'
@@ -9,58 +13,84 @@ import homeBg from '../assets/home_bg.png'
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState<string>('全部')
+  const [displayLimit, setDisplayLimit] = useState<number>(24)
+
+  const { data: jobs, loading, error } = usePageCache<Job[]>('landing-all-jobs', {
+    fetcher: async () => await processedJobsService.getAllProcessedJobsFull(100),
+    ttl: 0,
+    persist: true,
+    namespace: 'landing'
+  })
+
+  const categories = useMemo(() => {
+    const set = new Set<string>()
+    ;(jobs || []).forEach(j => { if (j.category) set.add(j.category) })
+    return Array.from(set).sort()
+  }, [jobs])
+
+  const dynamicTabs = useMemo(() => ['全部', ...categories], [categories])
+  const latestJobs = useMemo(() => [...(jobs || [])].sort((a,b)=>{
+    const ta = new Date(a.postedAt || 0).getTime(); const tb = new Date(b.postedAt || 0).getTime(); return tb - ta
+  }), [jobs])
+  const categoryJobs = useMemo(() => activeTab==='全部' ? (jobs||[]) : (jobs||[]).filter(j=>j.category===activeTab), [jobs, activeTab])
+  const displayedJobs = useMemo(()=> (activeTab==='全部'? latestJobs : categoryJobs).slice(0, displayLimit), [activeTab, latestJobs, categoryJobs, displayLimit])
 
   return (
     <div className="min-h-screen relative">
       <BackgroundImageLayer imageUrl={homeBg} />
       <section className="container-fluid section-padding relative z-10">
         <div className="landing-hero">
-          <div className="landing-shield" />
-          <div className="grid grid-cols-1 gap-8">
-            <h1 className="landing-title">
-              WORK YOUR BRAIN,
-              <br /> LEAVE YOUR BODY TO BE HAPPY
-            </h1>
-            <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>
-
-            {/* 搜索与功能入口 */}
-            <div className="space-y-4">
-              <div className="landing-search" role="search">
-                <label className="sr-only" htmlFor="landing-search-input">Search for remote jobs</label>
-                <div className="landing-search-bar" aria-label="Search for remote jobs">
-                  <Search className="w-5 h-5 text-gray-500" aria-hidden />
-                  <input id="landing-search-input" className="landing-search-input" placeholder="Search for remote jobs..." />
-                  <button onClick={() => navigate('/jobs')} className="landing-explore" aria-label="Explore jobs">
-                    <span>Explore Jobs</span>
-                  </button>
-                </div>
-              </div>
-              <div className="landing-pills">
-                <button onClick={() => navigate('/copilot')} className="landing-pill">
-                  <Bot className="w-5 h-5" /> Try AI Copilot
+          <div className="flex flex-col items-end">
+            <div className="w-full max-w-3xl text-right">
+              <h1 className="landing-title">WORK YOUR BRAIN,<br /> LEAVE YOUR BODY TO BE HAPPY</h1>
+              <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>
+            </div>
+            <div className="landing-search mt-4 justify-end">
+              <div className="landing-search-bar">
+                <Search className="w-5 h-5 text-gray-500" />
+                <input className="landing-search-input" placeholder="Search for remote jobs..." />
+                <button onClick={() => navigate('/jobs')} className="landing-explore">
+                  <span>Explore Jobs</span>
                 </button>
               </div>
-              <div className="landing-features">
-                <div className="landing-card" role="link" tabIndex={0} onClick={() => navigate('/jobs')} onKeyDown={(e)=>{ if(e.key==='Enter') navigate('/jobs') }} aria-label="Global opportunities">
-                  <div className="flex items-center gap-3">
-                    <span className="landing-icon orange"><Rocket className="w-5 h-5" /></span>
-                    <div>
-                      <div className="title">GLOBAL OPPORTUNITIES</div>
-                      <div className="desc">Find jobs across continents</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="landing-card" role="link" tabIndex={0} onClick={() => navigate('/copilot')} onKeyDown={(e)=>{ if(e.key==='Enter') navigate('/copilot') }} aria-label="Smart career path">
-                  <div className="flex items-center gap-3">
-                    <span className="landing-icon teal"><Bot className="w-5 h-5" /></span>
-                    <div>
-                      <div className="title">SMART CAREER PATH</div>
-                      <div className="desc">AI-powered guidance</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
+          </div>
+
+          {/* 岗位列表合入首页 */}
+          <div className="mt-10">
+            {loading ? (
+              <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div></div>
+            ) : error ? (
+              <div className="text-center py-12 text-red-600">{String(error)}</div>
+            ) : displayedJobs.length === 0 ? (
+              <div className="text-center py-16 text-gray-600">暂无匹配的职位</div>
+            ) : (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2 overflow-x-auto whitespace-nowrap py-1" role="tablist" aria-label="岗位分类切换">
+                    {dynamicTabs.map(tab => {
+                      const isActive = activeTab === tab
+                      const count = tab === '全部' ? (jobs||[]).length : (jobs||[]).filter(j=>j.category===tab).length
+                      return (
+                        <button key={tab} onClick={()=>setActiveTab(tab)} className={`text-sm md:text-base font-medium transition-all duration-200 rounded-full px-3 py-1 ${isActive ? 'bg-haigoo-primary/10 text-haigoo-primary' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`} role="tab" aria-selected={isActive}>
+                          {tab}{count ? `（${count}）` : ''}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div className="text-sm text-gray-500">共 {(jobs||[]).length} 个职位</div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-10 mt-2">
+                  {displayedJobs.map(job => (
+                    <JobCard key={job.id} job={job} onClick={()=>navigate(`/job/${job.id}`)} />
+                  ))}
+                </div>
+                {displayedJobs.length < (activeTab==='全部'? latestJobs.length : categoryJobs.length) && (
+                  <div className="flex justify-center"><button onClick={()=>setDisplayLimit(dl=>dl+24)} className="text-sm font-medium text-gray-600 hover:text-gray-900">加载更多</button></div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>

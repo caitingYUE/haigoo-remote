@@ -15,17 +15,6 @@
   padding: 24px;
 }
 
-.landing-shield{
-  position: absolute;
-  left: 24px;
-  top: 24px;
-  width: 60%;
-  height: 280px;
-  pointer-events: none;
-  border-radius: 16px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.55) 28%, rgba(255,255,255,0.0) 56%);
-}
-
 .landing-bg{
   background: linear-gradient(180deg,var(--landing-bg-start) 0%, var(--landing-bg-end) 100%);
 }
@@ -39,7 +28,6 @@
   letter-spacing: .2px;
   color:#1A365D;
   margin-top: 60px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .landing-subtitle{
@@ -59,8 +47,6 @@
 .landing-card{ background:#FFFFFF; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.1); padding:32px; }
 .landing-card .title{ font-size:24px; font-weight:700; color:#1A365D; margin-bottom:16px; text-transform:uppercase; }
 .landing-card .desc{ color:#4A5568; font-size:16px; line-height:1.5; }
-.landing-card:hover{ box-shadow:0 12px 28px rgba(0,0,0,0.12); transform: translateY(-1px); transition: all .25s cubic-bezier(0.4,0,0.2,1); }
-.landing-card:active{ transform: translateY(0); box-shadow:0 8px 24px rgba(0,0,0,0.1); }
 
 .landing-icon{ height:40px; width:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; }
 .landing-icon.orange{ background:#FFEAD1; color:var(--landing-accent-orange); }
