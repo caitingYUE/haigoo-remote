@@ -62,8 +62,21 @@ export default function LandingPage() {
           <div className="title-wrap">
             <h1 className="landing-title">WORK YOUR BRAIN,<br /> LEAVE YOUR BODY TO BE HAPPY</h1>
           </div>
-          <div className="landing-search mt-8">
-            <div className="filter-fig2">
+          {/* Feature strip */}
+          <div className="feature-strip">
+            <div className="feature-item">日更数千个远程岗位</div>
+            <div className="feature-item">AI为你求职保驾护航</div>
+            <div className="feature-item">全球岗位、全行业覆盖</div>
+          </div>
+        </div>
+        
+      </div>
+
+      <section className="container-fluid section-padding-sm list-section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 list-tight">
+          {/* 搜索区：放置于岗位分类Tab上方，左对齐 */}
+          <div className="mb-6">
+            <div className="filter-fig2" role="search" aria-label="职位筛选">
               <span className="filter-label">筛选</span>
               <input className="filter-input" placeholder="岗位名称" value={titleQuery} onChange={(e)=>setTitleQuery(e.target.value)} />
               <input className="filter-input" placeholder="地点" value={locationQuery} onChange={(e)=>setLocationQuery(e.target.value)} />
@@ -78,18 +91,6 @@ export default function LandingPage() {
               <button onClick={clearAll} className="filter-clear">清除</button>
             </div>
           </div>
-          {/* Feature strip */}
-          <div className="feature-strip">
-            <div className="feature-item">日更数千个远程岗位</div>
-            <div className="feature-item">AI为你求职保驾护航</div>
-            <div className="feature-item">全球岗位、全行业覆盖</div>
-          </div>
-        </div>
-        
-      </div>
-
-      <section className="container-fluid section-padding-sm list-section">
-        <div className="landing-hero">
           <div className="mt-4 w-full">
             {loading ? (
               <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3182CE]"></div></div>
