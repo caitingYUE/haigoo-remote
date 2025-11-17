@@ -36,10 +36,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      {/* 新：单背景图 + 前景SVG分层，文字使用安全宽度，避免互相干扰 */}
-      <div className="hero-one" style={{ backgroundImage: `url(${homeBg})` }}>
+      {/* 新：渐变背景 + 前景SVG分层，文字使用安全区，避免遮挡 */}
+      <div className="hero-gradient">
         <div className="hero-foreground"><img src={homeBgSvg} alt="illustration" /></div>
-        <div className="content hero-safe-content">
+        <div className="hero-safe-content">
           <div className="title-wrap">
             <h1 className="landing-title">WORK YOUR BRAIN,<br /> LEAVE YOUR BODY TO BE HAPPY</h1>
             <p className="landing-subtitle">Open to the world · Remote jobs · Global opportunities</p>

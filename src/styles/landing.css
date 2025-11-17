@@ -60,7 +60,7 @@
 .hero-gradient{ position:relative; height:60vh; background: linear-gradient(180deg,#4A90E2 0%, #F5F5DC 100%); overflow:hidden; }
 .hero-layer-left{ position:absolute; left:0; top:6vh; width:42vw; height:48vh; background-repeat:no-repeat; background-size:contain; background-position:left center; pointer-events:none; }
 .hero-layer-right{ position:absolute; right:0; top:12vh; width:46vw; height:46vh; background-repeat:no-repeat; background-size:contain; background-position:right center; pointer-events:none; }
-.hero-safe-content{ position:relative; z-index:1; width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-end; }
+.hero-safe-content{ position:relative; z-index:1; width:100%; max-width:1200px; margin:0 auto; padding:24px; display:flex; flex-direction:column; align-items:flex-start; }
 @media (max-width:1024px){
   .hero-gradient{ height:50vh }
   .hero-layer-left{ top:4vh; width:48vw; height:40vh }
@@ -75,6 +75,6 @@
 /* SVG前景元素覆盖层（不拦截事件） */
 .hero-foreground{ position:absolute; right:2vw; top:6vh; width:50vw; max-width:860px; pointer-events:none; z-index:0; }
 .hero-foreground img{ width:100%; height:auto; display:block; }
-.hero-safe-content .title-wrap{ width:40%; min-width:520px; text-align:right; }
+.hero-safe-content .title-wrap{ width:42%; min-width:520px; text-align:left; }
 @media (max-width:1280px){ .hero-safe-content .title-wrap{ width:48%; min-width:480px } }
 @media (max-width:1024px){ .hero-safe-content .title-wrap{ width:60%; min-width:420px } }
