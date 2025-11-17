@@ -25,6 +25,20 @@ export default function LandingPage() {
 
   // categories 仅用于 Top6 逻辑，后续可复用
 
+  // 聚合地点选项（去重、按出现次数排序，最多50项）
+  const locationOptions = useMemo(() => {
+    const counter = new Map<string, number>()
+    ;(jobs || []).forEach(j => {
+      const raw = (j.location || '').trim()
+      if (!raw) return
+      counter.set(raw, (counter.get(raw) || 0) + 1)
+    })
+    return Array.from(counter.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([loc]) => loc)
+      .slice(0, 50)
+  }, [jobs])
+
   const dynamicTabs = useMemo(() => {
     const counts: Record<string, number> = {}
     ;(jobs || []).forEach(j => { if (j.category) counts[j.category] = (counts[j.category]||0)+1 })
@@ -91,7 +105,12 @@ export default function LandingPage() {
             <div className="filter-fig2" role="search" aria-label="职位筛选">
               <span className="filter-label">筛选</span>
               <input className="filter-input" placeholder="岗位名称" value={titleQuery} onChange={(e)=>setTitleQuery(e.target.value)} />
-              <input className="filter-input" placeholder="地点" value={locationQuery} onChange={(e)=>setLocationQuery(e.target.value)} />
+              <select className="filter-select" value={locationQuery} onChange={(e)=>setLocationQuery(e.target.value)}>
+                <option value="">所有地点</option>
+                {locationOptions.map(loc => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
               <select className="filter-select" value={typeQuery} onChange={(e)=>setTypeQuery(e.target.value)}>
                 <option value="">全部类型</option>
                 <option value="full-time">全职</option>
@@ -139,7 +158,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 页脚由全局 Footer 统一渲染，这里不重复 */}
+  {/* 页脚由全局 Footer 统一渲染，这里不重复 */}
     </div>
   )
 }
