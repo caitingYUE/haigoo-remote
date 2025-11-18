@@ -225,6 +225,21 @@ export default function ProfilePage() {
     })()
   }, [])
 
+  useEffect(() => {
+    const onProfileUpdated = () => {
+      fetch('/api/user-profile', { method: 'GET' })
+        .then(r => r.json())
+        .then(json => {
+          if (json.success && json.profile) {
+            setUser(prev => ({ ...prev, savedJobs: Array.isArray(json.profile.savedJobs) ? json.profile.savedJobs : [] }))
+          }
+        })
+        .catch(() => {})
+    }
+    window.addEventListener('user-profile-updated', onProfileUpdated)
+    return () => window.removeEventListener('user-profile-updated', onProfileUpdated)
+  }, [])
+
   
 
   // 监听登录用户变化，更新本地状态
@@ -456,20 +471,20 @@ export default function ProfilePage() {
     const savedIds = new Set<string>((user.savedJobs || []).map(s => s.jobId))
     const favorites = (jobs || []).filter(j => savedIds.has(j.id))
     return (
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="profile-card p-6 profile-fill-card">
+        <div className="flex items-center justify之间 mb-4">
           <h2 className="text-xl font-semibold text-gray-900">我的收藏</h2>
           <div className="text-sm text-gray-500">{favorites.length} 个职位</div>
         </div>
         {jobsLoading ? (
-          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-blue)]"></div></div>
+          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--profile-primary)]"></div></div>
         ) : jobsError ? (
           <div className="text-center py-12 text-red-600">{String(jobsError)}</div>
         ) : favorites.length === 0 ? (
-          <div className="p-8 bg-white/70 rounded-lg border-2 border-dashed border-[var(--brand-border)] text-center">
+          <div className="profile-upload-area">
             <ExternalLink className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">还没有收藏职位</h3>
-            <p className="text-sm text-gray-600">在首页浏览职位时点击收藏按钮，这里将展示已收藏的职位</p>
+            <p className="text-lg font-bold">还没有收藏职位</p>
+            <p className="text-sm text-gray-600">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
