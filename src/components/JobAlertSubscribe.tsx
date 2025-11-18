@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 
-export default function JobAlertSubscribe() {
+type Variant = 'card' | 'inline'
+
+export default function JobAlertSubscribe({ variant = 'card' }: { variant?: Variant }) {
   const [channel, setChannel] = useState<'email'|'feishu'>('email')
   const [identifier, setIdentifier] = useState('')
   const [topic, setTopic] = useState('product')
@@ -20,6 +22,25 @@ export default function JobAlertSubscribe() {
     } catch {
       setStatus('error')
     }
+  }
+
+  if (variant === 'inline') {
+    return (
+      <div className="filter-fig2" role="form" aria-label="订阅岗位推送">
+        <span className="filter-label">订阅</span>
+        <select className="filter-select" value={topic} onChange={e=>setTopic(e.target.value)}>
+          {['product','development','algorithm','operations','marketing','account','support'].map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select className="filter-select" value={channel} onChange={e=>setChannel(e.target.value as any)}>
+          <option value="email">Email</option>
+          <option value="feishu">Feishu</option>
+        </select>
+        <input className="filter-input" placeholder={channel==='email' ? 'you@example.com' : 'Feishu ID'} value={identifier} onChange={e=>setIdentifier(e.target.value)} />
+        <button onClick={submit} className="filter-btn">订阅</button>
+        {status==='done' && <span className="text-green-600 text-sm">已订阅</span>}
+        {status==='error' && <span className="text-red-600 text-sm">失败</span>}
+      </div>
+    )
   }
 
   return (
