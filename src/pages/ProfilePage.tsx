@@ -1,52 +1,33 @@
 import { useState, useRef, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { processJobDescription } from '../utils/text-formatter'
+import '../styles/landing.css'
 import {
   Mail,
   Phone,
   MapPin,
-  Calendar,
-  Save,
-  X,
-  Upload,
-  Download,
-  Camera,
   Globe,
-  Linkedin,
-  Github,
-  TrendingUp,
-  Target,
-  CheckCircle,
-  Clock,
-  Briefcase,
   Edit3,
-  Plus,
-  Trash2,
-  GraduationCap,
-  Award,
-  Star,
-  User,
-  Settings,
-  Bell,
-  LogOut,
-  Search,
-  Filter,
-  MoreHorizontal,
-  FileText,
-  Brain,
-  Zap,
-  AlertCircle,
-  Check,
-  RefreshCw,
-  Lightbulb,
-  DollarSign,
   Eye,
-  Heart,
+  Trash2,
+  Plus,
+  Star,
+  Lightbulb,
+  TrendingUp,
+  DollarSign,
   Building,
   Calendar as CalendarIcon,
-  ExternalLink
+  Briefcase,
+  Heart
 } from 'lucide-react'
+import { Upload, FileText, Download, X, AlertCircle, ExternalLink, RefreshCw, Brain, Check, CheckCircle } from 'lucide-react'
+import JobCard from '../components/JobCard'
+import { Job } from '../types'
+import { processedJobsService } from '../services/processed-jobs-service'
+import { usePageCache } from '../hooks/usePageCache'
+import { resumeService } from '../services/resume-service'
+import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
+import { useAuth } from '../contexts/AuthContext'
+import { processJobDescription } from '../utils/text-formatter'
+ 
 
 interface Experience {
   id: string
@@ -108,14 +89,15 @@ interface JobApplication {
 }
 
 interface SavedJob {
-  id: string
-  title: string
+  jobId: string
+  jobTitle: string
   company: string
-  location: string
-  salary: string
-  type: string
-  savedDate: string
-  description: string
+  savedAt: string
+  id?: string
+  title?: string
+  location?: string
+  salary?: string
+  description?: string
 }
 
 interface UserProfile {
@@ -151,17 +133,11 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
-  const location = useLocation()
   const { user: authUser } = useAuth()
-  
-  // 从 URL 参数中读取 tab，如果没有则默认为 'profile'
-  const searchParams = new URLSearchParams(location.search)
-  const urlTab = searchParams.get('tab') || 'profile'
-  
-  const [activeSection, setActiveSection] = useState(urlTab)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
   
   // 从登录用户数据初始化，如果没有则使用默认值
   const [user, setUser] = useState<UserProfile>({
@@ -197,14 +173,38 @@ export default function ProfilePage() {
     }
   })
 
-  // 监听 URL 参数变化，切换到对应的 tab
+  const { data: jobs, loading: jobsLoading, error: jobsError } = usePageCache<Job[]>('profile-favorites-source', {
+    fetcher: async () => await processedJobsService.getAllProcessedJobs(200),
+    ttl: 60000,
+    persist: false,
+    namespace: 'profile'
+  })
+
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search)
-    const tab = searchParams.get('tab')
-    if (tab) {
-      setActiveSection(tab)
-    }
-  }, [location.search])
+    ;(async () => {
+      try {
+        const resp = await fetch('/api/user-profile', { method: 'GET' })
+        const json = await resp.json()
+        if (json.success && json.profile) {
+          setUser(prev => ({
+            ...prev,
+            name: json.profile.username || prev.name,
+            email: json.profile.email || prev.email,
+            phone: json.profile.phone || prev.phone,
+            location: json.profile.location || prev.location,
+            title: json.profile.title || prev.title,
+            summary: json.profile.summary || prev.summary,
+            avatar: json.profile.avatar || prev.avatar,
+            savedJobs: Array.isArray(json.profile.savedJobs) ? json.profile.savedJobs : []
+          }))
+        }
+      } catch (e) {
+        console.warn('加载用户资料失败', e)
+      }
+    })()
+  }, [])
+
+  
 
   // 监听登录用户变化，更新本地状态
   useEffect(() => {
@@ -222,11 +222,7 @@ export default function ProfilePage() {
     }
   }, [authUser])
 
-  const sidebarItems = [
-    { id: 'profile', label: '个人资料', icon: User },
-    { id: 'resume', label: '简历管理', icon: FileText },
-    { id: 'favorites', label: '我的收藏', icon: Heart }
-  ]
+  
 
   // 文件上传处理
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,28 +231,39 @@ export default function ProfilePage() {
 
     setIsUploading(true)
     
-    // 模拟文件上传和AI分析
-    setTimeout(() => {
+    try {
+      const parsed = await parseResumeFileEnhanced(file)
       const newResumeFile: ResumeFile = {
         id: Date.now().toString(),
         name: file.name,
         size: file.size,
         type: file.type,
         uploadDate: new Date().toISOString().split('T')[0],
-        aiScore: Math.floor(Math.random() * 20) + 80,
-        suggestions: [
-          '添加更多量化成果',
-          '优化关键词匹配',
-          '完善项目描述'
-        ]
+        content: parsed.textContent,
+        parsed: parsed.success
       }
-      
-      setUser(prev => ({
-        ...prev,
-        resumeFiles: [...prev.resumeFiles, newResumeFile]
-      }))
+      setUser(prev => ({ ...prev, resumeFiles: [...prev.resumeFiles, newResumeFile] }))
       setIsUploading(false)
-    }, 2000)
+
+      if (parsed.textContent && parsed.textContent.length > 50) {
+        const analysis = await resumeService.analyzeResume(parsed.textContent)
+        if (analysis.success && analysis.data) {
+          const data = analysis.data
+          setUser(prev => ({
+            ...prev,
+            resumeScore: data.score,
+            resumeFiles: prev.resumeFiles.map(f => (
+              f.id === newResumeFile.id
+                ? { ...f, aiScore: data.score, suggestions: data.suggestions }
+                : f
+            ))
+          }))
+        }
+      }
+    } catch (e) {
+      console.error('简历解析/分析失败', e)
+      setIsUploading(false)
+    }
   }
 
   // 删除简历文件
@@ -309,44 +316,105 @@ export default function ProfilePage() {
     }))
   }
 
-  // 渲染个人资料卡片
-  const renderUserProfileCard = () => (
-    <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+  const renderResumeSection = () => (
+    <div className="glass-card p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold text-gray-900">个人资料</h3>
-        <Edit3 
-          className="w-5 h-5 text-gray-400 cursor-pointer hover:text-haigoo-primary" 
-          onClick={() => setEditingProfile(!editingProfile)}
-        />
+        <h2 className="text-xl font-semibold text-gray-900">简历上传与AI分析</h2>
+        <button onClick={() => fileInputRef.current?.click()} className="brand-btn">
+          <Upload className="w-4 h-4" />
+          上传简历
+        </button>
       </div>
-      
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <Mail className="w-5 h-5 text-gray-400" />
-          <span className="text-gray-700">{user.email}</span>
+
+      <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileUpload} className="hidden" />
+
+      {user.resumeFiles.length === 0 ? (
+        <div className="p-8 bg-white/70 rounded-lg border-2 border-dashed border-[var(--brand-border)] text-center">
+          <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">还没有上传简历</h3>
+          <p className="text-sm text-gray-600 mb-6">上传您的简历，AI 将为您提供专业的优化建议</p>
+          <button onClick={() => fileInputRef.current?.click()} className="brand-btn">选择文件</button>
+          <p className="text-xs text-gray-500 mt-3">支持 PDF、DOC、DOCX、TXT 格式</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Phone className="w-5 h-5 text-gray-400" />
-          <span className="text-gray-700">{user.phone}</span>
+      ) : (
+        <div className="space-y-4">
+          {user.resumeFiles.map(file => (
+            <div key={file.id} className="p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-[var(--brand-blue)]" />
+                  <span className="font-medium text-gray-900">{file.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-gray-400 cursor-pointer hover:text-[var(--brand-blue)] transition-colors" />
+                  <button onClick={() => deleteResumeFile(file.id)} className="p-2 text-gray-400 hover:text-red-500">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-sm text-gray-500">
+                <span>上传时间: {file.uploadDate}</span>
+                {file.aiScore && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[var(--brand-blue)] font-medium">AI评分: {file.aiScore}/100</span>
+                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-[var(--brand-blue)] rounded-full transition-all" style={{ width: `${file.aiScore}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+              {file.suggestions && file.suggestions.length > 0 && (
+                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <h5 className="font-medium text-amber-900 mb-2">AI优化建议:</h5>
+                  <ul className="space-y-1">
+                    {file.suggestions.map((s, idx) => (
+                      <li key={idx} className="text-sm text-amber-800 flex items-center gap-2">
+                        <AlertCircle className="w-3 h-3" />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-        <div className="flex items-center gap-3">
-          <MapPin className="w-5 h-5 text-gray-400" />
-          <span className="text-gray-700">{user.location}</span>
+      )}
+    </div>
+  )
+
+  const renderFavoritesSection = () => {
+    const savedIds = new Set<string>((user.savedJobs || []).map(s => s.jobId))
+    const favorites = (jobs || []).filter(j => savedIds.has(j.id))
+    return (
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">我的收藏</h2>
+          <div className="text-sm text-gray-500">{favorites.length} 个职位</div>
         </div>
-        {user.website && (
-          <div className="flex items-center gap-3">
-            <Globe className="w-5 h-5 text-gray-400" />
-            <a href={user.website} className="text-haigoo-primary hover:underline">{user.website}</a>
+        {jobsLoading ? (
+          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-blue)]"></div></div>
+        ) : jobsError ? (
+          <div className="text-center py-12 text-red-600">{String(jobsError)}</div>
+        ) : favorites.length === 0 ? (
+          <div className="p-8 bg-white/70 rounded-lg border-2 border-dashed border-[var(--brand-border)] text-center">
+            <ExternalLink className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">还没有收藏职位</h3>
+            <p className="text-sm text-gray-600">在首页浏览职位时点击收藏按钮，这里将展示已收藏的职位</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {favorites.map(job => (
+              <JobCard key={job.id} job={job} />
+            ))}
           </div>
         )}
       </div>
-      
-      <div className="mt-6 pt-6 border-t border-gray-100">
-        <h4 className="font-medium text-gray-900 mb-3">个人简介</h4>
-        <p className="text-gray-600 text-sm leading-relaxed">{user.summary}</p>
-      </div>
-    </div>
-  )
+    )
+  }
+
+  // 渲染个人资料卡片
+  const renderUserProfileCard = () => null
 
   // 渲染简历卡片
   const renderResumeCard = () => (
@@ -650,125 +718,7 @@ export default function ProfilePage() {
   )
 
   // 渲染职位管理页面
-  const renderJobManagement = () => (
-    <div className="space-y-6">
-      {/* 申请记录 */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6">申请记录</h3>
-        
-        <div className="space-y-4">
-          {user.jobApplications.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                <Briefcase className="w-8 h-8 text-gray-400" />
-              </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">还没有申请记录</h4>
-              <p className="text-gray-500">
-                浏览职位并开始申请，您的申请记录会在这里显示
-              </p>
-            </div>
-          ) : (
-            user.jobApplications.map(application => (
-            <div key={application.id} className="p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h4 className="font-medium text-gray-900">{application.jobTitle}</h4>
-                  <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                    <span className="flex items-center gap-1">
-                      <Building className="w-4 h-4" />
-                      {application.company}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {application.location}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <CalendarIcon className="w-4 h-4" />
-                      {application.appliedDate}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="text-right">
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                    application.status === 'applied' ? 'bg-blue-100 text-blue-800' :
-                    application.status === 'interview' ? 'bg-yellow-100 text-yellow-800' :
-                    application.status === 'offer' ? 'bg-green-100 text-green-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {application.status === 'applied' && '已申请'}
-                    {application.status === 'interview' && '面试中'}
-                    {application.status === 'offer' && '已录用'}
-                    {application.status === 'rejected' && '已拒绝'}
-                  </div>
-                  {application.salary && (
-                    <div className="text-sm text-gray-500 mt-1">{application.salary}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* 收藏职位 */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6">收藏职位</h3>
-        
-        <div className="space-y-4">
-          {user.savedJobs.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                <Heart className="w-8 h-8 text-gray-400" />
-              </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">还没有收藏职位</h4>
-              <p className="text-gray-500">
-                浏览职位时点击收藏按钮，收藏的职位会在这里显示
-              </p>
-            </div>
-          ) : (
-            user.savedJobs.map(job => (
-            <div key={job.id} className="p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{job.title}</h4>
-                  <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                    <span className="flex items-center gap-1">
-                      <Building className="w-4 h-4" />
-                      {job.company}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {job.location}
-                    </span>
-                    <span className="text-haigoo-primary font-medium">{job.salary}</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2">
-                    {processJobDescription(job.description, { 
-                      formatMarkdown: false, 
-                      maxLength: 150, 
-                      preserveHtml: false 
-                    })}
-                  </p>
-                </div>
-                
-                <div className="flex items-center gap-2 ml-4">
-                  <button className="p-2 text-gray-400 hover:text-haigoo-primary">
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                  <button className="p-2 text-red-400 hover:text-red-600">
-                    <Heart className="w-4 h-4 fill-current" />
-                  </button>
-                </div>
-              </div>
-            </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  )
+  const renderJobManagement = () => null
 
   // 渲染账户设置页面
   const renderAccountSettings = () => (
@@ -970,312 +920,19 @@ export default function ProfilePage() {
     </div>
   )
 
-  // 渲染主内容
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'profile':
-        return (
-          <div className="space-y-6">
-            {/* 个人资料概览卡片 */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">个人资料概览</h2>
-                <Edit3 
-                  className="w-5 h-5 text-gray-400 cursor-pointer hover:text-haigoo-primary transition-colors" 
-                  onClick={() => setEditingProfile(!editingProfile)}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-700">{user.email}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-700">{user.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-700">{user.location}</span>
-                  </div>
-                  {user.website && (
-                    <div className="flex items-center gap-3">
-                      <Globe className="w-5 h-5 text-gray-400" />
-                      <a href={user.website} className="text-haigoo-primary hover:underline">{user.website}</a>
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">个人简介</h4>
-                  <p className="text-gray-600 text-sm leading-relaxed">{user.summary}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 简历管理卡片 */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">简历管理</h2>
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="brand-btn"
-                >
-                  <Upload className="w-4 h-4" />
-                  上传简历
-                </button>
-              </div>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              
-              <div className="space-y-4">
-                {user.resumeFiles.length > 0 ? (
-                  user.resumeFiles.map(file => (
-                    <div key={file.id} className="p-6 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-5 h-5 text-haigoo-primary" />
-                          <span className="font-medium text-gray-900">{file.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Eye className="w-4 h-4 text-gray-400 cursor-pointer hover:text-[var(--brand-blue)] transition-colors" />
-                          <Download className="w-4 h-4 text-gray-400 cursor-pointer hover:text-[var(--brand-blue)] transition-colors" />
-                          <Trash2 
-                            className="w-4 h-4 text-gray-400 cursor-pointer hover:text-red-500 transition-colors" 
-                            onClick={() => deleteResumeFile(file.id)}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span>上传时间: {file.uploadDate}</span>
-                {file.aiScore && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#3182CE] font-medium">AI评分: {file.aiScore}/100</span>
-                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-[#3182CE] rounded-full transition-all duration-300"
-                        style={{ width: `${file.aiScore}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-          <div className="p-8 bg-white/70 rounded-lg border-2 border-dashed border-[var(--brand-border)] text-center">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">还没有上传简历</h3>
-                    <p className="text-sm text-gray-600 mb-6">上传您的简历，让AI为您提供专业的优化建议</p>
-                    <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-6 py-3 bg-haigoo-primary text-white rounded-lg hover:bg-haigoo-primary/90 transition-colors"
-                    >
-                      选择文件
-                    </button>
-                    <p className="text-xs text-gray-500 mt-3">支持 PDF、DOC、DOCX 格式</p>
-                  </div>
-                )}
-                
-                {isUploading && (
-                  <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center gap-3">
-                      <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
-                      <span className="text-blue-700">正在上传并分析简历...</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* AI职业洞察卡片 */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-haigoo-primary" />
-                  AI职业洞察
-                </h2>
-                <RefreshCw className="w-5 h-5 text-gray-400 cursor-pointer hover:text-haigoo-primary transition-colors" />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Target className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-blue-900">简历匹配度</span>
-                  </div>
-                  <div className="text-2xl font-bold text-blue-600">{user.resumeScore}%</div>
-                </div>
-                
-                <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
-                    <span className="font-medium text-green-900">市场竞争力</span>
-                  </div>
-                  <div className="text-2xl font-bold text-green-600">85%</div>
-                </div>
-                
-                <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Lightbulb className="w-5 h-5 text-purple-600" />
-                    <span className="font-medium text-purple-900">优化建议</span>
-                  </div>
-                  <div className="text-2xl font-bold text-purple-600">5条</div>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">AI优化建议</h3>
-                <div className="space-y-3">
-                  {user.aiSuggestions.slice(0, 3).map(suggestion => (
-                    <div key={suggestion.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <AlertCircle className="w-4 h-4 text-amber-500" />
-                            <span className="text-sm font-medium text-gray-700">{suggestion.section}</span>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">{suggestion.reason}</p>
-                          <p className="text-sm text-gray-900 font-medium">{suggestion.suggested}</p>
-                        </div>
-                        <div className="flex items-center gap-2 ml-4">
-                          <button
-                            onClick={() => acceptSuggestion(suggestion.id)}
-                            className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => rejectSuggestion(suggestion.id)}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      
-      case 'resume':
-        return renderResumeManagement()
-      case 'favorites':
-        return renderJobManagement()
-      
-      case 'subscriptions':
-        return (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">职位订阅</h2>
-            <p className="text-gray-600">管理您的职位订阅和推送设置</p>
-          </div>
-        )
-      
-      case 'insights':
-        return (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">AI职业洞察</h2>
-            <p className="text-gray-600">获取个性化的职业发展建议和市场洞察</p>
-          </div>
-        )
-      
-      case 'applications':
-        return (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">我的申请</h2>
-            <p className="text-gray-600">查看和管理您的职位申请记录</p>
-          </div>
-        )
-      
-      case 'settings':
-        return renderAccountSettings()
-      
-      case 'jobs':
-        return renderJobManagement()
-      
-      case 'notifications':
-        return renderNotificationSettings()
-      
-      default:
-        return (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">功能开发中</h2>
-            <p className="text-gray-600">该功能正在开发中，敬请期待！</p>
-          </div>
-        )
-    }
-  }
+  
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#EAF3FF] via-[#F7FAFC] to-white">
-      {/* 统一的容器 - 移除阴影，使用更简洁的布局 */}
-      <div className="flex max-w-7xl mx-auto">
-        {/* 左侧边栏 - 固定宽度，与右侧内容对齐 */}
-        <aside className="w-80 bg-white/90 backdrop-blur-sm border-r border-gray-200 flex-shrink-0 min-h-screen">
-          <div className="p-8 border-b border-gray-100">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-haigoo-primary to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                {user.name.charAt(0)}
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-gray-900">{user.name}</p>
-                <p className="text-base text-gray-500">智能求职者</p>
-              </div>
-            </div>
-          </div>
-          
-          <nav className="p-8">
-            <div className="space-y-2">
-              {sidebarItems.map((item) => {
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-all duration-200 ${activeSection === item.id ? 'sidebar-active' : 'sidebar-link'}`}
-                  >
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </nav>
-        </aside>
-
-        {/* 右侧主内容区域 - 充分利用剩余空间 */}
-        <main className="flex-1 min-h-screen">
-          {/* 页面头部 - 与侧边栏顶部对齐 */}
-          <div className="px-8 py-8 bg-white/90 backdrop-blur-sm border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {sidebarItems.find(item => item.id === activeSection)?.label || '个人资料'}
-                </h1>
-                <p className="text-gray-600 mt-1">管理您的个人信息和设置</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* 内容区域 - 统一的内边距，与头部对齐 */}
-          <div className="p-8">
-            <div className="space-y-8">
-              {renderContent()}
-            </div>
-          </div>
-        </main>
+    <div className="min-h-screen landing-bg-page">
+      <div className="max-w-7xl mx-auto px-8 py-10">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">个人中心</h1>
+          <p className="text-gray-600">上传并优化你的简历，查看已收藏的职位</p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {renderResumeSection()}
+          {renderFavoritesSection()}
+        </div>
       </div>
     </div>
   )
