@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { segmentJobDescription } from '../utils/translation'
 import { SingleLineTags } from './SingleLineTags'
+import { processedJobsService } from '../services/processed-jobs-service'
 
 interface JobDetailModalProps {
   job: Job | null
@@ -29,7 +30,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   onNavigateJob
 }) => {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'description' | 'company' | 'similar'>('description')
+  const [activeTab, setActiveTab] = useState<'description' | 'company' | 'openings'>('description')
   // 仅显示原始文本，不进行语言切换或翻译
   
   // 可访问性相关的 refs
@@ -84,7 +85,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
         case '3':
           if (e.altKey) {
             e.preventDefault()
-            const tabKeys = ['description', 'company', 'similar'] as const
+            const tabKeys = ['description', 'company', 'openings'] as const
             setActiveTab(tabKeys[parseInt(e.key) - 1])
           }
           break
@@ -131,9 +132,31 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     return segmentJobDescription(desc)
   }, [job])
 
-  if (!job || !isOpen) return null
+  const [companyJobs, setCompanyJobs] = useState<Job[]>([])
+  const [companyLoading, setCompanyLoading] = useState<boolean>(false)
+  const [companyError, setCompanyError] = useState<string | null>(null)
 
-  const matchPercentage = Math.floor(Math.random() * 20) + 80
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      if (!job?.company) { setCompanyJobs([]); return }
+      setCompanyLoading(true)
+      setCompanyError(null)
+      try {
+        const resp = await processedJobsService.getProcessedJobs(1, 10, { company: job.company })
+        const others = resp.jobs.filter(j => j.id !== job.id)
+        if (!cancelled) setCompanyJobs(others)
+      } catch (e: any) {
+        if (!cancelled) setCompanyError(String(e?.message || e))
+      } finally {
+        if (!cancelled) setCompanyLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [job?.company, job?.id])
+
+  if (!job || !isOpen) return null
 
   const handleSave = () => {
     onSave?.(job.id)
@@ -213,7 +236,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     >
       <div 
         ref={modalRef}
-        className={`bg-white dark:bg-zinc-900 shadow-xl h-full w-full max-w-[560px] md:max-w-[640px] flex flex-col relative transform transition-all duration-300 ${
+        className={`bg-white dark:bg-zinc-900 shadow-xl h-full w-full max-w-[95vw] md:max-w-[60vw] lg:max-w-[50vw] xl:max-w-[45vw] flex flex-col relative transform transition-all duration-300 ${
           isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -385,15 +408,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                        <span>智能匹配</span>
-                        <span 
-                          className="ml-1 font-semibold text-haigoo-primary dark:text-purple-400"
-                          aria-label={`匹配度 ${matchPercentage} 百分比`}
-                        >
-                          {matchPercentage}%
-                        </span>
-                      </div>
+                      
                     </div>
                   </div>
 
@@ -432,7 +447,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
               {[
                 { key: 'description', label: '职位描述', shortcut: 'Alt+1' },
                 { key: 'company', label: '公司信息', shortcut: 'Alt+2' },
-                { key: 'similar', label: '相似职位', shortcut: 'Alt+3' }
+                { key: 'openings', label: '在招职位', shortcut: 'Alt+3' }
               ].map((tab, index) => (
                 <button
                   key={tab.key}
@@ -566,57 +581,32 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 </div>
               )}
 
-              {activeTab === 'similar' && (
+              {activeTab === 'openings' && (
                 <section>
-                  <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">相似职位推荐</h3>
-                  <div className="space-y-4" role="list">
-                    {[1, 2, 3].map((index) => (
-                      <article 
-                        key={index} 
-                        className="p-4 border border-slate-200/60 dark:border-zinc-700/60 rounded-xl hover:bg-gradient-to-r hover:from-slate-50/80 hover:to-white/80 dark:hover:from-zinc-700/50 dark:hover:to-zinc-600/50 transition-all duration-300 cursor-pointer group transform hover:scale-[1.01]"
-                        role="listitem"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            // 处理相似职位点击
-                          }
-                        }}
-                        aria-label={`相似职位：${job.title} ${index + 1}，匹配度 ${85 + index * 2}%`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div 
-                            className="w-12 h-12 bg-gradient-to-br from-[#3182CE] via-[#256bb0] to-[#1A365D] rounded-xl flex items-center justify-center shadow-lg shadow-[#3182CE]/25 group-hover:shadow-[#3182CE]/40 transition-all duration-300"
-                            role="img"
-                            aria-hidden="true"
-                          >
-                            <span className="text-white font-bold">
-                              {String.fromCharCode(65 + index)}
-                            </span>
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#3182CE] dark:group-hover:text-[#3182CE] transition-colors">
-                              {job.title} {index + 1}
-                            </h4>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                              {job.company} • {job.location}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div 
-                              className="text-sm font-medium text-[#3182CE] dark:text-[#3182CE]"
-                              aria-label={`匹配度 ${85 + index * 2} 百分比`}
-                            >
-                              {85 + index * 2}% 匹配
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">在招职位</h3>
+                  {companyLoading ? (
+                    <div className="text-sm text-slate-500">加载中…</div>
+                  ) : companyError ? (
+                    <div className="text-sm text-red-600">{companyError}</div>
+                  ) : companyJobs.length === 0 ? (
+                    <div className="text-sm text-slate-500">暂无该公司的其他在招职位</div>
+                  ) : (
+                    <div className="space-y-3" role="list">
+                      {companyJobs.map((cj) => (
+                        <article key={cj.id} className="p-4 border border-slate-200/60 dark:border-zinc-700/60 rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-700/50 transition-all duration-200" role="listitem">
+                          <div className="flex items-center justify-between">
+                            <div className="min-w-0">
+                              <h4 className="font-semibold text-slate-800 dark:text-slate-200 truncate" title={cj.title}>{cj.title}</h4>
+                              <p className="text-sm text-slate-600 dark:text-slate-400 truncate" title={cj.location}>{cj.location}</p>
                             </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                              2天前
-                            </div>
+                            {cj.sourceUrl && (
+                              <a href={cj.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-haigoo-primary underline underline-offset-2">查看</a>
+                            )}
                           </div>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
                 </section>
               )}
             </div>
