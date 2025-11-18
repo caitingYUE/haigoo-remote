@@ -185,7 +185,7 @@ export default function LandingPage() {
                   </div>
                   <div className="text-sm text-gray-500">共 {(sourceJobs||[]).length} 个职位</div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-10 mt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
                   {displayedJobs.map(job => (
                     <JobCard key={job.id} job={job} onClick={()=>navigate(`/job/${job.id}`)} />
                   ))}
