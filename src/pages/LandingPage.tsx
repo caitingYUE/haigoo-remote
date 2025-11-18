@@ -19,10 +19,10 @@ export default function LandingPage() {
   const [showSubscribe, setShowSubscribe] = useState<boolean>(false)
   const membershipUrl: string = (import.meta as any).env?.VITE_MEMBERSHIP_FORM_URL || '/club/apply'
 
-  const { data: jobs, loading, error } = usePageCache<Job[]>('landing-all-jobs', {
+  const { data: jobs, loading, error } = usePageCache<Job[]>('landing-all-jobs-v2', {
     fetcher: async () => await processedJobsService.getAllProcessedJobsFull(100),
     ttl: 0,
-    persist: true,
+    persist: false,
     namespace: 'landing'
   })
 
