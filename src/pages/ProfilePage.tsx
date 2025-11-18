@@ -357,10 +357,10 @@ export default function ProfilePage() {
           </div>
           <div className="profile-progress"><div className="fill" style={{ width: `${Math.max(0, Math.min(100, score))}%` }} /></div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 profile-fixed-row">
+          <div className="lg:col-span-2 space-y-4 profile-col-left">
             <h3 className="text-xl font-bold px-4">Your Resume</h3>
-            <div className="profile-card p-6">
+            <div className="profile-card p-6 profile-fill-card">
               {user.resumeFiles.length === 0 ? (
                 <div className="profile-upload-area">
                   <div className="flex flex-col items-center gap-2 text-center max-w-[480px] mx-auto">
@@ -393,9 +393,9 @@ export default function ProfilePage() {
               <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileUpload} className="hidden" />
             </div>
           </div>
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-1 space-y-4 profile-col-right">
             <h3 className="text-xl font-bold px-4">AI-Powered Suggestions</h3>
-            <div className="space-y-4">
+            <div className="profile-suggestions-list">
               {suggestions.length === 0 ? (
                 <>
                   <div className="profile-suggestion-card">
