@@ -1021,7 +1021,7 @@ export default function ProfilePage() {
                 <h2 className="text-xl font-semibold text-gray-900">简历管理</h2>
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-4 py-2 bg-haigoo-primary text-white rounded-lg hover:bg-haigoo-primary/90 transition-colors"
+                  className="brand-btn"
                 >
                   <Upload className="w-4 h-4" />
                   上传简历
@@ -1046,8 +1046,8 @@ export default function ProfilePage() {
                           <span className="font-medium text-gray-900">{file.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Eye className="w-4 h-4 text-gray-400 cursor-pointer hover:text-haigoo-primary transition-colors" />
-                          <Download className="w-4 h-4 text-gray-400 cursor-pointer hover:text-haigoo-primary transition-colors" />
+                          <Eye className="w-4 h-4 text-gray-400 cursor-pointer hover:text-[var(--brand-blue)] transition-colors" />
+                          <Download className="w-4 h-4 text-gray-400 cursor-pointer hover:text-[var(--brand-blue)] transition-colors" />
                           <Trash2 
                             className="w-4 h-4 text-gray-400 cursor-pointer hover:text-red-500 transition-colors" 
                             onClick={() => deleteResumeFile(file.id)}
@@ -1071,7 +1071,7 @@ export default function ProfilePage() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center">
+          <div className="p-8 bg-white/70 rounded-lg border-2 border-dashed border-[var(--brand-border)] text-center">
                     <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">还没有上传简历</h3>
                     <p className="text-sm text-gray-600 mb-6">上传您的简历，让AI为您提供专业的优化建议</p>
@@ -1245,11 +1245,7 @@ export default function ProfilePage() {
                   <button
                     key={item.id}
                     onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-all duration-200 ${
-                      activeSection === item.id
-                        ? 'bg-[#3182CE] text-white shadow-sm'
-                        : 'text-[#1A365D] hover:bg-[#EAF3FF] hover:text-[#256bb0]'
-                    }`}
+                    className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-all duration-200 ${activeSection === item.id ? 'sidebar-active' : 'sidebar-link'}`}
                   >
                     <span className="font-medium">{item.label}</span>
                   </button>
