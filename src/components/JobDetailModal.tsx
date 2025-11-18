@@ -190,7 +190,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 
   // 处理职位描述数据
   const jobDescriptionData = useMemo(() => {
-    return segmentJobDescription(job.description || '')
+    const desc = typeof job.description === 'string' ? job.description : (job.description ? String(job.description) : '')
+    return segmentJobDescription(desc)
   }, [job.description])
 
   const canNavigatePrev = currentJobIndex > 0
@@ -375,7 +376,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                             className="text-sm text-haigoo-primary dark:text-[#3182CE] hover:text-haigoo-primary/80 dark:hover:text-[#256bb0] underline decoration-1 underline-offset-2 transition-colors"
                             title={'查看原始职位信息'}
                           >
-                            {job.source || new URL(job.sourceUrl).hostname}
+                            {(() => {
+                              if (job.source) return job.source
+                              try { return new URL(job.sourceUrl || '').hostname } catch { return job.sourceUrl || '' }
+                            })()}
                           </a>
                         </div>
                       )}
