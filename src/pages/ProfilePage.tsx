@@ -19,7 +19,7 @@ import {
   Briefcase,
   Heart
 } from 'lucide-react'
-import { Upload, FileText, Download, X, AlertCircle, ExternalLink, RefreshCw, Brain, Check, CheckCircle } from 'lucide-react'
+import { Upload, FileText, Download, X, AlertCircle, ExternalLink, RefreshCw, Brain, Check, CheckCircle, Shield } from 'lucide-react'
 import JobCard from '../components/JobCard'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -351,22 +351,11 @@ export default function ProfilePage() {
     return (
       <div className="space-y-6">
         <div className="profile-card p-6">
-          <div className="flex items-center justify-between">
-            <div className="w-full">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-black tracking-[-0.03em] text-gray-900">Resume Optimization</h2>
-                  <p className="text-gray-500 text-sm">Enhance your resume with AI-powered suggestions.</p>
-                </div>
-                <button className="profile-download-btn">
-                  <Download className="w-4 h-4" />
-                  Download Optimized Resume
-                </button>
-              </div>
-              <div className="mb-2 text-sm text-gray-700">Overall Resume Score</div>
-              <div className="profile-progress"><div className="fill" style={{ width: `${Math.max(0, Math.min(100, score))}%` }} /></div>
-            </div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-base font-medium">Overall Resume Score</p>
+            <p className="text-base font-bold text-[var(--profile-primary)]">{Math.max(0, Math.min(100, score))}%</p>
           </div>
+          <div className="profile-progress"><div className="fill" style={{ width: `${Math.max(0, Math.min(100, score))}%` }} /></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
@@ -408,10 +397,38 @@ export default function ProfilePage() {
             <h3 className="text-xl font-bold px-4">AI-Powered Suggestions</h3>
             <div className="space-y-4">
               {suggestions.length === 0 ? (
-                <div className="profile-card p-6 text-center">
-                  <Lightbulb className="w-8 h-8 text-[var(--profile-primary)] mx-auto mb-3" />
-                  <div className="text-sm text-gray-600">上传简历后将展示优化建议</div>
-                </div>
+                <>
+                  <div className="profile-suggestion-card">
+                    <div className="flex items-start gap-4">
+                      <CheckCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+                      <div className="flex-1">
+                        <h4 className="font-bold text-base">Strengthen Your Action Verbs</h4>
+                        <p className="text-sm text-gray-600 mt-1">Use powerful verbs to describe your accomplishments.</p>
+                        <button className="text-sm font-medium text-[var(--profile-primary)] mt-3">Learn More</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="profile-suggestion-card">
+                    <div className="flex items-start gap-4">
+                      <Lightbulb className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+                      <div className="flex-1">
+                        <h4 className="font-bold text-base">Add Quantifiable Results</h4>
+                        <p className="text-sm text-gray-600 mt-1">Include numbers and data to demonstrate your impact.</p>
+                        <button className="text-sm font-medium text-[var(--profile-primary)] mt-3">Show Example</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="profile-suggestion-card">
+                    <div className="flex items-start gap-4">
+                      <Shield className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+                      <div className="flex-1">
+                        <h4 className="font-bold text-base">ATS Compatibility Check</h4>
+                        <p className="text-sm text-gray-600 mt-1">Ensure your resume is formatted to pass through applicant tracking systems.</p>
+                        <button className="text-sm font-medium text-[var(--profile-primary)] mt-3">Learn More</button>
+                      </div>
+                    </div>
+                  </div>
+                </>
               ) : (
                 suggestions.map((s, idx) => (
                   <div key={idx} className="profile-suggestion-card">
@@ -977,24 +994,37 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen landing-bg-page profile-theme">
       <div className="max-w-7xl mx-auto px-8 py-10">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">个人中心</h1>
-            <p className="text-gray-600">简历管理与我的收藏</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-8">
-          <aside>
-            <div className="glass-card p-3">
-              <div className="flex flex-col gap-2" role="tablist" aria-label="个人中心切换">
-                <button className={`tab-pill ${activeTab==='resume' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='resume'} onClick={() => switchTab('resume')}>简历管理</button>
-                <button className={`tab-pill ${activeTab==='favorites' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='favorites'} onClick={() => switchTab('favorites')}>我的收藏</button>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
+          <aside className="profile-sidebar rounded-xl">
+            <div className="profile-nav-title">Personal Profile</div>
+            <div className="profile-nav" role="tablist" aria-label="个人中心切换">
+              <button className={`profile-nav-item ${activeTab==='resume' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='resume'} onClick={() => switchTab('resume')}>
+                <FileText className={`w-5 h-5 ${activeTab==='resume' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
+                <span className="text-sm font-medium">Resume Optimization</span>
+              </button>
+              <button className={`profile-nav-item ${activeTab==='favorites' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='favorites'} onClick={() => switchTab('favorites')}>
+                <Heart className={`w-5 h-5 ${activeTab==='favorites' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
+                <span className="text-sm font-medium">My Favorites</span>
+              </button>
             </div>
           </aside>
           <main>
             {activeTab === 'resume' ? (
-              <div className="space-y-8">{renderResumeSection()}</div>
+              <div className="space-y-8">
+                <div className="flex flex-wrap justify-between gap-4 items-center">
+                  <div className="flex min-w-72 flex-col gap-2">
+                    <p className="text-4xl font-black leading-tight tracking-[-0.033em]">Resume Optimization</p>
+                    <p className="text-gray-500 text-base">Enhance your resume with AI-powered suggestions.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="profile-download-btn">
+                      <Download className="w-4 h-4" />
+                      Download Optimized Resume
+                    </button>
+                  </div>
+                </div>
+                {renderResumeSection()}
+              </div>
             ) : (
               <div className="space-y-8">{renderFavoritesSection()}</div>
             )}

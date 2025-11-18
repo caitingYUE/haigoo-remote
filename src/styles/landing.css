@@ -180,6 +180,12 @@
 .profile-apply-btn:hover{ background:#c97549; }
 .profile-reset-btn{ display:flex; align-items:center; justify-content:center; width:100%; height:48px; border-radius:12px; background:transparent; border:1px solid #d1d5db; color:#131014; font-weight:600; }
 .profile-reset-btn:hover{ background:#f3f4f6; }
+.profile-sidebar{ background:#fff; border-right:1px solid #e9e6eb; min-height:calc(100vh - 120px); padding:16px; }
+.profile-nav{ display:flex; flex-direction:column; gap:8px; }
+.profile-nav-title{ padding:8px 16px; font-size:12px; font-weight:600; color:#6b7280; }
+.profile-nav-item{ display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:10px; color:#6b7280; }
+.profile-nav-item:hover{ background:#f3f4f6; }
+.profile-nav-item.active{ background: rgba(221,131,82,0.10); color: var(--profile-primary); font-weight:700; }
 .sidebar-link{ color: var(--brand-navy); border-radius:10px; }
 .sidebar-link:hover{ background: var(--brand-blue-10); color: var(--brand-blue-hover); }
 .sidebar-active{ background: var(--brand-blue); color:#FFFFFF; box-shadow:0 6px 12px rgba(49,130,206,0.24); }
