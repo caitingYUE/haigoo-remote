@@ -25,6 +25,12 @@ export default function LandingPage() {
     persist: false,
     namespace: 'landing'
   })
+  const { data: fallbackJobs } = usePageCache<Job[]>('landing-fallback-jobs', {
+    fetcher: async () => await processedJobsService.getAllProcessedJobs(200),
+    ttl: 60000,
+    persist: false,
+    namespace: 'landing'
+  })
 
   // categories 仅用于 Top6 逻辑，后续可复用
 
@@ -56,9 +62,14 @@ export default function LandingPage() {
   }
 
   // 聚合地点选项（去重、按出现次数排序，最多50项）
+  const sourceJobs = useMemo(() => {
+    const primary = jobs || []
+    return primary.length > 0 ? primary : (fallbackJobs || [])
+  }, [jobs, fallbackJobs])
+
   const locationOptions = useMemo(() => {
     const counter = new Map<string, number>()
-    ;(jobs || []).forEach(j => {
+    ;(sourceJobs || []).forEach(j => {
       tokenizeLocations(j.location || '').forEach(loc => {
         counter.set(loc, (counter.get(loc) || 0) + 1)
       })
@@ -67,18 +78,18 @@ export default function LandingPage() {
       .sort((a, b) => b[1] - a[1])
       .map(([loc]) => loc)
       .slice(0, 50)
-  }, [jobs])
+  }, [sourceJobs])
 
   const dynamicTabs = useMemo(() => {
     const counts: Record<string, number> = {}
-    ;(jobs || []).forEach(j => { if (j.category) counts[j.category] = (counts[j.category]||0)+1 })
+    ;(sourceJobs || []).forEach(j => { if (j.category) counts[j.category] = (counts[j.category]||0)+1 })
     const top = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,6)
     return ['全部', ...top]
-  }, [jobs])
-  const latestJobs = useMemo(() => [...(jobs || [])].sort((a,b)=>{
+  }, [sourceJobs])
+  const latestJobs = useMemo(() => [...(sourceJobs || [])].sort((a,b)=>{
     const ta = new Date(a.postedAt || 0).getTime(); const tb = new Date(b.postedAt || 0).getTime(); return tb - ta
-  }), [jobs])
-  const categoryJobs = useMemo(() => activeTab==='全部' ? (jobs||[]) : (jobs||[]).filter(j=>j.category===activeTab), [jobs, activeTab])
+  }), [sourceJobs])
+  const categoryJobs = useMemo(() => activeTab==='全部' ? (sourceJobs||[]) : (sourceJobs||[]).filter(j=>j.category===activeTab), [sourceJobs, activeTab])
 
   // 在首页就地搜索，不跳转页面
   const searchedJobs = useMemo(() => {
@@ -190,7 +201,7 @@ export default function LandingPage() {
                   <div className="flex gap-2 overflow-x-auto whitespace-nowrap py-1" role="tablist" aria-label="岗位分类切换">
                     {dynamicTabs.map(tab => {
                       const isActive = activeTab === tab
-                      const count = tab === '全部' ? (jobs||[]).length : (jobs||[]).filter(j=>j.category===tab).length
+                      const count = tab === '全部' ? (sourceJobs||[]).length : (sourceJobs||[]).filter(j=>j.category===tab).length
                       return (
                         <button key={tab} onClick={()=>setActiveTab(tab)} className={`tab-pill ${isActive ? 'active' : ''}`} role="tab" aria-selected={isActive}>
                           {tab}{count ? `（${count}）` : ''}
@@ -198,7 +209,7 @@ export default function LandingPage() {
                       )
                     })}
                   </div>
-                  <div className="text-sm text-gray-500">共 {(jobs||[]).length} 个职位</div>
+                  <div className="text-sm text-gray-500">共 {(sourceJobs||[]).length} 个职位</div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-10 mt-2">
                   {displayedJobs.map(job => (
