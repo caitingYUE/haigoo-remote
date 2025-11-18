@@ -361,8 +361,8 @@ export default function ProfilePage() {
                 </button>
               </div>
               <div className="mb-2 text-sm text-gray-700">总体简历评分</div>
-              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--brand-blue)] rounded-full transition-all" style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
+              <div className="profile-progress">
+                <div className="fill" style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
               </div>
               <div className="mt-1 text-right text-sm text-gray-600">{Math.max(0, Math.min(100, score))}%</div>
             </div>
@@ -389,7 +389,7 @@ export default function ProfilePage() {
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-[var(--brand-blue)]" />
+                      <FileText className="w-5 h-5 text-[var(--profile-primary)]" />
                       <span className="font-medium text-gray-900">{latest?.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -403,9 +403,9 @@ export default function ProfilePage() {
                     <span>上传时间: {latest?.uploadDate}</span>
                     {typeof latest?.aiScore === 'number' && (
                       <div className="flex items-center gap-2">
-                        <span className="text-[var(--brand-blue)] font-medium">AI评分: {latest.aiScore}/100</span>
+                        <span className="text-[var(--profile-primary)] font-medium">AI评分: {latest.aiScore}/100</span>
                         <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-[var(--brand-blue)] rounded-full transition-all" style={{ width: `${latest.aiScore}%` }} />
+                          <div className="h-full bg-[var(--profile-primary)] rounded-full transition-all" style={{ width: `${latest.aiScore}%` }} />
                         </div>
                       </div>
                     )}
@@ -422,14 +422,14 @@ export default function ProfilePage() {
             </div>
             {suggestions.length === 0 ? (
               <div className="p-10 bg-white/70 rounded-lg border border-[var(--brand-border)] text-center">
-                <Lightbulb className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+                <Lightbulb className="w-8 h-8 text-[var(--profile-primary)] mx-auto mb-3" />
                 <div className="text-sm text-gray-600">上传简历后将展示优化建议</div>
               </div>
             ) : (
               <div className="space-y-3">
                 {suggestions.map((s, idx) => (
                   <div key={idx} className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-start gap-3">
-                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                    <AlertCircle className="w-4 h-4 text-[var(--profile-primary)]" />
                     <div className="text-sm text-gray-700">{s}</div>
                   </div>
                 ))}
@@ -985,7 +985,7 @@ export default function ProfilePage() {
   
 
   return (
-    <div className="min-h-screen landing-bg-page">
+    <div className="min-h-screen landing-bg-page profile-theme">
       <div className="max-w-7xl mx-auto px-8 py-10">
         <div className="mb-4 flex items-center justify-between">
           <div>
