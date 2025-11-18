@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award } from 'lucide-react';
+import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award, Bookmark } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
@@ -119,24 +119,38 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       aria-describedby={`job-${job.id}-description`}
     >
       {/* 右上角操作按钮组 - 仅保留原始链接跳转 */}
-      {job.sourceUrl && (
-        <div 
-          className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          role="toolbar"
-          aria-label="职位操作"
-        >
+      <div 
+        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2"
+        role="toolbar"
+        aria-label="职位操作"
+      >
+        {/* 收藏按钮 */}
+        {onSave && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onSave(job.id); } }}
+            className={`p-3 rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center border ${isSaved ? 'bg-[#EAF3FF] text-[#3182CE] border-[#3182CE]/30' : 'text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] border-gray-200'}`}
+            title={isSaved ? '已收藏' : '收藏'}
+            aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
+            aria-pressed={Boolean(isSaved)}
+          >
+            <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} aria-hidden="true" />
+          </button>
+        )}
+        {/* 原始链接跳转 */}
+        {job.sourceUrl && (
           <button
             onClick={handleSourceClick}
             onKeyDown={handleSourceKeyDown}
-            className="p-3 text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-3 text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center border border-gray-200"
             title={`在 ${job.source} 查看原始职位`}
             aria-label={`在 ${job.source} 查看原始职位`}
             tabIndex={0}
           >
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Header */}
       <header className="flex items-start justify-between pr-12">

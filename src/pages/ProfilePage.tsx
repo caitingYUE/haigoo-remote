@@ -138,6 +138,7 @@ export default function ProfilePage() {
   const [isUploading, setIsUploading] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'resume' | 'favorites'>('resume')
   
   // 从登录用户数据初始化，如果没有则使用默认值
   const [user, setUser] = useState<UserProfile>({
@@ -925,14 +926,21 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen landing-bg-page">
       <div className="max-w-7xl mx-auto px-8 py-10">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">个人中心</h1>
-          <p className="text-gray-600">上传并优化你的简历，查看已收藏的职位</p>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">个人中心</h1>
+            <p className="text-gray-600">简历管理与我的收藏</p>
+          </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {renderResumeSection()}
-          {renderFavoritesSection()}
+        <div className="flex items-center gap-2 mb-6" role="tablist" aria-label="个人中心切换">
+          <button className={`tab-pill ${activeTab==='resume' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='resume'} onClick={() => setActiveTab('resume')}>简历管理</button>
+          <button className={`tab-pill ${activeTab==='favorites' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='favorites'} onClick={() => setActiveTab('favorites')}>我的收藏</button>
         </div>
+        {activeTab === 'resume' ? (
+          <div className="grid grid-cols-1 gap-8">{renderResumeSection()}</div>
+        ) : (
+          <div className="grid grid-cols-1 gap-8">{renderFavoritesSection()}</div>
+        )}
       </div>
     </div>
   )

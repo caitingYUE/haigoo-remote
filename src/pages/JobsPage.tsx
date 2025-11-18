@@ -202,6 +202,31 @@ export default function JobsPage() {
       } else {
         newSet.add(jobId)
       }
+      // 同步到个人资料，便于个人页面展示
+      ;(async () => {
+        try {
+          const list = Array.from(newSet)
+          const jobMap = new Map((jobs || []).map(j => [j.id, j]))
+          const payload = list.map(id => {
+            const j = jobMap.get(id)
+            return {
+              jobId: id,
+              jobTitle: j?.title || '',
+              company: j?.company || '',
+              savedAt: new Date().toISOString()
+            }
+          })
+          await fetch('/api/user-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ savedJobs: payload })
+          })
+          // 通知其他页面可选择刷新（可选）
+          window.dispatchEvent(new Event('user-profile-updated'))
+        } catch (e) {
+          console.warn('同步收藏失败', e)
+        }
+      })()
       return newSet
     })
   }
