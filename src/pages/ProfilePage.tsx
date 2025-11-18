@@ -517,7 +517,7 @@ export default function ProfilePage() {
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-haigoo-primary text-white rounded-lg hover:bg-haigoo-primary/90 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#3182CE] text-white rounded-lg hover:bg-[#256bb0] transition-colors"
               >
                 <Upload className="w-5 h-5" />
                 立即上传简历
@@ -1056,17 +1056,17 @@ export default function ProfilePage() {
                       </div>
                       <div className="flex items-center justify-between text-sm text-gray-500">
                         <span>上传时间: {file.uploadDate}</span>
-                        {file.aiScore && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-haigoo-primary font-medium">AI评分: {file.aiScore}/100</span>
-                            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-haigoo-primary to-purple-600 rounded-full transition-all duration-300"
-                                style={{ width: `${file.aiScore}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
+                {file.aiScore && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3182CE] font-medium">AI评分: {file.aiScore}/100</span>
+                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-[#3182CE] rounded-full transition-all duration-300"
+                        style={{ width: `${file.aiScore}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
                       </div>
                     </div>
                   ))
@@ -1247,8 +1247,8 @@ export default function ProfilePage() {
                     onClick={() => setActiveSection(item.id)}
                     className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                       activeSection === item.id
-                        ? 'bg-haigoo-primary text-white shadow-md'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-[#3182CE] text-white shadow-sm'
+                        : 'text-[#1A365D] hover:bg-[#EAF3FF] hover:text-[#256bb0]'
                     }`}
                   >
                     <span className="font-medium">{item.label}</span>
