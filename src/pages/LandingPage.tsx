@@ -6,6 +6,7 @@ import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 import '../styles/landing.css'
+import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import homeBgSvg from '../assets/home_bg.svg'
 
 export default function LandingPage() {
@@ -15,6 +16,8 @@ export default function LandingPage() {
   const [titleQuery, setTitleQuery] = useState<string>('')
   const [locationQuery, setLocationQuery] = useState<string>('')
   const [typeQuery, setTypeQuery] = useState<string>('')
+  const [showSubscribe, setShowSubscribe] = useState<boolean>(false)
+  const membershipUrl: string = (import.meta as any).env?.VITE_MEMBERSHIP_FORM_URL || '/club/apply'
 
   const { data: jobs, loading, error } = usePageCache<Job[]>('landing-all-jobs', {
     fetcher: async () => await processedJobsService.getAllProcessedJobsFull(100),
@@ -121,6 +124,31 @@ export default function LandingPage() {
             <div className="feature-item">日更数千个远程岗位</div>
             <div className="feature-item">AI为你求职保驾护航</div>
             <div className="feature-item">全球岗位、全行业覆盖</div>
+          </div>
+          {/* CTA：订阅岗位推送 / 加入社群 */}
+          <div className="hero-cta">
+            <div className="flex items-center gap-4">
+              <button
+                className="px-4 py-2 rounded-lg bg-[#3182CE] text-white font-semibold shadow-md hover:bg-[#256bb0]"
+                onClick={()=>setShowSubscribe(s=>!s)}
+                aria-expanded={showSubscribe}
+              >
+                订阅岗位推送
+              </button>
+              <a
+                href={membershipUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 rounded-lg bg-white text-[#1A365D] font-semibold border border-[#E2E8F0] shadow-sm hover:bg-[#f7fafc]"
+              >
+                加入俱乐部社群
+              </a>
+            </div>
+            {showSubscribe && (
+              <div className="mt-3 max-w-xl">
+                <JobAlertSubscribe />
+              </div>
+            )}
           </div>
         </div>
         

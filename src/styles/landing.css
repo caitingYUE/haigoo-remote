@@ -133,6 +133,9 @@
 @media (max-width:1280px){ .hero-safe-content .landing-search{ width:100% } }
 @media (max-width:1024px){ .hero-safe-content .landing-search{ width:100% } }
 
+/* Hero CTA：订阅与加入社群 */
+.hero-safe-content .hero-cta{ margin-top:12px; }
+
 /* 亮点条：极简三短句，无符号 */
 .feature-strip{ margin-top:16px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
 .feature-item{ color:var(--brand-navy); font-size:16px; font-weight:600; }
