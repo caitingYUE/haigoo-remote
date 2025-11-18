@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import '../styles/landing.css'
 import {
   Mail,
@@ -134,11 +135,30 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const { user: authUser } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'resume' | 'favorites'>('resume')
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const t = params.get('tab')
+    if (t === 'resume' || t === 'favorites') {
+      setActiveTab(t as 'resume' | 'favorites')
+    } else if (t === 'profile') {
+      setActiveTab('resume')
+    }
+  }, [location.search])
+
+  const switchTab = (t: 'resume' | 'favorites') => {
+    setActiveTab(t)
+    const sp = new URLSearchParams(location.search)
+    sp.set('tab', t)
+    navigate({ pathname: '/profile', search: `?${sp.toString()}` }, { replace: true })
+  }
   
   // 从登录用户数据初始化，如果没有则使用默认值
   const [user, setUser] = useState<UserProfile>({
@@ -933,8 +953,8 @@ export default function ProfilePage() {
           </div>
         </div>
         <div className="flex items-center gap-2 mb-6" role="tablist" aria-label="个人中心切换">
-          <button className={`tab-pill ${activeTab==='resume' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='resume'} onClick={() => setActiveTab('resume')}>简历管理</button>
-          <button className={`tab-pill ${activeTab==='favorites' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='favorites'} onClick={() => setActiveTab('favorites')}>我的收藏</button>
+          <button className={`tab-pill ${activeTab==='resume' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='resume'} onClick={() => switchTab('resume')}>简历管理</button>
+          <button className={`tab-pill ${activeTab==='favorites' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='favorites'} onClick={() => switchTab('favorites')}>我的收藏</button>
         </div>
         {activeTab === 'resume' ? (
           <div className="grid grid-cols-1 gap-8">{renderResumeSection()}</div>
