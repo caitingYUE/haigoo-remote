@@ -337,72 +337,113 @@ export default function ProfilePage() {
     }))
   }
 
-  const renderResumeSection = () => (
-    <div className="glass-card p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">简历上传与AI分析</h2>
-        <button onClick={() => fileInputRef.current?.click()} className="brand-btn">
-          <Upload className="w-4 h-4" />
-          上传简历
-        </button>
-      </div>
-
-      <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileUpload} className="hidden" />
-
-      {user.resumeFiles.length === 0 ? (
-        <div className="p-8 bg-white/70 rounded-lg border-2 border-dashed border-[var(--brand-border)] text-center">
-          <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">还没有上传简历</h3>
-          <p className="text-sm text-gray-600 mb-6">上传您的简历，AI 将为您提供专业的优化建议</p>
-          <button onClick={() => fileInputRef.current?.click()} className="brand-btn">选择文件</button>
-          <p className="text-xs text-gray-500 mt-3">支持 PDF、DOC、DOCX、TXT 格式</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {user.resumeFiles.map(file => (
-            <div key={file.id} className="p-6 bg-gray-50 rounded-lg border border-gray-200">
+  const renderResumeSection = () => {
+    const latest = user.resumeFiles[user.resumeFiles.length - 1]
+    const suggestions = latest?.suggestions || []
+    const score = typeof latest?.aiScore === 'number' ? latest.aiScore : (user.resumeScore || 0)
+    const applyAllSuggestions = () => {}
+    const resetSuggestions = () => {
+      setUser(prev => ({
+        ...prev,
+        resumeFiles: prev.resumeFiles.map(f => f.id === latest?.id ? { ...f, suggestions: [] } : f)
+      }))
+    }
+    return (
+      <div className="space-y-6">
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between">
+            <div className="w-full">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-[var(--brand-blue)]" />
-                  <span className="font-medium text-gray-900">{file.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Download className="w-4 h-4 text-gray-400 cursor-pointer hover:text-[var(--brand-blue)] transition-colors" />
-                  <button onClick={() => deleteResumeFile(file.id)} className="p-2 text-gray-400 hover:text-red-500">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <h2 className="text-xl font-semibold text-gray-900">简历优化</h2>
+                <button className="brand-btn-outline">
+                  <Download className="w-4 h-4" />
+                  下载优化简历
+                </button>
               </div>
-              <div className="flex items-center justify-between text-sm text-gray-500">
-                <span>上传时间: {file.uploadDate}</span>
-                {file.aiScore && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[var(--brand-blue)] font-medium">AI评分: {file.aiScore}/100</span>
-                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-[var(--brand-blue)] rounded-full transition-all" style={{ width: `${file.aiScore}%` }} />
+              <div className="mb-2 text-sm text-gray-700">总体简历评分</div>
+              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-[var(--brand-blue)] rounded-full transition-all" style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
+              </div>
+              <div className="mt-1 text-right text-sm text-gray-600">{Math.max(0, Math.min(100, score))}%</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="glass-card p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">我的简历</h3>
+            </div>
+            {user.resumeFiles.length === 0 ? (
+              <div className="p-10 bg-white/70 rounded-lg border-2 border-dashed border-[var(--brand-border)] text-center">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <div className="text-sm text-gray-600 mb-2">还没有上传简历</div>
+                <button onClick={() => fileInputRef.current?.click()} className="brand-btn">
+                  <Upload className="w-4 h-4" />
+                  上传简历
+                </button>
+                <p className="text-xs text-gray-500 mt-3">支持 PDF、DOC、DOCX、TXT</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-[var(--brand-blue)]" />
+                      <span className="font-medium text-gray-900">{latest?.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Download className="w-4 h-4 text-gray-400 cursor-pointer hover:text-[var(--brand-blue)] transition-colors" />
+                      <button onClick={() => latest && deleteResumeFile(latest.id)} className="p-2 text-gray-400 hover:text-red-500">
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                )}
-              </div>
-              {file.suggestions && file.suggestions.length > 0 && (
-                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <h5 className="font-medium text-amber-900 mb-2">AI优化建议:</h5>
-                  <ul className="space-y-1">
-                    {file.suggestions.map((s, idx) => (
-                      <li key={idx} className="text-sm text-amber-800 flex items-center gap-2">
-                        <AlertCircle className="w-3 h-3" />
-                        {s}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <span>上传时间: {latest?.uploadDate}</span>
+                    {typeof latest?.aiScore === 'number' && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[var(--brand-blue)] font-medium">AI评分: {latest.aiScore}/100</span>
+                        <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-[var(--brand-blue)] rounded-full transition-all" style={{ width: `${latest.aiScore}%` }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileUpload} className="hidden" />
+          </div>
+
+          <div className="glass-card p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">AI建议</h3>
             </div>
-          ))}
+            {suggestions.length === 0 ? (
+              <div className="p-10 bg-white/70 rounded-lg border border-[var(--brand-border)] text-center">
+                <Lightbulb className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+                <div className="text-sm text-gray-600">上传简历后将展示优化建议</div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {suggestions.map((s, idx) => (
+                  <div key={idx} className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-start gap-3">
+                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                    <div className="text-sm text-gray-700">{s}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-6 flex items-center gap-3">
+              <button onClick={applyAllSuggestions} className="brand-btn">应用建议</button>
+              <button onClick={resetSuggestions} className="brand-btn-outline">重置建议</button>
+            </div>
+          </div>
         </div>
-      )}
-    </div>
-  )
+      </div>
+    )
+  }
 
   const renderFavoritesSection = () => {
     const savedIds = new Set<string>((user.savedJobs || []).map(s => s.jobId))
@@ -952,15 +993,23 @@ export default function ProfilePage() {
             <p className="text-gray-600">简历管理与我的收藏</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 mb-6" role="tablist" aria-label="个人中心切换">
-          <button className={`tab-pill ${activeTab==='resume' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='resume'} onClick={() => switchTab('resume')}>简历管理</button>
-          <button className={`tab-pill ${activeTab==='favorites' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='favorites'} onClick={() => switchTab('favorites')}>我的收藏</button>
+        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-8">
+          <aside>
+            <div className="glass-card p-3">
+              <div className="flex flex-col gap-2" role="tablist" aria-label="个人中心切换">
+                <button className={`tab-pill ${activeTab==='resume' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='resume'} onClick={() => switchTab('resume')}>简历管理</button>
+                <button className={`tab-pill ${activeTab==='favorites' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='favorites'} onClick={() => switchTab('favorites')}>我的收藏</button>
+              </div>
+            </div>
+          </aside>
+          <main>
+            {activeTab === 'resume' ? (
+              <div className="space-y-8">{renderResumeSection()}</div>
+            ) : (
+              <div className="space-y-8">{renderFavoritesSection()}</div>
+            )}
+          </main>
         </div>
-        {activeTab === 'resume' ? (
-          <div className="grid grid-cols-1 gap-8">{renderResumeSection()}</div>
-        ) : (
-          <div className="grid grid-cols-1 gap-8">{renderFavoritesSection()}</div>
-        )}
       </div>
     </div>
   )
