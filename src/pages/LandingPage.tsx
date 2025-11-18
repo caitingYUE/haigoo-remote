@@ -6,6 +6,7 @@ import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 import '../styles/landing.css'
+import JobDetailModal from '../components/JobDetailModal'
 import homeBgSvg from '../assets/home_bg.svg'
 
 export default function LandingPage() {
@@ -15,6 +16,9 @@ export default function LandingPage() {
   const [titleQuery, setTitleQuery] = useState<string>('')
   const [locationQuery, setLocationQuery] = useState<string>('')
   const [typeQuery, setTypeQuery] = useState<string>('')
+  const [isDetailOpen, setIsDetailOpen] = useState<boolean>(false)
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [currentJobIndex, setCurrentJobIndex] = useState<number>(-1)
   
 
   const { data: jobs, loading, error } = usePageCache<Job[]>('landing-all-jobs-v2', {
@@ -119,6 +123,28 @@ export default function LandingPage() {
     setDisplayLimit(24)
   }
 
+  const openJobDetail = (job: Job) => {
+    const idx = (searchedJobs || []).findIndex(j => j.id === job.id)
+    setSelectedJob(job)
+    setCurrentJobIndex(idx)
+    setIsDetailOpen(true)
+  }
+
+  const closeJobDetail = () => {
+    setIsDetailOpen(false)
+    setSelectedJob(null)
+    setCurrentJobIndex(-1)
+  }
+
+  const handleNavigateJob = (direction: 'prev' | 'next') => {
+    if (currentJobIndex < 0) return
+    const list = searchedJobs || []
+    let next = currentJobIndex + (direction === 'next' ? 1 : -1)
+    next = Math.max(0, Math.min(list.length - 1, next))
+    setCurrentJobIndex(next)
+    setSelectedJob(list[next] || null)
+  }
+
   return (
     <div className="min-h-screen landing-bg-page">
       {/* 新：渐变背景 + 前景SVG分层，文字使用安全区，避免遮挡 */}
@@ -187,7 +213,7 @@ export default function LandingPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
                   {displayedJobs.map(job => (
-                    <JobCard key={job.id} job={job} onClick={()=>navigate(`/job/${job.id}`)} />
+                    <JobCard key={job.id} job={job} onClick={()=>openJobDetail(job)} />
                   ))}
                 </div>
                 {displayedJobs.length < (activeTab==='全部'? latestJobs.length : categoryJobs.length) && (
@@ -200,6 +226,14 @@ export default function LandingPage() {
       </section>
 
   {/* 页脚由全局 Footer 统一渲染，这里不重复 */}
+      <JobDetailModal
+        job={selectedJob}
+        isOpen={isDetailOpen}
+        onClose={closeJobDetail}
+        jobs={searchedJobs}
+        currentJobIndex={currentJobIndex}
+        onNavigateJob={handleNavigateJob}
+      />
     </div>
   )
 }
