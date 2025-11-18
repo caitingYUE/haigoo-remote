@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 
-export default function JobAlertSubscribe() {
+type Variant = 'card' | 'compact'
+
+export default function JobAlertSubscribe({ variant = 'card' }: { variant?: Variant }) {
   const [channel, setChannel] = useState<'email'|'feishu'>('email')
   const [identifier, setIdentifier] = useState('')
   const [topic, setTopic] = useState('product')
@@ -20,6 +22,17 @@ export default function JobAlertSubscribe() {
     } catch {
       setStatus('error')
     }
+  }
+
+  if (variant === 'compact') {
+    return (
+      <div className="cta-inline" role="form" aria-label="订阅岗位推送">
+        <input className="cta-input" placeholder="输入邮箱即可订阅" value={identifier} onChange={e=>setIdentifier(e.target.value)} />
+        <button onClick={submit} className="cta-btn">订阅</button>
+        {status==='done' && <span className="text-green-600 text-xs">已订阅</span>}
+        {status==='error' && <span className="text-red-600 text-xs">失败</span>}
+      </div>
+    )
   }
 
   return (

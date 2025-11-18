@@ -155,6 +155,15 @@ export default function LandingPage() {
                 加入俱乐部社群
               </a>
             </div>
+            <div className="mt-2">
+              <JobAlertSubscribe variant="compact" />
+            </div>
+            <div className="cta-benefits">
+              <span className="cta-chip">每日精选</span>
+              <span className="cta-chip">优先内推</span>
+              <span className="cta-chip">远程经验交流</span>
+              <span className="cta-chip">职业指导</span>
+            </div>
             {showSubscribe && (
               <div className="mt-3 max-w-xl">
                 <JobAlertSubscribe />

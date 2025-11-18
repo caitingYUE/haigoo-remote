@@ -135,6 +135,8 @@
 
 /* Hero CTA：订阅与加入社群 */
 .hero-safe-content .hero-cta{ margin-top:12px; }
+.hero-safe-content .hero-cta .cta-inline{ box-shadow:0 3px 8px rgba(15,23,42,0.05); }
+.hero-safe-content .hero-cta .cta-benefits{ opacity:.9 }
 
 /* 亮点条：极简三短句，无符号 */
 .feature-strip{ margin-top:16px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
@@ -150,3 +152,11 @@
 
 /* 社群加入按钮样式（更有吸引力） */
 /* 回退：不使用自定义 club-join-btn */
+
+/* CTA 紧凑内联订阅 */
+.cta-inline{ display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 10px; border-radius:20px; background:#FFFFFF; border:1px solid #E2E8F0; box-shadow:0 4px 10px rgba(15,23,42,0.06); }
+.cta-input{ width:220px; border:none; outline:none; font-size:14px; color:#1A365D; background:transparent; }
+.cta-btn{ height:32px; padding:0 14px; border-radius:16px; background:var(--brand-blue); color:#FFFFFF; font-weight:600; border:none; }
+.cta-note{ margin-top:6px; color:#64748B; font-size:12px; }
+.cta-benefits{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.cta-chip{ padding:6px 10px; border-radius:9999px; background:#F1F5F9; color:#334155; font-size:12px; font-weight:600; }
