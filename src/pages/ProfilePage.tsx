@@ -225,10 +225,7 @@ export default function ProfilePage() {
   const sidebarItems = [
     { id: 'profile', label: '个人资料', icon: User },
     { id: 'resume', label: '简历管理', icon: FileText },
-    { id: 'subscriptions', label: '职位订阅', icon: Bell },
-    { id: 'insights', label: 'AI职业洞察', icon: TrendingUp },
-    { id: 'applications', label: '我的申请', icon: Briefcase },
-    { id: 'settings', label: '设置', icon: Settings }
+    { id: 'favorites', label: '我的收藏', icon: Heart }
   ]
 
   // 文件上传处理
@@ -1174,6 +1171,8 @@ export default function ProfilePage() {
       
       case 'resume':
         return renderResumeManagement()
+      case 'favorites':
+        return renderJobManagement()
       
       case 'subscriptions':
         return (
@@ -1222,11 +1221,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-[#EAF3FF] via-[#F7FAFC] to-white">
       {/* 统一的容器 - 移除阴影，使用更简洁的布局 */}
       <div className="flex max-w-7xl mx-auto">
         {/* 左侧边栏 - 固定宽度，与右侧内容对齐 */}
-        <aside className="w-80 bg-white border-r border-gray-200 flex-shrink-0 min-h-screen">
+        <aside className="w-80 bg-white/90 backdrop-blur-sm border-r border-gray-200 flex-shrink-0 min-h-screen">
           <div className="p-8 border-b border-gray-100">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-haigoo-primary to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
@@ -1261,9 +1260,9 @@ export default function ProfilePage() {
         </aside>
 
         {/* 右侧主内容区域 - 充分利用剩余空间 */}
-        <main className="flex-1 min-h-screen bg-gray-50">
+        <main className="flex-1 min-h-screen">
           {/* 页面头部 - 与侧边栏顶部对齐 */}
-          <div className="px-8 py-8 bg-white border-b border-gray-100">
+          <div className="px-8 py-8 bg-white/90 backdrop-blur-sm border-b border-gray-100">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">

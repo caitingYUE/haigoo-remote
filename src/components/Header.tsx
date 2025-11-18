@@ -92,10 +92,7 @@ export default function Header() {
   const userMenuItems = [
     { id: 'profile', label: '个人资料', href: '/profile?tab=profile' },
     { id: 'resume', label: '简历管理', href: '/profile?tab=resume' },
-    { id: 'subscriptions', label: '职位订阅', href: '/profile?tab=subscriptions' },
-    { id: 'insights', label: 'AI职业洞察', href: '/profile?tab=insights' },
-    { id: 'applications', label: '我的申请', href: '/profile?tab=applications' },
-    { id: 'settings', label: '设置', href: '/profile?tab=settings' }
+    { id: 'favorites', label: '我的收藏', href: '/profile?tab=favorites' }
   ]
 
   return (
