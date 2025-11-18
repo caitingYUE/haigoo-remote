@@ -171,6 +171,15 @@
 .profile-progress{ height:12px; background:#e9e6eb; border-radius:9999px; overflow:hidden; }
 .profile-progress .fill{ height:100%; background: var(--profile-primary); border-radius:9999px; }
 .profile-outline-btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; background:transparent; color: var(--profile-primary); border:1px solid var(--profile-primary); }
+.profile-download-btn{ display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 16px; border-radius:12px; background:#e9e6eb; color:#131014; font-weight:700; border:none; }
+.profile-download-btn:hover{ background:#e3e0e5; }
+.profile-card{ background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #f1f1f3; }
+.profile-upload-area{ border:2px dashed #e9e6eb; border-radius:12px; padding:32px; text-align:center; }
+.profile-suggestion-card{ background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border:1px solid #f1f1f3; padding:20px; }
+.profile-apply-btn{ display:flex; align-items:center; justify-content:center; width:100%; height:48px; border-radius:12px; background: var(--profile-primary); color:#fff; font-weight:700; }
+.profile-apply-btn:hover{ background:#c97549; }
+.profile-reset-btn{ display:flex; align-items:center; justify-content:center; width:100%; height:48px; border-radius:12px; background:transparent; border:1px solid #d1d5db; color:#131014; font-weight:600; }
+.profile-reset-btn:hover{ background:#f3f4f6; }
 .sidebar-link{ color: var(--brand-navy); border-radius:10px; }
 .sidebar-link:hover{ background: var(--brand-blue-10); color: var(--brand-blue-hover); }
 .sidebar-active{ background: var(--brand-blue); color:#FFFFFF; box-shadow:0 6px 12px rgba(49,130,206,0.24); }

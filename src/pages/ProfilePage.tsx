@@ -350,95 +350,85 @@ export default function ProfilePage() {
     }
     return (
       <div className="space-y-6">
-        <div className="glass-card p-6">
+        <div className="profile-card p-6">
           <div className="flex items-center justify-between">
             <div className="w-full">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">简历优化</h2>
-                <button className="brand-btn-outline">
+                <div>
+                  <h2 className="text-2xl font-black tracking-[-0.03em] text-gray-900">Resume Optimization</h2>
+                  <p className="text-gray-500 text-sm">Enhance your resume with AI-powered suggestions.</p>
+                </div>
+                <button className="profile-download-btn">
                   <Download className="w-4 h-4" />
-                  下载优化简历
+                  Download Optimized Resume
                 </button>
               </div>
-              <div className="mb-2 text-sm text-gray-700">总体简历评分</div>
-              <div className="profile-progress">
-                <div className="fill" style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
-              </div>
-              <div className="mt-1 text-right text-sm text-gray-600">{Math.max(0, Math.min(100, score))}%</div>
+              <div className="mb-2 text-sm text-gray-700">Overall Resume Score</div>
+              <div className="profile-progress"><div className="fill" style={{ width: `${Math.max(0, Math.min(100, score))}%` }} /></div>
             </div>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="glass-card p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">我的简历</h3>
-            </div>
-            {user.resumeFiles.length === 0 ? (
-              <div className="p-10 bg-white/70 rounded-lg border-2 border-dashed border-[var(--brand-border)] text-center">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <div className="text-sm text-gray-600 mb-2">还没有上传简历</div>
-                <button onClick={() => fileInputRef.current?.click()} className="brand-btn">
-                  <Upload className="w-4 h-4" />
-                  上传简历
-                </button>
-                <p className="text-xs text-gray-500 mt-3">支持 PDF、DOC、DOCX、TXT</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-[var(--profile-primary)]" />
-                      <span className="font-medium text-gray-900">{latest?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Download className="w-4 h-4 text-gray-400 cursor-pointer hover:text-[var(--brand-blue)] transition-colors" />
-                      <button onClick={() => latest && deleteResumeFile(latest.id)} className="p-2 text-gray-400 hover:text-red-500">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>上传时间: {latest?.uploadDate}</span>
-                    {typeof latest?.aiScore === 'number' && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[var(--profile-primary)] font-medium">AI评分: {latest.aiScore}/100</span>
-                        <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-[var(--profile-primary)] rounded-full transition-all" style={{ width: `${latest.aiScore}%` }} />
-                        </div>
-                      </div>
-                    )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-xl font-bold px-4">Your Resume</h3>
+            <div className="profile-card p-6">
+              {user.resumeFiles.length === 0 ? (
+                <div className="profile-upload-area">
+                  <div className="flex flex-col items-center gap-2 text-center max-w-[480px] mx-auto">
+                    <FileText className="w-12 h-12 text-gray-400" />
+                    <p className="text-lg font-bold">No resume uploaded yet</p>
+                    <p className="text-sm text-gray-500">Drag and drop your file here or click to upload.</p>
+                    <button onClick={() => fileInputRef.current?.click()} className="profile-apply-btn" style={{ width: '240px', height: '40px' }}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Resume
+                    </button>
+                    <p className="text-xs text-gray-500">支持 PDF、DOC、DOCX、TXT</p>
                   </div>
                 </div>
-              </div>
-            )}
-            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileUpload} className="hidden" />
-          </div>
-
-          <div className="glass-card p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">AI建议</h3>
-            </div>
-            {suggestions.length === 0 ? (
-              <div className="p-10 bg-white/70 rounded-lg border border-[var(--brand-border)] text-center">
-                <Lightbulb className="w-8 h-8 text-[var(--profile-primary)] mx-auto mb-3" />
-                <div className="text-sm text-gray-600">上传简历后将展示优化建议</div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {suggestions.map((s, idx) => (
-                  <div key={idx} className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-start gap-3">
-                    <AlertCircle className="w-4 h-4 text-[var(--profile-primary)]" />
-                    <div className="text-sm text-gray-700">{s}</div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-xl border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-[var(--profile-primary)]" />
+                        <span className="font-medium text-gray-900">{latest?.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Download className="w-4 h-4 text-gray-400" />
+                        <button onClick={() => latest && deleteResumeFile(latest.id)} className="p-2 text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-            <div className="mt-6 flex items-center gap-3">
-              <button onClick={applyAllSuggestions} className="brand-btn">应用建议</button>
-              <button onClick={resetSuggestions} className="brand-btn-outline">重置建议</button>
+                </div>
+              )}
+              <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileUpload} className="hidden" />
             </div>
+          </div>
+          <div className="lg:col-span-1 space-y-4">
+            <h3 className="text-xl font-bold px-4">AI-Powered Suggestions</h3>
+            <div className="space-y-4">
+              {suggestions.length === 0 ? (
+                <div className="profile-card p-6 text-center">
+                  <Lightbulb className="w-8 h-8 text-[var(--profile-primary)] mx-auto mb-3" />
+                  <div className="text-sm text-gray-600">上传简历后将展示优化建议</div>
+                </div>
+              ) : (
+                suggestions.map((s, idx) => (
+                  <div key={idx} className="profile-suggestion-card">
+                    <div className="flex items-start gap-4">
+                      <AlertCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+                      <div className="flex-1">
+                        <h4 className="font-bold text-base">建议 {idx + 1}</h4>
+                        <p className="text-sm text-gray-600 mt-1">{s}</p>
+                        <button className="text-sm font-medium text-[var(--profile-primary)] mt-3">Learn More</button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <button className="profile-apply-btn mt-4" onClick={applyAllSuggestions}>Apply Suggestions</button>
+            <button className="profile-reset-btn" onClick={resetSuggestions}>Reset Suggestions</button>
           </div>
         </div>
       </div>
