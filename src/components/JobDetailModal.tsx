@@ -126,6 +126,11 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     }
   }
 
+  const jobDescriptionData = useMemo(() => {
+    const desc = typeof job?.description === 'string' ? job?.description as string : (job?.description ? String(job?.description) : '')
+    return segmentJobDescription(desc)
+  }, [job])
+
   if (!job || !isOpen) return null
 
   const matchPercentage = Math.floor(Math.random() * 20) + 80
@@ -188,11 +193,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     })
   }
 
-  // 处理职位描述数据
-  const jobDescriptionData = useMemo(() => {
-    const desc = typeof job.description === 'string' ? job.description : (job.description ? String(job.description) : '')
-    return segmentJobDescription(desc)
-  }, [job.description])
+  // 处理职位描述数据：已提前计算，保证 hooks 调用顺序一致
 
   const canNavigatePrev = currentJobIndex > 0
   const canNavigateNext = currentJobIndex < jobs.length - 1
