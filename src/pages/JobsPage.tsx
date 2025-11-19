@@ -218,8 +218,8 @@ export default function JobsPage() {
     console.log('[JobsPage] current saved state:', isSaved)
     setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
     try {
-      console.log('[JobsPage] sending request to:', `/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}`)
-      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}`, {
+      console.log('[JobsPage] sending request to:', `/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}`)
+      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ jobId })

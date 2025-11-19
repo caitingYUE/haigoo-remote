@@ -8,6 +8,7 @@ import RSSStatusIndicator from '../components/RSSStatusIndicator'
 import JobCard from '../components/JobCard'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
+import type { ProcessedJobsResponse } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 // ❌ 不再前端实时翻译，数据从后端API获取已翻译
 // import { jobTranslationService } from '../services/job-translation-service'
@@ -43,36 +44,42 @@ export default function HomePage() {
   // 加载阶段状态
   const [loadingStage, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
   
-  // 使用页面缓存 Hook
+  const PAGE_SIZE = 24
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [hasMore, setHasMore] = useState<boolean>(true)
+  const [pagedJobs, setPagedJobs] = useState<Job[]>([])
+  const [totalJobs, setTotalJobs] = useState<number>(0)
+
   const {
-    data: jobs,
+    data: jobsResp,
     loading,
     error: loadError,
     refresh,
     isFromCache,
     cacheAge
-  } = usePageCache<Job[]>('homepage-all-jobs', {
+  } = usePageCache<ProcessedJobsResponse>('homepage-paged-jobs', {
     fetcher: async () => {
       try {
-        // 新首页使用后台数据库“全部数据”：聚合所有分页；本地失败时自动回退到预发
         setLoadingStage('fetching')
-        const allJobs = await processedJobsService.getAllProcessedJobsFull(100)
+        const resp = await processedJobsService.getProcessedJobs(1, PAGE_SIZE)
         setLoadingStage('idle')
-
-        console.log(`✅ 已聚合全部岗位，共 ${allJobs.length} 条（后端已翻译）`)
-        return allJobs
+        return resp
       } catch (error) {
         setLoadingStage('idle')
         throw error
       }
     },
-    ttl: 0, // 永不过期，只有手动刷新才更新
-    persist: true, // 持久化到 localStorage
+    ttl: 5 * 60 * 1000,
+    persist: true,
     namespace: 'homepage',
-    onSuccess: (jobs) => {
+    onSuccess: (resp) => {
       setLastUpdateTime(new Date())
+      setPagedJobs(resp.jobs)
+      setHasMore(resp.hasMore)
+      setCurrentPage(resp.page)
+      setTotalJobs(resp.total)
       setLoadingStage('idle')
-      console.log(`✅ 首页加载了 ${jobs.length} 个岗位（${isFromCache ? '来自缓存' : '新数据'}）`)
+      console.log(`✅ 首页首屏加载 ${resp.jobs.length}/${resp.total} 个岗位（${isFromCache ? '来自缓存' : '新数据'}）`)
     }
   })
   
@@ -83,7 +90,6 @@ export default function HomePage() {
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
   const [activeTab, setActiveTab] = useState<string>('全部')
-  const [displayLimit, setDisplayLimit] = useState<number>(24)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
@@ -96,9 +102,9 @@ export default function HomePage() {
   // 归一化筛选：使用RSS处理后的岗位作为基础，支持URL参数与Tab过滤
   const categories = useMemo(() => {
     const set = new Set<string>()
-    ;(jobs || []).forEach(j => { if (j.category) set.add(j.category) })
+    ;(pagedJobs || []).forEach(j => { if (j.category) set.add(j.category) })
     return Array.from(set).sort()
-  }, [jobs])
+  }, [pagedJobs])
 
   // 动态生成Tabs：全部、最新、各岗位类别
   const dynamicTabs = useMemo(() => {
@@ -107,7 +113,7 @@ export default function HomePage() {
   }, [categories])
 
   const filteredAllJobs = useMemo(() => {
-    let filtered = (jobs || [])
+    let filtered = (pagedJobs || [])
 
     if (locationFilter) {
       filtered = filtered.filter(job => 
@@ -129,7 +135,7 @@ export default function HomePage() {
     }
 
     return filtered
-  }, [jobs, locationFilter, typeFilter, skillsFilter])
+  }, [pagedJobs, locationFilter, typeFilter, skillsFilter])
 
   const latestJobs = useMemo(() => {
     return [...filteredAllJobs].sort((a, b) => {
@@ -146,8 +152,8 @@ export default function HomePage() {
 
   const displayedJobs = useMemo(() => {
     const base = activeTab === '全部' ? latestJobs : categoryJobs
-    return base.slice(0, displayLimit)
-  }, [activeTab, latestJobs, categoryJobs, displayLimit])
+    return base
+  }, [activeTab, latestJobs, categoryJobs])
 
   // 从URL参数读取tab，驱动初始Tab状态
   useEffect(() => {
@@ -186,7 +192,7 @@ export default function HomePage() {
 
     // 如果没有打开详情，则在当前数据源中查找该岗位
     if (!job) {
-      job = jobs?.find(j => j.id === jobId) || null
+      job = pagedJobs?.find(j => j.id === jobId) || null
     }
 
     // 成功定位岗位则带状态跳转到申请页；否则兜底直接跳转
@@ -228,8 +234,8 @@ export default function HomePage() {
     console.log('[HomePage] current saved state:', isSaved)
     setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
     try {
-      console.log('[HomePage] sending request to:', `/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}`)
-      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}`, {
+    console.log('[HomePage] sending request to:', `/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}`)
+      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ jobId })
@@ -320,7 +326,7 @@ export default function HomePage() {
                   })}
                 </div>
                 <div className="text-sm text-gray-500">
-                  共 {filteredAllJobs.length} 个职位
+                  共 {totalJobs} 个职位，已加载 {pagedJobs.length}
                 </div>
               </div>
 
@@ -336,10 +342,21 @@ export default function HomePage() {
                 ))}
               </div>
               {/* 加载更多（保持性能与信息密度） */}
-              {displayedJobs.length < (activeTab === '全部' ? latestJobs.length : categoryJobs.length) && (
+              {hasMore && (
                 <div className="flex justify-center mt-6">
                   <button
-                    onClick={() => setDisplayLimit(dl => dl + 24)}
+                    onClick={async () => {
+                      const nextPage = currentPage + 1
+                      try {
+                        const resp = await processedJobsService.getProcessedJobs(nextPage, PAGE_SIZE)
+                        setPagedJobs(prev => prev.concat(resp.jobs))
+                        setCurrentPage(resp.page)
+                        setHasMore(resp.hasMore)
+                        setTotalJobs(resp.total)
+                      } catch (e) {
+                        console.warn('加载更多失败', e)
+                      }
+                    }}
                     className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
                   >
                     加载更多
