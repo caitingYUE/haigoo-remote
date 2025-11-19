@@ -53,6 +53,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [activeTab, setActiveTab] = useState<'raw' | 'processed' | 'storage'>('processed');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [translating, setTranslating] = useState(false); // 🆕 翻译按钮专用状态
   const { showSuccess, showError } = useNotificationHelpers();
   
   // 原始数据状态
@@ -162,7 +163,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     }
   };
 
-  // 手动刷新处理后数据（仅拉取RSS并更新“处理后数据”）
+  // 手动刷新处理后数据（仅拉取RSS并更新"处理后数据"）
   const handleRefreshProcessedOnly = async () => {
     try {
       setSyncing(true);
@@ -181,6 +182,53 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       showError('刷新失败', '请检查后端服务或网络连接');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  // 🆕 手动触发后端翻译任务
+  const handleTriggerTranslation = async () => {
+    try {
+      setTranslating(true); // 使用独立的翻译状态
+      console.log('🌍 触发后端翻译任务...');
+      
+      // 调用后端cron job API进行翻译
+      const response = await fetch('/api/cron/sync-jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `翻译任务失败: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ 翻译任务完成:', result);
+
+      // 重新加载数据
+      await loadProcessedData();
+      await loadStorageStats();
+
+      // 显示详细统计
+      const stats = result.stats;
+      showSuccess(
+        '翻译完成', 
+        `共处理 ${stats.totalJobs} 个岗位，翻译 ${stats.translatedJobs} 个，跳过 ${stats.skippedJobs} 个，失败 ${stats.failedJobs} 个`
+      );
+
+      // 广播全局事件，通知前台页面刷新
+      try {
+        window.dispatchEvent(new Event('processed-jobs-updated'));
+      } catch (e) {
+        console.warn('广播处理后数据更新事件失败', e);
+      }
+    } catch (error) {
+      console.error('❌ 翻译任务失败:', error);
+      showError('翻译失败', error instanceof Error ? error.message : '请检查后端服务或网络连接');
+    } finally {
+      setTranslating(false); // 使用独立的翻译状态
     }
   };
   
@@ -717,9 +765,9 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       <span className="font-medium text-gray-900 text-sm">{job.company}</span>
                     </div>
                   </Tooltip>
-                  {job.url && (
+                  {(job.companyWebsite || job.url) && (
                     <a
-                      href={job.url}
+                      href={job.companyWebsite || job.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs mt-1"
@@ -964,6 +1012,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             </button>
           )}
           {activeTab === 'processed' && (
+            <div className="flex gap-2">
             <button
               onClick={handleRefreshProcessedOnly}
               disabled={syncing}
@@ -972,6 +1021,18 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? '刷新中...' : '刷新处理后数据'}
             </button>
+              <button
+                onClick={handleTriggerTranslation}
+                disabled={translating || syncing} // 翻译或刷新时都禁用
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-green-300 text-green-700 bg-green-50 rounded-md hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="将现有岗位数据翻译成中文"
+              >
+                <svg className={`w-3 h-3 ${translating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                </svg>
+                {translating ? '翻译中...' : '翻译数据'}
+              </button>
+            </div>
           )}
           {/* 按需：导出数据按钮已移除 */}
         </div>

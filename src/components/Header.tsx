@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import logoSvg from '../assets/logo.svg'
+const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || logoSvg
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -87,18 +88,15 @@ export default function Header() {
     }
   }
 
-  // 简化用户菜单选项，保留核心功能（移除图标）
-  const userMenuItems = [
-    { id: 'profile', label: '个人资料', href: '/profile?tab=profile' },
-    { id: 'resume', label: '简历优化', href: '/profile?tab=resume' },
-    { id: 'applications', label: '申请记录', href: '/profile?tab=applications' },
-    { id: 'insights', label: 'AI洞察', href: '/profile?tab=insights' },
-    { id: 'settings', label: '设置', href: '/profile?tab=settings' }
+  // 用户菜单选项 - 恢复个人中心入口
+  const userMenuItems: { id: string; label: string; href: string }[] = [
+    { id: 'profile-resume', label: '我的简历', href: '/profile?tab=resume' },
+    { id: 'profile-favorites', label: '我的收藏', href: '/profile?tab=favorites' }
   ]
 
   return (
     <header 
-      className="bg-white border-b border-gray-200 relative z-50"
+      className="bg-transparent relative z-50"
       role="banner"
     >
       <div className="px-6 md:px-10 lg:px-20">
@@ -107,84 +105,42 @@ export default function Header() {
           <div className="flex items-center">
             <Link 
               to="/" 
-              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 rounded-lg transition-all duration-200 hover:opacity-80"
+              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 rounded-lg transition-all duration-200 hover:opacity-80"
               aria-label="Haigoo 首页"
             >
               <img 
-                src={logoSvg} 
+                src={BRAND_LOGO} 
                 alt="Haigoo - 海外远程工作助手" 
-                className="h-10 w-auto" 
+                className="h-12 w-auto" 
               />
+              <span className="ml-3 text-[#1A365D] font-semibold text-lg">Haigoo Remote Club</span>
             </Link>
-            {/* Brand Slogan */}
-            <div className="ml-4">
-              <p className="text-lg font-medium text-slate-700 italic tracking-wide transform hover:scale-105 transition-transform duration-300" 
-                 style={{ fontFamily: "'Inter', 'Helvetica Neue', 'Arial', sans-serif", fontWeight: 500 }}>
-                Go Higher with Haigoo
-              </p>
-            </div>
+            {/* 移除顶部导航 Tabs：统一为单一首页入口 */}
+            <div className="ml-4 hidden md:flex items-center gap-6" />
           </div>
 
-          {/* Desktop Navigation - 优化导航样式，移除深色背景和下划线 */}
-          <nav 
-            className="hidden md:flex items-center space-x-1"
-            role="navigation"
-            aria-label="主导航"
-          >
-            <Link 
-              to="/" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transform hover:scale-105 ${
-                isActive('/') 
-                  ? 'text-violet-600 bg-violet-50 font-semibold shadow-sm' 
-                  : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50'
-              }`}
-              aria-current={isActive('/') ? 'page' : undefined}
-            >
-              智能推荐
-            </Link>
-            <Link 
-              to="/jobs" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transform hover:scale-105 ${
-                isActive('/jobs') 
-                  ? 'text-violet-600 bg-violet-50 font-semibold shadow-sm' 
-                  : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50'
-              }`}
-              aria-current={isActive('/jobs') ? 'page' : undefined}
-            >
-              全部职位
-            </Link>
-            <Link 
-              to="/remote-experience" 
-              className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 transform hover:scale-105 ${
-                isActive('/remote-experience') 
-                  ? 'text-violet-600 bg-violet-50 font-semibold shadow-sm' 
-                  : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50'
-              }`}
-              aria-current={isActive('/remote-experience') ? 'page' : undefined}
-            >
-              远程指南
-            </Link>
-          </nav>
+          {/* Desktop Navigation - 按要求移除顶部三个 Tab */}
+          <div className="hidden md:flex items-center" aria-label="主导航" />
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
             {/* 未登录：显示登录/注册按钮 */}
-            {!isAuthenticated && (
+              {!isAuthenticated && (
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-[#1A365D] hover:text-[#3182CE] transition-colors"
                 >
                   登录
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#3182CE] rounded-lg hover:bg-[#256bb0] transition-all"
                 >
                   注册
                 </Link>
               </>
-            )}
+              )}
 
             {/* 已登录：显示通知和用户菜单 */}
             {isAuthenticated && (
@@ -324,7 +280,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation - 按要求移除顶部三个 Tab */}
         {isMenuOpen && (
           <nav 
             className="md:hidden"
@@ -333,42 +289,7 @@ export default function Header() {
             aria-label="移动端导航"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
-              <Link 
-                to="/" 
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
-                  isActive('/') 
-                    ? 'text-white bg-haigoo-primary shadow-lg shadow-haigoo-primary/25' 
-                    : 'text-gray-600 hover:text-haigoo-primary hover:bg-haigoo-primary/5'
-                }`}
-                aria-current={isActive('/') ? 'page' : undefined}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                专属推荐
-              </Link>
-              <Link 
-                to="/jobs" 
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
-                  isActive('/jobs') 
-                    ? 'text-white bg-haigoo-primary shadow-lg shadow-haigoo-primary/25' 
-                    : 'text-gray-600 hover:text-haigoo-primary hover:bg-haigoo-primary/5'
-                }`}
-                aria-current={isActive('/jobs') ? 'page' : undefined}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                全部岗位
-              </Link>
-              <Link 
-                to="/remote-experience" 
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
-                  isActive('/remote-experience') 
-                    ? 'text-white bg-haigoo-primary shadow-lg shadow-haigoo-primary/25' 
-                    : 'text-gray-600 hover:text-haigoo-primary hover:bg-haigoo-primary/5'
-                }`}
-                aria-current={isActive('/remote-experience') ? 'page' : undefined}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                远程经验
-              </Link>
+              {/* 顶部三个 Tab 已移除 */}
               
               {/* 移动端用户菜单 */}
               {isAuthenticated && (
@@ -435,7 +356,7 @@ export default function Header() {
                   </Link>
                   <Link
                     to="/register"
-                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all"
+                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-[#3182CE] rounded-lg hover:bg-[#256bb0] transition-all"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     注册

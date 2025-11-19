@@ -25,6 +25,8 @@ export interface ProcessedJobsFilters {
 
 class ProcessedJobsService {
   private baseUrl = '/api'
+  // 预发环境回退地址（仅用于本地服务无法获取数据时）
+  private previewBaseUrl = 'https://haigoo-remote-git-develop-caitlinyct.vercel.app/api'
 
   async getProcessedJobs(
     page: number = 1,
@@ -57,10 +59,33 @@ class ProcessedJobsService {
         filters.skills.forEach(skill => params.append('skills', skill))
       }
 
-      const response = await fetch(`${this.baseUrl}/data/processed-jobs?${params}`)
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      // 为网络请求添加超时与中止控制，避免请求卡住导致页面一直处于 loading
+      const controller = new AbortController()
+      const timeoutMs = 15000 // 15秒超时
+      const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+      let response: Response | null = null
+      try {
+        response = await fetch(`${this.baseUrl}/data/processed-jobs?${params}`, { signal: controller.signal })
+      } catch (e) {
+        console.warn('[processed-jobs-service] 本地API请求失败，尝试回退到预发环境', e)
+      } finally {
+        clearTimeout(timer)
+      }
+
+      // 如果本地不可用或返回非200，回退到预发环境
+      if (!response || !response.ok) {
+        try {
+          const fallbackController = new AbortController()
+          const fallbackTimeout = 15000
+          const fallbackTimer = setTimeout(() => fallbackController.abort(), fallbackTimeout)
+          console.info('[processed-jobs-service] 使用预发环境数据源进行回退')
+          response = await fetch(`${this.previewBaseUrl}/data/processed-jobs?${params}`, { signal: fallbackController.signal })
+          clearTimeout(fallbackTimer)
+        } catch (fallbackErr) {
+          console.error('[processed-jobs-service] 预发环境回退也失败', fallbackErr)
+          throw fallbackErr
+        }
       }
 
       const contentType = response.headers.get('content-type') || ''
@@ -96,6 +121,7 @@ class ProcessedJobsService {
         description: job.description,
         requirements: job.requirements || [],
         responsibilities: [],
+        benefits: job.benefits || [],
         skills: job.tags || [],
         postedAt: job.publishedAt,
         expiresAt: undefined,
@@ -105,7 +131,11 @@ class ProcessedJobsService {
         status: job.status,
         isRemote: job.isRemote,
         category: job.category,
-        recommendationScore: 0
+        recommendationScore: 0,
+        // 🆕 保留翻译字段，让前端组件可以使用
+        translations: job.translations || undefined,
+        isTranslated: job.isTranslated || false,
+        translatedAt: job.translatedAt || undefined
       }))
 
       return {
@@ -121,13 +151,40 @@ class ProcessedJobsService {
     }
   }
 
-  async getAllProcessedJobs(): Promise<Job[]> {
+  async getAllProcessedJobs(limit: number = 200): Promise<Job[]> {
     try {
-      // 获取所有数据，不分页
-      const response = await this.getProcessedJobs(1, 1000)
+      // 限制数据量，优化性能（默认200条）
+      // 避免一次性加载过多数据导致内存和带宽问题
+      const response = await this.getProcessedJobs(1, limit)
+      console.log(`[processed-jobs-service] 加载职位数据: ${response.jobs.length}/${response.total} 条`)
       return response.jobs
     } catch (error) {
       console.error('获取所有处理后职位数据失败:', error)
+      return []
+    }
+  }
+
+  // 聚合所有分页数据：返回完整的岗位列表（数千条）
+  async getAllProcessedJobsFull(pageSize: number = 100, maxPages?: number): Promise<Job[]> {
+    try {
+      const first = await this.getProcessedJobs(1, pageSize)
+      let all: Job[] = [...first.jobs]
+      let page = 2
+      const totalPages = Math.ceil((first.total || 0) / (first.limit || pageSize)) || 1
+
+      const finalMaxPages = typeof maxPages === 'number' ? Math.min(maxPages, totalPages) : totalPages
+
+      while (page <= finalMaxPages && first.hasMore) {
+        const resp = await this.getProcessedJobs(page, pageSize)
+        all = all.concat(resp.jobs)
+        page += 1
+        if (!resp.hasMore) break
+      }
+
+      console.log(`[processed-jobs-service] 聚合完成，共 ${all.length}/${first.total} 条（${finalMaxPages} 页）`)
+      return all
+    } catch (error) {
+      console.error('聚合所有处理后职位数据失败:', error)
       return []
     }
   }

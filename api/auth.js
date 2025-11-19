@@ -23,6 +23,8 @@ import { getUserByEmail, getUserById, saveUser } from '../server-utils/user-stor
 import { sendVerificationEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
+import { kv } from '@vercel/kv'
+import { createClient } from 'redis'
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
@@ -34,6 +36,17 @@ function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+}
+
+// optional Redis client for Hobby plan without KV
+const REDIS_URL = process.env.REDIS_URL
+let redisClient = null
+async function getRedis() {
+  if (redisClient) return redisClient
+  if (!REDIS_URL) return null
+  redisClient = createClient({ url: REDIS_URL })
+  await redisClient.connect()
+  return redisClient
 }
 
 /**
@@ -104,7 +117,8 @@ async function handleRegister(req, res) {
     verificationExpires,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    status: 'active'
+    status: 'active',
+    roles: { admin: email === 'caitlinyct@gmail.com' }
   }
 
   const { success } = await saveUser(user)
@@ -215,7 +229,8 @@ async function handleGoogleLogin(req, res) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
-      status: 'active'
+      status: 'active',
+      roles: { admin: googleUser.email === 'caitlinyct@gmail.com' }
     }
     await saveUser(user)
   }
@@ -400,6 +415,57 @@ async function handleResendVerification(req, res) {
   })
 }
 
+// subscribe job alerts
+async function handleSubscribe(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
+  const { channel, identifier, topic } = req.body || {}
+  if (!channel || !identifier || !topic) {
+    return res.status(400).json({ success: false, error: 'Missing fields' })
+  }
+  const key = `haigoo:subscribe:${channel}:${identifier}`
+  const data = { channel, identifier, topic, createdAt: new Date().toISOString() }
+  try {
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+      await kv.set(key, data)
+      await kv.sadd('haigoo:subscribe:list', key)
+    } else {
+      const r = await getRedis()
+      if (r) {
+        await r.set(key, JSON.stringify(data))
+        await r.sAdd('haigoo:subscribe:list', key)
+      }
+    }
+    return res.status(200).json({ success: true })
+  } catch (e) {
+    return res.status(500).json({ success: false, error: 'Server error' })
+  }
+}
+
+// copilot analysis (baseline)
+async function handleCopilot(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
+  const { resume = '' } = req.body || {}
+  const text = String(resume).toLowerCase()
+  const analysis = []
+  if (text.includes('react')) analysis.push('Strong frontend experience (React)')
+  if (text.includes('python')) analysis.push('Backend/Data skills with Python')
+  if (text.includes('ml') || text.includes('machine learning')) analysis.push('Machine learning exposure detected')
+  if (analysis.length === 0) analysis.push('General software experience; add role-specific keywords to improve matching')
+  const optimization = [
+    'Quantify achievements (metrics, %, time saved)',
+    'Add role keywords (e.g., product, algorithm, operations, marketing where relevant)',
+    'Highlight remote collaboration tools and async communication',
+    'Include links to portfolio or GitHub for evidence'
+  ]
+  const tips = [
+    'Tailor resume to each job; mirror job requirements',
+    'Use concise paragraphs and bullet points',
+    'Write a short cover letter focusing on impact and fit',
+    'Submit during local business hours of hiring company'
+  ]
+  return res.status(200).json({ success: true, matchAnalysis: analysis, optimization, tips })
+}
+
 /**
  * 主处理器
  */
@@ -442,11 +508,17 @@ export default async function handler(req, res) {
         if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
         return await handleResendVerification(req, res)
 
+      case 'subscribe':
+        return await handleSubscribe(req, res)
+
+      case 'copilot':
+        return await handleCopilot(req, res)
+
       default:
         return res.status(400).json({
           success: false,
           error: 'Invalid action',
-          availableActions: ['register', 'login', 'google', 'me', 'update-profile', 'verify-email', 'resend-verification']
+          availableActions: ['register', 'login', 'google', 'me', 'update-profile', 'verify-email', 'resend-verification', 'subscribe', 'copilot']
         })
     }
   } catch (error) {

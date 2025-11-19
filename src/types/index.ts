@@ -12,6 +12,7 @@ export interface Job {
   description?: string  // 可选，避免显示"暂无描述"
   requirements: string[]
   responsibilities: string[]
+  benefits?: string[]
   skills: string[]
   postedAt: string
   expiresAt?: string  // 可选，避免虚假过期时间
@@ -29,6 +30,16 @@ export interface Job {
   recommendationId?: string  // 推荐唯一ID，用于关联推荐时间
   recommendedAt?: string     // 推荐时间戳 (ISO 8601 format)
   recommendationGroup?: number // 推荐组别 (1或2，每天2组推荐)
+  // 翻译字段 - 用于存储中文翻译，优先显示翻译内容
+  translations?: {
+    title?: string
+    company?: string
+    description?: string
+    location?: string
+    type?: string
+    requirements?: string[]
+    responsibilities?: string[]
+  }
 }
 
 export interface User {

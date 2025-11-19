@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Search, 
   Filter, 
@@ -604,6 +605,13 @@ const AdminDashboardPage: React.FC = () => {
               <p className="text-gray-600">RSS岗位数据聚合与管理</p>
             </div>
             <div className="flex space-x-3">
+              <Link
+                to="/admin/users"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                用户管理
+              </Link>
               <button
                 onClick={() => setShowRSSConfig(!showRSSConfig)}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"

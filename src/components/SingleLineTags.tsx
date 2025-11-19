@@ -27,11 +27,11 @@ export const SingleLineTags: React.FC<SingleLineTagsProps> = ({ tags, size = 'sm
 
   // 样式常量（与现有卡片风格保持一致）
   const badgeBase = size === 'xs'
-    ? 'px-2 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-md text-xs font-medium whitespace-nowrap flex-shrink-0'
-    : 'px-3 py-1 bg-haigoo-primary/10 text-haigoo-primary rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0';
+    ? 'tag-badge-xs'
+    : 'tag-badge-sm';
   const plusBase = size === 'xs'
-    ? 'px-2 py-1 bg-gray-100 text-gray-500 rounded-md text-xs whitespace-nowrap flex-shrink-0'
-    : 'px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm whitespace-nowrap flex-shrink-0';
+    ? 'tag-plus-xs'
+    : 'tag-plus-sm';
   const GAP = 8; // 与 tailwind gap-2 对齐
 
   useLayoutEffect(() => {
@@ -54,6 +54,9 @@ export const SingleLineTags: React.FC<SingleLineTagsProps> = ({ tags, size = 'sm
       let used = 0;
       let count = 0;
 
+      // 定义最少显示标签数量
+      const MIN_VISIBLE_TAGS = 2;
+
       for (let i = 0; i < widths.length; i++) {
         const w = widths[i];
         const needGapBefore = count > 0 ? GAP : 0;
@@ -68,7 +71,31 @@ export const SingleLineTags: React.FC<SingleLineTagsProps> = ({ tags, size = 'sm
           used += needGapBefore + w;
           count += 1;
         } else {
+          // 如果是前几个标签（小于 MIN_VISIBLE_TAGS），强制显示
+          if (count < MIN_VISIBLE_TAGS && widths.length > MIN_VISIBLE_TAGS) {
+            // 尝试不预留 +N 空间，直接显示标签
+            const requiredWithoutPlus = used + needGapBefore + w;
+            if (requiredWithoutPlus <= available) {
+              used += needGapBefore + w;
+              count += 1;
+            } else {
+              break;
+            }
+        } else {
           break;
+          }
+        }
+      }
+
+      // 特殊处理：如果只有1-2个标签，全部显示，不折叠
+      if (widths.length <= MIN_VISIBLE_TAGS) {
+        let totalWidth = 0;
+        for (let i = 0; i < widths.length; i++) {
+          totalWidth += widths[i] + (i > 0 ? GAP : 0);
+        }
+        if (totalWidth <= available) {
+          setVisibleCount(widths.length);
+          return;
         }
       }
 

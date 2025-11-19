@@ -154,7 +154,7 @@ export default function JobDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">职位详情已关闭</h1>
           <button 
             onClick={() => setShowModal(true)}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="px-6 py-2 bg-[#3182CE] text-white rounded-lg hover:bg-[#256bb0] transition-colors"
           >
             重新打开
           </button>
@@ -184,7 +184,7 @@ export default function JobDetailPage() {
             <div className="bg-white rounded-xl shadow-sm mb-4 md:mb-6 p-4 md:p-6">
               <div className="flex flex-col gap-4 md:flex-row md:justify-between items-start md:items-center">
                 <div className="flex gap-3 md:gap-4 items-center w-full md:w-auto">
-                  <div className="bg-purple-600 rounded-xl h-16 w-16 md:h-20 md:w-20 flex items-center justify-center text-white font-bold text-lg md:text-xl flex-shrink-0">
+                  <div className="bg-[#3182CE] rounded-xl h-16 w-16 md:h-20 md:w-20 flex items-center justify-center text-white font-bold text-lg md:text-xl flex-shrink-0">
                     {(job.company || '未知公司').charAt(0)}
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
@@ -206,13 +206,13 @@ export default function JobDetailPage() {
                 <div className="flex gap-2 md:gap-3 w-full md:w-auto justify-end">
                   <button 
                     onClick={handleBookmark}
-                    className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] rounded-lg transition-colors"
                   >
                     {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
                   </button>
                   <button 
                     onClick={handleApply}
-                    className="px-4 md:px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm md:text-base"
+                    className="px-4 md:px-6 py-2 bg-[#3182CE] text-white rounded-lg hover:bg-[#256bb0] transition-colors font-medium text-sm md:text-base"
                   >
                     申请职位
                   </button>
@@ -223,7 +223,7 @@ export default function JobDetailPage() {
               <div className="mt-4 p-3 md:p-4 bg-white border border-gray-200 rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-700 font-medium text-sm md:text-base">AI 匹配度</span>
-                  <span className="text-xl md:text-2xl font-bold text-purple-600">{matchScore}%</span>
+                  <span className="text-xl md:text-2xl font-bold text-[#3182CE]">{matchScore}%</span>
                 </div>
               </div>
             </div>
@@ -280,10 +280,17 @@ export default function JobDetailPage() {
                     <div>
                       <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2 md:mb-3">Benefits</h3>
                       <ul className="list-disc list-inside space-y-1 md:space-y-2 text-sm md:text-base text-gray-600">
-                        <li>Comprehensive health, dental, and vision insurance.</li>
-                        <li>Flexible work hours and remote-first culture.</li>
-                        <li>Generous paid time off and parental leave.</li>
-                        <li>401(k) with company match.</li>
+                        {(job.benefits && job.benefits.length > 0
+                          ? job.benefits
+                          : [
+                              'Comprehensive health, dental, and vision insurance.',
+                              'Flexible work hours and remote-first culture.',
+                              'Generous paid time off and parental leave.',
+                              '401(k) with company match.'
+                            ]
+                        ).map((benefit, index) => (
+                          <li key={index}>{benefit}</li>
+                        ))}
                       </ul>
                     </div>
                   </div>
@@ -330,7 +337,7 @@ export default function JobDetailPage() {
                         <span className="text-xs font-medium text-green-600">{similarJob.match}</span>
                       </div>
                     ))}
-                    <Link to="/" className="block text-center text-purple-600 hover:text-purple-700 text-sm font-medium mt-4">
+                    <Link to="/" className="block text-center text-[#3182CE] hover:text-[#256bb0] text-sm font-medium mt-4">
                       查看更多职位
                     </Link>
                   </div>

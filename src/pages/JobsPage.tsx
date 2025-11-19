@@ -1,12 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase } from 'lucide-react'
+import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase, RefreshCw } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import JobDetailModal from '../components/JobDetailModal'
 import JobCard from '../components/JobCard'
+import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { DateFormatter } from '../utils/date-formatter'
 import { processJobDescription } from '../utils/text-formatter'
+// ❌ 不再前端实时翻译，数据从后端API获取已翻译
+// import { jobTranslationService } from '../services/job-translation-service'
+import { usePageCache } from '../hooks/usePageCache'
+import { useNotificationHelpers } from '../components/NotificationSystem'
 
 const jobTypes = [
   { value: 'all', label: '全部类型' },
@@ -83,6 +89,7 @@ const remoteOptions = [
 export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { token, isAuthenticated } = useAuth()
   
   // Refs for focus management
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -100,9 +107,44 @@ export default function JobsPage() {
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [loading, setLoading] = useState(true)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
+  
+  // 加载阶段状态
+  const [loadingStage, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
+  const { showSuccess, showError, showWarning } = useNotificationHelpers()
+  
+  // 使用页面缓存 Hook
+  const {
+    data: jobs,
+    loading,
+    error: loadError,
+    refresh,
+    isFromCache,
+    cacheAge
+  } = usePageCache<Job[]>('jobs-all-list', {
+    fetcher: async () => {
+      try {
+        // 获取数据（后端已翻译）
+        setLoadingStage('fetching')
+        const response = await processedJobsService.getAllProcessedJobs(200)
+        setLoadingStage('idle')
+        
+        // 🎉 后端已处理翻译，前端直接使用
+        console.log(`✅ 获取到 ${response.length} 个岗位（后端已翻译）`)
+        return response
+      } catch (error) {
+        setLoadingStage('idle')
+        throw error
+      }
+    },
+    ttl: 10 * 60 * 1000, // 10分钟缓存
+    persist: true, // 持久化到 localStorage
+    namespace: 'jobs',
+    onSuccess: (jobs) => {
+      setLoadingStage('idle')
+      console.log(`✅ 岗位列表加载完成，共 ${jobs.length} 个${isFromCache ? '（来自缓存）' : '（新数据）'}`)
+    }
+  })
 
   // Keyboard navigation handler
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -144,57 +186,53 @@ export default function JobsPage() {
     }
   }, [location.search])
 
-  // 加载处理后的职位数据，并在后台刷新后自动重载
+  // 监听处理后岗位数据的更新事件（从后台管理触发）
   useEffect(() => {
-    const loadJobs = async () => {
-      try {
-        setLoading(true)
-        const response = await processedJobsService.getAllProcessedJobs()
-        console.log('获取到处理后的岗位数据:', response.length, '个')
-        if (response.length > 0) {
-          setJobs(response)
-          console.log('示例岗位数据:', response.slice(0, 2).map((job: Job) => ({
-            title: job.title,
-            company: job.company,
-            description: processJobDescription(job.description || '', {
-              formatMarkdown: false,
-              maxLength: 100,
-              preserveHtml: false
-            })
-          })))
-        } else {
-          console.log('没有找到处理后的数据')
-          setJobs([])
-        }
-      } catch (error) {
-        console.error('Failed to load jobs:', error)
-        setJobs([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadJobs()
-
     const handleUpdated = () => {
-      loadJobs()
+      console.log('收到岗位数据更新事件，重新加载收藏与岗位...')
+      refresh()
+      ;(async () => {
+        if (!token) return
+        try {
+          const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
+          if (resp.ok) {
+            const data = await resp.json()
+            const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
+            setSavedJobs(new Set(ids))
+          }
+        } catch {}
+      })()
     }
     window.addEventListener('processed-jobs-updated', handleUpdated)
     return () => {
       window.removeEventListener('processed-jobs-updated', handleUpdated)
     }
-  }, [])
+  }, [refresh])
 
-  const toggleSaveJob = (jobId: string) => {
-    setSavedJobs(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(jobId)) {
-        newSet.delete(jobId)
-      } else {
-        newSet.add(jobId)
+  const toggleSaveJob = async (jobId: string) => {
+    const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
+    if (!isAuthenticated || !authToken) { showWarning('请先登录', '登录后可以收藏职位'); navigate('/login'); return }
+    const isSaved = savedJobs.has(jobId)
+    setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
+    try {
+      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}` , {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ jobId })
+      })
+      if (!resp.ok) throw new Error('收藏接口失败')
+      const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
+      if (r.ok) {
+        const d = await r.json()
+        const ids: string[] = (d?.favorites || []).map((f: any) => f.jobId)
+        setSavedJobs(new Set(ids))
+        showSuccess(isSaved ? '已取消收藏' : '收藏成功')
       }
-      return newSet
-    })
+    } catch (e) {
+      setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.add(jobId) : s.delete(jobId); return s })
+      console.warn('收藏操作失败', e)
+      showError('收藏失败', e instanceof Error ? e.message : '网络或服务不可用')
+    }
   }
 
   const openJobDetail = (job: Job) => {
@@ -225,8 +263,23 @@ export default function JobsPage() {
     navigate(`/job/${jobId}/apply`)
   }
 
+  // 初始化拉取收藏集
+  useEffect(() => {
+    ;(async () => {
+      if (!token) return
+      try {
+        const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
+        if (resp.ok) {
+          const data = await resp.json()
+          const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
+          setSavedJobs(new Set(ids))
+        }
+      } catch {}
+    })()
+  }, [token])
+
   // 筛选逻辑
-  const filteredJobs = jobs.filter(job => {
+  const filteredJobs = (jobs || []).filter(job => {
     // 搜索匹配
     const matchesSearch = searchTerm === '' || 
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -261,6 +314,21 @@ export default function JobsPage() {
   })
 
   const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length
+
+  // 初始化加载已收藏的岗位，用于高亮 Bookmark 状态
+  useEffect(() => {
+    if (!token) return
+    ;(async () => {
+      try {
+        const resp = await fetch('/api/user-profile', { headers: { Authorization: `Bearer ${token}` } })
+        if (resp.ok) {
+          const data = await resp.json()
+          const ids: string[] = (data?.profile?.savedJobs || []).map((s: any) => s.jobId)
+          setSavedJobs(new Set(ids))
+        }
+      } catch {}
+    })()
+  }, [token])
 
   return (
     <div 
@@ -503,6 +571,9 @@ export default function JobsPage() {
                   找到 <span className="font-semibold text-gray-900 text-base">{filteredJobs.length}</span> 个岗位
                 </div>
               </div>
+              <div className="mb-6">
+                <JobAlertSubscribe />
+              </div>
 
               {/* 岗位列表 */}
               <div 
@@ -518,13 +589,15 @@ export default function JobsPage() {
                 
                 {loading ? (
                   <div 
-                    className="flex items-center justify-center py-12"
+                    className="flex flex-col items-center justify-center py-12 space-y-4"
                     role="status"
                     aria-live="polite"
                     aria-label="正在加载职位数据"
                   >
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-haigoo-primary" aria-hidden="true"></div>
-                    <span className="ml-3 text-gray-600">正在加载职位数据...</span>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3182CE]" aria-hidden="true"></div>
+                    <div className="text-center">
+                      <p className="text-gray-600 dark:text-gray-400 font-medium">正在加载岗位数据...</p>
+                    </div>
                   </div>
                 ) : filteredJobs.length === 0 ? (
                   <div 

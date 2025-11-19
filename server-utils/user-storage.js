@@ -12,13 +12,15 @@ const REDIS_URL =
   process.env.haigoo_REDIS_URL ||
   process.env.HAIGOO_REDIS_URL ||
   process.env.UPSTASH_REDIS_URL ||
+  process.env.pre_haigoo_REDIS_URL ||
+  process.env.PRE_HAIGOO_REDIS_URL ||
   null
 const REDIS_CONFIGURED = !!REDIS_URL
 
 // 检测 Vercel KV 配置
 const KV_CONFIGURED = !!(
-  process.env.KV_REST_API_URL &&
-  process.env.KV_REST_API_TOKEN
+  (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
+  (process.env.pre_haigoo_KV_REST_API_URL && process.env.pre_haigoo_KV_REST_API_TOKEN)
 )
 
 // Redis 客户端缓存
@@ -94,6 +96,12 @@ async function saveUserToRedis(user) {
     await client.set(`haigoo:user:${user.email}`, JSON.stringify(user))
     // 保存 userId -> email 映射，方便通过 userId 查询
     await client.set(`haigoo:userId:${user.id}`, user.email)
+    // 维护用户列表集合，便于在无 keys 扫描的存储中获取列表
+    try {
+      await client.sAdd('haigoo:user_list', user.email)
+    } catch (e) {
+      console.warn('[user-storage] Redis sAdd user_list failed (non-critical):', e?.message || e)
+    }
     console.log(`[user-storage] Saved user to Redis: ${user.email}`)
     return true
   } catch (error) {
@@ -139,6 +147,12 @@ async function saveUserToKV(user) {
     if (!KV_CONFIGURED) return false
     await kv.set(`haigoo:user:${user.email}`, user)
     await kv.set(`haigoo:userId:${user.id}`, user.email)
+    // 维护用户列表集合，供 /api/users 在 KV 环境读取
+    try {
+      await kv.sadd('haigoo:user_list', user.email)
+    } catch (e) {
+      console.warn('[user-storage] KV sadd user_list failed (non-critical):', e?.message || e)
+    }
     console.log(`[user-storage] Saved user to KV: ${user.email}`)
     return true
   } catch (error) {
@@ -244,6 +258,48 @@ export async function saveUser(user) {
 
   console.log(`[user-storage] Save user (${provider}): ${user.email} - ${success ? 'success' : 'failed'}`)
   return { success, provider }
+}
+
+export async function deleteUserById(userId) {
+  let ok = false
+  if (REDIS_CONFIGURED) {
+    try {
+      const client = await getRedisClient()
+      const email = await client.get(`haigoo:userId:${userId}`)
+      if (email) {
+        await client.del(`haigoo:user:${email}`)
+        await client.del(`haigoo:userId:${userId}`)
+        try { await client.sRem('haigoo:user_list', email) } catch {}
+        memoryStore.users.delete(email)
+        memoryStore.usersByUserId.delete(userId)
+        ok = true
+      }
+    } catch (e) {
+      ok = false
+    }
+  } else if (KV_CONFIGURED) {
+    try {
+      const email = await kv.get(`haigoo:userId:${userId}`)
+      if (email) {
+        await kv.del(`haigoo:user:${email}`)
+        await kv.del(`haigoo:userId:${userId}`)
+        try { await kv.srem('haigoo:user_list', email) } catch {}
+        memoryStore.users.delete(email)
+        memoryStore.usersByUserId.delete(userId)
+        ok = true
+      }
+    } catch (e) {
+      ok = false
+    }
+  } else {
+    const email = memoryStore.usersByUserId.get(userId)?.email
+    if (email) {
+      memoryStore.users.delete(email)
+      memoryStore.usersByUserId.delete(userId)
+      ok = true
+    }
+  }
+  return ok
 }
 
 /**

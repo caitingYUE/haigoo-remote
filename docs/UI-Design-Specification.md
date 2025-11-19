@@ -6,6 +6,23 @@
 
 ## 1. 颜色系统
 
+### 预发版颜色系统（与首页一致）
+```css
+/* 来自 src/styles/landing.css */
+--brand-blue: #3182CE;     /* 主按钮/高亮 */
+--brand-blue-hover: #256bb0;
+--brand-navy: #1A365D;     /* 标题/正文主色 */
+--brand-teal: #0EA5A3;     /* 辅助强调 */
+--brand-orange: #F59F0B;   /* 强调/提示 */
+--brand-sand: #F5F5DC;     /* 页面延展底色 */
+--brand-blue-10: #EAF3FF;  /* 浅底色 */
+--brand-teal-10: #D9F6F3;
+--brand-orange-10: #FFEAD1;
+--brand-border: #E2E8F0;   /* 边框统一 */
+--landing-bg-start:#A6E3FF;
+--landing-bg-end:#FDE5C7;
+```
+
 ### 1.1 主品牌色
 ```css
 --haigoo-primary: #803af2;           /* 主品牌紫色 */
@@ -84,25 +101,11 @@
 - **按钮**: 渐变背景，悬停缩放效果
 - **装饰元素**: 半透明圆形背景装饰
 
-**样式规范**:
+**样式规范（预发版示例）**:
 ```css
-/* TOP 1 卡片 */
-.top-1-card {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  box-shadow: 0 20px 40px rgba(251, 191, 36, 0.3);
-}
-
-/* TOP 2 卡片 */
-.top-2-card {
-  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
-  box-shadow: 0 20px 40px rgba(168, 85, 247, 0.3);
-}
-
-/* TOP 3 卡片 */
-.top-3-card {
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-  box-shadow: 0 20px 40px rgba(6, 182, 212, 0.3);
-}
+.card-neutral { background:#FFFFFF; border:1px solid var(--brand-border); border-radius:12px; }
+.badge-primary { background: var(--brand-blue-10); color: var(--brand-blue); }
+.salary-primary { color: var(--brand-orange); font-weight:700; }
 ```
 
 #### 2.2.2 普通推荐卡片（4-6位）

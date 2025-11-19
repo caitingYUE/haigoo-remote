@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award } from 'lucide-react';
+import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award, Bookmark } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
@@ -34,18 +34,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     return `${currencySymbol}${formatAmount(salary.min)} - ${formatAmount(salary.max)}`;
   };
 
-  const getCompanyLogo = (company: string) => {
-    const colors = [
-      'bg-blue-500',
-      'bg-green-500', 
-      'bg-purple-500',
-      'bg-orange-500',
-      'bg-pink-500',
-      'bg-indigo-500'
-    ];
-    const colorIndex = company.length % colors.length;
-    return colors[colorIndex];
-  };
+  
 
   const getJobTypeLabel = (jobType: string) => {
     const labels = {
@@ -90,13 +79,13 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     }
   };
 
-  // 生成职位卡片的 ARIA 标签
+  // 生成职位卡片的 ARIA 标签（使用翻译后的内容）
   const getJobCardAriaLabel = () => {
     const parts = [
-      `职位：${job.title}`,
-      `公司：${job.company}`,
+      `职位：${job.translations?.title || job.title}`,
+      `公司：${job.translations?.company || job.company}`,
       `薪资：${formatSalary(job.salary)}`,
-      `地点：${job.location}`,
+      `地点：${job.translations?.location || job.location}`,
       `类型：${getJobTypeLabel(job.type)}`,
       `发布时间：${DateFormatter.formatPublishTime(job.postedAt)}`
     ];
@@ -117,12 +106,12 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       parts.push('支持远程工作');
     }
     
-    return parts.join('，') + '。点击查看详情';
+    return parts.join('，') + '。';
   };
 
   return (
     <article 
-      className="group bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-lg hover:border-haigoo-primary/30 transition-all duration-300 cursor-pointer relative focus-ring"
+      className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-[#3182CE]/30 transition-all duration-300 cursor-pointer relative hover:-translate-y-0.5"
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       tabIndex={0}
@@ -130,53 +119,61 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       aria-describedby={`job-${job.id}-description`}
     >
       {/* 右上角操作按钮组 - 仅保留原始链接跳转 */}
-      {job.sourceUrl && (
-        <div 
-          className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          role="toolbar"
-          aria-label="职位操作"
-        >
+      <div 
+        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2"
+        role="toolbar"
+        aria-label="职位操作"
+      >
+        {/* 收藏按钮 */}
+        {onSave && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onSave(job.id); } }}
+            className={`p-3 rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center border ${isSaved ? 'bg-[#EAF3FF] text-[#3182CE] border-[#3182CE]/30' : 'text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] border-gray-200'}`}
+            title={isSaved ? '已收藏' : '收藏'}
+            aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
+            aria-pressed={Boolean(isSaved)}
+          >
+            <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} aria-hidden="true" />
+          </button>
+        )}
+        {/* 原始链接跳转 */}
+        {job.sourceUrl && (
           <button
             onClick={handleSourceClick}
             onKeyDown={handleSourceKeyDown}
-            className="p-3 text-gray-400 hover:text-haigoo-primary hover:bg-haigoo-primary/10 rounded-lg transition-all duration-200 focus-ring min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-3 text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center border border-gray-200"
             title={`在 ${job.source} 查看原始职位`}
             aria-label={`在 ${job.source} 查看原始职位`}
             tabIndex={0}
           >
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Header */}
-      <header className="flex items-start justify-between pr-20">
+      <header className="flex items-start justify-between pr-12">
         <div className="flex items-center flex-1 min-w-0">
-          <div 
-            className={`w-12 h-12 rounded-xl ${getCompanyLogo(job.company || '')} flex items-center justify-center text-white font-semibold text-sm mr-4 flex-shrink-0 shadow-sm`}
-            aria-hidden="true"
-          >
-            {(job.company || '未知公司').charAt(0).toUpperCase()}
-          </div>
           <div className="flex-1 min-w-0">
             <h2 
               id={`job-${job.id}-title`}
-              className="font-semibold text-gray-900 text-lg group-hover:text-haigoo-primary transition-colors mb-1 line-clamp-1"
-              title={job.title}
+              className="font-semibold text-brand-navy text-lg md:text-xl hover:text-brand-blue transition-colors mb-1 line-clamp-2"
+              title={job.translations?.title || job.title}
             >
-              {job.title}
+              {job.translations?.title || job.title}
             </h2>
             
             {/* 公司信息行 - 移除来源标签，避免与底部重复 */}
-            <div className="flex items-center gap-3 text-gray-600 text-sm mb-3 flex-wrap">
-              <div className="flex items-center font-medium">
-                <Building className="w-4 h-4 mr-1.5" aria-hidden="true" />
-                <span>{job.company}</span>
+            <div className="flex items-center text-gray-600 text-sm mb-2">
+              <div className="flex items-center font-medium min-w-0">
+                <Building className="w-4 h-4 mr-1.5 flex-shrink-0" aria-hidden="true" />
+                <span className="truncate" title={job.translations?.company || job.company}>{job.translations?.company || job.company}</span>
               </div>
             </div>
             
             {/* 核心信息行 */}
-            <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
               {/* 薪资 - 只有当薪资数据存在且大于0时才显示 */}
               {job.salary && job.salary.min > 0 && (
                 <div className="flex items-center text-haigoo-primary font-semibold">
@@ -192,10 +189,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
                 <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" aria-hidden="true" />
                 <span 
                   className="truncate" 
-                  title={job.location}
-                  aria-label={`工作地点：${job.location}`}
+                  title={job.translations?.location || job.location}
+                  aria-label={`工作地点：${job.translations?.location || job.location}`}
                 >
-                  {job.location}
+                  {job.translations?.location || job.location}
                 </span>
               </div>
               
@@ -232,15 +229,15 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         </div>
       </header>
 
-      {/* 职位描述 - 优化HTML标签处理 */}
-      {job.description && (
-        <section className="mt-4 pt-4 border-t border-gray-100">
+      {/* 职位描述 - 优化HTML标签处理，优先显示翻译 */}
+      {(job.translations?.description || job.description) && (
+        <section className="mt-3">
           <p 
             id={`job-${job.id}-description`}
             className="text-gray-600 text-sm line-clamp-2 leading-relaxed"
             aria-label="职位描述"
           >
-            {processJobDescription(job.description, { 
+            {processJobDescription(job.translations?.description || job.description || '', { 
               formatMarkdown: false, 
               maxLength: 120, 
               preserveHtml: false 
@@ -249,49 +246,20 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         </section>
       )}
 
-      {/* 技能标签 - 单行动态计算显示，保持卡片高度对齐 */}
-      {(job.skills && job.skills.length > 0) && (
-        <section className="mt-4 pt-4 border-t border-gray-100">
-          <SingleLineTags
-            size="xs"
-            tags={(
-              Array.isArray((job as any).tags) && (job as any).tags.length > 0
-                ? (job as any).tags
-                : (job.skills || [])
-            ) as string[]}
-            fallback="remote"
-          />
-        </section>
-      )}
+      {/* 技能/标签行 - 永远渲染以保证卡片高度一致；当无标签时使用兜底 */}
+      <section className="mt-2">
+        <SingleLineTags
+          size="xs"
+          tags={(
+            Array.isArray((job as any).tags) && (job as any).tags.length > 0
+              ? (job as any).tags
+              : (job.skills || [])
+          ) as string[]}
+          fallback="remote"
+        />
+      </section>
 
-      {/* 底部操作栏 - 简化布局，移除重复按钮 */}
-      <footer className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-        <div className="flex items-center space-x-4 text-xs text-gray-500">
-          {job.source && job.sourceUrl && (
-            <button
-              onClick={handleSourceClick}
-              onKeyDown={handleSourceKeyDown}
-              className="flex items-center hover:text-haigoo-primary transition-colors duration-200 focus-ring rounded"
-              aria-label={`在 ${job.source} 查看原始职位`}
-              tabIndex={0}
-            >
-              <ExternalLink className="w-3 h-3 mr-1" aria-hidden="true" />
-              在 {job.source} 查看
-            </button>
-          )}
-          {!job.sourceUrl && job.source && (
-            <span className="flex items-center text-gray-400">
-              <ExternalLink className="w-3 h-3 mr-1" aria-hidden="true" />
-              来源: {job.source}
-            </span>
-          )}
-        </div>
-        
-        {/* 移除重复的分享和收藏按钮，右上角已有图标按钮 */}
-        <div className="text-xs text-gray-400">
-          点击查看详情
-        </div>
-      </footer>
+      
     </article>
   );
 }

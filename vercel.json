@@ -1,40 +1,11 @@
 {
   "version": 2,
-  "functions": {
-    "api/rss-proxy.js": {
-      "maxDuration": 30
-    },
-    "api/translate.js": {
-      "maxDuration": 30
-    },
-    "api/parse-resume.js": {
-      "maxDuration": 30
-    },
-    "api/parse-resume-new.js": {
-      "maxDuration": 30
-    },
-    "api/resumes.js": {
-      "maxDuration": 30
-    },
-    "api/data/processed-jobs.js": {
-      "maxDuration": 30
-    },
-    "api/recommendations.js": {
-      "maxDuration": 30
-    },
-    "api/health.js": {
-      "maxDuration": 10
-    },
-    "api/storage/stats.js": {
-      "maxDuration": 10
-    },
-    "api/auth.js": {
-      "maxDuration": 30
-    },
-    "api/users.js": {
-      "maxDuration": 10
+  "crons": [
+    {
+      "path": "/api/cron/sync-jobs",
+      "schedule": "0 2 * * *"
     }
-  },
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -45,7 +16,7 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
+          "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",

@@ -96,56 +96,9 @@ const basicTranslations: TranslationDict = {
 };
 
 // 简化的翻译函数 - 修复原文和翻译内容混乱问题
-export const translateText = (text: string, useTranslation: boolean = true): string => {
-  if (!useTranslation || !text) {
-    return text;
-  }
-
-  // 清理文本，移除多余的HTML标签和特殊字符
-  let cleanText = text
-    .replace(/<[^>]*>/g, '') // 移除HTML标签
-    .replace(/&[a-zA-Z0-9#]+;/g, '') // 移除HTML实体
-    .replace(/\s+/g, ' ') // 合并多个空格
-    .trim();
-
-  // 直接匹配完整翻译
-  if (basicTranslations[cleanText]) {
-    return basicTranslations[cleanText];
-  }
-
-  // 对于较短的文本，尝试词汇替换
-  if (cleanText.length < 100) {
-    let translatedText = cleanText;
-    
-    // 按优先级进行替换
-    const priorityReplacements: Array<[string, string]> = [
-      ['Junior Crypto Analyst & Trader (Remote, Training Included)', '初级加密货币分析师和交易员（远程，包含培训）'],
-      ['Junior Crypto Analyst', '初级加密货币分析师'],
-      ['WhiteBridge-Ltd', 'WhiteBridge有限公司'],
-      ['Sevilla, Spain', '西班牙塞维利亚'],
-      ['Full-time', '全职'],
-      ['Remote', '远程'],
-      ['experience', '经验'],
-      ['years', '年'],
-      ['with', '使用'],
-      ['and', '和'],
-      ['work', '工作'],
-      ['team', '团队'],
-      ['company', '公司'],
-      ['development', '开发'],
-      ['required', '必需的']
-    ];
-
-    priorityReplacements.forEach(([english, chinese]) => {
-      const regex = new RegExp(`\\b${english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      translatedText = translatedText.replace(regex, chinese);
-    });
-
-    return translatedText;
-  }
-
-  // 对于长文本，返回原文
-  return cleanText;
+export const translateText = (text: string, _useTranslation: boolean = true): string => {
+  // 前端已停用翻译，统一返回原文
+  return text;
 };
 
 // 格式化职位描述 - 优化为序号和点列表格式

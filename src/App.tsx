@@ -1,17 +1,19 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import HomePage from './pages/HomePage'
+import LandingPage from './pages/LandingPage'
 import JobsPage from './pages/JobsPage'
 import RemoteExperiencePage from './pages/RemoteExperiencePage'
 import JobApplicationPage from './pages/JobApplicationPage'
 import JobDetailPage from './pages/JobDetailPage'
-import ProfilePage from './pages/ProfilePage'
-import ResumeOptimizationPage from './pages/ResumeOptimizationPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import CopilotPage from './pages/CopilotPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPanel from './components/AdminPanel'
+import ProfileCenterPage from './pages/ProfileCenterPage'
 import AdminTeamPage from './pages/AdminTeamPage'
 import UserManagementPage from './pages/UserManagementPage'
 import { AppProvider } from './contexts/AppContext'
@@ -53,16 +55,16 @@ function App() {
             
             {/* AdminTeamPage 统一后台管理页面（需要登录） */}
             <Route path="/admin_team" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminTeamPage />
-              </ProtectedRoute>
+              </AdminRoute>
             } />
             
             {/* 用户管理页面（需要登录） */}
             <Route path="/admin/users" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <UserManagementPage />
-              </ProtectedRoute>
+              </AdminRoute>
             } />
             
             {/* 其他页面使用标准布局 */}
@@ -70,20 +72,16 @@ function App() {
               <Layout>
                 <Routes>
                   {/* 公开页面 */}
-                  <Route path="/" element={<HomePage />} />
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/jobs" element={<JobsPage />} />
+                  <Route path="/copilot" element={<CopilotPage />} />
                   <Route path="/remote-experience" element={<RemoteExperiencePage />} />
                   <Route path="/job/:id" element={<JobDetailPage />} />
                   
                   {/* 需要登录的页面 */}
                   <Route path="/profile" element={
                     <ProtectedRoute>
-                      <ProfilePage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/resume" element={
-                    <ProtectedRoute>
-                      <ResumeOptimizationPage />
+                      <ProfileCenterPage />
                     </ProtectedRoute>
                   } />
                 </Routes>
