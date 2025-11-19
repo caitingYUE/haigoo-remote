@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
+import { ResumeStorageService } from '../services/resume-storage-service'
+import type { ResumeItem } from '../types/resume-types'
 import { resumeService } from '../services/resume-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
@@ -76,6 +78,25 @@ export default function ProfileCenterPage() {
       setLatestResume({ id: Date.now().toString(), name: file.name })
       if (parsed.success && parsed.textContent && parsed.textContent.length > 50) {
         setResumeText(parsed.textContent)
+        const resumeItem: ResumeItem = {
+          id: Date.now().toString(),
+          fileName: file.name,
+          fileType: file.type || 'application/octet-stream',
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+          blobURL: URL.createObjectURL(file),
+          parseStatus: 'success',
+          textContent: parsed.textContent,
+          name: parsed.name,
+          title: parsed.title,
+          gender: parsed.gender,
+          location: parsed.location,
+          targetRole: parsed.targetRole,
+          education: parsed.education,
+          graduationYear: parsed.graduationYear,
+          summary: parsed.summary,
+        }
+        await ResumeStorageService.addResume(resumeItem)
         const analysis = await resumeService.analyzeResume(parsed.textContent)
         if (analysis.success && analysis.data) {
           setResumeScore(analysis.data.score || 0)
