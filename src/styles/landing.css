@@ -168,7 +168,8 @@
 .brand-btn:hover{ background: var(--brand-blue-hover); }
 .brand-btn-outline{ display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; background:transparent; color: var(--brand-blue); border:1px solid var(--brand-blue); }
 .profile-theme{ --profile-primary:#dd8352; --profile-content-h: calc(100vh - 110px); }
-.profile-main-grid{ min-height: var(--profile-content-h); height: var(--profile-content-h); align-items: stretch; box-sizing:border-box; }
+.profile-container{ height:100%; min-height:100%; box-sizing:border-box; }
+.profile-main-grid{ height:100%; min-height:100%; align-items: stretch; box-sizing:border-box; }
 .profile-page{ background:#f9f8fa; min-height:100vh; }
 .profile-title{ font-size:32px; font-weight:900; letter-spacing:-0.015em; color:#131014; }
 .profile-subtitle{ color:#6b7280; font-size:14px; }
@@ -186,9 +187,9 @@
 .profile-apply-btn:hover{ background:#c97549; }
 .profile-reset-btn{ display:flex; align-items:center; justify-content:center; width:100%; min-height:48px; height:48px; padding:0 16px; border-radius:12px; background:transparent; border:1px solid #d1d5db; color:#131014; font-weight:600; }
 .profile-reset-btn:hover{ background:#f3f4f6; }
-.profile-sidebar{ background:#fff; border-right:1px solid #e9e6eb; height: var(--profile-content-h); padding:16px; display:flex; flex-direction:column; box-sizing:border-box; }
-.profile-fixed-row{ height: var(--profile-content-h); }
-.profile-col-left, .profile-col-right{ max-height: var(--profile-content-h); height: var(--profile-content-h); display:flex; flex-direction:column; overflow:auto; -webkit-overflow-scrolling: touch; box-sizing:border-box; }
+.profile-sidebar{ background:#fff; border-right:1px solid #e9e6eb; height: 100%; padding:16px; display:flex; flex-direction:column; box-sizing:border-box; }
+.profile-fixed-row{ height: 100%; }
+.profile-col-left, .profile-col-right{ height: 100%; display:flex; flex-direction:column; overflow:auto; -webkit-overflow-scrolling: touch; box-sizing:border-box; }
 .profile-fill-card{ flex:1; overflow:auto; -webkit-overflow-scrolling: touch; }
 .profile-suggestions-list{ flex:1; overflow:auto; -webkit-overflow-scrolling: touch; display:flex; flex-direction:column; gap:16px; padding-bottom:16px; box-sizing:border-box; }
 .profile-nav{ display:flex; flex-direction:column; gap:8px; }

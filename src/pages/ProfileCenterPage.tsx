@@ -255,7 +255,7 @@ export default function ProfileCenterPage() {
 
   return (
     <div className="profile-page profile-theme">
-      <div className="max-w-7xl mx-auto px-8 py-10">
+      <div className="max-w-7xl mx-auto px-8 py-10 profile-container">
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 profile-main-grid">
           <aside className="profile-sidebar">
             <div className="profile-nav-title">Personal Center</div>
