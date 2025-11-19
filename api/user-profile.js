@@ -224,13 +224,81 @@ export default async function handler(req, res) {
       return res.status(404).json({ success: false, error: '用户不存在' })
     }
     
-    if (user.status !== 'active') {
-      return res.status(403).json({ success: false, error: '账户已被停用' })
+  if (user.status !== 'active') {
+    return res.status(403).json({ success: false, error: '账户已被停用' })
+  }
+  // 解析 action（Vercel Node 环境无 req.query 时兼容）
+  const rawQuery = req.url && req.url.includes('?') ? req.url.split('?')[1] : ''
+  const params = new URLSearchParams(rawQuery)
+  const action = params.get('action') || ''
+
+  // 收藏列表
+  if (action === 'favorites') {
+    const key = `haigoo:favorites:${user.id}`
+    let ids = []
+    if (UPSTASH_CONFIGURED) {
+      const r = await upstashCommand('SMEMBERS', [key])
+      if (Array.isArray(r)) ids = r
     }
-    // 解析 action（Vercel Node 环境无 req.query 时兼容）
-    const rawQuery = req.url && req.url.includes('?') ? req.url.split('?')[1] : ''
-    const params = new URLSearchParams(rawQuery)
-    const action = params.get('action') || ''
+    if (!ids.length) { try { const client = await getRedisClient(); if (client) ids = await client.sMembers(key) || [] } catch {} }
+    if (!ids.length && KV_CONFIGURED) { try { ids = await kv.smembers(key) || [] } catch {} }
+    ids = ids || []
+
+    const originProto = req.headers['x-forwarded-proto'] || 'https'
+    const originHost = req.headers.host || process.env.VERCEL_URL || ''
+    const jobsUrl = `${originProto}://${originHost}/api/data/processed-jobs?page=1&limit=1000`
+    let jobs = []
+    try { const r = await fetch(jobsUrl); if (r.ok) { const d = await r.json(); jobs = Array.isArray(d) ? d : (d.jobs || []) } } catch {}
+    const map = new Map(jobs.map(j => [j.id, j]))
+    const items = ids.map(id => {
+      const job = map.get(id)
+      let status = '已下架'
+      if (job) {
+        if (job.expiresAt) {
+          const exp = new Date(job.expiresAt).getTime()
+          status = !Number.isNaN(exp) && exp < Date.now() ? '已失效' : '有效中'
+        } else { status = '有效中' }
+      }
+      return {
+        jobId: id,
+        status,
+        title: job?.title || '',
+        company: job?.company || '',
+        postedAt: job?.postedAt || '',
+        expiresAt: job?.expiresAt || null,
+        type: job?.type || '',
+        isRemote: !!job?.isRemote,
+        salary: job?.salary || null
+      }
+    })
+    return res.status(200).json({ success: true, favorites: items })
+  }
+
+  // 收藏添加
+  if (action === 'favorites_add' && req.method === 'POST') {
+    const body = req.body || {}
+    const jobIdParam = params.get('jobId') || ''
+    const jobId = body.jobId || jobIdParam
+    if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+    const key = `haigoo:favorites:${user.id}`
+    if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
+    try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch {}
+    if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch {} }
+    return res.status(200).json({ success: true, message: '收藏成功' })
+  }
+
+  // 收藏移除
+  if (action === 'favorites_remove' && req.method === 'POST') {
+    const body = req.body || {}
+    const jobIdParam = params.get('jobId') || ''
+    const jobId = body.jobId || jobIdParam
+    if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+    const key = `haigoo:favorites:${user.id}`
+    if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
+    try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch {}
+    if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch {} }
+    return res.status(200).json({ success: true, message: '取消收藏成功' })
+  }
 
     // 移除收藏相关 action，准备后续重新设计收藏方案
     

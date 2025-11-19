@@ -216,3 +216,4 @@
 .favorite-status-exp{ color:#dc2626; font-weight:600; }
 .favorite-view{ display:flex; align-items:center; justify-content:center; height:36px; padding:0 14px; border-radius:10px; background:#E5E7EB; color:#111827; font-weight:700; }
 .favorite-heart{ position:absolute; top:12px; right:12px; }
+.favorite-disabled{ opacity:0.6; filter:grayscale(0.2); }

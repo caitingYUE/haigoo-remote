@@ -609,6 +609,8 @@ export default function JobsPage() {
                     <div key={job.id} role="listitem">
                       <JobCard
                         job={job}
+                        onSave={() => toggleSaveJob(job.id)}
+                        isSaved={savedJobs.has(job.id)}
                         onClick={() => openJobDetail(job)}
                         aria-label={`职位 ${index + 1}：${job.title} - ${job.company}`}
                       />
@@ -627,7 +629,8 @@ export default function JobsPage() {
           job={selectedJob} 
           isOpen={isJobDetailOpen}
           onClose={closeJobDetail}
-          
+          onSave={() => toggleSaveJob(selectedJob.id)}
+          isSaved={savedJobs.has(selectedJob.id)}
           onApply={handleApply}
           jobs={filteredJobs}
           currentJobIndex={currentJobIndex}

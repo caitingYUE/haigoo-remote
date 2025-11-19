@@ -27,6 +27,7 @@ export default function ProfileCenterPage() {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
+  const [favorites, setFavorites] = useState<any[]>([])
 
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
@@ -49,11 +50,22 @@ export default function ProfileCenterPage() {
   })
 
 
-  // 移除收藏数据加载，后续将重新设计收藏方案
+  useEffect(() => {
+    ;(async () => {
+      try {
+        if (!authUser || !token) return
+        const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token as string}` } })
+        const j = await r.json()
+        if (j?.success && Array.isArray(j?.favorites)) {
+          setFavorites(j.favorites)
+        }
+      } catch {}
+    })()
+  }, [authUser])
 
   
 
-  // 移除收藏状态映射
+  const favoritesWithStatus = useMemo(() => favorites, [favorites])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -199,10 +211,14 @@ export default function ProfileCenterPage() {
                 <FileText className={`w-5 h-5 ${tab==='resume' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">我的简历</span>
               </button>
+              <button className={`profile-nav-item ${tab==='favorites' ? 'active' : ''}`} role="tab" aria-selected={tab==='favorites'} onClick={() => switchTab('favorites')}>
+                <Heart className={`w-5 h-5 ${tab==='favorites' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
+                <span className="text-sm font-medium">我的收藏</span>
+              </button>
             </div>
           </aside>
           <main>
-            {tab === 'resume' ? <ResumeTab /> : <ResumeTab />}
+            {tab === 'resume' ? <ResumeTab /> : <FavoritesTab />}
           </main>
         </div>
       </div>
