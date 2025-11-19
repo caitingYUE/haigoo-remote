@@ -281,21 +281,25 @@ export default async function handler(req, res) {
 
     if (action === 'favorites_add' && req.method === 'POST') {
       const { jobId } = req.body || {}
-      if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+      const jobIdParam = params.get('jobId') || ''
+      const finalJobId = jobId || jobIdParam
+      if (!finalJobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
       const key = `haigoo:favorites:${user.id}`
-      if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
-      try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch {}
-      if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch {} }
+      if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, finalJobId]) }
+      try { const client = await getRedisClient(); if (client) await client.sAdd(key, finalJobId) } catch {}
+      if (KV_CONFIGURED) { try { await kv.sadd(key, finalJobId) } catch {} }
       return res.status(200).json({ success: true, message: '收藏成功' })
     }
 
     if (action === 'favorites_remove' && req.method === 'DELETE') {
       const { jobId } = req.body || {}
-      if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+      const jobIdParam = params.get('jobId') || ''
+      const finalJobId = jobId || jobIdParam
+      if (!finalJobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
       const key = `haigoo:favorites:${user.id}`
-      if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
-      try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch {}
-      if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch {} }
+      if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, finalJobId]) }
+      try { const client = await getRedisClient(); if (client) await client.sRem(key, finalJobId) } catch {}
+      if (KV_CONFIGURED) { try { await kv.srem(key, finalJobId) } catch {} }
       return res.status(200).json({ success: true, message: '取消收藏成功' })
     }
     
