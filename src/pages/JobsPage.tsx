@@ -89,7 +89,6 @@ export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token, isAuthenticated } = useAuth()
-  const { token, isAuthenticated } = useAuth()
   
   // Refs for focus management
   const searchInputRef = useRef<HTMLInputElement>(null)
