@@ -12,6 +12,7 @@ import { usePageCache } from '../hooks/usePageCache'
 // ❌ 不再前端实时翻译，数据从后端API获取已翻译
 // import { jobTranslationService } from '../services/job-translation-service'
 import { useAuth } from '../contexts/AuthContext'
+import { useNotificationHelpers } from '../components/NotificationSystem'
 
 
 
@@ -84,6 +85,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<string>('全部')
   const [displayLimit, setDisplayLimit] = useState<number>(24)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
+  const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
   // 从URL参数获取筛选条件
   const searchParams = new URLSearchParams(location.search)
@@ -219,7 +221,7 @@ export default function HomePage() {
 
   const toggleSaveJob = async (jobId: string) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
-    if (!isAuthenticated || !authToken) { navigate('/login'); return }
+    if (!isAuthenticated || !authToken) { showWarning('请先登录', '登录后可以收藏职位'); navigate('/login'); return }
     const isSaved = savedJobs.has(jobId)
     setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
     try {
@@ -234,10 +236,12 @@ export default function HomePage() {
         const d = await r.json()
         const ids: string[] = (d?.favorites || []).map((f: any) => f.jobId)
         setSavedJobs(new Set(ids))
+        showSuccess(isSaved ? '已取消收藏' : '收藏成功')
       }
     } catch (e) {
       setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.add(jobId) : s.delete(jobId); return s })
       console.warn('收藏操作失败', e)
+      showError('收藏失败', e instanceof Error ? e.message : '网络或服务不可用')
     }
   }
 
