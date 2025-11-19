@@ -100,6 +100,16 @@ export default function ProfileCenterPage() {
 
   const ResumeTab = () => (
     <div className="space-y-6">
+      {/* 顶部标题与下载 */}
+      <div className="profile-topbar">
+        <div>
+          <div className="profile-title">Resume Optimization</div>
+          <div className="profile-subtitle">Enhance your resume with AI-powered suggestions.</div>
+        </div>
+        <button className="profile-download-btn"><Download className="w-4 h-4" />Download Optimized Resume</button>
+      </div>
+
+      {/* 分数条 */}
       <div className="profile-card p-6">
         <div className="flex items-center justify-between mb-3">
           <p className="text-base font-medium">Overall Resume Score</p>
@@ -109,17 +119,18 @@ export default function ProfileCenterPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 profile-fixed-row">
+        {/* 左列：上传区 */}
         <div className="lg:col-span-2 space-y-4 profile-col-left">
-          <h3 className="text-xl font-bold px-4">我的简历</h3>
+          <h3 className="text-xl font-bold px-4">Your Resume</h3>
           <div className="profile-card p-6 profile-fill-card">
             {!latestResume ? (
               <div className="profile-upload-area">
-                <div className="flex flex-col items-center gap-2 text-center max-w-[480px] mx-auto">
+                <div className="flex flex-col items-center gap-2 text-center max-w-[520px] mx-auto">
                   <FileText className="w-12 h-12 text-gray-400" />
-                  <p className="text-lg font-bold">尚未上传简历</p>
-                  <p className="text-sm text-gray-500">拖拽文件到此处或点击上传</p>
+                  <p className="text-lg font-bold">No resume uploaded yet</p>
+                  <p className="text-sm text-gray-500">Drag and drop your file here or click to upload.</p>
                   <button onClick={() => fileInputRef.current?.click()} className="profile-apply-btn" style={{ width: '240px', height: '40px' }}>
-                    <Upload className="w-4 h-4 mr-2" />上传简历
+                    <Upload className="w-4 h-4 mr-2" />Upload Resume
                   </button>
                   <p className="text-xs text-gray-500">支持 PDF、DOC、DOCX、TXT</p>
                 </div>
@@ -143,32 +154,46 @@ export default function ProfileCenterPage() {
             )}
           </div>
         </div>
+
+        {/* 右列：建议与CTA */}
         <div className="lg:col-span-1 space-y-4 profile-col-right">
-          <h3 className="text-xl font-bold px-4">AI优化建议</h3>
+          <h3 className="text-xl font-bold px-4">AI-Powered Suggestions</h3>
           <div className="profile-suggestions-list">
-            {suggestions.length === 0 ? (
-              <div className="profile-suggestion-card">
-                <div className="flex items-start gap-4">
-                  <CheckCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
-                  <div className="flex-1">
-                    <h4 className="font-bold text-base">上传简历以获取建议</h4>
-                    <p className="text-sm text-gray-600 mt-1">AI 将为你提供量化优化建议与关键词补全。</p>
-                  </div>
+            {/* 三张建议卡 */}
+            <div className="profile-suggestion-card">
+              <div className="flex items-start gap-4">
+                <CheckCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-base">Strengthen Your Action Verbs</h4>
+                  <p className="text-sm text-gray-600 mt-1">Use powerful verbs to describe your accomplishments.</p>
+                  <button className="text-sm font-medium text-[var(--profile-primary)] mt-2">Learn More</button>
                 </div>
               </div>
-            ) : (
-              suggestions.map((s, idx) => (
-                <div key={idx} className="profile-suggestion-card">
-                  <div className="flex items-start gap-4">
-                    <AlertCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
-                    <div className="flex-1">
-                      <h4 className="font-bold text-base">建议 {idx + 1}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{s}</p>
-                    </div>
-                  </div>
+            </div>
+            <div className="profile-suggestion-card">
+              <div className="flex items-start gap-4">
+                <AlertCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-base">Add Quantifiable Results</h4>
+                  <p className="text-sm text-gray-600 mt-1">Include numbers and data to demonstrate your impact.</p>
+                  <button className="text-sm font-medium text-[var(--profile-primary)] mt-2">Show Example</button>
                 </div>
-              ))
-            )}
+              </div>
+            </div>
+            <div className="profile-suggestion-card">
+              <div className="flex items-start gap-4">
+                <AlertCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-base">ATS Compatibility Check</h4>
+                  <p className="text-sm text-gray-600 mt-1">Ensure your resume is formatted to pass ATS.</p>
+                  <button className="text-sm font-medium text-[var(--profile-primary)] mt-2">Learn More</button>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <button className="profile-apply-btn">Apply Suggestions</button>
+            <button className="profile-reset-btn">Reset Suggestions</button>
           </div>
         </div>
       </div>
@@ -176,41 +201,50 @@ export default function ProfileCenterPage() {
   )
 
   const FavoritesTab = () => (
-    <div className="profile-card p-6 profile-fill-card">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">我的收藏</h2>
-        <div className="text-sm text-gray-500 flex items-center"><Heart className="w-4 h-4 mr-1 text-[var(--profile-primary)]" />{favoritesWithStatus.length}</div>
+    <div className="space-y-4">
+      <div className="profile-topbar">
+        <div>
+          <div className="profile-title">My Favorites</div>
+          <div className="profile-subtitle">Your bookmarked job postings.</div>
+        </div>
       </div>
-      {favoritesWithStatus.length === 0 ? (
-        <div className="profile-upload-area">
-          <p className="text-lg font-bold">还没有收藏职位</p>
-          <p className="text-sm text-gray-600">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {favoritesWithStatus.map(f => (
-            <div key={f.jobId} className="p-4 bg-white rounded-xl border shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-bold text-gray-900 text-base">{f.title || '未命名职位'}</div>
-                  <div className="text-sm text-gray-500">{f.company || '未知公司'}</div>
+      <div className="profile-card p-6 profile-fill-card">
+        {favoritesWithStatus.length === 0 ? (
+          <div className="profile-upload-area">
+            <p className="text-lg font-bold">还没有收藏职位</p>
+            <p className="text-sm text-gray-600">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {favoritesWithStatus.map(f => (
+              <div key={f.jobId} className="favorite-card relative">
+                <button className="favorite-heart text-[var(--profile-primary)]"><Heart className="w-5 h-5" /></button>
+                <div className="favorite-title text-base">{f.title || '未命名职位'}</div>
+                <div className="favorite-company">{f.company || '未知公司'}</div>
+                {f.job?.description && (
+                  <p className="favorite-summary">{String(f.job.description)}</p>
+                )}
+                <div className="favorite-tags">
+                  {f.job?.isRemote && <span className="favorite-tag">Remote</span>}
+                  {f.job?.type && <span className="favorite-tag">{f.job.type}</span>}
+                  {f.job?.salary && f.job.salary.min>0 && <span className="favorite-salary">${f.job.salary.min} - ${f.job.salary.max}</span>}
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  f.status === '有效中' ? 'bg-green-100 text-green-700' : f.status === '已下架' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'
-                }`}>{f.status}</span>
+                <div className="favorite-bottom">
+                  {f.status === '有效中' && <div className="favorite-status-ok"><span className="inline-block w-2 h-2 rounded-full bg-green-500" />有效中</div>}
+                  {f.status === '已下架' && <div className="favorite-status-off">已下架</div>}
+                  {f.status === '已失效' && <div className="favorite-status-exp">已失效</div>}
+                  <button className="favorite-view">View Details</button>
+                </div>
               </div>
-              {f.job?.description && (
-                <p className="mt-3 text-sm text-gray-600 line-clamp-2">{f.job.description}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen landing-bg-page profile-theme">
+    <div className="profile-page profile-theme">
       <div className="max-w-7xl mx-auto px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
           <aside className="profile-sidebar">

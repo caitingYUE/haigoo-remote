@@ -168,7 +168,11 @@
 .brand-btn:hover{ background: var(--brand-blue-hover); }
 .brand-btn-outline{ display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; background:transparent; color: var(--brand-blue); border:1px solid var(--brand-blue); }
 .profile-theme{ --profile-primary:#dd8352; --profile-content-h: calc(100vh - 110px); }
-.profile-progress{ height:12px; background:#e9e6eb; border-radius:9999px; overflow:hidden; }
+.profile-page{ background:#f9f8fa; min-height:100vh; }
+.profile-title{ font-size:28px; font-weight:900; letter-spacing:-0.015em; color:#131014; }
+.profile-subtitle{ color:#6b7280; font-size:14px; }
+.profile-topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.profile-progress{ height:8px; background:#e9e6eb; border-radius:9999px; overflow:hidden; }
 .profile-progress .fill{ height:100%; background: var(--profile-primary); border-radius:9999px; }
 .profile-outline-btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; background:transparent; color: var(--profile-primary); border:1px solid var(--profile-primary); }
 .profile-download-btn{ display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 16px; border-radius:12px; background:#e9e6eb; color:#131014; font-weight:700; border:none; }
@@ -193,3 +197,18 @@
 .sidebar-link{ color: var(--brand-navy); border-radius:10px; }
 .sidebar-link:hover{ background: var(--brand-blue-10); color: var(--brand-blue-hover); }
 .sidebar-active{ background: var(--brand-blue); color:#FFFFFF; box-shadow:0 6px 12px rgba(49,130,206,0.24); }
+
+/* Favorites 卡片样式 */
+.favorite-card{ background:#fff; border:1px solid var(--brand-border); border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.favorite-title{ font-weight:700; color:#131014; }
+.favorite-company{ color:#6b7280; font-size:14px; margin-top:4px; }
+.favorite-summary{ color:#374151; font-size:14px; margin-top:8px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.favorite-tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.favorite-tag{ padding:6px 10px; border-radius:9999px; background: var(--brand-blue-10); color: var(--brand-blue); font-weight:600; font-size:12px; }
+.favorite-salary{ color: var(--brand-orange); font-weight:700; font-size:14px; }
+.favorite-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; border-top:1px solid #E5E7EB; padding-top:10px; }
+.favorite-status-ok{ color:#16a34a; font-weight:600; display:flex; align-items:center; gap:6px; }
+.favorite-status-off{ color:#6b7280; font-weight:600; }
+.favorite-status-exp{ color:#dc2626; font-weight:600; }
+.favorite-view{ display:flex; align-items:center; justify-content:center; height:36px; padding:0 14px; border-radius:10px; background:#E5E7EB; color:#111827; font-weight:700; }
+.favorite-heart{ position:absolute; top:12px; right:12px; }
