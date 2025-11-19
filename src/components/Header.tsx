@@ -90,8 +90,7 @@ export default function Header() {
 
   // 用户菜单选项 - 恢复个人中心入口
   const userMenuItems: { id: string; label: string; href: string }[] = [
-    { id: 'profile-resume', label: '我的简历', href: '/profile?tab=resume' },
-    { id: 'profile-favorites', label: '我的收藏', href: '/profile?tab=favorites' }
+    { id: 'profile-resume', label: '我的简历', href: '/profile?tab=resume' }
   ]
 
   return (
