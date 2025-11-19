@@ -184,7 +184,13 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     }
   }
   const handleSave = () => {
-    onSave?.(job.id)
+    console.log('Favorite button clicked, job.id:', job?.id)
+    console.log('onSave function available:', typeof onSave === 'function')
+    if (job?.id) {
+      onSave?.(job.id)
+    } else {
+      console.error('No job ID available for favorite action')
+    }
   }
 
   // 显示文本的辅助函数：直接返回原文

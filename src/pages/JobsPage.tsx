@@ -88,7 +88,9 @@ const remoteOptions = [
 export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { token, isAuthenticated } = useAuth()
+  const { token, isAuthenticated, user } = useAuth()
+  
+  console.log('JobsPage - Auth status:', { token: !!token, isAuthenticated, user })
   
   // Refs for focus management
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -208,26 +210,72 @@ export default function JobsPage() {
   }, [refresh])
 
   const toggleSaveJob = async (jobId: string) => {
+    console.log('toggleSaveJob called with jobId:', jobId)
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
-    if (!isAuthenticated || !authToken) { navigate('/login'); return }
+    console.log('Auth token available:', !!authToken)
+    console.log('Is authenticated:', isAuthenticated)
+    console.log('Current user:', user)
+    
+    if (!isAuthenticated || !authToken) { 
+      console.log('Not authenticated, redirecting to login')
+      navigate('/login'); 
+      return 
+    }
+    
     const isSaved = savedJobs.has(jobId)
-    setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
+    console.log('Current saved state:', isSaved)
+    
+    // Optimistic update
+    setSavedJobs(prev => { 
+      const s = new Set(prev); 
+      isSaved ? s.delete(jobId) : s.add(jobId); 
+      console.log('Optimistic update - new saved jobs:', Array.from(s))
+      return s 
+    })
+    
     try {
-      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}` , {
+      const action = isSaved ? 'favorites_remove' : 'favorites_add'
+      const url = `/api/user-profile?action=${action}&jobId=${encodeURIComponent(jobId)}`
+      console.log('Making API request to:', url)
+      console.log('Request headers:', { Authorization: `Bearer ${authToken}` })
+      
+      const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ jobId })
       })
-      if (!resp.ok) throw new Error('收藏接口失败')
+      
+      console.log('API response status:', resp.status)
+      console.log('API response headers:', Object.fromEntries(resp.headers.entries()))
+      
+      if (!resp.ok) {
+        const errorText = await resp.text()
+        console.error('API request failed:', resp.status, errorText)
+        throw new Error(`收藏接口失败: ${resp.status} ${errorText}`)
+      }
+      
+      const responseData = await resp.json()
+      console.log('API response data:', responseData)
+      
+      console.log('API request successful, refreshing favorites list')
+      
+      // Refresh favorites list
       const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
       if (r.ok) {
         const d = await r.json()
+        console.log('Favorites list response:', d)
         const ids: string[] = (d?.favorites || []).map((f: any) => f.jobId)
+        console.log('Updated favorites IDs:', ids)
         setSavedJobs(new Set(ids))
       }
     } catch (e) {
-      setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.add(jobId) : s.delete(jobId); return s })
-      console.warn('收藏操作失败', e)
+      console.error('收藏操作失败', e)
+      // Revert optimistic update on error
+      setSavedJobs(prev => { 
+        const s = new Set(prev); 
+        isSaved ? s.add(jobId) : s.delete(jobId); 
+        return s 
+      })
     }
   }
 
