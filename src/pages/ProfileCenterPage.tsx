@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { resumeService } from '../services/resume-service'
 import { processedJobsService } from '../services/processed-jobs-service'
-import { useAuth } from '../contexts/AuthContext'
 import { usePageCache } from '../hooks/usePageCache'
 import { Job } from '../types'
 
