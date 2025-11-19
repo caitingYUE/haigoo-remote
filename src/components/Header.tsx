@@ -89,9 +89,7 @@ export default function Header() {
   }
 
   // 用户菜单选项 - 移除个人中心，保留简历优化入口
-  const userMenuItems = [
-    { id: 'resume', label: '简历优化', href: '/resume' }
-  ]
+  const userMenuItems: { id: string; label: string; href: string }[] = []
 
   return (
     <header 

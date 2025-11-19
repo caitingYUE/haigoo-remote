@@ -8,7 +8,6 @@ import JobsPage from './pages/JobsPage'
 import RemoteExperiencePage from './pages/RemoteExperiencePage'
 import JobApplicationPage from './pages/JobApplicationPage'
 import JobDetailPage from './pages/JobDetailPage'
-import ResumeOptimizationPage from './pages/ResumeOptimizationPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import CopilotPage from './pages/CopilotPage'
@@ -79,11 +78,6 @@ function App() {
                   <Route path="/job/:id" element={<JobDetailPage />} />
                   
                   {/* 需要登录的页面 */}
-                  <Route path="/resume" element={
-                    <ProtectedRoute>
-                      <ResumeOptimizationPage />
-                    </ProtectedRoute>
-                  } />
                 </Routes>
               </Layout>
             } />
