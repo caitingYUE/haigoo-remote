@@ -208,17 +208,18 @@ export default function JobsPage() {
   }, [refresh])
 
   const toggleSaveJob = async (jobId: string) => {
-    if (!isAuthenticated || !token) { navigate('/login'); return }
+    const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
+    if (!isAuthenticated || !authToken) { navigate('/login'); return }
     const isSaved = savedJobs.has(jobId)
     setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
     try {
       const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}` , {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ jobId })
       })
       if (!resp.ok) throw new Error('收藏接口失败')
-      const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
+      const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
       if (r.ok) {
         const d = await r.json()
         const ids: string[] = (d?.favorites || []).map((f: any) => f.jobId)
