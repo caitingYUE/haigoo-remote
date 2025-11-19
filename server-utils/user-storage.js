@@ -12,13 +12,15 @@ const REDIS_URL =
   process.env.haigoo_REDIS_URL ||
   process.env.HAIGOO_REDIS_URL ||
   process.env.UPSTASH_REDIS_URL ||
+  process.env.pre_haigoo_REDIS_URL ||
+  process.env.PRE_HAIGOO_REDIS_URL ||
   null
 const REDIS_CONFIGURED = !!REDIS_URL
 
 // 检测 Vercel KV 配置
 const KV_CONFIGURED = !!(
-  process.env.KV_REST_API_URL &&
-  process.env.KV_REST_API_TOKEN
+  (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
+  (process.env.pre_haigoo_KV_REST_API_URL && process.env.pre_haigoo_KV_REST_API_TOKEN)
 )
 
 // Redis 客户端缓存

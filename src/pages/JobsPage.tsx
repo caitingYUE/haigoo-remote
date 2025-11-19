@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase, RefreshCw } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import JobDetailModal from '../components/JobDetailModal'
 import JobCard from '../components/JobCard'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
@@ -87,6 +88,7 @@ const remoteOptions = [
 export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { token, isAuthenticated } = useAuth()
   
   // Refs for focus management
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -204,6 +206,7 @@ export default function JobsPage() {
       }
       // 同步到个人资料，便于个人页面展示
       ;(async () => {
+        if (!isAuthenticated || !token) { navigate('/login'); return }
         try {
           const list = Array.from(newSet)
           const jobMap = new Map((jobs || []).map(j => [j.id, j]))
@@ -218,7 +221,7 @@ export default function JobsPage() {
           })
           await fetch('/api/user-profile', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ savedJobs: payload })
           })
           // 通知其他页面可选择刷新（可选）
@@ -295,6 +298,21 @@ export default function JobsPage() {
   })
 
   const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length
+
+  // 初始化加载已收藏的岗位，用于高亮 Bookmark 状态
+  useEffect(() => {
+    if (!token) return
+    ;(async () => {
+      try {
+        const resp = await fetch('/api/user-profile', { headers: { Authorization: `Bearer ${token}` } })
+        if (resp.ok) {
+          const data = await resp.json()
+          const ids: string[] = (data?.profile?.savedJobs || []).map((s: any) => s.jobId)
+          setSavedJobs(new Set(ids))
+        }
+      } catch {}
+    })()
+  }, [token])
 
   return (
     <div 

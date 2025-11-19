@@ -15,9 +15,14 @@ const REDIS_URL =
   process.env.haigoo_REDIS_URL ||
   process.env.HAIGOO_REDIS_URL ||
   process.env.UPSTASH_REDIS_URL ||
+  process.env.pre_haigoo_REDIS_URL ||
+  process.env.PRE_HAIGOO_REDIS_URL ||
   null
 const REDIS_CONFIGURED = !!REDIS_URL
-const KV_CONFIGURED = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+const KV_CONFIGURED = !!(
+  (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
+  (process.env.pre_haigoo_KV_REST_API_URL && process.env.pre_haigoo_KV_REST_API_TOKEN)
+)
 
 let __redisClient = globalThis.__haigoo_redis_client || null
 

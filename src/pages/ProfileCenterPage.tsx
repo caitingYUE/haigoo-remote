@@ -11,7 +11,7 @@ import { Job } from '../types'
 type TabKey = 'resume' | 'favorites'
 
 export default function ProfileCenterPage() {
-  const { user: authUser } = useAuth()
+  const { user: authUser, token } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -52,14 +52,17 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     ;(async () => {
       try {
-        const r = await fetch('/api/user-profile', { method: 'GET' })
+        if (!authUser) return
+        const r = await fetch('/api/user-profile', { method: 'GET', headers: { Authorization: `Bearer ${token as string}` } })
         const j = await r.json()
         if (j?.success && Array.isArray(j?.profile?.savedJobs)) {
           setSavedJobs(j.profile.savedJobs)
         }
       } catch {}
     })()
-  }, [])
+  }, [authUser])
+
+  
 
   const favoritesWithStatus = useMemo(() => {
     const map = new Map<string, Job>()
