@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { resumeService } from '../services/resume-service'
 import { processedJobsService } from '../services/processed-jobs-service'
+import { useAuth } from '../contexts/AuthContext'
 import { usePageCache } from '../hooks/usePageCache'
 import { Job } from '../types'
 
@@ -48,16 +49,16 @@ export default function ProfileCenterPage() {
     namespace: 'profile'
   })
 
-  const [savedJobs, setSavedJobs] = useState<{ jobId: string; title?: string; company?: string }[]>([])
+  const [favorites, setFavorites] = useState<any[]>([])
 
   useEffect(() => {
     ;(async () => {
       try {
-        if (!authUser) return
-        const r = await fetch('/api/user-profile', { method: 'GET', headers: { Authorization: `Bearer ${token as string}` } })
+        if (!authUser || !token) return
+        const r = await fetch('/api/favorites', { headers: { Authorization: `Bearer ${token as string}` } })
         const j = await r.json()
-        if (j?.success && Array.isArray(j?.profile?.savedJobs)) {
-          setSavedJobs(j.profile.savedJobs)
+        if (j?.success && Array.isArray(j?.favorites)) {
+          setFavorites(j.favorites)
         }
       } catch {}
     })()
@@ -68,17 +69,14 @@ export default function ProfileCenterPage() {
   const favoritesWithStatus = useMemo(() => {
     const map = new Map<string, Job>()
     ;(jobs || []).forEach(j => map.set(j.id, j))
-    const now = Date.now()
-    return savedJobs.map(s => {
-      const j = map.get(s.jobId)
-      let status: '有效中' | '已失效' | '已下架' = '已下架'
-      if (j) {
-        const exp = j.expiresAt ? new Date(j.expiresAt).getTime() : undefined
-        status = exp && exp < now ? '已失效' : '有效中'
-      }
-      return { jobId: s.jobId, title: s.title || j?.title, company: s.company || j?.company, status, job: j }
-    })
-  }, [savedJobs, jobs])
+    return favorites.map(f => ({
+      jobId: f.jobId,
+      title: f.title || map.get(f.jobId)?.title,
+      company: f.company || map.get(f.jobId)?.company,
+      status: f.status,
+      job: map.get(f.jobId)
+    }))
+  }, [favorites, jobs])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

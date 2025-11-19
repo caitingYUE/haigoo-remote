@@ -187,8 +187,19 @@ export default function JobsPage() {
   // 监听处理后岗位数据的更新事件（从后台管理触发）
   useEffect(() => {
     const handleUpdated = () => {
-      console.log('收到岗位数据更新事件，重新加载...')
+      console.log('收到岗位数据更新事件，重新加载收藏与岗位...')
       refresh()
+      ;(async () => {
+        if (!token) return
+        try {
+          const resp = await fetch('/api/favorites', { headers: { Authorization: `Bearer ${token}` } })
+          if (resp.ok) {
+            const data = await resp.json()
+            const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
+            setSavedJobs(new Set(ids))
+          }
+        } catch {}
+      })()
     }
     window.addEventListener('processed-jobs-updated', handleUpdated)
     return () => {
