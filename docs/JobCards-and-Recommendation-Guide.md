@@ -1,6 +1,6 @@
 # 岗位卡片视觉与技术方案、推荐方案与数据注意事项（综合版）
 
-更新时间：2025-11-04
+更新时间：2025-11-19（对齐预发新版色系与卡片规范）
 
 本文档汇总当前前端卡片的视觉与技术实现、简化版推荐方案与数据注意事项，以及交接所需的关键技术点。旨在帮助后续开发快速理解现状并保持一致的实现与体验。
 
@@ -33,11 +33,11 @@
 - `src/components/JobCard.tsx`（列表卡组件）
 - `src/utils/date-formatter.ts`（发布时间文案与分组基准）
 
-### 1.2 通用样式与图标规范
+### 1.2 通用样式与图标规范（预发版视觉）
 - 图标尺寸统一：`Building` 与 `MapPin` 均为 `w-4 h-4`，并给 `MapPin` 添加 `flex-shrink-0` 防止压缩。
 - 文本溢出处理：公司名与地点文本统一 `min-w-0 + truncate + whitespace-nowrap + overflow-hidden`，杜绝长文本撑破卡片。
 - 薪资显示：仅当 `salary.min > 0` 时显示；单位按币种展示（CNY 用 `¥` 并在组件内统一格式化）。
-- 交互与无障碍：标题、公司、地点行提供合适的 `aria-label`；卡片容器使用 `role="article"`，辅助阅读器友好。
+- 交互与无障碍：标题、公司、地点行提供 `aria-label`；卡片容器 `role="article"`。
 
 ### 1.3 标签系统（含兜底策略）
 - 标签渲染遵循：最多显示 3 个技能标签，超过用 `+N` 表示剩余数量。
@@ -62,7 +62,7 @@
 - RSS/数据聚合：通过 `api/rss-proxy.js` 进行跨域代理获取 RSS 或外部数据源。
 - 前端聚合与适配：`src/services` 下的 `job-aggregator.ts`、`job-service.ts` 等完成数据整合与映射。
 - 历史推荐接口（本地开发）：`server.js` 提供简化的 `/api/recommendations` GET/POST（内存存储），用于开发与演示。
-- 生产部署（建议）：结合 `vercel.json` 中的 Serverless Functions 与 Vercel KV 进行持久化（详见 `VERCEL_DEPLOYMENT_GUIDE.md`）。
+- 生产/预发：由 Vercel Functions 提供接口，数据持久化推荐使用 Vercel KV 或 Upstash Redis REST；详见 `Technical-Architecture-Documentation.md` 与 `PREVIEW_ENVIRONMENT_SETUP.md`。
 
 ### 2.2 分组与展示
 - 按 `postedAt` 的日历日分组为“今天/昨天/更早”。
@@ -118,8 +118,8 @@
 
 ---
 
-维护人：Haigoo 开发团队（待更新）
-版本：v1.0（综合说明）
+维护人：Haigoo 开发团队
+版本：v1.1（预发新版视觉与联调对齐）
 ### 标签行（统一规范）
 
 - 单行限制：标签与 `+N` 聚合徽标保持在同一行，禁止换行。

@@ -1,23 +1,29 @@
-# Haigoo 颜色规范文档 v2.0
+# Haigoo 颜色规范文档 v3.0（预发新版）
 
-## 核心品牌色彩系统
+## 核心品牌色彩系统（与 `src/styles/landing.css` 对齐）
 
-### 主品牌色 (Primary Brand Colors)
+### 主品牌与页面变量
 ```css
---haigoo-primary: #8B5CF6;           /* 主品牌紫色 */
---haigoo-primary-hover: #7C3AED;     /* Hover状态 (-20% 亮度) */
---haigoo-primary-active: #6D28D9;    /* Active状态 (-40% 亮度) */
---haigoo-primary-light: #A78BFA;     /* 浅色变体 */
---haigoo-primary-dark: #5B21B6;      /* 深色变体 */
+--brand-blue: #3182CE;
+--brand-blue-hover: #256bb0;
+--brand-navy: #1A365D;
+--brand-teal: #0EA5A3;
+--brand-orange: #F59F0B;
+--brand-sand: #F5F5DC;
+--brand-blue-10: #EAF3FF;
+--brand-teal-10: #D9F6F3;
+--brand-orange-10: #FFEAD1;
+--brand-border: #E2E8F0;
+--landing-bg-start:#A6E3FF;
+--landing-bg-end:#FDE5C7;
 ```
 
-### 辅助色彩 (Secondary Colors)
+### 功能色（保留）
 ```css
---haigoo-secondary: #EC4899;         /* 辅助粉色 */
---haigoo-accent: #06B6D4;            /* 强调青色 */
---haigoo-success: #10B981;           /* 成功绿色 */
---haigoo-warning: #F59E0B;           /* 警告橙色 */
---haigoo-error: #EF4444;             /* 错误红色 */
+--haigoo-success: #10B981;
+--haigoo-warning: #F59E0B;
+--haigoo-error: #EF4444;
+--haigoo-info: #06B6D4;
 ```
 
 ### 中性色系 (Neutral Colors)
@@ -34,28 +40,20 @@
 --haigoo-gray-900: #111827;
 ```
 
-## Tab 导航交互状态规范
+## 导航与背景规范
 
-### 默认状态 (Default State)
+### 页面与Header背景
 ```css
-.tab-default {
-  background-color: var(--haigoo-gray-50);
-  color: var(--haigoo-primary);
-  border: 1px solid var(--haigoo-gray-200);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+.landing-bg-page { background: linear-gradient(180deg, var(--landing-bg-start) 0%, var(--landing-bg-end) 60%, #FFFFFF 100%); }
+.header-grad { background: linear-gradient(180deg, var(--landing-bg-start) 0%, var(--landing-bg-end) 60%, #FFFFFF 100%); }
 ```
 
-### Hover状态 (Hover State)
+### Tab 状态示例（蓝系）
 ```css
-.tab-hover {
-  background-color: var(--haigoo-primary);
-  color: #FFFFFF;
-  border: 1px solid var(--haigoo-primary);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
-  transform: translateY(-1px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+.tab-default { background-color: var(--brand-blue-10); color: var(--brand-blue); border: 1px solid var(--brand-border); transition: var(--transition-standard); }
+.tab-hover { background-color: var(--brand-blue); color: #fff; border: 1px solid var(--brand-blue); box-shadow: 0 4px 12px rgba(49,130,206,0.25); transform: translateY(-1px); transition: var(--transition-standard); }
+.tab-active { background-color: var(--brand-blue-hover); color: #fff; border: 1px solid var(--brand-blue-hover); box-shadow: 0 6px 16px rgba(37,107,176,0.35); transform: translateY(-2px) scale(1.02); transition: var(--transition-standard); }
+.tab-focus { outline: 2px solid var(--brand-blue); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(49,130,206,0.1); }
 ```
 
 ### Active状态 (Active State)
@@ -79,7 +77,7 @@
 }
 ```
 
-## 标签系统颜色规范
+## 标签与卡片用色规范
 
 ### 岗位类型标签
 ```css
@@ -91,11 +89,10 @@
 --tag-management: #6B7280;       /* 管理类 - 灰色 */
 ```
 
-### 工作模式标签
+### 技能标签统一样式
 ```css
---tag-remote: #06B6D4;           /* 远程工作 - 青色 */
---tag-hybrid: #8B5CF6;           /* 混合模式 - 紫色 */
---tag-onsite: #6B7280;           /* 现场工作 - 灰色 */
+.tag-skill { background: var(--brand-blue-10); color: var(--brand-blue); }
+.tag-more { background: var(--haigoo-gray-100); color: var(--haigoo-gray-500); }
 ```
 
 ### 紧急程度标签
@@ -121,10 +118,11 @@
 
 ```css
 :root {
-  /* 主品牌色 */
-  --haigoo-primary: #8B5CF6;
-  --haigoo-primary-hover: #7C3AED;
-  --haigoo-primary-active: #6D28D9;
+  /* 主品牌色（新版） */
+  --brand-blue: #3182CE;
+  --brand-blue-hover: #256bb0;
+  --brand-navy: #1A365D;
+  --brand-orange: #F59F0B;
   
   /* 中性色 */
   --haigoo-gray-50: #F9FAFB;
@@ -150,7 +148,7 @@
 
 ---
 
-**版本**: 2.0  
-**更新日期**: 2024年11月  
-**负责人**: 技术负责人兼设计总监  
-**审核状态**: 待审核
+**版本**: 3.0  
+**更新日期**: 2025年11月  
+**负责人**: Haigoo 设计与前端团队  
+**审核状态**: 已对齐预发新版
