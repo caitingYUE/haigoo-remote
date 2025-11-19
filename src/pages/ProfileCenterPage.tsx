@@ -198,7 +198,47 @@ export default function ProfileCenterPage() {
     </div>
   )
 
-  
+  const FavoritesTab = () => (
+    <div className="space-y-4">
+      <div className="profile-topbar">
+        <div>
+          <div className="profile-title">My Favorites</div>
+          <div className="profile-subtitle">Your bookmarked job postings.</div>
+        </div>
+      </div>
+      <div className="profile-card p-6 profile-fill-card">
+        {favoritesWithStatus.length === 0 ? (
+          <div className="profile-upload-area">
+            <p className="text-lg font-bold">还没有收藏职位</p>
+            <p className="text-sm text-gray-600">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {favoritesWithStatus.map((f: any) => (
+              <div key={f.jobId} className={`favorite-card relative ${f.status==='已失效' ? 'favorite-disabled' : ''}`}>
+                <div className="favorite-title text-base">{f.title || '未命名职位'}</div>
+                <div className="favorite-company">{f.company || '未知公司'}</div>
+                {f.job?.description && (
+                  <p className="favorite-summary">{String(f.job.description)}</p>
+                )}
+                <div className="favorite-tags">
+                  {f.job?.isRemote && <span className="favorite-tag">Remote</span>}
+                  {f.job?.type && <span className="favorite-tag">{f.job.type}</span>}
+                  {f.job?.salary && f.job.salary.min>0 && <span className="favorite-salary">${f.job.salary.min} - ${f.job.salary.max}</span>}
+                </div>
+                <div className="favorite-bottom">
+                  {f.status === '有效中' && <div className="favorite-status-ok"><span className="inline-block w-2 h-2 rounded-full bg-green-500" />有效中</div>}
+                  {f.status === '已下架' && <div className="favorite-status-off">已下架</div>}
+                  {f.status === '已失效' && <div className="favorite-status-exp">已失效</div>}
+                  <button className="favorite-view">View Details</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 
   return (
     <div className="profile-page profile-theme">
