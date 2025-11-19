@@ -73,19 +73,16 @@ class ProcessedJobsService {
         clearTimeout(timer)
       }
 
-      // 如果本地不可用或返回非200，回退到预发环境
-      if (!response || !response.ok) {
-        try {
-          const fallbackController = new AbortController()
-          const fallbackTimeout = 15000
-          const fallbackTimer = setTimeout(() => fallbackController.abort(), fallbackTimeout)
-          console.info('[processed-jobs-service] 使用预发环境数据源进行回退')
-          response = await fetch(`${this.previewBaseUrl}/data/processed-jobs?${params}`, { signal: fallbackController.signal })
-          clearTimeout(fallbackTimer)
-        } catch (fallbackErr) {
-          console.error('[processed-jobs-service] 预发环境回退也失败', fallbackErr)
-          throw fallbackErr
-        }
+      // 如果请求失败，直接抛出错误
+      if (!response) {
+        console.error('[processed-jobs-service] API request failed, no response received.');
+        throw new Error('API request failed, no response received.');
+      }
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => 'Failed to read error body');
+        console.error(`[processed-jobs-service] API request failed with status ${response.status}. Body: ${errorBody}`);
+        throw new Error(`API request failed with status ${response.status}`);
       }
 
       const contentType = response.headers.get('content-type') || ''
