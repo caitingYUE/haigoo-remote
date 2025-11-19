@@ -54,7 +54,7 @@ export default function ProfileCenterPage() {
     ;(async () => {
       try {
         if (!authUser || !token) return
-        const r = await fetch('/api/favorites', { headers: { Authorization: `Bearer ${token as string}` } })
+        const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token as string}` } })
         const j = await r.json()
         if (j?.success && Array.isArray(j?.favorites)) {
           setFavorites(j.favorites)

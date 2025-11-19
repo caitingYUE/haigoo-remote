@@ -89,6 +89,7 @@ export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token, isAuthenticated } = useAuth()
+  const { token, isAuthenticated } = useAuth()
   
   // Refs for focus management
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -192,7 +193,7 @@ export default function JobsPage() {
       ;(async () => {
         if (!token) return
         try {
-          const resp = await fetch('/api/favorites', { headers: { Authorization: `Bearer ${token}` } })
+          const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
           if (resp.ok) {
             const data = await resp.json()
             const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
@@ -207,42 +208,27 @@ export default function JobsPage() {
     }
   }, [refresh])
 
-  const toggleSaveJob = (jobId: string) => {
-    setSavedJobs(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(jobId)) {
-        newSet.delete(jobId)
-      } else {
-        newSet.add(jobId)
+  const toggleSaveJob = async (jobId: string) => {
+    if (!isAuthenticated || !token) { navigate('/login'); return }
+    const isSaved = savedJobs.has(jobId)
+    setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
+    try {
+      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}` , {
+        method: isSaved ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ jobId })
+      })
+      if (!resp.ok) throw new Error('收藏接口失败')
+      const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
+      if (r.ok) {
+        const d = await r.json()
+        const ids: string[] = (d?.favorites || []).map((f: any) => f.jobId)
+        setSavedJobs(new Set(ids))
       }
-      // 同步到个人资料，便于个人页面展示
-      ;(async () => {
-        if (!isAuthenticated || !token) { navigate('/login'); return }
-        try {
-          const list = Array.from(newSet)
-          const jobMap = new Map((jobs || []).map(j => [j.id, j]))
-          const payload = list.map(id => {
-            const j = jobMap.get(id)
-            return {
-              jobId: id,
-              jobTitle: j?.title || '',
-              company: j?.company || '',
-              savedAt: new Date().toISOString()
-            }
-          })
-          await fetch('/api/user-profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ savedJobs: payload })
-          })
-          // 通知其他页面可选择刷新（可选）
-          window.dispatchEvent(new Event('user-profile-updated'))
-        } catch (e) {
-          console.warn('同步收藏失败', e)
-        }
-      })()
-      return newSet
-    })
+    } catch (e) {
+      setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.add(jobId) : s.delete(jobId); return s })
+      console.warn('收藏操作失败', e)
+    }
   }
 
   const openJobDetail = (job: Job) => {
@@ -272,6 +258,21 @@ export default function JobsPage() {
   const handleApply = (jobId: string) => {
     navigate(`/job/${jobId}/apply`)
   }
+
+  // 初始化拉取收藏集
+  useEffect(() => {
+    ;(async () => {
+      if (!token) return
+      try {
+        const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
+        if (resp.ok) {
+          const data = await resp.json()
+          const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
+          setSavedJobs(new Set(ids))
+        }
+      } catch {}
+    })()
+  }, [token])
 
   // 筛选逻辑
   const filteredJobs = (jobs || []).filter(job => {
