@@ -88,11 +88,9 @@ export default function Header() {
     }
   }
 
-  // 用户菜单选项 - 与个人资料页面侧边栏保持一致
+  // 用户菜单选项 - 移除个人中心，保留简历优化入口
   const userMenuItems = [
-    { id: 'profile', label: '个人资料', href: '/profile?tab=profile' },
-    { id: 'resume', label: '简历管理', href: '/profile?tab=resume' },
-    { id: 'favorites', label: '我的收藏', href: '/profile?tab=favorites' }
+    { id: 'resume', label: '简历优化', href: '/resume' }
   ]
 
   return (

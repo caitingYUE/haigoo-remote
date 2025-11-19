@@ -9,7 +9,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const { pathname } = useLocation()
-  const hideFooter = pathname.startsWith('/profile') || pathname.startsWith('/resume')
+  const hideFooter = pathname.startsWith('/resume')
   return (
     <div className="min-h-screen landing-bg-page flex flex-col">
       <Header />
