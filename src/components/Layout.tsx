@@ -13,7 +13,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen landing-bg-page flex flex-col">
       <Header />
-      <main className="flex-1 relative overflow-visible">
+      <main className="flex-1 relative overflow-hidden">
         <div className="relative z-10">
           {children}
         </div>

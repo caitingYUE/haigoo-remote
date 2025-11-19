@@ -1010,7 +1010,7 @@ export default function ProfilePage() {
     <div className="min-h-screen landing-bg-page profile-theme">
       <div className="max-w-7xl mx-auto px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
-          <aside className="profile-sidebar rounded-xl">
+          <aside className="profile-sidebar">
             <div className="profile-nav-title">Personal Profile</div>
             <div className="profile-nav" role="tablist" aria-label="个人中心切换">
               <button className={`profile-nav-item ${activeTab==='resume' ? 'active' : ''}`} role="tab" aria-selected={activeTab==='resume'} onClick={() => switchTab('resume')}>
