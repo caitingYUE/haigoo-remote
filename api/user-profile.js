@@ -23,6 +23,10 @@ const KV_CONFIGURED = !!(
   (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
   (process.env.pre_haigoo_KV_REST_API_URL && process.env.pre_haigoo_KV_REST_API_TOKEN)
 )
+// Upstash REST（优先使用，兼容预发变量命名）
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.pre_haigoo_KV_REST_API_URL || null
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.pre_haigoo_KV_REST_API_TOKEN || null
+const UPSTASH_CONFIGURED = !!(UPSTASH_URL && UPSTASH_TOKEN)
 
 let __redisClient = globalThis.__haigoo_redis_client || null
 
@@ -38,6 +42,23 @@ async function getRedisClient() {
     return client
   } catch (error) {
     console.error('[user-profile] Redis connection failed:', error.message)
+    return null
+  }
+}
+
+async function upstashCommand(command, args) {
+  if (!UPSTASH_CONFIGURED) return null
+  try {
+    const resp = await fetch(UPSTASH_URL, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command, args })
+    })
+    if (!resp.ok) throw new Error(`Upstash ${command} failed ${resp.status}`)
+    const data = await resp.json()
+    return data?.result ?? null
+  } catch (e) {
+    console.error('[user-profile] Upstash REST error:', e.message)
     return null
   }
 }
@@ -216,7 +237,14 @@ export default async function handler(req, res) {
       const key = `haigoo:favorites:${user.id}`
       // 读取收藏 IDs（Redis/KV/内存）
       let ids = []
-      try { const client = await getRedisClient(); if (client) { ids = await client.sMembers(key) || [] } } catch {}
+      // Upstash REST
+      if (UPSTASH_CONFIGURED) {
+        const r = await upstashCommand('SMEMBERS', [key])
+        if (Array.isArray(r)) ids = r
+      }
+      // Redis TCP
+      if (!ids.length) { try { const client = await getRedisClient(); if (client) { ids = await client.sMembers(key) || [] } } catch {} }
+      // Vercel KV
       if (!ids.length && KV_CONFIGURED) { try { ids = await kv.smembers(key) || [] } catch {} }
       if (!ids.length) { ids = [] }
 
@@ -255,6 +283,7 @@ export default async function handler(req, res) {
       const { jobId } = req.body || {}
       if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
       const key = `haigoo:favorites:${user.id}`
+      if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
       try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch {}
       if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch {} }
       return res.status(200).json({ success: true, message: '收藏成功' })
@@ -264,6 +293,7 @@ export default async function handler(req, res) {
       const { jobId } = req.body || {}
       if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
       const key = `haigoo:favorites:${user.id}`
+      if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
       try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch {}
       if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch {} }
       return res.status(200).json({ success: true, message: '取消收藏成功' })
