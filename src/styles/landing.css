@@ -169,7 +169,7 @@
 .brand-btn-outline{ display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; background:transparent; color: var(--brand-blue); border:1px solid var(--brand-blue); }
 .profile-theme{ --profile-primary:#dd8352; --profile-content-h: calc(100vh - 110px); }
 .profile-page{ background:#f9f8fa; min-height:100vh; }
-.profile-title{ font-size:28px; font-weight:900; letter-spacing:-0.015em; color:#131014; }
+.profile-title{ font-size:32px; font-weight:900; letter-spacing:-0.015em; color:#131014; }
 .profile-subtitle{ color:#6b7280; font-size:14px; }
 .profile-topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
 .profile-progress{ height:8px; background:#e9e6eb; border-radius:9999px; overflow:hidden; }

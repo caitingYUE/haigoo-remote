@@ -11,7 +11,7 @@ export default function Layout({ children }: LayoutProps) {
   const { pathname } = useLocation()
   const hideFooter = pathname.startsWith('/resume')
   return (
-    <div className="min-h-screen landing-bg-page flex flex-col">
+    <div className={`min-h-screen flex flex-col ${pathname.startsWith('/profile') ? 'profile-page' : 'landing-bg-page'}`}>
       <Header />
       <main className="flex-1 relative overflow-hidden">
         <div className="relative z-10">
