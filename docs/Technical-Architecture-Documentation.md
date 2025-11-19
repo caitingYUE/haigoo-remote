@@ -18,21 +18,21 @@
                         └─────────────────┘
 ```
 
-### 1.2 技术栈选择
+### 1.2 技术栈选择（预发环境）
 
 #### 前端技术栈
 - **框架**: React 18.2.0 + TypeScript 5.2.2
 - **构建工具**: Vite 5.0.0
-- **样式**: Tailwind CSS 3.3.6
+- **样式**: Tailwind CSS 3.3.6（统一使用 `src/styles/landing.css` 变量与组件类）
 - **状态管理**: Zustand 4.4.7
 - **路由**: React Router DOM 6.20.1
 - **表单处理**: React Hook Form 7.48.2 + Zod 3.22.4
 - **图标**: Lucide React 0.294.0
 - **HTTP客户端**: Axios 1.6.2
 
-#### 后端/轻服务技术栈（生产）
+#### 后端/轻服务技术栈（生产/预发）
 - **平台**: Vercel Serverless Functions + Edge Functions
-- **缓存**: Vercel KV（可选）
+- **缓存**: Vercel KV 或 Upstash Redis REST（推荐）
 - **代理与跨域**: Edge Runtime 内置
 - **HTTP请求**: fetch（Edge/Node）
 - **XML解析**: xmldom 0.6.0（如在服务端解析）
@@ -130,7 +130,7 @@ app.get('/api/rss-proxy', async (req, res) => {
 });
 ```
 
-### 3.2 API接口设计
+### 3.2 API接口设计（前后端联调）
 
 #### RSS代理接口
 - **端点**: `GET /api/rss-proxy`
@@ -143,6 +143,17 @@ app.get('/api/rss-proxy', async (req, res) => {
   - 超时控制
 - **部署**: 生产环境由 Vercel Functions/Edge 提供该端点
 - **响应**: XML或JSON（按需求）格式的RSS数据
+
+#### 处理后职位数据接口
+- **端点**: `GET /api/data/processed-jobs?page={n}&limit={m}`
+- **用途**: 前端首页与岗位页读取后端聚合并翻译后的数据
+- **联调要点**:
+  - 预发环境需在 Vercel 设置 `ENABLE_AUTO_TRANSLATION=true` 与 `CRON_SECRET`
+  - 数据翻译由后台任务触发（管理后台或 `POST /api/cron/sync-jobs`）
+
+#### 健康检查接口
+- **端点**: `GET /api/health`
+- **返回**: 环境、特性开关与存储适配器状态，用于验收预发配置
 
 ### 3.3 错误处理机制
 ```javascript
@@ -233,7 +244,7 @@ npm run dev  # 启动Vite开发服务器 (端口3000)
 node server.js  # 启动Express服务器 (端口3001)
 ```
 
-### 6.2 生产环境
+### 6.2 生产/预发环境
 ```bash
 # 构建前端
 npm run build
@@ -241,19 +252,18 @@ npm run build
 # 预览构建结果
 npm run preview
 
-# 生产部署
-# 平台: Vercel
-# 前端: 由 Vercel 构建与托管静态资源
-# API: Vercel Serverless/Edge Functions（/api/rss-proxy、/api/translate、/api/recommendations）
+# 平台: Vercel（main=production，develop=preview）
+# 前端: 静态资源托管于 Vercel
+# API: Serverless/Edge Functions（例如 /api/rss-proxy、/api/data/processed-jobs、/api/translate）
 ```
 
-### 6.3 环境配置
+### 6.3 环境配置（关键）
 ```javascript
 // 开发环境
 const API_BASE_URL = 'http://localhost:3001';
 
-// 生产环境
-const API_BASE_URL = '/api'; // 生产由Vercel Functions提供
+// 生产/预发
+const API_BASE_URL = '/api'; // 前端统一使用相对路径
 ```
 
 ## 7. 性能优化策略
@@ -288,7 +298,7 @@ const API_BASE_URL = '/api'; // 生产由Vercel Functions提供
 ### 9.1 错误监控
 - **前端错误**: 全局错误捕获
 - **后端错误**: Express错误中间件
-- **网络错误**: 请求失败监控
+- **网络错误**: 请求失败监控（重点关注 `processed-jobs` 拉取）
 
 ### 9.2 性能监控
 - **页面加载时间**: Performance API
@@ -307,7 +317,7 @@ const API_BASE_URL = '/api'; // 生产由Vercel Functions提供
 - **命名规范**: PascalCase组件名
 - **Props接口**: 明确的TypeScript接口
 - **默认值**: 合理的默认属性值
-- **文档注释**: JSDoc注释
+- **样式规范**: 颜色与背景统一引用 `landing.css` 变量
 
 ### 10.3 API规范
 - **RESTful**: 遵循REST API设计原则
