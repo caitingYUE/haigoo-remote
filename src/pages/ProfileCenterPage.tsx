@@ -201,7 +201,8 @@ export default function ProfileCenterPage() {
               </div>
             </div>
 
-            {/* CTA */}
+          </div>
+          <div className="profile-actions">
             <button className="profile-apply-btn">Apply Suggestions</button>
             <button className="profile-reset-btn">Reset Suggestions</button>
           </div>
