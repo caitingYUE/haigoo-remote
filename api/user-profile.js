@@ -217,6 +217,18 @@ export default async function handler(req, res) {
     return res.status(200).end()
   }
   
+  // 解析请求体（Vercel函数需要手动解析）
+  if (req.method === 'POST' && req.body) {
+    try {
+      if (typeof req.body === 'string') {
+        req.body = JSON.parse(req.body)
+      }
+    } catch (e) {
+      console.error('[user-profile] Failed to parse request body:', e)
+      return res.status(400).json({ success: false, error: '请求体格式错误' })
+    }
+  }
+  
   try {
     // 验证用户身份
     const token = extractToken(req)
@@ -288,29 +300,37 @@ export default async function handler(req, res) {
 
   // 收藏添加
   if (action === 'favorites_add' && req.method === 'POST') {
+    console.log('[user-profile] favorites_add called, user:', user.id)
     const body = req.body || {}
+    console.log('[user-profile] request body:', body)
     const jobIdParam = params.get('jobId') || ''
     const jobId = body.jobId || jobIdParam
+    console.log('[user-profile] jobId:', jobId, 'from body:', body.jobId, 'from param:', jobIdParam)
     if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
     const key = `haigoo:favorites:${user.id}`
     if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
     try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch {}
     if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch {} }
     getMemoryFavorites(user.id).add(jobId)
+    console.log('[user-profile] favorites_add success, jobId:', jobId)
     return res.status(200).json({ success: true, message: '收藏成功' })
   }
 
   // 收藏移除
   if (action === 'favorites_remove' && req.method === 'POST') {
+    console.log('[user-profile] favorites_remove called, user:', user.id)
     const body = req.body || {}
+    console.log('[user-profile] request body:', body)
     const jobIdParam = params.get('jobId') || ''
     const jobId = body.jobId || jobIdParam
+    console.log('[user-profile] jobId:', jobId, 'from body:', body.jobId, 'from param:', jobIdParam)
     if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
     const key = `haigoo:favorites:${user.id}`
     if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
     try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch {}
     if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch {} }
     getMemoryFavorites(user.id).delete(jobId)
+    console.log('[user-profile] favorites_remove success, jobId:', jobId)
     return res.status(200).json({ success: true, message: '取消收藏成功' })
   }
 

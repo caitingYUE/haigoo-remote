@@ -210,16 +210,21 @@ export default function JobsPage() {
   }, [refresh])
 
   const toggleSaveJob = async (jobId: string) => {
+    console.log('[JobsPage] toggleSaveJob called, jobId:', jobId)
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
+    console.log('[JobsPage] authToken:', !!authToken, 'isAuthenticated:', isAuthenticated)
     if (!isAuthenticated || !authToken) { showWarning('请先登录', '登录后可以收藏职位'); navigate('/login'); return }
     const isSaved = savedJobs.has(jobId)
+    console.log('[JobsPage] current saved state:', isSaved)
     setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
     try {
-      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}` , {
+      console.log('[JobsPage] sending request to:', `/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}`)
+      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ jobId })
       })
+      console.log('[JobsPage] response status:', resp.status)
       if (!resp.ok) throw new Error('收藏接口失败')
       const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
       if (r.ok) {
