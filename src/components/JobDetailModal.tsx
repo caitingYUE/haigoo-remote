@@ -183,6 +183,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
       console.error('分享失败:', error)
     }
   }
+  const handleSave = () => { onSave?.(job.id) }
 
   // 显示文本的辅助函数：直接返回原文
   const displayText = (originalText: string): string => {
@@ -330,6 +331,21 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <Share2 className="w-4 h-4" />
                 </button>
 
+                {/* 收藏 */}
+                <button
+                  onClick={handleSave}
+                  onKeyDown={(e) => handleKeyDown(e, handleSave)}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all duration-200 border ${
+                    isSaved
+                      ? 'bg-haigoo-primary/5 text-haigoo-primary border-haigoo-primary/20'
+                      : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 border-slate-200/50 dark:border-zinc-700/50'
+                  }`}
+                  title={isSaved ? '已收藏' : '收藏'}
+                  aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
+                  aria-pressed={isSaved}
+                >
+                  <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+                </button>
                 
               </div>
             </div>
