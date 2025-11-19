@@ -63,7 +63,7 @@ export default function ProfileCenterPage() {
         }
       } catch {}
     })()
-  }, [authUser])
+  }, [authUser, token])
 
   
 

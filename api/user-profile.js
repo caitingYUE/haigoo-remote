@@ -65,6 +65,16 @@ async function upstashCommand(command, args) {
 
 // 内存存储（开发环境备用）
 const memoryStore = new Map()
+const memoryFavorites = new Map()
+
+function getMemoryFavorites(userId) {
+  let set = memoryFavorites.get(userId)
+  if (!set) {
+    set = new Set()
+    memoryFavorites.set(userId, set)
+  }
+  return set
+}
 
 // CORS headers
 function setCorsHeaders(res) {
@@ -242,7 +252,9 @@ export default async function handler(req, res) {
     }
     if (!ids.length) { try { const client = await getRedisClient(); if (client) ids = await client.sMembers(key) || [] } catch {} }
     if (!ids.length && KV_CONFIGURED) { try { ids = await kv.smembers(key) || [] } catch {} }
-    ids = ids || []
+    if (!ids.length) {
+      ids = Array.from(getMemoryFavorites(user.id))
+    }
 
     const originProto = req.headers['x-forwarded-proto'] || 'https'
     const originHost = req.headers.host || process.env.VERCEL_URL || ''
@@ -284,6 +296,7 @@ export default async function handler(req, res) {
     if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
     try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch {}
     if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch {} }
+    getMemoryFavorites(user.id).add(jobId)
     return res.status(200).json({ success: true, message: '收藏成功' })
   }
 
@@ -297,6 +310,7 @@ export default async function handler(req, res) {
     if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
     try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch {}
     if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch {} }
+    getMemoryFavorites(user.id).delete(jobId)
     return res.status(200).json({ success: true, message: '取消收藏成功' })
   }
 

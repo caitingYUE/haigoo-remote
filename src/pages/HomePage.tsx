@@ -11,6 +11,7 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 // ❌ 不再前端实时翻译，数据从后端API获取已翻译
 // import { jobTranslationService } from '../services/job-translation-service'
+import { useAuth } from '../contexts/AuthContext'
 
 
 
@@ -36,6 +37,7 @@ const getCompanyColor = (companyName: string) => {
 export default function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { token, isAuthenticated } = useAuth()
   
   // 加载阶段状态
   const [loadingStage, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
@@ -81,6 +83,7 @@ export default function HomePage() {
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
   const [activeTab, setActiveTab] = useState<string>('全部')
   const [displayLimit, setDisplayLimit] = useState<number>(24)
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
 
   // 从URL参数获取筛选条件
   const searchParams = new URLSearchParams(location.search)
@@ -200,6 +203,44 @@ export default function HomePage() {
     })
   }
 
+  useEffect(() => {
+    ;(async () => {
+      if (!token) return
+      try {
+        const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
+        if (resp.ok) {
+          const data = await resp.json()
+          const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
+          setSavedJobs(new Set(ids))
+        }
+      } catch {}
+    })()
+  }, [token])
+
+  const toggleSaveJob = async (jobId: string) => {
+    const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
+    if (!isAuthenticated || !authToken) { navigate('/login'); return }
+    const isSaved = savedJobs.has(jobId)
+    setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
+    try {
+      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}` , {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ jobId })
+      })
+      if (!resp.ok) throw new Error('收藏接口失败')
+      const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
+      if (r.ok) {
+        const d = await r.json()
+        const ids: string[] = (d?.favorites || []).map((f: any) => f.jobId)
+        setSavedJobs(new Set(ids))
+      }
+    } catch (e) {
+      setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.add(jobId) : s.delete(jobId); return s })
+      console.warn('收藏操作失败', e)
+    }
+  }
+
   return (
     <div className="min-h-screen">
       <main className="container mx-auto px-4 pt-16 pb-8">
@@ -280,6 +321,8 @@ export default function HomePage() {
                     key={job.id}
                     job={job}
                     onClick={() => openJobDetail(job)}
+                    onSave={() => toggleSaveJob(job.id)}
+                    isSaved={savedJobs.has(job.id)}
                   />
                 ))}
               </div>
@@ -313,6 +356,8 @@ export default function HomePage() {
           isOpen={isJobDetailOpen}
           onClose={closeJobDetail}
           onApply={handleApply}
+          onSave={() => toggleSaveJob(selectedJob.id)}
+          isSaved={savedJobs.has(selectedJob.id)}
         />
       )}
     </div>
