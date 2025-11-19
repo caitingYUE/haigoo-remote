@@ -26,6 +26,7 @@ export default function ProfileCenterPage() {
   const [resumeScore, setResumeScore] = useState<number>(0)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
+  const [resumeText, setResumeText] = useState<string>('')
 
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
@@ -87,6 +88,7 @@ export default function ProfileCenterPage() {
       const parsed = await parseResumeFileEnhanced(file)
       setLatestResume({ id: Date.now().toString(), name: file.name })
       if (parsed.success && parsed.textContent && parsed.textContent.length > 50) {
+        setResumeText(parsed.textContent)
         const analysis = await resumeService.analyzeResume(parsed.textContent)
         if (analysis.success && analysis.data) {
           setResumeScore(analysis.data.score || 0)
@@ -146,6 +148,11 @@ export default function ProfileCenterPage() {
                     <button className="p-2 text-gray-400 hover:text-[var(--profile-primary)]"><Download className="w-4 h-4" /></button>
                   </div>
                 </div>
+                {resumeText && (
+                  <div className="rounded-xl border p-4 h-[360px] overflow-auto bg-white">
+                    <pre className="whitespace-pre-wrap text-sm text-gray-800">{resumeText}</pre>
+                  </div>
+                )}
               </div>
             )}
             <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleUpload} className="hidden" />
@@ -159,6 +166,9 @@ export default function ProfileCenterPage() {
         <div className="lg:col-span-1 space-y-4 profile-col-right">
           <h3 className="text-xl font-bold px-4">AI-Powered Suggestions</h3>
           <div className="profile-suggestions-list">
+            {!resumeText && (
+              <div className="profile-notice">These are example suggestions. Upload your resume to generate personalized recommendations.</div>
+            )}
             {/* 三张建议卡 */}
             <div className="profile-suggestion-card">
               <div className="flex items-start gap-4">
@@ -246,7 +256,7 @@ export default function ProfileCenterPage() {
   return (
     <div className="profile-page profile-theme">
       <div className="max-w-7xl mx-auto px-8 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 profile-main-grid">
           <aside className="profile-sidebar">
             <div className="profile-nav-title">Personal Center</div>
             <div className="profile-nav" role="tablist" aria-label="个人中心切换">
