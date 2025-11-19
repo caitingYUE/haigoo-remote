@@ -167,7 +167,7 @@
 .brand-btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; background: var(--brand-blue); color:#FFFFFF; font-weight:600; border:none; box-shadow:0 8px 16px rgba(49,130,206,0.24); }
 .brand-btn:hover{ background: var(--brand-blue-hover); }
 .brand-btn-outline{ display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; background:transparent; color: var(--brand-blue); border:1px solid var(--brand-blue); }
-.profile-theme{ --profile-primary:#dd8352; --profile-content-h: calc(100vh - 220px); }
+.profile-theme{ --profile-primary:#dd8352; --profile-content-h: calc(100vh - 110px); }
 .profile-progress{ height:12px; background:#e9e6eb; border-radius:9999px; overflow:hidden; }
 .profile-progress .fill{ height:100%; background: var(--profile-primary); border-radius:9999px; }
 .profile-outline-btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; background:transparent; color: var(--profile-primary); border:1px solid var(--profile-primary); }
@@ -180,7 +180,7 @@
 .profile-apply-btn:hover{ background:#c97549; }
 .profile-reset-btn{ display:flex; align-items:center; justify-content:center; width:100%; height:48px; border-radius:12px; background:transparent; border:1px solid #d1d5db; color:#131014; font-weight:600; }
 .profile-reset-btn:hover{ background:#f3f4f6; }
-.profile-sidebar{ background:#fff; border-right:1px solid #e9e6eb; min-height:calc(100vh - 120px); padding:16px; }
+.profile-sidebar{ background:#fff; border-right:1px solid #e9e6eb; height: var(--profile-content-h); padding:16px; display:flex; flex-direction:column; }
 .profile-fixed-row{ min-height: var(--profile-content-h); }
 .profile-col-left, .profile-col-right{ height: var(--profile-content-h); display:flex; flex-direction:column; }
 .profile-fill-card{ flex:1; overflow:auto; }
