@@ -280,10 +280,17 @@ export default function JobDetailPage() {
                     <div>
                       <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2 md:mb-3">Benefits</h3>
                       <ul className="list-disc list-inside space-y-1 md:space-y-2 text-sm md:text-base text-gray-600">
-                        <li>Comprehensive health, dental, and vision insurance.</li>
-                        <li>Flexible work hours and remote-first culture.</li>
-                        <li>Generous paid time off and parental leave.</li>
-                        <li>401(k) with company match.</li>
+                        {(job.benefits && job.benefits.length > 0
+                          ? job.benefits
+                          : [
+                              'Comprehensive health, dental, and vision insurance.',
+                              'Flexible work hours and remote-first culture.',
+                              'Generous paid time off and parental leave.',
+                              '401(k) with company match.'
+                            ]
+                        ).map((benefit, index) => (
+                          <li key={index}>{benefit}</li>
+                        ))}
                       </ul>
                     </div>
                   </div>

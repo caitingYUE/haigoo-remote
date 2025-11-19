@@ -234,218 +234,70 @@ export default async function handler(req, res) {
 
   // 收藏列表
   if (action === 'favorites') {
-    try {
-      const key = `haigoo:favorites:${user.id}`
-      let ids = []
-      
-      console.log(`[user-profile] Fetching favorites for user ${user.id}`)
-      
-      if (UPSTASH_CONFIGURED) {
-        try {
-          const r = await upstashCommand('SMEMBERS', [key])
-          if (Array.isArray(r)) ids = r
-          console.log(`[user-profile] Upstash favorites: ${ids.length} items`)
-        } catch (e) {
-          console.error('[user-profile] Upstash SMEMBERS failed:', e)
-        }
-      }
-      
-      if (!ids.length && REDIS_CONFIGURED) { 
-        try { 
-          const client = await getRedisClient()
-          if (client) {
-            ids = await client.sMembers(key) || []
-            console.log(`[user-profile] Redis favorites: ${ids.length} items`)
-          }
-        } catch (e) {
-          console.error('[user-profile] Redis sMembers failed:', e)
-        }
-      }
-      
-      if (!ids.length && KV_CONFIGURED) { 
-        try { 
-          ids = await kv.smembers(key) || []
-          console.log(`[user-profile] KV favorites: ${ids.length} items`)
-        } catch (e) {
-          console.error('[user-profile] KV smembers failed:', e)
-        }
-      }
-      
-      if (!ids.length) {
-        // Fallback to memory storage
-        const memoryKey = `favorites_${user.id}`
-        if (memoryStore.has(memoryKey)) {
-          ids = Array.from(memoryStore.get(memoryKey))
-          console.log(`[user-profile] Memory favorites: ${ids.length} items`)
-        }
-      }
-      
-      ids = ids || []
-      console.log(`[user-profile] Total favorites found: ${ids.length}`)
-
-      const originProto = req.headers['x-forwarded-proto'] || 'https'
-      const originHost = req.headers.host || process.env.VERCEL_URL || ''
-      const jobsUrl = `${originProto}://${originHost}/api/data/processed-jobs?page=1&limit=1000`
-      let jobs = []
-      try { 
-        const r = await fetch(jobsUrl)
-        if (r.ok) { 
-          const d = await r.json()
-          jobs = Array.isArray(d) ? d : (d.jobs || [])
-          console.log(`[user-profile] Fetched ${jobs.length} jobs for favorites mapping`)
-        }
-      } catch (e) {
-        console.error('[user-profile] Failed to fetch jobs for favorites:', e)
-      }
-      
-      const map = new Map(jobs.map(j => [j.id, j]))
-      const items = ids.map(id => {
-        const job = map.get(id)
-        let status = '已下架'
-        if (job) {
-          if (job.expiresAt) {
-            const exp = new Date(job.expiresAt).getTime()
-            status = !Number.isNaN(exp) && exp < Date.now() ? '已失效' : '有效中'
-          } else { status = '有效中' }
-        }
-        return {
-          jobId: id,
-          status,
-          title: job?.title || '',
-          company: job?.company || '',
-          postedAt: job?.postedAt || '',
-          expiresAt: job?.expiresAt || null,
-          type: job?.type || '',
-          isRemote: !!job?.isRemote,
-          salary: job?.salary || null
-        }
-      })
-      
-      console.log(`[user-profile] Returning ${items.length} favorites`)
-      return res.status(200).json({ success: true, favorites: items })
-    } catch (error) {
-      console.error('[user-profile] favorites list error:', error)
-      return res.status(500).json({ success: false, error: '服务器错误' })
+    const key = `haigoo:favorites:${user.id}`
+    let ids = []
+    if (UPSTASH_CONFIGURED) {
+      const r = await upstashCommand('SMEMBERS', [key])
+      if (Array.isArray(r)) ids = r
     }
+    if (!ids.length) { try { const client = await getRedisClient(); if (client) ids = await client.sMembers(key) || [] } catch {} }
+    if (!ids.length && KV_CONFIGURED) { try { ids = await kv.smembers(key) || [] } catch {} }
+    ids = ids || []
+
+    const originProto = req.headers['x-forwarded-proto'] || 'https'
+    const originHost = req.headers.host || process.env.VERCEL_URL || ''
+    const jobsUrl = `${originProto}://${originHost}/api/data/processed-jobs?page=1&limit=1000`
+    let jobs = []
+    try { const r = await fetch(jobsUrl); if (r.ok) { const d = await r.json(); jobs = Array.isArray(d) ? d : (d.jobs || []) } } catch {}
+    const map = new Map(jobs.map(j => [j.id, j]))
+    const items = ids.map(id => {
+      const job = map.get(id)
+      let status = '已下架'
+      if (job) {
+        if (job.expiresAt) {
+          const exp = new Date(job.expiresAt).getTime()
+          status = !Number.isNaN(exp) && exp < Date.now() ? '已失效' : '有效中'
+        } else { status = '有效中' }
+      }
+      return {
+        jobId: id,
+        status,
+        title: job?.title || '',
+        company: job?.company || '',
+        postedAt: job?.postedAt || '',
+        expiresAt: job?.expiresAt || null,
+        type: job?.type || '',
+        isRemote: !!job?.isRemote,
+        salary: job?.salary || null
+      }
+    })
+    return res.status(200).json({ success: true, favorites: items })
   }
 
   // 收藏添加
   if (action === 'favorites_add' && req.method === 'POST') {
-    try {
-      const body = req.body || {}
-      const jobIdParam = params.get('jobId') || ''
-      const jobId = body.jobId || jobIdParam
-      if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
-      
-      console.log(`[user-profile] Adding favorite for user ${user.id}, jobId: ${jobId}`)
-      
-      const key = `haigoo:favorites:${user.id}`
-      let success = false
-      
-      if (UPSTASH_CONFIGURED) { 
-        try {
-          await upstashCommand('SADD', [key, jobId])
-          success = true
-        } catch (e) {
-          console.error('[user-profile] Upstash SADD failed:', e)
-        }
-      }
-      
-      if (!success && REDIS_CONFIGURED) { 
-        try { 
-          const client = await getRedisClient()
-          if (client) {
-            await client.sAdd(key, jobId)
-            success = true
-          }
-        } catch (e) {
-          console.error('[user-profile] Redis SADD failed:', e)
-        }
-      }
-      
-      if (!success && KV_CONFIGURED) { 
-        try { 
-          await kv.sadd(key, jobId)
-          success = true
-        } catch (e) {
-          console.error('[user-profile] KV sadd failed:', e)
-        }
-      }
-      
-      if (!success) {
-        // Fallback to memory storage
-        const memoryKey = `favorites_${user.id}`
-        if (!memoryStore.has(memoryKey)) {
-          memoryStore.set(memoryKey, new Set())
-        }
-        memoryStore.get(memoryKey).add(jobId)
-        success = true
-      }
-      
-      return res.status(200).json({ success: true, message: '收藏成功' })
-    } catch (error) {
-      console.error('[user-profile] favorites_add error:', error)
-      return res.status(500).json({ success: false, error: '服务器错误' })
-    }
+    const body = req.body || {}
+    const jobIdParam = params.get('jobId') || ''
+    const jobId = body.jobId || jobIdParam
+    if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+    const key = `haigoo:favorites:${user.id}`
+    if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
+    try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch {}
+    if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch {} }
+    return res.status(200).json({ success: true, message: '收藏成功' })
   }
 
   // 收藏移除
   if (action === 'favorites_remove' && req.method === 'POST') {
-    try {
-      const body = req.body || {}
-      const jobIdParam = params.get('jobId') || ''
-      const jobId = body.jobId || jobIdParam
-      if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
-      
-      console.log(`[user-profile] Removing favorite for user ${user.id}, jobId: ${jobId}`)
-      
-      const key = `haigoo:favorites:${user.id}`
-      let success = false
-      
-      if (UPSTASH_CONFIGURED) { 
-        try {
-          await upstashCommand('SREM', [key, jobId])
-          success = true
-        } catch (e) {
-          console.error('[user-profile] Upstash SREM failed:', e)
-        }
-      }
-      
-      if (!success && REDIS_CONFIGURED) { 
-        try { 
-          const client = await getRedisClient()
-          if (client) {
-            await client.sRem(key, jobId)
-            success = true
-          }
-        } catch (e) {
-          console.error('[user-profile] Redis SREM failed:', e)
-        }
-      }
-      
-      if (!success && KV_CONFIGURED) { 
-        try { 
-          await kv.srem(key, jobId)
-          success = true
-        } catch (e) {
-          console.error('[user-profile] KV srem failed:', e)
-        }
-      }
-      
-      if (!success) {
-        // Fallback to memory storage
-        const memoryKey = `favorites_${user.id}`
-        if (memoryStore.has(memoryKey)) {
-          memoryStore.get(memoryKey).delete(jobId)
-        }
-        success = true
-      }
-      
-      return res.status(200).json({ success: true, message: '取消收藏成功' })
-    } catch (error) {
-      console.error('[user-profile] favorites_remove error:', error)
-      return res.status(500).json({ success: false, error: '服务器错误' })
-    }
+    const body = req.body || {}
+    const jobIdParam = params.get('jobId') || ''
+    const jobId = body.jobId || jobIdParam
+    if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+    const key = `haigoo:favorites:${user.id}`
+    if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
+    try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch {}
+    if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch {} }
+    return res.status(200).json({ success: true, message: '取消收藏成功' })
   }
 
     // 移除收藏相关 action，准备后续重新设计收藏方案

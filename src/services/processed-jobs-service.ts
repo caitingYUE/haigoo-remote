@@ -121,6 +121,7 @@ class ProcessedJobsService {
         description: job.description,
         requirements: job.requirements || [],
         responsibilities: [],
+        benefits: job.benefits || [],
         skills: job.tags || [],
         postedAt: job.publishedAt,
         expiresAt: undefined,

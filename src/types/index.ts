@@ -12,6 +12,7 @@ export interface Job {
   description?: string  // 可选，避免显示"暂无描述"
   requirements: string[]
   responsibilities: string[]
+  benefits?: string[]
   skills: string[]
   postedAt: string
   expiresAt?: string  // 可选，避免虚假过期时间

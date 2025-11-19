@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Send, FileText, CheckCircle, Bot } from 'lucide-react';
 import { aiService } from '../services/ai-service';
+import { resumeService } from '../services/resume-service';
+import { ResumeStorageService } from '../services/resume-storage-service';
 
 interface JobDetail {
   id: number;
@@ -63,17 +65,19 @@ const JobApplicationPage: React.FC = () => {
         description: job.description,
         requirements: job.requirements || [],
         responsibilities: job.responsibilities || [],
-        benefits: [
-          '五险一金 + 补充商业保险',
-          '年终奖金 + 股票期权',
-          '弹性工作制，支持远程办公',
-          '技术培训 + 会议学习机会',
-          '团队建设活动 + 年度旅游',
-          '免费三餐 + 下午茶',
-          '健身房 + 按摩椅',
-          '带薪年假 + 生日假',
-          '内推奖励 + 晋升通道'
-        ]
+        benefits: (job.benefits && job.benefits.length > 0)
+          ? job.benefits
+          : [
+              '五险一金 + 补充商业保险',
+              '年终奖金 + 股票期权',
+              '弹性工作制，支持远程办公',
+              '技术培训 + 会议学习机会',
+              '团队建设活动 + 年度旅游',
+              '免费三餐 + 下午茶',
+              '健身房 + 按摩椅',
+              '带薪年假 + 生日假',
+              '内推奖励 + 晋升通道'
+            ]
       };
     }
     
@@ -118,6 +122,7 @@ const JobApplicationPage: React.FC = () => {
   };
 
   const jobDetail = getJobDetail();
+  const [dynamicMatchScore, setDynamicMatchScore] = useState(matchScore);
   
   // AI头像组件
   const AIAvatar = ({ size = 'w-7 h-7' }: { size?: string }) => {
@@ -458,6 +463,130 @@ const JobApplicationPage: React.FC = () => {
     alert('申请已提交！我们会尽快为您处理。');
   };
 
+  const getLatestResumeText = async (): Promise<string | null> => {
+    try {
+      const resumes = await ResumeStorageService.loadResumes();
+      const withText = resumes.find(r => r.textContent && r.textContent.length > 50);
+      if (withText?.textContent) return withText.textContent;
+      if (message && message.length > 200) return message;
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleAnalyzeResume = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    setApiError('');
+    setApiProgress('正在分析简历...');
+    try {
+      const resumeText = await getLatestResumeText();
+      if (!resumeText) {
+        const infoMessage: ChatMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: '请先在个人中心上传简历，或将简历全文粘贴到输入框后再点击分析简历。'
+        };
+        setChatMessages(prev => [...prev, infoMessage]);
+        return;
+      }
+
+      const analysis = await resumeService.analyzeResume(resumeText);
+      if (analysis.success && analysis.data) {
+        const { score, strengths, weaknesses, suggestions } = analysis.data;
+        setDynamicMatchScore(Math.max(0, Math.min(100, score)));
+        const content = `简历分析结果\n\n总体评分：${score}%\n\n优势：\n- ${strengths.join('\n- ')}\n\n不足：\n- ${weaknesses.join('\n- ')}`;
+        const msg: ChatMessage = {
+          id: Date.now(),
+          type: 'suggestion',
+          content,
+          suggestions: suggestions
+        };
+        setChatMessages(prev => [...prev, msg]);
+      } else {
+        const errMsg: ChatMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: analysis.error || '抱歉，简历分析失败。请稍后再试。'
+        };
+        setChatMessages(prev => [...prev, errMsg]);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      setApiError(errorMessage);
+      const errChat: ChatMessage = {
+        id: Date.now(),
+        type: 'ai',
+        content: '抱歉，简历分析失败。请检查网络连接或稍后再试。'
+      };
+      setChatMessages(prev => [...prev, errChat]);
+    } finally {
+      setIsLoading(false);
+      setApiProgress('');
+    }
+  };
+
+  const handleOptimizeResume = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    setApiError('');
+    setApiProgress('正在优化简历...');
+    try {
+      const resumeText = await getLatestResumeText();
+      if (!resumeText) {
+        const infoMessage: ChatMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: '请先在个人中心上传简历，或将简历全文粘贴到输入框后再点击优化简历。'
+        };
+        setChatMessages(prev => [...prev, infoMessage]);
+        return;
+      }
+
+      const optimization = await resumeService.optimizeResume({
+        resumeContent: resumeText,
+        jobDescription: jobDetail.description,
+        targetPosition: jobDetail.title,
+        optimizationType: 'job-specific'
+      });
+
+      if (optimization.success && optimization.data) {
+        const { optimizedResume, suggestions, score } = optimization.data;
+        if (score?.overall !== undefined) {
+          setDynamicMatchScore(Math.max(0, Math.min(100, score.overall)));
+        }
+        const content = `已生成优化建议并提升简历质量。\n\n优化后简历预览（摘要）：\n${optimizedResume.slice(0, 500)}${optimizedResume.length > 500 ? '...\n(已截断)' : ''}`;
+        const msg: ChatMessage = {
+          id: Date.now(),
+          type: 'suggestion',
+          content,
+          suggestions: suggestions || []
+        };
+        setChatMessages(prev => [...prev, msg]);
+      } else {
+        const errMsg: ChatMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: optimization.error || '抱歉，简历优化失败。请稍后再试。'
+        };
+        setChatMessages(prev => [...prev, errMsg]);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      setApiError(errorMessage);
+      const errChat: ChatMessage = {
+        id: Date.now(),
+        type: 'ai',
+        content: '抱歉，简历优化失败。请检查网络连接或稍后再试。'
+      };
+      setChatMessages(prev => [...prev, errChat]);
+    } finally {
+      setIsLoading(false);
+      setApiProgress('');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-white to-blue-50 overflow-hidden">
       {/* 顶部导航 */}
@@ -577,7 +706,7 @@ const JobApplicationPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center">
-                <div className="text-2xl font-bold text-gray-900 mr-3">{matchScore}%</div>
+                <div className="text-2xl font-bold text-gray-900 mr-3">{dynamicMatchScore}%</div>
                 <div className="w-12 h-12 relative">
                   <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 48 48">
                     <circle
@@ -596,7 +725,7 @@ const JobApplicationPage: React.FC = () => {
                       strokeWidth="6"
                       fill="none"
                       strokeDasharray={`${2 * Math.PI * 20}`}
-                      strokeDashoffset={`${2 * Math.PI * 20 * (1 - matchScore / 100)}`}
+                      strokeDashoffset={`${2 * Math.PI * 20 * (1 - dynamicMatchScore / 100)}`}
                       className="transition-all duration-1000 ease-out"
                     />
                   </svg>
@@ -714,6 +843,30 @@ const JobApplicationPage: React.FC = () => {
                  Generate Cover Letter
                </button>
                <button
+                 onClick={handleAnalyzeResume}
+                 disabled={isLoading}
+                 className={`flex-1 flex items-center justify-center px-3 py-2 border border-haigoo-primary rounded-lg font-medium text-xs transition-colors ${
+                   isLoading 
+                     ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed' 
+                     : 'bg-white text-haigoo-primary hover:bg-purple-50'
+                 }`}
+               >
+                 <CheckCircle className="w-3 h-3 mr-1" />
+                 Analyze Resume
+               </button>
+               <button
+                 onClick={handleOptimizeResume}
+                 disabled={isLoading}
+                 className={`flex-1 flex items-center justify-center px-3 py-2 border border-haigoo-primary rounded-lg font-medium text-xs transition-colors ${
+                   isLoading 
+                     ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed' 
+                     : 'bg-white text-haigoo-primary hover:bg-purple-50'
+                 }`}
+               >
+                 <CheckCircle className="w-3 h-3 mr-1" />
+                 Optimize Resume
+               </button>
+               <button
                  onClick={handleSubmitApplication}
                  disabled={isLoading}
                  className={`flex-1 flex items-center justify-center px-3 py-2 rounded-lg font-medium text-xs transition-colors ${
@@ -725,7 +878,7 @@ const JobApplicationPage: React.FC = () => {
                  <CheckCircle className="w-3 h-3 mr-1" />
                  Submit Application
                </button>
-            </div>
+             </div>
           </div>
         </div>
       </div>
