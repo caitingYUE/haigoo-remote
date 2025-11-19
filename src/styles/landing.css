@@ -182,9 +182,9 @@
 .profile-reset-btn:hover{ background:#f3f4f6; }
 .profile-sidebar{ background:#fff; border-right:1px solid #e9e6eb; height: var(--profile-content-h); padding:16px; display:flex; flex-direction:column; }
 .profile-fixed-row{ height: var(--profile-content-h); }
-.profile-col-left, .profile-col-right{ height: var(--profile-content-h); display:flex; flex-direction:column; }
-.profile-fill-card{ flex:1; overflow:hidden; }
-.profile-suggestions-list{ flex:1; overflow:hidden; display:flex; flex-direction:column; gap:16px; }
+.profile-col-left, .profile-col-right{ height: var(--profile-content-h); display:flex; flex-direction:column; overflow:auto; -webkit-overflow-scrolling: touch; }
+.profile-fill-card{ flex:1; overflow:auto; -webkit-overflow-scrolling: touch; }
+.profile-suggestions-list{ flex:1; overflow:auto; -webkit-overflow-scrolling: touch; display:flex; flex-direction:column; gap:16px; }
 .profile-nav{ display:flex; flex-direction:column; gap:8px; }
 .profile-nav-title{ padding:8px 16px; font-size:12px; font-weight:600; color:#6b7280; }
 .profile-nav-item{ display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:10px; color:#6b7280; }
