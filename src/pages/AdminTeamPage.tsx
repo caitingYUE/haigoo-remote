@@ -38,7 +38,6 @@ import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '..
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
 import DataManagementTabs from '../components/DataManagementTabs';
-import ResumeLibraryPage from './ResumeLibraryPage';
 import UserManagementPage from './UserManagementPage';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
@@ -336,7 +335,12 @@ const AdminTeamPage: React.FC = () => {
 
   // 渲染简历库
   const renderResumeLibrary = () => (
-    <ResumeLibraryPage />
+    <div className="card">
+      <div className="card-header"><h2>简历库</h2></div>
+      <div className="card-content">
+        <p className="text-gray-500">该功能暂未启用。</p>
+      </div>
+    </div>
   );
 
   // 渲染数据分析

@@ -13,6 +13,7 @@ import RegisterPage from './pages/RegisterPage'
 import CopilotPage from './pages/CopilotPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPanel from './components/AdminPanel'
+import ProfileCenterPage from './pages/ProfileCenterPage'
 import AdminTeamPage from './pages/AdminTeamPage'
 import UserManagementPage from './pages/UserManagementPage'
 import { AppProvider } from './contexts/AppContext'
@@ -78,6 +79,11 @@ function App() {
                   <Route path="/job/:id" element={<JobDetailPage />} />
                   
                   {/* 需要登录的页面 */}
+                  <Route path="/profile" element={
+                    <ProtectedRoute>
+                      <ProfileCenterPage />
+                    </ProtectedRoute>
+                  } />
                 </Routes>
               </Layout>
             } />
