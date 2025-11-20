@@ -300,7 +300,16 @@ export default async function handler(req, res) {
         const job = map.get(id)
         if (!job) {
           console.warn('[API] Job not found for ID:', id)
-          return null
+          // Return placeholder so it's not filtered out
+          return {
+            id,
+            title: '加载中...',
+            company: '未知公司',
+            location: '未知地点',
+            tags: [],
+            isSaved: true,
+            status: 'unknown'
+          }
         }
 
         // Calculate status
@@ -317,7 +326,7 @@ export default async function handler(req, res) {
           // Ensure compatibility with JobCard if needed
           isSaved: true
         }
-      }).filter(Boolean) // Remove nulls (jobs not found)
+      }) // No filter(Boolean) needed anymore as we always return an object
 
       console.log('[API] Returning favorites:', items.length)
       return res.status(200).json({ success: true, favorites: items })
