@@ -7,6 +7,7 @@ import JobsPage from './pages/JobsPage'
 import RemoteExperiencePage from './pages/RemoteExperiencePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import AdminLocationPage from './pages/AdminLocationPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPanel from './components/AdminPanel'
 import ProfileCenterPage from './pages/ProfileCenterPage'
@@ -64,7 +65,12 @@ function App() {
                 <Routes>
                   {/* 公开页面 */}
                   <Route path="/" element={<LandingPage />} />
-                  <Route path="/jobs" element={<JobsPage />} />
+                <Route path="/jobs" element={<JobsPage />} />
+                <Route path="/admin/location-categories" element={
+                  <ProtectedRoute>
+                    <AdminLocationPage />
+                  </ProtectedRoute>
+                } />
                   <Route path="/remote-experience" element={<RemoteExperiencePage />} />
                   
                   {/* 需要登录的页面 */}

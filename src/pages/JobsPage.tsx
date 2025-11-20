@@ -97,6 +97,12 @@ export default function JobsPage() {
   const jobListRef = useRef<HTMLDivElement>(null)
 
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeRegion, setActiveRegion] = useState<'domestic' | 'overseas'>(() => {
+    const p = new URLSearchParams(location.search)
+    const r = (p.get('region') || '').toLowerCase()
+    return r === 'overseas' ? 'overseas' : 'domestic'
+  })
+  const [categories, setCategories] = useState<{ domesticKeywords: string[]; overseasKeywords: string[]; globalKeywords: string[] }>({ domesticKeywords: [], overseasKeywords: [], globalKeywords: [] })
   const [filters, setFilters] = useState({
     type: 'all',
     category: 'all',
@@ -175,6 +181,10 @@ export default function JobsPage() {
     if (search) {
       setSearchTerm(search)
     }
+    const r = params.get('region')
+    if (r) {
+      setActiveRegion(r === 'overseas' ? 'overseas' : 'domestic')
+    }
   }, [location.search])
 
   // 监听处理后岗位数据的更新事件（从后台管理触发）
@@ -248,6 +258,19 @@ export default function JobsPage() {
     })()
   }, [token])
 
+  // 地址分类加载
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const r = await fetch('/api/location-categories')
+        if (r.ok) {
+          const j = await r.json()
+          setCategories(j.categories || { domesticKeywords: [], overseasKeywords: [], globalKeywords: [] })
+        }
+      } catch { }
+    })()
+  }, [])
+
   // 筛选逻辑
   const filteredJobs = (jobs || []).filter(job => {
     // 搜索匹配
@@ -280,7 +303,16 @@ export default function JobsPage() {
       (filters.remote === 'yes' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
       (filters.remote === 'no' && !(job.type === 'remote' || job.location.includes('远程') || job.isRemote))
 
-    return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote
+    const norm = (v: string) => (v || '').toLowerCase()
+    const loc = norm(job.location)
+    const skills = (job.skills || []).map((t: string) => norm(t))
+    const pool = new Set([loc, ...skills])
+    const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)))
+    const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|remote|不限地点/.test(loc)
+    const domesticHit = hit(categories.domesticKeywords)
+    const matchesRegion = activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || (!domesticHit))
+
+    return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote && matchesRegion
   })
 
   const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length
@@ -341,6 +373,19 @@ export default function JobsPage() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex gap-6">
+            {/* 顶部 Tabs：人与地域分类 */}
+            <div className="absolute left-1/2 -translate-x-1/2 -top-2 flex items-center gap-3">
+              <button
+                className={`px-4 py-2 rounded-full border ${activeRegion === 'domestic' ? 'bg-[#3182CE] text-white border-[#3182CE]' : 'bg-white text-gray-700 border-gray-300'} shadow-sm hover:shadow-md transition-all`}
+                onClick={() => { setActiveRegion('domestic'); const p = new URLSearchParams(location.search); p.set('region','domestic'); navigate(`/jobs?${p.toString()}`) }}
+                aria-pressed={activeRegion==='domestic'}
+              >人在国内</button>
+              <button
+                className={`px-4 py-2 rounded-full border ${activeRegion === 'overseas' ? 'bg-[#3182CE] text-white border-[#3182CE]' : 'bg-white text-gray-700 border-gray-300'} shadow-sm hover:shadow-md transition-all`}
+                onClick={() => { setActiveRegion('overseas'); const p = new URLSearchParams(location.search); p.set('region','overseas'); navigate(`/jobs?${p.toString()}`) }}
+                aria-pressed={activeRegion==='overseas'}
+              >人在海外</button>
+            </div>
             {/* 侧边栏筛选 - 优化固定定位 */}
             <aside className="w-72 shrink-0" aria-label="职位筛选器">
               <div className="sticky top-24 w-72 h-[calc(100vh-120px)] will-change-transform">

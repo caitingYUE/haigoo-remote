@@ -22,6 +22,7 @@ export interface ProcessedJobsFilters {
   type?: string
   skills?: string[]
   id?: string
+  region?: 'domestic' | 'overseas'
 }
 
 class ProcessedJobsService {
@@ -52,6 +53,7 @@ class ProcessedJobsService {
       if (filters.location) params.append('location', filters.location)
       if (filters.type) params.append('type', filters.type)
       if (filters.id) params.append('id', filters.id)
+      if (filters.region) params.append('region', filters.region)
 
       if (filters.tags && filters.tags.length > 0) {
         filters.tags.forEach(tag => params.append('tags', tag))
@@ -196,6 +198,17 @@ class ProcessedJobsService {
     } catch (error) {
       console.error('获取推荐职位失败:', error)
       return []
+    }
+  }
+
+  async getLocationCategories(): Promise<{ domesticKeywords: string[]; overseasKeywords: string[]; globalKeywords: string[] }> {
+    try {
+      const r = await fetch(`${this.baseUrl}/location-categories`)
+      if (!r.ok) throw new Error('categories fetch failed')
+      const j = await r.json()
+      return j.categories || { domesticKeywords: [], overseasKeywords: [], globalKeywords: [] }
+    } catch {
+      return { domesticKeywords: [], overseasKeywords: [], globalKeywords: [] }
     }
   }
 
