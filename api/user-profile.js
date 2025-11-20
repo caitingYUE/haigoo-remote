@@ -244,28 +244,77 @@ export default async function handler(req, res) {
 
     // 收藏列表
     if (action === 'favorites') {
+      console.log('[API] favorites GET called', { userId: user.id })
+
       const key = `haigoo:favorites:${user.id}`
       let ids = []
+
+      // Try Upstash first
       if (UPSTASH_CONFIGURED) {
         const r = await upstashCommand('SMEMBERS', [key])
-        if (Array.isArray(r)) ids = r
+        if (Array.isArray(r)) {
+          ids = r
+          console.log('[API] Got favorites from Upstash:', ids.length, ids)
+        }
       }
-      if (!ids.length) { try { const client = await getRedisClient(); if (client) ids = await client.sMembers(key) || [] } catch { } }
-      if (!ids.length && KV_CONFIGURED) { try { ids = await kv.smembers(key) || [] } catch { } }
+
+      // Try Redis if empty
+      if (!ids.length) {
+        try {
+          const client = await getRedisClient()
+          if (client) {
+            ids = await client.sMembers(key) || []
+            console.log('[API] Got favorites from Redis:', ids.length, ids)
+          }
+        } catch (e) {
+          console.error('[API] Redis error:', e)
+        }
+      }
+
+      // Try KV if still empty
+      if (!ids.length && KV_CONFIGURED) {
+        try {
+          ids = await kv.smembers(key) || []
+          console.log('[API] Got favorites from KV:', ids.length, ids)
+        } catch (e) {
+          console.error('[API] KV error:', e)
+        }
+      }
+
+      // Try memory as last resort
       if (!ids.length) {
         ids = Array.from(getMemoryFavorites(user.id))
+        console.log('[API] Got favorites from memory:', ids.length, ids)
       }
+
+      console.log('[API] Total favorite IDs:', ids)
 
       const originProto = req.headers['x-forwarded-proto'] || 'https'
       const originHost = req.headers.host || process.env.VERCEL_URL || ''
       const jobsUrl = `${originProto}://${originHost}/api/data/processed-jobs?page=1&limit=1000`
       let jobs = []
-      try { const r = await fetch(jobsUrl); if (r.ok) { const d = await r.json(); jobs = Array.isArray(d) ? d : (d.jobs || []) } } catch { }
+
+      try {
+        console.log('[API] Fetching jobs from:', jobsUrl)
+        const r = await fetch(jobsUrl)
+        if (r.ok) {
+          const d = await r.json()
+          jobs = Array.isArray(d) ? d : (d.jobs || [])
+          console.log('[API] Fetched jobs:', jobs.length)
+        } else {
+          console.error('[API] Jobs fetch failed:', r.status)
+        }
+      } catch (e) {
+        console.error('[API] Jobs fetch error:', e)
+      }
 
       const map = new Map(jobs.map(j => [j.id, j]))
       const items = ids.map(id => {
         const job = map.get(id)
-        if (!job) return null
+        if (!job) {
+          console.warn('[API] Job not found for ID:', id)
+          return null
+        }
 
         // Calculate status
         let status = '有效中'
@@ -283,6 +332,7 @@ export default async function handler(req, res) {
         }
       }).filter(Boolean) // Remove nulls (jobs not found)
 
+      console.log('[API] Returning favorites:', items.length)
       return res.status(200).json({ success: true, favorites: items })
     }
 

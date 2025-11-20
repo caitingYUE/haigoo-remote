@@ -95,7 +95,7 @@ export default function Header() {
   ]
 
   return (
-    <header 
+    <header
       className="bg-transparent relative z-50"
       role="banner"
     >
@@ -103,15 +103,15 @@ export default function Header() {
         <div className="flex items-center justify-between h-20 max-w-7xl mx-auto">
           {/* Logo */}
           <div className="flex items-center">
-            <Link 
-              to="/" 
-              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 rounded-lg transition-all duration-200 hover:opacity-80"
+            <Link
+              to="/"
+              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 rounded-lg transition-all duration-200 hover:scale-110"
               aria-label="Haigoo 首页"
             >
-              <img 
-                src={BRAND_LOGO} 
-                alt="Haigoo - 海外远程工作助手" 
-                className="h-12 w-auto" 
+              <img
+                src={BRAND_LOGO}
+                alt="Haigoo - 海外远程工作助手"
+                className="h-12 w-auto"
               />
               <span className="ml-3 text-[#1A365D] font-semibold text-lg">Haigoo Remote Club</span>
             </Link>
@@ -125,7 +125,7 @@ export default function Header() {
           {/* Right side actions */}
           <div className="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
             {/* 未登录：显示登录/注册按钮 */}
-              {!isAuthenticated && (
+            {!isAuthenticated && (
               <>
                 <Link
                   to="/login"
@@ -140,19 +140,19 @@ export default function Header() {
                   注册
                 </Link>
               </>
-              )}
+            )}
 
             {/* 已登录：显示通知和用户菜单 */}
             {isAuthenticated && (
               <>
                 {/* Notifications */}
-                <button 
+                <button
                   className="p-3 text-gray-400 hover:text-gray-600 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label="通知，有 1 条新消息"
                   title="通知"
                 >
                   <Bell className="h-6 w-6" aria-hidden="true" />
-                  <span 
+                  <span
                     className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-400"
                     aria-hidden="true"
                   ></span>
@@ -160,107 +160,110 @@ export default function Header() {
                 </button>
 
                 {/* User Menu - 优化用户菜单设计 */}
-                <div 
-              ref={userMenuRef}
-              className="relative"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button 
-                ref={userMenuButtonRef}
-                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2"
-                onKeyDown={handleUserMenuKeyDown}
-                aria-expanded={isUserMenuOpen}
-                aria-haspopup="menu"
-                aria-label={`用户菜单，当前用户：${user?.username || '用户'}`}
-                id="user-menu-button"
-              >
-                {user?.avatar ? (
-                  <img 
-                    src={user.avatar} 
-                    alt={user.username}
-                    className="w-8 h-8 rounded-full shadow-sm"
-                  />
-                ) : (
-                  <div 
-                    className="w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center shadow-sm"
-                    role="img"
-                    aria-label="用户头像"
-                  >
-                    <User className="h-4 w-4 text-white" aria-hidden="true" />
-                  </div>
-                )}
-                <span className="text-sm font-medium hidden sm:block">{user?.username || '用户'}</span>
-                <ChevronDown 
-                  className={`h-4 w-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} 
-                  aria-hidden="true"
-                />
-              </button>
-
-              {/* 优化下拉菜单设计 */}
-              {isUserMenuOpen && (
-                <div 
-                  className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
-                  role="menu"
-                  aria-labelledby="user-menu-button"
-                  aria-orientation="vertical"
+                <div
+                  ref={userMenuRef}
+                  className="relative"
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
                 >
-                  {/* 用户信息 */}
-                  <div className="px-4 py-3 border-b border-gray-100" role="presentation">
-                    <div className="flex items-center space-x-3">
-                      {user?.avatar ? (
-                        <img 
-                          src={user.avatar} 
-                          alt={user.username}
-                          className="w-10 h-10 rounded-full"
-                        />
-                      ) : (
-                        <div 
-                          className="w-10 h-10 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center"
-                          role="img"
-                          aria-label="用户头像"
-                        >
-                          <User className="h-5 w-5 text-white" aria-hidden="true" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{user?.username || '用户'}</p>
-                        <p className="text-xs text-gray-500">{user?.profile?.title || user?.email}</p>
+                  <button
+                    ref={userMenuButtonRef}
+                    className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2"
+                    onKeyDown={handleUserMenuKeyDown}
+                    aria-expanded={isUserMenuOpen}
+                    aria-haspopup="menu"
+                    aria-label={`用户菜单，当前用户：${user?.username || '用户'}`}
+                    id="user-menu-button"
+                  >
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.username}
+                        className="w-8 h-8 rounded-full shadow-sm"
+                      />
+                    ) : (
+                      <div
+                        className="w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center shadow-sm"
+                        role="img"
+                        aria-label="用户头像"
+                      >
+                        <User className="h-4 w-4 text-white" aria-hidden="true" />
                       </div>
-                    </div>
-                  </div>
+                    )}
+                    <span className="text-sm font-medium hidden sm:block">{user?.username || '用户'}</span>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
+                      aria-hidden="true"
+                    />
+                  </button>
 
-                  {/* 简化的菜单选项 - 只保留文字 */}
-                  <div className="py-1" role="group" aria-label="用户菜单选项">
-                    {userMenuItems.map((item) => {
-                      return (
-                        <Link
-                          key={item.id}
-                          to={item.href}
-                          className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-haigoo-primary/8 hover:text-haigoo-primary transition-all duration-200 focus:outline-none focus:bg-haigoo-primary/8 focus:text-haigoo-primary"
+                  {/* 优化下拉菜单设计 */}
+                  {isUserMenuOpen && (
+                    <div
+                      className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
+                      role="menu"
+                      aria-labelledby="user-menu-button"
+                      aria-orientation="vertical"
+                    >
+                      {/* 用户信息 */}
+                      <div className="px-4 py-3 border-b border-gray-100" role="presentation">
+                        <div className="flex items-center space-x-3">
+                          {user?.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt={user.username}
+                              className="w-10 h-10 rounded-full"
+                            />
+                          ) : (
+                            <div
+                              className="w-10 h-10 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center"
+                              role="img"
+                              aria-label="用户头像"
+                            >
+                              <User className="h-5 w-5 text-white" aria-hidden="true" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{user?.username || '用户'}</p>
+                            <p className="text-xs text-gray-500">{user?.profile?.title || user?.email}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 简化的菜单选项 - 只保留文字 */}
+                      <div className="py-1" role="group" aria-label="用户菜单选项">
+                        {userMenuItems.map((item) => {
+                          return (
+                            <Link
+                              key={item.id}
+                              to={item.href}
+                              className={`block px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none rounded-lg ${location.pathname === item.href || location.search.includes(item.href.split('?')[1])
+                                  ? 'bg-[#FF6B35]/10 text-[#FF6B35] font-medium'
+                                  : 'text-gray-700 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35]'
+                                }`}
+                              role="menuitem"
+                              tabIndex={isUserMenuOpen ? 0 : -1}
+                            >
+                              {item.label}
+                            </Link>
+                          )
+                        })}
+                      </div>
+
+                      {/* 退出登录 - 只保留文字 */}
+                      <div className="border-t border-gray-100 pt-1" role="group" aria-label="账户操作">
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 focus:outline-none focus:bg-red-50"
                           role="menuitem"
                           tabIndex={isUserMenuOpen ? 0 : -1}
+                          aria-label="退出登录"
                         >
-                          {item.label}
-                        </Link>
-                      )
-                    })}
-                  </div>
-
-                  {/* 退出登录 - 只保留文字 */}
-                  <div className="border-t border-gray-100 pt-1" role="group" aria-label="账户操作">
-                    <button 
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 focus:outline-none focus:bg-red-50"
-                      role="menuitem"
-                      tabIndex={isUserMenuOpen ? 0 : -1}
-                      aria-label="退出登录"
-                    >
-                      退出登录
-                    </button>
-                  </div>
-                </div>
-              )}
+                          退出登录
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -282,7 +285,7 @@ export default function Header() {
 
         {/* Mobile Navigation - 按要求移除顶部三个 Tab */}
         {isMenuOpen && (
-          <nav 
+          <nav
             className="md:hidden"
             id="mobile-menu"
             role="navigation"
@@ -290,20 +293,20 @@ export default function Header() {
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
               {/* 顶部三个 Tab 已移除 */}
-              
+
               {/* 移动端用户菜单 */}
               {isAuthenticated && (
                 <div className="border-t border-gray-200 pt-2 mt-2" role="region" aria-label="用户信息和操作">
                   <div className="px-3 py-2">
                     <div className="flex items-center space-x-3 mb-3">
                       {user?.avatar ? (
-                        <img 
-                          src={user.avatar} 
+                        <img
+                          src={user.avatar}
                           alt={user.username}
                           className="w-8 h-8 rounded-full"
                         />
                       ) : (
-                        <div 
+                        <div
                           className="w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center"
                           role="img"
                           aria-label="用户头像"
@@ -316,7 +319,7 @@ export default function Header() {
                         <p className="text-xs text-gray-500">{user?.profile?.title || user?.email}</p>
                       </div>
                     </div>
-                    
+
                     {userMenuItems.map((item) => {
                       return (
                         <Link
@@ -329,8 +332,8 @@ export default function Header() {
                         </Link>
                       )
                     })}
-                    
-                    <button 
+
+                    <button
                       onClick={() => {
                         handleLogout()
                         setIsMenuOpen(false)
@@ -343,7 +346,7 @@ export default function Header() {
                   </div>
                 </div>
               )}
-              
+
               {/* 移动端登录/注册按钮 */}
               {!isAuthenticated && (
                 <div className="border-t border-gray-200 pt-2 mt-2 space-y-2 px-3">
