@@ -299,7 +299,6 @@ export default function JobsPage() {
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-x-hidden"
-      onKeyDown={handleKeyDown}
       role="main"
       aria-label="职位搜索页面"
     >
