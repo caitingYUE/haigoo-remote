@@ -300,15 +300,15 @@ export default async function handler(req, res) {
         const job = map.get(id)
         if (!job) {
           console.warn('[API] Job not found for ID:', id)
-          // Return placeholder so it's not filtered out
+          // Return minimal object marked as expired
           return {
             id,
-            title: '加载中...',
-            company: '未知公司',
-            location: '未知地点',
+            title: '该岗位已失效或被删除',
+            company: '-',
+            location: '-',
             tags: [],
             isSaved: true,
-            status: 'unknown'
+            status: '已失效'
           }
         }
 
@@ -508,4 +508,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: '服务器错误' })
   }
 }
-
