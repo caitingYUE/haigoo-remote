@@ -188,7 +188,7 @@ export default function JobsPage() {
             const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
             if (resp.ok) {
               const data = await resp.json()
-              const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
+              const ids: string[] = (data?.favorites || []).map((f: any) => f.id)
               setSavedJobs(new Set(ids))
             }
           } catch { }
@@ -215,7 +215,7 @@ export default function JobsPage() {
       const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
       if (r.ok) {
         const d = await r.json()
-        const ids: string[] = (d?.favorites || []).map((f: any) => f.jobId)
+        const ids: string[] = (d?.favorites || []).map((f: any) => f.id)
         setSavedJobs(new Set(ids))
         showSuccess(isSaved ? '已取消收藏' : '收藏成功')
       }
@@ -241,7 +241,7 @@ export default function JobsPage() {
         const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
         if (resp.ok) {
           const data = await resp.json()
-          const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
+          const ids: string[] = (data?.favorites || []).map((f: any) => f.id)
           setSavedJobs(new Set(ids))
         }
       } catch { }
