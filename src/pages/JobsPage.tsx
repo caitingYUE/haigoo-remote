@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase, RefreshCw } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import JobDetailModal from '../components/JobDetailModal'
 import JobCard from '../components/JobCard'
+import JobDetailModal from '../components/JobDetailModal'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -90,12 +90,12 @@ export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token, isAuthenticated } = useAuth()
-  
+
   // Refs for focus management
   const searchInputRef = useRef<HTMLInputElement>(null)
   const filterSectionRef = useRef<HTMLDivElement>(null)
   const jobListRef = useRef<HTMLDivElement>(null)
-  
+
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     type: 'all',
@@ -108,11 +108,11 @@ export default function JobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
-  
+
   // 加载阶段状态
   const [loadingStage, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
-  
+
   // 使用页面缓存 Hook
   const {
     data: jobs,
@@ -128,7 +128,7 @@ export default function JobsPage() {
         setLoadingStage('fetching')
         const response = await processedJobsService.getAllProcessedJobs(200)
         setLoadingStage('idle')
-        
+
         // 🎉 后端已处理翻译，前端直接使用
         console.log(`✅ 获取到 ${response.length} 个岗位（后端已翻译）`)
         return response
@@ -145,15 +145,6 @@ export default function JobsPage() {
       console.log(`✅ 岗位列表加载完成，共 ${jobs.length} 个${isFromCache ? '（来自缓存）' : '（新数据）'}`)
     }
   })
-
-  // Keyboard navigation handler
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      if (isJobDetailOpen) {
-        closeJobDetail()
-      }
-    }
-  }
 
   // Filter keyboard navigation
   const handleFilterKeyDown = (event: React.KeyboardEvent, filterType: string, value: string) => {
@@ -191,17 +182,17 @@ export default function JobsPage() {
     const handleUpdated = () => {
       console.log('收到岗位数据更新事件，重新加载收藏与岗位...')
       refresh()
-      ;(async () => {
-        if (!token) return
-        try {
-          const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
-          if (resp.ok) {
-            const data = await resp.json()
-            const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
-            setSavedJobs(new Set(ids))
-          }
-        } catch {}
-      })()
+        ; (async () => {
+          if (!token) return
+          try {
+            const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
+            if (resp.ok) {
+              const data = await resp.json()
+              const ids: string[] = (data?.favorites || []).map((f: any) => f.id)
+              setSavedJobs(new Set(ids))
+            }
+          } catch { }
+        })()
     }
     window.addEventListener('processed-jobs-updated', handleUpdated)
     return () => {
@@ -210,26 +201,21 @@ export default function JobsPage() {
   }, [refresh])
 
   const toggleSaveJob = async (jobId: string) => {
-    console.log('[JobsPage] toggleSaveJob called, jobId:', jobId)
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
-    console.log('[JobsPage] authToken:', !!authToken, 'isAuthenticated:', isAuthenticated)
     if (!isAuthenticated || !authToken) { showWarning('请先登录', '登录后可以收藏职位'); navigate('/login'); return }
     const isSaved = savedJobs.has(jobId)
-    console.log('[JobsPage] current saved state:', isSaved)
     setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
     try {
-      console.log('[JobsPage] sending request to:', `/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}`)
       const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ jobId })
       })
-      console.log('[JobsPage] response status:', resp.status)
       if (!resp.ok) throw new Error('收藏接口失败')
       const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
       if (r.ok) {
         const d = await r.json()
-        const ids: string[] = (d?.favorites || []).map((f: any) => f.jobId)
+        const ids: string[] = (d?.favorites || []).map((f: any) => f.id)
         setSavedJobs(new Set(ids))
         showSuccess(isSaved ? '已取消收藏' : '收藏成功')
       }
@@ -240,81 +226,60 @@ export default function JobsPage() {
     }
   }
 
-  const openJobDetail = (job: Job) => {
-    const jobIndex = filteredJobs.findIndex(j => j.id === job.id)
-    setCurrentJobIndex(jobIndex >= 0 ? jobIndex : 0)
-    setSelectedJob(job)
-    setIsJobDetailOpen(true)
-  }
-
-  const closeJobDetail = () => {
-    setIsJobDetailOpen(false)
-    setSelectedJob(null)
-  }
-
-  const handleNavigateJob = (direction: 'prev' | 'next') => {
-    if (direction === 'prev' && currentJobIndex > 0) {
-      const newIndex = currentJobIndex - 1
-      setCurrentJobIndex(newIndex)
-      setSelectedJob(filteredJobs[newIndex])
-    } else if (direction === 'next' && currentJobIndex < filteredJobs.length - 1) {
-      const newIndex = currentJobIndex + 1
-      setCurrentJobIndex(newIndex)
-      setSelectedJob(filteredJobs[newIndex])
-    }
-  }
-
   const handleApply = (jobId: string) => {
-    navigate(`/job/${jobId}/apply`)
+    const job = (jobs || []).find(j => j.id === jobId)
+    if (job && job.sourceUrl) {
+      window.open(job.sourceUrl, '_blank', 'noopener,noreferrer')
+    }
   }
 
   // 初始化拉取收藏集
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       if (!token) return
       try {
         const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
         if (resp.ok) {
           const data = await resp.json()
-          const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
+          const ids: string[] = (data?.favorites || []).map((f: any) => f.id)
           setSavedJobs(new Set(ids))
         }
-      } catch {}
+      } catch { }
     })()
   }, [token])
 
   // 筛选逻辑
   const filteredJobs = (jobs || []).filter(job => {
     // 搜索匹配
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (job.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (job.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (job.skills && job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
-    
+
     // 工作类型匹配
     const matchesType = filters.type === 'all' || job.type === filters.type
-    
+
     // 岗位分类匹配 - 支持处理后数据的category字段和技能标签匹配
-    const matchesCategory = filters.category === 'all' || 
+    const matchesCategory = filters.category === 'all' ||
       (job.category && job.category === filters.category) ||
       (job.skills && job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase())))
-    
+
     // 地点匹配 - 支持远程工作判断和处理后数据的isRemote字段
-    const matchesLocation = filters.location === 'all' || 
+    const matchesLocation = filters.location === 'all' ||
       job.location.includes(filters.location) ||
       (filters.location === 'Remote' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
       (filters.location === 'Worldwide' && (job.location.includes('全球') || job.location.includes('远程') || job.isRemote))
-    
+
     // 经验等级匹配 - 支持处理后数据的experienceLevel字段
-    const matchesExperience = filters.experience === 'all' || 
+    const matchesExperience = filters.experience === 'all' ||
       (job.experienceLevel && job.experienceLevel === filters.experience)
-    
+
     // 远程工作匹配 - 支持处理后数据的isRemote字段
-    const matchesRemote = filters.remote === 'all' || 
+    const matchesRemote = filters.remote === 'all' ||
       (filters.remote === 'yes' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
       (filters.remote === 'no' && !(job.type === 'remote' || job.location.includes('远程') || job.isRemote))
-    
+
     return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote
   })
 
@@ -323,22 +288,21 @@ export default function JobsPage() {
   // 初始化加载已收藏的岗位，用于高亮 Bookmark 状态
   useEffect(() => {
     if (!token) return
-    ;(async () => {
-      try {
-        const resp = await fetch('/api/user-profile', { headers: { Authorization: `Bearer ${token}` } })
-        if (resp.ok) {
-          const data = await resp.json()
-          const ids: string[] = (data?.profile?.savedJobs || []).map((s: any) => s.jobId)
-          setSavedJobs(new Set(ids))
-        }
-      } catch {}
-    })()
+      ; (async () => {
+        try {
+          const resp = await fetch('/api/user-profile', { headers: { Authorization: `Bearer ${token}` } })
+          if (resp.ok) {
+            const data = await resp.json()
+            const ids: string[] = (data?.profile?.savedJobs || []).map((s: any) => s.jobId)
+            setSavedJobs(new Set(ids))
+          }
+        } catch { }
+      })()
   }, [token])
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-x-hidden"
-      onKeyDown={handleKeyDown}
       role="main"
       aria-label="职位搜索页面"
     >
@@ -350,11 +314,11 @@ export default function JobsPage() {
             <h1 className="text-2xl font-bold text-gray-900 mb-1">全部岗位</h1>
             <p className="text-gray-600 text-sm">发现适合你的工作机会</p>
           </header>
-          
+
           <div className="max-w-2xl mx-auto mb-6">
             <div className="relative">
-              <Search 
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 transition-colors duration-200" 
+              <Search
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 transition-colors duration-200"
                 aria-hidden="true"
               />
               <input
@@ -374,13 +338,13 @@ export default function JobsPage() {
             </div>
           </div>
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex gap-6">
             {/* 侧边栏筛选 - 优化固定定位 */}
             <aside className="w-72 shrink-0" aria-label="职位筛选器">
               <div className="sticky top-24 w-72 h-[calc(100vh-120px)] will-change-transform">
-                <div 
+                <div
                   ref={filterSectionRef}
                   className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden h-full flex flex-col"
                   role="region"
@@ -392,7 +356,7 @@ export default function JobsPage() {
                       筛选条件
                     </h2>
                   </div>
-                  
+
                   <div className="p-5 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     {/* 工作类型 */}
                     <fieldset className="mb-5">
@@ -412,7 +376,7 @@ export default function JobsPage() {
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
                               aria-describedby={`type-${type.value}-desc`}
                             />
-                            <span 
+                            <span
                               className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
                               id={`type-${type.value}-desc`}
                             >
@@ -441,7 +405,7 @@ export default function JobsPage() {
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
                               aria-describedby={`category-${category.value}-desc`}
                             />
-                            <span 
+                            <span
                               className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
                               id={`category-${category.value}-desc`}
                             >
@@ -470,7 +434,7 @@ export default function JobsPage() {
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
                               aria-describedby={`location-${location.value}-desc`}
                             />
-                            <span 
+                            <span
                               className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
                               id={`location-${location.value}-desc`}
                             >
@@ -499,7 +463,7 @@ export default function JobsPage() {
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
                               aria-describedby={`experience-${level.value}-desc`}
                             />
-                            <span 
+                            <span
                               className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
                               id={`experience-${level.value}-desc`}
                             >
@@ -528,7 +492,7 @@ export default function JobsPage() {
                               className="h-4 w-4 text-haigoo-primary focus:ring-haigoo-primary border-gray-300 rounded transition-colors duration-200"
                               aria-describedby={`remote-${option.value}-desc`}
                             />
-                            <span 
+                            <span
                               className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200"
                               id={`remote-${option.value}-desc`}
                             >
@@ -567,7 +531,7 @@ export default function JobsPage() {
             <main className="flex-1 min-w-0 relative" role="main" aria-label="职位列表">
               {/* 结果统计 */}
               <div className="flex items-center justify-between mb-6">
-                <div 
+                <div
                   className="text-gray-600 text-sm"
                   role="status"
                   aria-live="polite"
@@ -581,7 +545,7 @@ export default function JobsPage() {
               </div>
 
               {/* 岗位列表 */}
-              <div 
+              <div
                 ref={jobListRef}
                 className="space-y-4"
                 role="list"
@@ -591,9 +555,9 @@ export default function JobsPage() {
                 <div id="job-list-help" className="sr-only">
                   使用方向键导航职位列表，按回车键查看职位详情
                 </div>
-                
+
                 {loading ? (
-                  <div 
+                  <div
                     className="flex flex-col items-center justify-center py-12 space-y-4"
                     role="status"
                     aria-live="polite"
@@ -605,7 +569,7 @@ export default function JobsPage() {
                     </div>
                   </div>
                 ) : filteredJobs.length === 0 ? (
-                  <div 
+                  <div
                     className="text-center py-12"
                     role="status"
                     aria-live="polite"
@@ -620,32 +584,34 @@ export default function JobsPage() {
                         job={job}
                         onSave={() => toggleSaveJob(job.id)}
                         isSaved={savedJobs.has(job.id)}
-                        onClick={() => openJobDetail(job)}
+                        onClick={() => { setSelectedJob(job); setIsJobDetailOpen(true); setCurrentJobIndex(index) }}
                         aria-label={`职位 ${index + 1}：${job.title} - ${job.company}`}
                       />
                     </div>
                   ))
                 )}
               </div>
+
+              {isJobDetailOpen && selectedJob && (
+                <JobDetailModal
+                  job={selectedJob}
+                  isOpen={isJobDetailOpen}
+                  onClose={() => { setIsJobDetailOpen(false); setSelectedJob(null) }}
+                  onSave={() => toggleSaveJob(selectedJob.id)}
+                  isSaved={savedJobs.has(selectedJob.id)}
+                  jobs={filteredJobs}
+                  currentJobIndex={currentJobIndex}
+                  onNavigateJob={(direction: 'prev' | 'next') => {
+                    const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(filteredJobs.length - 1, currentJobIndex + 1)
+                    setCurrentJobIndex(nextIndex)
+                    setSelectedJob(filteredJobs[nextIndex])
+                  }}
+                />
+              )}
             </main>
           </div>
         </div>
       </div>
-
-      {/* 岗位详情弹窗 */}
-      {selectedJob && (
-        <JobDetailModal
-          job={selectedJob} 
-          isOpen={isJobDetailOpen}
-          onClose={closeJobDetail}
-          onSave={() => toggleSaveJob(selectedJob.id)}
-          isSaved={savedJobs.has(selectedJob.id)}
-          onApply={handleApply}
-          jobs={filteredJobs}
-          currentJobIndex={currentJobIndex}
-          onNavigateJob={handleNavigateJob}
-        />
-      )}
     </div>
   )
 }

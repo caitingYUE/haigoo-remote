@@ -24,7 +24,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   onClose,
   onSave,
   isSaved = false,
-  
+
   onApply,
   jobs = [],
   currentJobIndex = -1,
@@ -33,7 +33,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'description' | 'company' | 'openings'>('description')
   // 仅显示原始文本，不进行语言切换或翻译
-  
+
   // 可访问性相关的 refs
   const modalRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -160,7 +160,11 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   if (!job || !isOpen) return null
 
   const handleApply = () => {
-    onApply?.(job.id)
+    if (job.sourceUrl) {
+      window.open(job.sourceUrl, '_blank', 'noopener,noreferrer')
+    } else {
+      onApply?.(job.id)
+    }
   }
 
   const handleNavigate = (direction: 'prev' | 'next') => {
@@ -172,7 +176,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
       if (navigator.share) {
         await navigator.share({
           title: `${job.title} - ${job.company || ''}`,
-        text: `查看这个职位：${job.title} at ${job.company || ''}`,
+          text: `查看这个职位：${job.title} at ${job.company || ''}`,
           url: window.location.href
         })
       } else {
@@ -195,7 +199,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   // 格式化文本渲染
   const renderFormattedText = (text: string) => {
     if (!text) return null
-    
+
     return text.split('\n').map((line, index) => (
       <p key={index} className="mb-2 last:mb-0">
         {renderInlineFormatting(line)}
@@ -207,7 +211,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     // 处理粗体文本 **text**
     const boldRegex = /\*\*(.*?)\*\*/g
     const parts = text.split(boldRegex)
-    
+
     return parts.map((part, index) => {
       if (index % 2 === 1) {
         return <strong key={index} className="font-semibold text-slate-800 dark:text-white">{part}</strong>
@@ -222,8 +226,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const canNavigateNext = currentJobIndex < jobs.length - 1
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-stretch justify-end"
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-stretch justify-end"
       role="dialog"
       aria-modal="true"
       aria-labelledby="job-modal-title"
@@ -234,14 +238,13 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
         }
       }}
     >
-      <div 
+      <div
         ref={modalRef}
-        className={`bg-white dark:bg-zinc-900 shadow-xl h-full w-full max-w-[95vw] md:max-w-[60vw] lg:max-w-[50vw] xl:max-w-[45vw] flex flex-col relative transform transition-all duration-300 ${
-          isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
-        }`}
+        className={`bg-white dark:bg-zinc-900 shadow-xl h-full w-full max-w-[95vw] md:max-w-[60vw] lg:max-w-[50vw] xl:max-w-[45vw] flex flex-col relative transform transition-all duration-300 ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
+          }`}
         onClick={(e) => e.stopPropagation()}
       >
-        
+
         {/* Navigation Buttons */}
         {jobs.length > 1 && canNavigatePrev && (
           <button
@@ -254,7 +257,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             <ChevronLeft className="h-6 w-6" />
           </button>
         )}
-        
+
         {jobs.length > 1 && canNavigateNext && (
           <button
             onClick={() => handleNavigate('next')}
@@ -274,7 +277,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="flex-shrink-0">
-                  <div 
+                  <div
                     className="w-12 h-12 bg-[#3182CE] rounded-xl flex items-center justify-center shadow-md shadow-blue-500/15 dark:shadow-blue-500/10 relative"
                     role="img"
                     aria-label={`${job.company || '未知公司'} 公司标志`}
@@ -283,7 +286,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                       {(job.company || '未知公司').charAt(0)}
                     </span>
                     {/* 推荐标识集成到右上角 */}
-                    <div 
+                    <div
                       className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-md flex items-center justify-center shadow-sm"
                       role="img"
                       aria-label="推荐职位标识"
@@ -292,7 +295,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                     </div>
                   </div>
                 </div>
-                <h1 
+                <h1
                   id="job-modal-title"
                   className="text-lg font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 dark:from-white dark:via-slate-100 dark:to-white bg-clip-text text-transparent truncate leading-tight"
                 >
@@ -315,7 +318,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 
             {/* 第二行：副标题（公司与地点） + 右侧操作按钮 */}
             <div className="mt-2 flex items-center justify-between">
-              <p 
+              <p
                 id="job-modal-description"
                 className="text-slate-600 dark:text-slate-400 font-medium text-sm truncate"
               >
@@ -337,11 +340,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 <button
                   onClick={handleSave}
                   onKeyDown={(e) => handleKeyDown(e, handleSave)}
-                  className={`px-2.5 py-1.5 rounded-lg transition-all duration-200 border ${
-                    isSaved
-                      ? 'bg-haigoo-primary/5 text-haigoo-primary border-haigoo-primary/20'
+                  className={`px-2.5 py-1.5 rounded-lg transition-all duration-200 border ${isSaved
+                      ? 'bg-[#3182CE]/5 text-[#3182CE] border-[#3182CE]/20'
                       : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 border-slate-200/50 dark:border-zinc-700/50'
-                  }`}
+                    }`}
                   title={isSaved ? '已收藏' : '收藏'}
                   aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
                   aria-pressed={isSaved}
@@ -358,14 +360,14 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
         <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-zinc-600 scrollbar-track-transparent">
           <div className="p-6 space-y-6">
             {/* 公司信息卡片 - 优化布局 */}
-            <section 
+            <section
               className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm hover:shadow-md transition-all duration-300"
               aria-labelledby="company-info-title"
             >
               <div className="flex items-start gap-6">
                 {/* 公司Logo */}
                 <div className="flex-shrink-0">
-                  <div 
+                  <div
                     className="w-16 h-16 bg-gradient-to-br from-[#3182CE] via-[#256bb0] to-[#1A365D] rounded-2xl flex items-center justify-center shadow-lg shadow-[#3182CE]/20"
                     role="img"
                     aria-label={`${job.company || '未知公司'} 公司标志`}
@@ -375,19 +377,19 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                     </span>
                   </div>
                 </div>
-                
+
                 {/* 主要信息区域 */}
                 <div className="flex-1 min-w-0">
                   {/* 公司名称与匹配度合并展示 */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <h2 
+                      <h2
                         id="company-info-title"
                         className="text-xl font-semibold text-slate-800 dark:text-white mb-1 truncate"
                       >
                         {displayText(job.company || '')}
                       </h2>
-                      
+
                       {/* 来源信息 */}
                       {job.sourceUrl && (
                         <div className="mb-2">
@@ -398,7 +400,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                             href={job.sourceUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-haigoo-primary dark:text-[#3182CE] hover:text-haigoo-primary/80 dark:hover:text-[#256bb0] underline decoration-1 underline-offset-2 transition-colors"
+                            className="text-sm text-[#3182CE] hover:text-[#256bb0] underline decoration-1 underline-offset-2 transition-colors"
                             title={'查看原始职位信息'}
                           >
                             {(() => {
@@ -408,8 +410,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                           </a>
                         </div>
                       )}
-                      
-                      
+
+
                     </div>
                   </div>
 
@@ -440,7 +442,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             </section>
 
             {/* 专业Tab导航 - 标准tab组件样式 */}
-            <nav 
+            <nav
               className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700"
               role="tablist"
               aria-label="职位详情选项卡"
@@ -454,11 +456,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}
                   onKeyDown={(e) => handleKeyDown(e, () => setActiveTab(tab.key as any))}
-                  className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 ${
-                    activeTab === tab.key 
-                      ? 'bg-white dark:bg-gray-700 text-[#3182CE] dark:text-[#3182CE] shadow-sm border border-gray-200 dark:border-gray-600' 
+                  className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 ${activeTab === tab.key
+                      ? 'bg-white dark:bg-gray-700 text-[#3182CE] shadow-sm border border-gray-200 dark:border-gray-600'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                    }`}
                   role="tab"
                   aria-selected={activeTab === tab.key}
                   aria-controls={`tabpanel-${tab.key}`}
@@ -471,7 +472,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             </nav>
 
             {/* Tab Content */}
-            <div 
+            <div
               className="bg-white dark:bg-zinc-800 rounded-xl p-6 border border-slate-200/40 dark:border-zinc-700/40"
               role="tabpanel"
               id={`tabpanel-${activeTab}`}
@@ -503,8 +504,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                       </h3>
                       <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
                         <SingleLineTags
-                          tags={(Array.isArray((job as any).tags) && (job as any).tags.length > 0 
-                            ? (job as any).tags 
+                          tags={(Array.isArray((job as any).tags) && (job as any).tags.length > 0
+                            ? (job as any).tags
                             : (job.skills || [])) as string[]}
                           fallback="remote"
                           size="sm"
@@ -512,7 +513,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                       </div>
                     </section>
                   )}
-                  
+
                   {jobDescriptionData.sections.map((section, index) => (
                     <section key={index}>
                       <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">
@@ -537,13 +538,13 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                     <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
                       {renderFormattedText(displayText(
                         (jobDescriptionData.sections.find(s => /About|公司介绍|关于我们/i.test(s.title))?.content) || '',
-                        
+
                       )) || (
-                        <p>暂无公司介绍信息。</p>
-                      )}
+                          <p>暂无公司介绍信息。</p>
+                        )}
                     </div>
                   </section>
-                  
+
                   <section>
                     <h4 className="text-base font-semibold text-slate-800 dark:text-white mb-4">公司详情</h4>
                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -601,7 +602,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                               <p className="text-sm text-slate-600 dark:text-slate-400 truncate" title={cj.location}>{cj.location}</p>
                             </div>
                             {cj.sourceUrl && (
-                              <a href={cj.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-haigoo-primary underline underline-offset-2">查看</a>
+                              <a href={cj.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[#3182CE] hover:text-[#256bb0] underline underline-offset-2">查看</a>
                             )}
                           </div>
                         </article>
@@ -613,7 +614,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             </div>
           </div>
         </main>
-        
+
         {/* 底部申请按钮 - 根据内容自适应，保持在视窗内 */}
         <footer className="border-t border-slate-200/60 dark:border-zinc-700/60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-4 sticky bottom-0">
           <button

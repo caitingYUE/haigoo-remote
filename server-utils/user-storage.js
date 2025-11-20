@@ -3,7 +3,7 @@
  * 优先使用 Redis，降级到 Vercel KV，最后使用内存
  */
 
-import { kv } from '@vercel/kv'
+import { kv, KV_CONFIGURED } from './kv-client.js'
 import { createClient } from 'redis'
 
 // 检测 Redis 配置
@@ -16,12 +16,6 @@ const REDIS_URL =
   process.env.PRE_HAIGOO_REDIS_URL ||
   null
 const REDIS_CONFIGURED = !!REDIS_URL
-
-// 检测 Vercel KV 配置
-const KV_CONFIGURED = !!(
-  (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
-  (process.env.pre_haigoo_KV_REST_API_URL && process.env.pre_haigoo_KV_REST_API_TOKEN)
-)
 
 // Redis 客户端缓存
 let __redisClient = globalThis.__haigoo_redis_client || null
@@ -269,7 +263,7 @@ export async function deleteUserById(userId) {
       if (email) {
         await client.del(`haigoo:user:${email}`)
         await client.del(`haigoo:userId:${userId}`)
-        try { await client.sRem('haigoo:user_list', email) } catch {}
+        try { await client.sRem('haigoo:user_list', email) } catch { }
         memoryStore.users.delete(email)
         memoryStore.usersByUserId.delete(userId)
         ok = true
@@ -283,7 +277,7 @@ export async function deleteUserById(userId) {
       if (email) {
         await kv.del(`haigoo:user:${email}`)
         await kv.del(`haigoo:userId:${userId}`)
-        try { await kv.srem('haigoo:user_list', email) } catch {}
+        try { await kv.srem('haigoo:user_list', email) } catch { }
         memoryStore.users.delete(email)
         memoryStore.usersByUserId.delete(userId)
         ok = true

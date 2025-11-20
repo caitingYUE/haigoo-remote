@@ -4,7 +4,7 @@
  * GET /api/users?id=xxx - 获取特定用户详情
  */
 
-import { kv } from '@vercel/kv'
+import { kv, KV_CONFIGURED } from '../server-utils/kv-client.js'
 import { createClient } from 'redis'
 import { getUserById, saveUser, deleteUserById } from '../server-utils/user-storage.js'
 import { extractToken, verifyToken } from '../server-utils/auth-helpers.js'
@@ -15,14 +15,10 @@ const REDIS_URL =
   process.env.haigoo_REDIS_URL ||
   process.env.HAIGOO_REDIS_URL ||
   process.env.UPSTASH_REDIS_URL ||
+  process.env.pre_haigoo_REDIS_URL ||
+  process.env.PRE_HAIGOO_REDIS_URL ||
   null
 const REDIS_CONFIGURED = !!REDIS_URL
-
-// Vercel KV配置检测
-const KV_CONFIGURED = !!(
-  process.env.KV_REST_API_URL &&
-  process.env.KV_REST_API_TOKEN
-)
 
 // Redis客户端缓存
 let __redisClient = globalThis.__haigoo_redis_client || null
@@ -77,7 +73,18 @@ async function getAllUsersFromRedis() {
     for (const key of keys) {
       const userData = await client.get(key)
       if (userData) {
-        users.push(JSON.parse(userData))
+        const user = JSON.parse(userData)
+        // 获取收藏数量和ID
+        try {
+          const favoritesKey = `haigoo:favorites:${user.id}`
+          const ids = await client.sMembers(favoritesKey)
+          user.favorites = ids || []
+          user.favoritesCount = ids ? ids.length : 0
+        } catch (e) {
+          user.favorites = []
+          user.favoritesCount = 0
+        }
+        users.push(user)
       }
     }
 
@@ -99,13 +106,25 @@ async function getAllUsersFromKV() {
     // 临时方案：扫描已知的用户
     const userListKey = 'haigoo:user_list'
     const userEmails = await kv.smembers(userListKey)
-    
+
     if (!userEmails || userEmails.length === 0) return []
 
     const users = []
     for (const email of userEmails) {
       const user = await kv.get(`haigoo:user:${email}`)
-      if (user) users.push(user)
+      if (user) {
+        // 获取收藏数量和ID
+        try {
+          const favoritesKey = `haigoo:favorites:${user.id}`
+          const ids = await kv.smembers(favoritesKey)
+          user.favorites = ids || []
+          user.favoritesCount = ids ? ids.length : 0
+        } catch (e) {
+          user.favorites = []
+          user.favoritesCount = 0
+        }
+        users.push(user)
+      }
     }
 
     return users

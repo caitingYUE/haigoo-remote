@@ -1,7 +1,7 @@
 import React from 'react'
 import { Search, Rocket, Bot } from 'lucide-react'
 
-export default function HeroVisual({ onExplore, onCopilot }: { onExplore: () => void, onCopilot: () => void }) {
+export default function HeroVisual({ onExplore, onCopilot }: { onExplore: () => void, onCopilot?: () => void }) {
   return (
     <section className="container-fluid mt-6 mb-8">
       <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
@@ -19,9 +19,11 @@ export default function HeroVisual({ onExplore, onCopilot }: { onExplore: () => 
             <input className="flex-1 p-4 outline-none" placeholder="Search for remote jobs..." />
             <button onClick={onExplore} className="px-6 py-3 bg-gray-900 text-white font-medium">Explore Jobs</button>
           </div>
-          <button onClick={onCopilot} className="btn btn-secondary inline-flex items-center gap-2">
-            <Bot className="w-5 h-5" /> Try AI Copilot
-          </button>
+          {onCopilot && (
+            <button onClick={onCopilot} className="btn btn-secondary inline-flex items-center gap-2">
+              <Bot className="w-5 h-5" /> Try AI Copilot
+            </button>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-2xl border p-5 bg-white">
               <div className="flex items-center gap-3">

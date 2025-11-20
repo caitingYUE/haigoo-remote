@@ -9,6 +9,9 @@ import { resumeService } from '../services/resume-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 import { Job } from '../types'
+import JobCard from '../components/JobCard'
+import JobDetailModal from '../components/JobDetailModal'
+import { useNotificationHelpers } from '../components/NotificationSystem'
 
 type TabKey = 'resume' | 'favorites'
 
@@ -30,6 +33,31 @@ export default function ProfileCenterPage() {
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
   const [favorites, setFavorites] = useState<any[]>([])
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
+  const { showSuccess, showError } = useNotificationHelpers()
+
+  const handleRemoveFavorite = async (jobId: string) => {
+    try {
+      const resp = await fetch(`/api/user-profile?action=favorites_remove`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ jobId })
+      })
+
+      if (resp.ok) {
+        setFavorites(prev => prev.filter(f => f.id !== jobId && f.jobId !== jobId))
+        showSuccess('已取消收藏')
+      } else {
+        throw new Error('Failed to remove')
+      }
+    } catch (error) {
+      showError('操作失败', '无法移除收藏')
+    }
+  }
 
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
@@ -53,19 +81,39 @@ export default function ProfileCenterPage() {
 
 
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       try {
-        if (!authUser || !token) return
-        const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token as string}` } })
-        const j = await r.json()
-        if (j?.success && Array.isArray(j?.favorites)) {
-          setFavorites(j.favorites)
+        if (!authUser || !token) {
+          console.log('[ProfileCenter] No auth user or token')
+          return
         }
-      } catch {}
+        console.log('[ProfileCenter] Fetching favorites...')
+        const r = await fetch('/api/user-profile?action=favorites', {
+          headers: { Authorization: `Bearer ${token as string}` }
+        })
+        const j = await r.json()
+        console.log('[ProfileCenter] Favorites response:', j)
+
+        // Handle both success and direct array responses
+        if (j?.success && Array.isArray(j?.favorites)) {
+          console.log('[ProfileCenter] Setting favorites (success):', j.favorites.length)
+          setFavorites(j.favorites)
+        } else if (Array.isArray(j?.favorites)) {
+          console.log('[ProfileCenter] Setting favorites (direct):', j.favorites.length)
+          setFavorites(j.favorites)
+        } else if (Array.isArray(j)) {
+          console.log('[ProfileCenter] Setting favorites (array):', j.length)
+          setFavorites(j)
+        } else {
+          console.warn('[ProfileCenter] Unexpected favorites response format:', j)
+        }
+      } catch (e) {
+        console.error('[ProfileCenter] Failed to fetch favorites:', e)
+      }
     })()
   }, [authUser, token])
 
-  
+
 
   const favoritesWithStatus = useMemo(() => favorites, [favorites])
 
@@ -234,25 +282,15 @@ export default function ProfileCenterPage() {
             <p className="text-sm text-gray-600">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-4">
             {favoritesWithStatus.map((f: any) => (
-              <div key={f.jobId} className={`favorite-card relative ${f.status==='已失效' ? 'favorite-disabled' : ''}`}>
-                <div className="favorite-title text-base">{f.title || '未命名职位'}</div>
-                <div className="favorite-company">{f.company || '未知公司'}</div>
-                {f.job?.description && (
-                  <p className="favorite-summary">{String(f.job.description)}</p>
-                )}
-                <div className="favorite-tags">
-                  {f.job?.isRemote && <span className="favorite-tag">Remote</span>}
-                  {f.job?.type && <span className="favorite-tag">{f.job.type}</span>}
-                  {f.job?.salary && f.job.salary.min>0 && <span className="favorite-salary">${f.job.salary.min} - ${f.job.salary.max}</span>}
-                </div>
-                <div className="favorite-bottom">
-                  {f.status === '有效中' && <div className="favorite-status-ok"><span className="inline-block w-2 h-2 rounded-full bg-green-500" />有效中</div>}
-                  {f.status === '已下架' && <div className="favorite-status-off">已下架</div>}
-                  {f.status === '已失效' && <div className="favorite-status-exp">已失效</div>}
-                  <button className="favorite-view">View Details</button>
-                </div>
+              <div key={f.id || f.jobId}>
+                <JobCard
+                  job={f as Job}
+                  isSaved={true}
+                  onSave={() => handleRemoveFavorite(f.id || f.jobId)}
+                  onClick={() => { setSelectedJob(f as Job); setIsJobDetailOpen(true) }}
+                />
               </div>
             ))}
           </div>
@@ -268,18 +306,27 @@ export default function ProfileCenterPage() {
           <aside className="profile-sidebar">
             <div className="profile-nav-title">Personal Center</div>
             <div className="profile-nav" role="tablist" aria-label="个人中心切换">
-              <button className={`profile-nav-item ${tab==='resume' ? 'active' : ''}`} role="tab" aria-selected={tab==='resume'} onClick={() => switchTab('resume')}>
-                <FileText className={`w-5 h-5 ${tab==='resume' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
+              <button className={`profile-nav-item ${tab === 'resume' ? 'active' : ''}`} role="tab" aria-selected={tab === 'resume'} onClick={() => switchTab('resume')}>
+                <FileText className={`w-5 h-5 ${tab === 'resume' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">我的简历</span>
               </button>
-              <button className={`profile-nav-item ${tab==='favorites' ? 'active' : ''}`} role="tab" aria-selected={tab==='favorites'} onClick={() => switchTab('favorites')}>
-                <Heart className={`w-5 h-5 ${tab==='favorites' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
+              <button className={`profile-nav-item ${tab === 'favorites' ? 'active' : ''}`} role="tab" aria-selected={tab === 'favorites'} onClick={() => switchTab('favorites')}>
+                <Heart className={`w-5 h-5 ${tab === 'favorites' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">我的收藏</span>
               </button>
             </div>
           </aside>
           <main>
             {tab === 'resume' ? <ResumeTab /> : <FavoritesTab />}
+            {isJobDetailOpen && selectedJob && (
+              <JobDetailModal
+                job={selectedJob}
+                isOpen={isJobDetailOpen}
+                onClose={() => { setIsJobDetailOpen(false); setSelectedJob(null) }}
+                onSave={() => handleRemoveFavorite(selectedJob.id)}
+                isSaved={true}
+              />
+            )}
           </main>
         </div>
       </div>

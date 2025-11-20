@@ -6,7 +6,7 @@
 
 import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'
 import { getUserById, saveUser } from '../server-utils/user-storage.js'
-import { kv } from '@vercel/kv'
+import { kv, KV_CONFIGURED } from '../server-utils/kv-client.js'
 import { createClient } from 'redis'
 
 // Redis配置
@@ -19,14 +19,6 @@ const REDIS_URL =
   process.env.PRE_HAIGOO_REDIS_URL ||
   null
 const REDIS_CONFIGURED = !!REDIS_URL
-const KV_CONFIGURED = !!(
-  (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
-  (process.env.pre_haigoo_KV_REST_API_URL && process.env.pre_haigoo_KV_REST_API_TOKEN)
-)
-// Upstash REST（优先使用，兼容预发变量命名）
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.pre_haigoo_KV_REST_API_URL || null
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.pre_haigoo_KV_REST_API_TOKEN || null
-const UPSTASH_CONFIGURED = !!(UPSTASH_URL && UPSTASH_TOKEN)
 
 let __redisClient = globalThis.__haigoo_redis_client || null
 
@@ -42,23 +34,6 @@ async function getRedisClient() {
     return client
   } catch (error) {
     console.error('[user-profile] Redis connection failed:', error.message)
-    return null
-  }
-}
-
-async function upstashCommand(command, args) {
-  if (!UPSTASH_CONFIGURED) return null
-  try {
-    const resp = await fetch(UPSTASH_URL, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ command, args })
-    })
-    if (!resp.ok) throw new Error(`Upstash ${command} failed ${resp.status}`)
-    const data = await resp.json()
-    return data?.result ?? null
-  } catch (e) {
-    console.error('[user-profile] Upstash REST error:', e.message)
     return null
   }
 }
@@ -88,7 +63,7 @@ function setCorsHeaders(res) {
  */
 async function getUserProfile(userId) {
   const key = `haigoo:userprofile:${userId}`
-  
+
   // 优先从 Redis 读取
   if (REDIS_CONFIGURED) {
     try {
@@ -101,7 +76,7 @@ async function getUserProfile(userId) {
       console.error('[user-profile] Redis read error:', error.message)
     }
   }
-  
+
   // 降级到 KV
   if (KV_CONFIGURED) {
     try {
@@ -111,7 +86,7 @@ async function getUserProfile(userId) {
       console.error('[user-profile] KV read error:', error.message)
     }
   }
-  
+
   // 最后从内存读取
   return memoryStore.get(userId) || null
 }
@@ -126,9 +101,9 @@ async function saveUserProfile(userId, profileData) {
     userId,
     updatedAt: new Date().toISOString()
   }
-  
+
   let saved = false
-  
+
   // 保存到 Redis
   if (REDIS_CONFIGURED) {
     try {
@@ -141,7 +116,7 @@ async function saveUserProfile(userId, profileData) {
       console.error('[user-profile] Redis write error:', error.message)
     }
   }
-  
+
   // 保存到 KV
   if (KV_CONFIGURED) {
     try {
@@ -151,10 +126,10 @@ async function saveUserProfile(userId, profileData) {
       console.error('[user-profile] KV write error:', error.message)
     }
   }
-  
+
   // 保存到内存
   memoryStore.set(userId, data)
-  
+
   return saved || true // 至少保存到了内存
 }
 
@@ -172,38 +147,38 @@ function calculateProfileCompleteness(user, profile) {
     skills: 10, // 技能
     resume: 10 // 简历
   }
-  
+
   // 基础信息
   if (user.email) score += weights.basicInfo * 0.5
   if (profile?.phone) score += weights.basicInfo * 0.5
-  
+
   // 职业信息
   if (user.profile?.title) score += weights.professionalInfo * 0.5
   if (user.profile?.location) score += weights.professionalInfo * 0.5
-  
+
   // 个人简介
   if (profile?.summary && profile.summary.length > 20) score += weights.summary
-  
+
   // 工作经历
   if (profile?.experience && profile.experience.length > 0) {
     score += weights.experience
   }
-  
+
   // 教育背景
   if (profile?.education && profile.education.length > 0) {
     score += weights.education
   }
-  
+
   // 技能
   if (profile?.skills && profile.skills.length >= 3) {
     score += weights.skills
   }
-  
+
   // 简历
   if (profile?.resumeFiles && profile.resumeFiles.length > 0) {
     score += weights.resume
   }
-  
+
   return Math.round(score)
 }
 
@@ -211,135 +186,225 @@ function calculateProfileCompleteness(user, profile) {
  * 主处理器
  */
 export default async function handler(req, res) {
+  console.log('[user-profile] Handler called', { method: req.method, url: req.url })
+
   setCorsHeaders(res)
-  
+
   if (req.method === 'OPTIONS') {
+    console.log('[user-profile] OPTIONS request, returning 200')
     return res.status(200).end()
   }
-  
-  // 解析请求体（Vercel函数需要手动解析）
-  if (req.method === 'POST' && req.body) {
-    try {
-      if (typeof req.body === 'string') {
-        req.body = JSON.parse(req.body)
-      }
-    } catch (e) {
-      console.error('[user-profile] Failed to parse request body:', e)
-      return res.status(400).json({ success: false, error: '请求体格式错误' })
-    }
-  }
-  
+
   try {
     // 验证用户身份
     const token = extractToken(req)
+    console.log('[user-profile] Token extracted:', !!token)
+
     if (!token) {
+      console.log('[user-profile] No token provided')
       return res.status(401).json({ success: false, error: '未提供认证令牌' })
     }
-    
+
     const payload = verifyToken(token)
+    console.log('[user-profile] Token verified:', !!payload, payload?.userId)
+
     if (!payload || !payload.userId) {
+      console.log('[user-profile] Invalid token payload')
       return res.status(401).json({ success: false, error: '认证令牌无效或已过期' })
     }
-    
+
     const user = await getUserById(payload.userId)
+    console.log('[user-profile] User fetched:', !!user, user?.id)
+
     if (!user) {
+      console.log('[user-profile] User not found:', payload.userId)
       return res.status(404).json({ success: false, error: '用户不存在' })
     }
-    
-  if (user.status !== 'active') {
-    return res.status(403).json({ success: false, error: '账户已被停用' })
-  }
-  // 解析 action（Vercel Node 环境无 req.query 时兼容）
-  const rawQuery = req.url && req.url.includes('?') ? req.url.split('?')[1] : ''
-  const params = new URLSearchParams(rawQuery)
-  const action = params.get('action') || ''
 
-  // 收藏列表
-  if (action === 'favorites') {
-    const key = `haigoo:favorites:${user.id}`
-    let ids = []
-    if (UPSTASH_CONFIGURED) {
-      const r = await upstashCommand('SMEMBERS', [key])
-      if (Array.isArray(r)) ids = r
-    }
-    if (!ids.length) { try { const client = await getRedisClient(); if (client) ids = await client.sMembers(key) || [] } catch {} }
-    if (!ids.length && KV_CONFIGURED) { try { ids = await kv.smembers(key) || [] } catch {} }
-    if (!ids.length) {
-      ids = Array.from(getMemoryFavorites(user.id))
+    if (user.status !== 'active') {
+      console.log('[user-profile] User not active:', user.status)
+      return res.status(403).json({ success: false, error: '账户已被停用' })
     }
 
-    const originProto = req.headers['x-forwarded-proto'] || 'https'
-    const originHost = req.headers.host || process.env.VERCEL_URL || ''
-    const jobsUrl = `${originProto}://${originHost}/api/data/processed-jobs?page=1&limit=1000`
-    let jobs = []
-    try { const r = await fetch(jobsUrl); if (r.ok) { const d = await r.json(); jobs = Array.isArray(d) ? d : (d.jobs || []) } } catch {}
-    const map = new Map(jobs.map(j => [j.id, j]))
-    const items = ids.map(id => {
-      const job = map.get(id)
-      let status = '已下架'
-      if (job) {
+    // 解析 action（Vercel Node 环境无 req.query 时兼容）
+    const rawQuery = req.url && req.url.includes('?') ? req.url.split('?')[1] : ''
+    const params = new URLSearchParams(rawQuery)
+    const action = params.get('action') || ''
+    console.log('[user-profile] Action parsed:', action, 'from URL:', req.url)
+
+    // 收藏列表
+    if (action === 'favorites') {
+      console.log('[API] favorites GET called', { userId: user.id })
+
+      const key = `haigoo:favorites:${user.id}`
+      const allIds = new Set()
+
+      try {
+        const client = await getRedisClient()
+        if (client) {
+          const r = await client.sMembers(key) || []
+          r.forEach(id => allIds.add(id))
+          console.log('[API] Got favorites from Redis:', r.length)
+        }
+      } catch (e) {
+        console.error('[API] Redis error:', e)
+      }
+
+      if (KV_CONFIGURED) {
+        try {
+          const r = await kv.smembers(key) || []
+          r.forEach(id => allIds.add(id))
+          console.log('[API] Got favorites from KV:', r.length)
+        } catch (e) {
+          console.error('[API] KV error:', e)
+        }
+      }
+
+      const memoryIds = Array.from(getMemoryFavorites(user.id))
+      memoryIds.forEach(id => allIds.add(id))
+      if (memoryIds.length) console.log('[API] Got favorites from memory:', memoryIds.length)
+
+      const ids = Array.from(allIds)
+      console.log('[API] Total unique favorite IDs:', ids.length, ids)
+
+      const originProto = req.headers['x-forwarded-proto'] || 'https'
+      const originHost = req.headers.host || process.env.VERCEL_URL || ''
+
+      const fetchJobById = async (jid) => {
+        const url = `${originProto}://${originHost}/api/data/processed-jobs?id=${encodeURIComponent(jid)}&page=1&limit=1`
+        try {
+          const r = await fetch(url)
+          if (r.ok) {
+            const d = await r.json()
+            const job = Array.isArray(d) ? d[0] : (Array.isArray(d.jobs) ? d.jobs[0] : null)
+            if (job) return job
+          } else {
+            console.warn('[API] fetch by id failed:', r.status, jid)
+          }
+        } catch (e) {
+          console.error('[API] fetch by id error:', jid, e)
+        }
+        return null
+      }
+
+      const normalizeJob = (job) => {
+        if (!job) return null
+        let status = '有效中'
         if (job.expiresAt) {
           const exp = new Date(job.expiresAt).getTime()
           status = !Number.isNaN(exp) && exp < Date.now() ? '已失效' : '有效中'
-        } else { status = '有效中' }
+        }
+        return {
+          id: job.id,
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          type: job.jobType || job.type || 'full-time',
+          salary: job.salary ? { min: 0, max: 0, currency: 'USD', display: job.salary } : undefined,
+          description: job.description,
+          requirements: job.requirements || [],
+          responsibilities: job.responsibilities || [],
+          benefits: job.benefits || [],
+          skills: job.tags || [],
+          postedAt: job.publishedAt,
+          expiresAt: job.expiresAt || undefined,
+          source: job.source,
+          sourceUrl: job.url,
+          tags: job.tags || [],
+          status,
+          isRemote: job.isRemote,
+          category: job.category,
+          recommendationScore: 0,
+          translations: job.translations || undefined,
+          isTranslated: job.isTranslated || false,
+          translatedAt: job.translatedAt || undefined,
+          isSaved: true
+        }
       }
-      return {
-        jobId: id,
-        status,
-        title: job?.title || '',
-        company: job?.company || '',
-        postedAt: job?.postedAt || '',
-        expiresAt: job?.expiresAt || null,
-        type: job?.type || '',
-        isRemote: !!job?.isRemote,
-        salary: job?.salary || null
+
+      const results = await Promise.all(ids.map(async (jid) => {
+        const job = await fetchJobById(jid)
+        if (!job) {
+          return {
+            id: jid,
+            title: '该岗位已失效或被删除',
+            company: '-',
+            location: '-',
+            type: 'full-time',
+            tags: [],
+            isSaved: true,
+            status: '已失效'
+          }
+        }
+        return normalizeJob(job)
+      }))
+
+      console.log('[API] Returning favorites:', results.length)
+      return res.status(200).json({ success: true, favorites: results })
+    }
+
+    // 收藏添加
+    if (action === 'favorites_add' && req.method === 'POST') {
+      console.log('[API] favorites_add called', { userId: user.id, body: req.body })
+
+      const body = req.body || {}
+      const jobIdParam = params.get('jobId') || ''
+      const jobId = body.jobId || jobIdParam
+
+      console.log('[API] Extracted jobId:', jobId)
+
+      if (!jobId) {
+        console.error('[API] Missing jobId')
+        return res.status(400).json({ success: false, error: '缺少 jobId' })
       }
-    })
-    return res.status(200).json({ success: true, favorites: items })
-  }
 
-  // 收藏添加
-  if (action === 'favorites_add' && req.method === 'POST') {
-    console.log('[user-profile] favorites_add called, user:', user.id)
-    const body = req.body || {}
-    console.log('[user-profile] request body:', body)
-    const jobIdParam = params.get('jobId') || ''
-    const jobId = body.jobId || jobIdParam
-    console.log('[user-profile] jobId:', jobId, 'from body:', body.jobId, 'from param:', jobIdParam)
-    if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
-    const key = `haigoo:favorites:${user.id}`
-    if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
-    try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch {}
-    if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch {} }
-    getMemoryFavorites(user.id).add(jobId)
-    console.log('[user-profile] favorites_add success, jobId:', jobId)
-    return res.status(200).json({ success: true, message: '收藏成功' })
-  }
+      const key = `haigoo:favorites:${user.id}`
+      console.log('[API] Saving to key:', key)
 
-  // 收藏移除
-  if (action === 'favorites_remove' && req.method === 'POST') {
-    console.log('[user-profile] favorites_remove called, user:', user.id)
-    const body = req.body || {}
-    console.log('[user-profile] request body:', body)
-    const jobIdParam = params.get('jobId') || ''
-    const jobId = body.jobId || jobIdParam
-    console.log('[user-profile] jobId:', jobId, 'from body:', body.jobId, 'from param:', jobIdParam)
-    if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
-    const key = `haigoo:favorites:${user.id}`
-    if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
-    try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch {}
-    if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch {} }
-    getMemoryFavorites(user.id).delete(jobId)
-    console.log('[user-profile] favorites_remove success, jobId:', jobId)
-    return res.status(200).json({ success: true, message: '取消收藏成功' })
-  }
+      try {
+        const client = await getRedisClient()
+        if (client) {
+          await client.sAdd(key, jobId)
+          console.log('[API] Saved to Redis')
+        }
+      } catch (e) {
+        console.error('[API] Redis error:', e)
+      }
+
+      if (KV_CONFIGURED) {
+        try {
+          await kv.sadd(key, jobId)
+          console.log('[API] Saved to KV')
+        } catch (e) {
+          console.error('[API] KV error:', e)
+        }
+      }
+
+      getMemoryFavorites(user.id).add(jobId)
+      console.log('[API] Saved to memory, current size:', getMemoryFavorites(user.id).size)
+
+      return res.status(200).json({ success: true, message: '收藏成功' })
+    }
+
+    // 收藏移除
+    if (action === 'favorites_remove' && req.method === 'POST') {
+      const body = req.body || {}
+      const jobIdParam = params.get('jobId') || ''
+      const jobId = body.jobId || jobIdParam
+      if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+      const key = `haigoo:favorites:${user.id}`
+      try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch { }
+      if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch { } }
+      getMemoryFavorites(user.id).delete(jobId)
+      return res.status(200).json({ success: true, message: '取消收藏成功' })
+    }
 
     // 移除收藏相关 action，准备后续重新设计收藏方案
-    
+
     // GET - 获取用户资料
     if (req.method === 'GET') {
       const profile = await getUserProfile(user.id)
-      
+
       // 合并基础用户信息和扩展资料
       const fullProfile = {
         // 基础信息
@@ -352,28 +417,28 @@ export default async function handler(req, res) {
         createdAt: user.createdAt,
         lastLoginAt: user.lastLoginAt,
         status: user.status,
-        
+
         // profile中的信息
         fullName: user.profile?.fullName || '',
         title: user.profile?.title || '',
         location: user.profile?.location || '',
         targetRole: user.profile?.targetRole || '',
         bio: user.profile?.bio || '',
-        
+
         // 扩展资料
         phone: profile?.phone || '',
         website: profile?.website || '',
         linkedin: profile?.linkedin || '',
         github: profile?.github || '',
         summary: profile?.summary || '',
-        
+
         experience: profile?.experience || [],
         education: profile?.education || [],
         skills: profile?.skills || [],
         resumeFiles: profile?.resumeFiles || [],
         jobApplications: profile?.jobApplications || [],
         savedJobs: profile?.savedJobs || [],
-        
+
         preferences: profile?.preferences || {
           jobAlerts: true,
           emailNotifications: true,
@@ -381,38 +446,38 @@ export default async function handler(req, res) {
           weeklyDigest: true,
           applicationUpdates: true
         },
-        
+
         privacy: profile?.privacy || {
           profileVisible: true,
           contactInfoVisible: false,
           resumeVisible: true,
           allowRecruiterContact: true
         },
-        
+
         profileCompleteness: 0
       }
-      
+
       // 计算资料完整度
       fullProfile.profileCompleteness = calculateProfileCompleteness(user, profile)
-      
+
       return res.status(200).json({
         success: true,
         profile: fullProfile
       })
     }
-    
+
     // POST - 更新用户资料
     if (req.method === 'POST') {
       const updates = req.body
-      
+
       // 验证数据
       if (!updates || typeof updates !== 'object') {
         return res.status(400).json({ success: false, error: '无效的数据格式' })
       }
-      
+
       // 获取现有资料
       const existingProfile = await getUserProfile(user.id) || {}
-      
+
       // 合并更新
       const updatedProfile = {
         ...existingProfile,
@@ -420,10 +485,10 @@ export default async function handler(req, res) {
         userId: user.id,
         updatedAt: new Date().toISOString()
       }
-      
+
       // 保存扩展资料
       await saveUserProfile(user.id, updatedProfile)
-      
+
       // 同时更新基础用户信息（如果有）
       if (updates.fullName || updates.title || updates.location || updates.targetRole || updates.bio) {
         if (!user.profile) user.profile = {}
@@ -435,23 +500,22 @@ export default async function handler(req, res) {
         user.updatedAt = new Date().toISOString()
         await saveUser(user)
       }
-      
+
       // 计算新的完整度
       const completeness = calculateProfileCompleteness(user, updatedProfile)
-      
+
       console.log(`[user-profile] Profile updated for user ${user.id}, completeness: ${completeness}%`)
-      
+
       return res.status(200).json({
         success: true,
         message: '资料更新成功',
         profileCompleteness: completeness
       })
     }
-    
+
     return res.status(405).json({ success: false, error: 'Method not allowed' })
   } catch (error) {
     console.error('[user-profile] Error:', error)
     return res.status(500).json({ success: false, error: '服务器错误' })
   }
 }
-

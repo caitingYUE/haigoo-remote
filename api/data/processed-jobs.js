@@ -172,6 +172,7 @@ function removeDuplicates(jobs) {
 
 function applyFilters(jobs, q) {
   let list = jobs
+  if (q.id) list = list.filter(j => j.id === q.id)
   if (q.source) list = list.filter(j => j.source === q.source)
   if (q.category) list = list.filter(j => j.category === q.category)
   if (q.status) list = list.filter(j => j.status === q.status)
@@ -385,7 +386,8 @@ export default async function handler(req, res) {
         location,
         type,
         tags,
-        skills
+        skills,
+        id
       } = req.query || {}
 
       const pageNum = Number(page) || 1
@@ -488,8 +490,10 @@ export default async function handler(req, res) {
           search,
           location,
           type,
+          type,
           tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? [tags] : []),
-          skills: Array.isArray(skills) ? skills : (typeof skills === 'string' ? [skills] : [])
+          skills: Array.isArray(skills) ? skills : (typeof skills === 'string' ? [skills] : []),
+          id
         })
       } catch (e) {
         console.warn('过滤处理异常，返回未过滤数据：', e?.message || e)
@@ -561,7 +565,7 @@ export default async function handler(req, res) {
         const salary = j.salary ? truncateString(String(j.salary), FIELD_LIMITS.salary) : null
         const jobType = truncateString(String(j.jobType || 'full-time'), FIELD_LIMITS.jobType)
         const experienceLevel = truncateString(String(j.experienceLevel || 'Mid'), FIELD_LIMITS.experienceLevel)
-        
+
         // Process arrays with limits
         let tags = Array.isArray(j.tags) ? j.tags : []
         tags = tags.slice(0, 50).map(t => truncateString(String(t), 50)) // Max 50 tags, each 50 chars
@@ -577,7 +581,7 @@ export default async function handler(req, res) {
           }
           tags = truncated
         }
-        
+
         let requirements = Array.isArray(j.requirements) ? j.requirements : []
         requirements = requirements.slice(0, 100).map(r => truncateString(sanitizeHtml(String(r)), 500))
         const reqTotal = requirements.join('').length
@@ -591,7 +595,7 @@ export default async function handler(req, res) {
           }
           requirements = truncated
         }
-        
+
         let benefits = Array.isArray(j.benefits) ? j.benefits : []
         benefits = benefits.slice(0, 100).map(b => truncateString(sanitizeHtml(String(b)), 500))
         const benTotal = benefits.join('').length
@@ -605,14 +609,14 @@ export default async function handler(req, res) {
           }
           benefits = truncated
         }
-        
+
         // Generate stable ID if not provided
         let id = j.id
         if (!id || typeof id !== 'string' || id.length === 0) {
           const dedupKey = generateDedupKey({ title, company, url })
           id = dedupKey.startsWith('id:') ? dedupKey.slice(3) : `${title.substring(0, 30)}-${company.substring(0, 20)}-${Date.now()}`
         }
-        
+
         return {
           id,
           title,
@@ -642,7 +646,7 @@ export default async function handler(req, res) {
 
       // 自动翻译强制禁用
       const shouldTranslate = false
-      
+
       if (translateJobs && shouldTranslate) {
         try {
           console.log('🌍 启动自动翻译（LibreTranslate 优先，经代理）...')
@@ -841,7 +845,7 @@ export default async function handler(req, res) {
       res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED))
       res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
       res.setHeader('X-Diag-Upstash-REST-Configured', String(!!UPSTASH_REST_CONFIGURED))
-    } catch {}
+    } catch { }
     return res.status(500).json({ error: 'Failed to process jobs', message: error?.message || String(error) })
   }
 }
