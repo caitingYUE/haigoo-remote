@@ -1,20 +1,32 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useMemo, useState, useEffect } from 'react'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 // 搜索图标暂不使用，已按图2样式重构
 import JobCard from '../components/JobCard'
+import JobDetailModal from '../components/JobDetailModal'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
+import { useAuth } from '../contexts/AuthContext'
+import { useNotificationHelpers } from '../components/NotificationSystem'
 import '../styles/landing.css'
 import homeBgSvg from '../assets/home_bg.svg'
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { token, isAuthenticated } = useAuth()
+  const { showSuccess, showError, showWarning } = useNotificationHelpers()
+
   const [activeTab, setActiveTab] = useState<string>('全部')
   const [displayLimit, setDisplayLimit] = useState<number>(24)
   const [titleQuery, setTitleQuery] = useState<string>('')
   const [locationQuery, setLocationQuery] = useState<string>('')
   const [typeQuery, setTypeQuery] = useState<string>('')
+  const [isDetailOpen, setIsDetailOpen] = useState<boolean>(false)
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [currentJobIndex, setCurrentJobIndex] = useState<number>(-1)
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
 
 
   const { data: jobs, loading, error } = usePageCache<Job[]>('landing-all-jobs-v2', {
@@ -119,6 +131,98 @@ export default function LandingPage() {
     setDisplayLimit(24)
   }
 
+  // Load saved jobs
+  useEffect(() => {
+    if (!token) return
+      ; (async () => {
+        try {
+          const resp = await fetch('/api/user-profile?action=favorites', {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          if (resp.ok) {
+            const data = await resp.json()
+            const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId || f.id)
+            setSavedJobs(new Set(ids))
+          }
+        } catch { }
+      })()
+  }, [token])
+
+  // Handle URL-based job opening
+  useEffect(() => {
+    const jobId = searchParams.get('job')
+    if (jobId && sourceJobs.length > 0) {
+      const job = sourceJobs.find(j => j.id === jobId)
+      if (job) {
+        openJobDetail(job)
+      }
+    }
+  }, [searchParams, sourceJobs])
+
+  const openJobDetail = (job: Job) => {
+    const idx = (searchedJobs || []).findIndex(j => j.id === job.id)
+    setSelectedJob(job)
+    setCurrentJobIndex(idx)
+    setIsDetailOpen(true)
+    // Update URL without navigation
+    setSearchParams({ job: job.id }, { replace: true })
+  }
+
+  const closeJobDetail = () => {
+    setIsDetailOpen(false)
+    setSelectedJob(null)
+    setCurrentJobIndex(-1)
+    // Clear job from URL
+    setSearchParams({}, { replace: true })
+  }
+
+  const handleNavigateJob = (direction: 'prev' | 'next') => {
+    if (currentJobIndex < 0) return
+    const list = searchedJobs || []
+    let next = currentJobIndex + (direction === 'next' ? 1 : -1)
+    next = Math.max(0, Math.min(list.length - 1, next))
+    setCurrentJobIndex(next)
+    const newJob = list[next]
+    setSelectedJob(newJob || null)
+    if (newJob) {
+      setSearchParams({ job: newJob.id }, { replace: true })
+    }
+  }
+
+  const toggleSaveJob = async (jobId: string) => {
+    if (!isAuthenticated || !token) {
+      showWarning('请先登录', '登录后可以收藏职位')
+      navigate('/login')
+      return
+    }
+    const isSaved = savedJobs.has(jobId)
+    setSavedJobs(prev => {
+      const s = new Set(prev)
+      isSaved ? s.delete(jobId) : s.add(jobId)
+      return s
+    })
+    try {
+      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ jobId })
+      })
+      if (!resp.ok) throw new Error('收藏接口失败')
+      showSuccess(isSaved ? '已取消收藏' : '收藏成功')
+    } catch (e) {
+      setSavedJobs(prev => {
+        const s = new Set(prev)
+        isSaved ? s.add(jobId) : s.delete(jobId)
+        return s
+      })
+      showError('收藏失败', e instanceof Error ? e.message : '网络或服务不可用')
+    }
+  }
+
+  const handleApply = (jobId: string) => {
+    navigate(`/job/${jobId}/apply`)
+  }
+
   return (
     <div className="min-h-screen landing-bg-page">
       {/* 新：渐变背景 + 前景SVG分层，文字使用安全区，避免遮挡 */}
@@ -187,7 +291,7 @@ export default function LandingPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
                   {displayedJobs.map(job => (
-                    <JobCard key={job.id} job={job} onClick={() => navigate(`/job/${job.id}`)} />
+                    <JobCard key={job.id} job={job} onClick={() => openJobDetail(job)} />
                   ))}
                 </div>
                 {displayedJobs.length < (activeTab === '全部' ? latestJobs.length : categoryJobs.length) && (
@@ -200,6 +304,18 @@ export default function LandingPage() {
       </section>
 
       {/* 页脚由全局 Footer 统一渲染，这里不重复 */}
+
+      <JobDetailModal
+        job={selectedJob}
+        isOpen={isDetailOpen}
+        onClose={closeJobDetail}
+        onSave={() => selectedJob && toggleSaveJob(selectedJob.id)}
+        isSaved={selectedJob ? savedJobs.has(selectedJob.id) : false}
+        onApply={handleApply}
+        jobs={searchedJobs}
+        currentJobIndex={currentJobIndex}
+        onNavigateJob={handleNavigateJob}
+      />
     </div>
   )
 }
