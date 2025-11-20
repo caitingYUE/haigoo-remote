@@ -17,6 +17,9 @@ import {
   X
 } from 'lucide-react'
 import { Job } from '../types'
+import { useAuth } from '../contexts/AuthContext'
+import { useNotificationHelpers } from '../components/NotificationSystem'
+import { processedJobsService } from '../services/processed-jobs-service'
 
 // Mock job data - in real app, this would come from API
 const mockJob: Job = {
@@ -50,12 +53,6 @@ const mockJob: Job = {
   sourceUrl: 'https://linkedin.com/jobs/123',
   logo: 'https://via.placeholder.com/80x80?text=TC'
 }
-
-import { useAuth } from '../contexts/AuthContext'
-import { useNotificationHelpers } from '../components/NotificationSystem'
-import { processedJobsService } from '../services/processed-jobs-service'
-
-// ... (imports remain same)
 
 export default function JobDetailPage() {
   const { id } = useParams()
@@ -125,32 +122,40 @@ export default function JobDetailPage() {
   }, [id, location.state])
 
   const handleBookmark = async () => {
+    console.log('[JobDetail] handleBookmark clicked', { isAuthenticated, jobId: job?.id || id })
     if (!isAuthenticated) {
+      console.log('[JobDetail] User not authenticated, redirecting')
       showWarning('请先登录', '登录后即可收藏职位')
       navigate('/login', { state: { from: location } })
       return
     }
 
     const newStatus = !isBookmarked
+    console.log('[JobDetail] Toggling bookmark to:', newStatus)
     setIsBookmarked(newStatus) // Optimistic update
 
     try {
       const action = newStatus ? 'favorites_add' : 'favorites_remove'
+      const payload = { jobId: job?.id || id }
+      console.log(`[JobDetail] Calling API: ${action}`, payload)
+
       const resp = await fetch(`/api/user-profile?action=${action}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ jobId: job?.id || id })
+        body: JSON.stringify(payload)
       })
 
+      console.log('[JobDetail] API response status:', resp.status)
       if (!resp.ok) {
         throw new Error('Operation failed')
       }
 
       showSuccess(newStatus ? '收藏成功' : '已取消收藏')
     } catch (error) {
+      console.error('[JobDetail] Bookmark failed:', error)
       setIsBookmarked(!newStatus) // Revert on error
       showError('操作失败', '请稍后重试')
     }
