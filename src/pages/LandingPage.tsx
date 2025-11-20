@@ -6,7 +6,6 @@ import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 import '../styles/landing.css'
-import JobDetailModal from '../components/JobDetailModal'
 import homeBgSvg from '../assets/home_bg.svg'
 
 export default function LandingPage() {
@@ -16,10 +15,7 @@ export default function LandingPage() {
   const [titleQuery, setTitleQuery] = useState<string>('')
   const [locationQuery, setLocationQuery] = useState<string>('')
   const [typeQuery, setTypeQuery] = useState<string>('')
-  const [isDetailOpen, setIsDetailOpen] = useState<boolean>(false)
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
-  const [currentJobIndex, setCurrentJobIndex] = useState<number>(-1)
-  
+
 
   const { data: jobs, loading, error } = usePageCache<Job[]>('landing-all-jobs-v2', {
     fetcher: async () => await processedJobsService.getAllProcessedJobsFull(100),
@@ -39,7 +35,7 @@ export default function LandingPage() {
   // 地点别名与分词函数：将“中国, 美国 / Europe | Remote”等拆分为独立关键词
   const normalizeLocation = (raw: string) => {
     const s = (raw || '').trim().toLowerCase()
-    const map: Record<string,string> = {
+    const map: Record<string, string> = {
       'china': '中国', 'mainland china': '中国', 'cn': '中国', '中国': '中国',
       'usa': '美国', 'united states': '美国', 'u.s.': '美国', 'us': '美国', 'america': '美国', '美国': '美国',
       'remote': '远程', 'anywhere': '远程', 'worldwide': '全球', 'world wide': '全球', 'global': '全球', 'remote-friendly': '远程', '远程': '远程',
@@ -71,11 +67,11 @@ export default function LandingPage() {
 
   const locationOptions = useMemo(() => {
     const counter = new Map<string, number>()
-    ;(sourceJobs || []).forEach(j => {
-      tokenizeLocations(j.location || '').forEach(loc => {
-        counter.set(loc, (counter.get(loc) || 0) + 1)
+      ; (sourceJobs || []).forEach(j => {
+        tokenizeLocations(j.location || '').forEach(loc => {
+          counter.set(loc, (counter.get(loc) || 0) + 1)
+        })
       })
-    })
     return Array.from(counter.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([loc]) => loc)
@@ -84,21 +80,21 @@ export default function LandingPage() {
 
   const dynamicTabs = useMemo(() => {
     const counts: Record<string, number> = {}
-    ;(sourceJobs || []).forEach(j => { if (j.category) counts[j.category] = (counts[j.category]||0)+1 })
-    const top = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,6)
+      ; (sourceJobs || []).forEach(j => { if (j.category) counts[j.category] = (counts[j.category] || 0) + 1 })
+    const top = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 6)
     return ['全部', ...top]
   }, [sourceJobs])
-  const latestJobs = useMemo(() => [...(sourceJobs || [])].sort((a,b)=>{
+  const latestJobs = useMemo(() => [...(sourceJobs || [])].sort((a, b) => {
     const ta = new Date(a.postedAt || 0).getTime(); const tb = new Date(b.postedAt || 0).getTime(); return tb - ta
   }), [sourceJobs])
-  const categoryJobs = useMemo(() => activeTab==='全部' ? (sourceJobs||[]) : (sourceJobs||[]).filter(j=>j.category===activeTab), [sourceJobs, activeTab])
+  const categoryJobs = useMemo(() => activeTab === '全部' ? (sourceJobs || []) : (sourceJobs || []).filter(j => j.category === activeTab), [sourceJobs, activeTab])
 
   // 在首页就地搜索，不跳转页面
   const searchedJobs = useMemo(() => {
     const t = titleQuery.trim().toLowerCase()
     const lNorm = normalizeLocation(locationQuery.trim().toLowerCase())
     const type = typeQuery.trim()
-    return (activeTab==='全部' ? latestJobs : categoryJobs).filter(job => {
+    return (activeTab === '全部' ? latestJobs : categoryJobs).filter(job => {
       const matchTitle = t === '' ||
         job.title?.toLowerCase().includes(t) ||
         (job.company || '').toLowerCase().includes(t) ||
@@ -110,7 +106,7 @@ export default function LandingPage() {
     })
   }, [latestJobs, categoryJobs, activeTab, titleQuery, locationQuery, typeQuery])
 
-  const displayedJobs = useMemo(()=> searchedJobs.slice(0, displayLimit), [searchedJobs, displayLimit])
+  const displayedJobs = useMemo(() => searchedJobs.slice(0, displayLimit), [searchedJobs, displayLimit])
 
   // 即时筛选，无需按钮
   // 输入变化时已通过 searchedJobs 生效
@@ -121,28 +117,6 @@ export default function LandingPage() {
     setTypeQuery('')
     setActiveTab('全部')
     setDisplayLimit(24)
-  }
-
-  const openJobDetail = (job: Job) => {
-    const idx = (searchedJobs || []).findIndex(j => j.id === job.id)
-    setSelectedJob(job)
-    setCurrentJobIndex(idx)
-    setIsDetailOpen(true)
-  }
-
-  const closeJobDetail = () => {
-    setIsDetailOpen(false)
-    setSelectedJob(null)
-    setCurrentJobIndex(-1)
-  }
-
-  const handleNavigateJob = (direction: 'prev' | 'next') => {
-    if (currentJobIndex < 0) return
-    const list = searchedJobs || []
-    let next = currentJobIndex + (direction === 'next' ? 1 : -1)
-    next = Math.max(0, Math.min(list.length - 1, next))
-    setCurrentJobIndex(next)
-    setSelectedJob(list[next] || null)
   }
 
   return (
@@ -160,9 +134,9 @@ export default function LandingPage() {
             <div className="feature-item">AI为你求职保驾护航</div>
             <div className="feature-item">全球岗位、全行业覆盖</div>
           </div>
-          
+
         </div>
-        
+
       </div>
 
       <section className="container-fluid section-padding-sm list-section">
@@ -171,14 +145,14 @@ export default function LandingPage() {
           <div className="mb-6">
             <div className="filter-fig2" role="search" aria-label="职位筛选">
               <span className="filter-label">筛选</span>
-              <input className="filter-input" placeholder="岗位名称" value={titleQuery} onChange={(e)=>setTitleQuery(e.target.value)} />
-              <select className="filter-select" value={locationQuery} onChange={(e)=>setLocationQuery(e.target.value)}>
+              <input className="filter-input" placeholder="岗位名称" value={titleQuery} onChange={(e) => setTitleQuery(e.target.value)} />
+              <select className="filter-select" value={locationQuery} onChange={(e) => setLocationQuery(e.target.value)}>
                 <option value="">所有地点</option>
                 {locationOptions.map(loc => (
                   <option key={loc} value={loc}>{loc}</option>
                 ))}
               </select>
-              <select className="filter-select" value={typeQuery} onChange={(e)=>setTypeQuery(e.target.value)}>
+              <select className="filter-select" value={typeQuery} onChange={(e) => setTypeQuery(e.target.value)}>
                 <option value="">全部类型</option>
                 <option value="full-time">全职</option>
                 <option value="part-time">兼职</option>
@@ -191,7 +165,7 @@ export default function LandingPage() {
           <div className="mt-4 w-full">
             {loading ? (
               <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3182CE]"></div></div>
-              ) : error ? (
+            ) : error ? (
               <div className="text-center py-12 text-red-600">{String(error)}</div>
             ) : displayedJobs.length === 0 ? (
               <div className="text-center py-16 text-gray-600">暂无匹配的职位</div>
@@ -201,23 +175,23 @@ export default function LandingPage() {
                   <div className="flex gap-2 overflow-x-auto whitespace-nowrap py-1" role="tablist" aria-label="岗位分类切换">
                     {dynamicTabs.map(tab => {
                       const isActive = activeTab === tab
-                      const count = tab === '全部' ? (sourceJobs||[]).length : (sourceJobs||[]).filter(j=>j.category===tab).length
+                      const count = tab === '全部' ? (sourceJobs || []).length : (sourceJobs || []).filter(j => j.category === tab).length
                       return (
-                        <button key={tab} onClick={()=>setActiveTab(tab)} className={`tab-pill ${isActive ? 'active' : ''}`} role="tab" aria-selected={isActive}>
+                        <button key={tab} onClick={() => setActiveTab(tab)} className={`tab-pill ${isActive ? 'active' : ''}`} role="tab" aria-selected={isActive}>
                           {tab}{count ? `（${count}）` : ''}
                         </button>
                       )
                     })}
                   </div>
-                  <div className="text-sm text-gray-500">共 {(sourceJobs||[]).length} 个职位</div>
+                  <div className="text-sm text-gray-500">共 {(sourceJobs || []).length} 个职位</div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
                   {displayedJobs.map(job => (
-                    <JobCard key={job.id} job={job} onClick={()=>openJobDetail(job)} />
+                    <JobCard key={job.id} job={job} onClick={() => navigate(`/job/${job.id}`)} />
                   ))}
                 </div>
-                {displayedJobs.length < (activeTab==='全部'? latestJobs.length : categoryJobs.length) && (
-                  <div className="flex justify-center"><button onClick={()=>setDisplayLimit(dl=>dl+24)} className="text-sm font-medium text-gray-600 hover:text-gray-900">加载更多</button></div>
+                {displayedJobs.length < (activeTab === '全部' ? latestJobs.length : categoryJobs.length) && (
+                  <div className="flex justify-center"><button onClick={() => setDisplayLimit(dl => dl + 24)} className="text-sm font-medium text-gray-600 hover:text-gray-900">加载更多</button></div>
                 )}
               </div>
             )}
@@ -225,15 +199,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-  {/* 页脚由全局 Footer 统一渲染，这里不重复 */}
-      <JobDetailModal
-        job={selectedJob}
-        isOpen={isDetailOpen}
-        onClose={closeJobDetail}
-        jobs={searchedJobs}
-        currentJobIndex={currentJobIndex}
-        onNavigateJob={handleNavigateJob}
-      />
+      {/* 页脚由全局 Footer 统一渲染，这里不重复 */}
     </div>
   )
 }
