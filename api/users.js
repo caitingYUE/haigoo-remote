@@ -4,7 +4,7 @@
  * GET /api/users?id=xxx - 获取特定用户详情
  */
 
-import { kv } from '@vercel/kv'
+import { kv, KV_CONFIGURED } from '../server-utils/kv-client.js'
 import { createClient } from 'redis'
 import { getUserById, saveUser, deleteUserById } from '../server-utils/user-storage.js'
 import { extractToken, verifyToken } from '../server-utils/auth-helpers.js'
@@ -15,14 +15,10 @@ const REDIS_URL =
   process.env.haigoo_REDIS_URL ||
   process.env.HAIGOO_REDIS_URL ||
   process.env.UPSTASH_REDIS_URL ||
+  process.env.pre_haigoo_REDIS_URL ||
+  process.env.PRE_HAIGOO_REDIS_URL ||
   null
 const REDIS_CONFIGURED = !!REDIS_URL
-
-// Vercel KV配置检测
-const KV_CONFIGURED = !!(
-  process.env.KV_REST_API_URL &&
-  process.env.KV_REST_API_TOKEN
-)
 
 // Redis客户端缓存
 let __redisClient = globalThis.__haigoo_redis_client || null

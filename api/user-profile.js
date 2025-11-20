@@ -6,7 +6,7 @@
 
 import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'
 import { getUserById, saveUser } from '../server-utils/user-storage.js'
-import { kv } from '@vercel/kv'
+import { kv, KV_CONFIGURED } from '../server-utils/kv-client.js'
 import { createClient } from 'redis'
 
 // Redis配置
@@ -19,24 +19,11 @@ const REDIS_URL =
   process.env.PRE_HAIGOO_REDIS_URL ||
   null
 const REDIS_CONFIGURED = !!REDIS_URL
-const KV_CONFIGURED = !!(
-  (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
-  (process.env.pre_haigoo_KV_REST_API_URL && process.env.pre_haigoo_KV_REST_API_TOKEN)
-)
+
 // Upstash REST（优先使用，兼容预发变量命名）
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.pre_haigoo_KV_REST_API_URL || null
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.pre_haigoo_KV_REST_API_TOKEN || null
 const UPSTASH_CONFIGURED = !!(UPSTASH_URL && UPSTASH_TOKEN)
-
-// Log configuration status
-console.log('[user-profile] Storage configuration:', {
-  REDIS_CONFIGURED,
-  KV_CONFIGURED,
-  UPSTASH_CONFIGURED,
-  REDIS_URL: REDIS_URL ? `${REDIS_URL.substring(0, 20)}...` : 'not set',
-  UPSTASH_URL: UPSTASH_URL ? `${UPSTASH_URL.substring(0, 30)}...` : 'not set'
-})
-
 
 let __redisClient = globalThis.__haigoo_redis_client || null
 
@@ -59,10 +46,12 @@ async function getRedisClient() {
 async function upstashCommand(command, args) {
   if (!UPSTASH_CONFIGURED) return null
   try {
+    // Fix: Upstash REST API expects ["COMMAND", "arg1", "arg2"]
+    const body = JSON.stringify([command, ...args])
     const resp = await fetch(UPSTASH_URL, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ command, args })
+      body
     })
     if (!resp.ok) throw new Error(`Upstash ${command} failed ${resp.status}`)
     const data = await resp.json()
