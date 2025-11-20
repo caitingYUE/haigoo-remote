@@ -10,6 +10,7 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 import { Job } from '../types'
 import JobCard from '../components/JobCard'
+import JobDetailModal from '../components/JobDetailModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 
 type TabKey = 'resume' | 'favorites'
@@ -32,6 +33,8 @@ export default function ProfileCenterPage() {
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
   const [favorites, setFavorites] = useState<any[]>([])
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const { showSuccess, showError } = useNotificationHelpers()
 
   const handleRemoveFavorite = async (jobId: string) => {
@@ -283,10 +286,10 @@ export default function ProfileCenterPage() {
             {favoritesWithStatus.map((f: any) => (
               <div key={f.id || f.jobId}>
                 <JobCard
-                  job={f}
+                  job={f as Job}
                   isSaved={true}
                   onSave={() => handleRemoveFavorite(f.id || f.jobId)}
-                  onClick={() => navigate(`/job/${f.id || f.jobId}`)}
+                  onClick={() => { setSelectedJob(f as Job); setIsJobDetailOpen(true) }}
                 />
               </div>
             ))}
@@ -315,6 +318,15 @@ export default function ProfileCenterPage() {
           </aside>
           <main>
             {tab === 'resume' ? <ResumeTab /> : <FavoritesTab />}
+            {isJobDetailOpen && selectedJob && (
+              <JobDetailModal
+                job={selectedJob}
+                isOpen={isJobDetailOpen}
+                onClose={() => { setIsJobDetailOpen(false); setSelectedJob(null) }}
+                onSave={() => handleRemoveFavorite(selectedJob.id)}
+                isSaved={true}
+              />
+            )}
           </main>
         </div>
       </div>

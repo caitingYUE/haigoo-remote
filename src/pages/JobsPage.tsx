@@ -3,6 +3,7 @@ import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase, Re
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCard from '../components/JobCard'
+import JobDetailModal from '../components/JobDetailModal'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -226,7 +227,10 @@ export default function JobsPage() {
   }
 
   const handleApply = (jobId: string) => {
-    navigate(`/job/${jobId}/apply`)
+    const job = (jobs || []).find(j => j.id === jobId)
+    if (job && job.sourceUrl) {
+      window.open(job.sourceUrl, '_blank', 'noopener,noreferrer')
+    }
   }
 
   // 初始化拉取收藏集
@@ -580,13 +584,30 @@ export default function JobsPage() {
                         job={job}
                         onSave={() => toggleSaveJob(job.id)}
                         isSaved={savedJobs.has(job.id)}
-                        onClick={() => navigate(`/job/${job.id}`)}
+                        onClick={() => { setSelectedJob(job); setIsJobDetailOpen(true); setCurrentJobIndex(index) }}
                         aria-label={`职位 ${index + 1}：${job.title} - ${job.company}`}
                       />
                     </div>
                   ))
                 )}
               </div>
+
+              {isJobDetailOpen && selectedJob && (
+                <JobDetailModal
+                  job={selectedJob}
+                  isOpen={isJobDetailOpen}
+                  onClose={() => { setIsJobDetailOpen(false); setSelectedJob(null) }}
+                  onSave={() => toggleSaveJob(selectedJob.id)}
+                  isSaved={savedJobs.has(selectedJob.id)}
+                  jobs={filteredJobs}
+                  currentJobIndex={currentJobIndex}
+                  onNavigateJob={(direction: 'prev' | 'next') => {
+                    const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(filteredJobs.length - 1, currentJobIndex + 1)
+                    setCurrentJobIndex(nextIndex)
+                    setSelectedJob(filteredJobs[nextIndex])
+                  }}
+                />
+              )}
             </main>
           </div>
         </div>

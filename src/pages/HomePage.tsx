@@ -186,23 +186,12 @@ export default function HomePage() {
 
     // 如果没有打开详情，则在当前数据源中查找该岗位
     if (!job) {
-      job = jobs?.find(j => j.id === jobId) || null
+      job = (jobs || []).find((j: Job) => j.id === jobId) || null
     }
 
-    // 成功定位岗位则带状态跳转到申请页；否则兜底直接跳转
-    navigate(`/job/${jobId}/apply`, {
-      state: job
-        ? {
-            job,
-            returnToModal: false,
-            previousPath: '/',
-            jobDetailPageState: { showModal: true, jobId }
-          }
-        : {
-            returnToModal: false,
-            previousPath: '/'
-          }
-    })
+    if (job?.sourceUrl) {
+      window.open(job.sourceUrl, '_blank', 'noopener,noreferrer')
+    }
   }
 
   useEffect(() => {
@@ -212,7 +201,7 @@ export default function HomePage() {
         const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
         if (resp.ok) {
           const data = await resp.json()
-          const ids: string[] = (data?.favorites || []).map((f: any) => f.jobId)
+          const ids: string[] = (data?.favorites || []).map((f: any) => f.id)
           setSavedJobs(new Set(ids))
         }
       } catch {}
@@ -234,7 +223,7 @@ export default function HomePage() {
       const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
       if (r.ok) {
         const d = await r.json()
-        const ids: string[] = (d?.favorites || []).map((f: any) => f.jobId)
+        const ids: string[] = (d?.favorites || []).map((f: any) => f.id)
         setSavedJobs(new Set(ids))
         showSuccess(isSaved ? '已取消收藏' : '收藏成功')
       }
@@ -250,7 +239,7 @@ export default function HomePage() {
       <main className="container mx-auto px-4 pt-16 pb-8">
         {/* Hero Section */}
         <BrandHero />
-        <HeroVisual onExplore={() => navigate('/jobs')} onCopilot={() => navigate('/copilot')} />
+        <HeroVisual onExplore={() => navigate('/jobs')} />
         <div className="text-center mb-6">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight">
             发现海内外优质远程岗位

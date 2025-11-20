@@ -237,99 +237,110 @@ export default async function handler(req, res) {
       console.log('[API] favorites GET called', { userId: user.id })
 
       const key = `haigoo:favorites:${user.id}`
-      const allIds = new Set() // Use Set to avoid duplicates
+      const allIds = new Set()
 
-      // Try Redis
       try {
         const client = await getRedisClient()
         if (client) {
           const r = await client.sMembers(key) || []
-          if (r.length > 0) {
-            r.forEach(id => allIds.add(id))
-            console.log('[API] Got favorites from Redis:', r.length, r)
-          }
+          r.forEach(id => allIds.add(id))
+          console.log('[API] Got favorites from Redis:', r.length)
         }
       } catch (e) {
         console.error('[API] Redis error:', e)
       }
 
-      // Try KV
       if (KV_CONFIGURED) {
         try {
           const r = await kv.smembers(key) || []
-          if (r.length > 0) {
-            r.forEach(id => allIds.add(id))
-            console.log('[API] Got favorites from KV:', r.length, r)
-          }
+          r.forEach(id => allIds.add(id))
+          console.log('[API] Got favorites from KV:', r.length)
         } catch (e) {
           console.error('[API] KV error:', e)
         }
       }
 
-      // Always check memory
       const memoryIds = Array.from(getMemoryFavorites(user.id))
-      if (memoryIds.length > 0) {
-        memoryIds.forEach(id => allIds.add(id))
-        console.log('[API] Got favorites from memory:', memoryIds.length, memoryIds)
-      }
+      memoryIds.forEach(id => allIds.add(id))
+      if (memoryIds.length) console.log('[API] Got favorites from memory:', memoryIds.length)
 
       const ids = Array.from(allIds)
       console.log('[API] Total unique favorite IDs:', ids.length, ids)
 
       const originProto = req.headers['x-forwarded-proto'] || 'https'
       const originHost = req.headers.host || process.env.VERCEL_URL || ''
-      const jobsUrl = `${originProto}://${originHost}/api/data/processed-jobs?page=1&limit=1000`
-      let jobs = []
 
-      try {
-        console.log('[API] Fetching jobs from:', jobsUrl)
-        const r = await fetch(jobsUrl)
-        if (r.ok) {
-          const d = await r.json()
-          jobs = Array.isArray(d) ? d : (d.jobs || [])
-          console.log('[API] Fetched jobs:', jobs.length)
-        } else {
-          console.error('[API] Jobs fetch failed:', r.status)
+      const fetchJobById = async (jid) => {
+        const url = `${originProto}://${originHost}/api/data/processed-jobs?id=${encodeURIComponent(jid)}&page=1&limit=1`
+        try {
+          const r = await fetch(url)
+          if (r.ok) {
+            const d = await r.json()
+            const job = Array.isArray(d) ? d[0] : (Array.isArray(d.jobs) ? d.jobs[0] : null)
+            if (job) return job
+          } else {
+            console.warn('[API] fetch by id failed:', r.status, jid)
+          }
+        } catch (e) {
+          console.error('[API] fetch by id error:', jid, e)
         }
-      } catch (e) {
-        console.error('[API] Jobs fetch error:', e)
+        return null
       }
 
-      const map = new Map(jobs.map(j => [j.id, j]))
-      const items = ids.map(id => {
-        const job = map.get(id)
-        if (!job) {
-          console.warn('[API] Job not found for ID:', id)
-          // Return minimal object marked as expired
-          return {
-            id,
-            title: '该岗位已失效或被删除',
-            company: '-',
-            location: '-',
-            tags: [],
-            isSaved: true,
-            status: '已失效'
-          }
-        }
-
-        // Calculate status
+      const normalizeJob = (job) => {
+        if (!job) return null
         let status = '有效中'
         if (job.expiresAt) {
           const exp = new Date(job.expiresAt).getTime()
           status = !Number.isNaN(exp) && exp < Date.now() ? '已失效' : '有效中'
         }
-
-        // Return full job object with status
         return {
-          ...job,
+          id: job.id,
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          type: job.jobType || job.type || 'full-time',
+          salary: job.salary ? { min: 0, max: 0, currency: 'USD', display: job.salary } : undefined,
+          description: job.description,
+          requirements: job.requirements || [],
+          responsibilities: job.responsibilities || [],
+          benefits: job.benefits || [],
+          skills: job.tags || [],
+          postedAt: job.publishedAt,
+          expiresAt: job.expiresAt || undefined,
+          source: job.source,
+          sourceUrl: job.url,
+          tags: job.tags || [],
           status,
-          // Ensure compatibility with JobCard if needed
+          isRemote: job.isRemote,
+          category: job.category,
+          recommendationScore: 0,
+          translations: job.translations || undefined,
+          isTranslated: job.isTranslated || false,
+          translatedAt: job.translatedAt || undefined,
           isSaved: true
         }
-      }) // No filter(Boolean) needed anymore as we always return an object
+      }
 
-      console.log('[API] Returning favorites:', items.length)
-      return res.status(200).json({ success: true, favorites: items })
+      const results = await Promise.all(ids.map(async (jid) => {
+        const job = await fetchJobById(jid)
+        if (!job) {
+          return {
+            id: jid,
+            title: '该岗位已失效或被删除',
+            company: '-',
+            location: '-',
+            type: 'full-time',
+            tags: [],
+            isSaved: true,
+            status: '已失效'
+          }
+        }
+        return normalizeJob(job)
+      }))
+
+      console.log('[API] Returning favorites:', results.length)
+      return res.status(200).json({ success: true, favorites: results })
     }
 
     // 收藏添加

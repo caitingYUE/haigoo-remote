@@ -6,11 +6,8 @@ import HomePage from './pages/HomePage'
 import LandingPage from './pages/LandingPage'
 import JobsPage from './pages/JobsPage'
 import RemoteExperiencePage from './pages/RemoteExperiencePage'
-import JobApplicationPage from './pages/JobApplicationPage'
-import JobDetailPage from './pages/JobDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
-import CopilotPage from './pages/CopilotPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPanel from './components/AdminPanel'
 import ProfileCenterPage from './pages/ProfileCenterPage'
@@ -32,12 +29,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             
-            {/* JobApplicationPage 独立布局，不使用 Layout（需要登录） */}
-            <Route path="/job/:jobId/apply" element={
-              <ProtectedRoute>
-                <JobApplicationPage />
-              </ProtectedRoute>
-            } />
+            {/* 旧申请页已废弃 */}
             
             {/* AdminDashboardPage 独立布局，不使用 Layout（需要登录） */}
             <Route path="/admin" element={
@@ -74,9 +66,7 @@ function App() {
                   {/* 公开页面 */}
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/jobs" element={<JobsPage />} />
-                  <Route path="/copilot" element={<CopilotPage />} />
                   <Route path="/remote-experience" element={<RemoteExperiencePage />} />
-                  <Route path="/job/:id" element={<JobDetailPage />} />
                   
                   {/* 需要登录的页面 */}
                   <Route path="/profile" element={
