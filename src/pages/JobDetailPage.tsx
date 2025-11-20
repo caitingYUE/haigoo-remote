@@ -65,7 +65,6 @@ export default function JobDetailPage() {
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [matchScore] = useState(92)
   const [isLoading, setIsLoading] = useState(true)
-  const [showModal, setShowModal] = useState(true)
   const [activeTab, setActiveTab] = useState('description')
 
   // Check initial bookmark status
@@ -95,7 +94,6 @@ export default function JobDetailPage() {
     // 检查是否从申请页面返回，如果是，恢复状态
     if (location.state) {
       const state = location.state as any
-      if (state.showModal !== undefined) setShowModal(state.showModal)
       if (state.activeTab) setActiveTab(state.activeTab)
       if (state.isBookmarked !== undefined) setIsBookmarked(state.isBookmarked)
     }
@@ -170,7 +168,6 @@ export default function JobDetailPage() {
           returnToModal: false, // 从岗位详情页进入，返回时不需要显示模态框
           previousPath: `/job/${job.id}`, // 返回到当前岗位详情页
           jobDetailPageState: {
-            showModal: true,
             activeTab,
             isBookmarked,
             matchScore
@@ -226,30 +223,14 @@ export default function JobDetailPage() {
     )
   }
 
-  if (!showModal) {
-    return (
-      <div className="min-h-screen bg-gray-200 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">职位详情已关闭</h1>
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-6 py-2 bg-[#3182CE] text-white rounded-lg hover:bg-[#256bb0] transition-colors"
-          >
-            重新打开
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark flex justify-end">
-      <div className="w-full max-w-[840px] h-screen bg-white flex flex-col border border-gray-200 shadow-lg">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark flex justify-center">
+      <div className="w-full max-w-[840px] min-h-screen bg-white flex flex-col border-x border-gray-200 shadow-lg">
         {/* Header */}
-        <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center bg-white">
+        <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10">
           <h2 className="text-lg md:text-2xl font-bold text-gray-900 truncate pr-4">{job.title}</h2>
           <button
-            onClick={() => setShowModal(false)}
+            onClick={() => navigate('/jobs')}
             className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
           >
             <X className="w-5 h-5 md:w-6 md:h-6" />
