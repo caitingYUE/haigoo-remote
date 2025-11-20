@@ -28,6 +28,17 @@ const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.pre_haigoo
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.pre_haigoo_KV_REST_API_TOKEN || null
 const UPSTASH_CONFIGURED = !!(UPSTASH_URL && UPSTASH_TOKEN)
 
+// Diagnostic logging
+console.log('[user-profile] Storage Configuration:', {
+  REDIS_CONFIGURED,
+  REDIS_URL: REDIS_URL ? 'SET' : 'NOT SET',
+  KV_CONFIGURED,
+  KV_URL: process.env.pre_haigoo_KV_REST_API_URL ? 'SET' : 'NOT SET',
+  UPSTASH_CONFIGURED,
+  UPSTASH_URL: UPSTASH_URL ? 'SET' : 'NOT SET',
+  UPSTASH_TOKEN: UPSTASH_TOKEN ? 'SET' : 'NOT SET'
+})
+
 let __redisClient = globalThis.__haigoo_redis_client || null
 
 async function getRedisClient() {
