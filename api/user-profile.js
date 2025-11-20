@@ -41,6 +41,7 @@ async function getRedisClient() {
 // 内存存储（开发环境备用）
 const memoryStore = new Map()
 const memoryFavorites = new Map()
+let memoryLocationCategories = globalThis.__haigoo_location_categories || null
 
 function getMemoryFavorites(userId) {
   let set = memoryFavorites.get(userId)
@@ -56,6 +57,13 @@ function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+}
+
+// 地址分类默认值
+const DEFAULT_LOCATION_CATEGORIES = {
+  domesticKeywords: ['china', '中国', 'cn', 'apac', 'asia', 'utc+8', 'gmt+8', 'beijing', 'shanghai', 'shenzhen', 'guangzhou', 'hangzhou', '不限地点'],
+  overseasKeywords: ['europe', 'emea', 'americas', 'latam', 'usa', 'uk', 'canada', 'australia', 'new zealand', 'oceania', 'eu', 'germany', 'france', 'spain', 'italy'],
+  globalKeywords: ['anywhere', 'everywhere', 'worldwide', 'remote', '不限地点']
 }
 
 /**
@@ -515,3 +523,40 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: '服务器错误' })
   }
 }
+    // 地址分类读取
+    if (action === 'location_categories_get') {
+      try {
+        if (KV_CONFIGURED) {
+          const data = await kv.get('haigoo:location_categories')
+          if (data) {
+            memoryLocationCategories = data
+            return res.status(200).json({ success: true, categories: data })
+          }
+        }
+        const cats = memoryLocationCategories || DEFAULT_LOCATION_CATEGORIES
+        return res.status(200).json({ success: true, categories: cats })
+      } catch (e) {
+        console.error('[user-profile] location_categories_get error:', e)
+        const cats = memoryLocationCategories || DEFAULT_LOCATION_CATEGORIES
+        return res.status(200).json({ success: true, categories: cats })
+      }
+    }
+
+    // 地址分类写入
+    if (action === 'location_categories_set' && (req.method === 'POST' || req.method === 'PUT')) {
+      const payload = req.body && typeof req.body === 'object' ? req.body : {}
+      const next = { ...DEFAULT_LOCATION_CATEGORIES, ...payload }
+      try {
+        if (KV_CONFIGURED) {
+          await kv.set('haigoo:location_categories', next)
+        }
+        memoryLocationCategories = next
+        globalThis.__haigoo_location_categories = next
+        return res.status(200).json({ success: true, categories: next })
+      } catch (e) {
+        console.error('[user-profile] location_categories_set error:', e)
+        memoryLocationCategories = next
+        globalThis.__haigoo_location_categories = next
+        return res.status(200).json({ success: true, categories: next })
+      }
+    }

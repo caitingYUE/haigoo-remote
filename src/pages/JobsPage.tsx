@@ -262,7 +262,7 @@ export default function JobsPage() {
   useEffect(() => {
     ;(async () => {
       try {
-        const r = await fetch('/api/location-categories')
+        const r = await fetch('/api/user-profile?action=location_categories_get')
         if (r.ok) {
           const j = await r.json()
           setCategories(j.categories || { domesticKeywords: [], overseasKeywords: [], globalKeywords: [] })

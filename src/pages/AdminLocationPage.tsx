@@ -8,7 +8,7 @@ export default function AdminLocationPage() {
 
   useEffect(() => {
     ;(async () => {
-      const r = await fetch('/api/location-categories')
+      const r = await fetch('/api/user-profile?action=location_categories_get')
       const j = await r.json().catch(() => ({}))
       setCats(j.categories || { domesticKeywords: [], overseasKeywords: [], globalKeywords: [] })
     })()
@@ -17,7 +17,7 @@ export default function AdminLocationPage() {
   const save = async () => {
     setSaving(true)
     try {
-      const r = await fetch('/api/location-categories', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cats) })
+      const r = await fetch('/api/user-profile?action=location_categories_set', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cats) })
       if (!r.ok) throw new Error('save failed')
     } catch { }
     setSaving(false)
