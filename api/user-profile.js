@@ -20,11 +20,6 @@ const REDIS_URL =
   null
 const REDIS_CONFIGURED = !!REDIS_URL
 
-// Upstash REST（优先使用，兼容预发变量命名）
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.pre_haigoo_KV_REST_API_URL || null
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.pre_haigoo_KV_REST_API_TOKEN || null
-const UPSTASH_CONFIGURED = !!(UPSTASH_URL && UPSTASH_TOKEN)
-
 let __redisClient = globalThis.__haigoo_redis_client || null
 
 async function getRedisClient() {
@@ -39,25 +34,6 @@ async function getRedisClient() {
     return client
   } catch (error) {
     console.error('[user-profile] Redis connection failed:', error.message)
-    return null
-  }
-}
-
-async function upstashCommand(command, args) {
-  if (!UPSTASH_CONFIGURED) return null
-  try {
-    // Fix: Upstash REST API expects ["COMMAND", "arg1", "arg2"]
-    const body = JSON.stringify([command, ...args])
-    const resp = await fetch(UPSTASH_URL, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
-      body
-    })
-    if (!resp.ok) throw new Error(`Upstash ${command} failed ${resp.status}`)
-    const data = await resp.json()
-    return data?.result ?? null
-  } catch (e) {
-    console.error('[user-profile] Upstash REST error:', e.message)
     return null
   }
 }
@@ -263,19 +239,6 @@ export default async function handler(req, res) {
       const key = `haigoo:favorites:${user.id}`
       const allIds = new Set() // Use Set to avoid duplicates
 
-      // Try Upstash
-      if (UPSTASH_CONFIGURED) {
-        try {
-          const r = await upstashCommand('SMEMBERS', [key])
-          if (Array.isArray(r) && r.length > 0) {
-            r.forEach(id => allIds.add(id))
-            console.log('[API] Got favorites from Upstash:', r.length, r)
-          }
-        } catch (e) {
-          console.error('[API] Upstash error:', e)
-        }
-      }
-
       // Try Redis
       try {
         const client = await getRedisClient()
@@ -378,11 +341,6 @@ export default async function handler(req, res) {
       const key = `haigoo:favorites:${user.id}`
       console.log('[API] Saving to key:', key)
 
-      if (UPSTASH_CONFIGURED) {
-        await upstashCommand('SADD', [key, jobId])
-        console.log('[API] Saved to Upstash')
-      }
-
       try {
         const client = await getRedisClient()
         if (client) {
@@ -415,7 +373,6 @@ export default async function handler(req, res) {
       const jobId = body.jobId || jobIdParam
       if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
       const key = `haigoo:favorites:${user.id}`
-      if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
       try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch { }
       if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch { } }
       getMemoryFavorites(user.id).delete(jobId)
