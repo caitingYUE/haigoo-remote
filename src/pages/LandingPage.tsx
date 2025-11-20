@@ -190,26 +190,50 @@ export default function LandingPage() {
   }
 
   const toggleSaveJob = async (jobId: string) => {
+    console.log('[LandingPage] toggleSaveJob called', { jobId, isAuthenticated, hasToken: !!token })
+
     if (!isAuthenticated || !token) {
+      console.log('[LandingPage] Not authenticated, redirecting to login')
       showWarning('请先登录', '登录后可以收藏职位')
       navigate('/login')
       return
     }
+
     const isSaved = savedJobs.has(jobId)
+    console.log('[LandingPage] Current save status:', isSaved)
+
+    // Optimistic update
     setSavedJobs(prev => {
       const s = new Set(prev)
       isSaved ? s.delete(jobId) : s.add(jobId)
+      console.log('[LandingPage] Updated savedJobs set size:', s.size)
       return s
     })
+
     try {
-      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}`, {
+      const action = isSaved ? 'favorites_remove' : 'favorites_add'
+      const url = `/api/user-profile?action=${action}`
+      console.log('[LandingPage] Calling API:', url, { jobId })
+
+      const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ jobId })
       })
+
+      console.log('[LandingPage] API response status:', resp.status)
+      const responseData = await resp.json()
+      console.log('[LandingPage] API response data:', responseData)
+
       if (!resp.ok) throw new Error('收藏接口失败')
+
       showSuccess(isSaved ? '已取消收藏' : '收藏成功')
     } catch (e) {
+      console.error('[LandingPage] Favorite operation failed:', e)
+      // Revert optimistic update
       setSavedJobs(prev => {
         const s = new Set(prev)
         isSaved ? s.add(jobId) : s.delete(jobId)

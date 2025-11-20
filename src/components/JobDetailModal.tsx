@@ -341,8 +341,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   onClick={handleSave}
                   onKeyDown={(e) => handleKeyDown(e, handleSave)}
                   className={`px-2.5 py-1.5 rounded-lg transition-all duration-200 border ${isSaved
-                    ? 'bg-haigoo-primary/5 text-haigoo-primary border-haigoo-primary/20'
-                    : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 border-slate-200/50 dark:border-zinc-700/50'
+                      ? 'bg-[#FF6B35]/5 text-[#FF6B35] border-[#FF6B35]/20'
+                      : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 border-slate-200/50 dark:border-zinc-700/50'
                     }`}
                   title={isSaved ? '已收藏' : '收藏'}
                   aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
@@ -400,7 +400,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                             href={job.sourceUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-haigoo-primary dark:text-[#3182CE] hover:text-haigoo-primary/80 dark:hover:text-[#256bb0] underline decoration-1 underline-offset-2 transition-colors"
+                            className="text-sm text-[#FF6B35] hover:text-[#E55A2B] underline decoration-1 underline-offset-2 transition-colors"
                             title={'查看原始职位信息'}
                           >
                             {(() => {
@@ -456,9 +456,9 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}
                   onKeyDown={(e) => handleKeyDown(e, () => setActiveTab(tab.key as any))}
-                  className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 ${activeTab === tab.key
-                    ? 'bg-white dark:bg-gray-700 text-[#3182CE] dark:text-[#3182CE] shadow-sm border border-gray-200 dark:border-gray-600'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:ring-offset-2 ${activeTab === tab.key
+                      ? 'bg-white dark:bg-gray-700 text-[#FF6B35] shadow-sm border border-gray-200 dark:border-gray-600'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   role="tab"
                   aria-selected={activeTab === tab.key}
@@ -602,7 +602,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                               <p className="text-sm text-slate-600 dark:text-slate-400 truncate" title={cj.location}>{cj.location}</p>
                             </div>
                             {cj.sourceUrl && (
-                              <a href={cj.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-haigoo-primary underline underline-offset-2">查看</a>
+                              <a href={cj.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[#FF6B35] hover:text-[#E55A2B] underline underline-offset-2">查看</a>
                             )}
                           </div>
                         </article>

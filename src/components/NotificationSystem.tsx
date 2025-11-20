@@ -138,7 +138,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
         <div className="flex-shrink-0">
           {getIcon()}
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-gray-900 text-sm">
             {title}
@@ -157,7 +157,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
             </button>
           )}
         </div>
-        
+
         <button
           onClick={onClose}
           className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
@@ -174,7 +174,7 @@ export function useNotificationHelpers() {
   const { addNotification } = useNotifications()
 
   const showSuccess = useCallback((title: string, message?: string) => {
-    addNotification({ type: 'success', title, message })
+    addNotification({ type: 'success', title, message, duration: 2000 })
   }, [addNotification])
 
   const showError = useCallback((title: string, message?: string) => {

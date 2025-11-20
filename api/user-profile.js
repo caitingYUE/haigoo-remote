@@ -288,15 +288,49 @@ export default async function handler(req, res) {
 
     // 收藏添加
     if (action === 'favorites_add' && req.method === 'POST') {
+      console.log('[API] favorites_add called', { userId: user.id, body: req.body })
+
       const body = req.body || {}
       const jobIdParam = params.get('jobId') || ''
       const jobId = body.jobId || jobIdParam
-      if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+
+      console.log('[API] Extracted jobId:', jobId)
+
+      if (!jobId) {
+        console.error('[API] Missing jobId')
+        return res.status(400).json({ success: false, error: '缺少 jobId' })
+      }
+
       const key = `haigoo:favorites:${user.id}`
-      if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
-      try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch { }
-      if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch { } }
+      console.log('[API] Saving to key:', key)
+
+      if (UPSTASH_CONFIGURED) {
+        await upstashCommand('SADD', [key, jobId])
+        console.log('[API] Saved to Upstash')
+      }
+
+      try {
+        const client = await getRedisClient()
+        if (client) {
+          await client.sAdd(key, jobId)
+          console.log('[API] Saved to Redis')
+        }
+      } catch (e) {
+        console.error('[API] Redis error:', e)
+      }
+
+      if (KV_CONFIGURED) {
+        try {
+          await kv.sadd(key, jobId)
+          console.log('[API] Saved to KV')
+        } catch (e) {
+          console.error('[API] KV error:', e)
+        }
+      }
+
       getMemoryFavorites(user.id).add(jobId)
+      console.log('[API] Saved to memory, current size:', getMemoryFavorites(user.id).size)
+
       return res.status(200).json({ success: true, message: '收藏成功' })
     }
 
