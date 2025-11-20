@@ -262,47 +262,57 @@ export default async function handler(req, res) {
       console.log('[API] favorites GET called', { userId: user.id })
 
       const key = `haigoo:favorites:${user.id}`
-      let ids = []
+      const allIds = new Set() // Use Set to avoid duplicates
 
-      // Try Upstash first
+      // Try Upstash
       if (UPSTASH_CONFIGURED) {
-        const r = await upstashCommand('SMEMBERS', [key])
-        if (Array.isArray(r)) {
-          ids = r
-          console.log('[API] Got favorites from Upstash:', ids.length, ids)
-        }
-      }
-
-      // Try Redis if empty
-      if (!ids.length) {
         try {
-          const client = await getRedisClient()
-          if (client) {
-            ids = await client.sMembers(key) || []
-            console.log('[API] Got favorites from Redis:', ids.length, ids)
+          const r = await upstashCommand('SMEMBERS', [key])
+          if (Array.isArray(r) && r.length > 0) {
+            r.forEach(id => allIds.add(id))
+            console.log('[API] Got favorites from Upstash:', r.length, r)
           }
         } catch (e) {
-          console.error('[API] Redis error:', e)
+          console.error('[API] Upstash error:', e)
         }
       }
 
-      // Try KV if still empty
-      if (!ids.length && KV_CONFIGURED) {
+      // Try Redis
+      try {
+        const client = await getRedisClient()
+        if (client) {
+          const r = await client.sMembers(key) || []
+          if (r.length > 0) {
+            r.forEach(id => allIds.add(id))
+            console.log('[API] Got favorites from Redis:', r.length, r)
+          }
+        }
+      } catch (e) {
+        console.error('[API] Redis error:', e)
+      }
+
+      // Try KV
+      if (KV_CONFIGURED) {
         try {
-          ids = await kv.smembers(key) || []
-          console.log('[API] Got favorites from KV:', ids.length, ids)
+          const r = await kv.smembers(key) || []
+          if (r.length > 0) {
+            r.forEach(id => allIds.add(id))
+            console.log('[API] Got favorites from KV:', r.length, r)
+          }
         } catch (e) {
           console.error('[API] KV error:', e)
         }
       }
 
-      // Try memory as last resort
-      if (!ids.length) {
-        ids = Array.from(getMemoryFavorites(user.id))
-        console.log('[API] Got favorites from memory:', ids.length, ids)
+      // Always check memory
+      const memoryIds = Array.from(getMemoryFavorites(user.id))
+      if (memoryIds.length > 0) {
+        memoryIds.forEach(id => allIds.add(id))
+        console.log('[API] Got favorites from memory:', memoryIds.length, memoryIds)
       }
 
-      console.log('[API] Total favorite IDs:', ids)
+      const ids = Array.from(allIds)
+      console.log('[API] Total unique favorite IDs:', ids.length, ids)
 
       const originProto = req.headers['x-forwarded-proto'] || 'https'
       const originHost = req.headers.host || process.env.VERCEL_URL || ''
