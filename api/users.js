@@ -77,7 +77,18 @@ async function getAllUsersFromRedis() {
     for (const key of keys) {
       const userData = await client.get(key)
       if (userData) {
-        users.push(JSON.parse(userData))
+        const user = JSON.parse(userData)
+        // 获取收藏数量和ID
+        try {
+          const favoritesKey = `haigoo:favorites:${user.id}`
+          const ids = await client.sMembers(favoritesKey)
+          user.favorites = ids || []
+          user.favoritesCount = ids ? ids.length : 0
+        } catch (e) {
+          user.favorites = []
+          user.favoritesCount = 0
+        }
+        users.push(user)
       }
     }
 
@@ -99,13 +110,25 @@ async function getAllUsersFromKV() {
     // 临时方案：扫描已知的用户
     const userListKey = 'haigoo:user_list'
     const userEmails = await kv.smembers(userListKey)
-    
+
     if (!userEmails || userEmails.length === 0) return []
 
     const users = []
     for (const email of userEmails) {
       const user = await kv.get(`haigoo:user:${email}`)
-      if (user) users.push(user)
+      if (user) {
+        // 获取收藏数量和ID
+        try {
+          const favoritesKey = `haigoo:favorites:${user.id}`
+          const ids = await kv.smembers(favoritesKey)
+          user.favorites = ids || []
+          user.favoritesCount = ids ? ids.length : 0
+        } catch (e) {
+          user.favorites = []
+          user.favoritesCount = 0
+        }
+        users.push(user)
+      }
     }
 
     return users

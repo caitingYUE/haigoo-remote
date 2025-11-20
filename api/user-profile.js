@@ -88,7 +88,7 @@ function setCorsHeaders(res) {
  */
 async function getUserProfile(userId) {
   const key = `haigoo:userprofile:${userId}`
-  
+
   // 优先从 Redis 读取
   if (REDIS_CONFIGURED) {
     try {
@@ -101,7 +101,7 @@ async function getUserProfile(userId) {
       console.error('[user-profile] Redis read error:', error.message)
     }
   }
-  
+
   // 降级到 KV
   if (KV_CONFIGURED) {
     try {
@@ -111,7 +111,7 @@ async function getUserProfile(userId) {
       console.error('[user-profile] KV read error:', error.message)
     }
   }
-  
+
   // 最后从内存读取
   return memoryStore.get(userId) || null
 }
@@ -126,9 +126,9 @@ async function saveUserProfile(userId, profileData) {
     userId,
     updatedAt: new Date().toISOString()
   }
-  
+
   let saved = false
-  
+
   // 保存到 Redis
   if (REDIS_CONFIGURED) {
     try {
@@ -141,7 +141,7 @@ async function saveUserProfile(userId, profileData) {
       console.error('[user-profile] Redis write error:', error.message)
     }
   }
-  
+
   // 保存到 KV
   if (KV_CONFIGURED) {
     try {
@@ -151,10 +151,10 @@ async function saveUserProfile(userId, profileData) {
       console.error('[user-profile] KV write error:', error.message)
     }
   }
-  
+
   // 保存到内存
   memoryStore.set(userId, data)
-  
+
   return saved || true // 至少保存到了内存
 }
 
@@ -172,38 +172,38 @@ function calculateProfileCompleteness(user, profile) {
     skills: 10, // 技能
     resume: 10 // 简历
   }
-  
+
   // 基础信息
   if (user.email) score += weights.basicInfo * 0.5
   if (profile?.phone) score += weights.basicInfo * 0.5
-  
+
   // 职业信息
   if (user.profile?.title) score += weights.professionalInfo * 0.5
   if (user.profile?.location) score += weights.professionalInfo * 0.5
-  
+
   // 个人简介
   if (profile?.summary && profile.summary.length > 20) score += weights.summary
-  
+
   // 工作经历
   if (profile?.experience && profile.experience.length > 0) {
     score += weights.experience
   }
-  
+
   // 教育背景
   if (profile?.education && profile.education.length > 0) {
     score += weights.education
   }
-  
+
   // 技能
   if (profile?.skills && profile.skills.length >= 3) {
     score += weights.skills
   }
-  
+
   // 简历
   if (profile?.resumeFiles && profile.resumeFiles.length > 0) {
     score += weights.resume
   }
-  
+
   return Math.round(score)
 }
 
@@ -212,114 +212,114 @@ function calculateProfileCompleteness(user, profile) {
  */
 export default async function handler(req, res) {
   setCorsHeaders(res)
-  
+
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }
-  
+
   try {
     // 验证用户身份
     const token = extractToken(req)
     if (!token) {
       return res.status(401).json({ success: false, error: '未提供认证令牌' })
     }
-    
+
     const payload = verifyToken(token)
     if (!payload || !payload.userId) {
       return res.status(401).json({ success: false, error: '认证令牌无效或已过期' })
     }
-    
+
     const user = await getUserById(payload.userId)
     if (!user) {
       return res.status(404).json({ success: false, error: '用户不存在' })
     }
-    
-  if (user.status !== 'active') {
-    return res.status(403).json({ success: false, error: '账户已被停用' })
-  }
-  // 解析 action（Vercel Node 环境无 req.query 时兼容）
-  const rawQuery = req.url && req.url.includes('?') ? req.url.split('?')[1] : ''
-  const params = new URLSearchParams(rawQuery)
-  const action = params.get('action') || ''
 
-  // 收藏列表
-  if (action === 'favorites') {
-    const key = `haigoo:favorites:${user.id}`
-    let ids = []
-    if (UPSTASH_CONFIGURED) {
-      const r = await upstashCommand('SMEMBERS', [key])
-      if (Array.isArray(r)) ids = r
+    if (user.status !== 'active') {
+      return res.status(403).json({ success: false, error: '账户已被停用' })
     }
-    if (!ids.length) { try { const client = await getRedisClient(); if (client) ids = await client.sMembers(key) || [] } catch {} }
-    if (!ids.length && KV_CONFIGURED) { try { ids = await kv.smembers(key) || [] } catch {} }
-    if (!ids.length) {
-      ids = Array.from(getMemoryFavorites(user.id))
-    }
+    // 解析 action（Vercel Node 环境无 req.query 时兼容）
+    const rawQuery = req.url && req.url.includes('?') ? req.url.split('?')[1] : ''
+    const params = new URLSearchParams(rawQuery)
+    const action = params.get('action') || ''
 
-    const originProto = req.headers['x-forwarded-proto'] || 'https'
-    const originHost = req.headers.host || process.env.VERCEL_URL || ''
-    const jobsUrl = `${originProto}://${originHost}/api/data/processed-jobs?page=1&limit=1000`
-    let jobs = []
-    try { const r = await fetch(jobsUrl); if (r.ok) { const d = await r.json(); jobs = Array.isArray(d) ? d : (d.jobs || []) } } catch {}
-    const map = new Map(jobs.map(j => [j.id, j]))
-    const items = ids.map(id => {
-      const job = map.get(id)
-      let status = '已下架'
-      if (job) {
+    // 收藏列表
+    if (action === 'favorites') {
+      const key = `haigoo:favorites:${user.id}`
+      let ids = []
+      if (UPSTASH_CONFIGURED) {
+        const r = await upstashCommand('SMEMBERS', [key])
+        if (Array.isArray(r)) ids = r
+      }
+      if (!ids.length) { try { const client = await getRedisClient(); if (client) ids = await client.sMembers(key) || [] } catch { } }
+      if (!ids.length && KV_CONFIGURED) { try { ids = await kv.smembers(key) || [] } catch { } }
+      if (!ids.length) {
+        ids = Array.from(getMemoryFavorites(user.id))
+      }
+
+      const originProto = req.headers['x-forwarded-proto'] || 'https'
+      const originHost = req.headers.host || process.env.VERCEL_URL || ''
+      const jobsUrl = `${originProto}://${originHost}/api/data/processed-jobs?page=1&limit=1000`
+      let jobs = []
+      try { const r = await fetch(jobsUrl); if (r.ok) { const d = await r.json(); jobs = Array.isArray(d) ? d : (d.jobs || []) } } catch { }
+
+      const map = new Map(jobs.map(j => [j.id, j]))
+      const items = ids.map(id => {
+        const job = map.get(id)
+        if (!job) return null
+
+        // Calculate status
+        let status = '有效中'
         if (job.expiresAt) {
           const exp = new Date(job.expiresAt).getTime()
           status = !Number.isNaN(exp) && exp < Date.now() ? '已失效' : '有效中'
-        } else { status = '有效中' }
-      }
-      return {
-        jobId: id,
-        status,
-        title: job?.title || '',
-        company: job?.company || '',
-        postedAt: job?.postedAt || '',
-        expiresAt: job?.expiresAt || null,
-        type: job?.type || '',
-        isRemote: !!job?.isRemote,
-        salary: job?.salary || null
-      }
-    })
-    return res.status(200).json({ success: true, favorites: items })
-  }
+        }
 
-  // 收藏添加
-  if (action === 'favorites_add' && req.method === 'POST') {
-    const body = req.body || {}
-    const jobIdParam = params.get('jobId') || ''
-    const jobId = body.jobId || jobIdParam
-    if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
-    const key = `haigoo:favorites:${user.id}`
-    if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
-    try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch {}
-    if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch {} }
-    getMemoryFavorites(user.id).add(jobId)
-    return res.status(200).json({ success: true, message: '收藏成功' })
-  }
+        // Return full job object with status
+        return {
+          ...job,
+          status,
+          // Ensure compatibility with JobCard if needed
+          isSaved: true
+        }
+      }).filter(Boolean) // Remove nulls (jobs not found)
 
-  // 收藏移除
-  if (action === 'favorites_remove' && req.method === 'POST') {
-    const body = req.body || {}
-    const jobIdParam = params.get('jobId') || ''
-    const jobId = body.jobId || jobIdParam
-    if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
-    const key = `haigoo:favorites:${user.id}`
-    if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
-    try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch {}
-    if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch {} }
-    getMemoryFavorites(user.id).delete(jobId)
-    return res.status(200).json({ success: true, message: '取消收藏成功' })
-  }
+      return res.status(200).json({ success: true, favorites: items })
+    }
+
+    // 收藏添加
+    if (action === 'favorites_add' && req.method === 'POST') {
+      const body = req.body || {}
+      const jobIdParam = params.get('jobId') || ''
+      const jobId = body.jobId || jobIdParam
+      if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+      const key = `haigoo:favorites:${user.id}`
+      if (UPSTASH_CONFIGURED) { await upstashCommand('SADD', [key, jobId]) }
+      try { const client = await getRedisClient(); if (client) await client.sAdd(key, jobId) } catch { }
+      if (KV_CONFIGURED) { try { await kv.sadd(key, jobId) } catch { } }
+      getMemoryFavorites(user.id).add(jobId)
+      return res.status(200).json({ success: true, message: '收藏成功' })
+    }
+
+    // 收藏移除
+    if (action === 'favorites_remove' && req.method === 'POST') {
+      const body = req.body || {}
+      const jobIdParam = params.get('jobId') || ''
+      const jobId = body.jobId || jobIdParam
+      if (!jobId) return res.status(400).json({ success: false, error: '缺少 jobId' })
+      const key = `haigoo:favorites:${user.id}`
+      if (UPSTASH_CONFIGURED) { await upstashCommand('SREM', [key, jobId]) }
+      try { const client = await getRedisClient(); if (client) await client.sRem(key, jobId) } catch { }
+      if (KV_CONFIGURED) { try { await kv.srem(key, jobId) } catch { } }
+      getMemoryFavorites(user.id).delete(jobId)
+      return res.status(200).json({ success: true, message: '取消收藏成功' })
+    }
 
     // 移除收藏相关 action，准备后续重新设计收藏方案
-    
+
     // GET - 获取用户资料
     if (req.method === 'GET') {
       const profile = await getUserProfile(user.id)
-      
+
       // 合并基础用户信息和扩展资料
       const fullProfile = {
         // 基础信息
@@ -332,28 +332,28 @@ export default async function handler(req, res) {
         createdAt: user.createdAt,
         lastLoginAt: user.lastLoginAt,
         status: user.status,
-        
+
         // profile中的信息
         fullName: user.profile?.fullName || '',
         title: user.profile?.title || '',
         location: user.profile?.location || '',
         targetRole: user.profile?.targetRole || '',
         bio: user.profile?.bio || '',
-        
+
         // 扩展资料
         phone: profile?.phone || '',
         website: profile?.website || '',
         linkedin: profile?.linkedin || '',
         github: profile?.github || '',
         summary: profile?.summary || '',
-        
+
         experience: profile?.experience || [],
         education: profile?.education || [],
         skills: profile?.skills || [],
         resumeFiles: profile?.resumeFiles || [],
         jobApplications: profile?.jobApplications || [],
         savedJobs: profile?.savedJobs || [],
-        
+
         preferences: profile?.preferences || {
           jobAlerts: true,
           emailNotifications: true,
@@ -361,38 +361,38 @@ export default async function handler(req, res) {
           weeklyDigest: true,
           applicationUpdates: true
         },
-        
+
         privacy: profile?.privacy || {
           profileVisible: true,
           contactInfoVisible: false,
           resumeVisible: true,
           allowRecruiterContact: true
         },
-        
+
         profileCompleteness: 0
       }
-      
+
       // 计算资料完整度
       fullProfile.profileCompleteness = calculateProfileCompleteness(user, profile)
-      
+
       return res.status(200).json({
         success: true,
         profile: fullProfile
       })
     }
-    
+
     // POST - 更新用户资料
     if (req.method === 'POST') {
       const updates = req.body
-      
+
       // 验证数据
       if (!updates || typeof updates !== 'object') {
         return res.status(400).json({ success: false, error: '无效的数据格式' })
       }
-      
+
       // 获取现有资料
       const existingProfile = await getUserProfile(user.id) || {}
-      
+
       // 合并更新
       const updatedProfile = {
         ...existingProfile,
@@ -400,10 +400,10 @@ export default async function handler(req, res) {
         userId: user.id,
         updatedAt: new Date().toISOString()
       }
-      
+
       // 保存扩展资料
       await saveUserProfile(user.id, updatedProfile)
-      
+
       // 同时更新基础用户信息（如果有）
       if (updates.fullName || updates.title || updates.location || updates.targetRole || updates.bio) {
         if (!user.profile) user.profile = {}
@@ -415,19 +415,19 @@ export default async function handler(req, res) {
         user.updatedAt = new Date().toISOString()
         await saveUser(user)
       }
-      
+
       // 计算新的完整度
       const completeness = calculateProfileCompleteness(user, updatedProfile)
-      
+
       console.log(`[user-profile] Profile updated for user ${user.id}, completeness: ${completeness}%`)
-      
+
       return res.status(200).json({
         success: true,
         message: '资料更新成功',
         profileCompleteness: completeness
       })
     }
-    
+
     return res.status(405).json({ success: false, error: 'Method not allowed' })
   } catch (error) {
     console.error('[user-profile] Error:', error)

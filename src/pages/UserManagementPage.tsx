@@ -4,10 +4,10 @@
  */
 
 import { useState, useEffect } from 'react'
-import { 
-  Search, 
-  Filter, 
-  Download, 
+import {
+  Search,
+  Filter,
+  Download,
   RefreshCw,
   Eye,
   Ban,
@@ -21,7 +21,8 @@ import {
   Activity,
   Users,
   TrendingUp,
-  Clock
+  Clock,
+  Bookmark
 } from 'lucide-react'
 import type { User } from '../types/auth-types'
 import { useAuth } from '../contexts/AuthContext'
@@ -66,7 +67,7 @@ export default function UserManagementPage() {
 
     // 搜索过滤
     if (searchTerm) {
-      filtered = filtered.filter(user => 
+      filtered = filtered.filter(user =>
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -363,6 +364,7 @@ export default function UserManagementPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">认证方式</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">注册时间</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最后登录</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">收藏岗位</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                   </tr>
@@ -397,9 +399,8 @@ export default function UserManagementPage() {
                         </code>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          user.authProvider === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
-                        }`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${user.authProvider === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                          }`}>
                           {user.authProvider === 'google' ? 'Google' : '邮箱'}
                         </span>
                         {user.emailVerified && (
@@ -418,12 +419,24 @@ export default function UserManagementPage() {
                           {user.lastLoginAt ? formatDate(user.lastLoginAt) : '-'}
                         </div>
                       </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1">
+                            <Bookmark className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium">{(user as any).favoritesCount || 0}</span>
+                          </div>
+                          {(user as any).favorites && (user as any).favorites.length > 0 && (
+                            <div className="text-xs text-gray-400 max-w-[150px] truncate" title={(user as any).favorites.join(', ')}>
+                              {(user as any).favorites.join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          user.status === 'active' ? 'bg-green-100 text-green-700' :
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-700' :
                           user.status === 'suspended' ? 'bg-red-100 text-red-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
+                            'bg-gray-100 text-gray-700'
+                          }`}>
                           {user.status === 'active' ? '活跃' : user.status === 'suspended' ? '已停用' : user.status}
                         </span>
                       </td>
@@ -433,9 +446,8 @@ export default function UserManagementPage() {
                             <button
                               disabled={updatingId === user.id}
                               onClick={() => updateUserStatus(user.id, 'suspended')}
-                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${
-                                updatingId === user.id ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'
-                              }`}
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.id ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'
+                                }`}
                             >
                               <Ban className="w-4 h-4" /> 停用
                             </button>
@@ -443,9 +455,8 @@ export default function UserManagementPage() {
                             <button
                               disabled={updatingId === user.id}
                               onClick={() => updateUserStatus(user.id, 'active')}
-                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${
-                                updatingId === user.id ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-green-50 border-green-200 text-green-600'
-                              }`}
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.id ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-green-50 border-green-200 text-green-600'
+                                }`}
                             >
                               <CheckCircle className="w-4 h-4" /> 启用
                             </button>

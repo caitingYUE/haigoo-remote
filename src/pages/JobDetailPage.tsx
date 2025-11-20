@@ -51,16 +51,48 @@ const mockJob: Job = {
   logo: 'https://via.placeholder.com/80x80?text=TC'
 }
 
+import { useAuth } from '../contexts/AuthContext'
+import { useNotificationHelpers } from '../components/NotificationSystem'
+import { processedJobsService } from '../services/processed-jobs-service'
+
+// ... (imports remain same)
+
 export default function JobDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const { token, isAuthenticated } = useAuth()
+  const { showSuccess, showError, showWarning } = useNotificationHelpers()
+
   const [job, setJob] = useState<Job | null>(null)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [matchScore] = useState(92)
   const [isLoading, setIsLoading] = useState(true)
   const [showModal, setShowModal] = useState(true)
   const [activeTab, setActiveTab] = useState('description')
+
+  // Check initial bookmark status
+  useEffect(() => {
+    if (!isAuthenticated || !token || !id) return
+
+    const checkBookmarkStatus = async () => {
+      try {
+        const resp = await fetch('/api/user-profile?action=favorites', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (resp.ok) {
+          const data = await resp.json()
+          const favorites = data.favorites || []
+          const isSaved = favorites.some((f: any) => f.id === id || f.jobId === id)
+          setIsBookmarked(isSaved)
+        }
+      } catch (error) {
+        console.error('Failed to check bookmark status:', error)
+      }
+    }
+
+    checkBookmarkStatus()
+  }, [id, token, isAuthenticated])
 
   useEffect(() => {
     // 检查是否从申请页面返回，如果是，恢复状态
@@ -70,16 +102,58 @@ export default function JobDetailPage() {
       if (state.activeTab) setActiveTab(state.activeTab)
       if (state.isBookmarked !== undefined) setIsBookmarked(state.isBookmarked)
     }
-    
-    // Simulate API call
-    setTimeout(() => {
-      setJob(mockJob)
-      setIsLoading(false)
-    }, 500)
+
+    const fetchJob = async () => {
+      if (!id) return
+      setIsLoading(true)
+      try {
+        const foundJob = await processedJobsService.getJobById(id)
+        if (foundJob) {
+          setJob(foundJob)
+        } else {
+          showError('职位不存在', '无法找到该职位信息')
+          navigate('/jobs')
+        }
+      } catch (error) {
+        showError('加载失败', '无法获取职位详情')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchJob()
   }, [id, location.state])
 
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked)
+  const handleBookmark = async () => {
+    if (!isAuthenticated) {
+      showWarning('请先登录', '登录后即可收藏职位')
+      navigate('/login', { state: { from: location } })
+      return
+    }
+
+    const newStatus = !isBookmarked
+    setIsBookmarked(newStatus) // Optimistic update
+
+    try {
+      const action = newStatus ? 'favorites_add' : 'favorites_remove'
+      const resp = await fetch(`/api/user-profile?action=${action}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ jobId: job?.id || id })
+      })
+
+      if (!resp.ok) {
+        throw new Error('Operation failed')
+      }
+
+      showSuccess(newStatus ? '收藏成功' : '已取消收藏')
+    } catch (error) {
+      setIsBookmarked(!newStatus) // Revert on error
+      showError('操作失败', '请稍后重试')
+    }
   }
 
   const handleApply = () => {
@@ -103,7 +177,7 @@ export default function JobDetailPage() {
 
   const formatSalary = (salary: { min: number; max: number; currency: string }) => {
     if (!salary || (salary.min === 0 && salary.max === 0)) return 'None';
-    
+
     const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: salary.currency,
@@ -118,7 +192,7 @@ export default function JobDetailPage() {
     const now = new Date()
     const diffTime = Math.abs(now.getTime() - date.getTime())
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays === 1) return '1天前'
     if (diffDays < 7) return `${diffDays}天前`
     if (diffDays < 30) return `${Math.ceil(diffDays / 7)}周前`
@@ -152,7 +226,7 @@ export default function JobDetailPage() {
       <div className="min-h-screen bg-gray-200 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">职位详情已关闭</h1>
-          <button 
+          <button
             onClick={() => setShowModal(true)}
             className="px-6 py-2 bg-[#3182CE] text-white rounded-lg hover:bg-[#256bb0] transition-colors"
           >
@@ -166,10 +240,10 @@ export default function JobDetailPage() {
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark flex justify-end">
       <div className="w-full max-w-[840px] h-screen bg-white flex flex-col border border-gray-200 shadow-lg">
-         {/* Header */}
-         <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center bg-white">
+        {/* Header */}
+        <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center bg-white">
           <h2 className="text-lg md:text-2xl font-bold text-gray-900 truncate pr-4">{job.title}</h2>
-          <button 
+          <button
             onClick={() => setShowModal(false)}
             className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
           >
@@ -204,13 +278,13 @@ export default function JobDetailPage() {
                   </div>
                 </div>
                 <div className="flex gap-2 md:gap-3 w-full md:w-auto justify-end">
-                  <button 
+                  <button
                     onClick={handleBookmark}
                     className="p-2 text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] rounded-lg transition-colors"
                   >
                     {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
                   </button>
-                  <button 
+                  <button
                     onClick={handleApply}
                     className="px-4 md:px-6 py-2 bg-[#3182CE] text-white rounded-lg hover:bg-[#256bb0] transition-colors font-medium text-sm md:text-base"
                   >
@@ -218,7 +292,7 @@ export default function JobDetailPage() {
                   </button>
                 </div>
               </div>
-              
+
               {/* AI Match Score */}
               <div className="mt-4 p-3 md:p-4 bg-white border border-gray-200 rounded-lg">
                 <div className="flex items-center justify-between">
@@ -233,25 +307,22 @@ export default function JobDetailPage() {
               <div className="flex bg-haigoo-neutral-50 p-1 rounded-t-xl">
                 <button
                   onClick={() => setActiveTab('description')}
-                  className={`tab-nav-item ${
-                    activeTab === 'description' ? 'tab-nav-active' : 'tab-nav-default'
-                  }`}
+                  className={`tab-nav-item ${activeTab === 'description' ? 'tab-nav-active' : 'tab-nav-default'
+                    }`}
                 >
                   Job Description
                 </button>
                 <button
                   onClick={() => setActiveTab('company')}
-                  className={`tab-nav-item ${
-                    activeTab === 'company' ? 'tab-nav-active' : 'tab-nav-default'
-                  }`}
+                  className={`tab-nav-item ${activeTab === 'company' ? 'tab-nav-active' : 'tab-nav-default'
+                    }`}
                 >
                   Company Info
                 </button>
                 <button
                   onClick={() => setActiveTab('similar')}
-                  className={`tab-nav-item ${
-                    activeTab === 'similar' ? 'tab-nav-active' : 'tab-nav-default'
-                  }`}
+                  className={`tab-nav-item ${activeTab === 'similar' ? 'tab-nav-active' : 'tab-nav-default'
+                    }`}
                 >
                   Similar Jobs
                 </button>
@@ -283,11 +354,11 @@ export default function JobDetailPage() {
                         {(job.benefits && job.benefits.length > 0
                           ? job.benefits
                           : [
-                              'Comprehensive health, dental, and vision insurance.',
-                              'Flexible work hours and remote-first culture.',
-                              'Generous paid time off and parental leave.',
-                              '401(k) with company match.'
-                            ]
+                            'Comprehensive health, dental, and vision insurance.',
+                            'Flexible work hours and remote-first culture.',
+                            'Generous paid time off and parental leave.',
+                            '401(k) with company match.'
+                          ]
                         ).map((benefit, index) => (
                           <li key={index}>{benefit}</li>
                         ))}

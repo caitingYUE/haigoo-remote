@@ -21,6 +21,7 @@ export interface ProcessedJobsFilters {
   location?: string
   type?: string
   skills?: string[]
+  id?: string
 }
 
 class ProcessedJobsService {
@@ -50,11 +51,12 @@ class ProcessedJobsService {
       if (filters.search) params.append('search', filters.search)
       if (filters.location) params.append('location', filters.location)
       if (filters.type) params.append('type', filters.type)
-      
+      if (filters.id) params.append('id', filters.id)
+
       if (filters.tags && filters.tags.length > 0) {
         filters.tags.forEach(tag => params.append('tags', tag))
       }
-      
+
       if (filters.skills && filters.skills.length > 0) {
         filters.skills.forEach(skill => params.append('skills', skill))
       }
@@ -104,7 +106,7 @@ class ProcessedJobsService {
           totalPages: 0
         }
       }
-      
+
       // 转换后端数据格式为前端Job类型
       const jobs: Job[] = data.jobs.map((job: any) => ({
         id: job.id,
@@ -197,6 +199,16 @@ class ProcessedJobsService {
     } catch (error) {
       console.error('获取推荐职位失败:', error)
       return []
+    }
+  }
+
+  async getJobById(id: string): Promise<Job | null> {
+    try {
+      const response = await this.getProcessedJobs(1, 1, { id })
+      return response.jobs[0] || null
+    } catch (error) {
+      console.error('获取特定职位失败:', error)
+      return null
     }
   }
 
