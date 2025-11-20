@@ -211,36 +211,51 @@ function calculateProfileCompleteness(user, profile) {
  * 主处理器
  */
 export default async function handler(req, res) {
+  console.log('[user-profile] Handler called', { method: req.method, url: req.url })
+
   setCorsHeaders(res)
 
   if (req.method === 'OPTIONS') {
+    console.log('[user-profile] OPTIONS request, returning 200')
     return res.status(200).end()
   }
 
   try {
     // 验证用户身份
     const token = extractToken(req)
+    console.log('[user-profile] Token extracted:', !!token)
+
     if (!token) {
+      console.log('[user-profile] No token provided')
       return res.status(401).json({ success: false, error: '未提供认证令牌' })
     }
 
     const payload = verifyToken(token)
+    console.log('[user-profile] Token verified:', !!payload, payload?.userId)
+
     if (!payload || !payload.userId) {
+      console.log('[user-profile] Invalid token payload')
       return res.status(401).json({ success: false, error: '认证令牌无效或已过期' })
     }
 
     const user = await getUserById(payload.userId)
+    console.log('[user-profile] User fetched:', !!user, user?.id)
+
     if (!user) {
+      console.log('[user-profile] User not found:', payload.userId)
       return res.status(404).json({ success: false, error: '用户不存在' })
     }
 
     if (user.status !== 'active') {
+      console.log('[user-profile] User not active:', user.status)
       return res.status(403).json({ success: false, error: '账户已被停用' })
     }
+
     // 解析 action（Vercel Node 环境无 req.query 时兼容）
     const rawQuery = req.url && req.url.includes('?') ? req.url.split('?')[1] : ''
     const params = new URLSearchParams(rawQuery)
     const action = params.get('action') || ''
+    console.log('[user-profile] Action parsed:', action, 'from URL:', req.url)
 
     // 收藏列表
     if (action === 'favorites') {
