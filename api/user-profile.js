@@ -204,6 +204,31 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 解析 action（Vercel Node 环境无 req.query 时兼容）
+    const rawQuery = req.url && req.url.includes('?') ? req.url.split('?')[1] : ''
+    const params = new URLSearchParams(rawQuery)
+    const action = params.get('action') || ''
+    console.log('[user-profile] Action parsed:', action, 'from URL:', req.url)
+
+    // 地址分类读取 (无需认证)
+    if (action === 'location_categories_get') {
+      try {
+        if (KV_CONFIGURED) {
+          const data = await kv.get('haigoo:location_categories')
+          if (data) {
+            memoryLocationCategories = data
+            return res.status(200).json({ success: true, categories: data })
+          }
+        }
+        const cats = memoryLocationCategories || DEFAULT_LOCATION_CATEGORIES
+        return res.status(200).json({ success: true, categories: cats })
+      } catch (e) {
+        console.error('[user-profile] location_categories_get error:', e)
+        const cats = memoryLocationCategories || DEFAULT_LOCATION_CATEGORIES
+        return res.status(200).json({ success: true, categories: cats })
+      }
+    }
+
     // 验证用户身份
     const token = extractToken(req)
     console.log('[user-profile] Token extracted:', !!token)
@@ -221,6 +246,25 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, error: '认证令牌无效或已过期' })
     }
 
+    // 地址分类写入 (需要认证)
+    if (action === 'location_categories_set' && (req.method === 'POST' || req.method === 'PUT')) {
+      const payload = req.body && typeof req.body === 'object' ? req.body : {}
+      const next = { ...DEFAULT_LOCATION_CATEGORIES, ...payload }
+      try {
+        if (KV_CONFIGURED) {
+          await kv.set('haigoo:location_categories', next)
+        }
+        memoryLocationCategories = next
+        globalThis.__haigoo_location_categories = next
+        return res.status(200).json({ success: true, categories: next })
+      } catch (e) {
+        console.error('[user-profile] location_categories_set error:', e)
+        memoryLocationCategories = next
+        globalThis.__haigoo_location_categories = next
+        return res.status(200).json({ success: true, categories: next })
+      }
+    }
+
     const user = await getUserById(payload.userId)
     console.log('[user-profile] User fetched:', !!user, user?.id)
 
@@ -233,12 +277,6 @@ export default async function handler(req, res) {
       console.log('[user-profile] User not active:', user.status)
       return res.status(403).json({ success: false, error: '账户已被停用' })
     }
-
-    // 解析 action（Vercel Node 环境无 req.query 时兼容）
-    const rawQuery = req.url && req.url.includes('?') ? req.url.split('?')[1] : ''
-    const params = new URLSearchParams(rawQuery)
-    const action = params.get('action') || ''
-    console.log('[user-profile] Action parsed:', action, 'from URL:', req.url)
 
     // 收藏列表
     if (action === 'favorites') {
@@ -523,40 +561,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: '服务器错误' })
   }
 }
-    // 地址分类读取
-    if (action === 'location_categories_get') {
-      try {
-        if (KV_CONFIGURED) {
-          const data = await kv.get('haigoo:location_categories')
-          if (data) {
-            memoryLocationCategories = data
-            return res.status(200).json({ success: true, categories: data })
-          }
-        }
-        const cats = memoryLocationCategories || DEFAULT_LOCATION_CATEGORIES
-        return res.status(200).json({ success: true, categories: cats })
-      } catch (e) {
-        console.error('[user-profile] location_categories_get error:', e)
-        const cats = memoryLocationCategories || DEFAULT_LOCATION_CATEGORIES
-        return res.status(200).json({ success: true, categories: cats })
-      }
-    }
 
-    // 地址分类写入
-    if (action === 'location_categories_set' && (req.method === 'POST' || req.method === 'PUT')) {
-      const payload = req.body && typeof req.body === 'object' ? req.body : {}
-      const next = { ...DEFAULT_LOCATION_CATEGORIES, ...payload }
-      try {
-        if (KV_CONFIGURED) {
-          await kv.set('haigoo:location_categories', next)
-        }
-        memoryLocationCategories = next
-        globalThis.__haigoo_location_categories = next
-        return res.status(200).json({ success: true, categories: next })
-      } catch (e) {
-        console.error('[user-profile] location_categories_set error:', e)
-        memoryLocationCategories = next
-        globalThis.__haigoo_location_categories = next
-        return res.status(200).json({ success: true, categories: next })
-      }
-    }

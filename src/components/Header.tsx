@@ -119,7 +119,31 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation - 按要求移除顶部三个 Tab */}
-          <div className="hidden md:flex items-center" aria-label="主导航" />
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center ml-10 space-x-3" aria-label="主导航">
+            {(location.pathname === '/' || location.pathname.startsWith('/jobs')) && (
+              <>
+                <button
+                  onClick={() => navigate('/jobs?region=domestic')}
+                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${(!location.search.includes('region=overseas'))
+                      ? 'bg-[#3182CE] text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                >
+                  人在国内
+                </button>
+                <button
+                  onClick={() => navigate('/jobs?region=overseas')}
+                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${location.search.includes('region=overseas')
+                      ? 'bg-[#3182CE] text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                >
+                  人在海外
+                </button>
+              </>
+            )}
+          </div>
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4" role="toolbar" aria-label="用户操作">

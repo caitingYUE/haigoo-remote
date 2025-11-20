@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Search, 
-  Filter, 
-  RefreshCw, 
-  Download, 
-  Upload, 
-  Trash2, 
-  Edit3, 
-  Eye, 
+import {
+  Search,
+  Filter,
+  RefreshCw,
+  Download,
+  Upload,
+  Trash2,
+  Edit3,
+  Eye,
   MoreHorizontal,
   CheckCircle,
   XCircle,
@@ -26,7 +26,8 @@ import {
   Save,
   X,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  MapPin
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
@@ -44,17 +45,17 @@ const AdminDashboardPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // 排序相关状态
   const [sortBy, setSortBy] = useState<'publishedAt' | 'title' | 'company' | 'remoteLocationRestriction'>('publishedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
+
   // 筛选下拉菜单状态
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [showSourceFilter, setShowSourceFilter] = useState(false);
   const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [showRemoteLocationFilter, setShowRemoteLocationFilter] = useState(false);
-  
+
   // RSS配置相关状态
   const [showRSSConfig, setShowRSSConfig] = useState(false);
   const [rssSources, setRssSources] = useState<RSSSource[]>([]);
@@ -69,7 +70,16 @@ const AdminDashboardPage: React.FC = () => {
     url: '',
     category: ''
   });
-  
+
+  // 地址分类管理状态
+  const [showLocationConfig, setShowLocationConfig] = useState(false);
+  const [locationCategories, setLocationCategories] = useState<{
+    domesticKeywords: string[];
+    overseasKeywords: string[];
+    globalKeywords: string[];
+  }>({ domesticKeywords: [], overseasKeywords: [], globalKeywords: [] });
+  const [locationConfigLoading, setLocationConfigLoading] = useState(false);
+
   // 新增状态
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<RSSSource | null>(null);
@@ -105,11 +115,11 @@ const AdminDashboardPage: React.FC = () => {
         stats: dashboardData.stats,
         syncStatus: dashboardData.syncStatus
       });
-      
+
       setJobs(dashboardData.jobs || []);
       setStats(dashboardData.stats);
       setSyncStatus(dashboardData.syncStatus);
-      
+
       // 加载RSS源配置
       const sources = rssService.getRSSSources();
       console.log('RSS源数量:', sources.length);
@@ -152,12 +162,12 @@ const AdminDashboardPage: React.FC = () => {
 
     try {
       console.log('调用 jobAggregator.syncAllJobs()...');
-      
+
       // 调用实际的RSS同步逻辑
       await jobAggregator.syncAllJobs();
-      
+
       console.log('同步完成，重新加载数据...');
-      
+
       // 完成后重新加载数据
       await loadData();
 
@@ -205,25 +215,71 @@ const AdminDashboardPage: React.FC = () => {
     const confirmed = confirm(
       '警告：此操作将清除所有职位数据和缓存，无法恢复！\n\n确定要继续吗？'
     );
-    
+
     if (!confirmed) return;
 
     try {
       console.log('开始清除所有数据...');
-      
+
       // 调用清除数据方法
       await jobAggregator.clearAllData();
-      
+
       // 重新加载数据（此时应该是空的）
       await loadData();
-      
+
       alert('数据清除成功！下次点击"同步数据"将重新拉取所有RSS信息。');
-      
+
     } catch (error) {
       console.error('清除数据失败:', error);
       alert(`❌ 清除数据失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }, [loadData]);
+
+  // 地址分类管理函数
+  const fetchLocationCategories = async () => {
+    setLocationConfigLoading(true);
+    try {
+      const res = await fetch('/api/user-profile?action=location_categories_get');
+      if (res.ok) {
+        const data = await res.json();
+        setLocationCategories(data.categories || { domesticKeywords: [], overseasKeywords: [], globalKeywords: [] });
+      }
+    } catch (error) {
+      console.error('Failed to fetch location categories:', error);
+    } finally {
+      setLocationConfigLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showLocationConfig) {
+      fetchLocationCategories();
+    }
+  }, [showLocationConfig]);
+
+  const handleSaveLocationCategories = async () => {
+    try {
+      const token = localStorage.getItem('haigoo_auth_token');
+      const res = await fetch('/api/user-profile?action=location_categories_set', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || ''}`
+        },
+        body: JSON.stringify(locationCategories)
+      });
+
+      if (res.ok) {
+        alert('地址分类保存成功');
+        setShowLocationConfig(false);
+        window.dispatchEvent(new Event('processed-jobs-updated'));
+      } else {
+        alert('保存失败');
+      }
+    } catch (error) {
+      alert('保存出错: ' + error);
+    }
+  };
 
   // 搜索处理
   const handleSearch = useCallback((term: string) => {
@@ -235,7 +291,7 @@ const AdminDashboardPage: React.FC = () => {
   // 批量操作
   const handleBatchDelete = useCallback(async () => {
     if (selectedJobs.length === 0) return;
-    
+
     if (confirm(`确定要删除选中的 ${selectedJobs.length} 个岗位吗？`)) {
       selectedJobs.forEach(jobId => {
         jobAggregator.deleteJob(jobId);
@@ -247,7 +303,7 @@ const AdminDashboardPage: React.FC = () => {
 
   const handleBatchUpdateCategory = useCallback(async (category: JobCategory) => {
     if (selectedJobs.length === 0) return;
-    
+
     const updatedCount = jobAggregator.batchUpdateCategory(selectedJobs, category);
     alert(`已更新 ${updatedCount} 个岗位的分类`);
     setSelectedJobs([]);
@@ -285,11 +341,11 @@ const AdminDashboardPage: React.FC = () => {
   // 确认删除RSS源
   const confirmDeleteRSSSource = async () => {
     if (!sourceToDelete) return;
-    
+
     try {
-      const sourceIndex = rssSources.findIndex(s => 
-        s.name === sourceToDelete.name && 
-        s.category === sourceToDelete.category && 
+      const sourceIndex = rssSources.findIndex(s =>
+        s.name === sourceToDelete.name &&
+        s.category === sourceToDelete.category &&
         s.url === sourceToDelete.url
       );
       if (sourceIndex !== -1) {
@@ -312,8 +368,8 @@ const AdminDashboardPage: React.FC = () => {
 
   // 批量删除相关函数
   const handleSelectSource = (index: number) => {
-    setSelectedSources(prev => 
-      prev.includes(index) 
+    setSelectedSources(prev =>
+      prev.includes(index)
         ? prev.filter(i => i !== index)
         : [...prev, index]
     );
@@ -364,7 +420,7 @@ const AdminDashboardPage: React.FC = () => {
   };
 
   const updateBatchRSSForm = (index: number, field: string, value: string) => {
-    setBatchRSSForms(prev => prev.map((form, i) => 
+    setBatchRSSForms(prev => prev.map((form, i) =>
       i === index ? { ...form, [field]: value } : form
     ));
   };
@@ -398,9 +454,9 @@ const AdminDashboardPage: React.FC = () => {
     try {
       if (editingRSSSource) {
         // 编辑现有源
-        const sourceIndex = rssSources.findIndex(s => 
-          s.name === editingRSSSource.name && 
-          s.category === editingRSSSource.category && 
+        const sourceIndex = rssSources.findIndex(s =>
+          s.name === editingRSSSource.name &&
+          s.category === editingRSSSource.category &&
           s.url === editingRSSSource.url
         );
         if (sourceIndex !== -1) {
@@ -418,7 +474,7 @@ const AdminDashboardPage: React.FC = () => {
           category: rssFormData.category
         });
       }
-      
+
       const updatedSources = rssService.getRSSSources();
       setRssSources(updatedSources);
       setShowRSSForm(false);
@@ -446,7 +502,7 @@ const AdminDashboardPage: React.FC = () => {
   const sortedJobs = React.useMemo(() => {
     const sorted = [...jobs].sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (sortBy) {
         case 'publishedAt':
           aValue = new Date(a.publishedAt || 0).getTime();
@@ -467,14 +523,14 @@ const AdminDashboardPage: React.FC = () => {
         default:
           return 0;
       }
-      
+
       if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
         return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
-    
+
     return sorted;
   }, [jobs, sortBy, sortOrder]);
 
@@ -498,15 +554,15 @@ const AdminDashboardPage: React.FC = () => {
   // 格式化日期
   const formatDate = (date: Date | string | null | undefined) => {
     if (!date) return '无效日期';
-    
+
     try {
       const dateObj = date instanceof Date ? date : new Date(date);
-      
+
       // 检查日期是否有效
       if (isNaN(dateObj.getTime())) {
         return '无效日期';
       }
-      
+
       return new Intl.DateTimeFormat('zh-CN', {
         year: 'numeric',
         month: '2-digit',
@@ -613,6 +669,13 @@ const AdminDashboardPage: React.FC = () => {
                 用户管理
               </Link>
               <button
+                onClick={() => setShowLocationConfig(true)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                地址分类
+              </button>
+              <button
                 onClick={() => setShowRSSConfig(!showRSSConfig)}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
@@ -655,7 +718,7 @@ const AdminDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="w-full bg-blue-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${(syncProgress.completed / syncProgress.total) * 100}%` }}
                   ></div>
@@ -667,11 +730,10 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* 同步完成状态 */}
         {!syncProgress.isRunning && syncProgress.total > 0 && (
-          <div className={`border rounded-lg p-4 mb-6 ${
-            syncProgress.errors.length > 0 
-              ? 'bg-yellow-50 border-yellow-200' 
+          <div className={`border rounded-lg p-4 mb-6 ${syncProgress.errors.length > 0
+              ? 'bg-yellow-50 border-yellow-200'
               : 'bg-green-50 border-green-200'
-          }`}>
+            }`}>
             <div className="flex items-center">
               {syncProgress.errors.length > 0 ? (
                 <AlertCircle className="w-5 h-5 text-yellow-600 mr-3" />
@@ -679,9 +741,8 @@ const AdminDashboardPage: React.FC = () => {
                 <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
               )}
               <div className="flex-1">
-                <p className={`text-sm font-medium ${
-                  syncProgress.errors.length > 0 ? 'text-yellow-900' : 'text-green-900'
-                }`}>
+                <p className={`text-sm font-medium ${syncProgress.errors.length > 0 ? 'text-yellow-900' : 'text-green-900'
+                  }`}>
                   {syncProgress.current} - 完成 {syncProgress.completed}/{syncProgress.total}
                 </p>
                 {syncProgress.errors.length > 0 && (
@@ -743,7 +804,7 @@ const AdminDashboardPage: React.FC = () => {
                   </button>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                 {rssSources.map((source, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
@@ -806,7 +867,7 @@ const AdminDashboardPage: React.FC = () => {
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                
+
                 {/* 批量添加模式 */}
                 {!editingRSSSource && (
                   <div className="space-y-4">
@@ -835,7 +896,7 @@ const AdminDashboardPage: React.FC = () => {
                             )}
                           </div>
                         </div>
-                        
+
                         <div className="space-y-3">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -849,7 +910,7 @@ const AdminDashboardPage: React.FC = () => {
                               placeholder="例如: WeWorkRemotely"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               分类
@@ -862,7 +923,7 @@ const AdminDashboardPage: React.FC = () => {
                               placeholder="例如: 全栈开发"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               RSS URL
@@ -880,7 +941,7 @@ const AdminDashboardPage: React.FC = () => {
                     ))}
                   </div>
                 )}
-                
+
                 {/* 单个编辑模式 */}
                 {editingRSSSource && (
                   <div className="space-y-4">
@@ -896,7 +957,7 @@ const AdminDashboardPage: React.FC = () => {
                         placeholder="例如: WeWorkRemotely"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         分类
@@ -909,7 +970,7 @@ const AdminDashboardPage: React.FC = () => {
                         placeholder="例如: 全栈开发"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         RSS URL
@@ -924,7 +985,7 @@ const AdminDashboardPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex justify-end space-x-3 mt-6">
                   <button
                     onClick={handleCancelRSSForm}
@@ -1012,11 +1073,10 @@ const AdminDashboardPage: React.FC = () => {
                   </div>
                   <div className="mt-2">
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full ${
-                          (stats.total * 2) / 1024 / 20 > 0.8 ? 'bg-red-500' : 
-                          (stats.total * 2) / 1024 / 20 > 0.6 ? 'bg-yellow-500' : 'bg-green-500'
-                        }`}
+                      <div
+                        className={`h-2 rounded-full ${(stats.total * 2) / 1024 / 20 > 0.8 ? 'bg-red-500' :
+                            (stats.total * 2) / 1024 / 20 > 0.6 ? 'bg-yellow-500' : 'bg-green-500'
+                          }`}
                         style={{ width: `${Math.min(((stats.total * 2) / 1024 / 20) * 100, 100)}%` }}
                       ></div>
                     </div>
@@ -1098,9 +1158,9 @@ const AdminDashboardPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">岗位状态</label>
                   <select
                     value={filter.status?.[0] || ''}
-                    onChange={(e) => setFilter(prev => ({ 
-                      ...prev, 
-                      status: e.target.value ? [e.target.value as Job['status']] : undefined 
+                    onChange={(e) => setFilter(prev => ({
+                      ...prev,
+                      status: e.target.value ? [e.target.value as Job['status']] : undefined
                     }))}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   >
@@ -1114,9 +1174,9 @@ const AdminDashboardPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">工作类型</label>
                   <select
                     value={filter.jobType?.[0] || ''}
-                    onChange={(e) => setFilter(prev => ({ 
-                      ...prev, 
-                      jobType: e.target.value ? [e.target.value as Job['jobType']] : undefined 
+                    onChange={(e) => setFilter(prev => ({
+                      ...prev,
+                      jobType: e.target.value ? [e.target.value as Job['jobType']] : undefined
                     }))}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   >
@@ -1132,9 +1192,9 @@ const AdminDashboardPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">数据源</label>
                   <select
                     value={filter.source?.[0] || ''}
-                    onChange={(e) => setFilter(prev => ({ 
-                      ...prev, 
-                      source: e.target.value ? [e.target.value] : undefined 
+                    onChange={(e) => setFilter(prev => ({
+                      ...prev,
+                      source: e.target.value ? [e.target.value] : undefined
                     }))}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   >
@@ -1236,9 +1296,8 @@ const AdminDashboardPage: React.FC = () => {
                         <div className="py-1">
                           <button
                             onClick={() => handleCategoryFilter('all')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                              !filter.category ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                            }`}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${!filter.category ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
                           >
                             全部分类
                           </button>
@@ -1246,9 +1305,8 @@ const AdminDashboardPage: React.FC = () => {
                             <button
                               key={category}
                               onClick={() => handleCategoryFilter(category)}
-                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                                filter.category?.[0] === category ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                              }`}
+                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.category?.[0] === category ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                }`}
                             >
                               {category}
                             </button>
@@ -1272,9 +1330,8 @@ const AdminDashboardPage: React.FC = () => {
                         <div className="py-1">
                           <button
                             onClick={() => handleSourceFilter('all')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                              !filter.source ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                            }`}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${!filter.source ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
                           >
                             全部来源
                           </button>
@@ -1282,9 +1339,8 @@ const AdminDashboardPage: React.FC = () => {
                             <button
                               key={source}
                               onClick={() => handleSourceFilter(source)}
-                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                                filter.source?.[0] === source ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                              }`}
+                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.source?.[0] === source ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                }`}
                             >
                               {source}
                             </button>
@@ -1308,33 +1364,29 @@ const AdminDashboardPage: React.FC = () => {
                         <div className="py-1">
                           <button
                             onClick={() => handleStatusFilter('all')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                              !filter.status ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                            }`}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${!filter.status ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
                           >
                             全部状态
                           </button>
                           <button
                             onClick={() => handleStatusFilter('active')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                              filter.status?.[0] === 'active' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                            }`}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.status?.[0] === 'active' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
                           >
                             活跃
                           </button>
                           <button
                             onClick={() => handleStatusFilter('inactive')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                              filter.status?.[0] === 'inactive' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                            }`}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.status?.[0] === 'inactive' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
                           >
                             非活跃
                           </button>
                           <button
                             onClick={() => handleStatusFilter('archived')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                              filter.status?.[0] === 'archived' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                            }`}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.status?.[0] === 'archived' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
                           >
                             已删除
                           </button>
@@ -1365,9 +1417,8 @@ const AdminDashboardPage: React.FC = () => {
                         <div className="py-1">
                           <button
                             onClick={() => handleRemoteLocationFilter('all')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                              !filter.remoteLocationRestriction ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                            }`}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${!filter.remoteLocationRestriction ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
                           >
                             全部地点
                           </button>
@@ -1375,9 +1426,8 @@ const AdminDashboardPage: React.FC = () => {
                             <button
                               key={restriction}
                               onClick={() => handleRemoteLocationFilter(restriction)}
-                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                                filter.remoteLocationRestriction?.includes(restriction) ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                              }`}
+                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.remoteLocationRestriction?.includes(restriction) ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                }`}
                             >
                               {restriction}
                             </button>
@@ -1440,27 +1490,27 @@ const AdminDashboardPage: React.FC = () => {
                           {job.company} • {job.location}
                         </div>
                         <div className="flex flex-wrap gap-1 mt-1">
-                           {job.salary && (
-                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                               {job.salary}
-                             </span>
-                           )}
-                           {job.jobType && (
-                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                               {job.jobType}
-                             </span>
-                           )}
-                           {job.isRemote && (
-                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                               远程
-                             </span>
-                           )}
-                           {job.experienceLevel && (
-                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
-                               {job.experienceLevel}
-                             </span>
-                           )}
-                         </div>
+                          {job.salary && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              {job.salary}
+                            </span>
+                          )}
+                          {job.jobType && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              {job.jobType}
+                            </span>
+                          )}
+                          {job.isRemote && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                              远程
+                            </span>
+                          )}
+                          {job.experienceLevel && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                              {job.experienceLevel}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -1561,11 +1611,10 @@ const AdminDashboardPage: React.FC = () => {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === page
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
                               ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                               : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           {page}
                         </button>
@@ -1582,77 +1631,173 @@ const AdminDashboardPage: React.FC = () => {
                 </div>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* 删除确认弹窗 */}
+        {showDeleteConfirm && sourceToDelete && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3 text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mt-4">确认删除RSS源</h3>
+                <div className="mt-2 px-7 py-3">
+                  <p className="text-sm text-gray-500">
+                    确定要删除RSS源 "<span className="font-medium">{sourceToDelete.name}</span>" 吗？
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">此操作无法撤销</p>
+                </div>
+                <div className="flex justify-center space-x-3 mt-4">
+                  <button
+                    onClick={cancelDeleteRSSSource}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={confirmDeleteRSSSource}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                  >
+                    确认删除
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 批量删除确认弹窗 */}
+        {showBatchDeleteConfirm && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3 text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mt-4">确认批量删除</h3>
+                <div className="mt-2 px-7 py-3">
+                  <p className="text-sm text-gray-500">
+                    确定要删除选中的 <span className="font-medium">{selectedSources.length}</span> 个RSS源吗？
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">此操作无法撤销</p>
+                </div>
+                <div className="flex justify-center space-x-3 mt-4">
+                  <button
+                    onClick={cancelBatchDelete}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={confirmBatchDelete}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                  >
+                    确认删除
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 地址分类管理模态框 */}
+        {showLocationConfig && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+            <div className="relative p-8 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">地址分类管理</h3>
+                <button onClick={() => setShowLocationConfig(false)} className="text-gray-500 hover:text-gray-700">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {locationConfigLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
+                    <p className="text-sm text-blue-800">
+                      在此配置"人在国内"和"人在海外"的匹配规则。系统将根据这些关键词自动将岗位分配到对应的标签页。
+                      支持输入城市名、国家名、时区等关键词。多个关键词请用逗号分隔。
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      人在国内 (Domestic) - 关键词
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">匹配到这些关键词的岗位将出现在"人在国内"标签页</p>
+                    <textarea
+                      rows={4}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      value={locationCategories.domesticKeywords.join(', ')}
+                      onChange={(e) => setLocationCategories(prev => ({
+                        ...prev,
+                        domesticKeywords: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean)
+                      }))}
+                      placeholder="例如: China, 中国, Beijing, Shanghai, UTC+8..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      人在海外 (Overseas) - 关键词
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">匹配到这些关键词的岗位将出现在"人在海外"标签页</p>
+                    <textarea
+                      rows={4}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      value={locationCategories.overseasKeywords.join(', ')}
+                      onChange={(e) => setLocationCategories(prev => ({
+                        ...prev,
+                        overseasKeywords: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean)
+                      }))}
+                      placeholder="例如: USA, UK, Europe, Japan, Australia..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      全球通用 (Global) - 关键词
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">匹配到这些关键词的岗位将同时出现在两个标签页</p>
+                    <textarea
+                      rows={4}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      value={locationCategories.globalKeywords.join(', ')}
+                      onChange={(e) => setLocationCategories(prev => ({
+                        ...prev,
+                        globalKeywords: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean)
+                      }))}
+                      placeholder="例如: Anywhere, Everywhere, Worldwide, 不限地点..."
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-4 mt-8 pt-4 border-t">
+                    <button
+                      onClick={() => setShowLocationConfig(false)}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={handleSaveLocationCategories}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      保存配置
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
-
-      {/* 删除确认弹窗 */}
-      {showDeleteConfirm && sourceToDelete && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <AlertCircle className="h-6 w-6 text-red-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mt-4">确认删除RSS源</h3>
-              <div className="mt-2 px-7 py-3">
-                <p className="text-sm text-gray-500">
-                  确定要删除RSS源 "<span className="font-medium">{sourceToDelete.name}</span>" 吗？
-                </p>
-                <p className="text-xs text-gray-400 mt-1">此操作无法撤销</p>
-              </div>
-              <div className="flex justify-center space-x-3 mt-4">
-                <button
-                  onClick={cancelDeleteRSSSource}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={confirmDeleteRSSSource}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
-                >
-                  确认删除
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 批量删除确认弹窗 */}
-      {showBatchDeleteConfirm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <AlertCircle className="h-6 w-6 text-red-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mt-4">确认批量删除</h3>
-              <div className="mt-2 px-7 py-3">
-                <p className="text-sm text-gray-500">
-                  确定要删除选中的 <span className="font-medium">{selectedSources.length}</span> 个RSS源吗？
-                </p>
-                <p className="text-xs text-gray-400 mt-1">此操作无法撤销</p>
-              </div>
-              <div className="flex justify-center space-x-3 mt-4">
-                <button
-                  onClick={cancelBatchDelete}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={confirmBatchDelete}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
-                >
-                  确认删除
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
     </div>
   );
 };
