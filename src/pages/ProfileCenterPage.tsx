@@ -33,6 +33,7 @@ export default function ProfileCenterPage() {
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
   const [favorites, setFavorites] = useState<any[]>([])
+  const [loadingFavorites, setLoadingFavorites] = useState<boolean>(false)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const { showSuccess, showError } = useNotificationHelpers()
@@ -88,6 +89,7 @@ export default function ProfileCenterPage() {
           return
         }
         console.log('[ProfileCenter] Fetching favorites...')
+        setLoadingFavorites(true)
         const r = await fetch('/api/user-profile?action=favorites', {
           headers: { Authorization: `Bearer ${token as string}` }
         })
@@ -107,8 +109,10 @@ export default function ProfileCenterPage() {
         } else {
           console.warn('[ProfileCenter] Unexpected favorites response format:', j)
         }
+        setLoadingFavorites(false)
       } catch (e) {
         console.error('[ProfileCenter] Failed to fetch favorites:', e)
+        setLoadingFavorites(false)
       }
     })()
   }, [authUser, token])
@@ -276,7 +280,15 @@ export default function ProfileCenterPage() {
         </div>
       </div>
       <div className="profile-card p-6 profile-fill-card">
-        {favoritesWithStatus.length === 0 ? (
+        {loadingFavorites ? (
+          <div className="space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-24 rounded-xl bg-gray-100" />
+              </div>
+            ))}
+          </div>
+        ) : favoritesWithStatus.length === 0 ? (
           <div className="profile-upload-area">
             <p className="text-lg font-bold">还没有收藏职位</p>
             <p className="text-sm text-gray-600">在首页点击收藏按钮后，这里将展示已收藏的职位</p>

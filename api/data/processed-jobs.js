@@ -172,6 +172,10 @@ function removeDuplicates(jobs) {
 
 function applyFilters(jobs, q) {
   let list = jobs
+  if (Array.isArray(q.ids) && q.ids.length > 0) {
+    const idSet = new Set(q.ids.map(String))
+    list = list.filter(j => idSet.has(String(j.id)))
+  }
   if (q.id) list = list.filter(j => j.id === q.id)
   if (q.source) list = list.filter(j => j.source === q.source)
   if (q.category) list = list.filter(j => j.category === q.category)

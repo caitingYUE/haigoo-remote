@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Share2, Bookmark, ExternalLink, MapPin, Clock, DollarSign, Building2, Zap, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
@@ -157,6 +158,14 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     return () => { cancelled = true }
   }, [job?.company, job?.id])
 
+  useEffect(() => {
+    if (isOpen) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = prev }
+    }
+  }, [isOpen])
+
   if (!job || !isOpen) return null
 
   const handleApply = () => {
@@ -225,9 +234,9 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const canNavigatePrev = currentJobIndex > 0
   const canNavigateNext = currentJobIndex < jobs.length - 1
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-stretch justify-end"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1000] flex items-stretch justify-end"
       role="dialog"
       aria-modal="true"
       aria-labelledby="job-modal-title"
@@ -629,7 +638,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

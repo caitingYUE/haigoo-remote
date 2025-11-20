@@ -269,23 +269,7 @@ export default async function handler(req, res) {
 
       const originProto = req.headers['x-forwarded-proto'] || 'https'
       const originHost = req.headers.host || process.env.VERCEL_URL || ''
-
-      const fetchJobById = async (jid) => {
-        const url = `${originProto}://${originHost}/api/data/processed-jobs?id=${encodeURIComponent(jid)}&page=1&limit=1`
-        try {
-          const r = await fetch(url)
-          if (r.ok) {
-            const d = await r.json()
-            const job = Array.isArray(d) ? d[0] : (Array.isArray(d.jobs) ? d.jobs[0] : null)
-            if (job) return job
-          } else {
-            console.warn('[API] fetch by id failed:', r.status, jid)
-          }
-        } catch (e) {
-          console.error('[API] fetch by id error:', jid, e)
-        }
-        return null
-      }
+      const batchUrl = `${originProto}://${originHost}/api/data/processed-jobs?ids=${encodeURIComponent(ids.join(','))}&page=1&limit=${Math.max(ids.length, 1)}`
 
       const normalizeJob = (job) => {
         if (!job) return null
@@ -322,22 +306,34 @@ export default async function handler(req, res) {
         }
       }
 
-      const results = await Promise.all(ids.map(async (jid) => {
-        const job = await fetchJobById(jid)
-        if (!job) {
-          return {
-            id: jid,
-            title: '该岗位已失效或被删除',
-            company: '-',
-            location: '-',
-            type: 'full-time',
-            tags: [],
-            isSaved: true,
-            status: '已失效'
-          }
+      let results = []
+      try {
+        const r = await fetch(batchUrl)
+        if (r.ok) {
+          const d = await r.json()
+          const jobs = Array.isArray(d) ? d : (Array.isArray(d.jobs) ? d.jobs : [])
+          const map = new Map(jobs.map(j => [String(j.id), j]))
+          results = ids.map(jid => {
+            const job = map.get(String(jid))
+            return job ? normalizeJob(job) : {
+              id: jid,
+              title: '该岗位已失效或被删除',
+              company: '-',
+              location: '-',
+              type: 'full-time',
+              tags: [],
+              isSaved: true,
+              status: '已失效'
+            }
+          })
+        } else {
+          console.warn('[API] batch fetch failed:', r.status)
+          results = []
         }
-        return normalizeJob(job)
-      }))
+      } catch (e) {
+        console.error('[API] batch fetch error:', e)
+        results = []
+      }
 
       console.log('[API] Returning favorites:', results.length)
       return res.status(200).json({ success: true, favorites: results })
