@@ -9,6 +9,7 @@ import BrandHero from '../components/BrandHero'
 import HeroVisual from '../components/HeroVisual'
 import HeroIllustration from '../components/HeroIllustration'
 import SearchBar from '../components/SearchBar'
+import homeBgSvg from '../assets/home_bg.svg'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { DateFormatter } from '../utils/date-formatter'
@@ -196,8 +197,21 @@ export default function JobsPage() {
   // 监听处理后岗位数据的更新事件（从后台管理触发）
   useEffect(() => {
     const handleUpdated = () => {
-      console.log('收到岗位数据更新事件，重新加载收藏与岗位...')
+      console.log('收到岗位数据更新事件，重新加载收藏、岗位及地址分类...')
       refresh()
+
+        // 重新加载地址分类
+        ; (async () => {
+          try {
+            const r = await fetch('/api/user-profile?action=location_categories_get')
+            if (r.ok) {
+              const j = await r.json()
+              setCategories(j.categories || { domesticKeywords: [], overseasKeywords: [], globalKeywords: [] })
+            }
+          } catch { }
+        })()
+
+        // 重新加载收藏
         ; (async () => {
           if (!token) return
           try {
@@ -214,7 +228,7 @@ export default function JobsPage() {
     return () => {
       window.removeEventListener('processed-jobs-updated', handleUpdated)
     }
-  }, [refresh])
+  }, [refresh, token])
 
   const toggleSaveJob = async (jobId: string) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
@@ -345,14 +359,14 @@ export default function JobsPage() {
       role="main"
       aria-label="职位搜索页面"
     >
-      {/* 顶部 Hero 区域 - 全局显示 */}
-      <div className="relative bg-[#BBE6F8] overflow-hidden mb-8">
-        <div className="absolute right-0 top-0 h-full w-1/2 pointer-events-none">
-          <HeroIllustration />
+      {/* 顶部 Hero 区域 - 全局显示，复用首页样式 */}
+      <div className="relative bg-gradient-to-b from-[#E6F4FF] to-[#F0F4F8] overflow-hidden mb-8">
+        <div className="absolute right-0 top-0 h-full w-1/2 pointer-events-none flex items-end justify-end">
+          <img src={homeBgSvg} alt="Hero Illustration" className="h-[90%] object-contain object-right-bottom opacity-90" />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
           <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-5xl font-bold text-[#1A365D] mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold text-[#1A365D] mb-6 leading-tight tracking-tight">
               WORK YOUR BRAIN,<br />
               LEAVE YOUR BODY TO BE<br />
               HAPPY

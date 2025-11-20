@@ -731,8 +731,8 @@ const AdminDashboardPage: React.FC = () => {
         {/* 同步完成状态 */}
         {!syncProgress.isRunning && syncProgress.total > 0 && (
           <div className={`border rounded-lg p-4 mb-6 ${syncProgress.errors.length > 0
-              ? 'bg-yellow-50 border-yellow-200'
-              : 'bg-green-50 border-green-200'
+            ? 'bg-yellow-50 border-yellow-200'
+            : 'bg-green-50 border-green-200'
             }`}>
             <div className="flex items-center">
               {syncProgress.errors.length > 0 ? (
@@ -1075,7 +1075,7 @@ const AdminDashboardPage: React.FC = () => {
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${(stats.total * 2) / 1024 / 20 > 0.8 ? 'bg-red-500' :
-                            (stats.total * 2) / 1024 / 20 > 0.6 ? 'bg-yellow-500' : 'bg-green-500'
+                          (stats.total * 2) / 1024 / 20 > 0.6 ? 'bg-yellow-500' : 'bg-green-500'
                           }`}
                         style={{ width: `${Math.min(((stats.total * 2) / 1024 / 20) * 100, 100)}%` }}
                       ></div>
@@ -1612,8 +1612,8 @@ const AdminDashboardPage: React.FC = () => {
                           key={page}
                           onClick={() => setCurrentPage(page)}
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                             }`}
                         >
                           {page}
@@ -1775,6 +1775,102 @@ const AdminDashboardPage: React.FC = () => {
                       }))}
                       placeholder="例如: Anywhere, Everywhere, Worldwide, 不限地点..."
                     />
+                  </div>
+
+                  {/* 现有地址分析与快速分类 */}
+                  <div className="mt-8 border-t pt-6">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">现有岗位地址分析</h4>
+                    <p className="text-sm text-gray-500 mb-4">
+                      以下列表展示了当前数据库中出现的所有唯一地址及其匹配状态。点击按钮可将其快速添加到对应分类。
+                    </p>
+
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 max-h-96 overflow-y-auto p-4">
+                      <div className="grid grid-cols-1 gap-2">
+                        {(() => {
+                          // 计算唯一地址及其出现次数
+                          const locationCounts = new Map<string, number>();
+                          jobs.forEach(job => {
+                            if (job.location) {
+                              locationCounts.set(job.location, (locationCounts.get(job.location) || 0) + 1);
+                            }
+                          });
+
+                          const sortedLocations = Array.from(locationCounts.entries())
+                            .sort((a, b) => b[1] - a[1]); // 按出现次数降序
+
+                          // 辅助函数：检查地址匹配状态
+                          const checkStatus = (loc: string) => {
+                            const normLoc = loc.toLowerCase();
+                            const isDomestic = locationCategories.domesticKeywords.some(k => normLoc.includes(k.toLowerCase()));
+                            const isOverseas = locationCategories.overseasKeywords.some(k => normLoc.includes(k.toLowerCase()));
+                            const isGlobal = locationCategories.globalKeywords.some(k => normLoc.includes(k.toLowerCase()));
+
+                            if (isGlobal) return { label: '全球', color: 'bg-purple-100 text-purple-800' };
+                            if (isDomestic && isOverseas) return { label: '混合', color: 'bg-yellow-100 text-yellow-800' };
+                            if (isDomestic) return { label: '国内', color: 'bg-blue-100 text-blue-800' };
+                            if (isOverseas) return { label: '海外', color: 'bg-green-100 text-green-800' };
+                            return { label: '未分类', color: 'bg-gray-100 text-gray-600' };
+                          };
+
+                          return sortedLocations.map(([loc, count]) => {
+                            const status = checkStatus(loc);
+                            return (
+                              <div key={loc} className="flex items-center justify-between bg-white p-3 rounded border border-gray-100 hover:shadow-sm">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <span className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${status.color}`}>
+                                    {status.label}
+                                  </span>
+                                  <span className="text-sm font-medium text-gray-700 truncate" title={loc}>{loc}</span>
+                                  <span className="text-xs text-gray-400 whitespace-nowrap">({count}个岗位)</span>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {status.label === '未分类' && (
+                                    <>
+                                      <button
+                                        onClick={() => setLocationCategories(prev => ({
+                                          ...prev,
+                                          domesticKeywords: [...prev.domesticKeywords, loc]
+                                        }))}
+                                        className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 border border-blue-200"
+                                      >
+                                        +国内
+                                      </button>
+                                      <button
+                                        onClick={() => setLocationCategories(prev => ({
+                                          ...prev,
+                                          overseasKeywords: [...prev.overseasKeywords, loc]
+                                        }))}
+                                        className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100 border border-green-200"
+                                      >
+                                        +海外
+                                      </button>
+                                      <button
+                                        onClick={() => setLocationCategories(prev => ({
+                                          ...prev,
+                                          globalKeywords: [...prev.globalKeywords, loc]
+                                        }))}
+                                        className="text-xs px-2 py-1 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 border border-purple-200"
+                                      >
+                                        +全球
+                                      </button>
+                                    </>
+                                  )}
+                                  {status.label !== '未分类' && (
+                                    <span className="text-xs text-gray-400 italic">已匹配规则</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+
+                        {jobs.length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            暂无岗位数据，无法分析地址
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex justify-end gap-4 mt-8 pt-4 border-t">
