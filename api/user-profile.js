@@ -61,9 +61,9 @@ function setCorsHeaders(res) {
 
 // 地址分类默认值
 const DEFAULT_LOCATION_CATEGORIES = {
-  domesticKeywords: ['china', '中国', 'cn', 'apac', 'asia', 'utc+8', 'gmt+8', 'beijing', 'shanghai', 'shenzhen', 'guangzhou', 'hangzhou', '不限地点'],
-  overseasKeywords: ['europe', 'emea', 'americas', 'latam', 'usa', 'uk', 'canada', 'australia', 'new zealand', 'oceania', 'eu', 'germany', 'france', 'spain', 'italy'],
-  globalKeywords: ['anywhere', 'everywhere', 'worldwide', 'remote', '不限地点']
+  domesticKeywords: ['china', '中国', 'cn', 'apac', 'asia', 'east asia', 'greater china', 'utc+8', 'gmt+8', 'beijing', 'shanghai', 'shenzhen', 'guangzhou', 'hangzhou', 'chongqing', 'chengdu', 'nanjing', '不限地点'],
+  overseasKeywords: ['usa', 'united states', 'us', 'uk', 'england', 'britain', 'canada', 'mexico', 'brazil', 'argentina', 'chile', 'peru', 'colombia', 'latam', 'europe', 'eu', 'emea', 'germany', 'france', 'spain', 'italy', 'netherlands', 'belgium', 'sweden', 'norway', 'denmark', 'finland', 'poland', 'czech', 'ireland', 'switzerland', 'australia', 'new zealand', 'oceania', 'india', 'pakistan', 'bangladesh', 'sri lanka', 'nepal', 'japan', 'korea', 'south korea', 'singapore', 'malaysia', 'indonesia', 'thailand', 'vietnam', 'philippines', 'uae', 'saudi', 'turkey', 'russia', 'israel', 'africa'],
+  globalKeywords: ['anywhere', 'everywhere', 'worldwide', 'global', '不限地点']
 }
 
 /**

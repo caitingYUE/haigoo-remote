@@ -115,16 +115,7 @@ export default function Header() {
               />
               <span className="ml-3 text-[#1A365D] font-semibold text-lg">Haigoo Remote Club</span>
             </Link>
-            <div className="ml-4 hidden md:flex items-center gap-2">
-              <Link
-                to="/jobs?region=domestic"
-                className={`px-4 py-1.5 rounded-full text-sm border ${new URLSearchParams(location.search).get('region') !== 'overseas' ? 'bg-[#3182CE] text-white border-[#3182CE]' : 'bg-white text-gray-700 border-gray-300'} shadow-sm hover:shadow-md transition-all`}
-              >人在国内</Link>
-              <Link
-                to="/jobs?region=overseas"
-                className={`px-4 py-1.5 rounded-full text-sm border ${new URLSearchParams(location.search).get('region') === 'overseas' ? 'bg-[#3182CE] text-white border-[#3182CE]' : 'bg-white text-gray-700 border-gray-300'} shadow-sm hover:shadow-md transition-all`}
-              >人在海外</Link>
-            </div>
+            <div className="ml-4 hidden md:flex items-center gap-2" />
           </div>
 
           {/* Desktop Navigation - 按要求移除顶部三个 Tab */}

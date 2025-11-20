@@ -308,9 +308,10 @@ export default function JobsPage() {
     const skills = (job.skills || []).map((t: string) => norm(t))
     const pool = new Set([loc, ...skills])
     const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)))
-    const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|remote|不限地点/.test(loc)
+    const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
     const domesticHit = hit(categories.domesticKeywords)
-    const matchesRegion = activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || (!domesticHit))
+    const overseasHit = hit(categories.overseasKeywords)
+    const matchesRegion = activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || overseasHit)
 
     return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote && matchesRegion
   })
@@ -373,8 +374,8 @@ export default function JobsPage() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex gap-6">
-            {/* 顶部 Tabs：人与地域分类 */}
-            <div className="absolute left-1/2 -translate-x-1/2 -top-2 flex items-center gap-3">
+            {/* 顶部 Tabs：人与地域分类（页面顶部居中）*/}
+            <div className="w-full flex items-center justify-center mb-4 gap-3">
               <button
                 className={`px-4 py-2 rounded-full border ${activeRegion === 'domestic' ? 'bg-[#3182CE] text-white border-[#3182CE]' : 'bg-white text-gray-700 border-gray-300'} shadow-sm hover:shadow-md transition-all`}
                 onClick={() => { setActiveRegion('domestic'); const p = new URLSearchParams(location.search); p.set('region','domestic'); navigate(`/jobs?${p.toString()}`) }}
