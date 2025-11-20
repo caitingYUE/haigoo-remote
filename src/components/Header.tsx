@@ -105,7 +105,7 @@ export default function Header() {
           <div className="flex items-center">
             <Link
               to="/"
-              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 rounded-lg transition-all duration-200 hover:scale-110"
+              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 rounded-lg transition-all duration-200 hover:scale-110 no-underline hover:no-underline"
               aria-label="Haigoo 首页"
             >
               <img
@@ -238,8 +238,8 @@ export default function Header() {
                               key={item.id}
                               to={item.href}
                               className={`block px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none rounded-lg ${location.pathname === item.href || location.search.includes(item.href.split('?')[1])
-                                  ? 'bg-[#FF6B35]/10 text-[#FF6B35] font-medium'
-                                  : 'text-gray-700 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35]'
+                                ? 'bg-[#FF6B35]/10 text-[#FF6B35] font-medium'
+                                : 'text-gray-700 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35]'
                                 }`}
                               role="menuitem"
                               tabIndex={isUserMenuOpen ? 0 : -1}
