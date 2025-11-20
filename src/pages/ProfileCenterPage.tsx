@@ -80,13 +80,33 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     ; (async () => {
       try {
-        if (!authUser || !token) return
-        const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token as string}` } })
-        const j = await r.json()
-        if (j?.success && Array.isArray(j?.favorites)) {
-          setFavorites(j.favorites)
+        if (!authUser || !token) {
+          console.log('[ProfileCenter] No auth user or token')
+          return
         }
-      } catch { }
+        console.log('[ProfileCenter] Fetching favorites...')
+        const r = await fetch('/api/user-profile?action=favorites', {
+          headers: { Authorization: `Bearer ${token as string}` }
+        })
+        const j = await r.json()
+        console.log('[ProfileCenter] Favorites response:', j)
+
+        // Handle both success and direct array responses
+        if (j?.success && Array.isArray(j?.favorites)) {
+          console.log('[ProfileCenter] Setting favorites (success):', j.favorites.length)
+          setFavorites(j.favorites)
+        } else if (Array.isArray(j?.favorites)) {
+          console.log('[ProfileCenter] Setting favorites (direct):', j.favorites.length)
+          setFavorites(j.favorites)
+        } else if (Array.isArray(j)) {
+          console.log('[ProfileCenter] Setting favorites (array):', j.length)
+          setFavorites(j)
+        } else {
+          console.warn('[ProfileCenter] Unexpected favorites response format:', j)
+        }
+      } catch (e) {
+        console.error('[ProfileCenter] Failed to fetch favorites:', e)
+      }
     })()
   }, [authUser, token])
 
