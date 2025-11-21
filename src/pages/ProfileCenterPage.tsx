@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart } from 'lucide-react'
+import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { ResumeStorageService } from '../services/resume-storage-service'
@@ -318,7 +318,7 @@ export default function ProfileCenterPage() {
       <div className="max-w-7xl mx-auto px-8 py-10 profile-container">
         <div className="mb-4">
           <button className="profile-back-btn" onClick={() => navigate(-1)} aria-label="返回上一页">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_back</span>
+            <ArrowLeft className="w-4 h-4" />
             返回
           </button>
         </div>
