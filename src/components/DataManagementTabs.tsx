@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { dataManagementService, RawRSSData, ProcessedJobData, StorageStats } from '../services/data-management-service';
+import { processedJobsService } from '../services/processed-jobs-service';
 import { useNotificationHelpers } from './NotificationSystem';
 // 简历库相关逻辑已迁移至独立页面
 
@@ -67,6 +68,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [processedDataTotal, setProcessedDataTotal] = useState(0);
   const [processedDataPage, setProcessedDataPage] = useState(1);
   const [processedDataPageSize] = useState(20);
+  const [locationCategories, setLocationCategories] = useState<{ domesticKeywords: string[]; overseasKeywords: string[]; globalKeywords: string[] }>({ domesticKeywords: [], overseasKeywords: [], globalKeywords: [] });
   
   // 存储统计状态
   const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
@@ -131,6 +133,29 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       setLoading(false);
     }
   }, [processedDataPage, processedDataPageSize, processedDataFilters]);
+
+  useEffect(() => {
+    if (activeTab === 'processed') {
+      processedJobsService.getLocationCategories().then((c) => setLocationCategories(c)).catch(() => {});
+    }
+  }, [activeTab]);
+
+  const computeRegion = useCallback((job: ProcessedJobData): 'domestic' | 'overseas' | undefined => {
+    if (job.region) return job.region as 'domestic' | 'overseas';
+    const norm = (v: string) => (v || '').toLowerCase();
+    const loc = norm(job.location || '');
+    const restriction = norm(job.remoteLocationRestriction || '');
+    const tags = (job.tags || []).map(t => norm(t));
+    const pool = new Set([loc, restriction, ...tags]);
+    const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)) || restriction.includes(norm(k)));
+    const globalHit = hit(locationCategories.globalKeywords) || /anywhere|everywhere|worldwide|global|不限地点|remote anywhere/.test(loc + ' ' + restriction);
+    const domesticHit = hit(locationCategories.domesticKeywords) || /(china|cn|中国|北京|上海|深圳|杭州|广州)/i.test(loc);
+    const overseasHit = hit(locationCategories.overseasKeywords) || /(usa|united states|europe|eu|uk|canada|australia|新加坡|日本|韩国)/i.test(loc);
+    if (globalHit) return undefined;
+    if (domesticHit) return 'domestic';
+    if (overseasHit) return 'overseas';
+    return undefined;
+  }, [locationCategories]);
   
   // 加载存储统计
   const loadStorageStats = useCallback(async () => {
@@ -688,6 +713,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业类型</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位类型</th>
               <th className="w-32 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">区域限制</th>
+              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">区域分类</th>
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">技能标签</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">语言要求</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">发布日期</th>
@@ -823,6 +849,25 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       </span>
                     </div>
                   </Tooltip>
+                </td>
+                {/* 区域分类 */}
+                <td className="px-3 py-2">
+                  {(() => {
+                    const r = computeRegion(job);
+                    const label = r === 'domestic' ? '国内' : r === 'overseas' ? '海外' : '未分类';
+                    const cls = r === 'domestic'
+                      ? 'bg-blue-100 text-blue-800'
+                      : r === 'overseas'
+                      ? 'bg-indigo-100 text-indigo-800'
+                      : 'bg-gray-100 text-gray-800';
+                    return (
+                      <Tooltip content={label} maxLines={1} clampChildren={false}>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${cls}`}>
+                          {label}
+                        </span>
+                      </Tooltip>
+                    );
+                  })()}
                 </td>
                 
                 {/* 技能标签 */}
@@ -1097,7 +1142,8 @@ const EditJobModal: React.FC<{
      description: job.description,
      tags: job.tags?.join(', ') || '',
      requirements: job.requirements?.join('\n') || '',
-     benefits: job.benefits?.join('\n') || ''
+     benefits: job.benefits?.join('\n') || '',
+     region: (job.region as 'domestic' | 'overseas' | undefined) || undefined
    });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1170,20 +1216,33 @@ const EditJobModal: React.FC<{
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">岗位类型</label>
-              <select
-                value={formData.jobType}
-                onChange={(e) => setFormData({ ...formData, jobType: e.target.value as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="full-time">全职</option>
-                <option value="part-time">兼职</option>
-                <option value="contract">合同</option>
-                <option value="freelance">自由职业</option>
-                <option value="internship">实习</option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">岗位类型</label>
+            <select
+              value={formData.jobType}
+              onChange={(e) => setFormData({ ...formData, jobType: e.target.value as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship' })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="full-time">全职</option>
+              <option value="part-time">兼职</option>
+              <option value="contract">合同</option>
+              <option value="freelance">自由职业</option>
+              <option value="internship">实习</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">区域分类</label>
+            <select
+              value={formData.region || ''}
+              onChange={(e) => setFormData({ ...formData, region: (e.target.value || undefined) as 'domestic' | 'overseas' | undefined })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">未设置</option>
+              <option value="domestic">国内</option>
+              <option value="overseas">海外</option>
+            </select>
+          </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">岗位级别</label>

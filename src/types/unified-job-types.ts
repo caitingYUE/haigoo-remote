@@ -25,6 +25,7 @@ export interface UnifiedJob {
   locationRestriction: LocationRestriction; // 区域限制
   isRemote: boolean; // 是否远程
   timezone?: string; // 时区要求
+  region?: 'domestic' | 'overseas';
   
   // 技能和要求
   skillTags: string[]; // 技能标签
