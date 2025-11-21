@@ -316,6 +316,12 @@ export default function ProfileCenterPage() {
     <div className="profile-page profile-theme">
       <div className="mesh-background"></div>
       <div className="max-w-7xl mx-auto px-8 py-10 profile-container">
+        <div className="mb-4">
+          <button className="profile-back-btn" onClick={() => navigate(-1)} aria-label="返回上一页">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_back</span>
+            返回
+          </button>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 profile-main-grid">
           <aside className="profile-sidebar">
             <div className="profile-nav-title">Personal Center</div>
