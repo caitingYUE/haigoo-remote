@@ -124,7 +124,7 @@ export default function Header() {
               <>
                 <button
                   onClick={() => navigate('/jobs?region=domestic')}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${(!location.search.includes('region=overseas'))
+                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')
                       ? 'bg-[#3182CE] text-white shadow-md transform scale-105'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
@@ -133,7 +133,7 @@ export default function Header() {
                 </button>
                 <button
                   onClick={() => navigate('/jobs?region=overseas')}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${location.search.includes('region=overseas')
+                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')
                       ? 'bg-[#3182CE] text-white shadow-md transform scale-105'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
