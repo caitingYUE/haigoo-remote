@@ -3,20 +3,14 @@ import { useEffect, useState } from 'react'
 import '../styles/landing-upgrade.css'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import homeBgSvg from '../assets/home_bg.svg'
-import ChinaPng from '../assets/China.png'
-import OverseasPng from '../assets/Overseas.png'
+import ChinaSvg from '../assets/China.svg'
+import OverseasSvg from '../assets/Overseas.svg'
 import { ArrowRight } from 'lucide-react'
 
 export default function LandingPage() {
   const navigate = useNavigate()
 
-  // Keep smooth scroll behavior but remove parallax for now as we switch to CSS background
-  useEffect(() => {
-    document.documentElement.style.scrollBehavior = 'smooth'
-    return () => {
-      document.documentElement.style.scrollBehavior = 'auto'
-    }
-  }, [])
+  // Removed forced smooth scroll for better native feel
 
   return (
     <div className="landing-page-wrapper">
@@ -47,7 +41,7 @@ export default function LandingPage() {
               tabIndex={0}
             >
               <div className="card-icon-wrapper">
-                <img src={ChinaPng} alt="China" className="card-icon" />
+                <img src={ChinaSvg} alt="China" className="card-icon" />
               </div>
               <h3 className="card-title">
                 我在国内
@@ -71,7 +65,7 @@ export default function LandingPage() {
               tabIndex={0}
             >
               <div className="card-icon-wrapper">
-                <img src={OverseasPng} alt="Overseas" className="card-icon" />
+                <img src={OverseasSvg} alt="Overseas" className="card-icon" />
               </div>
               <h3 className="card-title">
                 我在海外

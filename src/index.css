@@ -96,6 +96,29 @@
   box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.1);
 }
 
+/* 纯文本分段式 Tab（无外框） */
+.tab-link {
+  background: transparent;
+  border: none;
+  color: var(--haigoo-gray-600);
+  transition: var(--transition-standard);
+}
+
+.tab-link:hover {
+  color: var(--haigoo-primary);
+}
+
+.tab-link-active {
+  color: var(--haigoo-primary-active);
+}
+
+.tab-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--haigoo-gray-200);
+  margin: 0 12px;
+}
+
 /* 微交互增强样式 */
 .card-hover-effect {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -303,8 +326,7 @@
   }
   
   html {
-    scroll-behavior: smooth;
-    height: 100%;
+    scroll-behavior: auto;
     /* 改进的字体渲染 */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -319,19 +341,10 @@
     font-variation-settings: "wght" 400;
     line-height: 1.6;
     overflow-x: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
   }
   
   #root {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
+    min-height: 100vh;
   }
 
   /* 改进的标题层级 */
@@ -486,10 +499,21 @@
 }
 
   /* 改进的输入框系统 */
-  .input {
-    @apply w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-haigoo-primary/20 focus:border-haigoo-primary transition-all duration-200 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400;
-    font-variation-settings: "wght" 400;
-  }
+.input {
+  @apply w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-haigoo-primary/20 focus:border-haigoo-primary transition-all duration-200 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400;
+  font-variation-settings: "wght" 400;
+}
+
+select.input {
+  padding-right: 2.5rem;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  background-position: right 0.75rem center;
+}
 
 .input:focus {
   box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
@@ -989,8 +1013,6 @@
   }
   
   html {
-    scroll-behavior: smooth;
-    height: 100%;
     /* 改进的字体渲染 */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -1005,19 +1027,10 @@
     font-variation-settings: "wght" 400;
     line-height: 1.6;
     overflow-x: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
   }
   
   #root {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
+    min-height: 100vh;
   }
 
   /* 改进的标题层级 */
