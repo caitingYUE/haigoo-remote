@@ -9,36 +9,45 @@
   --text-sub: #4A5568;
 }
 
+/* Global Smooth Scroll */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Background Animation */
 .landing-page-wrapper {
   min-height: 100vh;
   width: 100%;
   background-color: #f0f9ff;
-  background-image: 
-    radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, hsla(225,39%,30%,0) 0, transparent 50%), 
-    radial-gradient(at 100% 0%, hsla(339,49%,30%,0) 0, transparent 50%);
   position: relative;
   overflow-x: hidden;
 }
 
-.mesh-background {
-  position: absolute;
+.landing-background-image {
+  position: fixed;
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.landing-background-overlay {
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   z-index: 0;
-  background: 
-    radial-gradient(circle at 15% 50%, rgba(49, 130, 206, 0.15), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(14, 165, 163, 0.15), transparent 25%);
-  filter: blur(60px);
-  animation: meshFloat 20s ease-in-out infinite alternate;
-}
-
-@keyframes meshFloat {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(-20px, 20px); }
+  pointer-events: none;
 }
 
 /* Hero Section */
@@ -109,7 +118,7 @@
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 2px 4px -1px rgba(0, 0, 0, 0.03),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
@@ -131,7 +140,7 @@
 .entry-card-modern:hover {
   transform: translateY(-8px) scale(1.01);
   background: rgba(255, 255, 255, 0.85);
-  box-shadow: 
+  box-shadow:
     0 20px 40px -5px rgba(49, 130, 206, 0.15),
     0 10px 20px -5px rgba(49, 130, 206, 0.1),
     inset 0 0 0 1px rgba(255, 255, 255, 0.8);
@@ -214,6 +223,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -221,8 +231,15 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-15px);
+  }
 }
 
 /* Responsive */
@@ -231,11 +248,11 @@
     font-size: 2.5rem;
     padding: 0 1rem;
   }
-  
+
   .hero-section {
     padding-top: 4rem;
   }
-  
+
   .entry-cards-grid {
     grid-template-columns: 1fr;
     padding: 0 1rem;

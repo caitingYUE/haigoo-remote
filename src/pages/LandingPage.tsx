@@ -1,17 +1,38 @@
 import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import '../styles/landing-upgrade.css'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
-import homeBgSvg from '../assets/home_bg.svg'
+import landingBg from '../assets/landing_bg_v2.png'
+import landingIllustration from '../assets/landing_illustration_v2.png'
 import ChinaPng from '../assets/China.png'
 import OverseasPng from '../assets/Overseas.png'
 import { ArrowRight } from 'lucide-react'
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const [scrollY, setScrollY] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
     <div className="landing-page-wrapper">
-      <div className="mesh-background"></div>
+      {/* New Background with Parallax */}
+      <div
+        className="landing-background-image"
+        style={{
+          backgroundImage: `url(${landingBg})`,
+          transform: `translateY(${scrollY * 0.5}px)`
+        }}
+      />
+
+      {/* Overlay for better text readability if needed */}
+      <div className="landing-background-overlay" />
 
       <div className="hero-section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,7 +46,7 @@ export default function LandingPage() {
           </p>
 
           <div className="hero-illustration-container">
-            <img src={homeBgSvg} alt="Remote Work Illustration" className="hero-illustration mx-auto" />
+            <img src={landingIllustration} alt="Remote Work Illustration" className="hero-illustration mx-auto" />
           </div>
 
           <div className="entry-cards-grid">
