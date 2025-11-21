@@ -118,8 +118,7 @@ export default function Header() {
             <div className="ml-4 hidden md:flex items-center gap-2" />
           </div>
 
-          {/* Desktop Navigation - 按要求移除顶部三个 Tab */}
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - 恢复顶部地域入口按钮 */}
           <div className="hidden md:flex items-center ml-10 space-x-3" aria-label="主导航">
             {(location.pathname === '/' || location.pathname.startsWith('/jobs')) && (
               <>

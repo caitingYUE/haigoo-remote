@@ -5,15 +5,15 @@
 /* Haigoo 专业颜色系统 v2.1 - 增强版 */
 :root {
   /* 主品牌色系 */
-  --haigoo-primary: #8B5CF6;
-  --haigoo-primary-hover: #7C3AED;
-  --haigoo-primary-active: #6D28D9;
-  --haigoo-primary-light: #A78BFA;
-  --haigoo-primary-dark: #5B21B6;
+  --haigoo-primary: #3182CE;
+  --haigoo-primary-hover: #256bb0;
+  --haigoo-primary-active: #1D4ED8;
+  --haigoo-primary-light: #EAF3FF;
+  --haigoo-primary-dark: #1A365D;
   
   /* 辅助色系 */
-  --haigoo-secondary: #EC4899;
-  --haigoo-accent: #06B6D4;
+  --haigoo-secondary: #F59F0B;
+  --haigoo-accent: #0EA5A3;
   --haigoo-success: #10B981;
   --haigoo-warning: #F59E0B;
   --haigoo-error: #EF4444;
@@ -78,7 +78,7 @@
   background-color: var(--haigoo-primary);
   color: #FFFFFF;
   border-color: var(--haigoo-primary);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.25);
   transform: translateY(-1px);
 }
 
@@ -86,14 +86,14 @@
   background-color: var(--haigoo-primary-active) !important;
   color: #FFFFFF !important;
   border-color: var(--haigoo-primary-active) !important;
-  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.35);
+  box-shadow: 0 6px 16px rgba(37, 107, 176, 0.35);
   transform: translateY(-2px) scale(1.02);
 }
 
 .tab-focus:focus {
   outline: 2px solid var(--haigoo-primary);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.1);
 }
 
 /* 微交互增强样式 */
@@ -121,7 +121,7 @@
 .smooth-focus:focus {
   outline: 2px solid var(--haigoo-primary);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.1);
 }
 
 /* 加载状态动画 */
@@ -255,10 +255,10 @@
 
 @keyframes glow-soft {
   0%, 100% { 
-    box-shadow: 0 0 20px rgba(128, 58, 242, 0.15); 
+    box-shadow: 0 0 20px rgba(49, 130, 206, 0.15); 
   }
   50% { 
-    box-shadow: 0 0 30px rgba(128, 58, 242, 0.25); 
+    box-shadow: 0 0 30px rgba(49, 130, 206, 0.25); 
   }
 }
 
@@ -284,7 +284,7 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(128, 58, 242, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(49, 130, 206, 0.1), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -441,10 +441,10 @@
     font-variation-settings: "wght" 500;
   }
   
-  .btn-primary {
-    @apply bg-haigoo-primary text-white hover:bg-haigoo-primary-dark shadow-lg hover:shadow-xl hover:shadow-haigoo-primary/25 hover:-translate-y-0.5 active:translate-y-0;
-    background: linear-gradient(135deg, #803af2 0%, #9470ff 100%);
-  }
+.btn-primary {
+  @apply bg-haigoo-primary text-white hover:bg-haigoo-primary-dark shadow-lg hover:shadow-xl hover:shadow-haigoo-primary/25 hover:-translate-y-0.5 active:translate-y-0;
+  background: linear-gradient(135deg, #3182CE 0%, #1D4ED8 100%);
+}
   
   .btn-secondary {
     @apply bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700;
@@ -470,20 +470,20 @@
   }
 
   /* 海狗品牌样式系统 */
-  .haigoo-gradient {
-    background: linear-gradient(135deg, #803af2 0%, #9470ff 100%);
-  }
+.haigoo-gradient {
+  background: linear-gradient(135deg, #3182CE 0%, #1D4ED8 100%);
+}
 
-  .haigoo-gradient-soft {
-    background: linear-gradient(135deg, rgba(128, 58, 242, 0.1) 0%, rgba(148, 112, 255, 0.1) 100%);
-  }
+.haigoo-gradient-soft {
+  background: linear-gradient(135deg, rgba(49, 130, 206, 0.12) 0%, rgba(29, 78, 216, 0.12) 100%);
+}
 
-  .haigoo-gradient-text {
-    background: linear-gradient(135deg, #803af2 0%, #9470ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+.haigoo-gradient-text {
+  background: linear-gradient(135deg, #3182CE 0%, #1D4ED8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
   /* 改进的输入框系统 */
   .input {
@@ -491,9 +491,9 @@
     font-variation-settings: "wght" 400;
   }
 
-  .input:focus {
-    box-shadow: 0 0 0 3px rgba(128, 58, 242, 0.1);
-  }
+.input:focus {
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
 
   /* 改进的标签系统 */
   .tag {
@@ -579,10 +579,10 @@
   }
 
   /* 改进的滚动条样式 */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(128, 58, 242, 0.3) transparent;
-  }
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(49, 130, 206, 0.3) transparent;
+}
 
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
@@ -593,23 +593,23 @@
     background: transparent;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: rgba(128, 58, 242, 0.3);
-    border-radius: 3px;
-  }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(49, 130, 206, 0.3);
+  border-radius: 3px;
+}
 
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(128, 58, 242, 0.5);
-  }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(49, 130, 206, 0.5);
+}
 
   /* 改进的阴影系统 */
-  .shadow-primary {
-    box-shadow: 0 10px 15px -3px rgba(128, 58, 242, 0.1), 0 4px 6px -2px rgba(128, 58, 242, 0.05);
-  }
+.shadow-primary {
+  box-shadow: 0 10px 15px -3px rgba(49, 130, 206, 0.1), 0 4px 6px -2px rgba(49, 130, 206, 0.05);
+}
 
-  .shadow-primary-lg {
-    box-shadow: 0 25px 50px -12px rgba(128, 58, 242, 0.25);
-  }
+.shadow-primary-lg {
+  box-shadow: 0 25px 50px -12px rgba(49, 130, 206, 0.25);
+}
 
   /* 改进的边框系统 */
   .border-primary {
@@ -630,20 +630,20 @@
   .dark\:text-primary {
     @apply dark:text-haigoo-primary;
   }
-  .hover\:bg-primary\/90:hover {
-    background-color: rgba(128, 58, 242, 0.9);
-  }
-  .bg-primary\/10 {
-    background-color: rgba(128, 58, 242, 0.1);
-  }
+.hover\:bg-primary\/90:hover {
+  background-color: rgba(49, 130, 206, 0.9);
+}
+.bg-primary\/10 {
+  background-color: rgba(49, 130, 206, 0.1);
+}
   .dark\:hover\:text-primary:hover {
     @apply dark:hover:text-haigoo-primary;
   }
 
   /* 改进的背景系统 */
-  .bg-gradient-primary {
-    background: linear-gradient(135deg, #803af2 0%, #9470ff 100%);
-  }
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #3182CE 0%, #1D4ED8 100%);
+}
 
   .bg-gradient-secondary {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -772,19 +772,19 @@
 
 /* 优化的按钮样式 */
 .btn-primary-enhanced {
-  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  background: linear-gradient(135deg, #3182CE 0%, #1D4ED8 100%);
   box-shadow: 
-    0 4px 14px rgba(139, 92, 246, 0.25),
-    0 2px 6px rgba(139, 92, 246, 0.15),
+    0 4px 14px rgba(49, 130, 206, 0.25),
+    0 2px 6px rgba(49, 130, 206, 0.15),
     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-primary-enhanced:hover {
-  background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+  background: linear-gradient(135deg, #256bb0 0%, #1D4ED8 100%);
   box-shadow: 
-    0 6px 20px rgba(139, 92, 246, 0.35),
-    0 4px 12px rgba(139, 92, 246, 0.25),
+    0 6px 20px rgba(49, 130, 206, 0.35),
+    0 4px 12px rgba(49, 130, 206, 0.25),
     0 0 0 1px rgba(255, 255, 255, 0.2) inset;
   transform: translateY(-2px) scale(1.05);
 }
@@ -792,8 +792,8 @@
 .btn-primary-enhanced:active {
   transform: translateY(0) scale(1.02);
   box-shadow: 
-    0 2px 8px rgba(139, 92, 246, 0.3),
-    0 1px 4px rgba(139, 92, 246, 0.2);
+    0 2px 8px rgba(49, 130, 206, 0.3),
+    0 1px 4px rgba(49, 130, 206, 0.2);
 }
 
 /* 精致的标签样式 */
@@ -805,9 +805,9 @@
 }
 
 .tag-enhanced:hover {
-  background: rgba(139, 92, 246, 0.1);
-  border-color: rgba(139, 92, 246, 0.3);
-  color: #8B5CF6;
+  background: rgba(49, 130, 206, 0.1);
+  border-color: rgba(49, 130, 206, 0.3);
+  color: #3182CE;
 }
 
 .tag-enhanced.dark {
@@ -816,9 +816,9 @@
 }
 
 .tag-enhanced.dark:hover {
-  background: rgba(139, 92, 246, 0.2);
-  border-color: rgba(139, 92, 246, 0.4);
-  color: #A78BFA;
+  background: rgba(49, 130, 206, 0.2);
+  border-color: rgba(49, 130, 206, 0.4);
+  color: #60A5FA;
 }
 
 /* 优化的加载动画 */
@@ -826,7 +826,7 @@
   width: 48px;
   height: 48px;
   border: 3px solid rgba(148, 163, 184, 0.2);
-  border-top: 3px solid #8B5CF6;
+  border-top: 3px solid #3182CE;
   border-radius: 50%;
   animation: spin-enhanced 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
 }
@@ -834,15 +834,15 @@
 @keyframes spin-enhanced {
   0% { 
     transform: rotate(0deg) scale(1);
-    border-top-color: #8B5CF6;
+    border-top-color: #3182CE;
   }
   50% { 
     transform: rotate(180deg) scale(1.1);
-    border-top-color: #6366F1;
+    border-top-color: #256bb0;
   }
   100% { 
     transform: rotate(360deg) scale(1);
-    border-top-color: #8B5CF6;
+    border-top-color: #3182CE;
   }
 }
 
@@ -941,10 +941,10 @@
 
 @keyframes glow-soft {
   0%, 100% { 
-    box-shadow: 0 0 20px rgba(128, 58, 242, 0.15); 
+    box-shadow: 0 0 20px rgba(49, 130, 206, 0.15); 
   }
   50% { 
-    box-shadow: 0 0 30px rgba(128, 58, 242, 0.25); 
+    box-shadow: 0 0 30px rgba(49, 130, 206, 0.25); 
   }
 }
 
@@ -970,7 +970,7 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(128, 58, 242, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(49, 130, 206, 0.1), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -1083,10 +1083,10 @@
     font-variation-settings: "wght" 500;
   }
   
-  .btn-primary {
-    @apply bg-haigoo-primary text-white hover:bg-haigoo-primary-dark shadow-lg hover:shadow-xl hover:shadow-haigoo-primary/25 hover:-translate-y-0.5 active:translate-y-0;
-    background: linear-gradient(135deg, #803af2 0%, #9470ff 100%);
-  }
+.btn-primary {
+  @apply bg-haigoo-primary text-white hover:bg-haigoo-primary-dark shadow-lg hover:shadow-xl hover:shadow-haigoo-primary/25 hover:-translate-y-0.5 active:translate-y-0;
+  background: linear-gradient(135deg, #3182CE 0%, #1D4ED8 100%);
+}
   
   .btn-secondary {
     @apply bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700;
@@ -1112,20 +1112,20 @@
   }
 
   /* 海狗品牌样式系统 */
-  .haigoo-gradient {
-    background: linear-gradient(135deg, #803af2 0%, #9470ff 100%);
-  }
+.haigoo-gradient {
+  background: linear-gradient(135deg, #3182CE 0%, #1D4ED8 100%);
+}
 
-  .haigoo-gradient-soft {
-    background: linear-gradient(135deg, rgba(128, 58, 242, 0.1) 0%, rgba(148, 112, 255, 0.1) 100%);
-  }
+.haigoo-gradient-soft {
+  background: linear-gradient(135deg, rgba(49, 130, 206, 0.12) 0%, rgba(29, 78, 216, 0.12) 100%);
+}
 
-  .haigoo-gradient-text {
-    background: linear-gradient(135deg, #803af2 0%, #9470ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+.haigoo-gradient-text {
+  background: linear-gradient(135deg, #3182CE 0%, #1D4ED8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
   /* 改进的输入框系统 */
   .input {
@@ -1133,9 +1133,9 @@
     font-variation-settings: "wght" 400;
   }
 
-  .input:focus {
-    box-shadow: 0 0 0 3px rgba(128, 58, 242, 0.1);
-  }
+.input:focus {
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
 
   /* 改进的标签系统 */
   .tag {
@@ -1221,10 +1221,10 @@
   }
 
   /* 改进的滚动条样式 */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(128, 58, 242, 0.3) transparent;
-  }
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(49, 130, 206, 0.3) transparent;
+}
 
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
@@ -1235,23 +1235,23 @@
     background: transparent;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: rgba(128, 58, 242, 0.3);
-    border-radius: 3px;
-  }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(49, 130, 206, 0.3);
+  border-radius: 3px;
+}
 
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(128, 58, 242, 0.5);
-  }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(49, 130, 206, 0.5);
+}
 
   /* 改进的阴影系统 */
-  .shadow-primary {
-    box-shadow: 0 10px 15px -3px rgba(128, 58, 242, 0.1), 0 4px 6px -2px rgba(128, 58, 242, 0.05);
-  }
+.shadow-primary {
+  box-shadow: 0 10px 15px -3px rgba(49, 130, 206, 0.1), 0 4px 6px -2px rgba(49, 130, 206, 0.05);
+}
 
-  .shadow-primary-lg {
-    box-shadow: 0 25px 50px -12px rgba(128, 58, 242, 0.25);
-  }
+.shadow-primary-lg {
+  box-shadow: 0 25px 50px -12px rgba(49, 130, 206, 0.25);
+}
 
   /* 改进的边框系统 */
   .border-primary {
@@ -1272,20 +1272,20 @@
   .dark\:text-primary {
     @apply dark:text-haigoo-primary;
   }
-  .hover\:bg-primary\/90:hover {
-    background-color: rgba(128, 58, 242, 0.9);
-  }
-  .bg-primary\/10 {
-    background-color: rgba(128, 58, 242, 0.1);
-  }
+.hover\:bg-primary\/90:hover {
+  background-color: rgba(49, 130, 206, 0.9);
+}
+.bg-primary\/10 {
+  background-color: rgba(49, 130, 206, 0.1);
+}
   .dark\:hover\:text-primary:hover {
     @apply dark:hover:text-haigoo-primary;
   }
 
   /* 改进的背景系统 */
-  .bg-gradient-primary {
-    background: linear-gradient(135deg, #803af2 0%, #9470ff 100%);
-  }
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #3182CE 0%, #1D4ED8 100%);
+}
 
   .bg-gradient-secondary {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);

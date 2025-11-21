@@ -7,35 +7,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#f3f0ff',
-          100: '#e9e2ff',
-          200: '#d6c9ff',
-          300: '#b8a3ff',
-          400: '#9470ff',
-          500: '#803af2',
-          600: '#7c3aed',
-          700: '#6d28d9',
-          800: '#5b21b6',
-          900: '#4c1d95',
-        },
-        // 海狗品牌色彩系统
         haigoo: {
-          primary: '#803af2',
-          'primary-light': '#9470ff',
-          'primary-dark': '#6d28d9',
-          purple: {
-            50: '#f9f7ff',
-            100: '#f3f0ff',
-            200: '#e9e2ff',
-            300: '#d6c9ff',
-            400: '#b8a3ff',
-            500: '#9470ff',
-            600: '#803af2',
-            700: '#7c3aed',
-            800: '#6d28d9',
-            900: '#5b21b6',
-          }
+          primary: '#3182CE',
+          secondary: '#F59F0B',
+          'primary-light': '#EAF3FF',
+          'primary-dark': '#1A365D'
         },
         // 背景色系统
         background: {
@@ -70,8 +46,8 @@ export default {
         'full': '9999px',
       },
       boxShadow: {
-        'primary': '0 4px 14px 0 rgba(128, 58, 242, 0.1)',
-        'modal': '-10px 0 30px rgba(0, 0, 0, 0.1)',
+        'primary': '0 4px 14px 0 rgba(49, 130, 206, 0.1)',
+        'modal': '-10px 0 30px rgba(0, 0, 0, 0.1)'
       }
     },
   },

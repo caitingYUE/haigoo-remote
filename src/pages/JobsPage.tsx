@@ -359,29 +359,10 @@ export default function JobsPage() {
       role="main"
       aria-label="职位搜索页面"
     >
-      {/* 顶部 Hero 区域 - 全局显示，复用首页样式 */}
-      <div className="relative bg-gradient-to-b from-[#E6F4FF] to-[#F0F4F8] overflow-hidden mb-8">
-        <div className="absolute right-0 top-0 h-full w-1/2 pointer-events-none flex items-end justify-end">
-          <img src={homeBgSvg} alt="Hero Illustration" className="h-[90%] object-contain object-right-bottom opacity-90" />
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-5xl font-bold text-[#1A365D] mb-6 leading-tight tracking-tight">
-              WORK YOUR BRAIN,<br />
-              LEAVE YOUR BODY TO BE<br />
-              HAPPY
-            </h1>
-            <div className="flex gap-6 text-[#1A365D]/80 text-sm font-medium">
-              <span>日更数千个远程岗位</span>
-              <span>AI为你求职保驾护航</span>
-              <span>全球岗位、全行业覆盖</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       {/* 搜索和筛选栏 - 悬浮吸顶效果 */}
-      <div className="sticky top-0 z-40 bg-[#F0F4F8]/95 backdrop-blur-sm py-4 shadow-sm transition-all duration-300">
+      <div className="sticky top-0 z-40 bg-gray-50/95 backdrop-blur-sm py-4 shadow-sm transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-full shadow-sm p-2 flex items-center gap-4">
             <div className="flex items-center gap-2 px-4 border-r border-gray-100">
@@ -482,7 +463,7 @@ export default function JobsPage() {
               <p className="text-gray-500">尝试调整筛选条件或搜索关键词</p>
               <button
                 onClick={() => { setSearchTerm(''); setFilters({ type: 'all', category: 'all', location: 'all', experience: 'all', remote: 'all' }); }}
-                className="mt-4 px-6 py-2 bg-[#3182CE] text-white rounded-full hover:bg-[#2c7a7b] transition-colors"
+                className="mt-4 px-6 py-2 bg-[#3182CE] text-white rounded-full hover:bg-[#2b6cb0] transition-colors"
               >
                 清除所有筛选
               </button>

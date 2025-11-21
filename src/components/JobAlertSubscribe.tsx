@@ -49,7 +49,7 @@ export default function JobAlertSubscribe({ variant = 'card' }: { variant?: Vari
           <option value="feishu">Feishu</option>
         </select>
         <input className="input" placeholder={channel==='email' ? 'you@example.com' : 'Feishu ID'} value={identifier} onChange={e=>setIdentifier(e.target.value)} />
-        <button onClick={submit} className="btn btn-primary">Subscribe</button>
+        <button onClick={submit} className="px-4 py-2 bg-[#3182CE] text-white rounded-lg hover:bg-[#256bb0] transition-colors">Subscribe</button>
       </div>
       {status==='done' && <div className="mt-2 text-green-600 text-sm">Subscribed successfully</div>}
       {status==='error' && <div className="mt-2 text-red-600 text-sm">Subscription failed</div>}
