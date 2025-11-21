@@ -170,7 +170,35 @@ function removeDuplicates(jobs) {
   })
 }
 
-function applyFilters(jobs, q) {
+const DEFAULT_LOCATION_CATEGORIES = {
+  domesticKeywords: ['china', '中国', 'cn', 'apac', 'asia', 'east asia', 'greater china', 'utc+8', 'gmt+8', 'beijing', 'shanghai', 'shenzhen', 'guangzhou', 'hangzhou', 'chongqing', 'chengdu', 'nanjing', '不限地点'],
+  overseasKeywords: ['usa', 'united states', 'us', 'uk', 'england', 'britain', 'canada', 'mexico', 'brazil', 'argentina', 'chile', 'peru', 'colombia', 'latam', 'europe', 'eu', 'emea', 'germany', 'france', 'spain', 'italy', 'netherlands', 'belgium', 'sweden', 'norway', 'denmark', 'finland', 'poland', 'czech', 'ireland', 'switzerland', 'australia', 'new zealand', 'oceania', 'india', 'pakistan', 'bangladesh', 'sri lanka', 'nepal', 'japan', 'korea', 'south korea', 'singapore', 'malaysia', 'indonesia', 'thailand', 'vietnam', 'philippines', 'uae', 'saudi', 'turkey', 'russia', 'israel', 'africa'],
+  globalKeywords: ['anywhere', 'everywhere', 'worldwide', 'global', '不限地点']
+}
+
+async function getLocationCategories() {
+  const key = 'haigoo:location_categories'
+  try {
+    if (UPSTASH_REST_CONFIGURED) {
+      const data = await upstashGet(key)
+      if (data) return typeof data === 'string' ? JSON.parse(data) : data
+    }
+    if (REDIS_CONFIGURED) {
+      const client = await getRedisClient()
+      const data = await client.get(key)
+      if (data) return JSON.parse(data)
+    }
+    if (KV_CONFIGURED) {
+      const data = await kv.get(key)
+      if (data) return data
+    }
+  } catch (e) {
+    console.warn('Failed to fetch location categories', e)
+  }
+  return DEFAULT_LOCATION_CATEGORIES
+}
+
+function applyFilters(jobs, q, categories = DEFAULT_LOCATION_CATEGORIES) {
   let list = jobs
   if (Array.isArray(q.ids) && q.ids.length > 0) {
     const idSet = new Set(q.ids.map(String))
@@ -184,6 +212,29 @@ function applyFilters(jobs, q) {
   if (typeof q.isRemote !== 'undefined') list = list.filter(j => !!j.isRemote === (q.isRemote === true || q.isRemote === 'true'))
   if (q.location) list = list.filter(j => (j.location || '').toLowerCase().includes(String(q.location).toLowerCase()))
   if (q.type) list = list.filter(j => (j.jobType || j.type) === q.type)
+
+  // Region Filter
+  if (q.region) {
+    const region = String(q.region).toLowerCase()
+    const norm = (v) => (v || '').toLowerCase()
+
+    list = list.filter(job => {
+      const loc = norm(job.location)
+      const tags = (job.tags || []).map(t => norm(t))
+
+      const pool = new Set([loc, ...tags])
+      const hit = (keys) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)))
+
+      const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
+      const domesticHit = hit(categories.domesticKeywords)
+      const overseasHit = hit(categories.overseasKeywords)
+
+      if (region === 'domestic') return globalHit || domesticHit
+      if (region === 'overseas') return globalHit || overseasHit
+      return true
+    })
+  }
+
   if (q.search) {
     const s = String(q.search).toLowerCase()
     list = list.filter(j => `${j.title} ${j.company} ${j.description}`.toLowerCase().includes(s))
@@ -391,11 +442,15 @@ export default async function handler(req, res) {
         type,
         tags,
         skills,
-        id
+        id,
+        region
       } = req.query || {}
 
       const pageNum = Number(page) || 1
       const pageSize = Number(limit) || 50
+
+      // Fetch location categories for filtering
+      const categories = await getLocationCategories()
 
       let jobs = []
       let provider = 'memory'
@@ -495,10 +550,12 @@ export default async function handler(req, res) {
           location,
           type,
           type,
+          type,
           tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? [tags] : []),
           skills: Array.isArray(skills) ? skills : (typeof skills === 'string' ? [skills] : []),
-          id
-        })
+          id,
+          region
+        }, categories)
       } catch (e) {
         console.warn('过滤处理异常，返回未过滤数据：', e?.message || e)
         filtered = Array.isArray(jobs) ? jobs : []
