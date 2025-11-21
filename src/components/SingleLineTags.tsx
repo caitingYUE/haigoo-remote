@@ -14,15 +14,17 @@ interface SingleLineTagsProps {
  * - 动态计算在单行内可展示的标签数量，剩余用 +N 表示
  * - 考虑标签文本长度、间距、内边距，保证卡片对齐
  */
-export const SingleLineTags: React.FC<SingleLineTagsProps> = ({ tags, size = 'sm', className = '', fallback = 'remote' }) => {
+export const SingleLineTags: React.FC<SingleLineTagsProps> = ({ tags, size = 'sm', className = '', fallback }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const measureRef = useRef<HTMLDivElement | null>(null);
   const [visibleCount, setVisibleCount] = useState<number>(0);
 
   const cleanedTags = useMemo(() => {
     const base = (tags || []).filter(Boolean).map(t => String(t));
-    // 兜底：当没有任何标签时，显示 fallback（remote）
-    return base.length === 0 ? [fallback] : base;
+    if (base.length === 0) {
+      return fallback ? [fallback] : [];
+    }
+    return base;
   }, [tags, fallback]);
 
   // 样式常量（与现有卡片风格保持一致）

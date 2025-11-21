@@ -26,10 +26,11 @@ export interface Job {
   status: 'active' | 'inactive' | 'archived';
   createdAt: string;
   updatedAt: string;
+  region?: 'domestic' | 'overseas';
 }
 
 // 标准化的工作分类
-export type JobCategory = 
+export type JobCategory =
   // 技术类
   | '全栈开发'
   | '前端开发'
@@ -42,40 +43,40 @@ export type JobCategory =
   | '人工智能'
   | '质量保证'
   | '网络安全'
-  
+
   // 设计类
   | 'UI/UX设计'
   | '平面设计'
   | '产品设计'
-  
+
   // 商业类
   | '产品管理'
   | '项目管理'
   | '商业分析'
-  
+
   // 市场营销类
   | '市场营销'
   | '销售'
   | '内容写作'
-  
+
   // 客户服务类
   | '客户支持'
-  
+
   // 人力资源类
   | '人力资源'
   | '招聘'
-  
+
   // 财务法律类
   | '财务'
   | '法律'
   | '会计'
-  
+
   // 运营类
   | '运营'
   | '商务拓展'
   | '咨询'
   | '教育培训'
-  
+
   // 其他
   | '其他'
   | '全部';
@@ -117,7 +118,7 @@ export interface EnhancedJob {
   applicationUrl: string;
   isRemote: boolean;
   experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive';
-  
+
   // 新增字段
   originalCategory?: string; // 原始分类
   lastUpdated: string; // 最后更新时间

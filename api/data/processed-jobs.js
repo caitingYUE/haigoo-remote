@@ -85,6 +85,7 @@ const FIELD_LIMITS = {
   salary: 200,
   jobType: 50,
   experienceLevel: 50,
+  region: 50,
   tags: 1000, // total for all tags
   requirements: 10000, // total for all requirements
   benefits: 10000 // total for all benefits
@@ -626,6 +627,7 @@ export default async function handler(req, res) {
         const salary = j.salary ? truncateString(String(j.salary), FIELD_LIMITS.salary) : null
         const jobType = truncateString(String(j.jobType || 'full-time'), FIELD_LIMITS.jobType)
         const experienceLevel = truncateString(String(j.experienceLevel || 'Mid'), FIELD_LIMITS.experienceLevel)
+        const region = truncateString(String(j.region || 'overseas'), FIELD_LIMITS.region)
 
         // Process arrays with limits
         let tags = Array.isArray(j.tags) ? j.tags : []
@@ -698,6 +700,7 @@ export default async function handler(req, res) {
           status: j.status || 'active',
           createdAt: j.createdAt || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          region,
           // 🆕 翻译字段
           translations: j.translations || null,
           isTranslated: j.isTranslated || false,

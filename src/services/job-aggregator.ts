@@ -5,6 +5,7 @@ import { getStorageAdapter } from './storage-factory';
 import { CloudStorageAdapter } from './cloud-storage-adapter';
 import { recommendationHistoryService } from './recommendation-history-service';
 import { Job as PageJob } from '../types';
+import { processedJobsService } from './processed-jobs-service';
 
 class JobAggregator {
   private jobs: Job[] = [];
@@ -39,7 +40,7 @@ class JobAggregator {
 
     if (rssJob.salary && typeof rssJob.salary === 'string' && rssJob.salary.trim()) {
       const salaryText = rssJob.salary.trim();
-      
+
       // 排除明显不是薪资的文本
       const excludePatterns = [
         /\$[\d,]+\s*(?:million|billion|k|thousand)\s*(?:company|business|startup|funding|investment|valuation|revenue)/i,
@@ -73,7 +74,7 @@ class JobAggregator {
             }
           }
         }
-        
+
         // 检测货币类型
         if (salary) {
           if (salaryText.includes('¥') || salaryText.includes('CNY') || salaryText.includes('人民币')) {
@@ -115,7 +116,7 @@ class JobAggregator {
 
     // 计算推荐分数
     let recommendationScore = 60; // 基础分数
-    
+
     if (rssJob.isRemote) recommendationScore += 20;
     if (rssJob.tags && rssJob.tags.length > 0) {
       recommendationScore += Math.min(rssJob.tags.length * 3, 15);
@@ -176,7 +177,7 @@ class JobAggregator {
         } else {
           console.log('存储中没有找到职位数据');
         }
-        
+
         // 更新同步状态
         const lastSync = await this.storageAdapter.getLastSyncTime();
         if (lastSync) {
@@ -227,7 +228,7 @@ class JobAggregator {
       '管理和财务': '财务',
       '设计': 'UI/UX设计',
       'DevOps和系统管理员': 'DevOps',
-      
+
       // Remotive 分类映射
       '软件开发': '软件开发',
       '客户服务': '客户支持',
@@ -241,13 +242,13 @@ class JobAggregator {
       '人力资源': '人力资源',
       '质量保证': '质量保证',
       '写作': '内容写作',
-      
+
       // JobsCollider 分类映射
       '网络安全': 'DevOps',
       '商业': '商务拓展',
       '数据': '数据分析',
       '财务与法律': '财务',
-      
+
       // RealWorkFromAnywhere 分类映射
       '开发人员': '软件开发',
       '工程师': '软件开发',
@@ -266,29 +267,29 @@ class JobAggregator {
     }
 
     const text = `${title} ${description}`.toLowerCase();
-    
+
     // 优化后的分类逻辑 - 更精确的关键词匹配
     const categoryKeywords: Record<JobCategory, string[]> = {
       '全部': [],
       '销售': [
-        'sales', 'account executive', 'business development', 'account manager', 
+        'sales', 'account executive', 'business development', 'account manager',
         'sales representative', 'sales manager', 'sales director', 'account director',
         'business development manager', 'sales consultant', 'inside sales', 'outside sales',
         'enterprise sales', 'channel sales', 'regional sales', 'territory manager',
         'sales development', 'sales operations', 'revenue', 'quota', 'pipeline'
       ],
       '数据分析': [
-        'data analyst', 'business intelligence', 'analytics', 'tableau', 'power bi', 
+        'data analyst', 'business intelligence', 'analytics', 'tableau', 'power bi',
         'sql analyst', 'business analyst', 'data engineer', 'analytics engineer',
         'people analytics', 'workforce analytics', 'hr analytics', 'analytics analyst'
       ],
       '前端开发': [
-        'frontend', 'front-end', 'react', 'vue', 'angular', 'javascript', 'typescript', 
+        'frontend', 'front-end', 'react', 'vue', 'angular', 'javascript', 'typescript',
         'html', 'css', 'ui developer', 'frontend developer', 'front end developer',
         'web developer', 'javascript developer', 'react developer', 'vue developer'
       ],
       '后端开发': [
-        'backend', 'back-end', 'server', 'api', 'database', 'node.js', 'python', 
+        'backend', 'back-end', 'server', 'api', 'database', 'node.js', 'python',
         'java', 'php', 'ruby', 'go', 'rust', 'backend developer', 'server developer',
         'api developer', 'microservices', 'backend engineer'
       ],
@@ -298,12 +299,12 @@ class JobAggregator {
         'engineer', 'developer', 'software architect', 'senior engineer', 'lead developer'
       ],
       'DevOps': [
-        'devops', 'infrastructure', 'deployment', 'ci/cd', 'docker', 'kubernetes', 
+        'devops', 'infrastructure', 'deployment', 'ci/cd', 'docker', 'kubernetes',
         'aws', 'cloud', 'sysadmin', 'site reliability', 'platform engineer',
         'infrastructure engineer', 'cloud engineer', 'systems engineer'
       ],
       '数据科学': [
-        'data scientist', 'machine learning', 'ai', 'artificial intelligence', 
+        'data scientist', 'machine learning', 'ai', 'artificial intelligence',
         'deep learning', 'ml engineer', 'research scientist', 'ai engineer'
       ],
       '产品管理': [
@@ -315,7 +316,7 @@ class JobAggregator {
         'delivery manager', 'technical project manager'
       ],
       'UI/UX设计': [
-        'ui designer', 'ux designer', 'user experience', 'user interface', 'figma', 
+        'ui designer', 'ux designer', 'user experience', 'user interface', 'figma',
         'sketch', 'product designer', 'interaction designer', 'visual designer'
       ],
       '平面设计': [
@@ -332,7 +333,7 @@ class JobAggregator {
       ],
       '客户支持': [
         'customer service', 'customer support', 'help desk', 'technical support',
-        'support specialist', 'customer success', 'client support', 'user support', 
+        'support specialist', 'customer success', 'client support', 'user support',
         'support engineer', 'customer success manager', 'technical support engineer'
       ],
       '人力资源': [
@@ -349,7 +350,7 @@ class JobAggregator {
       ],
       '内容写作': [
         'writer', 'content writer', 'copywriter', 'technical writer', 'blogger',
-        'content creator', 'editor', 'communications', 'content marketing', 
+        'content creator', 'editor', 'communications', 'content marketing',
         'social media manager', 'content strategist', 'creative director', 'brand storyteller'
       ],
       '质量保证': [
@@ -427,7 +428,7 @@ class JobAggregator {
       'Business Development': '商务拓展',
       'Consulting': '咨询',
       'Education': '教育培训',
-      
+
       // 中文源分类映射
       '前端编程': '前端开发',
       '后端编程': '后端开发',
@@ -465,23 +466,23 @@ class JobAggregator {
 
     // 基于职位标题的优先级匹配 - 职位标题权重更高
     const titleText = title.toLowerCase();
-    
+
     // 数据分析相关职位的特殊处理 - 优先级最高
-    if (titleText.includes('people analytics') || titleText.includes('workforce analytics') || 
-        titleText.includes('hr analytics') || titleText.includes('analytics analyst')) {
+    if (titleText.includes('people analytics') || titleText.includes('workforce analytics') ||
+      titleText.includes('hr analytics') || titleText.includes('analytics analyst')) {
       return '数据分析';
     }
-    
+
     // 销售相关职位的特殊处理
     if (titleText.includes('account executive') || titleText.includes('sales')) {
       return '销售';
     }
-    
+
     // 市场营销相关职位的特殊处理
     if (titleText.includes('marketing') && !titleText.includes('product marketing')) {
       return '市场营销';
     }
-    
+
     // 产品相关职位的特殊处理
     if (titleText.includes('product') && (titleText.includes('manager') || titleText.includes('owner'))) {
       return '产品管理';
@@ -489,17 +490,17 @@ class JobAggregator {
 
     // 基于关键词匹配 - 按优先级顺序检查
     const priorityOrder: JobCategory[] = [
-      '销售', '市场营销', '产品管理', '前端开发', '后端开发', '全栈开发', 
+      '销售', '市场营销', '产品管理', '前端开发', '后端开发', '全栈开发',
       '软件开发', 'DevOps', '数据科学', '数据分析', 'UI/UX设计', '客户支持'
     ];
-    
+
     for (const category of priorityOrder) {
       const keywords = categoryKeywords[category];
       if (keywords && keywords.some(keyword => text.includes(keyword))) {
         return category;
       }
     }
-    
+
     // 如果没有匹配到优先级分类，检查其他分类
     for (const [category, keywords] of Object.entries(categoryKeywords)) {
       if (!priorityOrder.includes(category as JobCategory) && keywords.some(keyword => text.includes(keyword))) {
@@ -511,13 +512,51 @@ class JobAggregator {
   }
 
   /**
+   * Determine job region based on location and tags
+   */
+  private async determineJobRegion(location: string, tags: string[]): Promise<'domestic' | 'overseas' | undefined> {
+    try {
+      const categories = await processedJobsService.getLocationCategories();
+      const norm = (v: string) => (v || '').toLowerCase();
+      const loc = norm(location);
+      const tagSet = new Set(tags.map(t => norm(t)));
+
+      const pool = new Set([loc, ...Array.from(tagSet)]);
+      const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)));
+
+      const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc);
+      const domesticHit = hit(categories.domesticKeywords);
+      const overseasHit = hit(categories.overseasKeywords);
+
+      if (globalHit) return undefined; // Global jobs appear in both, so we don't force a specific region here, or we can default to one. 
+      // Actually, based on requirements, we want to classify them. 
+      // If it's global, it shows up in both. But for the "region" field, maybe we can leave it undefined or use a specific value?
+      // The requirement says: "classify... into Domestic and Overseas". 
+      // Let's use the same logic as frontend: if it hits domestic, it's domestic. If overseas, overseas.
+      // If global, it's effectively both.
+
+      if (domesticHit) return 'domestic';
+      if (overseasHit) return 'overseas';
+
+      // Default fallback based on simple heuristics if categories fail
+      if (loc.includes('china') || loc.includes('cn') || loc.includes('beijing') || loc.includes('shanghai')) return 'domestic';
+      return 'overseas';
+    } catch (e) {
+      console.warn('Failed to determine region:', e);
+      return 'overseas'; // Default to overseas for English RSS feeds
+    }
+  }
+
+  /**
    * 将RSS项目转换为Job对象 - 使用基于规则的解析
    */
-  private convertRSSItemToJob(item: RSSFeedItem, source: string, sourceCategory: string): Job {
+  private async convertRSSItemToJob(item: RSSFeedItem, source: string, sourceCategory: string): Promise<Job> {
     const id = this.generateJobId(item.link, source);
     const category = this.categorizeJob(item.title, item.description, sourceCategory);
     const now = new Date().toISOString();
-    
+    const tags = this.extractTags(item.title, item.description, item.skills);
+    const region = await this.determineJobRegion(item.location || '', tags);
+
     return {
       id,
       title: item.title,
@@ -532,13 +571,14 @@ class JobAggregator {
       jobType: (item.jobType as Job['jobType']) || 'full-time',
       experienceLevel: item.experienceLevel || this.determineExperienceLevel(item.title, item.description),
       remoteLocationRestriction: item.remoteLocationRestriction,
-      tags: this.extractTags(item.title, item.description, item.skills),
+      tags,
       requirements: this.extractRequirements(item.description),
       benefits: this.extractBenefits(item.description),
       isRemote: item.workType === 'remote' || this.isRemoteJob(item.title, item.description, item.location),
       status: 'active',
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      region
     };
   }
 
@@ -549,7 +589,7 @@ class JobAggregator {
     const id = this.generateJobId(item.link, source);
     const category = this.categorizeJob(item.title, item.description, sourceCategory);
     const now = new Date().toISOString();
-    
+
     return {
       id,
       title: item.title,
@@ -696,7 +736,7 @@ class JobAggregator {
    */
   private determineExperienceLevel(title: string, description: string): Job['experienceLevel'] {
     const text = `${title} ${description}`.toLowerCase();
-    
+
     if (text.includes('senior') || text.includes('lead') || text.includes('principal')) {
       return 'Senior';
     }
@@ -709,7 +749,7 @@ class JobAggregator {
     if (text.includes('lead') || text.includes('team lead') || text.includes('tech lead')) {
       return 'Lead';
     }
-    
+
     return 'Mid'; // 默认中级
   }
 
@@ -740,11 +780,11 @@ class JobAggregator {
       console.log('开始RSS同步...');
       const rssData = await rssService.fetchAllRSSFeeds();
       console.log(`获取到 ${rssData.length} 个RSS数据源`);
-      
+
       // 保留现有数据，进行增量更新而不是清空重建
       const oldJobsCount = this.jobs.length;
       console.log(`当前已有 ${oldJobsCount} 个职位数据，将进行增量更新`);
-      
+
       for (const data of rssData) {
         try {
           console.log(`处理RSS数据: ${data.source} - ${data.category}, 包含 ${data.items.length} 个职位`);
@@ -770,13 +810,13 @@ class JobAggregator {
         try {
           console.log('生成今日推荐数据...');
           const convertedJobs = this.jobs.map(job => this.convertRSSJobToPageJob(job));
-          
+
           // 按推荐分数排序，选择前6个岗位（分为2组，每组3个）
           const topRecommendations = convertedJobs
             .filter(job => job.recommendationScore && job.recommendationScore > 0) // 只选择有推荐分数的岗位
             .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
             .slice(0, 6); // 确保每天推荐6个岗位
-          
+
           if (topRecommendations.length >= 6) {
             await recommendationHistoryService.saveDailyRecommendation(topRecommendations);
             console.log(`已保存 ${topRecommendations.length} 个今日推荐到历史记录（分为2组，每组3个岗位）`);
@@ -795,10 +835,10 @@ class JobAggregator {
 
       // 设置下次同步时间（1小时后）
       this.syncStatus.nextSync = new Date(Date.now() + 60 * 60 * 1000);
-      
+
       console.log(`同步完成。新增 ${this.syncStatus.newJobsAdded} 个职位，更新 ${this.syncStatus.updatedJobs} 个职位，总共处理 ${this.syncStatus.totalJobsProcessed} 个职位`);
       console.log(`当前总职位数: ${this.jobs.length}`);
-      
+
       // 更新同步状态中的最后同步时间
       if (this.storageAdapter) {
         await this.storageAdapter.saveJobs(this.jobs);
@@ -809,7 +849,7 @@ class JobAggregator {
       } catch (err) {
         console.error('通过API写入KV失败:', err);
       }
-      
+
     } catch (error) {
       console.error('同步失败:', error);
       this.syncStatus.errors.push({
@@ -831,12 +871,33 @@ class JobAggregator {
     console.log(`开始处理RSS数据: ${data.source} - ${data.category}`);
     let newJobs = 0;
     let updatedJobs = 0;
-    
+    let skippedJobs = 0;
+
+    console.log(`[RSS Debug] Source: ${data.source}, Items found: ${data.items.length}`);
+
     for (const item of data.items) {
       try {
+        // Basic validation
+        if (!item.title || !item.link) {
+          console.warn(`[RSS Debug] Skipping invalid item: ${JSON.stringify(item).slice(0, 100)}`);
+          skippedJobs++;
+          continue;
+        }
+
         const job = await this.convertRSSItemToJob(item, data.source, data.category);
+
+        // Check if job is too old (e.g., > 30 days)
+        const pubDate = new Date(job.publishedAt);
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        if (pubDate < thirtyDaysAgo) {
+          // console.log(`[RSS Debug] Skipping old job: ${job.title} (${job.publishedAt})`);
+          // skippedJobs++;
+          // continue;
+          // For now, let's NOT skip old jobs to see if that's the issue, or log it but keep it.
+        }
+
         const existingJobIndex = this.jobs.findIndex(j => j.id === job.id);
-        
+
         if (existingJobIndex === -1) {
           // 新岗位
           this.jobs.push(job);
@@ -848,14 +909,15 @@ class JobAggregator {
           this.syncStatus.updatedJobs++;
           updatedJobs++;
         }
-        
+
         this.syncStatus.totalJobsProcessed++;
       } catch (error) {
         console.error(`处理职位数据失败:`, item.title, error);
+        skippedJobs++;
       }
     }
-    
-    console.log(`${data.source} - ${data.category} 处理完成: 新增 ${newJobs} 个，更新 ${updatedJobs} 个职位`);
+
+    console.log(`${data.source} - ${data.category} 处理完成: 新增 ${newJobs} 个，更新 ${updatedJobs} 个，跳过 ${skippedJobs} 个职位`);
   }
 
   /**
@@ -868,32 +930,32 @@ class JobAggregator {
       if (filter.category && filter.category.length > 0) {
         filteredJobs = filteredJobs.filter(job => filter.category!.includes(job.category));
       }
-      
+
       if (filter.jobType && filter.jobType.length > 0) {
         filteredJobs = filteredJobs.filter(job => filter.jobType!.includes(job.jobType));
       }
-      
+
       if (filter.experienceLevel && filter.experienceLevel.length > 0) {
         filteredJobs = filteredJobs.filter(job => filter.experienceLevel!.includes(job.experienceLevel));
       }
-      
+
       if (filter.source && filter.source.length > 0) {
         filteredJobs = filteredJobs.filter(job => filter.source!.includes(job.source));
       }
-      
+
       if (filter.keywords) {
         const keywords = filter.keywords.toLowerCase();
-        filteredJobs = filteredJobs.filter(job => 
+        filteredJobs = filteredJobs.filter(job =>
           job.title.toLowerCase().includes(keywords) ||
           job.description.toLowerCase().includes(keywords) ||
           job.company.toLowerCase().includes(keywords)
         );
       }
-      
+
       if (filter.isRemote !== undefined) {
         filteredJobs = filteredJobs.filter(job => job.isRemote === filter.isRemote);
       }
-      
+
       if (filter.status && filter.status.length > 0) {
         filteredJobs = filteredJobs.filter(job => filter.status!.includes(job.status));
       }
@@ -907,7 +969,7 @@ class JobAggregator {
    */
   getJobStats(): JobStats {
     const activeJobs = this.jobs.filter(job => job.status === 'active');
-    const recentlyAdded = this.jobs.filter(job => 
+    const recentlyAdded = this.jobs.filter(job =>
       new Date(job.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
     ).length;
 
@@ -948,7 +1010,7 @@ class JobAggregator {
     console.log(`获取管理后台数据，当前职位数量: ${this.jobs.length}`);
     const filteredJobs = this.getJobs(filter);
     console.log(`过滤后职位数量: ${filteredJobs.length}`);
-    
+
     return {
       jobs: filteredJobs,
       stats: this.getJobStats(),
@@ -1024,10 +1086,10 @@ class JobAggregator {
   async clearAllData(): Promise<void> {
     try {
       console.log('开始清除所有数据...');
-      
+
       // 清空内存中的数据
       this.jobs = [];
-      
+
       // 重置同步状态
       this.syncStatus = {
         isRunning: false,
@@ -1041,13 +1103,13 @@ class JobAggregator {
         updatedJobs: 0,
         errors: []
       };
-      
+
       // 清除存储中的数据
       if (this.storageAdapter) {
         await this.storageAdapter.clearAllData();
         console.log('存储数据已清除');
       }
-      
+
       console.log('所有数据清除完成');
     } catch (error) {
       console.error('清除数据失败:', error);

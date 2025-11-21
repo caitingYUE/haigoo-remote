@@ -516,7 +516,6 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                           tags={(Array.isArray((job as any).tags) && (job as any).tags.length > 0
                             ? (job as any).tags
                             : (job.skills || [])) as string[]}
-                          fallback="remote"
                           size="sm"
                         />
                       </div>

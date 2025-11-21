@@ -252,7 +252,6 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               ? (job as any).tags
               : (job.skills || [])
           ) as string[]}
-          fallback="remote"
         />
       </section>
     </article>
