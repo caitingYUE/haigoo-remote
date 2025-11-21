@@ -96,7 +96,7 @@ export default function Header() {
 
   return (
     <header
-      className="bg-transparent relative z-50"
+      className="sticky top-0 z-50 backdrop-blur-md bg-white/70 border-b border-white/20 transition-all duration-300"
       role="banner"
     >
       <div className="px-6 md:px-10 lg:px-20">
@@ -125,8 +125,8 @@ export default function Header() {
                 <button
                   onClick={() => navigate('/jobs?region=domestic')}
                   className={`tab-link px-2 py-2 text-base font-semibold ${location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')
-                      ? 'tab-link-active'
-                      : ''
+                    ? 'tab-link-active'
+                    : ''
                     }`}
                   role="tab"
                   aria-selected={location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')}
@@ -137,8 +137,8 @@ export default function Header() {
                 <button
                   onClick={() => navigate('/jobs?region=overseas')}
                   className={`tab-link px-2 py-2 text-base font-semibold ${location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')
-                      ? 'tab-link-active'
-                      : ''
+                    ? 'tab-link-active'
+                    : ''
                     }`}
                   role="tab"
                   aria-selected={location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')}

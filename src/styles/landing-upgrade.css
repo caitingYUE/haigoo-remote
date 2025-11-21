@@ -263,8 +263,8 @@
   width: 100%;
   background-color: #f0f9ff;
   position: relative;
-  padding-top: 80px;
-  /* Reduced from previous large value if any, standard header height */
+  padding-top: 20px;
+  /* Reduced significantly to bring content up */
   padding-bottom: 40px;
 }
 
@@ -286,13 +286,15 @@
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 32px;
-  padding: 2rem;
+  padding: 1.5rem;
+  /* Reduced padding */
   box-shadow:
     0 20px 40px -5px rgba(49, 130, 206, 0.1),
     0 10px 20px -5px rgba(49, 130, 206, 0.05),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-  min-height: calc(100vh - 140px);
-  align-items: start;
+  min-height: calc(100vh - 120px);
+  align-items: stretch;
+  /* Ensure sidebar and content stretch */
 }
 
 /* Sidebar */
@@ -318,6 +320,10 @@
   margin-bottom: 1.5rem;
   padding-left: 1rem;
   opacity: 0.8;
+  height: 2rem;
+  /* Fixed height for alignment */
+  display: flex;
+  align-items: center;
 }
 
 .profile-nav {
@@ -361,14 +367,18 @@
 /* Main Content Area */
 .profile-content-area {
   padding-left: 0.5rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .profile-topbar {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 2.5rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  /* Reduced margin */
+  padding-bottom: 1rem;
+  /* Reduced padding */
   border-bottom: 1px solid rgba(49, 130, 206, 0.1);
 }
 
@@ -376,12 +386,13 @@
   font-size: 2.25rem;
   font-weight: 800;
   color: var(--text-main);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   background: linear-gradient(135deg, #1A365D 0%, #3182CE 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .profile-subtitle {
@@ -394,7 +405,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.875rem 1.75rem;
+  padding: 0.75rem 1.5rem;
   background: white;
   border: 1px solid rgba(49, 130, 206, 0.15);
   border-radius: 14px;
@@ -448,6 +459,10 @@
   background: #F7FAFC;
   transition: all 0.3s ease;
   cursor: pointer;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-upload-area:hover {
@@ -509,18 +524,34 @@
   color: var(--text-main);
 }
 
-/* Layout Grids */
+/* Layout Grids - Optimized for Alignment */
 .profile-fixed-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 2rem;
-  align-items: start;
+  align-items: stretch;
+  /* Ensure columns stretch to equal height */
+}
+
+.profile-col-left,
+.profile-col-right {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make the card fill the available height in the column */
+.profile-col-left .profile-fill-card {
+  flex: 1;
+  height: auto;
+  min-height: 500px;
 }
 
 .profile-suggestions-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  flex: 1;
+  /* Push actions to bottom */
 }
 
 .profile-actions {
@@ -548,6 +579,7 @@
     padding-bottom: 1.5rem;
     flex-direction: row;
     overflow-x: auto;
+    height: auto;
   }
 
   .profile-nav {
