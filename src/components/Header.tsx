@@ -118,25 +118,30 @@ export default function Header() {
             <div className="ml-4 hidden md:flex items-center gap-2" />
           </div>
 
-          {/* Desktop Navigation - 恢复顶部地域入口按钮 */}
-          <div className="hidden md:flex items-center ml-10 space-x-3" aria-label="主导航">
+          {/* Desktop Navigation - 顶部地域入口标签（无外框，竖线分隔） */}
+          <div className="hidden md:flex items-center ml-10 tab-navigation" aria-label="主导航" role="tablist">
             {(location.pathname === '/' || location.pathname.startsWith('/jobs')) && (
               <>
                 <button
                   onClick={() => navigate('/jobs?region=domestic')}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')
-                      ? 'bg-[#3182CE] text-white shadow-md transform scale-105'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  className={`tab-link px-2 py-2 text-base font-semibold ${location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')
+                      ? 'tab-link-active'
+                      : ''
                     }`}
+                  role="tab"
+                  aria-selected={location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')}
                 >
                   人在国内
                 </button>
+                <span className="tab-divider" aria-hidden="true" />
                 <button
                   onClick={() => navigate('/jobs?region=overseas')}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')
-                      ? 'bg-[#3182CE] text-white shadow-md transform scale-105'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  className={`tab-link px-2 py-2 text-base font-semibold ${location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')
+                      ? 'tab-link-active'
+                      : ''
                     }`}
+                  role="tab"
+                  aria-selected={location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')}
                 >
                   人在海外
                 </button>
