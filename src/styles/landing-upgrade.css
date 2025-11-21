@@ -266,6 +266,20 @@
   padding-top: 20px;
   /* Reduced significantly to bring content up */
   padding-bottom: 40px;
+  overflow-x: hidden;
+  /* Prevent horizontal scroll */
+}
+
+.profile-page .mesh-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  /* Ensure full viewport width */
+  height: 100vh;
+  z-index: -1;
+  /* Push behind all content */
+  pointer-events: none;
 }
 
 .profile-container {
