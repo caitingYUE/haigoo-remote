@@ -2,37 +2,26 @@ import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import '../styles/landing-upgrade.css'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
-import landingBg from '../assets/landing_bg_v2.png'
-import landingIllustration from '../assets/landing_illustration_flat.png'
+import homeBgSvg from '../assets/home_bg.svg'
 import ChinaPng from '../assets/China.png'
 import OverseasPng from '../assets/Overseas.png'
 import { ArrowRight } from 'lucide-react'
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const [scrollY, setScrollY] = useState(0)
 
+  // Keep smooth scroll behavior but remove parallax for now as we switch to CSS background
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY)
+    document.documentElement.style.scrollBehavior = 'smooth'
+    return () => {
+      document.documentElement.style.scrollBehavior = 'auto'
     }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   return (
     <div className="landing-page-wrapper">
-      {/* New Background with Parallax */}
-      <div
-        className="landing-background-image"
-        style={{
-          backgroundImage: `url(${landingBg})`,
-          transform: `translateY(${scrollY * 0.5}px)`
-        }}
-      />
-
-      {/* Overlay for better text readability if needed */}
-      <div className="landing-background-overlay" />
+      {/* CSS-based Mesh Gradient Background */}
+      <div className="mesh-background"></div>
 
       <div className="hero-section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,7 +35,7 @@ export default function LandingPage() {
           </p>
 
           <div className="hero-illustration-container">
-            <img src={landingIllustration} alt="Remote Work Illustration" className="hero-illustration mx-auto" />
+            <img src={homeBgSvg} alt="Remote Work Illustration" className="hero-illustration mx-auto" />
           </div>
 
           <div className="entry-cards-grid">
