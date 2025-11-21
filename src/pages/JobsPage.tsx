@@ -336,6 +336,40 @@ export default function JobsPage() {
     return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote && matchesRegion
   })
 
+  // 计算当前地区与其它筛选（不含分类）的基础集合，用于“全部 (数量)”显示
+  const baseFilteredJobs = (jobs || []).filter(job => {
+    const matchesSearch = searchTerm === '' ||
+      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (job.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (job.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (job.skills && job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
+
+    const matchesType = filters.type === 'all' || job.type === filters.type
+    const matchesLocation = filters.location === 'all' ||
+      job.location.includes(filters.location) ||
+      (filters.location === 'Remote' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
+      (filters.location === 'Worldwide' && (job.location.includes('全球') || job.location.includes('远程') || job.isRemote))
+
+    const matchesExperience = filters.experience === 'all' ||
+      (job.experienceLevel && job.experienceLevel === filters.experience)
+
+    const matchesRemote = filters.remote === 'all' ||
+      (filters.remote === 'yes' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
+      (filters.remote === 'no' && !(job.type === 'remote' || job.location.includes('远程') || job.isRemote))
+
+    const norm = (v: string) => (v || '').toLowerCase()
+    const loc = norm(job.location)
+    const skills = (job.skills || []).map((t: string) => norm(t))
+    const pool = new Set([loc, ...skills])
+    const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)))
+    const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
+    const domesticHit = hit(categories.domesticKeywords)
+    const overseasHit = hit(categories.overseasKeywords)
+    const matchesRegion = activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || overseasHit)
+
+    return matchesSearch && matchesType && matchesLocation && matchesExperience && matchesRemote && matchesRegion
+  })
+
   const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length
 
   // 初始化加载已收藏的岗位，用于高亮 Bookmark 状态
@@ -412,7 +446,7 @@ export default function JobsPage() {
               onClick={() => setFilters(prev => ({ ...prev, category: 'all' }))}
               className={`whitespace-nowrap px-3 py-1 rounded-full transition-colors ${filters.category === 'all' ? 'bg-blue-100 text-blue-600 font-medium' : 'hover:text-gray-700'}`}
             >
-              全部 ({jobs?.length || 0})
+              全部 ({baseFilteredJobs.length})
             </button>
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: '市场营销' }))}
