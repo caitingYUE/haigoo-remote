@@ -17,6 +17,7 @@ import {
 } from '../types/unified-job-types';
 import { Job as RSSJob } from '../types/rss-types';
 import { translationMappingService } from './translation-mapping-service';
+import { processedJobsService } from './processed-jobs-service';
 
 export class JobMappingService {
   private mappingConfig: MappingConfig;
@@ -29,6 +30,7 @@ export class JobMappingService {
    * 将RSS岗位数据映射为统一岗位数据
    */
   public async mapRssJobToUnified(rssJob: RSSJob, rawRssJob?: RawRssJob): Promise<UnifiedJob> {
+    const region = await this.determineRegion(rssJob.location || '', rssJob.tags || []);
     const unifiedJob: UnifiedJob = {
       id: this.generateUnifiedId(rssJob),
       
@@ -52,6 +54,7 @@ export class JobMappingService {
       locationRestriction: this.mapLocationRestriction(rssJob),
       isRemote: rssJob.isRemote || false,
       timezone: this.extractTimezone(rssJob),
+      region,
       
       // 技能和要求
       skillTags: this.extractSkillTags(rssJob),
@@ -81,6 +84,27 @@ export class JobMappingService {
     };
 
     return unifiedJob;
+  }
+
+  private async determineRegion(location: string, tags: string[]): Promise<'domestic' | 'overseas' | undefined> {
+    try {
+      const categories = await processedJobsService.getLocationCategories();
+      const norm = (v: string) => (v || '').toLowerCase();
+      const loc = norm(location);
+      const tagSet = new Set(tags.map(t => norm(t)));
+      const pool = new Set([loc, ...Array.from(tagSet)]);
+      const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)));
+      const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc);
+      const domesticHit = hit(categories.domesticKeywords);
+      const overseasHit = hit(categories.overseasKeywords);
+      if (globalHit) return undefined;
+      if (domesticHit) return 'domestic';
+      if (overseasHit) return 'overseas';
+      if (loc.includes('china') || loc.includes('cn') || loc.includes('中国') || loc.includes('beijing') || loc.includes('shanghai') || loc.includes('深圳') || loc.includes('杭州')) return 'domestic';
+      return 'overseas';
+    } catch {
+      return undefined;
+    }
   }
 
   /**

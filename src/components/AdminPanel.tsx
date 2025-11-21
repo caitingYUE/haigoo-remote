@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { processedJobsService } from '../services/processed-jobs-service'
+import { Job as PageJob } from '../types'
 import { Job as RSSJob } from '../types/rss-types';
 import { dataRetentionService, RetentionStats } from '../services/data-retention-service';
 import './AdminPanel.css';
@@ -17,6 +19,7 @@ interface SimpleUnifiedJob {
   companyName: string;
   industryType: string;
   jobType: string;
+  region?: 'domestic' | 'overseas';
   locationRestriction: string;
   skillTags: string[];
   languageRequirements: string;
@@ -131,6 +134,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           companyName: 'Tech Corp',
           industryType: 'TECHNOLOGY',
           jobType: 'FULL_TIME',
+          region: 'overseas',
           locationRestriction: 'NO_RESTRICTION',
           skillTags: ['React', 'TypeScript', 'Node.js', 'AWS'],
           languageRequirements: 'English (Business)',
@@ -146,6 +150,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           companyName: '创新科技公司',
           industryType: 'TECHNOLOGY',
           jobType: 'FULL_TIME',
+          region: 'domestic',
           locationRestriction: 'SPECIFIC_REGIONS',
           skillTags: ['产品管理', '数据分析', '用户研究'],
           languageRequirements: '中文 (母语)',
@@ -161,6 +166,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           companyName: 'Cloud Solutions Inc',
           industryType: 'TECHNOLOGY',
           jobType: 'FULL_TIME',
+          region: 'overseas',
           locationRestriction: 'NO_RESTRICTION',
           skillTags: ['Docker', 'Kubernetes', 'AWS', 'Jenkins', 'Python'],
           languageRequirements: 'English (Fluent)',
@@ -554,6 +560,69 @@ const UnifiedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => voi
 
 // 处理后数据表格组件
 const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => void }> = ({ jobs, onExport }) => {
+  const [regionDetailOpen, setRegionDetailOpen] = useState(false)
+  const [regionDetailLoading, setRegionDetailLoading] = useState(false)
+  const [regionDetailError, setRegionDetailError] = useState<string | null>(null)
+  const [regionDetail, setRegionDetail] = useState<{
+    jobId: string
+    title: string
+    company: string
+    region?: 'domestic' | 'overseas'
+    location: string
+    tags: string[]
+    hits: { type: 'domestic' | 'overseas' | 'global'; keywords: string[] }
+    decision: 'global' | 'domestic' | 'overseas' | 'heuristic' | 'unknown'
+  } | null>(null)
+
+  const openRegionDetail = async (jobId: string) => {
+    setRegionDetailOpen(true)
+    setRegionDetailLoading(true)
+    setRegionDetailError(null)
+    try {
+      const job = await processedJobsService.getJobById(jobId)
+      const cats = await processedJobsService.getLocationCategories()
+      const norm = (v: string) => (v || '').toLowerCase()
+      const loc = norm(job?.location || '')
+      const tagList = (job?.skills || []).map((t: string) => t || '')
+      const pool = new Set([loc, ...tagList.map((t: string) => norm(t))])
+      const hit = (keys: string[]) => {
+        const matched = (keys || []).filter(k => pool.has(norm(k)) || loc.includes(norm(k)))
+        return { matched, any: matched.length > 0 }
+      }
+      const g = hit(cats.globalKeywords)
+      const d = hit(cats.domesticKeywords)
+      const o = hit(cats.overseasKeywords)
+      const isGlobalText = /anywhere|everywhere|worldwide|不限地点/.test(loc)
+      let decision: 'global' | 'domestic' | 'overseas' | 'heuristic' | 'unknown' = 'unknown'
+      if (g.any || isGlobalText) decision = 'global'
+      else if (d.any) decision = 'domestic'
+      else if (o.any) decision = 'overseas'
+      else if (loc.includes('china') || loc.includes('cn') || loc.includes('中国') || loc.includes('beijing') || loc.includes('shanghai') || loc.includes('深圳') || loc.includes('杭州')) decision = 'heuristic'
+      else decision = 'heuristic'
+
+      setRegionDetail({
+        jobId,
+        title: job?.title || '',
+        company: job?.company || '',
+        region: job?.region,
+        location: job?.location || '',
+        tags: tagList,
+        hits: decision === 'global' ? { type: 'global', keywords: g.matched } : decision === 'domestic' ? { type: 'domestic', keywords: d.matched } : decision === 'overseas' ? { type: 'overseas', keywords: o.matched } : { type: 'global', keywords: [] },
+        decision
+      })
+    } catch (e) {
+      setRegionDetailError('加载分类详情失败')
+    } finally {
+      setRegionDetailLoading(false)
+    }
+  }
+
+  const closeRegionDetail = () => {
+    setRegionDetailOpen(false)
+    setRegionDetail(null)
+    setRegionDetailError(null)
+  }
+
   return (
     <div className="table-container">
       <div className="table-header">
@@ -584,6 +653,7 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
               <th>企业名称</th>
               <th>行业类型</th>
               <th>岗位类型</th>
+              <th>区域分类</th>
               <th>区域限制</th>
               <th>技能标签</th>
               <th>语言要求</th>
@@ -602,6 +672,16 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
                 <td>{job.companyName}</td>
                 <td>{job.industryType}</td>
                 <td>{job.jobType}</td>
+                <td>
+                  <div className="flex items-center gap-2">
+                    <span className={`badge ${job.region === 'domestic' ? 'badge-success' : job.region === 'overseas' ? 'badge-info' : 'badge-default'}`}>
+                      {job.region === 'domestic' ? '国内' : job.region === 'overseas' ? '海外' : '未分类'}
+                    </span>
+                    <button className="action-btn" onClick={() => openRegionDetail(job.id)}>
+                      详情
+                    </button>
+                  </div>
+                </td>
                 <td>{job.locationRestriction}</td>
                 <td>
                   <div className="skill-tags">
@@ -639,6 +719,34 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
             ))}
           </tbody>
         </table>
+        {regionDetailOpen && (
+          <div className="modal-overlay">
+            <div className="modal-card">
+              <div className="modal-header">
+                <h4>区域分类匹配详情</h4>
+                <button className="close-btn" onClick={closeRegionDetail}>×</button>
+              </div>
+              <div className="modal-body">
+                {regionDetailLoading && <div className="loading">加载中...</div>}
+                {!regionDetailLoading && regionDetailError && <div className="error">{regionDetailError}</div>}
+                {!regionDetailLoading && !regionDetailError && regionDetail && (
+                  <div className="detail-grid">
+                    <div><strong>岗位：</strong>{regionDetail.title}</div>
+                    <div><strong>企业：</strong>{regionDetail.company}</div>
+                    <div><strong>区域分类：</strong>{regionDetail.region === 'domestic' ? '国内' : regionDetail.region === 'overseas' ? '海外' : '未分类'}</div>
+                    <div><strong>地点：</strong>{regionDetail.location || '-'}</div>
+                    <div><strong>标签：</strong>{regionDetail.tags.length > 0 ? regionDetail.tags.slice(0,6).join(' / ') : '-'}</div>
+                    <div><strong>命中：</strong>{regionDetail.hits.keywords.length > 0 ? `${regionDetail.hits.type}：${regionDetail.hits.keywords.join(', ')}` : '无直接命中，使用启发式'}</div>
+                    <div><strong>判定来源：</strong>{regionDetail.decision}</div>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button className="btn-primary" onClick={closeRegionDetail}>关闭</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <div className="pagination">
         <span>显示 1-{jobs.length} 条，共 {jobs.length} 条记录</span>

@@ -112,6 +112,7 @@ class ProcessedJobsService {
         title: job.title,
         company: job.company,
         location: job.location,
+        region: job.region,
         type: this.mapJobType(job.jobType),
         salary: job.salary ? {
           min: 0,
