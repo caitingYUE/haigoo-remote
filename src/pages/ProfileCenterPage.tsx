@@ -322,21 +322,24 @@ export default function ProfileCenterPage() {
             返回
           </button>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 profile-main-grid">
+        <div className="profile-dashboard-wrapper">
+          {/* Sidebar */}
           <aside className="profile-sidebar">
             <div className="profile-nav-title">Personal Center</div>
             <div className="profile-nav" role="tablist" aria-label="个人中心切换">
               <button className={`profile-nav-item ${tab === 'resume' ? 'active' : ''}`} role="tab" aria-selected={tab === 'resume'} onClick={() => switchTab('resume')}>
-                <FileText className={`w-5 h-5 ${tab === 'resume' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
+                <FileText className={`w-5 h-5 ${tab === 'resume' ? 'text-white' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">我的简历</span>
               </button>
               <button className={`profile-nav-item ${tab === 'favorites' ? 'active' : ''}`} role="tab" aria-selected={tab === 'favorites'} onClick={() => switchTab('favorites')}>
-                <Heart className={`w-5 h-5 ${tab === 'favorites' ? 'text-[var(--profile-primary)]' : 'text-gray-400'}`} />
+                <Heart className={`w-5 h-5 ${tab === 'favorites' ? 'text-white' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">我的收藏</span>
               </button>
             </div>
           </aside>
-          <main>
+
+          {/* Main Content */}
+          <main className="profile-content-area w-full">
             {tab === 'resume' ? <ResumeTab /> : <FavoritesTab />}
             {isJobDetailOpen && selectedJob && (
               <JobDetailModal
