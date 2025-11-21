@@ -120,7 +120,7 @@ export default function Header() {
 
           {/* Desktop Navigation - 顶部地域入口标签（无外框，竖线分隔） */}
           <div className="hidden md:flex items-center ml-10 tab-navigation" aria-label="主导航" role="tablist">
-            {(location.pathname === '/' || location.pathname.startsWith('/jobs')) && (
+            {(location.pathname === '/' || location.pathname.startsWith('/jobs') || location.pathname.startsWith('/profile')) && (
               <>
                 <button
                   onClick={() => navigate('/jobs?region=domestic')}
