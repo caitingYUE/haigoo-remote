@@ -263,8 +263,7 @@
   width: 100%;
   background-color: #f0f9ff;
   position: relative;
-  padding-top: 80px;
-  /* Space for fixed header */
+  padding-top: 56px;
 }
 
 .profile-page .mesh-background {
@@ -278,7 +277,7 @@
 
 .profile-main-grid {
   align-items: start;
-  min-height: calc(100vh - 160px);
+  min-height: calc(100vh - 140px);
 }
 
 .profile-fixed-row {
@@ -296,18 +295,24 @@
 
 /* 固定内容高度，内部滚动 */
 :root {
-  --profile-content-height: calc(100vh - 360px);
+  --profile-content-height: min(64vh, 680px);
 }
 
 .profile-fill-card {
-  max-height: var(--profile-content-height);
+  height: var(--profile-content-height);
+  min-height: 520px;
   overflow: auto;
 }
 
 .profile-suggestions-list {
   flex: 1;
-  max-height: var(--profile-content-height);
+  height: var(--profile-content-height);
+  min-height: 520px;
   overflow: auto;
+}
+
+.profile-col-left .profile-fill-card {
+  flex: 1;
 }
 
 .profile-actions {
@@ -318,6 +323,7 @@
   -webkit-backdrop-filter: blur(6px);
   padding: 0.75rem;
   border-radius: 12px;
+  align-self: stretch;
 }
 
 .profile-sidebar {
