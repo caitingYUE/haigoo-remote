@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Search, 
-  Filter, 
-  RefreshCw, 
-  Download, 
-  Upload, 
-  Trash2, 
-  Edit3, 
-  Eye, 
+import {
+  Search,
+  Filter,
+  RefreshCw,
+  Download,
+  Upload,
+  Trash2,
+  Edit3,
+  Eye,
   MoreHorizontal,
   CheckCircle,
   XCircle,
@@ -63,11 +63,11 @@ const AdminTeamPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // 排序相关状态
   const [sortBy, setSortBy] = useState<'publishedAt' | 'title' | 'company' | 'remoteLocationRestriction'>('publishedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
+
   // RSS配置相关状态
   const [rssSources, setRssSources] = useState<ExtendedRSSSource[]>([]);
   const [showRSSForm, setShowRSSForm] = useState(false);
@@ -81,14 +81,20 @@ const AdminTeamPage: React.FC = () => {
     url: '',
     category: ''
   });
-  
+
   // 数据管理状态
   const [rawJobs, setRawJobs] = useState<any[]>([]);
   const [processedJobs, setProcessedJobs] = useState<any[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  
+
   // 侧边栏折叠状态
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // 简历管理状态
+  const [resumes, setResumes] = useState<any[]>([]);
+  const [resumeSearchTerm, setResumeSearchTerm] = useState('');
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const [storageProvider, setStorageProvider] = useState<string>('');
 
   const { user, logout } = useAuth();
 
@@ -100,29 +106,29 @@ const AdminTeamPage: React.FC = () => {
       // 加载RSS数据
       const rssJobs = jobAggregator.getJobs();
       setJobs(rssJobs);
-      
+
       // 加载统计数据
       const data = jobAggregator.getAdminDashboardData(filter);
       setStats(data.stats);
-      
+
       // 加载RSS源配置
-        const sources = rssService.getRSSSources();
-        // 转换为ExtendedRSSSource格式
-        const extendedSources: ExtendedRSSSource[] = sources.map((source, index) => ({
-          ...source,
-          id: index + 1,
-          isActive: true,
-          lastSync: new Date()
-        }));
-        setRssSources(extendedSources);
-      
+      const sources = rssService.getRSSSources();
+      // 转换为ExtendedRSSSource格式
+      const extendedSources: ExtendedRSSSource[] = sources.map((source, index) => ({
+        ...source,
+        id: index + 1,
+        isActive: true,
+        lastSync: new Date()
+      }));
+      setRssSources(extendedSources);
+
       // 加载原始和处理后的数据
       setRawJobs(rssJobs);
       setProcessedJobs(rssJobs);
-      
-      console.log('数据加载完成:', { 
-        jobsCount: rssJobs.length, 
-        sourcesCount: sources.length 
+
+      console.log('数据加载完成:', {
+        jobsCount: rssJobs.length,
+        sourcesCount: sources.length
       });
     } catch (error) {
       console.error('加载数据失败:', error);
@@ -134,6 +140,13 @@ const AdminTeamPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // 加载简历数据当切换到简历库标签时
+  useEffect(() => {
+    if (activeTab === 'resumes') {
+      fetchResumes();
+    }
+  }, [activeTab]);
 
   // 同步RSS数据
   const handleSync = async () => {
@@ -198,7 +211,7 @@ const AdminTeamPage: React.FC = () => {
             <span className="stat-change positive">+{stats?.recentlyAdded || 0} 今日新增</span>
           </div>
         </div>
-        
+
         <div className="stat-card">
           <div className="stat-icon">
             <Rss className="w-6 h-6" />
@@ -209,7 +222,7 @@ const AdminTeamPage: React.FC = () => {
             <span className="stat-change">活跃源 {rssSources.filter(s => s.isActive).length}</span>
           </div>
         </div>
-        
+
         <div className="stat-card">
           <div className="stat-icon">
             <CheckCircle className="w-6 h-6" />
@@ -220,7 +233,7 @@ const AdminTeamPage: React.FC = () => {
             <span className="stat-change">同步成功率 95%</span>
           </div>
         </div>
-        
+
         <div className="stat-card">
           <div className="stat-icon">
             <Clock className="w-6 h-6" />
@@ -240,15 +253,15 @@ const AdminTeamPage: React.FC = () => {
         </div>
         <div className="card-content">
           <div className="flex flex-wrap gap-4">
-            <button 
+            <button
               onClick={() => handleExport('processed')}
               className="btn-secondary"
             >
               <Download className="w-4 h-4" />
               导出数据
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setShowRSSForm(true)}
               className="btn-secondary"
             >
@@ -267,7 +280,7 @@ const AdminTeamPage: React.FC = () => {
       <div className="card">
         <div className="card-header">
           <h2>RSS源管理</h2>
-          <button 
+          <button
             onClick={() => setShowRSSForm(true)}
             className="btn-primary"
           >
@@ -304,13 +317,13 @@ const AdminTeamPage: React.FC = () => {
                     <td>{source.lastSync ? new Date(source.lastSync).toLocaleString() : '--'}</td>
                     <td>
                       <div className="flex space-x-2">
-                        <button 
+                        <button
                           onClick={() => setEditingRSSSource(source)}
                           className="action-btn"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteRSSSource(source.id)}
                           className="action-btn danger"
                         >
@@ -333,15 +346,214 @@ const AdminTeamPage: React.FC = () => {
     <DataManagementTabs />
   );
 
+  // 获取简历数据
+  const fetchResumes = useCallback(async () => {
+    setResumeLoading(true);
+    try {
+      const token = localStorage.getItem('haigoo_auth_token');
+      const res = await fetch('/api/resumes', {
+        headers: {
+          'Authorization': `Bearer ${token || ''}`
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setResumes(data.data || []);
+        setStorageProvider(data.provider || 'unknown');
+      } else {
+        console.error('Failed to fetch resumes');
+      }
+    } catch (error) {
+      console.error('Error fetching resumes:', error);
+    } finally {
+      setResumeLoading(false);
+    }
+  }, []);
+
+  // 删除简历
+  const handleDeleteResume = async (id: string) => {
+    if (!confirm('确定要删除这份简历吗？')) return;
+
+    try {
+      const token = localStorage.getItem('haigoo_auth_token');
+      const res = await fetch(`/api/resumes?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token || ''}`
+        }
+      });
+
+      if (res.ok) {
+        setResumes(prev => prev.filter(r => r.id !== id));
+      } else {
+        alert('删除失败');
+      }
+    } catch (error) {
+      alert('删除出错: ' + error);
+    }
+  };
+
   // 渲染简历库
-  const renderResumeLibrary = () => (
-    <div className="card">
-      <div className="card-header"><h2>简历库</h2></div>
-      <div className="card-content">
-        <p className="text-gray-500">该功能暂未启用。</p>
+  const renderResumeLibrary = () => {
+    const filteredResumes = resumes.filter(resume => {
+      const term = resumeSearchTerm.toLowerCase();
+      const name = resume.parsedData?.name?.toLowerCase() || '';
+      const email = resume.parsedData?.email?.toLowerCase() || '';
+      const fileName = resume.fileName?.toLowerCase() || '';
+      return name.includes(term) || email.includes(term) || fileName.includes(term);
+    });
+
+    const formatSize = (bytes: number) => {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
+    const formatDate = (dateStr: string) => {
+      return new Date(dateStr).toLocaleString('zh-CN');
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="card">
+          <div className="card-header">
+            <h2>简历库</h2>
+            <button
+              onClick={fetchResumes}
+              className="btn-primary"
+              disabled={resumeLoading}
+            >
+              <RefreshCw className={`w-4 h-4 ${resumeLoading ? 'animate-spin' : ''}`} />
+              刷新列表
+            </button>
+          </div>
+          <div className="card-content">
+            {/* 搜索栏和统计 */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2 flex-1 max-w-md">
+                <Search className="w-5 h-5 text-gray-400 mr-2" />
+                <input
+                  type="text"
+                  placeholder="搜索姓名、邮箱或文件名..."
+                  className="bg-transparent border-none focus:ring-0 w-full text-sm"
+                  value={resumeSearchTerm}
+                  onChange={(e) => setResumeSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="text-sm text-gray-500">
+                存储提供者: <span className="font-medium text-gray-900">{storageProvider}</span>
+                <span className="mx-2">|</span>
+                总计: <span className="font-medium text-gray-900">{resumes.length}</span>
+              </div>
+            </div>
+
+            {/* 简历表格 */}
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>候选人</th>
+                    <th>文件信息</th>
+                    <th>解析状态</th>
+                    <th>上传时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resumeLoading ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-12">
+                        <Loader className="w-6 h-6 animate-spin mx-auto mb-2" />
+                        <p className="text-gray-500">加载中...</p>
+                      </td>
+                    </tr>
+                  ) : filteredResumes.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-12">
+                        <p className="text-gray-500">暂无简历数据</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredResumes.map((resume) => (
+                      <tr key={resume.id}>
+                        <td>
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                              <Users className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {resume.parsedData?.name || '未知姓名'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {resume.parsedData?.email || '无邮箱'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="text-sm text-gray-900">{resume.fileName}</div>
+                          <div className="text-sm text-gray-500">{formatSize(resume.size)}</div>
+                        </td>
+                        <td>
+                          {resume.parseStatus === 'success' ? (
+                            <span className="status-badge high">
+                              <CheckCircle className="w-3 h-3 mr-1" /> 解析成功
+                            </span>
+                          ) : resume.parseStatus === 'partial' ? (
+                            <span className="status-badge medium">
+                              <AlertCircle className="w-3 h-3 mr-1" /> 部分解析
+                            </span>
+                          ) : (
+                            <span className="status-badge low">
+                              <XCircle className="w-3 h-3 mr-1" /> 解析失败
+                            </span>
+                          )}
+                        </td>
+                        <td className="text-sm text-gray-500">
+                          {formatDate(resume.uploadedAt)}
+                        </td>
+                        <td>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => {
+                                alert(JSON.stringify(resume.parsedData, null, 2));
+                              }}
+                              className="action-btn"
+                              title="查看详情"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            {resume.localFilePath && (
+                              <button
+                                onClick={() => window.open(`/api/resume-file?id=${resume.id}`, '_blank')}
+                                className="action-btn"
+                                title="下载原文件"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteResume(resume.id)}
+                              className="action-btn danger"
+                              title="删除"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // 渲染数据分析
   const renderAnalytics = () => (
@@ -385,8 +597,8 @@ const AdminTeamPage: React.FC = () => {
                   <span className="text-sm font-medium">{category}</span>
                   <div className="flex items-center space-x-2">
                     <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary" 
+                      <div
+                        className="h-full bg-primary"
                         style={{ width: `${Math.random() * 80 + 20}%` }}
                       />
                     </div>
@@ -431,8 +643,8 @@ const AdminTeamPage: React.FC = () => {
           <div className="space-y-4">
             <div className="setting-item">
               <label className="flex items-center space-x-3">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={isDarkMode}
                   onChange={(e) => setIsDarkMode(e.target.checked)}
                   className="form-checkbox"
@@ -440,29 +652,29 @@ const AdminTeamPage: React.FC = () => {
                 <span>深色模式</span>
               </label>
             </div>
-            
+
             <div className="setting-item">
               <label className="block text-sm font-medium mb-2">
                 自动同步间隔 (分钟)
               </label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 defaultValue={30}
                 className="form-input w-32"
               />
             </div>
-            
+
             <div className="setting-item">
               <label className="block text-sm font-medium mb-2">
                 数据保留天数
               </label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 defaultValue={30}
                 className="form-input w-32"
               />
             </div>
-            
+
             <button className="btn-primary">
               <Save className="w-4 h-4" />
               保存设置
@@ -509,9 +721,9 @@ const AdminTeamPage: React.FC = () => {
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
-                <a 
+                <a
                   key={tab.id}
-                  href="#" 
+                  href="#"
                   className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
                   onClick={(e) => {
                     e.preventDefault();
@@ -586,7 +798,7 @@ const AdminTeamPage: React.FC = () => {
 
       {/* RSS表单模态框 */}
       {showRSSForm && (
-        <div 
+        <div
           className="modal-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -597,7 +809,7 @@ const AdminTeamPage: React.FC = () => {
           <div className="modal">
             <div className="modal-header">
               <h3>{editingRSSSource ? '编辑RSS源' : '添加RSS源'}</h3>
-              <button 
+              <button
                 onClick={() => {
                   setShowRSSForm(false);
                   setEditingRSSSource(null);
@@ -612,10 +824,10 @@ const AdminTeamPage: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">名称</label>
-                  <input 
+                  <input
                     type="text"
                     value={rssFormData.name}
-                    onChange={(e) => setRssFormData({...rssFormData, name: e.target.value})}
+                    onChange={(e) => setRssFormData({ ...rssFormData, name: e.target.value })}
                     className="form-input w-full"
                     placeholder="RSS源名称"
                     autoFocus
@@ -623,19 +835,19 @@ const AdminTeamPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">URL</label>
-                  <input 
+                  <input
                     type="url"
                     value={rssFormData.url}
-                    onChange={(e) => setRssFormData({...rssFormData, url: e.target.value})}
+                    onChange={(e) => setRssFormData({ ...rssFormData, url: e.target.value })}
                     className="form-input w-full"
                     placeholder="https://example.com/rss"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">分类</label>
-                  <select 
+                  <select
                     value={rssFormData.category}
-                    onChange={(e) => setRssFormData({...rssFormData, category: e.target.value})}
+                    onChange={(e) => setRssFormData({ ...rssFormData, category: e.target.value })}
                     className="form-select w-full"
                   >
                     <option value="">选择分类</option>
@@ -648,7 +860,7 @@ const AdminTeamPage: React.FC = () => {
               </div>
             </div>
             <div className="modal-footer">
-              <button 
+              <button
                 onClick={() => {
                   setShowRSSForm(false);
                   setEditingRSSSource(null);
@@ -658,7 +870,7 @@ const AdminTeamPage: React.FC = () => {
               >
                 取消
               </button>
-              <button 
+              <button
                 onClick={handleAddRSSSource}
                 className="btn-primary"
                 disabled={!rssFormData.name || !rssFormData.url}
