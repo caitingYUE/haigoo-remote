@@ -16,6 +16,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
     "@tailwindcss/line-clamp": "^0.4.4",
+    "@vercel/functions": "^3.3.3",
     "@vercel/kv": "^3.0.0",
     "@vitalets/google-translate-api": "^9.2.0",
     "axios": "^1.6.2",
