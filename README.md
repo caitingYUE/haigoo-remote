@@ -71,11 +71,14 @@ VITE_ALIBABA_BAILIAN_BASE_URL=https://dashscope.aliyuncs.com/api/v1
 
 ### 本地开发
 ```bash
-# 启动开发服务器
+# 启动开发-前端 3001端口
 npm run dev
+# 启动开发-后端 3000端口
+npm i -g vercel
+vercel dev
 
 # 访问应用
-# http://localhost:5173
+# http://localhost:3001
 ```
 
 ### 生产构建
