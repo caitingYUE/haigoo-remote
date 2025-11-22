@@ -125,11 +125,20 @@ export default function ProfileCenterPage() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
     setIsUploading(true)
+    showSuccess('开始上传简历...', '正在解析文件，请稍候')
+
     try {
       const parsed = await parseResumeFileEnhanced(file)
+
+      if (!parsed || !parsed.success) {
+        throw new Error('简历解析失败')
+      }
+
       setLatestResume({ id: Date.now().toString(), name: file.name })
-      if (parsed.success && parsed.textContent && parsed.textContent.length > 50) {
+
+      if (parsed.textContent && parsed.textContent.length > 50) {
         setResumeText(parsed.textContent)
         const resumeItem: ResumeItem = {
           id: Date.now().toString(),
@@ -150,14 +159,52 @@ export default function ProfileCenterPage() {
           summary: parsed.summary,
         }
         await ResumeStorageService.addResume(resumeItem)
+
+        showSuccess('简历上传成功！', '正在分析简历内容...')
+
         const analysis = await resumeService.analyzeResume(parsed.textContent)
         if (analysis.success && analysis.data) {
           setResumeScore(analysis.data.score || 0)
           setSuggestions(analysis.data.suggestions || [])
+          showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
         }
+      } else {
+        showError('解析失败', '无法提取简历内容，请检查文件格式')
       }
+    } catch (error) {
+      console.error('Resume upload error:', error)
+      showError('上传失败', error instanceof Error ? error.message : '简历上传或解析失败，请重试')
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const handleDeleteResume = async () => {
+    if (!confirm('确定要删除简历吗？删除后无法恢复。')) return
+
+    try {
+      if (!latestResume || !token) return
+
+      // 调用 API 删除简历
+      const res = await fetch(`/api/resumes?id=${latestResume.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (res.ok) {
+        // 清除本地状态
+        setLatestResume(null)
+        setResumeText('')
+        setResumeScore(0)
+        setSuggestions([])
+        showSuccess('简历已删除')
+      } else {
+        throw new Error('删除失败')
+      }
+    } catch (error) {
+      showError('删除失败', '无法删除简历，请稍后重试')
     }
   }
 
@@ -206,7 +253,23 @@ export default function ProfileCenterPage() {
                       <FileText className="w-5 h-5 text-[var(--profile-primary)]" />
                       <span className="font-medium text-gray-900">{latestResume.name}</span>
                     </div>
-                    <button className="p-2 text-gray-400 hover:text-[var(--profile-primary)]"><Download className="w-4 h-4" /></button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3 py-1.5 text-sm font-medium text-[var(--profile-primary)] hover:bg-blue-50 rounded-lg transition-colors"
+                        title="重新上传简历"
+                      >
+                        <Upload className="w-4 h-4 inline mr-1" />
+                        重新上传
+                      </button>
+                      <button
+                        onClick={handleDeleteResume}
+                        className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="删除简历"
+                      >
+                        删除
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {resumeText && (

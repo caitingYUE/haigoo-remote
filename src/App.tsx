@@ -8,7 +8,6 @@ import RemoteExperiencePage from './pages/RemoteExperiencePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import AdminLocationPage from './pages/AdminLocationPage'
-import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminPanel from './components/AdminPanel'
 import ProfileCenterPage from './pages/ProfileCenterPage'
 import AdminTeamPage from './pages/AdminTeamPage'
@@ -24,66 +23,57 @@ function App() {
       <AuthProvider>
         <AppProvider>
           <NotificationProvider>
-          <Routes>
-            {/* 公开路由：登录和注册 */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            
-            {/* 旧申请页已废弃 */}
-            
-            {/* AdminDashboardPage 独立布局，不使用 Layout（需要登录） */}
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <AdminDashboardPage />
-              </ProtectedRoute>
-            } />
-            
-            {/* AdminPanel 独立布局，用于数据管理（需要登录） */}
-            <Route path="/admin/data" element={
-              <ProtectedRoute>
-                <AdminPanel />
-              </ProtectedRoute>
-            } />
-            
-            {/* AdminTeamPage 统一后台管理页面（需要登录） */}
-            <Route path="/admin_team" element={
-              <AdminRoute>
-                <AdminTeamPage />
-              </AdminRoute>
-            } />
-            
-            {/* 用户管理页面（需要登录） */}
-            <Route path="/admin/users" element={
-              <AdminRoute>
-                <UserManagementPage />
-              </AdminRoute>
-            } />
-            
-            {/* 其他页面使用标准布局 */}
-            <Route path="/*" element={
-              <Layout>
-                <Routes>
-                  {/* 公开页面 */}
-                  <Route path="/" element={<LandingPage />} />
-                <Route path="/jobs" element={<JobsPage />} />
-                <Route path="/admin/location-categories" element={
-                  <ProtectedRoute>
-                    <AdminLocationPage />
-                  </ProtectedRoute>
-                } />
-                  <Route path="/remote-experience" element={<RemoteExperiencePage />} />
-                  
-                  {/* 需要登录的页面 */}
-                  <Route path="/profile" element={
-                    <ProtectedRoute>
-                      <ProfileCenterPage />
-                    </ProtectedRoute>
-                  } />
-                </Routes>
-              </Layout>
-            } />
-          </Routes>
-        </NotificationProvider>
+            <Routes>
+              {/* 公开路由：登录和注册 */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+
+              {/* AdminPanel 独立布局，用于数据管理（需要登录） */}
+              <Route path="/admin/data" element={
+                <ProtectedRoute>
+                  <AdminPanel />
+                </ProtectedRoute>
+              } />
+
+              {/* AdminTeamPage 统一后台管理页面（需要登录） */}
+              <Route path="/admin_team" element={
+                <AdminRoute>
+                  <AdminTeamPage />
+                </AdminRoute>
+              } />
+
+              {/* 用户管理页面（需要登录） */}
+              <Route path="/admin/users" element={
+                <AdminRoute>
+                  <UserManagementPage />
+                </AdminRoute>
+              } />
+
+              {/* 其他页面使用标准布局 */}
+              <Route path="/*" element={
+                <Layout>
+                  <Routes>
+                    {/* 公开页面 */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/jobs" element={<JobsPage />} />
+                    <Route path="/admin/location-categories" element={
+                      <ProtectedRoute>
+                        <AdminLocationPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/remote-experience" element={<RemoteExperiencePage />} />
+
+                    {/* 需要登录的页面 */}
+                    <Route path="/profile" element={
+                      <ProtectedRoute>
+                        <ProfileCenterPage />
+                      </ProtectedRoute>
+                    } />
+                  </Routes>
+                </Layout>
+              } />
+            </Routes>
+          </NotificationProvider>
         </AppProvider>
       </AuthProvider>
     </ErrorBoundary>

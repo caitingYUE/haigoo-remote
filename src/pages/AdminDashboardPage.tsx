@@ -27,7 +27,8 @@ import {
   X,
   ChevronUp,
   ChevronDown,
-  MapPin
+  MapPin,
+  FileText
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
@@ -667,6 +668,13 @@ const AdminDashboardPage: React.FC = () => {
               >
                 <Users className="w-4 h-4 mr-2" />
                 用户管理
+              </Link>
+              <Link
+                to="/admin/resumes"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                简历管理
               </Link>
               <button
                 onClick={() => setShowLocationConfig(true)}
