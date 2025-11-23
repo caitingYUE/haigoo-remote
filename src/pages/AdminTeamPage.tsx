@@ -394,6 +394,30 @@ const AdminTeamPage: React.FC = () => {
     }
   };
 
+  // 清空所有简历
+  const handleClearResumes = async () => {
+    if (!confirm('确定要清空所有简历吗？此操作不可恢复！')) return;
+
+    try {
+      const token = localStorage.getItem('haigoo_auth_token');
+      const res = await fetch('/api/resumes', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token || ''}`
+        }
+      });
+
+      if (res.ok) {
+        setResumes([]);
+        alert('所有简历已清空');
+      } else {
+        alert('清空失败');
+      }
+    } catch (error) {
+      alert('清空出错: ' + error);
+    }
+  };
+
   // 渲染简历库
   const renderResumeLibrary = () => {
     const filteredResumes = resumes.filter(resume => {
@@ -419,14 +443,24 @@ const AdminTeamPage: React.FC = () => {
         <div className="card">
           <div className="card-header">
             <h2>简历库</h2>
-            <button
-              onClick={fetchResumes}
-              className="btn-primary"
-              disabled={resumeLoading}
-            >
-              <RefreshCw className={`w-4 h-4 ${resumeLoading ? 'animate-spin' : ''}`} />
-              刷新列表
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={handleClearResumes}
+                className="px-4 py-2 bg-white border border-gray-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center text-sm font-medium"
+                disabled={resumeLoading || resumes.length === 0}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                清空所有
+              </button>
+              <button
+                onClick={fetchResumes}
+                className="btn-primary"
+                disabled={resumeLoading}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${resumeLoading ? 'animate-spin' : ''}`} />
+                刷新列表
+              </button>
+            </div>
           </div>
           <div className="card-content">
             {/* 搜索栏和统计 */}

@@ -85,6 +85,14 @@ async function parseWithPython(filePath) {
 
     const pythonProcess = spawn('python3', [pythonScript, filePath])
 
+    // Set a timeout to kill the process if it takes too long (e.g. 5 seconds)
+    // This prevents Vercel function timeouts if Python tries to download models
+    const timeout = setTimeout(() => {
+      console.warn('[parse-resume] Python parsing timed out, killing process...')
+      pythonProcess.kill()
+      resolve(null) // Resolve null to trigger fallback
+    }, 5000)
+
     let stdout = ''
     let stderr = ''
 
@@ -92,10 +100,15 @@ async function parseWithPython(filePath) {
     pythonProcess.stderr.on('data', (data) => stderr += data.toString())
 
     pythonProcess.on('close', (code) => {
-      if (code !== 0) {
+      clearTimeout(timeout)
+      if (code !== 0 && code !== null) { // code is null if killed
         console.error(`[parse-resume] Python exited with code ${code}: ${stderr}`)
         return resolve(null)
       }
+
+      // If killed by timeout, we already resolved null, but safe to check
+      if (pythonProcess.killed) return
+
       try {
         const result = JSON.parse(stdout)
         resolve(result)
@@ -103,6 +116,12 @@ async function parseWithPython(filePath) {
         console.error(`[parse-resume] Failed to parse Python output: ${stdout}`)
         resolve(null)
       }
+    })
+
+    pythonProcess.on('error', (err) => {
+      clearTimeout(timeout)
+      console.error('[parse-resume] Failed to start Python process:', err)
+      resolve(null)
     })
   })
 }
@@ -206,27 +225,40 @@ export default async function handler(req, res) {
       try { await fs.unlink(tempFilePath) } catch (e) { }
     }
 
-    if (parsedData) {
-      // Save to storage
-      const resumeRecord = {
-        fileName: filename,
-        size: buffer.length,
-        parseStatus,
-        parsedData,
-        localFilePath, // 保存本地文件路径（仅本地模式有值）
-        uploadedAt: new Date().toISOString()
-      }
-
-      await saveUserResume(userId, resumeRecord)
-      console.log(`[parse-resume] Saved resume for user ${userId}`)
-
-      return sendJson(res, {
-        success: true,
-        data: parsedData
-      })
+    // 无论解析是否成功，都尝试保存记录
+    // 如果解析失败，parsedData 可能为 null，我们需要构建一个基本的记录
+    const finalParsedData = parsedData || {
+      text: '',
+      fallback: true,
+      error: 'Parsing failed'
     }
 
-    return sendJson(res, { success: false, error: 'Parsing failed' }, 500)
+    const finalParseStatus = parsedData ? parseStatus : 'failed'
+
+    // Save to storage
+    const resumeRecord = {
+      fileName: filename,
+      size: buffer.length,
+      parseStatus: finalParseStatus,
+      parsedData: finalParsedData,
+      localFilePath, // 保存本地文件路径（仅本地模式有值）
+      uploadedAt: new Date().toISOString()
+    }
+
+    try {
+      await saveUserResume(userId, resumeRecord)
+      console.log(`[parse-resume] Saved resume for user ${userId} (Status: ${finalParseStatus})`)
+    } catch (saveError) {
+      console.error(`[parse-resume] Failed to save resume record: ${saveError.message}`)
+      // 如果保存也失败了，那确实没办法了
+      return sendJson(res, { success: false, error: 'Failed to save resume' }, 500)
+    }
+
+    return sendJson(res, {
+      success: true,
+      data: finalParsedData,
+      status: finalParseStatus
+    })
 
   } catch (error) {
     console.error('[parse-resume] ===  ERROR ===')
