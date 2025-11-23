@@ -106,21 +106,23 @@ async function handleRegister(req, res) {
   const verificationExpires = generateVerificationExpiry()
 
   const user = {
-    id: userId,
+    user_id: userId,
     email,
     username: finalUsername,
     avatar,
-    authProvider: 'email',
-    passwordHash,
-    emailVerified: false,
-    verificationToken,
-    verificationExpires,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    auth_provider: 'email',
+    password_hash: passwordHash,
+    email_verified: false,
+    verification_token: verificationToken,
+    verification_expires: verificationExpires,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    last_login_at: null,
     status: 'active',
     roles: {
       admin: email === 'caitlinyct@gmail.com' || email === 'test@example.com'
-    }
+    },
+    profile: null
   }
 
   const { success } = await saveUser(user)
@@ -161,6 +163,7 @@ async function handleLogin(req, res) {
   if (!user) {
     return res.status(401).json({ success: false, error: '邮箱或密码错误' })
   }
+  console.log(`[auth] User found: ${JSON.stringify(user)}`)
 
   // 验证密码
   const passwordMatch = await comparePassword(password, user.passwordHash)
@@ -182,13 +185,13 @@ async function handleLogin(req, res) {
     return res.status(403).json({ success: false, error: '账户已被停用' })
   }
 
-  user.lastLoginAt = new Date().toISOString()
-  user.updatedAt = new Date().toISOString()
+  user.last_login_at = new Date().toISOString()
+  user.updated_at = new Date().toISOString()
   await saveUser(user)
 
   console.log(`[auth] User logged in: ${email}`)
 
-  const token = generateToken({ userId: user.id, email: user.email })
+  const token = generateToken({ userId: user.user_id, email: user.email })
   return res.status(200).json({
     success: true,
     token,
@@ -218,33 +221,34 @@ async function handleGoogleLogin(req, res) {
   let user = await getUserByEmail(googleUser.email)
 
   if (user) {
-    if (user.authProvider !== 'google') {
-      return res.status(400).json({ success: false, error: `该邮箱已使用 ${user.authProvider} 方式注册` })
-    }
-    user.lastLoginAt = new Date().toISOString()
-    user.updatedAt = new Date().toISOString()
-    if (googleUser.picture) user.avatar = googleUser.picture
-    await saveUser(user)
+    if (user.auth_provider !== 'google') {
+    return res.status(400).json({ success: false, error: `该邮箱已使用 ${user.auth_provider} 方式注册` })
+  }
+    user.last_login_at = new Date().toISOString()
+  user.updated_at = new Date().toISOString()
+  if (googleUser.picture) user.avatar = googleUser.picture
+  await saveUser(user)
   } else {
     const userId = crypto.randomUUID()
     user = {
-      id: userId,
+      user_id: userId,
       email: googleUser.email,
       username: googleUser.name || generateRandomUsername(),
       avatar: googleUser.picture || generateRandomAvatar(userId, 'personas'),
-      authProvider: 'google',
-      googleId: googleUser.googleId,
-      emailVerified: googleUser.emailVerified,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
+      auth_provider: 'google',
+      google_id: googleUser.googleId,
+      email_verified: googleUser.emailVerified,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_login_at: new Date().toISOString(),
       status: 'active',
-      roles: { admin: googleUser.email === 'caitlinyct@gmail.com' }
+      roles: { admin: googleUser.email === 'caitlinyct@gmail.com' },
+      profile: null
     }
     await saveUser(user)
   }
 
-  const token = generateToken({ userId: user.id, email: user.email })
+  const token = generateToken({ userId: user.user_id, email: user.email })
   return res.status(200).json({
     success: true,
     token,
@@ -316,7 +320,7 @@ async function handleUpdateProfile(req, res) {
   if (phone !== undefined) user.profile.phone = typeof phone === 'string' ? phone.trim() : undefined
   if (bio !== undefined) user.profile.bio = typeof bio === 'string' ? bio.trim() : undefined
 
-  user.updatedAt = new Date().toISOString()
+  user.updated_at = new Date().toISOString()
 
   const { success } = await saveUser(user)
   if (!success) {
@@ -349,7 +353,7 @@ async function handleVerifyEmail(req, res) {
     return res.status(404).json({ success: false, error: '用户不存在' })
   }
 
-  if (user.emailVerified) {
+  if (user.email_verified) {
     return res.status(200).json({
       success: true,
       message: '邮箱已验证',
@@ -357,18 +361,18 @@ async function handleVerifyEmail(req, res) {
     })
   }
 
-  if (user.verificationToken !== token) {
+  if (user.verification_token !== token) {
     return res.status(400).json({ success: false, error: '验证令牌无效' })
   }
 
-  if (isTokenExpired(user.verificationExpires)) {
+  if (isTokenExpired(user.verification_expires)) {
     return res.status(400).json({ success: false, error: '验证令牌已过期' })
   }
 
-  user.emailVerified = true
-  user.verificationToken = undefined
-  user.verificationExpires = undefined
-  user.updatedAt = new Date().toISOString()
+  user.email_verified = true
+  user.verification_token = undefined
+  user.verification_expires = undefined
+  user.updated_at = new Date().toISOString()
 
   const { success } = await saveUser(user)
   if (!success) {
@@ -408,9 +412,9 @@ async function handleResendVerification(req, res) {
     return res.status(200).json({ success: true, message: '该邮箱已验证' })
   }
 
-  user.verificationToken = generateVerificationToken()
-  user.verificationExpires = generateVerificationExpiry()
-  user.updatedAt = new Date().toISOString()
+  user.verification_token = generateVerificationToken()
+  user.verification_expires = generateVerificationExpiry()
+  user.updated_at = new Date().toISOString()
 
   await saveUser(user)
 

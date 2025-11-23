@@ -135,7 +135,34 @@ export function isValidPassword(password) {
  * @returns {Object} 清理后的用户对象
  */
 export function sanitizeUser(user) {
-  const { passwordHash, verificationToken, ...safeUser } = user
+  if (!user) return null
+  
+  // 统一处理可能的不同命名格式
+  const safeUser = {
+    // 基本信息
+    userId: user.userId || user.user_id,
+    email: user.email,
+    username: user.username,
+    avatar: user.avatar,
+    status: user.status,
+    roles: user.roles,
+    // 时间信息（转换为驼峰命名）
+    createdAt: user.createdAt || user.created_at,
+    updatedAt: user.updatedAt || user.updated_at,
+    lastLoginAt: user.lastLoginAt || user.last_login_at,
+    // 其他非敏感字段
+    profile: user.profile,
+    authProvider: user.authProvider || user.auth_provider,
+    emailVerified: user.emailVerified ?? user.email_verified ?? false
+  }
+  
+  // 移除所有值为undefined的属性
+  Object.keys(safeUser).forEach(key => {
+    if (safeUser[key] === undefined) {
+      delete safeUser[key]
+    }
+  })
+  
   return safeUser
 }
 

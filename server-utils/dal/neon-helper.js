@@ -2,14 +2,15 @@ import { neon } from '@neondatabase/serverless'
 
 
 // Neon/PostgreSQL 配置检测
-const DATABASE_URL =
-    process.env.DATABASE_URL ||
-    process.env.NEON_DATABASE_URL ||
-    process.env.HAIGOO_DATABASE_URL ||
-    process.env.haigoo_DATABASE_URL ||
-    process.env.pre_haigoo_DATABASE_URL ||
-    process.env.PRE_HAIGOO_DATABASE_URL ||
-    null
+// const DATABASE_URL =
+//     process.env.DATABASE_URL ||
+//     process.env.NEON_DATABASE_URL ||
+//     process.env.HAIGOO_DATABASE_URL ||
+//     process.env.haigoo_DATABASE_URL ||
+//     process.env.pre_haigoo_DATABASE_URL ||
+//     process.env.PRE_HAIGOO_DATABASE_URL ||
+//     null
+const DATABASE_URL = "postgresql://neondb_owner:npg_T4Vvm1ryXBwI@ep-crimson-lab-a1pn20hz-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 const DATABASE_CONFIGURED = !!DATABASE_URL
 
 // 创建 Neon SQL 客户端
@@ -105,7 +106,7 @@ const neonHelper = {
         try {
             const columns = Object.keys(data)
             const values = Object.values(data)
-            const placeholders = columns.map((_, index) => `${index + 1}`).join(', ')
+            const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ')
 
             const query = `
                 INSERT INTO ${table} (${columns.join(', ')})
@@ -312,7 +313,7 @@ const neonHelper = {
             `
             const sql = createNeonClient()
             const result = await sql.query(query, [table])
-            return result ?? [0].exists ?? false
+            return result?.[0].exists ?? false
         } catch (error) {
             console.error('[Neon/PostgreSQL] Table exists check error:', error.message)
             console.error('[Neon/PostgreSQL] Error stack:', error.stack)
