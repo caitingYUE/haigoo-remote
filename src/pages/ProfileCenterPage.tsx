@@ -127,53 +127,53 @@ export default function ProfileCenterPage() {
     if (!file) return
 
     setIsUploading(true)
-    showSuccess('开始上传简历...', '正在解析文件，请稍候')
+
+    // 1. 乐观更新：立即展示文件
+    const tempId = Date.now().toString()
+    setLatestResume({ id: tempId, name: file.name })
+    showSuccess('开始上传简历...', '正在后台解析文件')
 
     try {
+      // 2. 调用 API 上传并解析
       const parsed = await parseResumeFileEnhanced(file)
 
-      if (!parsed || !parsed.success) {
-        throw new Error('简历解析失败')
-      }
+      // 3. 处理结果
+      if (parsed && parsed.success) {
+        // 解析成功
+        if (parsed.textContent && parsed.textContent.length > 50) {
+          setResumeText(parsed.textContent)
 
-      setLatestResume({ id: Date.now().toString(), name: file.name })
+          // 更新本地状态以包含更多详情（如果有）
+          // 注意：这里不需要再调用 ResumeStorageService.addResume，因为 API 已经保存了
 
-      if (parsed.textContent && parsed.textContent.length > 50) {
-        setResumeText(parsed.textContent)
-        const resumeItem: ResumeItem = {
-          id: Date.now().toString(),
-          fileName: file.name,
-          fileType: file.type || 'application/octet-stream',
-          size: file.size,
-          uploadedAt: new Date().toISOString(),
-          blobURL: URL.createObjectURL(file),
-          parseStatus: 'success',
-          textContent: parsed.textContent,
-          name: parsed.name,
-          title: parsed.title,
-          gender: parsed.gender,
-          location: parsed.location,
-          targetRole: parsed.targetRole,
-          education: parsed.education,
-          graduationYear: parsed.graduationYear,
-          summary: parsed.summary,
-        }
-        await ResumeStorageService.addResume(resumeItem)
+          showSuccess('简历上传成功！', '正在分析简历内容...')
 
-        showSuccess('简历上传成功！', '正在分析简历内容...')
-
-        const analysis = await resumeService.analyzeResume(parsed.textContent)
-        if (analysis.success && analysis.data) {
-          setResumeScore(analysis.data.score || 0)
-          setSuggestions(analysis.data.suggestions || [])
-          showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
+          // 4. 获取 AI 建议
+          try {
+            const analysis = await resumeService.analyzeResume(parsed.textContent)
+            if (analysis.success && analysis.data) {
+              setResumeScore(analysis.data.score || 0)
+              setSuggestions(analysis.data.suggestions || [])
+              showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
+            }
+          } catch (aiError) {
+            console.warn('AI analysis failed:', aiError)
+            // AI 分析失败不影响简历上传状态
+          }
+        } else {
+          // 解析内容太少，可能解析不完全
+          showSuccess('简历上传成功', '但解析到的内容较少')
         }
       } else {
-        showError('解析失败', '无法提取简历内容，请检查文件格式')
+        // 解析失败，但文件已保存（API 端已处理保存逻辑）
+        console.warn('Resume parsed with errors or fallback')
+        showSuccess('简历上传成功', '文件已保存，但自动解析失败')
       }
     } catch (error) {
       console.error('Resume upload error:', error)
-      showError('上传失败', error instanceof Error ? error.message : '简历上传或解析失败，请重试')
+      // 只有在网络错误等严重情况才回滚
+      showError('上传失败', error instanceof Error ? error.message : '简历上传失败，请重试')
+      setLatestResume(null) // 回滚
     } finally {
       setIsUploading(false)
     }
