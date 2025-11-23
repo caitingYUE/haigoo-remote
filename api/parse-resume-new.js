@@ -85,6 +85,14 @@ async function parseWithPython(filePath) {
 
     const pythonProcess = spawn('python3', [pythonScript, filePath])
 
+    // Set a timeout to kill the process if it takes too long (e.g. 5 seconds)
+    // This prevents Vercel function timeouts if Python tries to download models
+    const timeout = setTimeout(() => {
+      console.warn('[parse-resume] Python parsing timed out, killing process...')
+      pythonProcess.kill()
+      resolve(null) // Resolve null to trigger fallback
+    }, 5000)
+
     let stdout = ''
     let stderr = ''
 
@@ -92,10 +100,15 @@ async function parseWithPython(filePath) {
     pythonProcess.stderr.on('data', (data) => stderr += data.toString())
 
     pythonProcess.on('close', (code) => {
-      if (code !== 0) {
+      clearTimeout(timeout)
+      if (code !== 0 && code !== null) { // code is null if killed
         console.error(`[parse-resume] Python exited with code ${code}: ${stderr}`)
         return resolve(null)
       }
+
+      // If killed by timeout, we already resolved null, but safe to check
+      if (pythonProcess.killed) return
+
       try {
         const result = JSON.parse(stdout)
         resolve(result)
@@ -103,6 +116,12 @@ async function parseWithPython(filePath) {
         console.error(`[parse-resume] Failed to parse Python output: ${stdout}`)
         resolve(null)
       }
+    })
+
+    pythonProcess.on('error', (err) => {
+      clearTimeout(timeout)
+      console.error('[parse-resume] Failed to start Python process:', err)
+      resolve(null)
     })
   })
 }
