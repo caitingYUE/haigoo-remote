@@ -172,10 +172,12 @@ export default function TrustedCompaniesPage() {
                                         </div>
                                     </div>
                                 </div>
-                        ))}
                             </div>
+                            </div>
+                ))}
+            </div>
                         )}
-                    </div>
         </div>
+        </div >
             )
 }

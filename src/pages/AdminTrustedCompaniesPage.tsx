@@ -214,136 +214,138 @@ export default function AdminTrustedCompaniesPage() {
                                         )}
                                     </div>
                                 </div>
-                        ))}
                             </div>
+                            </div>
+                ))}
+            </div>
                         )}
 
-                        {/* Modal */}
-                        {isModalOpen && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                                <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
-                                    <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
-                                        <h2 className="text-xl font-bold text-gray-900">
-                                            {editingCompany ? '编辑企业' : '新增企业'}
-                                        </h2>
-                                        <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                            <XCircle className="w-6 h-6" />
+            {/* Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                            <h2 className="text-xl font-bold text-gray-900">
+                                {editingCompany ? '编辑企业' : '新增企业'}
+                            </h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSave} className="p-6 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="col-span-full">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">企业名称 *</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            placeholder="例如：GitLab"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAutoFill}
+                                            disabled={crawling || (!formData.website && !formData.careersPage)}
+                                            className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+                                        >
+                                            {crawling ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+                                            自动抓取
                                         </button>
                                     </div>
+                                    <p className="text-xs text-gray-500 mt-1">输入官网链接后点击自动抓取可快速填充信息</p>
+                                </div>
 
-                                    <form onSubmit={handleSave} className="p-6 space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="col-span-full">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">企业名称 *</label>
-                                                <div className="flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        required
-                                                        value={formData.name}
-                                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                                        className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                        placeholder="例如：GitLab"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleAutoFill}
-                                                        disabled={crawling || (!formData.website && !formData.careersPage)}
-                                                        className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
-                                                    >
-                                                        {crawling ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
-                                                        自动抓取
-                                                    </button>
-                                                </div>
-                                                <p className="text-xs text-gray-500 mt-1">输入官网链接后点击自动抓取可快速填充信息</p>
-                                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">官网链接</label>
+                                    <input
+                                        type="url"
+                                        value={formData.website}
+                                        onChange={e => setFormData({ ...formData, website: e.target.value })}
+                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        placeholder="https://..."
+                                    />
+                                </div>
 
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">官网链接</label>
-                                                <input
-                                                    type="url"
-                                                    value={formData.website}
-                                                    onChange={e => setFormData({ ...formData, website: e.target.value })}
-                                                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    placeholder="https://..."
-                                                />
-                                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">招聘页链接</label>
+                                    <input
+                                        type="url"
+                                        value={formData.careersPage}
+                                        onChange={e => setFormData({ ...formData, careersPage: e.target.value })}
+                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        placeholder="https://.../careers"
+                                    />
+                                </div>
 
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">招聘页链接</label>
-                                                <input
-                                                    type="url"
-                                                    value={formData.careersPage}
-                                                    onChange={e => setFormData({ ...formData, careersPage: e.target.value })}
-                                                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    placeholder="https://.../careers"
-                                                />
-                                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn 链接</label>
+                                    <input
+                                        type="url"
+                                        value={formData.linkedin}
+                                        onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
+                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        placeholder="https://linkedin.com/company/..."
+                                    />
+                                </div>
 
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn 链接</label>
-                                                <input
-                                                    type="url"
-                                                    value={formData.linkedin}
-                                                    onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
-                                                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    placeholder="https://linkedin.com/company/..."
-                                                />
-                                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Logo 链接</label>
+                                    <input
+                                        type="url"
+                                        value={formData.logo}
+                                        onChange={e => setFormData({ ...formData, logo: e.target.value })}
+                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        placeholder="https://..."
+                                    />
+                                </div>
 
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Logo 链接</label>
-                                                <input
-                                                    type="url"
-                                                    value={formData.logo}
-                                                    onChange={e => setFormData({ ...formData, logo: e.target.value })}
-                                                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    placeholder="https://..."
-                                                />
-                                            </div>
+                                <div className="col-span-full">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">企业简介</label>
+                                    <textarea
+                                        rows={4}
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        placeholder="简要介绍企业业务、文化及远程办公政策..."
+                                    />
+                                </div>
 
-                                            <div className="col-span-full">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">企业简介</label>
-                                                <textarea
-                                                    rows={4}
-                                                    value={formData.description}
-                                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    placeholder="简要介绍企业业务、文化及远程办公政策..."
-                                                />
-                                            </div>
-
-                                            <div className="col-span-full">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">标签 (逗号分隔)</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.tags}
-                                                    onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                                                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                    placeholder="SaaS, DevOps, 全球远程, 异步协作"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex justify-end gap-4 pt-4 border-t border-gray-100">
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsModalOpen(false)}
-                                                className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                                            >
-                                                取消
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                                            >
-                                                保存
-                                            </button>
-                                        </div>
-                                    </form>
+                                <div className="col-span-full">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">标签 (逗号分隔)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.tags}
+                                        onChange={e => setFormData({ ...formData, tags: e.target.value })}
+                                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        placeholder="SaaS, DevOps, 全球远程, 异步协作"
+                                    />
                                 </div>
                             </div>
-                        )}
+
+                            <div className="flex justify-end gap-4 pt-4 border-t border-gray-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    取消
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                                >
+                                    保存
+                                </button>
+                            </div>
+                        </form>
                     </div>
+                </div>
+            )}
         </div>
+        </div >
             )
 }
