@@ -115,44 +115,58 @@ export default function Header() {
               />
               <span className="ml-3 text-[#1A365D] font-semibold text-lg">Haigoo Remote Club</span>
             </Link>
-            <div className="ml-8 hidden md:flex items-center gap-4 border-l border-gray-200 pl-6 h-8">
-              {(location.pathname === '/' || location.pathname.startsWith('/jobs') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/trusted-companies')) && (
-                <>
-                  <button
-                    onClick={() => navigate('/jobs?region=domestic')}
-                    className={`text-sm font-medium transition-colors ${!location.search.includes('region=overseas')
-                      ? 'text-[#1A365D] font-bold'
-                      : 'text-gray-500 hover:text-gray-900'
-                      }`}
-                  >
-                    人在国内
-                  </button>
-                  <span className="text-gray-300">|</span>
-                  <button
-                    onClick={() => navigate('/jobs?region=overseas')}
-                    className={`text-sm font-medium transition-colors ${location.search.includes('region=overseas')
-                      ? 'text-[#1A365D] font-bold'
-                      : 'text-gray-500 hover:text-gray-900'
-                      }`}
-                  >
-                    人在海外
-                  </button>
-                </>
-              )}
-            </div>
           </div>
 
           {/* Center Navigation - 核心功能导航 */}
           <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2 space-x-8">
-            <Link
-              to={`/jobs${location.search}`}
-              className={`text-base font-medium transition-colors ${location.pathname === '/jobs' || location.pathname === '/'
-                ? 'text-[#3182CE]'
-                : 'text-gray-600 hover:text-gray-900'
-                }`}
-            >
-              远程岗位搜索
-            </Link>
+            <div className="flex flex-col items-center group relative">
+              <Link
+                to={`/jobs${location.search}`}
+                className={`text-base font-medium transition-colors ${location.pathname === '/jobs' || location.pathname === '/'
+                  ? 'text-[#3182CE]'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
+              >
+                远程岗位搜索
+              </Link>
+              {/* Region Selector Badge */}
+              <div className="absolute top-full mt-1 flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigate('/jobs?region=domestic')
+                  }}
+                  className={`text-[10px] font-medium transition-colors ${!location.search.includes('region=overseas')
+                    ? 'text-[#3182CE] font-bold'
+                    : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                >
+                  国内
+                </button>
+                <span className="text-[10px] text-gray-300">|</span>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigate('/jobs?region=overseas')
+                  }}
+                  className={`text-[10px] font-medium transition-colors ${location.search.includes('region=overseas')
+                    ? 'text-[#3182CE] font-bold'
+                    : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                >
+                  海外
+                </button>
+              </div>
+              {/* Active Indicator if on jobs page */}
+              {(location.pathname === '/jobs' || location.pathname === '/') && (
+                <div className="absolute top-full mt-1 flex items-center gap-1 group-hover:opacity-0 transition-opacity duration-200">
+                  <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 rounded border border-gray-100">
+                    {!location.search.includes('region=overseas') ? '国内' : '海外'}
+                  </span>
+                </div>
+              )}
+            </div>
+
             <Link
               to="/trusted-companies"
               className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
