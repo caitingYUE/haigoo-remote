@@ -10,6 +10,23 @@ try {
     console.warn('[trusted-companies] Vercel KV module not available')
 }
 
+// Simple HTML parser using regex
+function extractMetadata(html) {
+    const metadata = { title: '', description: '', image: '', icon: '' }
+    const getMeta = (prop) => {
+        const regex = new RegExp(`<meta\\s+(?:property|name)=["']${prop}["']\\s+content=["']([^"']*)["']`, 'i')
+        const match = html.match(regex)
+        return match ? match[1] : ''
+    }
+    const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i)
+    metadata.title = getMeta('og:title') || (titleMatch ? titleMatch[1] : '')
+    metadata.description = getMeta('og:description') || getMeta('description')
+    metadata.image = getMeta('og:image')
+    const iconMatch = html.match(/<link\\s+rel=["'](?:shortcut )?icon["']\\s+href=["']([^"']*)["']/i)
+    metadata.icon = iconMatch ? iconMatch[1] : ''
+    return metadata
+}
+
 // 环境变量
 const REDIS_URL = process.env.REDIS_URL || process.env.haigoo_REDIS_URL || process.env.HAIGOO_REDIS_URL || null
 const REDIS_CONFIGURED = !!REDIS_URL
@@ -112,9 +129,39 @@ export default async function handler(req, res) {
         const payload = verifyToken(token)
         if (!payload) return res.status(401).json({ success: false, error: 'Unauthorized' })
 
-        // POST: Add or Update
+        // POST: Add, Update, or Crawl
         if (req.method === 'POST') {
             const body = req.body || {}
+            const { action } = req.query
+
+            // Crawl Action
+            if (action === 'crawl') {
+                const { url } = body
+                if (!url) return res.status(400).json({ success: false, error: 'URL is required' })
+                try {
+                    console.log(`[trusted-companies] Crawling: ${url}`)
+                    const response = await fetch(url, {
+                        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+                    })
+                    if (!response.ok) throw new Error(`Failed to fetch URL: ${response.status}`)
+                    const html = await response.text()
+                    const metadata = extractMetadata(html)
+                    // Normalize URLs
+                    if (metadata.icon && !metadata.icon.startsWith('http')) {
+                        const urlObj = new URL(url)
+                        metadata.icon = new URL(metadata.icon, urlObj.origin).toString()
+                    }
+                    if (metadata.image && !metadata.image.startsWith('http')) {
+                        const urlObj = new URL(url)
+                        metadata.image = new URL(metadata.image, urlObj.origin).toString()
+                    }
+                    return res.status(200).json({ success: true, metadata })
+                } catch (error) {
+                    console.error('[trusted-companies] Crawl error:', error)
+                    return res.status(500).json({ success: false, error: error.message })
+                }
+            }
+
             const { id, name, website, careersPage, linkedin, description, logo, tags } = body
 
             if (!name) return res.status(400).json({ success: false, error: 'Name is required' })

@@ -64,7 +64,7 @@ export const trustedCompaniesService = {
 
     async fetchMetadata(url: string): Promise<{ title: string; description: string; image: string; icon: string }> {
         const token = getAuthToken()
-        const response = await fetch('/api/crawler/company-info', {
+        const response = await fetch('/api/data/trusted-companies?action=crawl', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
