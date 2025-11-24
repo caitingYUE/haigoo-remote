@@ -12,6 +12,8 @@ import AdminPanel from './components/AdminPanel'
 import ProfileCenterPage from './pages/ProfileCenterPage'
 import AdminTeamPage from './pages/AdminTeamPage'
 import UserManagementPage from './pages/UserManagementPage'
+import AdminTrustedCompaniesPage from './pages/AdminTrustedCompaniesPage'
+import CompanyProfilePage from './pages/CompanyProfilePage'
 import { AppProvider } from './contexts/AppContext'
 import { AuthProvider } from './contexts/AuthContext'
 import NotificationProvider from './components/NotificationSystem'
@@ -56,9 +58,15 @@ function App() {
                     {/* 公开页面 */}
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/jobs" element={<JobsPage />} />
+                    <Route path="/company/:id" element={<CompanyProfilePage />} />
                     <Route path="/admin/location-categories" element={
                       <ProtectedRoute>
                         <AdminLocationPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/trusted-companies" element={
+                      <ProtectedRoute>
+                        <AdminTrustedCompaniesPage />
                       </ProtectedRoute>
                     } />
                     <Route path="/remote-experience" element={<RemoteExperiencePage />} />

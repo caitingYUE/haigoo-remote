@@ -39,6 +39,7 @@ import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
 import DataManagementTabs from '../components/DataManagementTabs';
 import UserManagementPage from './UserManagementPage';
+import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -725,6 +726,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'jobs', label: '职位数据', icon: Briefcase },
     { id: 'resumes', label: '简历库', icon: Users },
     { id: 'users', label: '用户管理', icon: Users },
+    { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'settings', label: '系统设置', icon: Settings }
   ];
@@ -822,8 +824,9 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'rss' && renderRSSManagement()}
               {activeTab === 'jobs' && renderJobDataManagement()}
               {activeTab === 'resumes' && renderResumeLibrary()}
-              {activeTab === 'analytics' && renderAnalytics()}
               {activeTab === 'users' && <UserManagementPage />}
+              {activeTab === 'trusted-companies' && <AdminTrustedCompaniesPage />}
+              {activeTab === 'analytics' && renderAnalytics()}
               {activeTab === 'settings' && renderSettings()}
             </div>
           )}

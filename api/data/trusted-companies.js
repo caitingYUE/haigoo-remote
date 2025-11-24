@@ -1,0 +1,171 @@
+import { verifyToken, extractToken } from '../../server-utils/auth-helpers.js'
+import { createClient } from 'redis'
+
+// 安全加载 Vercel KV
+let kv = null
+try {
+    const kvModule = require('@vercel/kv')
+    kv = kvModule?.kv || null
+} catch (e) {
+    console.warn('[trusted-companies] Vercel KV module not available')
+}
+
+// 环境变量
+const REDIS_URL = process.env.REDIS_URL || process.env.haigoo_REDIS_URL || process.env.HAIGOO_REDIS_URL || null
+const REDIS_CONFIGURED = !!REDIS_URL
+const KV_CONFIGURED = !!kv
+
+// 内存存储 (Fallback)
+let MEMORY_STORE = globalThis.__haigoo_trusted_companies_mem || []
+if (!globalThis.__haigoo_trusted_companies_mem) {
+    globalThis.__haigoo_trusted_companies_mem = MEMORY_STORE
+}
+
+const STORAGE_KEY = 'haigoo:trusted_companies'
+
+// Redis Client Helper
+let __redisClient = globalThis.__haigoo_redis_client || null
+async function getRedisClient() {
+    if (!REDIS_CONFIGURED) return null
+    if (__redisClient) return __redisClient
+    try {
+        const client = createClient({ url: REDIS_URL })
+        client.on('error', err => console.error('[trusted-companies] Redis error:', err))
+        await client.connect()
+        __redisClient = client
+        globalThis.__haigoo_redis_client = client
+        return client
+    } catch (error) {
+        console.error('[trusted-companies] Redis connection failed:', error.message)
+        return null
+    }
+}
+
+// Data Access Layer
+async function getAllCompanies() {
+    try {
+        // 1. Redis
+        if (REDIS_CONFIGURED) {
+            const client = await getRedisClient()
+            if (client) {
+                const data = await client.get(STORAGE_KEY)
+                if (data) return JSON.parse(data)
+            }
+        }
+        // 2. KV
+        if (KV_CONFIGURED) {
+            const data = await kv.get(STORAGE_KEY)
+            if (data) return Array.isArray(data) ? data : []
+        }
+    } catch (e) {
+        console.error('[trusted-companies] Read error:', e)
+    }
+    // 3. Memory
+    return MEMORY_STORE
+}
+
+async function saveAllCompanies(companies) {
+    MEMORY_STORE = companies
+    globalThis.__haigoo_trusted_companies_mem = companies
+
+    try {
+        // 1. Redis
+        if (REDIS_CONFIGURED) {
+            const client = await getRedisClient()
+            if (client) await client.set(STORAGE_KEY, JSON.stringify(companies))
+        }
+        // 2. KV
+        if (KV_CONFIGURED) {
+            await kv.set(STORAGE_KEY, companies)
+        }
+    } catch (e) {
+        console.error('[trusted-companies] Write error:', e)
+    }
+}
+
+// Handler
+export default async function handler(req, res) {
+    // CORS
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+    if (req.method === 'OPTIONS') return res.status(200).end()
+
+    try {
+        // GET: List all companies
+        if (req.method === 'GET') {
+            const companies = await getAllCompanies()
+            const { id } = req.query
+
+            if (id) {
+                const company = companies.find(c => c.id === id)
+                if (!company) return res.status(404).json({ success: false, error: 'Company not found' })
+                return res.status(200).json({ success: true, company })
+            }
+
+            return res.status(200).json({ success: true, companies })
+        }
+
+        // Auth Check for Write Operations
+        const token = extractToken(req)
+        const payload = verifyToken(token)
+        if (!payload) return res.status(401).json({ success: false, error: 'Unauthorized' })
+
+        // POST: Add or Update
+        if (req.method === 'POST') {
+            const body = req.body || {}
+            const { id, name, website, careersPage, linkedin, description, logo, tags } = body
+
+            if (!name) return res.status(400).json({ success: false, error: 'Name is required' })
+
+            let companies = await getAllCompanies()
+            const now = new Date().toISOString()
+
+            if (id) {
+                // Update
+                const index = companies.findIndex(c => c.id === id)
+                if (index === -1) return res.status(404).json({ success: false, error: 'Company not found' })
+
+                companies[index] = {
+                    ...companies[index],
+                    name, website, careersPage, linkedin, description, logo, tags,
+                    updatedAt: now
+                }
+            } else {
+                // Create
+                const newCompany = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    name, website, careersPage, linkedin, description, logo, tags,
+                    createdAt: now,
+                    updatedAt: now,
+                    isTrusted: true
+                }
+                companies.push(newCompany)
+            }
+
+            await saveAllCompanies(companies)
+            return res.status(200).json({ success: true, message: 'Saved successfully' })
+        }
+
+        // DELETE
+        if (req.method === 'DELETE') {
+            const { id } = req.query
+            if (!id) return res.status(400).json({ success: false, error: 'ID is required' })
+
+            let companies = await getAllCompanies()
+            const initialLen = companies.length
+            companies = companies.filter(c => c.id !== id)
+
+            if (companies.length === initialLen) return res.status(404).json({ success: false, error: 'Company not found' })
+
+            await saveAllCompanies(companies)
+            return res.status(200).json({ success: true, message: 'Deleted successfully' })
+        }
+
+        return res.status(405).json({ success: false, error: 'Method not allowed' })
+    } catch (error) {
+        console.error('[trusted-companies] Error:', error)
+        return res.status(500).json({ success: false, error: 'Server error' })
+    }
+}
