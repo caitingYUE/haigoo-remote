@@ -200,13 +200,28 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             <div className="flex items-center">
               <span
                 className={`px-2 py-0.5 text-xs font-medium rounded-md ${job.type === 'full-time' ? 'bg-green-100 text-green-700' :
-                    job.type === 'contract' ? 'bg-blue-100 text-blue-700' :
-                      'bg-gray-100 text-gray-700'
+                  job.type === 'contract' ? 'bg-blue-100 text-blue-700' :
+                    'bg-gray-100 text-gray-700'
                   }`}
                 aria-label={`工作类型：${getJobTypeLabel(job.type)}`}
               >
                 {getJobTypeLabel(job.type)}
               </span>
+            </div>
+
+            {/* 来源认证徽章 */}
+            <div className="flex items-center">
+              {(job as any).sourceType === 'trusted' || (job as any).isTrusted ? (
+                <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-blue-50 text-blue-600 border border-blue-100">
+                  <Award className="w-3 h-3" />
+                  可信认证
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-gray-50 text-gray-500 border border-gray-100">
+                  <Globe className="w-3 h-3" />
+                  第三方
+                </span>
+              )}
             </div>
 
             {/* 发布时间 */}

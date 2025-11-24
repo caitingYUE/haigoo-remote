@@ -121,6 +121,36 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
+    const handleCrawlJobs = async (company: TrustedCompany) => {
+        try {
+            setCrawling(true)
+            showSuccess('开始抓取', `正在抓取 ${company.name} 的岗位...`)
+
+            // Call API with action=crawl-jobs
+            const token = localStorage.getItem('auth_token') // Assuming token is stored here or use helper
+            // Note: trustedCompaniesService doesn't have this method yet, so we'll fetch directly or add it.
+            // Let's use fetch directly for now as it's a specific admin action
+
+            const response = await fetch(`/api/data/trusted-companies?action=crawl-jobs&id=${company.id}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            if (data.success) {
+                showSuccess('抓取完成', `成功抓取 ${data.count} 个岗位`)
+            } else {
+                showError('抓取失败', data.error)
+            }
+        } catch (error) {
+            showError('抓取失败', '网络或服务器错误')
+        } finally {
+            setCrawling(false)
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             <div className="max-w-7xl mx-auto">
@@ -159,6 +189,14 @@ export default function AdminTrustedCompaniesPage() {
 
                                     {/* Action Buttons Overlay */}
                                     <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => handleCrawlJobs(company)}
+                                            disabled={crawling}
+                                            className="p-1.5 bg-white text-gray-600 hover:text-green-600 rounded-lg shadow-sm border border-gray-200 transition-colors"
+                                            title="抓取岗位"
+                                        >
+                                            <Briefcase className="w-4 h-4" />
+                                        </button>
                                         <button onClick={() => handleEdit(company)} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded-lg shadow-sm border border-gray-200 transition-colors">
                                             <Edit2 className="w-4 h-4" />
                                         </button>

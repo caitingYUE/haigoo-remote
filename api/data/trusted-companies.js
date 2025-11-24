@@ -162,6 +162,74 @@ export default async function handler(req, res) {
                 }
             }
 
+            // Crawl Jobs Action
+            if (action === 'crawl-jobs') {
+                const { id } = req.query
+                if (!id) return res.status(400).json({ success: false, error: 'Company ID is required' })
+
+                const companies = await getAllCompanies()
+                const company = companies.find(c => c.id === id)
+                if (!company) return res.status(404).json({ success: false, error: 'Company not found' })
+                if (!company.careersPage && !company.website) return res.status(400).json({ success: false, error: 'No careers page or website URL' })
+
+                try {
+                    const { crawlCompanyJobs } = await import('../../api/crawler/job-crawler.js')
+                    const url = company.careersPage || company.website
+                    const crawledJobs = await crawlCompanyJobs(company.id, url)
+
+                    // Enrich jobs with company name
+                    const enrichedJobs = crawledJobs.map(job => ({
+                        ...job,
+                        company: company.name,
+                        companyLogo: company.logo,
+                        sourceType: 'trusted',
+                        isTrusted: true
+                    }))
+
+                    // Save to Job Storage (Accessing processed-jobs storage key directly)
+                    // Note: This duplicates logic from processed-jobs.js but is necessary for cross-endpoint data manipulation
+                    // in this simple serverless structure without a shared DB layer.
+                    const JOB_STORAGE_KEY = 'haigoo:processed_jobs'
+                    let existingJobs = []
+
+                    // Read existing jobs
+                    if (REDIS_CONFIGURED) {
+                        const client = await getRedisClient()
+                        if (client) {
+                            const data = await client.get(JOB_STORAGE_KEY)
+                            if (data) existingJobs = JSON.parse(data)
+                        }
+                    } else if (KV_CONFIGURED) {
+                        const data = await kv.get(JOB_STORAGE_KEY)
+                        if (data) existingJobs = Array.isArray(data) ? data : []
+                    } else {
+                        // Fallback to memory (shared global if possible, but likely separate in serverless)
+                        existingJobs = globalThis.__haigoo_processed_jobs_mem || []
+                    }
+
+                    // Merge: Remove old crawled jobs for this company and add new ones
+                    const otherJobs = existingJobs.filter(j => j.companyId !== company.id || j.sourceType !== 'trusted')
+                    const allJobs = [...otherJobs, ...enrichedJobs]
+
+                    // Save back
+                    if (REDIS_CONFIGURED) {
+                        const client = await getRedisClient()
+                        if (client) await client.set(JOB_STORAGE_KEY, JSON.stringify(allJobs))
+                    } else if (KV_CONFIGURED) {
+                        await kv.set(JOB_STORAGE_KEY, allJobs)
+                    }
+
+                    // Update memory fallback
+                    globalThis.__haigoo_processed_jobs_mem = allJobs
+
+                    return res.status(200).json({ success: true, count: enrichedJobs.length, jobs: enrichedJobs })
+
+                } catch (error) {
+                    console.error('[trusted-companies] Job crawl error:', error)
+                    return res.status(500).json({ success: false, error: error.message })
+                }
+            }
+
             const { id, name, website, careersPage, linkedin, description, logo, tags } = body
 
             if (!name) return res.status(400).json({ success: false, error: 'Name is required' })
