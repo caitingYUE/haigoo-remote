@@ -130,18 +130,18 @@ export default function Header() {
                 远程岗位搜索
               </Link>
               {/* Region Selector Badge */}
-              <div className="absolute top-full mt-1 flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="absolute -bottom-4 -right-12 transform scale-90 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-gray-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
                 <button
                   onClick={(e) => {
                     e.preventDefault()
                     navigate('/jobs?region=domestic')
                   }}
-                  className={`text-[10px] font-medium transition-colors ${!location.search.includes('region=overseas')
+                  className={`text-[10px] whitespace-nowrap transition-colors ${!location.search.includes('region=overseas')
                     ? 'text-[#3182CE] font-bold'
-                    : 'text-gray-400 hover:text-gray-600'
+                    : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
-                  国内
+                  国内可申
                 </button>
                 <span className="text-[10px] text-gray-300">|</span>
                 <button
@@ -149,19 +149,19 @@ export default function Header() {
                     e.preventDefault()
                     navigate('/jobs?region=overseas')
                   }}
-                  className={`text-[10px] font-medium transition-colors ${location.search.includes('region=overseas')
+                  className={`text-[10px] whitespace-nowrap transition-colors ${location.search.includes('region=overseas')
                     ? 'text-[#3182CE] font-bold'
-                    : 'text-gray-400 hover:text-gray-600'
+                    : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
-                  海外
+                  海外可申
                 </button>
               </div>
               {/* Active Indicator if on jobs page */}
               {(location.pathname === '/jobs' || location.pathname === '/') && (
-                <div className="absolute top-full mt-1 flex items-center gap-1 group-hover:opacity-0 transition-opacity duration-200">
-                  <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 rounded border border-gray-100">
-                    {!location.search.includes('region=overseas') ? '国内' : '海外'}
+                <div className="absolute -bottom-4 -right-12 transform scale-90 flex items-center gap-1 group-hover:opacity-0 transition-opacity duration-200">
+                  <span className="text-[10px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 whitespace-nowrap">
+                    {!location.search.includes('region=overseas') ? '国内可申' : '海外可申'}
                   </span>
                 </div>
               )}

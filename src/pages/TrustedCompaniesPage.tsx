@@ -13,6 +13,8 @@ export default function TrustedCompaniesPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [jobCounts, setJobCounts] = useState<Record<string, number>>({})
 
+    const [allJobs, setAllJobs] = useState<any[]>([])
+
     useEffect(() => {
         loadData()
     }, [])
@@ -26,6 +28,7 @@ export default function TrustedCompaniesPage() {
             ])
 
             setCompanies(companiesData)
+            setAllJobs(jobsData)
 
             // Calculate job counts per company
             const counts: Record<string, number> = {}
@@ -45,11 +48,25 @@ export default function TrustedCompaniesPage() {
         }
     }
 
-    const filteredCompanies = companies.filter(company =>
-        company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (company.description && company.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (company.tags && company.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
-    )
+    const filteredCompanies = companies.filter(company => {
+        const searchLower = searchTerm.toLowerCase()
+        // Basic company info match
+        const infoMatch =
+            company.name.toLowerCase().includes(searchLower) ||
+            (company.description && company.description.toLowerCase().includes(searchLower)) ||
+            (company.tags && company.tags.some(tag => tag.toLowerCase().includes(searchLower)))
+
+        // Job title match
+        const hasMatchingJobs = allJobs.some(job =>
+            job.company &&
+            company.name &&
+            job.company.toLowerCase().includes(company.name.toLowerCase()) &&
+            job.title &&
+            job.title.toLowerCase().includes(searchLower)
+        )
+
+        return infoMatch || hasMatchingJobs
+    })
 
     return (
         <div className="min-h-screen bg-[#F8F9FA]">
@@ -57,10 +74,10 @@ export default function TrustedCompaniesPage() {
             <div className="bg-white border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
                     <h1 className="text-4xl font-bold text-[#1A365D] mb-4">
-                        Meet the Innovators: Our Trusted Remote Companies
+                        遇见创新者：我们的可信远程企业
                     </h1>
                     <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-                        Discover our hand-picked selection of verified companies, celebrated for their remote culture, mission, and the opportunities they offer.
+                        探索我们精选的经过验证的企业，它们以远程文化、使命和提供的机会而闻名。
                     </p>
 
                     <div className="max-w-2xl mx-auto">
@@ -68,7 +85,7 @@ export default function TrustedCompaniesPage() {
                             value={searchTerm}
                             onChange={setSearchTerm}
                             onSearch={setSearchTerm}
-                            placeholder="Search by company name..."
+                            placeholder="搜索岗位、公司或关键词..."
                             className="w-full shadow-md"
                         />
                     </div>
@@ -76,13 +93,13 @@ export default function TrustedCompaniesPage() {
                     {/* Filters (Visual only for now as per design, can be functional later) */}
                     <div className="flex justify-center gap-4 mt-8">
                         <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 flex items-center gap-2">
-                            Industry <span className="text-xs">▼</span>
+                            行业 <span className="text-xs">▼</span>
                         </button>
                         <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 flex items-center gap-2">
-                            Company Size <span className="text-xs">▼</span>
+                            公司规模 <span className="text-xs">▼</span>
                         </button>
                         <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 flex items-center gap-2">
-                            Region <span className="text-xs">▼</span>
+                            地区 <span className="text-xs">▼</span>
                         </button>
                     </div>
                 </div>
