@@ -115,38 +115,53 @@ export default function Header() {
               />
               <span className="ml-3 text-[#1A365D] font-semibold text-lg">Haigoo Remote Club</span>
             </Link>
-            <div className="ml-4 hidden md:flex items-center gap-2" />
+            <div className="ml-8 hidden md:flex items-center gap-4 border-l border-gray-200 pl-6 h-8">
+              {(location.pathname === '/' || location.pathname.startsWith('/jobs') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/trusted-companies')) && (
+                <>
+                  <button
+                    onClick={() => navigate('/jobs?region=domestic')}
+                    className={`text-sm font-medium transition-colors ${!location.search.includes('region=overseas')
+                      ? 'text-[#1A365D] font-bold'
+                      : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                  >
+                    人在国内
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={() => navigate('/jobs?region=overseas')}
+                    className={`text-sm font-medium transition-colors ${location.search.includes('region=overseas')
+                      ? 'text-[#1A365D] font-bold'
+                      : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                  >
+                    人在海外
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Desktop Navigation - 顶部地域入口标签（无外框，竖线分隔） */}
-          <div className="hidden md:flex items-center ml-10 tab-navigation" aria-label="主导航" role="tablist">
-            {(location.pathname === '/' || location.pathname.startsWith('/jobs') || location.pathname.startsWith('/profile')) && (
-              <>
-                <button
-                  onClick={() => navigate('/jobs?region=domestic')}
-                  className={`tab-link px-2 py-2 text-base font-semibold ${location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')
-                    ? 'tab-link-active'
-                    : ''
-                    }`}
-                  role="tab"
-                  aria-selected={location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')}
-                >
-                  人在国内
-                </button>
-                <span className="tab-divider" aria-hidden="true" />
-                <button
-                  onClick={() => navigate('/jobs?region=overseas')}
-                  className={`tab-link px-2 py-2 text-base font-semibold ${location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')
-                    ? 'tab-link-active'
-                    : ''
-                    }`}
-                  role="tab"
-                  aria-selected={location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')}
-                >
-                  人在海外
-                </button>
-              </>
-            )}
+          {/* Center Navigation - 核心功能导航 */}
+          <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2 space-x-8">
+            <Link
+              to={`/jobs${location.search}`}
+              className={`text-base font-medium transition-colors ${location.pathname === '/jobs' || location.pathname === '/'
+                ? 'text-[#3182CE]'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
+            >
+              远程岗位搜索
+            </Link>
+            <Link
+              to="/trusted-companies"
+              className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
+                ? 'text-[#3182CE]'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
+            >
+              可信企业列表
+            </Link>
           </div>
 
           {/* Right side actions */}

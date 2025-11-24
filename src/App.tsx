@@ -14,6 +14,7 @@ import AdminTeamPage from './pages/AdminTeamPage'
 import UserManagementPage from './pages/UserManagementPage'
 import AdminTrustedCompaniesPage from './pages/AdminTrustedCompaniesPage'
 import CompanyProfilePage from './pages/CompanyProfilePage'
+import TrustedCompaniesPage from './pages/TrustedCompaniesPage'
 import { AppProvider } from './contexts/AppContext'
 import { AuthProvider } from './contexts/AuthContext'
 import NotificationProvider from './components/NotificationSystem'
@@ -58,6 +59,7 @@ function App() {
                     {/* 公开页面 */}
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/jobs" element={<JobsPage />} />
+                    <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
                     <Route path="/company/:id" element={<CompanyProfilePage />} />
                     <Route path="/admin/location-categories" element={
                       <ProtectedRoute>
