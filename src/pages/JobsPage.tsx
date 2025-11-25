@@ -334,7 +334,13 @@ export default function JobsPage() {
     const matchesRegion = activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || overseasHit)
 
     return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote && matchesRegion
+  }).sort((a, b) => {
+    // 排序逻辑：优先显示已认证 (isTrusted) 的岗位，其次按发布时间倒序
+    if (a.isTrusted && !b.isTrusted) return -1
+    if (!a.isTrusted && b.isTrusted) return 1
+    return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
   })
+
 
   // 计算当前地区与其它筛选（不含分类）的基础集合，用于“全部 (数量)”显示
   const baseFilteredJobs = (jobs || []).filter(job => {
@@ -393,7 +399,7 @@ export default function JobsPage() {
       role="main"
       aria-label="职位搜索页面"
     >
-      
+
 
       {/* 搜索和筛选栏 - 悬浮吸顶效果 */}
       <div className="sticky top-0 z-40 bg-gray-50/95 backdrop-blur-sm py-4 shadow-sm transition-all duration-300">
