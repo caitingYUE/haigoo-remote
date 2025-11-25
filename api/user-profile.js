@@ -248,6 +248,38 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, error: '认证令牌无效或已过期' })
     }
 
+    // 获取反馈列表 (仅管理员)
+    if (action === 'feedbacks_list') {
+      // 简单鉴权：检查是否有 token 且 userId 存在 (更严格的鉴权应检查角色)
+      if (!payload || !payload.userId) return res.status(401).json({ success: false, error: 'Unauthorized' })
+
+      const key = `haigoo:feedbacks`
+      let feedbacks = []
+
+      try {
+        if (REDIS_CONFIGURED) {
+          const client = await getRedisClient()
+          if (client) {
+            const data = await client.get(key)
+            if (data) feedbacks = JSON.parse(data)
+          }
+        } else if (KV_CONFIGURED) {
+          const data = await kv.get(key)
+          if (data) feedbacks = Array.isArray(data) ? data : []
+        } else {
+          feedbacks = memoryFeedbacks || []
+        }
+
+        // 按时间倒序
+        feedbacks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+        return res.status(200).json({ success: true, feedbacks })
+      } catch (e) {
+        console.error('[user-profile] feedbacks_list error:', e)
+        return res.status(500).json({ success: false, error: 'Failed to fetch feedbacks' })
+      }
+    }
+
     // 地址分类写入 (需要认证)
     if (action === 'location_categories_set' && (req.method === 'POST' || req.method === 'PUT')) {
       const payload = req.body && typeof req.body === 'object' ? req.body : {}

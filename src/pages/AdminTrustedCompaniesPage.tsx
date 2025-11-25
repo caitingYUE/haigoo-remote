@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import AdminCompanyJobsModal from '../components/AdminCompanyJobsModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 
@@ -14,6 +15,7 @@ export default function AdminTrustedCompaniesPage() {
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingCompany, setEditingCompany] = useState<Partial<TrustedCompany> | null>(null)
+    const [managingJobsCompany, setManagingJobsCompany] = useState<TrustedCompany | null>(null)
     const [crawling, setCrawling] = useState(false)
 
     // Form State
@@ -220,6 +222,13 @@ export default function AdminTrustedCompaniesPage() {
                                         >
                                             <Briefcase className="w-4 h-4" />
                                         </button>
+                                        <button
+                                            onClick={() => setManagingJobsCompany(company)}
+                                            className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded-lg shadow-sm border border-gray-200 transition-colors"
+                                            title="管理岗位"
+                                        >
+                                            <Search className="w-4 h-4" />
+                                        </button>
                                         <button onClick={() => handleEdit(company)} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded-lg shadow-sm border border-gray-200 transition-colors">
                                             <Edit2 className="w-4 h-4" />
                                         </button>
@@ -421,6 +430,14 @@ export default function AdminTrustedCompaniesPage() {
                             </form>
                         </div>
                     </div>
+                )}
+
+                {/* Jobs Management Modal */}
+                {managingJobsCompany && (
+                    <AdminCompanyJobsModal
+                        company={managingJobsCompany}
+                        onClose={() => setManagingJobsCompany(null)}
+                    />
                 )}
             </div>
         </div >

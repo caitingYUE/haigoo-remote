@@ -173,7 +173,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
           </div>
 
           {/* 核心信息行 - 固定高度 */}
-          <div className="flex flex-wrap items-center gap-3 text-sm h-6 overflow-hidden">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
             {/* 薪资 */}
             {job.salary && job.salary.min > 0 && (
               <div className="flex items-center text-haigoo-primary font-semibold">
