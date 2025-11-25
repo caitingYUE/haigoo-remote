@@ -41,6 +41,10 @@ export interface Job {
     requirements?: string[]
     responsibilities?: string[]
   }
+  // Trusted Company Fields
+  companyId?: string
+  sourceType?: 'trusted' | 'rss'
+  isTrusted?: boolean
 }
 
 export interface User {

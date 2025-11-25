@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 
 export default function AdminTrustedCompaniesPage() {
     const navigate = useNavigate()
     const { showSuccess, showError } = useNotificationHelpers()
+    const { token } = useAuth()
+    const [fetchDetailsEnabled, setFetchDetailsEnabled] = useState(false)
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -124,14 +127,20 @@ export default function AdminTrustedCompaniesPage() {
     const handleCrawlJobs = async (company: TrustedCompany) => {
         try {
             setCrawling(true)
-            showSuccess('开始抓取', `正在抓取 ${company.name} 的岗位...`)
+            const message = fetchDetailsEnabled
+                ? `正在抓取 ${company.name} 的岗位（包含详细描述，可能需要较长时间）...`
+                : `正在抓取 ${company.name} 的岗位...`
+            showSuccess('开始抓取', message)
 
-            // Call API with action=crawl-jobs
-            const token = localStorage.getItem('auth_token') // Assuming token is stored here or use helper
-            // Note: trustedCompaniesService doesn't have this method yet, so we'll fetch directly or add it.
-            // Let's use fetch directly for now as it's a specific admin action
+            // Build query string with optional detail fetching
+            const params = new URLSearchParams({
+                action: 'crawl-jobs',
+                id: company.id,
+                fetchDetails: fetchDetailsEnabled.toString(),
+                maxDetails: '10'
+            })
 
-            const response = await fetch(`/api/data/trusted-companies?action=crawl-jobs&id=${company.id}`, {
+            const response = await fetch(`/api/data/trusted-companies?${params}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -157,15 +166,26 @@ export default function AdminTrustedCompaniesPage() {
                 <div className="flex justify-between items-center mb-8">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">可信远程企业管理</h1>
-                        <p className="text-gray-500 mt-1">管理经过人工审核的优质远程企业名单</p>
+                        <p className="text-gray-500 mt-1">管理经过认证工作栈的优质远程企业名单</p>
                     </div>
-                    <button
-                        onClick={handleAdd}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        <Plus className="w-5 h-5" />
-                        新增企业
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 text-sm text-gray-600">
+                            <input
+                                type="checkbox"
+                                checked={fetchDetailsEnabled}
+                                onChange={(e) => setFetchDetailsEnabled(e.target.checked)}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            抓取详细描述
+                        </label>
+                        <button
+                            onClick={handleAdd}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        >
+                            <Plus className="w-4 h-4" />
+                            新增企业
+                        </button>
+                    </div>
                 </div>
 
                 {/* List */}

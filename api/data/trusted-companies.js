@@ -27,10 +27,40 @@ function extractMetadata(html) {
     return metadata
 }
 
-// 环境变量
-const REDIS_URL = process.env.REDIS_URL || process.env.haigoo_REDIS_URL || process.env.HAIGOO_REDIS_URL || null
+// 统一环境变量解析：兼容 preview 专用前缀（pre_haigoo_*、pre_*、haigoo_* 等）
+function getEnv(...names) {
+    const variants = (name) => [
+        name,
+        `haigoo_${name}`,
+        `HAIGOO_${name}`,
+        `pre_${name}`,
+        `PRE_${name}`,
+        `pre_haigoo_${name}`,
+        `PRE_HAIGOO_${name}`
+    ]
+    for (const base of names) {
+        for (const key of variants(base)) {
+            if (process.env[key]) return process.env[key]
+        }
+    }
+    return null
+}
+
+// Detect KV configuration (REST-only)
+const KV_REST_API_URL = getEnv('KV_REST_API_URL')
+const KV_REST_API_TOKEN = getEnv('KV_REST_API_TOKEN')
+if (KV_REST_API_URL && !process.env.KV_REST_API_URL) process.env.KV_REST_API_URL = KV_REST_API_URL
+if (KV_REST_API_TOKEN && !process.env.KV_REST_API_TOKEN) process.env.KV_REST_API_TOKEN = KV_REST_API_TOKEN
+const KV_CONFIGURED = !!(KV_REST_API_URL && KV_REST_API_TOKEN)
+
+// Detect Upstash Redis REST configuration
+const UPSTASH_REST_URL = getEnv('UPSTASH_REDIS_REST_URL', 'UPSTASH_REST_URL', 'REDIS_REST_API_URL', 'KV_REST_API_URL')
+const UPSTASH_REST_TOKEN = getEnv('UPSTASH_REDIS_REST_TOKEN', 'UPSTASH_REST_TOKEN', 'REDIS_REST_API_TOKEN', 'KV_REST_API_TOKEN')
+const UPSTASH_REST_CONFIGURED = !!(UPSTASH_REST_URL && UPSTASH_REST_TOKEN)
+
+// Detect Redis TCP configuration
+const REDIS_URL = getEnv('REDIS_URL', 'UPSTASH_REDIS_URL') || null
 const REDIS_CONFIGURED = !!REDIS_URL
-const KV_CONFIGURED = !!kv
 
 // 内存存储 (Fallback)
 let MEMORY_STORE = globalThis.__haigoo_trusted_companies_mem || []
@@ -39,6 +69,50 @@ if (!globalThis.__haigoo_trusted_companies_mem) {
 }
 
 const STORAGE_KEY = 'haigoo:trusted_companies'
+
+// --- Upstash Redis REST helpers ---
+async function upstashGet(key) {
+    if (!UPSTASH_REST_CONFIGURED) throw new Error('Upstash REST not configured')
+    try {
+        const res = await fetch(`${UPSTASH_REST_URL}/get/${encodeURIComponent(key)}`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${UPSTASH_REST_TOKEN}` }
+        })
+        if (res.ok) {
+            const json = await res.json().catch(() => null)
+            if (json && typeof json.result !== 'undefined') return json.result
+        }
+    } catch (e) {
+        // ignore, try POST fallback
+    }
+    const res2 = await fetch(`${UPSTASH_REST_URL}/get`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_REST_TOKEN}` },
+        body: JSON.stringify({ key })
+    })
+    const json2 = await res2.json().catch(() => null)
+    return json2?.result ?? null
+}
+
+async function upstashSet(key, value) {
+    if (!UPSTASH_REST_CONFIGURED) throw new Error('Upstash REST not configured')
+    const serialized = typeof value === 'string' ? value : JSON.stringify(value)
+    try {
+        const res = await fetch(`${UPSTASH_REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(serialized)}`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${UPSTASH_REST_TOKEN}` }
+        })
+        if (res.ok) return true
+    } catch (e) {
+        // try JSON endpoint
+    }
+    const res2 = await fetch(`${UPSTASH_REST_URL}/set`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_REST_TOKEN}` },
+        body: JSON.stringify({ key, value: serialized })
+    })
+    return res2.ok
+}
 
 // Redis Client Helper
 let __redisClient = globalThis.__haigoo_redis_client || null
@@ -61,7 +135,19 @@ async function getRedisClient() {
 // Data Access Layer
 async function getAllCompanies() {
     try {
-        // 1. Redis
+        // Priority: Upstash REST -> Redis TCP -> KV SDK -> Memory
+        if (UPSTASH_REST_CONFIGURED) {
+            try {
+                const data = await upstashGet(STORAGE_KEY)
+                if (data) {
+                    const parsed = typeof data === 'string' ? JSON.parse(data) : data
+                    return Array.isArray(parsed) ? parsed : []
+                }
+            } catch (e) {
+                console.warn('[trusted-companies] Upstash REST read failed, trying Redis TCP:', e?.message)
+            }
+        }
+
         if (REDIS_CONFIGURED) {
             const client = await getRedisClient()
             if (client) {
@@ -69,15 +155,14 @@ async function getAllCompanies() {
                 if (data) return JSON.parse(data)
             }
         }
-        // 2. KV
-        if (KV_CONFIGURED) {
+
+        if (KV_CONFIGURED && kv) {
             const data = await kv.get(STORAGE_KEY)
             if (data) return Array.isArray(data) ? data : []
         }
     } catch (e) {
         console.error('[trusted-companies] Read error:', e)
     }
-    // 3. Memory
     return MEMORY_STORE
 }
 
@@ -86,14 +171,17 @@ async function saveAllCompanies(companies) {
     globalThis.__haigoo_trusted_companies_mem = companies
 
     try {
-        // 1. Redis
-        if (REDIS_CONFIGURED) {
+        // Priority: Upstash REST -> Redis TCP -> KV SDK
+        if (UPSTASH_REST_CONFIGURED) {
+            await upstashSet(STORAGE_KEY, JSON.stringify(companies))
+            console.log('[trusted-companies] Saved to Upstash REST')
+        } else if (REDIS_CONFIGURED) {
             const client = await getRedisClient()
             if (client) await client.set(STORAGE_KEY, JSON.stringify(companies))
-        }
-        // 2. KV
-        if (KV_CONFIGURED) {
+            console.log('[trusted-companies] Saved to Redis TCP')
+        } else if (KV_CONFIGURED && kv) {
             await kv.set(STORAGE_KEY, companies)
+            console.log('[trusted-companies] Saved to KV SDK')
         }
     } catch (e) {
         console.error('[trusted-companies] Write error:', e)
@@ -164,7 +252,7 @@ export default async function handler(req, res) {
 
             // Crawl Jobs Action
             if (action === 'crawl-jobs') {
-                const { id } = req.query
+                const { id, fetchDetails, maxDetails } = req.query
                 if (!id) return res.status(400).json({ success: false, error: 'Company ID is required' })
 
                 const companies = await getAllCompanies()
@@ -173,9 +261,19 @@ export default async function handler(req, res) {
                 if (!company.careersPage && !company.website) return res.status(400).json({ success: false, error: 'No careers page or website URL' })
 
                 try {
-                    const { crawlCompanyJobs } = await import('../../api/crawler/job-crawler.js')
+                    const { crawlCompanyJobs } = await import('../../lib/job-crawler.js')
                     const url = company.careersPage || company.website
-                    const crawledJobs = await crawlCompanyJobs(company.id, url)
+
+                    // Parse options
+                    const crawlOptions = {
+                        fetchDetails: fetchDetails === 'true',
+                        maxDetailFetches: parseInt(maxDetails || '10', 10),
+                        concurrency: 3
+                    }
+
+                    console.log('[trusted-companies] Crawl options:', crawlOptions)
+
+                    const crawledJobs = await crawlCompanyJobs(company.id, url, crawlOptions)
 
                     // Enrich jobs with company name
                     const enrichedJobs = crawledJobs.map(job => ({
@@ -192,31 +290,64 @@ export default async function handler(req, res) {
                     const JOB_STORAGE_KEY = 'haigoo:processed_jobs'
                     let existingJobs = []
 
-                    // Read existing jobs
-                    if (REDIS_CONFIGURED) {
+                    // Read existing jobs (Priority: Upstash REST -> Redis TCP -> KV SDK -> Memory)
+                    if (UPSTASH_REST_CONFIGURED) {
+                        try {
+                            const data = await upstashGet(JOB_STORAGE_KEY)
+                            if (data) {
+                                const parsed = typeof data === 'string' ? JSON.parse(data) : data
+                                existingJobs = Array.isArray(parsed) ? parsed : []
+                            }
+                        } catch (e) {
+                            console.warn('[trusted-companies] Upstash REST read jobs failed:', e?.message)
+                        }
+                    } else if (REDIS_CONFIGURED) {
                         const client = await getRedisClient()
                         if (client) {
                             const data = await client.get(JOB_STORAGE_KEY)
                             if (data) existingJobs = JSON.parse(data)
                         }
-                    } else if (KV_CONFIGURED) {
+                    } else if (KV_CONFIGURED && kv) {
                         const data = await kv.get(JOB_STORAGE_KEY)
                         if (data) existingJobs = Array.isArray(data) ? data : []
                     } else {
-                        // Fallback to memory (shared global if possible, but likely separate in serverless)
                         existingJobs = globalThis.__haigoo_processed_jobs_mem || []
                     }
 
-                    // Merge: Remove old crawled jobs for this company and add new ones
-                    const otherJobs = existingJobs.filter(j => j.companyId !== company.id || j.sourceType !== 'trusted')
+                    console.log(`[trusted-companies] Existing jobs count: ${existingJobs.length}`)
+
+                    // Merge: Remove ALL jobs for this company (trusted OR otherwise) and add new crawled ones
+                    // This ensures we don't have duplicates or stale data
+                    const beforeMerge = existingJobs.length
+                    const otherJobs = existingJobs.filter(j => {
+                        // Remove if companyId matches
+                        if (j.companyId === company.id) {
+                            console.log(`[trusted-companies] Removing existing job ${j.id} for company ${company.id}`)
+                            return false
+                        }
+                        // Also remove if company name matches (fallback for old data without companyId)
+                        if (j.company === company.name) {
+                            console.log(`[trusted-companies] Removing existing job ${j.id} by company name`)
+                            return false
+                        }
+                        return true
+                    })
+                    console.log(`[trusted-companies] Removed ${beforeMerge - otherJobs.length} existing jobs for ${company.name}`)
                     const allJobs = [...otherJobs, ...enrichedJobs]
 
-                    // Save back
-                    if (REDIS_CONFIGURED) {
+                    console.log(`[trusted-companies] After merge: ${allJobs.length} jobs (removed ${existingJobs.length - otherJobs.length} old, added ${enrichedJobs.length} new)`)
+
+                    // Save back (Priority: Upstash REST -> Redis TCP -> KV SDK)
+                    if (UPSTASH_REST_CONFIGURED) {
+                        await upstashSet(JOB_STORAGE_KEY, JSON.stringify(allJobs))
+                        console.log('[trusted-companies] Saved jobs to Upstash REST')
+                    } else if (REDIS_CONFIGURED) {
                         const client = await getRedisClient()
                         if (client) await client.set(JOB_STORAGE_KEY, JSON.stringify(allJobs))
-                    } else if (KV_CONFIGURED) {
+                        console.log('[trusted-companies] Saved jobs to Redis TCP')
+                    } else if (KV_CONFIGURED && kv) {
                         await kv.set(JOB_STORAGE_KEY, allJobs)
+                        console.log('[trusted-companies] Saved jobs to KV SDK')
                     }
 
                     // Update memory fallback
@@ -270,11 +401,98 @@ export default async function handler(req, res) {
 
             let companies = await getAllCompanies()
             const initialLen = companies.length
+
+            // IMPORTANT: Save company info BEFORE filtering
+            const companyToDelete = companies.find(c => c.id === id)
+
             companies = companies.filter(c => c.id !== id)
 
             if (companies.length === initialLen) return res.status(404).json({ success: false, error: 'Company not found' })
 
             await saveAllCompanies(companies)
+
+            // Also delete associated jobs
+            try {
+                const JOB_STORAGE_KEY = getEnv('haigoo:processed_jobs')
+                let existingJobs = []
+
+                console.log(`[trusted-companies] Attempting to delete jobs for company ID: ${id}`)
+
+                // Read existing jobs
+                if (UPSTASH_REST_CONFIGURED) {
+                    const data = await upstashGet(JOB_STORAGE_KEY)
+                    if (data) {
+                        const parsed = typeof data === 'string' ? JSON.parse(data) : data
+                        existingJobs = Array.isArray(parsed) ? parsed : []
+                    }
+                    console.log(`[trusted-companies] Read ${existingJobs.length} jobs from Upstash REST`)
+                } else if (REDIS_CONFIGURED) {
+                    const client = await getRedisClient()
+                    if (client) {
+                        const data = await client.get(JOB_STORAGE_KEY)
+                        if (data) existingJobs = JSON.parse(data)
+                    }
+                    console.log(`[trusted-companies] Read ${existingJobs.length} jobs from Redis TCP`)
+                } else if (KV_CONFIGURED && kv) {
+                    const data = await kv.get(JOB_STORAGE_KEY)
+                    if (data) existingJobs = Array.isArray(data) ? data : []
+                    console.log(`[trusted-companies] Read ${existingJobs.length} jobs from KV SDK`)
+                } else {
+                    existingJobs = globalThis.__haigoo_processed_jobs_mem || []
+                    console.log(`[trusted-companies] Read ${existingJobs.length} jobs from memory`)
+                }
+
+                // Debug: Show sample of jobs with companyId
+                if (existingJobs.length > 0) {
+                    const sampleJobs = existingJobs.slice(0, 3).map(j => ({
+                        id: j.id,
+                        title: j.title,
+                        companyId: j.companyId,
+                        company: j.company
+                    }))
+                    console.log(`[trusted-companies] Sample jobs:`, JSON.stringify(sampleJobs))
+                }
+
+                // Filter out jobs for this company (try multiple strategies)
+                const beforeCount = existingJobs.length
+                const remainingJobs = existingJobs.filter(j => {
+                    // Strategy 1: Match by companyId
+                    if (j.companyId === id) {
+                        console.log(`[trusted-companies] Removing job ${j.id} (matched companyId)`)
+                        return false
+                    }
+                    // Strategy 2: Match by company name (fallback for old data)
+                    if (companyToDelete && j.company === companyToDelete.name) {
+                        console.log(`[trusted-companies] Removing job ${j.id} (matched company name)`)
+                        return false
+                    }
+                    return true
+                })
+                const deletedCount = beforeCount - remainingJobs.length
+
+                console.log(`[trusted-companies] Filtered ${deletedCount} jobs (${beforeCount} -> ${remainingJobs.length})`)
+
+                // Save back
+                if (UPSTASH_REST_CONFIGURED) {
+                    await upstashSet(JOB_STORAGE_KEY, JSON.stringify(remainingJobs))
+                    console.log(`[trusted-companies] Saved ${remainingJobs.length} jobs to Upstash REST`)
+                } else if (REDIS_CONFIGURED) {
+                    const client = await getRedisClient()
+                    if (client) await client.set(JOB_STORAGE_KEY, JSON.stringify(remainingJobs))
+                    console.log(`[trusted-companies] Saved ${remainingJobs.length} jobs to Redis TCP`)
+                } else if (KV_CONFIGURED && kv) {
+                    await kv.set(JOB_STORAGE_KEY, remainingJobs)
+                    console.log(`[trusted-companies] Saved ${remainingJobs.length} jobs to KV SDK`)
+                }
+
+                globalThis.__haigoo_processed_jobs_mem = remainingJobs
+
+                console.log(`[trusted-companies] ✅ Deleted company ${id} and ${deletedCount} associated jobs`)
+            } catch (error) {
+                console.error('[trusted-companies] ❌ Failed to delete associated jobs:', error)
+                // Don't fail the company deletion if job cleanup fails
+            }
+
             return res.status(200).json({ success: true, message: 'Deleted successfully' })
         }
 

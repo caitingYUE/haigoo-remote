@@ -641,6 +641,18 @@ export default async function handler(req, res) {
         totalPages = 0
       }
 
+      // DEBUG: Log first few jobs to check for companyId
+      if (items.length > 0) {
+        const debugJobs = items.slice(0, 3).map(j => ({
+          id: j.id,
+          title: j.title,
+          company: j.company,
+          companyId: j.companyId,
+          sourceType: j.sourceType
+        }))
+        console.log('[processed-jobs] Debug Response Jobs:', JSON.stringify(debugJobs))
+      }
+
       // 强制禁用缓存，确保前端刷新拿到最新数据
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
       res.setHeader('Pragma', 'no-cache')
@@ -768,7 +780,11 @@ export default async function handler(req, res) {
           // 🆕 翻译字段
           translations: j.translations || null,
           isTranslated: j.isTranslated || false,
-          translatedAt: j.translatedAt || null
+          translatedAt: j.translatedAt || null,
+          // Trusted Company Fields
+          companyId: j.companyId || null,
+          sourceType: j.sourceType || 'rss',
+          isTrusted: !!j.isTrusted
         }
       })
 

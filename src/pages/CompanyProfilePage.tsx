@@ -6,6 +6,7 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { Job } from '../types'
 import JobCard from '../components/JobCard'
 import { useNotificationHelpers } from '../components/NotificationSystem'
+import JobDetailModal from '../components/JobDetailModal'
 
 export default function CompanyProfilePage() {
     const { id } = useParams<{ id: string }>()
@@ -13,6 +14,7 @@ export default function CompanyProfilePage() {
     const [company, setCompany] = useState<TrustedCompany | null>(null)
     const [jobs, setJobs] = useState<Job[]>([])
     const [loading, setLoading] = useState(true)
+    const [selectedJob, setSelectedJob] = useState<Job | null>(null)
 
     useEffect(() => {
         if (id) {
@@ -31,10 +33,14 @@ export default function CompanyProfilePage() {
             // Note: This is a simple client-side filter. ideally backend should support filtering by company ID if linked.
             // For now we match by name.
             const allJobs = await processedJobsService.getAllProcessedJobs(1000) // Fetch enough jobs
-            const relatedJobs = allJobs.filter(job =>
-                job.company && companyData.name &&
-                job.company.toLowerCase().includes(companyData.name.toLowerCase())
-            )
+            const relatedJobs = allJobs.filter(job => {
+                // Check by ID first (more accurate for trusted companies)
+                if (job.companyId && job.companyId === companyId) return true
+
+                // Fallback to name matching
+                return job.company && companyData.name &&
+                    job.company.toLowerCase().includes(companyData.name.toLowerCase())
+            })
             setJobs(relatedJobs)
 
         } catch (error) {
@@ -165,7 +171,7 @@ export default function CompanyProfilePage() {
                                 job={job}
                                 isSaved={false} // Todo: connect with saved state
                                 onSave={() => { }}
-                                onClick={() => { }} // Todo: open detail modal
+                                onClick={(job) => setSelectedJob(job)}
                             />
                         ))}
                     </div>
@@ -189,6 +195,15 @@ export default function CompanyProfilePage() {
                     </div>
                 )}
             </div>
+
+            {/* Job Detail Modal */}
+            {selectedJob && (
+                <JobDetailModal
+                    job={selectedJob}
+                    isOpen={!!selectedJob}
+                    onClose={() => setSelectedJob(null)}
+                />
+            )}
         </div>
     )
 }

@@ -21,16 +21,16 @@ const basicTranslations: TranslationDict = {
   'Trader': '交易员',
   'Analyst': '分析师',
   'Training Included': '包含培训',
-  
+
   // 公司名称
   'WhiteBridge-Ltd': 'WhiteBridge有限公司',
   'WhiteBridge': 'WhiteBridge',
-  
+
   // 地点
   'Sevilla': '塞维利亚',
   'Spain': '西班牙',
   'Sevilla, Spain': '西班牙塞维利亚',
-  
+
   // 工作类型
   'Full-time': '全职',
   'Part-time': '兼职',
@@ -38,7 +38,7 @@ const basicTranslations: TranslationDict = {
   'Remote': '远程',
   'Hybrid': '混合办公',
   'On-site': '现场办公',
-  
+
   // 常用词汇
   'Job description': '职位描述',
   'Company information': '公司信息',
@@ -57,13 +57,13 @@ const basicTranslations: TranslationDict = {
   'employees': '员工',
   'Technology/Internet': '科技/互联网',
   'Series B': 'B轮',
-  
+
   // 福利相关
   'Competitive salary and equity package': '具有竞争力的薪资和股权包',
   'Flexible working hours and remote work options': '灵活的工作时间和远程工作选择',
   'Health, dental, and vision insurance': '健康、牙科和视力保险',
   'Professional development budget': '专业发展预算',
-  
+
   // 职位描述相关
   'Work with analytical tools and participate in discussions with a team of traders': '使用分析工具并与交易团队进行讨论',
   'The gradual formation and improvement of your own trading strategy': '逐步形成和完善您自己的交易策略',
@@ -104,7 +104,7 @@ export const translateText = (text: string, _useTranslation: boolean = true): st
 // 格式化职位描述 - 优化为序号和点列表格式
 export const formatJobDescription = (description: string): string => {
   if (!description) return '';
-  
+
   return description
     .replace(/\n\s*\n/g, '<br><br>')
     .replace(/\n/g, '<br>')
@@ -119,16 +119,16 @@ export const formatJobDescription = (description: string): string => {
 // 提取职位摘要
 export const extractJobSummary = (description: string): string => {
   if (!description) return '';
-  
+
   // 移除HTML标签
   const cleanText = description.replace(/<[^>]*>/g, '').trim();
-  
+
   // 检查是否有明确的摘要标识
   const summaryMarkers = [
     /^(summary|overview|about|description)[:：]/im,
     /^(职位概要|职位摘要|岗位概述|关于职位)[:：]/im
   ];
-  
+
   let hasSummaryMarker = false;
   for (const marker of summaryMarkers) {
     if (marker.test(cleanText)) {
@@ -136,44 +136,46 @@ export const extractJobSummary = (description: string): string => {
       break;
     }
   }
-  
+
   // 如果没有明确的摘要标识，且文本很短或很长，则不提取摘要
   if (!hasSummaryMarker) {
     // 如果文本太短（少于100字符）或太长（超过2000字符），可能不适合作为摘要
     if (cleanText.length < 100 || cleanText.length > 2000) {
       return '';
     }
-    
+
     // 检查是否是纯粹的职位描述列表（包含大量项目符号或编号）
-    const listItemCount = (cleanText.match(/^[\s]*[-•*]\s+/gm) || []).length + 
-                         (cleanText.match(/^[\s]*\d+[\.\)]\s+/gm) || []).length;
+    const listItemCount = (cleanText.match(/^[\s]*[-•*]\s+/gm) || []).length +
+      (cleanText.match(/^[\s]*\d+[\.\)]\s+/gm) || []).length;
     if (listItemCount > 5) {
       return ''; // 如果有太多列表项，可能不适合作为摘要
     }
   }
-  
+
   // 按句子分割，取前两句
   const sentences = cleanText.split(/[.!?。！？]/).filter(s => s.trim().length > 10);
-  
+
   // 如果句子太少，可能不是有效的摘要
   if (sentences.length < 2) {
     return '';
   }
-  
+
   const summary = sentences.slice(0, 2).join('。') + (sentences.length > 2 ? '。' : '');
-  
+
   // 如果摘要太短或太长，返回空
   if (summary.length < 50 || summary.length > 300) {
     return '';
   }
-  
+
   return summary.length > 150 ? summary.substring(0, 150) + '...' : summary;
 };
 
 // 分段职位描述 - 简化分段逻辑，保持原文完整性
 export const segmentJobDescription = (description: string) => {
-  if (!description) return { sections: [] };
-  
+  if (!description || description.trim().length === 0) {
+    return { sections: [{ title: '职位详情', content: '暂无描述' }] };
+  }
+
   // 清理描述文本，但保持基本结构
   const cleanDescription = description
     // 先将块级标签转换为换行，保留段落结构
@@ -191,17 +193,29 @@ export const segmentJobDescription = (description: string) => {
     .replace(/\n\s*\n/g, '\n\n')
     .replace(/[ \t]+/g, ' ')
     .trim();
-  
-  // 如果文本较短或没有明显的分段标志，直接返回完整内容
-  if (cleanDescription.length < 500 || !cleanDescription.includes('\n')) {
-    return { 
-      sections: [{ 
-        title: '职位详情', 
-        content: cleanDescription 
-      }] 
+
+  // 即使内容很短,也返回它（修复暂无描述问题）
+  if (cleanDescription.length === 0) {
+    // 如果清理后完全没有内容，尝试使用原始内容
+    const rawContent = description.replace(/<[^>]*>/g, '').trim();
+    return {
+      sections: [{
+        title: '职位详情',
+        content: rawContent.length > 0 ? rawContent : '暂无描述'
+      }]
     };
   }
-  
+
+  // 如果文本较短或没有明显的分段标志，直接返回完整内容
+  if (cleanDescription.length < 500 || !cleanDescription.includes('\n')) {
+    return {
+      sections: [{
+        title: '职位详情',
+        content: cleanDescription
+      }]
+    };
+  }
+
   // 只在有明确分段标志时才进行分段
   const naturalSections = [];
   const strongSectionMarkers = [
@@ -211,27 +225,27 @@ export const segmentJobDescription = (description: string) => {
     /^(Benefits|What We Offer|福利|薪资福利|我们提供)[:：]/im,
     /^(About (Us|the Company)|关于我们|公司介绍)[:：]/im
   ];
-  
+
   // 按自然段落分割，但只在有强标志时分段
   const paragraphs = cleanDescription.split(/\n\s*\n/).filter(p => p.trim().length > 50);
-  
+
   if (paragraphs.length <= 2) {
     // 段落太少，不分段
-    return { 
-      sections: [{ 
-        title: '职位详情', 
-        content: cleanDescription 
-      }] 
+    return {
+      sections: [{
+        title: '职位详情',
+        content: cleanDescription
+      }]
     };
   }
-  
+
   let currentSection = '';
   let currentTitle = '职位详情';
-  
+
   for (const paragraph of paragraphs) {
     const trimmed = paragraph.trim();
     let foundMarker = false;
-    
+
     // 检查是否有强分段标志
     for (const marker of strongSectionMarkers) {
       if (marker.test(trimmed)) {
@@ -242,7 +256,7 @@ export const segmentJobDescription = (description: string) => {
             content: currentSection.trim()
           });
         }
-        
+
         // 开始新段落
         currentTitle = trimmed.split(/[:：]/)[0].trim();
         currentSection = trimmed;
@@ -250,13 +264,13 @@ export const segmentJobDescription = (description: string) => {
         break;
       }
     }
-    
+
     if (!foundMarker) {
       // 添加到当前段落
       currentSection += (currentSection ? '\n\n' : '') + trimmed;
     }
   }
-  
+
   // 添加最后一个段落
   if (currentSection) {
     naturalSections.push({
@@ -264,16 +278,16 @@ export const segmentJobDescription = (description: string) => {
       content: currentSection.trim()
     });
   }
-  
+
   // 如果没有找到有效的分段，返回完整内容
   if (naturalSections.length === 0 || naturalSections.length === 1) {
-    return { 
-      sections: [{ 
-        title: '职位详情', 
-        content: cleanDescription 
-      }] 
+    return {
+      sections: [{
+        title: '职位详情',
+        content: cleanDescription
+      }]
     };
   }
-  
+
   return { sections: naturalSections };
 };
