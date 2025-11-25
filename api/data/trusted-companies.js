@@ -281,7 +281,8 @@ export default async function handler(req, res) {
                         company: company.name,
                         companyLogo: company.logo,
                         sourceType: 'trusted',
-                        isTrusted: true
+                        isTrusted: true,
+                        canRefer: !!company.canRefer
                     }))
 
                     // Save to Job Storage (Accessing processed-jobs storage key directly)
@@ -361,7 +362,7 @@ export default async function handler(req, res) {
                 }
             }
 
-            const { id, name, website, careersPage, linkedin, description, logo, tags } = body
+            const { id, name, website, careersPage, linkedin, description, logo, tags, canRefer } = body
 
             if (!name) return res.status(400).json({ success: false, error: 'Name is required' })
 
@@ -376,6 +377,7 @@ export default async function handler(req, res) {
                 companies[index] = {
                     ...companies[index],
                     name, website, careersPage, linkedin, description, logo, tags,
+                    canRefer: !!canRefer,
                     updatedAt: now
                 }
             } else {
@@ -385,7 +387,8 @@ export default async function handler(req, res) {
                     name, website, careersPage, linkedin, description, logo, tags,
                     createdAt: now,
                     updatedAt: now,
-                    isTrusted: true
+                    isTrusted: true,
+                    canRefer: !!canRefer
                 }
                 companies.push(newCompany)
             }

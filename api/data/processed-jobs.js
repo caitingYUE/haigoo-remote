@@ -784,7 +784,8 @@ export default async function handler(req, res) {
           // Trusted Company Fields
           companyId: j.companyId || null,
           sourceType: j.sourceType || 'rss',
-          isTrusted: !!j.isTrusted
+          isTrusted: !!j.isTrusted,
+          canRefer: !!j.canRefer
         }
       })
 

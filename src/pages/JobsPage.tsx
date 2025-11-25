@@ -335,7 +335,8 @@ export default function JobsPage() {
 
     return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote && matchesRegion
   }).sort((a, b) => {
-    // 排序逻辑：优先显示已认证 (isTrusted) 的岗位，其次按发布时间倒序
+    if (a.canRefer && !b.canRefer) return -1
+    if (!a.canRefer && b.canRefer) return 1
     if (a.isTrusted && !b.isTrusted) return -1
     if (!a.isTrusted && b.isTrusted) return 1
     return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()

@@ -18,6 +18,7 @@ export interface TrustedCompany {
     createdAt: string
     updatedAt: string
     isTrusted: boolean
+    canRefer?: boolean
 }
 
 export const trustedCompaniesService = {

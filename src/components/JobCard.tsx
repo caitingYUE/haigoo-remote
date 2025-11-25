@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award, Bookmark } from 'lucide-react';
+import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award, Bookmark, UserCheck } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
@@ -209,20 +209,25 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               </span>
             </div>
 
-            {/* 来源标签 - 统一风格 */}
-            <div className="absolute top-4 right-4 flex gap-2">
-              {job.isTrusted ? (
-                <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-medium border border-blue-100">
-                  <Award className="w-3 h-3" />
-                  已认证
+            {/* 来源/可信标识（内联展示，避免与右上角操作重叠） */}
+            {job.isTrusted ? (
+              job.canRefer ? (
+                <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs font-medium border border-emerald-100">
+                  <UserCheck className="w-3 h-3" />
+                  可内推
                 </div>
               ) : (
-                <div className="flex items-center gap-1 bg-gray-50 text-gray-600 px-2 py-1 rounded text-xs font-medium border border-gray-200">
-                  <Globe className="w-3 h-3" />
-                  第三方
+                <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium border border-blue-100">
+                  <Award className="w-3 h-3" />
+                  已审核
                 </div>
-              )}
-            </div>
+              )
+            ) : (
+              <div className="flex items-center gap-1 bg-gray-50 text-gray-600 px-2 py-0.5 rounded text-xs font-medium border border-gray-200">
+                <Globe className="w-3 h-3" />
+                第三方
+              </div>
+            )}
 
             <div className="flex items-start justify-between mb-4">
               <div className="flex gap-4">

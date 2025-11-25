@@ -140,7 +140,8 @@ class ProcessedJobsService {
         translatedAt: job.translatedAt || undefined,
         companyId: job.companyId,
         sourceType: job.sourceType,
-        isTrusted: job.isTrusted
+        isTrusted: job.isTrusted,
+        canRefer: job.canRefer
       }))
 
       return {

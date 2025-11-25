@@ -101,7 +101,12 @@ export default function CompanyProfilePage() {
                                 {company.isTrusted && (
                                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-medium border border-green-100">
                                         <CheckCircle className="w-4 h-4" />
-                                        官方认证远程企业
+                                        已审核
+                                    </span>
+                                )}
+                                {company.canRefer && (
+                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-100">
+                                        可内推
                                     </span>
                                 )}
                             </div>

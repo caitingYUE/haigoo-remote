@@ -24,7 +24,8 @@ export default function AdminTrustedCompaniesPage() {
         linkedin: '',
         description: '',
         logo: '',
-        tags: ''
+        tags: '',
+        canRefer: false
     })
 
     useEffect(() => {
@@ -52,7 +53,8 @@ export default function AdminTrustedCompaniesPage() {
             linkedin: company.linkedin || '',
             description: company.description || '',
             logo: company.logo || '',
-            tags: company.tags ? company.tags.join(', ') : ''
+            tags: company.tags ? company.tags.join(', ') : '',
+            canRefer: !!company.canRefer
         })
         setIsModalOpen(true)
     }
@@ -66,7 +68,8 @@ export default function AdminTrustedCompaniesPage() {
             linkedin: '',
             description: '',
             logo: '',
-            tags: ''
+            tags: '',
+            canRefer: false
         })
         setIsModalOpen(true)
     }
@@ -227,7 +230,12 @@ export default function AdminTrustedCompaniesPage() {
 
                                     {company.isTrusted && (
                                         <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs font-medium text-green-600 shadow-sm border border-gray-100">
-                                            <CheckCircle className="w-3 h-3" /> 已认证
+                                            <CheckCircle className="w-3 h-3" /> 已审核
+                                        </div>
+                                    )}
+                                    {company.canRefer && (
+                                        <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-green-50/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs font-medium text-emerald-700 shadow-sm border border-emerald-100">
+                                            可内推
                                         </div>
                                     )}
                                 </div>
@@ -380,6 +388,18 @@ export default function AdminTrustedCompaniesPage() {
                                             className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="SaaS, DevOps, 全球远程, 异步协作"
                                         />
+                                    </div>
+                                    <div>
+                                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.canRefer}
+                                                onChange={e => setFormData({ ...formData, canRefer: e.target.checked })}
+                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            可内推
+                                        </label>
+                                        <p className="text-xs text-gray-500">勾选后，该企业职位将展示“可内推”标识</p>
                                     </div>
                                 </div>
 

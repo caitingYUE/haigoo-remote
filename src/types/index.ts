@@ -45,6 +45,7 @@ export interface Job {
   companyId?: string
   sourceType?: 'trusted' | 'rss'
   isTrusted?: boolean
+  canRefer?: boolean
 }
 
 export interface User {
