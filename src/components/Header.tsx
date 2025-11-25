@@ -118,7 +118,7 @@ export default function Header() {
           </div>
 
           {/* Center Navigation - 核心功能导航 */}
-          <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2 space-x-8">
+          <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
             <div className="flex flex-col items-center group relative">
               <Link
                 to={`/jobs${location.search}`}
@@ -129,27 +129,29 @@ export default function Header() {
               >
                 远程岗位搜索
               </Link>
-              {/* Integrated Region Selector Pill */}
-              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex items-center bg-gray-100 rounded-full p-0.5 border border-gray-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 w-max">
+
+              {/* Region badges below title - always visible, centered */}
+              <div className="mt-1 flex items-center gap-1 text-xs">
                 <button
                   onClick={(e) => {
                     e.preventDefault()
                     navigate('/jobs?region=domestic')
                   }}
-                  className={`px-3 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all ${!location.search.includes('region=overseas')
-                    ? 'bg-white text-[#3182CE] shadow-sm'
+                  className={`transition-colors ${!location.search.includes('region=overseas')
+                    ? 'text-[#3182CE] font-medium'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
                   国内可申
                 </button>
+                <span className="text-gray-300">|</span>
                 <button
                   onClick={(e) => {
                     e.preventDefault()
                     navigate('/jobs?region=overseas')
                   }}
-                  className={`px-3 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all ${location.search.includes('region=overseas')
-                    ? 'bg-white text-[#3182CE] shadow-sm'
+                  className={`transition-colors ${location.search.includes('region=overseas')
+                    ? 'text-[#3182CE] font-medium'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
@@ -159,13 +161,13 @@ export default function Header() {
 
               {/* Active Indicator (Small Dot) if on jobs page */}
               {(location.pathname === '/jobs' || location.pathname === '/') && (
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#3182CE] rounded-full group-hover:opacity-0 transition-opacity duration-200"></div>
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#3182CE] rounded-full"></div>
               )}
             </div>
 
             <Link
               to="/trusted-companies"
-              className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
+              className={`ml-8 text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
                 ? 'text-[#3182CE]'
                 : 'text-gray-600 hover:text-gray-900'
                 }`}

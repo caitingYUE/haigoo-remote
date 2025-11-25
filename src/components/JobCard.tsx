@@ -119,6 +119,28 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       aria-label={getJobCardAriaLabel()}
       aria-describedby={`job-${job.id}-description`}
     >
+      {/* Status Badge - Top-left border edge */}
+      <div className="absolute -top-2 left-4 z-20">
+        {job.isTrusted ? (
+          job.canRefer ? (
+            <div className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
+              <UserCheck className="w-3 h-3" />
+              可内推
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
+              <Award className="w-3 h-3" />
+              已审核
+            </div>
+          )
+        ) : (
+          <div className="flex items-center gap-1 bg-gray-400 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
+            <Globe className="w-3 h-3" />
+            第三方
+          </div>
+        )}
+      </div>
+
       {/* 右上角操作按钮组 - 仅保留原始链接跳转 */}
       <div
         className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2 z-10"
@@ -154,7 +176,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       </div>
 
       {/* Header */}
-      <header className="flex items-start justify-between pr-28 mb-3">
+      <header className="flex items-start justify-between pr-20 mb-3">
         <div className="flex-1 min-w-0">
           <h2
             id={`job-${job.id}-title`}
@@ -185,10 +207,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             )}
 
             {/* 地点 */}
-            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300 min-w-0 max-w-[150px]">
+            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300 min-w-0">
               <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" aria-hidden="true" />
               <span
-                className="truncate"
+                className="line-clamp-1"
                 title={job.translations?.location || job.location}
                 aria-label={`工作地点：${job.translations?.location || job.location}`}
               >
@@ -209,29 +231,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               </span>
             </div>
 
-            {/* 来源/可信标识（内联展示，避免与右上角操作重叠） */}
-            {job.isTrusted ? (
-              job.canRefer ? (
-                <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs font-medium border border-emerald-100">
-                  <UserCheck className="w-3 h-3" />
-                  可内推
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium border border-blue-100">
-                  <Award className="w-3 h-3" />
-                  已审核
-                </div>
-              )
-            ) : (
-              <div className="flex items-center gap-1 bg-gray-50 text-gray-600 px-2 py-0.5 rounded text-xs font-medium border border-gray-200">
-                <Globe className="w-3 h-3" />
-                第三方
-              </div>
-            )}
 
 
-            {/* 发布时间 */}
-            <div className="flex items-center text-gray-400 text-xs ml-auto">
+            {/* 发布时间 - 右对齐 */}
+            <div className="flex items-center text-gray-400 text-xs">
               <Clock className="w-3 h-3 mr-1" aria-hidden="true" />
               <time
                 className="whitespace-nowrap"
@@ -245,17 +248,17 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         </div>
       </header>
 
-      {/* 职位描述 - 固定高度，保证对齐 */}
-      <section className="mt-auto mb-3 h-[42px] overflow-hidden">
+      {/* 职位描述 - 动态高度：无标签时3行，有标签时2行 */}
+      <section className={`mt-auto mb-3 overflow-hidden ${(Array.isArray((job as any).tags) && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0) ? 'h-[42px]' : 'h-[63px]'}`}>
         {(job.translations?.description || job.description) ? (
           <p
             id={`job-${job.id}-description`}
-            className="text-gray-600 text-sm line-clamp-2 leading-relaxed"
+            className={`text-gray-600 text-sm leading-relaxed ${(Array.isArray((job as any).tags) && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0) ? 'line-clamp-2' : 'line-clamp-3'}`}
             aria-label="职位描述"
           >
             {processJobDescription(job.translations?.description || job.description || '', {
               formatMarkdown: false,
-              maxLength: 120,
+              maxLength: (Array.isArray((job as any).tags) && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0) ? 120 : 180,
               preserveHtml: false
             })}
           </p>
@@ -264,17 +267,19 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         )}
       </section>
 
-      {/* 技能/标签行 - 固定高度容器 */}
-      <section className="mt-auto h-[28px] overflow-hidden">
-        <SingleLineTags
-          size="xs"
-          tags={(
-            Array.isArray((job as any).tags) && (job as any).tags.length > 0
-              ? (job as any).tags
-              : (job.skills || [])
-          ) as string[]}
-        />
-      </section>
+      {/* 技能/标签行 - 仅在有标签时显示 */}
+      {((Array.isArray((job as any).tags) && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0)) && (
+        <section className="mt-auto h-[28px] overflow-hidden">
+          <SingleLineTags
+            size="xs"
+            tags={(
+              Array.isArray((job as any).tags) && (job as any).tags.length > 0
+                ? (job as any).tags
+                : (job.skills || [])
+            ) as string[]}
+          />
+        </section>
+      )}
     </article>
   );
 }
