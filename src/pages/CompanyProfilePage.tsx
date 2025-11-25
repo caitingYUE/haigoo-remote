@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Globe, Linkedin, Briefcase, MapPin, CheckCircle, ArrowLeft, ExternalLink } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -9,6 +9,7 @@ import { useNotificationHelpers } from '../components/NotificationSystem'
 import JobDetailModal from '../components/JobDetailModal'
 
 export default function CompanyProfilePage() {
+    const navigate = useNavigate()
     const { id } = useParams<{ id: string }>()
     const { showError } = useNotificationHelpers()
     const [company, setCompany] = useState<TrustedCompany | null>(null)
@@ -73,10 +74,13 @@ export default function CompanyProfilePage() {
             {/* Header / Banner */}
             <div className="bg-white border-b border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <Link to="/jobs" className="inline-flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="inline-flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"
+                    >
                         <ArrowLeft className="w-4 h-4 mr-1" />
-                        返回职位列表
-                    </Link>
+                        返回
+                    </button>
 
                     <div className="flex flex-col md:flex-row gap-8 items-start">
                         {/* Logo */}
@@ -197,13 +201,15 @@ export default function CompanyProfilePage() {
             </div>
 
             {/* Job Detail Modal */}
-            {selectedJob && (
-                <JobDetailModal
-                    job={selectedJob}
-                    isOpen={!!selectedJob}
-                    onClose={() => setSelectedJob(null)}
-                />
-            )}
-        </div>
+            {
+                selectedJob && (
+                    <JobDetailModal
+                        job={selectedJob}
+                        isOpen={!!selectedJob}
+                        onClose={() => setSelectedJob(null)}
+                    />
+                )
+            }
+        </div >
     )
 }

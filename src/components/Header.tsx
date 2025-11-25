@@ -130,30 +130,30 @@ export default function Header() {
                 远程岗位搜索
               </Link>
               {/* Integrated Region Selector Pill */}
-              <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 flex items-center bg-gray-100 rounded-full p-0.5 border border-gray-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex items-center bg-gray-100 rounded-full p-0.5 border border-gray-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 w-max">
                 <button
                   onClick={(e) => {
                     e.preventDefault()
                     navigate('/jobs?region=domestic')
                   }}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all ${!location.search.includes('region=overseas')
+                  className={`px-3 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all ${!location.search.includes('region=overseas')
                     ? 'bg-white text-[#3182CE] shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
-                  国内
+                  国内可申
                 </button>
                 <button
                   onClick={(e) => {
                     e.preventDefault()
                     navigate('/jobs?region=overseas')
                   }}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-all ${location.search.includes('region=overseas')
+                  className={`px-3 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all ${location.search.includes('region=overseas')
                     ? 'bg-white text-[#3182CE] shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
-                  海外
+                  海外可申
                 </button>
               </div>
 
