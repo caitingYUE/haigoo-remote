@@ -229,30 +229,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               </div>
             )}
 
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex gap-4">
-                {/* Logo */}
-                <div className="w-12 h-12 rounded-lg border border-gray-100 flex items-center justify-center bg-white shadow-sm flex-shrink-0 overflow-hidden">
-                  {job.logo ? (
-                    <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
-                  ) : (
-                    <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400 font-bold text-xl">
-                      {job.company?.charAt(0) || <Building className="w-6 h-6" />}
-                    </div>
-                  )}
-                </div>
 
-                <div>
-                  <h3 className="font-medium text-lg text-gray-900 line-clamp-1 mb-1 group-hover:text-blue-600 transition-colors">
-                    {job.translations?.title || job.title}
-                  </h3>
-                  <div className="flex items-center text-gray-500 text-sm">
-                    <Building className="w-3.5 h-3.5 mr-1" />
-                    <span className="mr-3">{job.translations?.company || job.company}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
             {/* 发布时间 */}
             <div className="flex items-center text-gray-400 text-xs ml-auto">
               <Clock className="w-3 h-3 mr-1" aria-hidden="true" />
