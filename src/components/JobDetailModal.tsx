@@ -33,6 +33,12 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 }) => {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'description' | 'company' | 'openings'>('description')
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+  const [feedbackAccuracy, setFeedbackAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
+  const [feedbackContent, setFeedbackContent] = useState('')
+  const [feedbackContact, setFeedbackContact] = useState('')
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
+  const [feedbackMessage, setFeedbackMessage] = useState('')
   // 仅显示原始文本，不进行语言切换或翻译
 
   // 可访问性相关的 refs
@@ -750,9 +756,3 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 }
 
 export default JobDetailModal
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
-  const [feedbackAccuracy, setFeedbackAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
-  const [feedbackContent, setFeedbackContent] = useState('')
-  const [feedbackContact, setFeedbackContact] = useState('')
-  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
-  const [feedbackMessage, setFeedbackMessage] = useState('')

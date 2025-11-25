@@ -154,7 +154,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       </div>
 
       {/* Header */}
-      <header className="flex items-start justify-between pr-10 mb-3">
+      <header className="flex items-start justify-between pr-28 mb-3">
         <div className="flex-1 min-w-0">
           <h2
             id={`job-${job.id}-title`}
