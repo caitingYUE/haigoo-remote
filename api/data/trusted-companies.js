@@ -288,7 +288,22 @@ export default async function handler(req, res) {
 
                     console.log('[trusted-companies] Crawl options:', crawlOptions)
 
-                    const crawledJobs = await crawlCompanyJobs(company.id, url, crawlOptions)
+                    const crawlResult = await crawlCompanyJobs(company.id, url, crawlOptions)
+                    const crawledJobs = crawlResult.jobs || []
+                    const crawledCompany = crawlResult.company
+
+                    // If we found company info (e.g. logo from Ashby), update the company record
+                    if (crawledCompany && crawledCompany.logo && !company.logo) {
+                        console.log(`[trusted-companies] Updating company logo from crawler: ${crawledCompany.logo}`)
+                        company.logo = crawledCompany.logo
+                        // We should persist this update
+                        const allCompanies = await getAllCompanies()
+                        const idx = allCompanies.findIndex(c => c.id === company.id)
+                        if (idx !== -1) {
+                            allCompanies[idx].logo = crawledCompany.logo
+                            await saveAllCompanies(allCompanies)
+                        }
+                    }
 
                     // Enrich jobs with company name
                     const enrichedJobs = crawledJobs.map(job => ({
