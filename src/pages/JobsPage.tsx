@@ -400,41 +400,6 @@ export default function JobsPage() {
       role="main"
       aria-label="职位搜索页面"
     >
-      {/* Top Navigation Tabs */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-8 h-14">
-            {/* 远程岗位搜索 Tab */}
-            <div className="flex items-center gap-2 h-full border-b-2 border-blue-500">
-              <span className="text-gray-900 font-medium">远程岗位搜索</span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setActiveRegion('domestic')}
-                  className={`px-2 py-0.5 text-xs rounded transition-colors ${activeRegion === 'domestic' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                >
-                  国内可申
-                </button>
-                <span className="text-gray-300">|</span>
-                <button
-                  onClick={() => setActiveRegion('overseas')}
-                  className={`px-2 py-0.5 text-xs rounded transition-colors ${activeRegion === 'overseas' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                >
-                  海外可申
-                </button>
-              </div>
-            </div>
-
-            {/* 可信企业别表 Tab */}
-            <button
-              onClick={() => navigate('/trusted-companies')}
-              className="flex items-center h-full border-b-2 border-transparent text-gray-600 hover:text-gray-900 font-medium"
-            >
-              可信企业别表
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* 搜索和筛选栏 */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
