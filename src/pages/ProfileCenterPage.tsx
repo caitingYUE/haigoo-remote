@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft } from 'lucide-react'
+import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { ResumeStorageService } from '../services/resume-storage-service'
@@ -14,7 +14,7 @@ import JobDetailModal from '../components/JobDetailModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import '../styles/landing-upgrade.css'
 
-type TabKey = 'resume' | 'favorites'
+type TabKey = 'resume' | 'favorites' | 'feedback' | 'recommend'
 
 export default function ProfileCenterPage() {
   const { user: authUser, token } = useAuth()
@@ -24,7 +24,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t === 'favorites' ? 'favorites' : 'resume'
+    return t && ['resume','favorites','feedback','recommend'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -64,7 +64,7 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
     const t = sp.get('tab') as TabKey | null
-    if (t && (t === 'resume' || t === 'favorites')) setTab(t)
+    if (t && ['resume','favorites','feedback','recommend'].includes(t)) setTab(t as TabKey)
   }, [location.search])
 
   const switchTab = (t: TabKey) => {
@@ -375,6 +375,121 @@ export default function ProfileCenterPage() {
     </div>
   )
 
+  const FeedbackTab = () => {
+    const [accuracy, setAccuracy] = useState<'accurate'|'inaccurate'|'unknown'>('unknown')
+    const [content, setContent] = useState('')
+    const [contact, setContact] = useState('')
+    const [submitting, setSubmitting] = useState(false)
+    const submit = async () => {
+      if (!content.trim()) { showError('请填写反馈内容'); return }
+      try {
+        setSubmitting(true)
+        const r = await fetch('/api/user-profile?action=submit_feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ accuracy, content, contact })
+        })
+        const j = await r.json().catch(() => ({ success: false }))
+        if (r.ok && j.success) { showSuccess('反馈已提交'); setAccuracy('unknown'); setContent(''); setContact('') }
+        else { showError('提交失败', j.error || '请稍后重试') }
+      } catch (e) {
+        showError('提交失败', '网络错误')
+      } finally { setSubmitting(false) }
+    }
+    return (
+      <div className="space-y-4">
+        <div className="profile-topbar">
+          <div>
+            <div className="profile-title">我要反馈</div>
+            <div className="profile-subtitle">反馈岗位或平台信息问题与建议。</div>
+          </div>
+        </div>
+        <div className="profile-card p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">信息准确度</label>
+              <div className="flex items-center gap-4 text-sm">
+                <label className="inline-flex items-center gap-2"><input type="radio" checked={accuracy==='accurate'} onChange={()=>setAccuracy('accurate')} />准确</label>
+                <label className="inline-flex items-center gap-2"><input type="radio" checked={accuracy==='inaccurate'} onChange={()=>setAccuracy('inaccurate')} />不准确</label>
+                <label className="inline-flex items-center gap-2"><input type="radio" checked={accuracy==='unknown'} onChange={()=>setAccuracy('unknown')} />不确定</label>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">反馈内容</label>
+              <textarea rows={5} value={content} onChange={e=>setContent(e.target.value)} className="w-full rounded-lg border p-3" placeholder="请描述问题或建议" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">联系方式（可选）</label>
+              <input value={contact} onChange={e=>setContact(e.target.value)} className="w-full rounded-lg border p-3" placeholder="邮箱或微信" />
+            </div>
+            <div className="flex justify-end">
+              <button onClick={submit} disabled={submitting} className="profile-apply-btn">{submitting?'提交中…':'提交反馈'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const RecommendTab = () => {
+    const [type, setType] = useState<'enterprise'|'job'|'user'>('enterprise')
+    const [name, setName] = useState('')
+    const [link, setLink] = useState('')
+    const [description, setDescription] = useState('')
+    const [submitting, setSubmitting] = useState(false)
+    const submit = async () => {
+      if (!name.trim()) { showError('请填写名称'); return }
+      try {
+        setSubmitting(true)
+        const r = await fetch('/api/user-profile?action=submit_recommendation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ type, name, link, description })
+        })
+        const j = await r.json().catch(() => ({ success: false }))
+        if (r.ok && j.success) { showSuccess('推荐已提交'); setName(''); setLink(''); setDescription('') }
+        else { showError('提交失败', j.error || '请稍后重试') }
+      } catch (e) { showError('提交失败', '网络错误') } finally { setSubmitting(false) }
+    }
+    return (
+      <div className="space-y-4">
+        <div className="profile-topbar">
+          <div>
+            <div className="profile-title">我要推荐</div>
+            <div className="profile-subtitle">推荐企业、岗位或优秀用户。</div>
+          </div>
+        </div>
+        <div className="profile-card p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">推荐类型</label>
+              <select value={type} onChange={e=>setType(e.target.value as any)} className="w-full rounded-lg border p-2">
+                <option value="enterprise">企业</option>
+                <option value="job">岗位</option>
+                <option value="user">用户</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">名称</label>
+              <input value={name} onChange={e=>setName(e.target.value)} className="w-full rounded-lg border p-3" placeholder="例如：GitLab" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">链接（可选）</label>
+              <input value={link} onChange={e=>setLink(e.target.value)} className="w-full rounded-lg border p-3" placeholder="https://..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">推荐理由（可选）</label>
+              <textarea rows={4} value={description} onChange={e=>setDescription(e.target.value)} className="w-full rounded-lg border p-3" placeholder="简述推荐原因" />
+            </div>
+            <div className="flex justify-end">
+              <button onClick={submit} disabled={submitting} className="profile-apply-btn">{submitting?'提交中…':'提交推荐'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="profile-page profile-theme">
       <div className="mesh-background"></div>
@@ -398,12 +513,20 @@ export default function ProfileCenterPage() {
                 <Heart className={`w-5 h-5 ${tab === 'favorites' ? 'text-white' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">我的收藏</span>
               </button>
+              <button className={`profile-nav-item ${tab === 'feedback' ? 'active' : ''}`} role="tab" aria-selected={tab === 'feedback'} onClick={() => switchTab('feedback')}>
+                <MessageSquare className={`w-5 h-5 ${tab === 'feedback' ? 'text-white' : 'text-gray-400'}`} />
+                <span className="text-sm font-medium">我要反馈</span>
+              </button>
+              <button className={`profile-nav-item ${tab === 'recommend' ? 'active' : ''}`} role="tab" aria-selected={tab === 'recommend'} onClick={() => switchTab('recommend')}>
+                <ThumbsUp className={`w-5 h-5 ${tab === 'recommend' ? 'text-white' : 'text-gray-400'}`} />
+                <span className="text-sm font-medium">我要推荐</span>
+              </button>
             </div>
           </aside>
 
           {/* Main Content */}
           <main className="profile-content-area w-full">
-            {tab === 'resume' ? <ResumeTab /> : <FavoritesTab />}
+            {tab === 'resume' ? <ResumeTab /> : tab === 'favorites' ? <FavoritesTab /> : tab === 'feedback' ? <FeedbackTab /> : <RecommendTab />}
             {isJobDetailOpen && selectedJob && (
               <JobDetailModal
                 job={selectedJob}

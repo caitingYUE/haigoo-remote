@@ -32,13 +32,16 @@ import {
   Rss,
   Menu,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
 import DataManagementTabs from '../components/DataManagementTabs';
 import UserManagementPage from './UserManagementPage';
+import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
+import AdminFeedbackList from '../components/AdminFeedbackList';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -344,6 +347,11 @@ const AdminTeamPage: React.FC = () => {
   // 渲染职位数据管理
   const renderJobDataManagement = () => (
     <DataManagementTabs />
+  );
+
+  // 渲染反馈列表
+  const renderFeedbackList = () => (
+    <AdminFeedbackList />
   );
 
   // 获取简历数据
@@ -725,7 +733,9 @@ const AdminTeamPage: React.FC = () => {
     { id: 'jobs', label: '职位数据', icon: Briefcase },
     { id: 'resumes', label: '简历库', icon: Users },
     { id: 'users', label: '用户管理', icon: Users },
+    { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
+    { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'settings', label: '系统设置', icon: Settings }
   ];
 
@@ -822,8 +832,10 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'rss' && renderRSSManagement()}
               {activeTab === 'jobs' && renderJobDataManagement()}
               {activeTab === 'resumes' && renderResumeLibrary()}
-              {activeTab === 'analytics' && renderAnalytics()}
               {activeTab === 'users' && <UserManagementPage />}
+              {activeTab === 'trusted-companies' && <AdminTrustedCompaniesPage />}
+              {activeTab === 'analytics' && renderAnalytics()}
+              {activeTab === 'feedback' && renderFeedbackList()}
               {activeTab === 'settings' && renderSettings()}
             </div>
           )}

@@ -137,7 +137,11 @@ class ProcessedJobsService {
         // 🆕 保留翻译字段，让前端组件可以使用
         translations: job.translations || undefined,
         isTranslated: job.isTranslated || false,
-        translatedAt: job.translatedAt || undefined
+        translatedAt: job.translatedAt || undefined,
+        companyId: job.companyId,
+        sourceType: job.sourceType,
+        isTrusted: job.isTrusted,
+        canRefer: job.canRefer
       }))
 
       return {

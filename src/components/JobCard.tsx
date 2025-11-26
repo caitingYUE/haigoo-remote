@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award, Bookmark } from 'lucide-react';
+import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award, Bookmark, UserCheck } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
@@ -112,129 +112,100 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
 
   return (
     <article
-      className="group bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-[#3182CE]/30 transition-all duration-300 cursor-pointer relative hover:-translate-y-0.5 h-full flex flex-col"
+      className="group bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer relative h-full flex flex-col"
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       tabIndex={0}
       aria-label={getJobCardAriaLabel()}
       aria-describedby={`job-${job.id}-description`}
     >
-      {/* 右上角操作按钮组 - 仅保留原始链接跳转 */}
-      <div
-        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2 z-10"
-        role="toolbar"
-        aria-label="职位操作"
-      >
-        {/* 收藏按钮 */}
-        {onSave && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onSave(job.id); } }}
-            className={`p-2 rounded-lg transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center border ${isSaved ? 'bg-[#EAF3FF] text-[#3182CE] border-[#3182CE]/30' : 'text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] border-gray-200'}`}
-            title={isSaved ? '已收藏' : '收藏'}
-            aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
-            aria-pressed={Boolean(isSaved)}
-          >
-            <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} aria-hidden="true" />
-          </button>
-        )}
-        {/* 原始链接跳转 */}
-        {job.sourceUrl && (
-          <button
-            onClick={handleSourceClick}
-            onKeyDown={handleSourceKeyDown}
-            className="p-2 text-gray-400 hover:text-[#3182CE] hover:bg-[#EAF3FF] rounded-lg transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center border border-gray-200"
-            title={`在 ${job.source} 查看原始职位`}
-            aria-label={`在 ${job.source} 查看原始职位`}
-            tabIndex={0}
-          >
-            <ExternalLink className="h-4 w-4" aria-hidden="true" />
-          </button>
+      {/* Source Badge - Top-left */}
+      <div className="absolute -top-2 -left-2 z-10">
+        {job.isTrusted ? (
+          job.canRefer ? (
+            <div className="flex items-center gap-1 bg-purple-500 text-white px-2.5 py-1 rounded text-xs font-medium shadow-sm">
+              <UserCheck className="w-3 h-3" />
+              内推
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 bg-blue-500 text-white px-2.5 py-1 rounded text-xs font-medium shadow-sm">
+              <Award className="w-3 h-3" />
+              已审核
+            </div>
+          )
+        ) : (
+          <div className="flex items-center gap-1 bg-gray-500 text-white px-2.5 py-1 rounded text-xs font-medium shadow-sm">
+            <Globe className="w-3 h-3" />
+            第三方
+          </div>
         )}
       </div>
 
-      {/* Header */}
-      <header className="flex items-start justify-between pr-10 mb-3">
-        <div className="flex-1 min-w-0">
-          <h2
-            id={`job-${job.id}-title`}
-            className="font-semibold text-brand-navy text-lg hover:text-brand-blue transition-colors mb-1 line-clamp-1"
-            title={job.translations?.title || job.title}
-          >
-            {job.translations?.title || job.title}
-          </h2>
+      {/* Bookmark Button - Top-right */}
+      {onSave && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onSave(job.id); } }}
+          className={`absolute top-3 right-3 p-1.5 rounded transition-colors ${isSaved ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`}
+          title={isSaved ? '已收藏' : '收藏'}
+          aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
+          aria-pressed={Boolean(isSaved)}
+        >
+          <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} aria-hidden="true" />
+        </button>
+      )}
 
-          {/* 公司信息行 */}
-          <div className="flex items-center text-gray-600 text-sm mb-2 h-5">
-            <div className="flex items-center font-medium min-w-0">
-              <Building className="w-4 h-4 mr-1.5 flex-shrink-0" aria-hidden="true" />
-              <span className="truncate" title={job.translations?.company || job.company}>{job.translations?.company || job.company}</span>
-            </div>
-          </div>
+      {/* Company Name */}
+      <div className="flex items-center text-gray-600 text-sm mb-2 mt-1">
+        <Building className="w-4 h-4 mr-1.5 flex-shrink-0" aria-hidden="true" />
+        <span className="truncate font-medium" title={job.translations?.company || job.company}>
+          {job.translations?.company || job.company}
+        </span>
+      </div>
 
-          {/* 核心信息行 - 固定高度 */}
-          <div className="flex flex-wrap items-center gap-3 text-sm h-6 overflow-hidden">
-            {/* 薪资 */}
-            {job.salary && job.salary.min > 0 && (
-              <div className="flex items-center text-haigoo-primary font-semibold">
-                <DollarSign className="w-4 h-4 mr-1 flex-shrink-0" aria-hidden="true" />
-                <span aria-label={`薪资：${formatSalary(job.salary)}`}>
-                  {formatSalary(job.salary)}
-                </span>
-              </div>
-            )}
+      {/* Job Title */}
+      <h2
+        id={`job-${job.id}-title`}
+        className="font-semibold text-gray-900 text-base mb-3 truncate leading-snug"
+        title={job.translations?.title || job.title}
+      >
+        {job.translations?.title || job.title}
+      </h2>
 
-            {/* 地点 */}
-            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300 min-w-0 max-w-[150px]">
-              <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" aria-hidden="true" />
-              <span
-                className="truncate"
-                title={job.translations?.location || job.location}
-                aria-label={`工作地点：${job.translations?.location || job.location}`}
-              >
-                {job.translations?.location || job.location}
-              </span>
-            </div>
-
-            {/* 工作类型 */}
-            <div className="flex items-center">
-              <span
-                className={`px-2 py-0.5 text-xs font-medium rounded-md ${job.type === 'full-time' ? 'bg-green-100 text-green-700' :
-                    job.type === 'contract' ? 'bg-blue-100 text-blue-700' :
-                      'bg-gray-100 text-gray-700'
-                  }`}
-                aria-label={`工作类型：${getJobTypeLabel(job.type)}`}
-              >
-                {getJobTypeLabel(job.type)}
-              </span>
-            </div>
-
-            {/* 发布时间 */}
-            <div className="flex items-center text-gray-400 text-xs ml-auto">
-              <Clock className="w-3 h-3 mr-1" aria-hidden="true" />
-              <time
-                className="whitespace-nowrap"
-                dateTime={job.postedAt}
-                aria-label={`发布时间：${DateFormatter.formatPublishTime(job.postedAt)}`}
-              >
-                {DateFormatter.formatPublishTime(job.postedAt)}
-              </time>
-            </div>
-          </div>
+      {/* Location, Type, and Time Row */}
+      <div className="flex items-center gap-3 text-sm text-gray-600 mb-3 min-w-0">
+        {/* Location - Flexible width with truncation */}
+        <div className="flex items-center gap-1 min-w-0 flex-1">
+          <MapPin className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+          <span className="truncate" title={job.translations?.location || job.location}>
+            {job.translations?.location || job.location}
+          </span>
         </div>
-      </header>
 
-      {/* 职位描述 - 固定高度，保证对齐 */}
-      <section className="mt-auto mb-3 h-[42px] overflow-hidden">
+        {/* Job Type Badge - Fixed width */}
+        <span className="px-2 py-0.5 text-xs font-medium rounded bg-green-50 text-green-700 flex-shrink-0">
+          {getJobTypeLabel(job.type)}
+        </span>
+
+        {/* Posted Time - Fixed width */}
+        <div className="flex items-center text-gray-400 text-xs flex-shrink-0">
+          <time dateTime={job.postedAt} aria-label={`发布时间：${DateFormatter.formatPublishTime(job.postedAt)}`}>
+            {DateFormatter.formatPublishTime(job.postedAt)}
+          </time>
+        </div>
+      </div>
+
+      {/* Job Description */}
+      <section className="flex-1 mb-3">
         {(job.translations?.description || job.description) ? (
           <p
             id={`job-${job.id}-description`}
-            className="text-gray-600 text-sm line-clamp-2 leading-relaxed"
+            className="text-gray-600 text-sm leading-relaxed line-clamp-3"
             aria-label="职位描述"
           >
             {processJobDescription(job.translations?.description || job.description || '', {
               formatMarkdown: false,
-              maxLength: 120,
+              maxLength: 150,
               preserveHtml: false
             })}
           </p>
@@ -243,17 +214,19 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         )}
       </section>
 
-      {/* 技能/标签行 - 固定高度容器 */}
-      <section className="mt-auto h-[28px] overflow-hidden">
-        <SingleLineTags
-          size="xs"
-          tags={(
-            Array.isArray((job as any).tags) && (job as any).tags.length > 0
-              ? (job as any).tags
-              : (job.skills || [])
-          ) as string[]}
-        />
-      </section>
+      {/* Tags - Only show if available */}
+      {((Array.isArray((job as any).tags) && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0)) && (
+        <section className="mt-auto">
+          <SingleLineTags
+            size="xs"
+            tags={(
+              Array.isArray((job as any).tags) && (job as any).tags.length > 0
+                ? (job as any).tags
+                : (job.skills || [])
+            ) as string[]}
+          />
+        </section>
+      )}
     </article>
   );
 }
