@@ -428,6 +428,70 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
+      const { action } = req.query
+
+      // Stats Action
+      if (action === 'stats') {
+        let provider = 'memory'
+        let jobsCount = 0
+        let storageSize = 0
+        let lastSync = null
+
+        try {
+          // Try to read pre-calculated stats first
+          if (UPSTASH_REST_CONFIGURED) {
+            const stats = await upstashGet(STATS_KEY)
+            if (stats) {
+              const s = typeof stats === 'string' ? JSON.parse(stats) : stats
+              jobsCount = s.totalJobs || 0
+              storageSize = s.storageSize || 0
+              lastSync = s.lastSync || null
+              provider = 'upstash-rest'
+            }
+          } else if (REDIS_CONFIGURED) {
+            const client = await getRedisClient()
+            const statsStr = await client.get(STATS_KEY)
+            if (statsStr) {
+              const s = JSON.parse(statsStr)
+              jobsCount = s.totalJobs || 0
+              storageSize = s.storageSize || 0
+              lastSync = s.lastSync || null
+              provider = 'redis'
+            }
+          } else if (KV_CONFIGURED && kv) {
+            const stats = await kv.get(STATS_KEY)
+            if (stats) {
+              jobsCount = stats.totalJobs || 0
+              storageSize = stats.storageSize || 0
+              lastSync = stats.lastSync || null
+              provider = 'vercel-kv'
+            }
+          }
+
+          // Fallback: if no stats found, count jobs
+          if (jobsCount === 0) {
+            let jobs = []
+            if (UPSTASH_REST_CONFIGURED) jobs = await readJobsFromUpstashREST()
+            else if (REDIS_CONFIGURED) jobs = await readJobsFromRedis()
+            else if (KV_CONFIGURED) jobs = await readJobsFromKV()
+            else jobs = readJobsFromMemory()
+
+            jobsCount = jobs.length
+            storageSize = JSON.stringify(jobs).length
+          }
+
+          return res.status(200).json({
+            provider,
+            totalJobs: jobsCount,
+            storageSize,
+            lastSync
+          })
+        } catch (e) {
+          console.error('[processed-jobs] Stats error:', e)
+          return res.status(500).json({ error: 'Failed to fetch stats' })
+        }
+      }
+
       const {
         page = '1',
         limit = '50',
@@ -577,6 +641,18 @@ export default async function handler(req, res) {
         totalPages = 0
       }
 
+      // DEBUG: Log first few jobs to check for companyId
+      if (items.length > 0) {
+        const debugJobs = items.slice(0, 3).map(j => ({
+          id: j.id,
+          title: j.title,
+          company: j.company,
+          companyId: j.companyId,
+          sourceType: j.sourceType
+        }))
+        console.log('[processed-jobs] Debug Response Jobs:', JSON.stringify(debugJobs))
+      }
+
       // 强制禁用缓存，确保前端刷新拿到最新数据
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
       res.setHeader('Pragma', 'no-cache')
@@ -704,7 +780,12 @@ export default async function handler(req, res) {
           // 🆕 翻译字段
           translations: j.translations || null,
           isTranslated: j.isTranslated || false,
-          translatedAt: j.translatedAt || null
+          translatedAt: j.translatedAt || null,
+          // Trusted Company Fields
+          companyId: j.companyId || null,
+          sourceType: j.sourceType || 'rss',
+          isTrusted: !!j.isTrusted,
+          canRefer: !!j.canRefer
         }
       })
 

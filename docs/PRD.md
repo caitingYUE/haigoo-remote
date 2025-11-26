@@ -115,5 +115,30 @@
 - 运营与监控：全链路埋点、转化漏斗、告警与自愈；推荐历史与回溯工具。
 - 安全与合规：隐私合规、反爬与限流、黑名单校验。
 
+### 2.10 网站管理后台简要介绍
+（1）后台的基本功能：
+- 登录与权限：受保护路由与令牌校验，管理员角色访问后台页面（参考 `src/types/rss-types.ts:52–53`）。
+- 数据同步与翻译：一键触发 RSS 同步与翻译任务，完成后刷新列表并广播事件（`vercel.json:3–8`；`src/components/DataManagementTabs.tsx:189–233, 201, 248`）。
+- 处理后数据校验：分页、搜索与过滤；“区域限制/区域分类（国内/海外/未分类）”列展示；支持详情查看、编辑、删除与保存（`src/components/DataManagementTabs.tsx:706–872, 1083–1283`）。
+- 地址关键词词库：国内/海外/全球关键词集合用于区域分类逻辑，前端从接口加载并用于回退计算（`src/services/processed-jobs-service.ts:205–213`；`src/components/DataManagementTabs.tsx:140–158`）。
+- 存储与留存：展示总量、处理后职位数、存储大小与来源维度统计；留存策略 7 天（`src/components/DataManagementTabs.tsx:947–991`；`src/services/data-management-service.ts:602–617`）。
+- RSS 源管理：源列表与分类在服务层维护，定时任务按计划拉取（`src/services/rss-service.ts:101–216` 源定义；`vercel.json:3–8` 定时）。
+
+（2）主要页面与导航：
+- 数据管理页签：Raw 数据 / 处理后数据 / 存储统计 三个 Tab（`src/components/DataManagementTabs.tsx:613–646, 993–1001`）。
+- 处理后数据 Tab：关键列包括岗位名称、岗位分类、岗位级别、企业名称、岗位类型、区域限制、区域分类、技能标签、语言要求、发布日期、来源、操作；支持编辑弹窗字段统一（`src/components/DataManagementTabs.tsx:706–872, 1134–1260`）。
+- 原始数据 Tab：按来源/状态过滤查看解析状态与错误占位（`src/components/DataManagementTabs.tsx:392–461`）。
+- 存储统计 Tab：展示总量、处理后职位数、存储大小与来源维度统计卡片（`src/components/DataManagementTabs.tsx:947–991`）。
+- 翻译任务按钮：触发 `/api/cron/sync-jobs`，完成后刷新并通过 `processed-jobs-updated` 通知前台页面（`src/components/DataManagementTabs.tsx:189–233, 201, 248`）。
+
+（3）操作与校验规则：
+- 编辑保存：写入 `editHistory`、更新 `updatedAt` 与 `isManuallyEdited`，持久化替换列表（`src/services/data-management-service.ts:443–481`）。
+- 删除操作：二次确认后替换存储（`src/services/data-management-service.ts:486–501`）。
+- 区域分类回退：后端无 `region` 字段时，基于地点/限制/标签 + 关键词集合进行前端兜底计算（`src/components/DataManagementTabs.tsx:140–158`）。
+- 事件广播：后台数据更新后通过 `processed-jobs-updated` 事件驱动前台刷新（`src/components/DataManagementTabs.tsx:201, 248`）。
+
+（4）预发/生产联动：
+- 预发（develop）先验证后台表格与编辑流程、区域分类与词库加载、统计页签显示；通过后合入生产（main）自动上线（`vercel.json:28–31`；“部署策略”见 2.5）。
+
 ---
 维护与交接：本PRD供产品/研发/运营共用，涉及功能变更请更新本文件并同步到预发验证。

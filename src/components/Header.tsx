@@ -115,38 +115,65 @@ export default function Header() {
               />
               <span className="ml-3 text-[#1A365D] font-semibold text-lg">Haigoo Remote Club</span>
             </Link>
-            <div className="ml-4 hidden md:flex items-center gap-2" />
           </div>
 
-          {/* Desktop Navigation - 顶部地域入口标签（无外框，竖线分隔） */}
-          <div className="hidden md:flex items-center ml-10 tab-navigation" aria-label="主导航" role="tablist">
-            {(location.pathname === '/' || location.pathname.startsWith('/jobs') || location.pathname.startsWith('/profile')) && (
-              <>
+          {/* Center Navigation - 核心功能导航 */}
+          <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
+            <div className="flex flex-col items-center group relative">
+              <Link
+                to={`/jobs${location.search}`}
+                className={`text-base font-medium transition-colors ${location.pathname === '/jobs' || location.pathname === '/'
+                  ? 'text-[#3182CE]'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
+              >
+                远程岗位搜索
+              </Link>
+
+              {/* Region badges below title - always visible, centered */}
+              <div className="mt-1 flex items-center gap-1 text-xs">
                 <button
-                  onClick={() => navigate('/jobs?region=domestic')}
-                  className={`tab-link px-2 py-2 text-base font-semibold ${location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')
-                    ? 'tab-link-active'
-                    : ''
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigate('/jobs?region=domestic')
+                  }}
+                  className={`transition-colors ${!location.search.includes('region=overseas')
+                    ? 'text-[#3182CE] font-medium'
+                    : 'text-gray-500 hover:text-gray-700'
                     }`}
-                  role="tab"
-                  aria-selected={location.pathname.startsWith('/jobs') && !location.search.includes('region=overseas')}
                 >
-                  人在国内
+                  国内可申
                 </button>
-                <span className="tab-divider" aria-hidden="true" />
+                <span className="text-gray-300">|</span>
                 <button
-                  onClick={() => navigate('/jobs?region=overseas')}
-                  className={`tab-link px-2 py-2 text-base font-semibold ${location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')
-                    ? 'tab-link-active'
-                    : ''
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigate('/jobs?region=overseas')
+                  }}
+                  className={`transition-colors ${location.search.includes('region=overseas')
+                    ? 'text-[#3182CE] font-medium'
+                    : 'text-gray-500 hover:text-gray-700'
                     }`}
-                  role="tab"
-                  aria-selected={location.pathname.startsWith('/jobs') && location.search.includes('region=overseas')}
                 >
-                  人在海外
+                  海外可申
                 </button>
-              </>
-            )}
+              </div>
+
+              {/* Active Indicator (Small Dot) if on jobs page */}
+              {(location.pathname === '/jobs' || location.pathname === '/') && (
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#3182CE] rounded-full"></div>
+              )}
+            </div>
+
+            <Link
+              to="/trusted-companies"
+              className={`ml-8 text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
+                ? 'text-[#3182CE]'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
+            >
+              可信企业列表
+            </Link>
           </div>
 
           {/* Right side actions */}

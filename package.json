@@ -11,7 +11,8 @@
     "build": "tsc && vite build",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node local-server.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
@@ -21,6 +22,7 @@
     "axios": "^1.6.2",
     "bcryptjs": "^3.0.3",
     "busboy": "^1.6.0",
+    "cheerio": "^1.1.2",
     "clsx": "^2.0.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",

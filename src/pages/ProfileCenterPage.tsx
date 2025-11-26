@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft } from 'lucide-react'
+import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { ResumeStorageService } from '../services/resume-storage-service'
@@ -14,7 +14,7 @@ import JobDetailModal from '../components/JobDetailModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import '../styles/landing-upgrade.css'
 
-type TabKey = 'resume' | 'favorites'
+type TabKey = 'resume' | 'favorites' | 'feedback' | 'recommend'
 
 export default function ProfileCenterPage() {
   const { user: authUser, token } = useAuth()
@@ -24,7 +24,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t === 'favorites' ? 'favorites' : 'resume'
+    return t && ['resume','favorites','feedback','recommend'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -64,7 +64,7 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
     const t = sp.get('tab') as TabKey | null
-    if (t && (t === 'resume' || t === 'favorites')) setTab(t)
+    if (t && ['resume','favorites','feedback','recommend'].includes(t)) setTab(t as TabKey)
   }, [location.search])
 
   const switchTab = (t: TabKey) => {
@@ -125,39 +125,86 @@ export default function ProfileCenterPage() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
     setIsUploading(true)
+
+    // 1. 乐观更新：立即展示文件
+    const tempId = Date.now().toString()
+    setLatestResume({ id: tempId, name: file.name })
+    showSuccess('开始上传简历...', '正在后台解析文件')
+
     try {
+      // 2. 调用 API 上传并解析
       const parsed = await parseResumeFileEnhanced(file)
-      setLatestResume({ id: Date.now().toString(), name: file.name })
-      if (parsed.success && parsed.textContent && parsed.textContent.length > 50) {
-        setResumeText(parsed.textContent)
-        const resumeItem: ResumeItem = {
-          id: Date.now().toString(),
-          fileName: file.name,
-          fileType: file.type || 'application/octet-stream',
-          size: file.size,
-          uploadedAt: new Date().toISOString(),
-          blobURL: URL.createObjectURL(file),
-          parseStatus: 'success',
-          textContent: parsed.textContent,
-          name: parsed.name,
-          title: parsed.title,
-          gender: parsed.gender,
-          location: parsed.location,
-          targetRole: parsed.targetRole,
-          education: parsed.education,
-          graduationYear: parsed.graduationYear,
-          summary: parsed.summary,
+
+      // 3. 处理结果
+      if (parsed && parsed.success) {
+        // 解析成功
+        if (parsed.textContent && parsed.textContent.length > 50) {
+          setResumeText(parsed.textContent)
+
+          // 更新本地状态以包含更多详情（如果有）
+          // 注意：这里不需要再调用 ResumeStorageService.addResume，因为 API 已经保存了
+
+          showSuccess('简历上传成功！', '正在分析简历内容...')
+
+          // 4. 获取 AI 建议
+          try {
+            const analysis = await resumeService.analyzeResume(parsed.textContent)
+            if (analysis.success && analysis.data) {
+              setResumeScore(analysis.data.score || 0)
+              setSuggestions(analysis.data.suggestions || [])
+              showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
+            }
+          } catch (aiError) {
+            console.warn('AI analysis failed:', aiError)
+            // AI 分析失败不影响简历上传状态
+          }
+        } else {
+          // 解析内容太少，可能解析不完全
+          showSuccess('简历上传成功', '但解析到的内容较少')
         }
-        await ResumeStorageService.addResume(resumeItem)
-        const analysis = await resumeService.analyzeResume(parsed.textContent)
-        if (analysis.success && analysis.data) {
-          setResumeScore(analysis.data.score || 0)
-          setSuggestions(analysis.data.suggestions || [])
-        }
+      } else {
+        // 解析失败，但文件已保存（API 端已处理保存逻辑）
+        console.warn('Resume parsed with errors or fallback')
+        showSuccess('简历上传成功', '文件已保存，但自动解析失败')
       }
+    } catch (error) {
+      console.error('Resume upload error:', error)
+      // 只有在网络错误等严重情况才回滚
+      showError('上传失败', error instanceof Error ? error.message : '简历上传失败，请重试')
+      setLatestResume(null) // 回滚
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const handleDeleteResume = async () => {
+    if (!confirm('确定要删除简历吗？删除后无法恢复。')) return
+
+    try {
+      if (!latestResume || !token) return
+
+      // 调用 API 删除简历
+      const res = await fetch(`/api/resumes?id=${latestResume.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (res.ok) {
+        // 清除本地状态
+        setLatestResume(null)
+        setResumeText('')
+        setResumeScore(0)
+        setSuggestions([])
+        showSuccess('简历已删除')
+      } else {
+        throw new Error('删除失败')
+      }
+    } catch (error) {
+      showError('删除失败', '无法删除简历，请稍后重试')
     }
   }
 
@@ -206,7 +253,23 @@ export default function ProfileCenterPage() {
                       <FileText className="w-5 h-5 text-[var(--profile-primary)]" />
                       <span className="font-medium text-gray-900">{latestResume.name}</span>
                     </div>
-                    <button className="p-2 text-gray-400 hover:text-[var(--profile-primary)]"><Download className="w-4 h-4" /></button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3 py-1.5 text-sm font-medium text-[var(--profile-primary)] hover:bg-blue-50 rounded-lg transition-colors"
+                        title="重新上传简历"
+                      >
+                        <Upload className="w-4 h-4 inline mr-1" />
+                        重新上传
+                      </button>
+                      <button
+                        onClick={handleDeleteResume}
+                        className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="删除简历"
+                      >
+                        删除
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {resumeText && (
@@ -312,6 +375,121 @@ export default function ProfileCenterPage() {
     </div>
   )
 
+  const FeedbackTab = () => {
+    const [accuracy, setAccuracy] = useState<'accurate'|'inaccurate'|'unknown'>('unknown')
+    const [content, setContent] = useState('')
+    const [contact, setContact] = useState('')
+    const [submitting, setSubmitting] = useState(false)
+    const submit = async () => {
+      if (!content.trim()) { showError('请填写反馈内容'); return }
+      try {
+        setSubmitting(true)
+        const r = await fetch('/api/user-profile?action=submit_feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ accuracy, content, contact })
+        })
+        const j = await r.json().catch(() => ({ success: false }))
+        if (r.ok && j.success) { showSuccess('反馈已提交'); setAccuracy('unknown'); setContent(''); setContact('') }
+        else { showError('提交失败', j.error || '请稍后重试') }
+      } catch (e) {
+        showError('提交失败', '网络错误')
+      } finally { setSubmitting(false) }
+    }
+    return (
+      <div className="space-y-4">
+        <div className="profile-topbar">
+          <div>
+            <div className="profile-title">我要反馈</div>
+            <div className="profile-subtitle">反馈岗位或平台信息问题与建议。</div>
+          </div>
+        </div>
+        <div className="profile-card p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">信息准确度</label>
+              <div className="flex items-center gap-4 text-sm">
+                <label className="inline-flex items-center gap-2"><input type="radio" checked={accuracy==='accurate'} onChange={()=>setAccuracy('accurate')} />准确</label>
+                <label className="inline-flex items-center gap-2"><input type="radio" checked={accuracy==='inaccurate'} onChange={()=>setAccuracy('inaccurate')} />不准确</label>
+                <label className="inline-flex items-center gap-2"><input type="radio" checked={accuracy==='unknown'} onChange={()=>setAccuracy('unknown')} />不确定</label>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">反馈内容</label>
+              <textarea rows={5} value={content} onChange={e=>setContent(e.target.value)} className="w-full rounded-lg border p-3" placeholder="请描述问题或建议" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">联系方式（可选）</label>
+              <input value={contact} onChange={e=>setContact(e.target.value)} className="w-full rounded-lg border p-3" placeholder="邮箱或微信" />
+            </div>
+            <div className="flex justify-end">
+              <button onClick={submit} disabled={submitting} className="profile-apply-btn">{submitting?'提交中…':'提交反馈'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const RecommendTab = () => {
+    const [type, setType] = useState<'enterprise'|'job'|'user'>('enterprise')
+    const [name, setName] = useState('')
+    const [link, setLink] = useState('')
+    const [description, setDescription] = useState('')
+    const [submitting, setSubmitting] = useState(false)
+    const submit = async () => {
+      if (!name.trim()) { showError('请填写名称'); return }
+      try {
+        setSubmitting(true)
+        const r = await fetch('/api/user-profile?action=submit_recommendation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ type, name, link, description })
+        })
+        const j = await r.json().catch(() => ({ success: false }))
+        if (r.ok && j.success) { showSuccess('推荐已提交'); setName(''); setLink(''); setDescription('') }
+        else { showError('提交失败', j.error || '请稍后重试') }
+      } catch (e) { showError('提交失败', '网络错误') } finally { setSubmitting(false) }
+    }
+    return (
+      <div className="space-y-4">
+        <div className="profile-topbar">
+          <div>
+            <div className="profile-title">我要推荐</div>
+            <div className="profile-subtitle">推荐企业、岗位或优秀用户。</div>
+          </div>
+        </div>
+        <div className="profile-card p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">推荐类型</label>
+              <select value={type} onChange={e=>setType(e.target.value as any)} className="w-full rounded-lg border p-2">
+                <option value="enterprise">企业</option>
+                <option value="job">岗位</option>
+                <option value="user">用户</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">名称</label>
+              <input value={name} onChange={e=>setName(e.target.value)} className="w-full rounded-lg border p-3" placeholder="例如：GitLab" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">链接（可选）</label>
+              <input value={link} onChange={e=>setLink(e.target.value)} className="w-full rounded-lg border p-3" placeholder="https://..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">推荐理由（可选）</label>
+              <textarea rows={4} value={description} onChange={e=>setDescription(e.target.value)} className="w-full rounded-lg border p-3" placeholder="简述推荐原因" />
+            </div>
+            <div className="flex justify-end">
+              <button onClick={submit} disabled={submitting} className="profile-apply-btn">{submitting?'提交中…':'提交推荐'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="profile-page profile-theme">
       <div className="mesh-background"></div>
@@ -335,12 +513,20 @@ export default function ProfileCenterPage() {
                 <Heart className={`w-5 h-5 ${tab === 'favorites' ? 'text-white' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">我的收藏</span>
               </button>
+              <button className={`profile-nav-item ${tab === 'feedback' ? 'active' : ''}`} role="tab" aria-selected={tab === 'feedback'} onClick={() => switchTab('feedback')}>
+                <MessageSquare className={`w-5 h-5 ${tab === 'feedback' ? 'text-white' : 'text-gray-400'}`} />
+                <span className="text-sm font-medium">我要反馈</span>
+              </button>
+              <button className={`profile-nav-item ${tab === 'recommend' ? 'active' : ''}`} role="tab" aria-selected={tab === 'recommend'} onClick={() => switchTab('recommend')}>
+                <ThumbsUp className={`w-5 h-5 ${tab === 'recommend' ? 'text-white' : 'text-gray-400'}`} />
+                <span className="text-sm font-medium">我要推荐</span>
+              </button>
             </div>
           </aside>
 
           {/* Main Content */}
           <main className="profile-content-area w-full">
-            {tab === 'resume' ? <ResumeTab /> : <FavoritesTab />}
+            {tab === 'resume' ? <ResumeTab /> : tab === 'favorites' ? <FavoritesTab /> : tab === 'feedback' ? <FeedbackTab /> : <RecommendTab />}
             {isJobDetailOpen && selectedJob && (
               <JobDetailModal
                 job={selectedJob}

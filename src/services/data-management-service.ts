@@ -108,14 +108,14 @@ export class DataManagementService {
       const syncPromises = sources.map(async (source, index) => {
         try {
           console.log(`[${index + 1}/${sources.length}] 同步 ${source.name} - ${source.category}`);
-          
+
           const rawData = await this.fetchAndStoreRawData(source);
           const processedJobs = await this.processRawData(rawData);
-          
+
           syncStatus.successfulSources++;
           syncStatus.totalJobsProcessed += rawData.length;
           syncStatus.newJobsAdded += processedJobs.length;
-          
+
           console.log(`✅ ${source.name} - ${source.category}: ${rawData.length} 原始数据, ${processedJobs.length} 处理后职位`);
         } catch (error) {
           syncStatus.failedSources++;
@@ -165,7 +165,7 @@ export class DataManagementService {
     try {
       const xmlData = await rssService.fetchRSSFeed(source.url);
       const items = rssService.parseRSSFeed(xmlData, source);
-      
+
       const rawDataList: RawRSSData[] = items.map(item => ({
         id: this.generateRawDataId(item.link, source.name),
         source: source.name,
@@ -182,7 +182,7 @@ export class DataManagementService {
 
       // 存储原始数据（增量追加）
       await this.saveRawData(rawDataList, 'append');
-      
+
       return rawDataList;
     } catch (error) {
       console.error(`获取RSS数据失败 ${source.name}:`, error);
@@ -199,12 +199,12 @@ export class DataManagementService {
     for (const rawData of rawDataList) {
       try {
         const rssItem: RSSFeedItem = JSON.parse(rawData.rawContent);
-        
+
         // 使用现有的转换逻辑
         const job = this.convertRSSItemToProcessedJob(rssItem, rawData);
-        
+
         processedJobs.push(job);
-        
+
         // 更新原始数据状态
         rawData.status = 'processed';
       } catch (error) {
@@ -216,7 +216,7 @@ export class DataManagementService {
 
     // 保存处理后的数据（增量追加）
     await this.saveProcessedJobs(processedJobs, 'append');
-    
+
     return processedJobs;
   }
 
@@ -277,22 +277,22 @@ export class DataManagementService {
       }
 
       const allRawData = await this.loadRawData();
-      
+
       // 应用过滤器
       let filteredData = allRawData;
-      
+
       if (filters?.source) {
         filteredData = filteredData.filter(item => item.source === filters.source);
       }
-      
+
       if (filters?.category) {
         filteredData = filteredData.filter(item => item.category === filters.category);
       }
-      
+
       if (filters?.status) {
         filteredData = filteredData.filter(item => item.status === filters.status);
       }
-      
+
       if (filters?.dateRange) {
         filteredData = filteredData.filter(item => {
           const itemDate = new Date(item.fetchedAt);
@@ -350,28 +350,28 @@ export class DataManagementService {
       }
 
       const allProcessedJobs = await this.loadProcessedJobs();
-      
+
       // 应用过滤器
       let filteredJobs = allProcessedJobs;
-      
+
       if (filters?.category) {
         filteredJobs = filteredJobs.filter(job => job.category === filters.category);
       }
-      
+
       if (filters?.source) {
         filteredJobs = filteredJobs.filter(job => job.source === filters.source);
       }
-      
+
       if (filters?.experienceLevel) {
         filteredJobs = filteredJobs.filter(job => job.experienceLevel === filters.experienceLevel);
       }
-      
+
       if (filters?.isManuallyEdited !== undefined) {
         filteredJobs = filteredJobs.filter(job => job.isManuallyEdited === filters.isManuallyEdited);
       }
-      
+
       if (filters?.company) {
-        filteredJobs = filteredJobs.filter(job => 
+        filteredJobs = filteredJobs.filter(job =>
           job.company.toLowerCase().includes(filters.company!.toLowerCase())
         );
       }
@@ -388,19 +388,19 @@ export class DataManagementService {
           return inTitle || inCompany || inDesc || inLocation || inTags;
         });
       }
-      
+
       if (filters?.isRemote !== undefined) {
         filteredJobs = filteredJobs.filter(job => job.isRemote === filters.isRemote);
       }
-      
+
       if (filters?.tags && filters.tags.length > 0) {
-        filteredJobs = filteredJobs.filter(job => 
-          filters.tags!.some(tag => 
+        filteredJobs = filteredJobs.filter(job =>
+          filters.tags!.some(tag =>
             job.tags.some(jobTag => jobTag.toLowerCase().includes(tag.toLowerCase()))
           )
         );
       }
-      
+
       if (filters?.dateRange) {
         filteredJobs = filteredJobs.filter(job => {
           const jobDate = new Date(job.publishedAt);
@@ -444,7 +444,7 @@ export class DataManagementService {
     try {
       const allJobs = await this.loadProcessedJobs();
       const jobIndex = allJobs.findIndex(job => job.id === jobId);
-      
+
       if (jobIndex === -1) {
         return false;
       }
@@ -487,7 +487,7 @@ export class DataManagementService {
     try {
       const allJobs = await this.loadProcessedJobs();
       const filteredJobs = allJobs.filter(job => job.id !== jobId);
-      
+
       if (filteredJobs.length === allJobs.length) {
         return false; // 没有找到要删除的职位
       }
@@ -507,8 +507,8 @@ export class DataManagementService {
     try {
       // 优先从后端API读取真实统计信息（来源KV）
       const t = Date.now()
-      const resp = await fetch(`/api/storage/stats?t=${t}`, { cache: 'no-store' })
-      if (!resp.ok) throw new Error(`GET /api/storage/stats failed: ${resp.status}`)
+      const resp = await fetch(`/api/data/processed-jobs?action=stats&t=${t}`, { cache: 'no-store' })
+      if (!resp.ok) throw new Error(`GET /api/data/processed-jobs?action=stats failed: ${resp.status}`)
       const stats = await resp.json()
 
       const sources = rssService.getRSSSources()
@@ -579,7 +579,7 @@ export class DataManagementService {
 
       // 清理过期的原始数据
       const recentRawData = rawData.filter(item => new Date(item.fetchedAt) > cutoffDate);
-      
+
       // 清理过期的处理后数据
       const recentProcessedJobs = processedJobs.filter(job => new Date(job.publishedAt) > cutoffDate);
 
@@ -605,7 +605,7 @@ export class DataManagementService {
   private async updateStorageStats(): Promise<void> {
     try {
       const stats = await this.getStorageStats();
-      
+
       if (this.storageAdapter) {
         // 这里可以保存统计信息到存储
         console.log('📊 存储统计:', {
@@ -742,18 +742,18 @@ export class DataManagementService {
 
   private extractCompany(title: string, description: string): string {
     // 简化的公司提取逻辑
-    const companyMatch = title.match(/at\s+([^-,\n]+)/i) || 
-                        description.match(/Company:\s*([^,\n]+)/i) ||
-                        description.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+is\s+(?:looking|hiring|seeking)/i);
-    
+    const companyMatch = title.match(/at\s+([^-,\n]+)/i) ||
+      description.match(/Company:\s*([^,\n]+)/i) ||
+      description.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+is\s+(?:looking|hiring|seeking)/i);
+
     return companyMatch ? companyMatch[1].trim() : 'Unknown Company';
   }
 
   private extractLocation(description: string): string {
     const locationMatch = description.match(/Location:\s*([^,\n]+)/i) ||
-                         description.match(/Based in\s+([^,\n]+)/i) ||
-                         description.match(/Remote.*?from\s+([^,\n]+)/i);
-    
+      description.match(/Based in\s+([^,\n]+)/i) ||
+      description.match(/Remote.*?from\s+([^,\n]+)/i);
+
     return locationMatch ? locationMatch[1].trim() : 'Remote';
   }
 
@@ -764,7 +764,7 @@ export class DataManagementService {
     const labeledMatch = description.match(labeledUrlRegex);
     const cleanUrl = (u: string): string => {
       // 去除结尾多余标点或括号/方括号
-      return u.replace(/[\)\]\.,;:!\u3002\uFF0C\uFF1B]+$/,'');
+      return u.replace(/[\)\]\.,;:!\u3002\uFF0C\uFF1B]+$/, '');
     }
     if (labeledMatch && labeledMatch[1]) {
       return cleanUrl(labeledMatch[1]);
@@ -776,9 +776,9 @@ export class DataManagementService {
     if (rawMatches.length === 0) return undefined;
     const jobDomain = jobLink ? this.getDomain(jobLink) : undefined;
     const excludeDomains = new Set([
-      'weworkremotely.com','remotive.com','himalayas.app','nodesk.co','remoteok.com','indeed.com','linkedin.com',
-      'lever.co','greenhouse.io','workable.com','ashbyhq.com','jobs.github.com','stackoverflow.com','angel.co',
-      'medium.com','twitter.com','facebook.com','instagram.com','youtube.com','t.co','bit.ly','goo.gl'
+      'weworkremotely.com', 'remotive.com', 'himalayas.app', 'nodesk.co', 'remoteok.com', 'indeed.com', 'linkedin.com',
+      'lever.co', 'greenhouse.io', 'workable.com', 'ashbyhq.com', 'jobs.github.com', 'stackoverflow.com', 'angel.co',
+      'medium.com', 'twitter.com', 'facebook.com', 'instagram.com', 'youtube.com', 't.co', 'bit.ly', 'goo.gl'
     ]);
 
     // 评分：排除聚合/社交域，排除与jobLink相同域；优先路径短且无查询参数
@@ -797,7 +797,7 @@ export class DataManagementService {
           // 路径越短、无查询分数越高
           score += (5 - Math.min(pathSegs, 5));
           if (!hasQuery) score += 2;
-        } catch {}
+        } catch { }
         return { url: u, hostname, score };
       })
       .sort((a, b) => b.score - a.score);
@@ -823,7 +823,7 @@ export class DataManagementService {
 
   private determineExperienceLevel(title: string, description: string): 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' {
     const text = (title + ' ' + description).toLowerCase();
-    
+
     if (text.includes('senior') || text.includes('sr.') || text.includes('lead')) {
       return 'Senior';
     }
@@ -836,14 +836,14 @@ export class DataManagementService {
     if (text.includes('director') || text.includes('vp') || text.includes('cto') || text.includes('ceo')) {
       return 'Executive';
     }
-    
+
     return 'Mid';
   }
 
   private categorizeJob(title: string, description: string, sourceCategory: string): JobCategory {
     // 简化的分类逻辑
     const text = (title + ' ' + description).toLowerCase();
-    
+
     if (text.includes('frontend') || text.includes('react') || text.includes('vue') || text.includes('angular')) {
       return '前端开发';
     }
@@ -868,7 +868,7 @@ export class DataManagementService {
     if (text.includes('marketing') || text.includes('growth')) {
       return '市场营销';
     }
-    
+
     // 尝试匹配源分类到标准分类
     const categoryMap: Record<string, JobCategory> = {
       'tech': '软件开发',
@@ -878,7 +878,7 @@ export class DataManagementService {
       'product': '产品管理',
       'data': '数据分析'
     };
-    
+
     const mappedCategory = categoryMap[sourceCategory.toLowerCase()];
     return mappedCategory || '其他';
   }
@@ -890,7 +890,7 @@ export class DataManagementService {
       'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'jenkins',
       'mongodb', 'postgresql', 'mysql', 'redis', 'elasticsearch'
     ];
-    
+
     const text = (title + ' ' + description).toLowerCase();
     return techKeywords.filter(keyword => text.includes(keyword));
   }

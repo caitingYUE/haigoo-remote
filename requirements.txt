@@ -1,0 +1,6 @@
+# Python dependencies for resume parsing
+pyresparser==1.0.6
+spacy==3.7.2
+nltk==3.8.1
+pdfminer.six==20221105
+docx2txt==0.8

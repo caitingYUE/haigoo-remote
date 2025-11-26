@@ -1,21 +1,26 @@
-/**
- * Vercel Serverless Function - 简历解析（轻量级方案）
- * 使用纯 Node.js 实现，不依赖外部服务
- * 支持：PDF（使用 pdf-parse）、DOCX（使用 mammoth）、TXT
- */
 
 import { createRequire } from 'module'
+import { spawn } from 'child_process'
+import fs from 'fs/promises'
+import path from 'path'
+import os from 'os'
+import { fileURLToPath } from 'url'
+import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'
+import { saveUserResume } from '../server-utils/resume-storage.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 const require = createRequire(import.meta.url)
 
-// 动态导入以避免打包问题
+// Fallback dependencies
 let pdfParse, mammoth
 
 async function loadDependencies() {
   if (!pdfParse) {
-    pdfParse = require('pdf-parse/lib/pdf-parse.js')
+    try { pdfParse = require('pdf-parse/lib/pdf-parse.js') } catch (e) { }
   }
   if (!mammoth) {
-    mammoth = (await import('mammoth')).default
+    try { mammoth = (await import('mammoth')).default } catch (e) { }
   }
 }
 
@@ -27,7 +32,7 @@ function sendJson(res, body, status = 200) {
   res.status(status).json(body)
 }
 
-// 解析 multipart/form-data（手动实现，避免依赖 busboy）
+// Parse multipart/form-data manually
 async function parseMultipartSimple(req) {
   return new Promise((resolve, reject) => {
     const chunks = []
@@ -36,47 +41,35 @@ async function parseMultipartSimple(req) {
       try {
         const buffer = Buffer.concat(chunks)
         const boundary = req.headers['content-type']?.split('boundary=')[1]
-        if (!boundary) {
-          return reject(new Error('No boundary found'))
-        }
-        
-        // 简单解析：找到文件内容
+        if (!boundary) return reject(new Error('No boundary found'))
+
         const boundaryBuffer = Buffer.from(`--${boundary}`)
-        const parts = []
-        let start = 0
-        
-        while (true) {
-          const idx = buffer.indexOf(boundaryBuffer, start)
-          if (idx === -1) break
-          if (start > 0) {
-            parts.push(buffer.slice(start, idx))
-          }
-          start = idx + boundaryBuffer.length
-        }
-        
-        // 找到包含文件数据的部分
-        for (const part of parts) {
+        let start = buffer.indexOf(boundaryBuffer) + boundaryBuffer.length
+
+        // Find file part
+        while (start < buffer.length) {
+          const end = buffer.indexOf(boundaryBuffer, start)
+          if (end === -1) break
+
+          const part = buffer.slice(start, end)
           const headerEnd = part.indexOf(Buffer.from('\r\n\r\n'))
-          if (headerEnd === -1) continue
-          
-          const header = part.slice(0, headerEnd).toString()
-          if (!header.includes('filename=')) continue
-          
-          // 提取文件名
-          const filenameMatch = header.match(/filename="([^"]+)"/)
-          const filename = filenameMatch ? filenameMatch[1] : 'upload.file'
-          
-          // 文件内容（去掉末尾的\r\n）
-          let fileBuffer = part.slice(headerEnd + 4)
-          if (fileBuffer.slice(-2).toString() === '\r\n') {
-            fileBuffer = fileBuffer.slice(0, -2)
+          if (headerEnd !== -1) {
+            const header = part.slice(0, headerEnd).toString()
+            if (header.includes('filename=')) {
+              const filenameMatch = header.match(/filename="([^"]+)"/)
+              const filename = filenameMatch ? filenameMatch[1] : 'upload.file'
+              let fileBuffer = part.slice(headerEnd + 4)
+              // Remove trailing \r\n
+              if (fileBuffer.slice(-2).toString() === '\r\n') {
+                fileBuffer = fileBuffer.slice(0, -2)
+              }
+              resolve({ buffer: fileBuffer, filename })
+              return
+            }
           }
-          
-          resolve({ buffer: fileBuffer, filename })
-          return
+          start = end + boundaryBuffer.length
         }
-        
-        reject(new Error('No file found in multipart data'))
+        reject(new Error('No file found'))
       } catch (err) {
         reject(err)
       }
@@ -85,157 +78,199 @@ async function parseMultipartSimple(req) {
   })
 }
 
-// 从文件扩展名判断类型
-function getFileType(filename) {
-  const ext = (filename || '').toLowerCase().split('.').pop()
-  if (ext === 'pdf') return 'pdf'
-  if (ext === 'docx') return 'docx'
-  if (ext === 'doc') return 'doc' // 暂不支持旧版 DOC
-  if (ext === 'txt') return 'txt'
-  return 'unknown'
-}
+async function parseWithPython(filePath) {
+  return new Promise((resolve, reject) => {
+    const pythonScript = path.join(__dirname, '../server-utils/resume-parser.py')
+    console.log(`[parse-resume] Spawning python: ${pythonScript} ${filePath}`)
 
-// 提取文本
-async function extractText(buffer, fileType) {
-  await loadDependencies()
-  
-  if (fileType === 'pdf') {
-    try {
-      const data = await pdfParse(buffer)
-      return { text: (data.text || '').trim() }
-    } catch (e) {
-      console.error('[parse-resume] PDF parse error:', e.message)
-      return { text: '', error: 'PDF解析失败' }
-    }
-  }
-  
-  if (fileType === 'docx') {
-    try {
-      const result = await mammoth.extractRawText({ buffer })
-      return { text: (result.value || '').trim() }
-    } catch (e) {
-      console.error('[parse-resume] DOCX parse error:', e.message)
-      return { text: '', error: 'DOCX解析失败' }
-    }
-  }
-  
-  if (fileType === 'txt') {
-    try {
-      const text = buffer.toString('utf-8').trim()
-      return { text }
-    } catch (e) {
-      return { text: '', error: 'TXT解析失败' }
-    }
-  }
-  
-  return { text: '', error: `不支持的文件类型: ${fileType}` }
+    const pythonProcess = spawn('python3', [pythonScript, filePath])
+
+    // Set a timeout to kill the process if it takes too long (e.g. 5 seconds)
+    // This prevents Vercel function timeouts if Python tries to download models
+    const timeout = setTimeout(() => {
+      console.warn('[parse-resume] Python parsing timed out, killing process...')
+      pythonProcess.kill()
+      resolve(null) // Resolve null to trigger fallback
+    }, 5000)
+
+    let stdout = ''
+    let stderr = ''
+
+    pythonProcess.stdout.on('data', (data) => stdout += data.toString())
+    pythonProcess.stderr.on('data', (data) => stderr += data.toString())
+
+    pythonProcess.on('close', (code) => {
+      clearTimeout(timeout)
+      if (code !== 0 && code !== null) { // code is null if killed
+        console.error(`[parse-resume] Python exited with code ${code}: ${stderr}`)
+        return resolve(null)
+      }
+
+      // If killed by timeout, we already resolved null, but safe to check
+      if (pythonProcess.killed) return
+
+      try {
+        const result = JSON.parse(stdout)
+        resolve(result)
+      } catch (e) {
+        console.error(`[parse-resume] Failed to parse Python output: ${stdout}`)
+        resolve(null)
+      }
+    })
+
+    pythonProcess.on('error', (err) => {
+      clearTimeout(timeout)
+      console.error('[parse-resume] Failed to start Python process:', err)
+      resolve(null)
+    })
+  })
 }
 
 export default async function handler(req, res) {
-  // CORS
-  if (req.method === 'OPTIONS') {
-    return sendJson(res, {}, 200)
+  console.log('[parse-resume] === NEW REQUEST ===')
+  console.log('[parse-resume] Method:', req.method)
+  console.log('[parse-resume] Content-Type:', req.headers['content-type'])
+
+  if (req.method === 'OPTIONS') return sendJson(res, {}, 200)
+  if (req.method !== 'POST') return sendJson(res, { success: false, error: 'Method not allowed' }, 405)
+
+  // 1. Verify Auth
+  const token = extractToken(req)
+  if (!token) {
+    console.error('[parse-resume] No token provided')
+    return sendJson(res, { success: false, error: 'Unauthorized' }, 401)
   }
-  
-  if (req.method !== 'POST') {
-    return sendJson(res, { success: false, error: 'Method not allowed' }, 405)
+  const payload = verifyToken(token)
+  if (!payload || !payload.userId) {
+    console.error('[parse-resume] Invalid token')
+    return sendJson(res, { success: false, error: 'Invalid token' }, 401)
   }
+  const userId = payload.userId
+  console.log('[parse-resume] User ID:', userId)
+
+  let tempFilePath = null
 
   try {
     const contentType = req.headers['content-type'] || ''
     let buffer = null
     let filename = 'upload.file'
 
-    // 处理 multipart/form-data
     if (contentType.includes('multipart/form-data')) {
-      try {
-        const parsed = await parseMultipartSimple(req)
-        buffer = parsed.buffer
-        filename = parsed.filename
-      } catch (e) {
-        console.error('[parse-resume] Multipart parse error:', e.message)
-        return sendJson(res, { 
-          success: false, 
-          error: 'Failed to parse multipart data: ' + e.message 
-        }, 400)
-      }
+      const parsed = await parseMultipartSimple(req)
+      buffer = parsed.buffer
+      filename = parsed.filename
+    } else {
+      // ...
+      return sendJson(res, { success: false, error: 'Only multipart/form-data supported' }, 400)
     }
-    // 处理 JSON (base64 或 fileUrl)
-    else if (contentType.includes('application/json')) {
-      const chunks = []
-      for await (const chunk of req) {
-        chunks.push(chunk)
+
+    if (!buffer || buffer.length === 0) return sendJson(res, { success: false, error: 'Empty file' }, 400)
+
+    // Save to temp file
+    const tempDir = os.tmpdir()
+    tempFilePath = path.join(tempDir, `resume-${Date.now()}-${filename}`)
+    await fs.writeFile(tempFilePath, buffer)
+
+    console.log(`[parse-resume] Saved temp file: ${tempFilePath}`)
+
+    // Try Python parsing first
+    const pythonResult = await parseWithPython(tempFilePath)
+    let parsedData = null
+    let parseStatus = 'failed'
+
+    if (pythonResult && pythonResult.success) {
+      console.log('[parse-resume] Python parse success')
+      parsedData = {
+        ...pythonResult.data,
+        text: pythonResult.data.content || '',
+        raw: pythonResult.data
       }
-      const body = JSON.parse(Buffer.concat(chunks).toString())
-      
-      if (body.base64) {
-        buffer = Buffer.from(body.base64, 'base64')
-        filename = body.filename || filename
-      } else if (body.fileUrl) {
-        const resp = await fetch(body.fileUrl)
-        if (!resp.ok) {
-          return sendJson(res, { 
-            success: false, 
-            error: `Failed to fetch file: ${resp.status}` 
-          }, 400)
+      parseStatus = 'success'
+    } else {
+      console.log('[parse-resume] Python parse failed, falling back to Node.js')
+      // Fallback to Node.js parsing
+      await loadDependencies()
+      const ext = path.extname(filename).toLowerCase().replace('.', '')
+      let text = ''
+
+      if (ext === 'pdf' && pdfParse) {
+        const data = await pdfParse(buffer)
+        text = data.text
+      } else if ((ext === 'docx' || ext === 'doc') && mammoth) {
+        const result = await mammoth.extractRawText({ buffer })
+        text = result.value
+      } else if (ext === 'txt') {
+        text = buffer.toString('utf-8')
+      }
+
+      if (text) {
+        parsedData = {
+          text: text.trim(),
+          fallback: true
         }
-        const arrayBuf = await resp.arrayBuffer()
-        buffer = Buffer.from(arrayBuf)
-        filename = body.filename || new URL(body.fileUrl).pathname.split('/').pop() || filename
-      } else {
-        return sendJson(res, { 
-          success: false, 
-          error: 'JSON payload must include "base64" or "fileUrl"' 
-        }, 400)
+        parseStatus = 'partial'
       }
     }
-    // 处理原始二进制
-    else {
-      const chunks = []
-      for await (const chunk of req) {
-        chunks.push(chunk)
-      }
-      buffer = Buffer.concat(chunks)
+
+    // 本地测试模式：保留文件；生产模式：删除文件
+    const isLocalMode = process.env.RESUME_STORAGE_MODE === 'local'
+    let localFilePath = null
+
+    if (isLocalMode) {
+      // 本地模式：保留文件用于测试
+      localFilePath = tempFilePath
+      console.log(`[parse-resume] Local mode: preserving file at ${tempFilePath}`)
+    } else {
+      // 生产模式：删除临时文件
+      try { await fs.unlink(tempFilePath) } catch (e) { }
     }
 
-    if (!buffer || buffer.length === 0) {
-      return sendJson(res, { success: false, error: 'Empty file' }, 400)
+    // 无论解析是否成功，都尝试保存记录
+    // 如果解析失败，parsedData 可能为 null，我们需要构建一个基本的记录
+    const finalParsedData = parsedData || {
+      text: '',
+      fallback: true,
+      error: 'Parsing failed'
     }
 
-    // 检测文件类型
-    const fileType = getFileType(filename)
-    
-    console.log(`[parse-resume] Parsing ${filename} (${fileType}), size: ${buffer.length} bytes`)
+    const finalParseStatus = parsedData ? parseStatus : 'failed'
 
-    // 提取文本
-    const { text, error } = await extractText(buffer, fileType)
-
-    if (error || !text || text.length === 0) {
-      return sendJson(res, { 
-        success: false, 
-        error: error || 'Failed to extract text',
-        fileType
-      }, 200)
+    // Save to storage
+    const resumeRecord = {
+      fileName: filename,
+      size: buffer.length,
+      parseStatus: finalParseStatus,
+      parsedData: finalParsedData,
+      localFilePath, // 保存本地文件路径（仅本地模式有值）
+      uploadedAt: new Date().toISOString()
     }
 
-    console.log(`[parse-resume] Success: extracted ${text.length} chars from ${filename}`)
+    try {
+      await saveUserResume(userId, resumeRecord)
+      console.log(`[parse-resume] Saved resume for user ${userId} (Status: ${finalParseStatus})`)
+    } catch (saveError) {
+      console.error(`[parse-resume] Failed to save resume record: ${saveError.message}`)
+      // 如果保存也失败了，那确实没办法了
+      return sendJson(res, { success: false, error: 'Failed to save resume' }, 500)
+    }
 
-    return sendJson(res, { 
-      success: true, 
-      data: { 
-        text,
-        filename,
-        fileType,
-        length: text.length
-      } 
-    }, 200)
+    return sendJson(res, {
+      success: true,
+      data: finalParsedData,
+      status: finalParseStatus
+    })
 
   } catch (error) {
-    console.error('[parse-resume] Handler error:', error)
-    return sendJson(res, { 
-      success: false, 
-      error: error.message || 'Unknown error' 
-    }, 500)
+    console.error('[parse-resume] ===  ERROR ===')
+    console.error('[parse-resume] Error message:', error.message)
+    console.error('[parse-resume] Error stack:', error.stack)
+    if (tempFilePath) {
+      console.error('[parse-resume] Temp file path:', tempFilePath)
+      try { await fs.unlink(tempFilePath) } catch (e) {
+        console.error('[parse-resume] Failed to cleanup temp file:', e.message)
+      }
+    }
+    return sendJson(res, { success: false, error: error.message }, 500)
   }
 }
 

@@ -334,7 +334,14 @@ export default function JobsPage() {
     const matchesRegion = activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || overseasHit)
 
     return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote && matchesRegion
+  }).sort((a, b) => {
+    if (a.canRefer && !b.canRefer) return -1
+    if (!a.canRefer && b.canRefer) return 1
+    if (a.isTrusted && !b.isTrusted) return -1
+    if (!a.isTrusted && b.isTrusted) return 1
+    return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
   })
+
 
   // 计算当前地区与其它筛选（不含分类）的基础集合，用于“全部 (数量)”显示
   const baseFilteredJobs = (jobs || []).filter(job => {
@@ -393,92 +400,114 @@ export default function JobsPage() {
       role="main"
       aria-label="职位搜索页面"
     >
-      
-
-      {/* 搜索和筛选栏 - 悬浮吸顶效果 */}
-      <div className="sticky top-0 z-40 bg-gray-50/95 backdrop-blur-sm py-4 shadow-sm transition-all duration-300">
+      {/* Top Navigation Tabs */}
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-full shadow-sm p-2 flex items-center gap-4">
-            <div className="flex items-center gap-2 px-4 border-r border-gray-100">
-              <span className="font-bold text-gray-700">筛选</span>
+          <div className="flex items-center gap-8 h-14">
+            {/* 远程岗位搜索 Tab */}
+            <div className="flex items-center gap-2 h-full border-b-2 border-blue-500">
+              <span className="text-gray-900 font-medium">远程岗位搜索</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setActiveRegion('domestic')}
+                  className={`px-2 py-0.5 text-xs rounded transition-colors ${activeRegion === 'domestic' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  国内可申
+                </button>
+                <span className="text-gray-300">|</span>
+                <button
+                  onClick={() => setActiveRegion('overseas')}
+                  className={`px-2 py-0.5 text-xs rounded transition-colors ${activeRegion === 'overseas' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  海外可申
+                </button>
+              </div>
             </div>
-            <div className="flex-1">
-              <SearchBar
+
+            {/* 可信企业别表 Tab */}
+            <button
+              onClick={() => navigate('/trusted-companies')}
+              className="flex items-center h-full border-b-2 border-transparent text-gray-600 hover:text-gray-900 font-medium"
+            >
+              可信企业别表
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 搜索和筛选栏 */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Search and Filter Row */}
+          <div className="flex items-center gap-4 mb-4">
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
                 value={searchTerm}
-                onChange={setSearchTerm}
-                onSearch={(val) => setSearchTerm(val)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="搜索岗位、公司或地点..."
-                className="w-full"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            {/* 简化的下拉筛选 */}
-            <div className="flex items-center gap-2 pr-4">
+            {/* Filter Dropdowns */}
+            <div className="flex items-center gap-2">
               <div className="relative group">
-                <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 px-3 py-1 rounded-full hover:bg-gray-50">
+                <button className="flex items-center gap-1 text-gray-700 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">
                   <span>所有地点</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
-                {/* Dropdown content would go here */}
               </div>
               <div className="relative group">
-                <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 px-3 py-1 rounded-full hover:bg-gray-50">
+                <button className="flex items-center gap-1 text-gray-700 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">
                   <span>全部类型</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
-                {/* Dropdown content would go here */}
               </div>
-
-              {activeFiltersCount > 0 && (
-                <button
-                  onClick={() => setFilters({ type: 'all', category: 'all', location: 'all', experience: 'all', remote: 'all' })}
-                  className="text-gray-400 hover:text-gray-600 px-3 py-1"
-                >
-                  清除
-                </button>
-              )}
             </div>
           </div>
 
-          {/* 快速分类标签 */}
-          <div className="flex items-center gap-6 mt-4 text-sm text-gray-500 overflow-x-auto pb-2 scrollbar-hide">
+          {/* Category Tabs */}
+          <div className="flex items-center gap-4 text-sm overflow-x-auto pb-2 scrollbar-hide">
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: 'all' }))}
-              className={`whitespace-nowrap px-3 py-1 rounded-full transition-colors ${filters.category === 'all' ? 'bg-blue-100 text-blue-600 font-medium' : 'hover:text-gray-700'}`}
+              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === 'all' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
             >
               全部 ({baseFilteredJobs.length})
             </button>
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: '市场营销' }))}
-              className={`whitespace-nowrap px-3 py-1 rounded-full transition-colors ${filters.category === '市场营销' ? 'bg-blue-100 text-blue-600 font-medium' : 'hover:text-gray-700'}`}
+              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '市场营销' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
             >
               市场营销
             </button>
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: '销售' }))}
-              className={`whitespace-nowrap px-3 py-1 rounded-full transition-colors ${filters.category === '销售' ? 'bg-blue-100 text-blue-600 font-medium' : 'hover:text-gray-700'}`}
+              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '销售' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
             >
               销售
             </button>
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: '软件开发' }))}
-              className={`whitespace-nowrap px-3 py-1 rounded-full transition-colors ${filters.category === '软件开发' ? 'bg-blue-100 text-blue-600 font-medium' : 'hover:text-gray-700'}`}
+              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '软件开发' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
             >
               软件开发
             </button>
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: '客户支持' }))}
-              className={`whitespace-nowrap px-3 py-1 rounded-full transition-colors ${filters.category === '客户支持' ? 'bg-blue-100 text-blue-600 font-medium' : 'hover:text-gray-700'}`}
+              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '客户支持' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
             >
               客户支持
             </button>
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: '产品管理' }))}
-              className={`whitespace-nowrap px-3 py-1 rounded-full transition-colors ${filters.category === '产品管理' ? 'bg-blue-100 text-blue-600 font-medium' : 'hover:text-gray-700'}`}
+              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '产品管理' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
             >
               产品管理
             </button>
-            <span className="ml-auto text-gray-400 whitespace-nowrap">共 {filteredJobs.length} 个职位</span>
+            <span className="ml-auto text-gray-500 whitespace-nowrap text-xs">共 {filteredJobs.length} 个职位</span>
           </div>
         </div>
       </div>

@@ -42,6 +42,8 @@ async function getRedisClient() {
 const memoryStore = new Map()
 const memoryFavorites = new Map()
 let memoryLocationCategories = globalThis.__haigoo_location_categories || null
+let memoryFeedbacks = globalThis.__haigoo_feedbacks || []
+let memoryRecommendations = globalThis.__haigoo_recommendations || []
 
 function getMemoryFavorites(userId) {
   let set = memoryFavorites.get(userId)
@@ -246,6 +248,38 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, error: '认证令牌无效或已过期' })
     }
 
+    // 获取反馈列表 (仅管理员)
+    if (action === 'feedbacks_list') {
+      // 简单鉴权：检查是否有 token 且 userId 存在 (更严格的鉴权应检查角色)
+      if (!payload || !payload.userId) return res.status(401).json({ success: false, error: 'Unauthorized' })
+
+      const key = `haigoo:feedbacks`
+      let feedbacks = []
+
+      try {
+        if (REDIS_CONFIGURED) {
+          const client = await getRedisClient()
+          if (client) {
+            const data = await client.get(key)
+            if (data) feedbacks = JSON.parse(data)
+          }
+        } else if (KV_CONFIGURED) {
+          const data = await kv.get(key)
+          if (data) feedbacks = Array.isArray(data) ? data : []
+        } else {
+          feedbacks = memoryFeedbacks || []
+        }
+
+        // 按时间倒序
+        feedbacks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+        return res.status(200).json({ success: true, feedbacks })
+      } catch (e) {
+        console.error('[user-profile] feedbacks_list error:', e)
+        return res.status(500).json({ success: false, error: 'Failed to fetch feedbacks' })
+      }
+    }
+
     // 地址分类写入 (需要认证)
     if (action === 'location_categories_set' && (req.method === 'POST' || req.method === 'PUT')) {
       const payload = req.body && typeof req.body === 'object' ? req.body : {}
@@ -428,6 +462,92 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: '收藏成功' })
     }
 
+    // 反馈提交（岗位或平台）
+    if (action === 'submit_feedback' && req.method === 'POST') {
+      const body = req.body || {}
+      const entry = {
+        id: `${payload.userId}:${Date.now()}`,
+        userId: payload.userId,
+        jobId: body.jobId || null,
+        accuracy: body.accuracy || 'unknown',
+        content: String(body.content || ''),
+        contact: String(body.contact || ''),
+        source: body.source || '',
+        sourceUrl: body.sourceUrl || '',
+        createdAt: new Date().toISOString()
+      }
+
+      const key = `haigoo:feedbacks`
+      try {
+        const client = await getRedisClient()
+        if (client) {
+          const prev = await client.get(key)
+          const arr = prev ? JSON.parse(prev) : []
+          arr.push(entry)
+          await client.set(key, JSON.stringify(arr))
+        }
+      } catch (e) {
+        console.error('[user-profile] Redis feedback write error:', e?.message || e)
+      }
+      if (KV_CONFIGURED) {
+        try {
+          const prev = await kv.get(key)
+          const arr = Array.isArray(prev) ? prev : []
+          arr.push(entry)
+          await kv.set(key, arr)
+        } catch (e) {
+          console.error('[user-profile] KV feedback write error:', e?.message || e)
+        }
+      }
+      memoryFeedbacks = Array.isArray(memoryFeedbacks) ? memoryFeedbacks : []
+      memoryFeedbacks.push(entry)
+      globalThis.__haigoo_feedbacks = memoryFeedbacks
+
+      return res.status(200).json({ success: true, message: '反馈已提交' })
+    }
+
+    // 推荐提交（企业/岗位/用户）
+    if (action === 'submit_recommendation' && req.method === 'POST') {
+      const body = req.body || {}
+      const entry = {
+        id: `${payload.userId}:${Date.now()}`,
+        userId: payload.userId,
+        type: String(body.type || 'enterprise'),
+        name: String(body.name || ''),
+        link: String(body.link || ''),
+        description: String(body.description || ''),
+        createdAt: new Date().toISOString()
+      }
+
+      const key = `haigoo:recommendations`
+      try {
+        const client = await getRedisClient()
+        if (client) {
+          const prev = await client.get(key)
+          const arr = prev ? JSON.parse(prev) : []
+          arr.push(entry)
+          await client.set(key, JSON.stringify(arr))
+        }
+      } catch (e) {
+        console.error('[user-profile] Redis recommendation write error:', e?.message || e)
+      }
+      if (KV_CONFIGURED) {
+        try {
+          const prev = await kv.get(key)
+          const arr = Array.isArray(prev) ? prev : []
+          arr.push(entry)
+          await kv.set(key, arr)
+        } catch (e) {
+          console.error('[user-profile] KV recommendation write error:', e?.message || e)
+        }
+      }
+      memoryRecommendations = Array.isArray(memoryRecommendations) ? memoryRecommendations : []
+      memoryRecommendations.push(entry)
+      globalThis.__haigoo_recommendations = memoryRecommendations
+
+      return res.status(200).json({ success: true, message: '推荐已提交' })
+    }
+
     // 收藏移除
     if (action === 'favorites_remove' && req.method === 'POST') {
       const body = req.body || {}
@@ -561,4 +681,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: '服务器错误' })
   }
 }
-

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Share2, Bookmark, ExternalLink, MapPin, Clock, DollarSign, Building2, Zap, Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, Share2, Bookmark, ExternalLink, MapPin, Clock, DollarSign, Building2, Zap, Star, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { segmentJobDescription } from '../utils/translation'
@@ -33,6 +33,12 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 }) => {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'description' | 'company' | 'openings'>('description')
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+  const [feedbackAccuracy, setFeedbackAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
+  const [feedbackContent, setFeedbackContent] = useState('')
+  const [feedbackContact, setFeedbackContact] = useState('')
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
+  const [feedbackMessage, setFeedbackMessage] = useState('')
   // 仅显示原始文本，不进行语言切换或翻译
 
   // 可访问性相关的 refs
@@ -200,6 +206,56 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     onSave?.(job.id)
   }
 
+  const openFeedback = () => {
+    setIsFeedbackOpen(true)
+    setFeedbackMessage('')
+  }
+
+  const closeFeedback = () => {
+    setIsFeedbackOpen(false)
+  }
+
+  const submitFeedback = async () => {
+    if (!feedbackContent.trim()) {
+      setFeedbackMessage('请填写反馈内容')
+      return
+    }
+    try {
+      setFeedbackSubmitting(true)
+      setFeedbackMessage('')
+      const token = localStorage.getItem('haigoo_auth_token') || ''
+      const res = await fetch('/api/user-profile?action=submit_feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          jobId: job.id,
+          accuracy: feedbackAccuracy,
+          content: feedbackContent,
+          contact: feedbackContact,
+          source: job.source || '',
+          sourceUrl: job.sourceUrl || ''
+        })
+      })
+      const data = await res.json().catch(() => ({ success: false }))
+      if (res.ok && data?.success) {
+        setFeedbackMessage('反馈已提交，感谢你的帮助！')
+        setTimeout(() => { closeFeedback() }, 1200)
+        setFeedbackAccuracy('unknown')
+        setFeedbackContent('')
+        setFeedbackContact('')
+      } else {
+        setFeedbackMessage(data?.error || '提交失败，请稍后重试')
+      }
+    } catch (e: any) {
+      setFeedbackMessage('提交失败，请检查网络连接')
+    } finally {
+      setFeedbackSubmitting(false)
+    }
+  }
+
   // 显示文本的辅助函数：直接返回原文
   const displayText = (originalText: string): string => {
     return originalText || ''
@@ -360,6 +416,16 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
                 </button>
 
+                {/* 反馈 */}
+                <button
+                  onClick={openFeedback}
+                  onKeyDown={(e) => handleKeyDown(e, openFeedback)}
+                  className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 rounded-lg transition-all duration-200 border border-slate-200/50 dark:border-zinc-700/50"
+                  title="反馈"
+                  aria-label="反馈职位信息"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -636,6 +702,53 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
             前往申请，Go！
           </button>
         </footer>
+
+        {isFeedbackOpen && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-slate-200 dark:border-zinc-700 w-full max-w-md mx-4">
+              <div className="p-5 border-b border-slate-200 dark:border-zinc-700 flex items-center justify-between">
+                <h3 id="feedback-title" className="text-base font-semibold">岗位信息反馈</h3>
+                <button onClick={closeFeedback} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800" aria-label="关闭反馈">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">该岗位信息是否准确？</label>
+                  <div className="flex items-center gap-3">
+                    <label className="inline-flex items-center gap-1 text-sm">
+                      <input type="radio" name="accuracy" value="accurate" checked={feedbackAccuracy==='accurate'} onChange={() => setFeedbackAccuracy('accurate')} />
+                      准确
+                    </label>
+                    <label className="inline-flex items-center gap-1 text-sm">
+                      <input type="radio" name="accuracy" value="inaccurate" checked={feedbackAccuracy==='inaccurate'} onChange={() => setFeedbackAccuracy('inaccurate')} />
+                      不准确
+                    </label>
+                    <label className="inline-flex items-center gap-1 text-sm">
+                      <input type="radio" name="accuracy" value="unknown" checked={feedbackAccuracy==='unknown'} onChange={() => setFeedbackAccuracy('unknown')} />
+                      不确定
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">反馈内容</label>
+                  <textarea value={feedbackContent} onChange={(e)=>setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">联系方式（可选）</label>
+                  <input value={feedbackContact} onChange={(e)=>setFeedbackContact(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm" placeholder="邮箱或微信" />
+                </div>
+                {feedbackMessage && (
+                  <div className="text-sm text-slate-600 dark:text-slate-300">{feedbackMessage}</div>
+                )}
+              </div>
+              <div className="p-5 border-t border-slate-200 dark:border-zinc-700 flex items-center justify-end gap-3">
+                <button onClick={closeFeedback} className="px-4 py-2 rounded-lg border border-slate-200 dark:border-zinc-700">取消</button>
+                <button onClick={submitFeedback} disabled={feedbackSubmitting} className="px-4 py-2 rounded-lg bg-[#3182CE] text-white hover:bg-[#256bb0] disabled:opacity-50">{feedbackSubmitting ? '提交中…' : '提交反馈'}</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     document.body
