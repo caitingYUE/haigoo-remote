@@ -166,29 +166,29 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       {/* Job Title */}
       <h2
         id={`job-${job.id}-title`}
-        className="font-semibold text-gray-900 text-base mb-3 line-clamp-2 leading-snug"
+        className="font-semibold text-gray-900 text-base mb-3 truncate leading-snug"
         title={job.translations?.title || job.title}
       >
         {job.translations?.title || job.title}
       </h2>
 
       {/* Location, Type, and Time Row */}
-      <div className="flex items-center gap-3 text-sm text-gray-600 mb-3 flex-wrap">
-        {/* Location */}
-        <div className="flex items-center gap-1">
+      <div className="flex items-center gap-3 text-sm text-gray-600 mb-3 min-w-0">
+        {/* Location - Flexible width with truncation */}
+        <div className="flex items-center gap-1 min-w-0 flex-1">
           <MapPin className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
           <span className="truncate" title={job.translations?.location || job.location}>
             {job.translations?.location || job.location}
           </span>
         </div>
 
-        {/* Job Type Badge */}
-        <span className="px-2 py-0.5 text-xs font-medium rounded bg-green-50 text-green-700">
+        {/* Job Type Badge - Fixed width */}
+        <span className="px-2 py-0.5 text-xs font-medium rounded bg-green-50 text-green-700 flex-shrink-0">
           {getJobTypeLabel(job.type)}
         </span>
 
-        {/* Posted Time */}
-        <div className="flex items-center text-gray-400 text-xs ml-auto">
+        {/* Posted Time - Fixed width */}
+        <div className="flex items-center text-gray-400 text-xs flex-shrink-0">
           <time dateTime={job.postedAt} aria-label={`发布时间：${DateFormatter.formatPublishTime(job.postedAt)}`}>
             {DateFormatter.formatPublishTime(job.postedAt)}
           </time>
