@@ -1,5 +1,6 @@
 import { verifyToken, extractToken } from '../../server-utils/auth-helpers.js'
 import { createClient } from 'redis'
+import * as cheerio from 'cheerio'
 
 // 安全加载 Vercel KV
 let kv = null
@@ -10,20 +11,34 @@ try {
     console.warn('[trusted-companies] Vercel KV module not available')
 }
 
-// Simple HTML parser using regex
+// HTML parser using Cheerio
 function extractMetadata(html) {
+    const $ = cheerio.load(html)
     const metadata = { title: '', description: '', image: '', icon: '' }
-    const getMeta = (prop) => {
-        const regex = new RegExp(`<meta\\s+(?:property|name)=["']${prop}["']\\s+content=["']([^"']*)["']`, 'i')
-        const match = html.match(regex)
-        return match ? match[1] : ''
+
+    metadata.title = $('meta[property="og:title"]').attr('content') || 
+                     $('title').text() || ''
+    
+    metadata.description = $('meta[property="og:description"]').attr('content') || 
+                           $('meta[name="description"]').attr('content') || ''
+    
+    // Fallback description from content if missing or too short
+    if (!metadata.description || metadata.description.length < 50) {
+        // Try generic description classes and common content containers
+        // Webflow often uses w-richtext
+        const desc = $('.description, [class*="description"], main p, article p, .w-richtext p, .hero-text, .intro-text').first().text().trim()
+        if (desc.length > 20) {
+            metadata.description = desc.substring(0, 300) + (desc.length > 300 ? '...' : '')
+        }
     }
-    const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i)
-    metadata.title = getMeta('og:title') || (titleMatch ? titleMatch[1] : '')
-    metadata.description = getMeta('og:description') || getMeta('description')
-    metadata.image = getMeta('og:image')
-    const iconMatch = html.match(/<link\\s+rel=["'](?:shortcut )?icon["']\\s+href=["']([^"']*)["']/i)
-    metadata.icon = iconMatch ? iconMatch[1] : ''
+    
+    metadata.image = $('meta[property="og:image"]').attr('content') || 
+                     $('meta[name="twitter:image"]').attr('content') || ''
+    
+    metadata.icon = $('link[rel="icon"]').attr('href') || 
+                    $('link[rel="shortcut icon"]').attr('href') || 
+                    $('link[rel="apple-touch-icon"]').attr('href') || ''
+
     return metadata
 }
 
