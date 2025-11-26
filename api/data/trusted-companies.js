@@ -261,6 +261,66 @@ export default async function handler(req, res) {
                     return res.status(200).json({ success: true, metadata })
                 } catch (error) {
                     console.error('[trusted-companies] Crawl error:', error)
+
+                    // Fallback strategy for blocked sites (e.g. Whatnot returns 403)
+                    // Try to guess the ATS/Career page URL based on the domain name
+                    try {
+                        let slug = ''
+                        try {
+                            const urlObj = new URL(url)
+                            const hostname = urlObj.hostname.replace(/^www\./, '')
+                            slug = hostname.split('.')[0]
+                        } catch (e) { /* ignore */ }
+
+                        if (slug && slug.length > 2) {
+                            console.log(`[trusted-companies] Main crawl failed. Trying fallbacks for slug: ${slug}`)
+                            const fallbacks = [
+                                `https://jobs.ashbyhq.com/${slug}`,
+                                `https://boards.greenhouse.io/${slug}`,
+                                `https://jobs.lever.co/${slug}`
+                            ]
+
+                            for (const fbUrl of fallbacks) {
+                                try {
+                                    console.log(`[trusted-companies] Trying fallback: ${fbUrl}`)
+                                    const fbRes = await fetch(fbUrl, {
+                                        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+                                    })
+                                    
+                                    if (fbRes.ok) {
+                                        const fbHtml = await fbRes.text()
+                                        const fbMetadata = extractMetadata(fbHtml)
+                                        
+                                        // If we got something useful
+                                        if (fbMetadata.title || fbMetadata.description) {
+                                            console.log(`[trusted-companies] Fallback success: ${fbUrl}`)
+                                            
+                                            // Normalize URLs
+                                            if (fbMetadata.icon && !fbMetadata.icon.startsWith('http')) {
+                                                const urlObj = new URL(fbUrl)
+                                                fbMetadata.icon = new URL(fbMetadata.icon, urlObj.origin).toString()
+                                            }
+                                            if (fbMetadata.image && !fbMetadata.image.startsWith('http')) {
+                                                const urlObj = new URL(fbUrl)
+                                                fbMetadata.image = new URL(fbMetadata.image, urlObj.origin).toString()
+                                            }
+                                            
+                                            // Add a note that this is from fallback
+                                            fbMetadata._source = 'fallback_ats'
+                                            fbMetadata._fallbackUrl = fbUrl
+                                            
+                                            return res.status(200).json({ success: true, metadata: fbMetadata })
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Ignore fallback errors
+                                }
+                            }
+                        }
+                    } catch (fbError) {
+                        console.error('[trusted-companies] Fallback error:', fbError)
+                    }
+
                     return res.status(500).json({ success: false, error: error.message })
                 }
             }
