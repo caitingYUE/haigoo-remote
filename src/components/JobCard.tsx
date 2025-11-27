@@ -112,69 +112,65 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
 
   return (
     <article
-      className="group bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer relative h-full flex flex-col"
+      className="group bg-white rounded-2xl p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer relative h-full flex flex-col"
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       tabIndex={0}
       aria-label={getJobCardAriaLabel()}
       aria-describedby={`job-${job.id}-description`}
     >
-      {/* Source Badge - Top-left */}
-      <div className="absolute -top-2 -left-2 z-10">
-        {job.isTrusted ? (
-          job.canRefer ? (
-            <div className="flex items-center gap-1 bg-purple-500 text-white px-2.5 py-1 rounded text-xs font-medium shadow-sm">
-              <UserCheck className="w-3 h-3" />
-              内推
-            </div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {job.isTrusted ? (
+            job.canRefer ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                <UserCheck className="w-3 h-3" />
+                内推
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                <Award className="w-3 h-3" />
+                已审核
+              </span>
+            )
           ) : (
-            <div className="flex items-center gap-1 bg-blue-500 text-white px-2.5 py-1 rounded text-xs font-medium shadow-sm">
-              <Award className="w-3 h-3" />
-              已审核
-            </div>
-          )
-        ) : (
-          <div className="flex items-center gap-1 bg-gray-500 text-white px-2.5 py-1 rounded text-xs font-medium shadow-sm">
-            <Globe className="w-3 h-3" />
-            第三方
-          </div>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+              <Globe className="w-3 h-3" />
+              第三方
+            </span>
+          )}
+        </div>
+
+        {onSave && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onSave(job.id); } }}
+            className={`p-1.5 rounded-md transition-colors ${isSaved ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
+            title={isSaved ? '已收藏' : '收藏'}
+            aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
+            aria-pressed={Boolean(isSaved)}
+          >
+            <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} aria-hidden="true" />
+          </button>
         )}
       </div>
 
-      {/* Bookmark Button - Top-right */}
-      {onSave && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onSave(job.id); } }}
-          className={`absolute top-3 right-3 p-1.5 rounded transition-colors ${isSaved ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`}
-          title={isSaved ? '已收藏' : '收藏'}
-          aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
-          aria-pressed={Boolean(isSaved)}
-        >
-          <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} aria-hidden="true" />
-        </button>
-      )}
-
-      {/* Company Name */}
-      <div className="flex items-center text-gray-600 text-sm mb-2 mt-1">
+      <div className="flex items-center text-gray-600 text-sm mb-2">
         <Building className="w-4 h-4 mr-1.5 flex-shrink-0" aria-hidden="true" />
         <span className="truncate font-medium" title={job.translations?.company || job.company}>
           {job.translations?.company || job.company}
         </span>
       </div>
 
-      {/* Job Title */}
       <h2
         id={`job-${job.id}-title`}
-        className="font-semibold text-gray-900 text-base mb-3 truncate leading-snug"
+        className="font-semibold text-slate-900 text-base mb-3 truncate leading-snug"
         title={job.translations?.title || job.title}
       >
         {job.translations?.title || job.title}
       </h2>
 
-      {/* Location, Type, and Time Row */}
-      <div className="flex items-center gap-3 text-sm text-gray-600 mb-3 min-w-0">
-        {/* Location - Flexible width with truncation */}
+      <div className="flex items-center gap-3 text-sm text-slate-700 mb-3 min-w-0">
         <div className="flex items-center gap-1 min-w-0 flex-1">
           <MapPin className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
           <span className="truncate" title={job.translations?.location || job.location}>
@@ -182,12 +178,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
           </span>
         </div>
 
-        {/* Job Type Badge - Fixed width */}
-        <span className="px-2 py-0.5 text-xs font-medium rounded bg-green-50 text-green-700 flex-shrink-0">
+        <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-green-50 text-green-700 border border-green-200 flex-shrink-0">
           {getJobTypeLabel(job.type)}
         </span>
 
-        {/* Posted Time - Fixed width */}
         <div className="flex items-center text-gray-400 text-xs flex-shrink-0">
           <time dateTime={job.postedAt} aria-label={`发布时间：${DateFormatter.formatPublishTime(job.postedAt)}`}>
             {DateFormatter.formatPublishTime(job.postedAt)}
@@ -195,12 +189,11 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         </div>
       </div>
 
-      {/* Job Description */}
       <section className="flex-1 mb-3">
         {(job.translations?.description || job.description) ? (
           <p
             id={`job-${job.id}-description`}
-            className="text-gray-600 text-sm leading-relaxed line-clamp-3"
+            className="text-slate-700 text-sm leading-relaxed line-clamp-3"
             aria-label="职位描述"
           >
             {processJobDescription(job.translations?.description || job.description || '', {
@@ -214,7 +207,6 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         )}
       </section>
 
-      {/* Tags - Only show if available */}
       {((Array.isArray((job as any).tags) && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0)) && (
         <section className="mt-auto">
           <SingleLineTags
