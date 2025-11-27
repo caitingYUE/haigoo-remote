@@ -119,10 +119,10 @@ export default function Header() {
 
           {/* Center Navigation - 核心功能导航 */}
           <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-            <div className="flex flex-col items-center group relative">
+            <div className="flex items-end group relative">
               <Link
                 to={`/jobs${location.search}`}
-                className={`text-base font-medium transition-colors ${location.pathname === '/jobs' || location.pathname === '/'
+                className={`text-base font-medium transition-colors ${location.pathname === '/jobs'
                   ? 'text-[#3182CE]'
                   : 'text-gray-600 hover:text-gray-900'
                   }`}
@@ -130,14 +130,14 @@ export default function Header() {
                 远程岗位搜索
               </Link>
 
-              {/* Region badges below title - always visible, centered */}
-              <div className="mt-1 flex items-center gap-1 text-xs">
+              {/* Region badges moved to the right of title, bottom aligned */}
+              <div className="ml-3 flex items-end gap-2 text-xs">
                 <button
                   onClick={(e) => {
                     e.preventDefault()
                     navigate('/jobs?region=domestic')
                   }}
-                  className={`transition-colors ${!location.search.includes('region=overseas')
+                  className={`transition-colors ${location.pathname === '/jobs' && !location.search.includes('region=overseas')
                     ? 'text-[#3182CE] font-medium'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
@@ -150,7 +150,7 @@ export default function Header() {
                     e.preventDefault()
                     navigate('/jobs?region=overseas')
                   }}
-                  className={`transition-colors ${location.search.includes('region=overseas')
+                  className={`transition-colors ${location.pathname === '/jobs' && location.search.includes('region=overseas')
                     ? 'text-[#3182CE] font-medium'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
@@ -158,11 +158,6 @@ export default function Header() {
                   海外可申
                 </button>
               </div>
-
-              {/* Active Indicator (Small Dot) if on jobs page */}
-              {(location.pathname === '/jobs' || location.pathname === '/') && (
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-[#3182CE] rounded-full"></div>
-              )}
             </div>
 
             <Link
