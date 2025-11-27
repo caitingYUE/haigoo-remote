@@ -16,12 +16,12 @@ function extractMetadata(html) {
     const $ = cheerio.load(html)
     const metadata = { title: '', description: '', image: '', icon: '' }
 
-    metadata.title = $('meta[property="og:title"]').attr('content') || 
-                     $('title').text() || ''
-    
-    metadata.description = $('meta[property="og:description"]').attr('content') || 
-                           $('meta[name="description"]').attr('content') || ''
-    
+    metadata.title = $('meta[property="og:title"]').attr('content') ||
+        $('title').text() || ''
+
+    metadata.description = $('meta[property="og:description"]').attr('content') ||
+        $('meta[name="description"]').attr('content') || ''
+
     // Fallback description from content if missing or too short
     if (!metadata.description || metadata.description.length < 50) {
         // Try generic description classes and common content containers
@@ -31,13 +31,13 @@ function extractMetadata(html) {
             metadata.description = desc.substring(0, 300) + (desc.length > 300 ? '...' : '')
         }
     }
-    
-    metadata.image = $('meta[property="og:image"]').attr('content') || 
-                     $('meta[name="twitter:image"]').attr('content') || ''
-    
-    metadata.icon = $('link[rel="icon"]').attr('href') || 
-                    $('link[rel="shortcut icon"]').attr('href') || 
-                    $('link[rel="apple-touch-icon"]').attr('href') || ''
+
+    metadata.image = $('meta[property="og:image"]').attr('content') ||
+        $('meta[name="twitter:image"]').attr('content') || ''
+
+    metadata.icon = $('link[rel="icon"]').attr('href') ||
+        $('link[rel="shortcut icon"]').attr('href') ||
+        $('link[rel="apple-touch-icon"]').attr('href') || ''
 
     return metadata
 }
@@ -258,6 +258,30 @@ export default async function handler(req, res) {
                         const urlObj = new URL(url)
                         metadata.image = new URL(metadata.image, urlObj.origin).toString()
                     }
+                    // Auto-classify if we have name or description
+                    let classification = { industry: '其他', tags: [] }
+                    if (metadata.title || metadata.description) {
+                        try {
+                            // Dynamic import for TS file in JS context might be tricky, 
+                            // but since we are in Next.js API route, we might need to rely on the transpiled output or duplicate logic.
+                            // For simplicity and robustness in this serverless function, let's implement a lightweight classifier here
+                            // or try to import the service if transpilation allows.
+
+                            // Let's try to import the service. If it fails, we fallback to basic defaults.
+                            // Note: In Vercel serverless, src/services might not be directly importable if not built together.
+                            // However, since we are using Next.js, it should handle it.
+                            // But to be safe and avoid build issues with mixing JS/TS, let's use a simplified inline logic 
+                            // or assume the caller (UI) will handle the classification suggestion based on the returned metadata.
+
+                            // Actually, the requirement says "based on RSS and crawler...".
+                            // Let's return the raw metadata and let the UI (which has full access to ClassificationService)
+                            // suggest the industry/tags to the user before saving.
+                            // This is better for "User Review" as well.
+                        } catch (e) {
+                            console.warn('Classification failed:', e)
+                        }
+                    }
+
                     return res.status(200).json({ success: true, metadata })
                 } catch (error) {
                     console.error('[trusted-companies] Crawl error:', error)
@@ -286,15 +310,15 @@ export default async function handler(req, res) {
                                     const fbRes = await fetch(fbUrl, {
                                         headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
                                     })
-                                    
+
                                     if (fbRes.ok) {
                                         const fbHtml = await fbRes.text()
                                         const fbMetadata = extractMetadata(fbHtml)
-                                        
+
                                         // If we got something useful
                                         if (fbMetadata.title || fbMetadata.description) {
                                             console.log(`[trusted-companies] Fallback success: ${fbUrl}`)
-                                            
+
                                             // Normalize URLs
                                             if (fbMetadata.icon && !fbMetadata.icon.startsWith('http')) {
                                                 const urlObj = new URL(fbUrl)
@@ -304,11 +328,11 @@ export default async function handler(req, res) {
                                                 const urlObj = new URL(fbUrl)
                                                 fbMetadata.image = new URL(fbMetadata.image, urlObj.origin).toString()
                                             }
-                                            
+
                                             // Add a note that this is from fallback
                                             fbMetadata._source = 'fallback_ats'
                                             fbMetadata._fallbackUrl = fbUrl
-                                            
+
                                             return res.status(200).json({ success: true, metadata: fbMetadata })
                                         }
                                     }
@@ -452,7 +476,7 @@ export default async function handler(req, res) {
                 }
             }
 
-            const { id, name, website, careersPage, linkedin, description, logo, tags, canRefer } = body
+            const { id, name, website, careersPage, linkedin, description, logo, tags, industry, canRefer } = body
 
             if (!name) return res.status(400).json({ success: false, error: 'Name is required' })
 
@@ -466,7 +490,7 @@ export default async function handler(req, res) {
 
                 companies[index] = {
                     ...companies[index],
-                    name, website, careersPage, linkedin, description, logo, tags,
+                    name, website, careersPage, linkedin, description, logo, tags, industry,
                     canRefer: !!canRefer,
                     updatedAt: now
                 }
@@ -474,7 +498,7 @@ export default async function handler(req, res) {
                 // Create
                 const newCompany = {
                     id: Date.now().toString(36) + Math.random().toString(36).substr(2),
-                    name, website, careersPage, linkedin, description, logo, tags,
+                    name, website, careersPage, linkedin, description, logo, tags, industry,
                     createdAt: now,
                     updatedAt: now,
                     isTrusted: true,

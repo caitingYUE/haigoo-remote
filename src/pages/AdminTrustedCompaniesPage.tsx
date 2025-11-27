@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import { ClassificationService } from '../services/classification-service'
+import { CompanyIndustry } from '../types/rss-types'
 import AdminCompanyJobsModal from '../components/AdminCompanyJobsModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -27,6 +29,7 @@ export default function AdminTrustedCompaniesPage() {
         description: '',
         logo: '',
         tags: '',
+        industry: '其他' as CompanyIndustry,
         canRefer: false
     })
 
@@ -56,6 +59,7 @@ export default function AdminTrustedCompaniesPage() {
             description: company.description || '',
             logo: company.logo || '',
             tags: company.tags ? company.tags.join(', ') : '',
+            industry: company.industry || '其他',
             canRefer: !!company.canRefer
         })
         setIsModalOpen(true)
@@ -71,6 +75,7 @@ export default function AdminTrustedCompaniesPage() {
             description: '',
             logo: '',
             tags: '',
+            industry: '其他',
             canRefer: false
         })
         setIsModalOpen(true)
@@ -115,11 +120,23 @@ export default function AdminTrustedCompaniesPage() {
             setCrawling(true)
             const metadata = await trustedCompaniesService.fetchMetadata(url)
 
+            if (!metadata) {
+                showError('抓取失败', '无法获取网页信息，请手动输入')
+                return
+            }
+
+            const classification = ClassificationService.classifyCompany(
+                metadata.title || '',
+                metadata.description || ''
+            )
+
             setFormData(prev => ({
                 ...prev,
                 name: prev.name || metadata.title || '',
                 description: prev.description || metadata.description || '',
-                logo: prev.logo || metadata.icon || metadata.image || ''
+                logo: prev.logo || metadata.icon || metadata.image || '',
+                industry: classification.industry,
+                tags: prev.tags ? prev.tags : classification.tags.join(', ')
             }))
             showSuccess('抓取成功', '已自动填充部分信息')
         } catch (error) {
@@ -170,8 +187,8 @@ export default function AdminTrustedCompaniesPage() {
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">可信远程企业管理</h1>
-                        <p className="text-gray-500 mt-1">管理经过认证工作栈的优质远程企业名单</p>
+                        <h1 className="text-2xl font-bold text-gray-900">企业库</h1>
+                        <p className="text-gray-500 mt-1">管理经过认证的优质远程企业名单，支持行业分类和标签</p>
                     </div>
                     <div className="flex items-center gap-4">
                         <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -252,7 +269,14 @@ export default function AdminTrustedCompaniesPage() {
                                 <div className="p-5 flex flex-col flex-1">
                                     <div className="flex items-start justify-between mb-2">
                                         <div>
-                                            <h3 className="font-bold text-gray-900 line-clamp-1 text-lg">{company.name}</h3>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-bold text-gray-900 line-clamp-1 text-lg">{company.name}</h3>
+                                                {company.industry && (
+                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-100 whitespace-nowrap">
+                                                        {company.industry}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                                                 <span>更新于 {new Date(company.updatedAt).toLocaleDateString()}</span>
                                             </div>
@@ -386,6 +410,29 @@ export default function AdminTrustedCompaniesPage() {
                                             className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="简要介绍企业业务、文化及远程办公政策..."
                                         />
+                                    </div>
+
+                                    <div className="col-span-full">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">行业分类</label>
+                                        <select
+                                            value={formData.industry}
+                                            onChange={e => setFormData({ ...formData, industry: e.target.value as CompanyIndustry })}
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        >
+                                            <option value="其他">其他</option>
+                                            <option value="互联网/软件">互联网/软件</option>
+                                            <option value="人工智能">人工智能</option>
+                                            <option value="大健康/医疗">大健康/医疗</option>
+                                            <option value="教育">教育</option>
+                                            <option value="金融/Fintech">金融/Fintech</option>
+                                            <option value="电子商务">电子商务</option>
+                                            <option value="Web3/区块链">Web3/区块链</option>
+                                            <option value="游戏">游戏</option>
+                                            <option value="媒体/娱乐">媒体/娱乐</option>
+                                            <option value="企业服务/SaaS">企业服务/SaaS</option>
+                                            <option value="硬件/物联网">硬件/物联网</option>
+                                            <option value="消费生活">消费生活</option>
+                                        </select>
                                     </div>
 
                                     <div className="col-span-full">

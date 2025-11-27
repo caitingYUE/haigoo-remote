@@ -6,75 +6,127 @@ const getAuthToken = () => {
     return ''
 }
 
+import { CompanyIndustry, CompanyTag } from '../types/rss-types';
+
 export interface TrustedCompany {
-    id: string
-    name: string
-    website: string
-    careersPage: string
-    linkedin?: string
-    description?: string
-    logo?: string
-    tags?: string[]
-    createdAt: string
-    updatedAt: string
-    isTrusted: boolean
-    canRefer?: boolean
+    id: string;
+    name: string;
+    website: string;
+    careersPage: string;
+    linkedin?: string;
+    description?: string;
+    logo?: string;
+    tags?: CompanyTag[];
+    industry?: CompanyIndustry;
+    isTrusted: boolean;
+    canRefer: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
-export const trustedCompaniesService = {
+export interface CompanyMetadata {
+    title: string;
+    description: string;
+    image: string;
+    icon: string;
+    _source?: string;
+    _fallbackUrl?: string;
+}
+
+class TrustedCompaniesService {
+    private API_BASE = '/api/data/trusted-companies';
+
     async getAllCompanies(): Promise<TrustedCompany[]> {
-        const response = await fetch('/api/data/trusted-companies')
-        if (!response.ok) throw new Error('Failed to fetch companies')
-        const data = await response.json()
-        return data.companies || []
-    },
-
-    async getCompanyById(id: string): Promise<TrustedCompany> {
-        const response = await fetch(`/api/data/trusted-companies?id=${id}`)
-        if (!response.ok) throw new Error('Failed to fetch company')
-        const data = await response.json()
-        return data.company
-    },
-
-    async saveCompany(company: Partial<TrustedCompany>): Promise<void> {
-        const token = getAuthToken()
-        const response = await fetch('/api/data/trusted-companies', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(company)
-        })
-        if (!response.ok) {
-            const error = await response.json()
-            throw new Error(error.error || 'Failed to save company')
+        try {
+            const response = await fetch(this.API_BASE);
+            if (!response.ok) throw new Error('Failed to fetch companies');
+            const data = await response.json();
+            return data.companies || [];
+        } catch (error) {
+            console.error('Error fetching trusted companies:', error);
+            return [];
         }
-    },
+    }
 
-    async deleteCompany(id: string): Promise<void> {
-        const token = getAuthToken()
-        const response = await fetch(`/api/data/trusted-companies?id=${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-        if (!response.ok) throw new Error('Failed to delete company')
-    },
+    async getCompanyById(id: string): Promise<TrustedCompany | null> {
+        try {
+            const response = await fetch(`${this.API_BASE}?id=${id}`);
+            if (!response.ok) throw new Error('Failed to fetch company');
+            const data = await response.json();
+            return data.company || null;
+        } catch (error) {
+            console.error('Error fetching company:', error);
+            return null;
+        }
+    }
 
-    async fetchMetadata(url: string): Promise<{ title: string; description: string; image: string; icon: string }> {
-        const token = getAuthToken()
-        const response = await fetch('/api/data/trusted-companies?action=crawl', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ url })
-        })
-        if (!response.ok) throw new Error('Failed to fetch metadata')
-        const data = await response.json()
-        return data.metadata
+    async saveCompany(company: Partial<TrustedCompany>): Promise<boolean> {
+        try {
+            const response = await fetch(this.API_BASE, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
+                body: JSON.stringify(company)
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Error saving company:', error);
+            return false;
+        }
+    }
+
+    async deleteCompany(id: string): Promise<boolean> {
+        try {
+            const response = await fetch(`${this.API_BASE}?id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                }
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Error deleting company:', error);
+            return false;
+        }
+    }
+
+    async fetchMetadata(url: string): Promise<CompanyMetadata | null> {
+        try {
+            const response = await fetch(`${this.API_BASE}?action=crawl`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                },
+                body: JSON.stringify({ url })
+            });
+            if (!response.ok) throw new Error('Failed to fetch metadata');
+            const data = await response.json();
+            return data.metadata || null;
+        } catch (error) {
+            console.error('Error fetching metadata:', error);
+            return null;
+        }
+    }
+
+    async crawlJobs(companyId: string, fetchDetails: boolean = false, maxDetails: number = 10): Promise<{ success: boolean; count?: number; error?: string }> {
+        try {
+            const response = await fetch(`${this.API_BASE}?action=crawl-jobs&id=${companyId}&fetchDetails=${fetchDetails}&maxDetails=${maxDetails}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to crawl jobs');
+            return { success: true, count: data.count };
+        } catch (error) {
+            console.error('Error crawling jobs:', error);
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        }
     }
 }
+
+export const trustedCompaniesService = new TrustedCompaniesService();
