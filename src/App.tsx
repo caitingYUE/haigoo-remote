@@ -39,6 +39,13 @@ function App() {
                 </ProtectedRoute>
               } />
 
+              {/* Tag Management - No Layout wrapper */}
+              <Route path="/admin/tag-management" element={
+                <ProtectedRoute>
+                  <AdminTagManagementPage />
+                </ProtectedRoute>
+              } />
+
               {/* AdminTeamPage 统一后台管理页面（需要登录） */}
               <Route path="/admin_team" element={
                 <AdminRoute>
@@ -70,11 +77,6 @@ function App() {
                     <Route path="/admin/trusted-companies" element={
                       <ProtectedRoute>
                         <AdminTrustedCompaniesPage />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/tag-management" element={
-                      <ProtectedRoute>
-                        <AdminTagManagementPage />
                       </ProtectedRoute>
                     } />
                     <Route path="/remote-experience" element={<RemoteExperiencePage />} />
