@@ -860,10 +860,10 @@ export class DataManagementService {
       return '数据分析';
     }
     if (text.includes('devops') || text.includes('infrastructure') || text.includes('cloud')) {
-      return 'DevOps';
+      return '运维/SRE';
     }
     if (text.includes('product') || text.includes('pm')) {
-      return '产品管理';
+      return '产品经理';
     }
     if (text.includes('marketing') || text.includes('growth')) {
       return '市场营销';
@@ -875,7 +875,7 @@ export class DataManagementService {
       'design': 'UI/UX设计',
       'marketing': '市场营销',
       'sales': '销售',
-      'product': '产品管理',
+      'product': '产品经理',
       'data': '数据分析'
     };
 

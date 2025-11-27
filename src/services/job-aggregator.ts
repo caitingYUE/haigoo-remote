@@ -219,33 +219,33 @@ class JobAggregator {
     const sourceCategoryMapping: Record<string, JobCategory> = {
       // WeWorkRemotely 分类映射
       '销售和市场营销': '市场营销',
-      '客户支持': '客户支持',
-      '产品职位': '产品管理',
+      '客户支持': '客户服务',
+      '产品职位': '产品经理',
       '全栈编程': '全栈开发',
       '后端编程': '后端开发',
       '前端编程': '前端开发',
       '所有编程': '软件开发',
       '管理和财务': '财务',
       '设计': 'UI/UX设计',
-      'DevOps和系统管理员': 'DevOps',
+      'DevOps和系统管理员': '运维/SRE',
 
       // Remotive 分类映射
       '软件开发': '软件开发',
-      '客户服务': '客户支持',
+      '客户服务': '客户服务',
       '营销': '市场营销',
       '销售/业务': '销售',
-      '产品': '产品管理',
+      '产品': '产品经理',
       '项目管理': '项目管理',
       '数据分析': '数据分析',
-      'DevOps/系统管理员': 'DevOps',
+      'DevOps/系统管理员': '运维/SRE',
       '金融/法律': '财务',
       '人力资源': '人力资源',
-      '质量保证': '质量保证',
-      '写作': '内容写作',
+      '质量保证': '测试/QA',
+      '写作': '内容创作',
 
       // JobsCollider 分类映射
-      '网络安全': 'DevOps',
-      '商业': '商务拓展',
+      '网络安全': '网络安全',
+      '商业': '销售',
       '数据': '数据分析',
       '财务与法律': '财务',
 
@@ -298,7 +298,7 @@ class JobAggregator {
         'software engineer', 'software developer', 'programmer', 'coding', 'development',
         'engineer', 'developer', 'software architect', 'senior engineer', 'lead developer'
       ],
-      'DevOps': [
+      '运维/SRE': [
         'devops', 'infrastructure', 'deployment', 'ci/cd', 'docker', 'kubernetes',
         'aws', 'cloud', 'sysadmin', 'site reliability', 'platform engineer',
         'infrastructure engineer', 'cloud engineer', 'systems engineer'
@@ -307,7 +307,7 @@ class JobAggregator {
         'data scientist', 'machine learning', 'ai', 'artificial intelligence',
         'deep learning', 'ml engineer', 'research scientist', 'ai engineer'
       ],
-      '产品管理': [
+      '产品经理': [
         'product manager', 'product owner', 'pm', 'product strategy', 'product director',
         'senior product manager', 'associate product manager', 'product lead'
       ],
@@ -331,7 +331,7 @@ class JobAggregator {
         'advertising', 'promotion', 'brand', 'communications', 'pr', 'public relations',
         'online marketing', 'paid media', 'ppc', 'google ads', 'facebook ads'
       ],
-      '客户支持': [
+      '客户服务': [
         'customer service', 'customer support', 'help desk', 'technical support',
         'support specialist', 'customer success', 'client support', 'user support',
         'support engineer', 'customer success manager', 'technical support engineer'
@@ -342,18 +342,34 @@ class JobAggregator {
       ],
       '财务': [
         'finance', 'accounting', 'financial analyst', 'controller', 'cfo',
-        'accountant', 'financial manager', 'finance manager', 'treasury'
+        'accountant', 'financial manager', 'finance manager', 'treasury',
+        'bookkeeper', 'financial reporting', 'tax preparation', 'audit', 'cpa'
       ],
-      '法律': [
+
+      '数据开发': [],
+      '服务器开发': [],
+      '操作系统/内核': [],
+      '技术支持': [],
+      '硬件开发': [],
+      '架构师': [],
+      'CTO/技术管理': [],
+      '用户研究': [],
+      '视觉设计': [],
+      '客户经理': [],
+      '增长黑客': [],
+      '行政': [],
+      '管理': [],
+      '投资': [],
+      '法务': [
         'legal', 'lawyer', 'attorney', 'compliance', 'paralegal', 'legal counsel',
         'general counsel', 'compliance officer'
       ],
-      '内容写作': [
+      '内容创作': [
         'writer', 'content writer', 'copywriter', 'technical writer', 'blogger',
         'content creator', 'editor', 'communications', 'content marketing',
         'social media manager', 'content strategist', 'creative director', 'brand storyteller'
       ],
-      '质量保证': [
+      '测试/QA': [
         'qa', 'quality assurance', 'tester', 'test engineer', 'qa engineer',
         'quality engineer', 'test automation', 'testing', 'software tester',
         'automation engineer', 'test lead'
@@ -361,10 +377,6 @@ class JobAggregator {
       '运营': [
         'operations', 'business operations', 'ops manager', 'operations manager',
         'business ops', 'operational excellence'
-      ],
-      '商务拓展': [
-        'business development', 'bd', 'partnerships', 'strategic partnerships',
-        'partnership manager', 'alliance manager'
       ],
       '咨询': [
         'consultant', 'consulting', 'advisory', 'strategy consultant',
@@ -379,7 +391,7 @@ class JobAggregator {
         'mobile developer', 'ios developer', 'android developer', 'react native',
         'flutter', 'swift', 'kotlin', 'mobile app', 'app developer'
       ],
-      '人工智能': [
+      '算法工程师': [
         'artificial intelligence', 'ai engineer', 'machine learning engineer',
         'deep learning', 'neural networks', 'computer vision', 'nlp'
       ],
@@ -399,10 +411,6 @@ class JobAggregator {
         'recruiter', 'talent acquisition', 'hiring manager', 'recruitment',
         'talent sourcing', 'hr recruiter'
       ],
-      '会计': [
-        'accountant', 'accounting', 'bookkeeper', 'financial reporting',
-        'tax preparation', 'audit', 'cpa'
-      ],
       '其他': []
     };
 
@@ -412,20 +420,20 @@ class JobAggregator {
       'Sales and Marketing': '销售',
       'Marketing': '市场营销',
       'Sales': '销售',
-      'Customer Support': '客户支持',
-      'Customer Service': '客户支持',
+      'Customer Support': '客户服务',
+      'Customer Service': '客户服务',
       'Human Resources': '人力资源',
       'Finance': '财务',
-      'Legal': '法律',
-      'Writing': '内容写作',
+      'Legal': '法务',
+      'Writing': '内容创作',
       'Design': 'UI/UX设计',
-      'Product': '产品管理',
+      'Product': '产品经理',
       'Project Management': '项目管理',
       'Data': '数据分析',
-      'DevOps': 'DevOps',
-      'QA': '质量保证',
+      'DevOps': '运维/SRE',
+      'QA': '测试/QA',
       'Operations': '运营',
-      'Business Development': '商务拓展',
+      'Business Development': '销售',
       'Consulting': '咨询',
       'Education': '教育培训',
 
@@ -435,12 +443,12 @@ class JobAggregator {
       '全栈编程': '全栈开发',
       '所有编程': '软件开发',
       '软件开发': '软件开发',
-      'DevOps和系统管理员': 'DevOps',
-      'DevOps/系统管理员': 'DevOps',
+      'DevOps和系统管理员': '运维/SRE',
+      'DevOps/系统管理员': '运维/SRE',
       '数据分析': '数据分析',
       '数据': '数据分析',
-      '产品职位': '产品管理',
-      '产品': '产品管理',
+      '产品职位': '产品经理',
+      '产品': '产品经理',
       '项目管理': '项目管理',
       '设计': 'UI/UX设计',
       '营销': '市场营销',
@@ -448,14 +456,14 @@ class JobAggregator {
       '销售/业务': '销售',
       '销售量': '销售',
       '销售': '销售',
-      '客户支持': '客户支持',
-      '客户服务': '客户支持',
+      '客户支持': '客户服务',
+      '客户服务': '客户服务',
       '人力资源': '人力资源',
       '财务与法律': '财务',
       '金融/法律': '财务',
       '金融': '财务',
-      '写作': '内容写作',
-      '质量保证': '质量保证',
+      '写作': '内容创作',
+      '质量保证': '测试/QA',
       '管理和财务': '财务'
     };
 
@@ -485,13 +493,13 @@ class JobAggregator {
 
     // 产品相关职位的特殊处理
     if (titleText.includes('product') && (titleText.includes('manager') || titleText.includes('owner'))) {
-      return '产品管理';
+      return '产品经理';
     }
 
     // 基于关键词匹配 - 按优先级顺序检查
     const priorityOrder: JobCategory[] = [
-      '销售', '市场营销', '产品管理', '前端开发', '后端开发', '全栈开发',
-      '软件开发', 'DevOps', '数据科学', '数据分析', 'UI/UX设计', '客户支持'
+      '销售', '市场营销', '产品经理', '前端开发', '后端开发', '全栈开发',
+      '软件开发', '运维/SRE', '数据科学', '数据分析', 'UI/UX设计', '客户服务'
     ];
 
     for (const category of priorityOrder) {

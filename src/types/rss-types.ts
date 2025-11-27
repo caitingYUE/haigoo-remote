@@ -53,6 +53,7 @@ export type JobCategory =
   | '产品经理'
   | '产品设计'
   | '用户研究'
+  | '项目管理'
 
   // 设计类
   | 'UI/UX设计'

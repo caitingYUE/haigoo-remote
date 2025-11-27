@@ -53,7 +53,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // 模拟RSS原始数据
       const mockRawJobs: RSSJob[] = [
@@ -90,7 +90,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           publishedAt: '2024-01-14',
           source: 'https://example.com/job/2',
           tags: ['产品管理', '数据分析'],
-          category: '产品管理',
+          category: '产品经理',
           jobType: 'full-time',
           experienceLevel: 'Mid',
           benefits: ['五险一金', '年终奖'],
@@ -111,7 +111,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           publishedAt: '2024-01-13',
           source: 'https://example.com/job/3',
           tags: ['DevOps', 'AWS', 'Docker'],
-          category: 'DevOps',
+          category: '运维/SRE',
           jobType: 'full-time',
           experienceLevel: 'Mid',
           benefits: ['Stock Options', 'Flexible Hours'],
@@ -325,8 +325,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           <header className="admin-header">
             <h1>海狗招聘数据管理后台</h1>
             <div className="header-actions">
-              <button 
-                className="btn-primary" 
+              <button
+                className="btn-primary"
                 onClick={handleRefresh}
                 disabled={loading}
               >
@@ -339,28 +339,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           {/* 标签页导航 */}
           <div className="admin-tabs">
             <nav className="tabs-nav">
-              <a 
+              <a
                 href="#"
                 className={`tab-item ${activeTab === 'raw' ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); setActiveTab('raw'); }}
               >
                 RSS原始数据 ({rawJobs.length})
               </a>
-              <a 
+              <a
                 href="#"
                 className={`tab-item ${activeTab === 'processed' ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); setActiveTab('processed'); }}
               >
                 处理后数据 ({processedJobs.length})
               </a>
-              <a 
+              <a
                 href="#"
                 className={`tab-item ${activeTab === 'stats' ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); setActiveTab('stats'); }}
               >
                 统计信息
               </a>
-              <a 
+              <a
                 href="#"
                 className={`tab-item ${activeTab === 'retention' ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); setActiveTab('retention'); }}
@@ -518,8 +518,8 @@ const UnifiedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => voi
                 <td>
                   <div className="quality-score">
                     <div className="score-bar">
-                      <div 
-                        className="score-fill" 
+                      <div
+                        className="score-fill"
                         style={{ width: `${job.dataQuality}%` }}
                       ></div>
                     </div>
@@ -735,7 +735,7 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
                     <div><strong>企业：</strong>{regionDetail.company}</div>
                     <div><strong>区域分类：</strong>{regionDetail.region === 'domestic' ? '国内' : regionDetail.region === 'overseas' ? '海外' : '未分类'}</div>
                     <div><strong>地点：</strong>{regionDetail.location || '-'}</div>
-                    <div><strong>标签：</strong>{regionDetail.tags.length > 0 ? regionDetail.tags.slice(0,6).join(' / ') : '-'}</div>
+                    <div><strong>标签：</strong>{regionDetail.tags.length > 0 ? regionDetail.tags.slice(0, 6).join(' / ') : '-'}</div>
                     <div><strong>命中：</strong>{regionDetail.hits.keywords.length > 0 ? `${regionDetail.hits.type}：${regionDetail.hits.keywords.join(', ')}` : '无直接命中，使用启发式'}</div>
                     <div><strong>判定来源：</strong>{regionDetail.decision}</div>
                   </div>
@@ -794,8 +794,8 @@ const StatsPanel: React.FC<{ stats: SimpleStats | null }> = ({ stats }) => {
               <div key={category} className="chart-bar">
                 <span className="bar-label">{category}</span>
                 <div className="bar-container">
-                  <div 
-                    className="bar-fill" 
+                  <div
+                    className="bar-fill"
                     style={{ width: `${(count / stats.totalProcessed) * 100}%` }}
                   ></div>
                 </div>
@@ -812,8 +812,8 @@ const StatsPanel: React.FC<{ stats: SimpleStats | null }> = ({ stats }) => {
               <div key={source} className="chart-bar">
                 <span className="bar-label">{source}</span>
                 <div className="bar-container">
-                  <div 
-                    className="bar-fill" 
+                  <div
+                    className="bar-fill"
                     style={{ width: `${(count / stats.totalProcessed) * 100}%` }}
                   ></div>
                 </div>
@@ -828,10 +828,10 @@ const StatsPanel: React.FC<{ stats: SimpleStats | null }> = ({ stats }) => {
 };
 
 // 数据保留管理面板组件
-const RetentionPanel: React.FC<{ 
-  stats: RetentionStats | null; 
-  onCleanup: () => void; 
-  loading: boolean; 
+const RetentionPanel: React.FC<{
+  stats: RetentionStats | null;
+  onCleanup: () => void;
+  loading: boolean;
 }> = ({ stats, onCleanup, loading }) => {
   if (!stats) {
     return <div className="loading">加载数据保留信息中...</div>;
@@ -854,9 +854,9 @@ const RetentionPanel: React.FC<{
     <div className="retention-panel">
       <div className="retention-header">
         <h3>数据保留策略管理</h3>
-        <button 
-          onClick={onCleanup} 
-          className="cleanup-btn" 
+        <button
+          onClick={onCleanup}
+          className="cleanup-btn"
           disabled={loading}
         >
           {loading ? '清理中...' : '手动清理'}
@@ -869,19 +869,19 @@ const RetentionPanel: React.FC<{
           <div className="retention-value">{stats.totalRecords}</div>
           <div className="retention-desc">RSS + 统一数据</div>
         </div>
-        
+
         <div className="retention-card">
           <h4>过期记录</h4>
           <div className="retention-value expired">{stats.expiredRecords}</div>
           <div className="retention-desc">超过7天的数据</div>
         </div>
-        
+
         <div className="retention-card">
           <h4>已清理记录</h4>
           <div className="retention-value cleaned">{stats.cleanedRecords}</div>
           <div className="retention-desc">本次清理删除</div>
         </div>
-        
+
         <div className="retention-card">
           <h4>存储使用</h4>
           <div className="retention-value">{formatBytes(stats.storageUsage.total)}</div>

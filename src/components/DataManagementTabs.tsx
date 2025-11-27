@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  Search, 
-  Filter, 
-  RefreshCw, 
-  Upload, 
-  Trash2, 
-  Edit3, 
-  Eye, 
+import {
+  Search,
+  Filter,
+  RefreshCw,
+  Upload,
+  Trash2,
+  Edit3,
+  Eye,
   MoreHorizontal,
   CheckCircle,
   XCircle,
@@ -56,23 +56,23 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [syncing, setSyncing] = useState(false);
   const [translating, setTranslating] = useState(false); // 🆕 翻译按钮专用状态
   const { showSuccess, showError } = useNotificationHelpers();
-  
+
   // 原始数据状态
   const [rawData, setRawData] = useState<RawRSSData[]>([]);
   const [rawDataTotal, setRawDataTotal] = useState(0);
   const [rawDataPage, setRawDataPage] = useState(1);
   const [rawDataPageSize] = useState(20);
-  
+
   // 处理后数据状态
   const [processedData, setProcessedData] = useState<ProcessedJobData[]>([]);
   const [processedDataTotal, setProcessedDataTotal] = useState(0);
   const [processedDataPage, setProcessedDataPage] = useState(1);
   const [processedDataPageSize] = useState(20);
   const [locationCategories, setLocationCategories] = useState<{ domesticKeywords: string[]; overseasKeywords: string[]; globalKeywords: string[] }>({ domesticKeywords: [], overseasKeywords: [], globalKeywords: [] });
-  
+
   // 存储统计状态
   const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
-  
+
   // 过滤器状态
   const [rawDataFilters, setRawDataFilters] = useState<{
     source?: string;
@@ -80,7 +80,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     status?: 'raw' | 'processed' | 'error';
     dateRange?: { start: Date; end: Date };
   }>({});
-  
+
   const [processedDataFilters, setProcessedDataFilters] = useState<{
     category?: JobCategory;
     company?: string;
@@ -89,7 +89,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     experienceLevel?: string;
     tags?: string[];
   }>({});
-  
+
   // 编辑状态
   const [editingJob, setEditingJob] = useState<ProcessedJobData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -97,14 +97,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [viewingItem, setViewingItem] = useState<RawRSSData | ProcessedJobData | null>(null);
 
   // 简历库已拆分为独立页面，不在此组件维护状态
-  
+
   // 加载原始数据
   const loadRawData = useCallback(async () => {
     try {
       setLoading(true);
       const result = await dataManagementService.getRawData(
-        rawDataPage, 
-        rawDataPageSize, 
+        rawDataPage,
+        rawDataPageSize,
         rawDataFilters
       );
       setRawData(result.data);
@@ -115,7 +115,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       setLoading(false);
     }
   }, [rawDataPage, rawDataPageSize, rawDataFilters]);
-  
+
   // 加载处理后数据
   const loadProcessedData = useCallback(async () => {
     try {
@@ -136,7 +136,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
   useEffect(() => {
     if (activeTab === 'processed') {
-      processedJobsService.getLocationCategories().then((c) => setLocationCategories(c)).catch(() => {});
+      processedJobsService.getLocationCategories().then((c) => setLocationCategories(c)).catch(() => { });
     }
   }, [activeTab]);
 
@@ -156,7 +156,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     if (overseasHit) return 'overseas';
     return undefined;
   }, [locationCategories]);
-  
+
   // 加载存储统计
   const loadStorageStats = useCallback(async () => {
     try {
@@ -169,7 +169,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       setLoading(false);
     }
   }, []);
-  
+
   // 同步数据
   const handleSyncData = async () => {
     try {
@@ -215,7 +215,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     try {
       setTranslating(true); // 使用独立的翻译状态
       console.log('🌍 触发后端翻译任务...');
-      
+
       // 调用后端cron job API进行翻译
       const response = await fetch('/api/cron/sync-jobs', {
         method: 'POST',
@@ -239,7 +239,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       // 显示详细统计
       const stats = result.stats;
       showSuccess(
-        '翻译完成', 
+        '翻译完成',
         `共处理 ${stats.totalJobs} 个岗位，翻译 ${stats.translatedJobs} 个，跳过 ${stats.skippedJobs} 个，失败 ${stats.failedJobs} 个`
       );
 
@@ -256,7 +256,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       setTranslating(false); // 使用独立的翻译状态
     }
   };
-  
+
   // 导出数据
   const handleExportData = async (type: 'raw' | 'processed') => {
     try {
@@ -268,7 +268,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         const result = await dataManagementService.getProcessedJobs(1, 10000);
         data = result.data;
       }
-      
+
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -282,13 +282,13 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       console.error('导出数据失败:', error);
     }
   };
-  
+
   // 删除职位
   const handleDeleteJob = async (jobId: string) => {
     if (!confirm('确定要删除这个职位吗？此操作不可撤销。')) {
       return;
     }
-    
+
     try {
       await dataManagementService.deleteProcessedJob(jobId);
       await loadProcessedData();
@@ -296,13 +296,13 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       console.error('删除职位失败:', error);
     }
   };
-  
+
   // 编辑职位
   const handleEditJob = (job: ProcessedJobData) => {
     setEditingJob(job);
     setShowEditModal(true);
   };
-  
+
   // 新增职位
   const handleAddJob = () => {
     // 创建一个空的职位模板
@@ -336,11 +336,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     setEditingJob(newJob);
     setShowEditModal(true);
   };
-  
+
   // 保存编辑
   const handleSaveEdit = async (updatedJob: Partial<ProcessedJobData>) => {
     if (!editingJob) return;
-    
+
     try {
       if (editingJob.id) {
         // 更新现有职位
@@ -353,10 +353,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           ...updatedJob,
           id: `manual_${Date.now()}`, // 生成唯一ID
         } as ProcessedJobData;
-        
+
         // 将新职位添加到现有职位列表中
         const updatedJobs = [newJob, ...allJobs.data];
-        
+
         // 这里需要调用私有方法，暂时使用localStorage作为fallback
         if (typeof window !== 'undefined') {
           localStorage.setItem('processed_jobs_data', JSON.stringify(updatedJobs));
@@ -369,13 +369,13 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       console.error('保存职位失败:', error);
     }
   };
-  
+
   // 查看详情
   const handleViewDetail = (item: RawRSSData | ProcessedJobData) => {
     setViewingItem(item);
     setShowDetailModal(true);
   };
-  
+
   useEffect(() => {
     if (activeTab === 'raw') {
       loadRawData();
@@ -390,11 +390,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     <button
       key={tabKey}
       onClick={() => setActiveTab(tabKey as any)}
-      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-        activeTab === tabKey
+      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === tabKey
           ? 'bg-blue-600 text-white shadow-lg'
           : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-      }`}
+        }`}
     >
       {icon}
       {label}
@@ -422,7 +421,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <Filter className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">过滤条件：</span>
             </div>
-            
+
             <select
               value={rawDataFilters.source || ''}
               onChange={(e) => setRawDataFilters({ ...rawDataFilters, source: e.target.value || undefined })}
@@ -434,7 +433,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <option value="Himalayas">Himalayas</option>
               <option value="NoDesk">NoDesk</option>
             </select>
-            
+
             <select
               value={rawDataFilters.status || ''}
               onChange={(e) => setRawDataFilters({ ...rawDataFilters, status: e.target.value as any || undefined })}
@@ -445,7 +444,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <option value="processed">已处理</option>
               <option value="error">错误</option>
             </select>
-            
+
             <button
               onClick={() => setRawDataFilters({})}
               className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -469,11 +468,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <th className="w-20 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <span className="inline-flex items-center gap-1">
                     状态
-                    <Tooltip 
-                      content={'原始：尚未解析或标准化\n已处理：解析完成并入库\n错误：解析或入库失败'} 
-                      maxLines={6} 
-                      clampChildren={false} 
-                      trigger="click" 
+                    <Tooltip
+                      content={'原始：尚未解析或标准化\n已处理：解析完成并入库\n错误：解析或入库失败'}
+                      maxLines={6}
+                      clampChildren={false}
+                      trigger="click"
                       forceShow
                     >
                       <Info className="w-3 h-3 text-gray-400 cursor-pointer" />
@@ -511,7 +510,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                         )}
                       </div>
                     </td>
-                    
+
                     <td className="px-3 py-2">
                       {parsed.jobType || parsed.type ? (
                         <Tooltip content={parsed.jobType || parsed.type} maxLines={1} clampChildren={false}>
@@ -552,16 +551,15 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </td>
                     <td className="px-3 py-2">
                       <Tooltip content={
-                        item.status === 'processed' ? '已处理' : 
-                        item.status === 'error' ? '错误' : '原始'
+                        item.status === 'processed' ? '已处理' :
+                          item.status === 'error' ? '错误' : '原始'
                       } maxLines={1} clampChildren={false}>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                          item.status === 'processed' ? 'bg-green-100 text-green-800' :
-                          item.status === 'error' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {item.status === 'processed' ? '已处理' : 
-                           item.status === 'error' ? '错误' : '原始'}
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${item.status === 'processed' ? 'bg-green-100 text-green-800' :
+                            item.status === 'error' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                          }`}>
+                          {item.status === 'processed' ? '已处理' :
+                            item.status === 'error' ? '错误' : '原始'}
                         </span>
                       </Tooltip>
                     </td>
@@ -645,7 +643,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <Filter className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">过滤条件：</span>
             </div>
-            
+
             <select
               value={processedDataFilters.category || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, category: e.target.value as JobCategory || undefined })}
@@ -661,7 +659,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <option value="产品管理">产品管理</option>
               <option value="市场营销">市场营销</option>
             </select>
-            
+
             <select
               value={processedDataFilters.experienceLevel || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, experienceLevel: e.target.value || undefined })}
@@ -674,7 +672,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <option value="Lead">专家</option>
               <option value="Executive">管理层</option>
             </select>
-            
+
             <input
               type="text"
               placeholder="搜索岗位名称或公司..."
@@ -682,7 +680,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, search: e.target.value || undefined })}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            
+
             <button
               onClick={() => setProcessedDataFilters({})}
               className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -690,7 +688,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               清除过滤
             </button>
           </div>
-          
+
           <button
             onClick={() => handleAddJob()}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
@@ -737,52 +735,50 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </div>
                   )}
                 </td>
-                
+
                 {/* 岗位分类 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.category || '未分类'} maxLines={1} clampChildren={false}>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      job.category === '前端开发' ? 'bg-blue-100 text-blue-800' :
-                      job.category === '后端开发' ? 'bg-green-100 text-green-800' :
-                      job.category === '全栈开发' ? 'bg-purple-100 text-purple-800' :
-                      job.category === 'UI/UX设计' ? 'bg-pink-100 text-pink-800' :
-                      job.category === '数据分析' ? 'bg-yellow-100 text-yellow-800' :
-                      job.category === 'DevOps' ? 'bg-indigo-100 text-indigo-800' :
-                      job.category === '产品管理' ? 'bg-orange-100 text-orange-800' :
-                      job.category === '市场营销' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.category === '前端开发' ? 'bg-blue-100 text-blue-800' :
+                        job.category === '后端开发' ? 'bg-green-100 text-green-800' :
+                          job.category === '全栈开发' ? 'bg-purple-100 text-purple-800' :
+                            job.category === 'UI/UX设计' ? 'bg-pink-100 text-pink-800' :
+                              job.category === '数据分析' ? 'bg-yellow-100 text-yellow-800' :
+                                job.category === '运维/SRE' ? 'bg-indigo-100 text-indigo-800' :
+                                  job.category === '产品经理' ? 'bg-orange-100 text-orange-800' :
+                                    job.category === '市场营销' ? 'bg-red-100 text-red-800' :
+                                      'bg-gray-100 text-gray-800'
+                      }`}>
                       {job.category || '未分类'}
                     </span>
                   </Tooltip>
                 </td>
-                
+
                 {/* 岗位级别 */}
                 <td className="px-3 py-2">
                   <Tooltip content={
                     job.experienceLevel === 'Entry' ? '初级' :
-                    job.experienceLevel === 'Mid' ? '中级' :
-                    job.experienceLevel === 'Senior' ? '高级' :
-                    job.experienceLevel === 'Lead' ? '专家' :
-                    job.experienceLevel === 'Executive' ? '管理层' : '未定义'
+                      job.experienceLevel === 'Mid' ? '中级' :
+                        job.experienceLevel === 'Senior' ? '高级' :
+                          job.experienceLevel === 'Lead' ? '专家' :
+                            job.experienceLevel === 'Executive' ? '管理层' : '未定义'
                   } maxLines={1} clampChildren={false}>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      job.experienceLevel === 'Entry' ? 'bg-green-100 text-green-800' :
-                      job.experienceLevel === 'Mid' ? 'bg-blue-100 text-blue-800' :
-                      job.experienceLevel === 'Senior' ? 'bg-orange-100 text-orange-800' :
-                      job.experienceLevel === 'Lead' ? 'bg-red-100 text-red-800' :
-                      job.experienceLevel === 'Executive' ? 'bg-purple-100 text-purple-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.experienceLevel === 'Entry' ? 'bg-green-100 text-green-800' :
+                        job.experienceLevel === 'Mid' ? 'bg-blue-100 text-blue-800' :
+                          job.experienceLevel === 'Senior' ? 'bg-orange-100 text-orange-800' :
+                            job.experienceLevel === 'Lead' ? 'bg-red-100 text-red-800' :
+                              job.experienceLevel === 'Executive' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
+                      }`}>
                       {job.experienceLevel === 'Entry' ? '初级' :
-                       job.experienceLevel === 'Mid' ? '中级' :
-                       job.experienceLevel === 'Senior' ? '高级' :
-                       job.experienceLevel === 'Lead' ? '专家' :
-                       job.experienceLevel === 'Executive' ? '管理层' : '未定义'}
+                        job.experienceLevel === 'Mid' ? '中级' :
+                          job.experienceLevel === 'Senior' ? '高级' :
+                            job.experienceLevel === 'Lead' ? '专家' :
+                              job.experienceLevel === 'Executive' ? '管理层' : '未定义'}
                     </span>
                   </Tooltip>
                 </td>
-                
+
                 {/* 企业名称 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.company} maxLines={3}>
@@ -803,7 +799,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </a>
                   )}
                 </td>
-                
+
                 {/* 行业类型 */}
                 <td className="px-3 py-2">
                   <Tooltip content="未定义" maxLines={1}>
@@ -812,33 +808,32 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </span>
                   </Tooltip>
                 </td>
-                
+
                 {/* 岗位类型 */}
                 <td className="px-3 py-2">
                   <Tooltip content={
                     job.jobType === 'full-time' ? '全职' :
-                    job.jobType === 'part-time' ? '兼职' :
-                    job.jobType === 'contract' ? '合同' :
-                    job.jobType === 'freelance' ? '自由职业' :
-                    job.jobType === 'internship' ? '实习' : job.jobType || '未定义'
+                      job.jobType === 'part-time' ? '兼职' :
+                        job.jobType === 'contract' ? '合同' :
+                          job.jobType === 'freelance' ? '自由职业' :
+                            job.jobType === 'internship' ? '实习' : job.jobType || '未定义'
                   } maxLines={1} clampChildren={false}>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      job.jobType === 'full-time' ? 'bg-green-100 text-green-800' :
-                      job.jobType === 'part-time' ? 'bg-blue-100 text-blue-800' :
-                      job.jobType === 'contract' ? 'bg-orange-100 text-orange-800' :
-                      job.jobType === 'freelance' ? 'bg-purple-100 text-purple-800' :
-                      job.jobType === 'internship' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.jobType === 'full-time' ? 'bg-green-100 text-green-800' :
+                        job.jobType === 'part-time' ? 'bg-blue-100 text-blue-800' :
+                          job.jobType === 'contract' ? 'bg-orange-100 text-orange-800' :
+                            job.jobType === 'freelance' ? 'bg-purple-100 text-purple-800' :
+                              job.jobType === 'internship' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                      }`}>
                       {job.jobType === 'full-time' ? '全职' :
-                       job.jobType === 'part-time' ? '兼职' :
-                       job.jobType === 'contract' ? '合同' :
-                       job.jobType === 'freelance' ? '自由职业' :
-                       job.jobType === 'internship' ? '实习' : job.jobType || '未定义'}
+                        job.jobType === 'part-time' ? '兼职' :
+                          job.jobType === 'contract' ? '合同' :
+                            job.jobType === 'freelance' ? '自由职业' :
+                              job.jobType === 'internship' ? '实习' : job.jobType || '未定义'}
                     </span>
                   </Tooltip>
                 </td>
-                
+
                 {/* 区域限制 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.remoteLocationRestriction || job.location || '不限地点'} maxLines={3} clampChildren={false}>
@@ -858,8 +853,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     const cls = r === 'domestic'
                       ? 'bg-blue-100 text-blue-800'
                       : r === 'overseas'
-                      ? 'bg-indigo-100 text-indigo-800'
-                      : 'bg-gray-100 text-gray-800';
+                        ? 'bg-indigo-100 text-indigo-800'
+                        : 'bg-gray-100 text-gray-800';
                     return (
                       <Tooltip content={label} maxLines={1} clampChildren={false}>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${cls}`}>
@@ -869,7 +864,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     );
                   })()}
                 </td>
-                
+
                 {/* 技能标签 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.tags?.join(', ') || '无标签'} maxLines={2} clampChildren={false}>
@@ -887,7 +882,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </div>
                   </Tooltip>
                 </td>
-                
+
                 {/* 语言要求 */}
                 <td className="px-3 py-2">
                   <Tooltip content="英语" maxLines={1}>
@@ -896,7 +891,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </span>
                   </Tooltip>
                 </td>
-                
+
                 {/* 发布日期 */}
                 <td className="px-3 py-2 text-xs text-gray-500">
                   <Tooltip content={new Date(job.publishedAt).toLocaleDateString()} maxLines={1} clampChildren={false}>
@@ -908,7 +903,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </div>
                   </Tooltip>
                 </td>
-                
+
                 {/* 岗位来源 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.source} maxLines={1} clampChildren={false}>
@@ -928,7 +923,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </div>
                   </Tooltip>
                 </td>
-                
+
                 {/* 操作 */}
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-1">
@@ -1004,7 +999,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-green-100 rounded-lg">
@@ -1016,7 +1011,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-purple-100 rounded-lg">
@@ -1039,12 +1034,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     <div className={`space-y-6 ${className}`}>
       {/* 头部操作栏 */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-      <div className="flex gap-2">
+        <div className="flex gap-2">
           {renderTabButton('processed', '处理后数据', <Briefcase className="w-4 h-4" />)}
           {renderTabButton('raw', '原始数据', <Database className="w-4 h-4" />)}
           {renderTabButton('storage', '存储统计', <BarChart3 className="w-4 h-4" />)}
         </div>
-        
+
         <div className="flex gap-2">
           {activeTab === 'raw' && (
             <button
@@ -1058,14 +1053,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           )}
           {activeTab === 'processed' && (
             <div className="flex gap-2">
-            <button
-              onClick={handleRefreshProcessedOnly}
-              disabled={syncing}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? '刷新中...' : '刷新处理后数据'}
-            </button>
+              <button
+                onClick={handleRefreshProcessedOnly}
+                disabled={syncing}
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? '刷新中...' : '刷新处理后数据'}
+              </button>
               <button
                 onClick={handleTriggerTranslation}
                 disabled={translating || syncing} // 翻译或刷新时都禁用
@@ -1132,19 +1127,19 @@ const EditJobModal: React.FC<{
   onClose: () => void;
 }> = ({ job, onSave, onClose }) => {
   const [formData, setFormData] = useState({
-     title: job.title,
-     company: job.company,
-     location: job.location,
-     salary: job.salary || '',
-     jobType: job.jobType as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship',
-     experienceLevel: job.experienceLevel as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive',
-     category: job.category,
-     description: job.description,
-     tags: job.tags?.join(', ') || '',
-     requirements: job.requirements?.join('\n') || '',
-     benefits: job.benefits?.join('\n') || '',
-     region: (job.region as 'domestic' | 'overseas' | undefined) || undefined
-   });
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    salary: job.salary || '',
+    jobType: job.jobType as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship',
+    experienceLevel: job.experienceLevel as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive',
+    category: job.category,
+    description: job.description,
+    tags: job.tags?.join(', ') || '',
+    requirements: job.requirements?.join('\n') || '',
+    benefits: job.benefits?.join('\n') || '',
+    region: (job.region as 'domestic' | 'overseas' | undefined) || undefined
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1170,7 +1165,7 @@ const EditJobModal: React.FC<{
             </button>
           </div>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -1183,7 +1178,7 @@ const EditJobModal: React.FC<{
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">企业名称</label>
               <input
@@ -1194,7 +1189,7 @@ const EditJobModal: React.FC<{
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">工作地点</label>
               <input
@@ -1204,7 +1199,7 @@ const EditJobModal: React.FC<{
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">薪资</label>
               <input
@@ -1215,35 +1210,35 @@ const EditJobModal: React.FC<{
                 placeholder="例如: $80,000 - $120,000"
               />
             </div>
-            
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">岗位类型</label>
-            <select
-              value={formData.jobType}
-              onChange={(e) => setFormData({ ...formData, jobType: e.target.value as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship' })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="full-time">全职</option>
-              <option value="part-time">兼职</option>
-              <option value="contract">合同</option>
-              <option value="freelance">自由职业</option>
-              <option value="internship">实习</option>
-            </select>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">区域分类</label>
-            <select
-              value={formData.region || ''}
-              onChange={(e) => setFormData({ ...formData, region: (e.target.value || undefined) as 'domestic' | 'overseas' | undefined })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">未设置</option>
-              <option value="domestic">国内</option>
-              <option value="overseas">海外</option>
-            </select>
-          </div>
-            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">岗位类型</label>
+              <select
+                value={formData.jobType}
+                onChange={(e) => setFormData({ ...formData, jobType: e.target.value as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship' })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="full-time">全职</option>
+                <option value="part-time">兼职</option>
+                <option value="contract">合同</option>
+                <option value="freelance">自由职业</option>
+                <option value="internship">实习</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">区域分类</label>
+              <select
+                value={formData.region || ''}
+                onChange={(e) => setFormData({ ...formData, region: (e.target.value || undefined) as 'domestic' | 'overseas' | undefined })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">未设置</option>
+                <option value="domestic">国内</option>
+                <option value="overseas">海外</option>
+              </select>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">岗位级别</label>
               <select
@@ -1258,7 +1253,7 @@ const EditJobModal: React.FC<{
                 <option value="Executive">管理层</option>
               </select>
             </div>
-            
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">岗位分类</label>
               <select
@@ -1276,7 +1271,7 @@ const EditJobModal: React.FC<{
                 <option value="市场营销">市场营销</option>
               </select>
             </div>
-            
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">技能标签（用逗号分隔）</label>
               <input
@@ -1287,7 +1282,7 @@ const EditJobModal: React.FC<{
                 placeholder="例如: React, TypeScript, Node.js"
               />
             </div>
-            
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">岗位描述</label>
               <textarea
@@ -1297,7 +1292,7 @@ const EditJobModal: React.FC<{
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">岗位要求（每行一个）</label>
               <textarea
@@ -1308,7 +1303,7 @@ const EditJobModal: React.FC<{
                 placeholder="例如:&#10;3+ years React experience&#10;TypeScript proficiency"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">福利待遇（每行一个）</label>
               <textarea
@@ -1320,7 +1315,7 @@ const EditJobModal: React.FC<{
               />
             </div>
           </div>
-          
+
           <div className="flex gap-3 pt-6 border-t border-gray-200">
             <button
               type="submit"
@@ -1441,13 +1436,13 @@ const Tooltip: React.FC<{
   };
 
   return (
-    <div 
+    <div
       className="relative"
       onMouseEnter={trigger === 'hover' ? (() => shouldShowTooltip && setShowTooltip(true)) : undefined}
       onMouseLeave={trigger === 'hover' ? (() => setShowTooltip(false)) : undefined}
       onClick={trigger === 'click' ? handleClick : undefined}
     >
-      <div 
+      <div
         ref={textRef}
         className={clampChildren ? 'overflow-hidden text-ellipsis' : ''}
         style={clampChildren ? {
@@ -1463,29 +1458,29 @@ const Tooltip: React.FC<{
       {showTooltip && (shouldShowTooltip || forceShow) && (
         usePortalResolved && coords
           ? createPortal(
-              <div
-                style={{ position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000 }}
-                className={`p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg max-w-sm ${coords.placement === 'top' ? '' : ''}`}
-              >
-                <div className="whitespace-pre-wrap break-words">{content}</div>
-                {coords.placement === 'top' ? (
-                  <div className="absolute" style={{ top: '100%', left: '16px' }}>
-                    <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                  </div>
-                ) : (
-                  <div className="absolute" style={{ bottom: '100%', left: '16px' }}>
-                    <div className="w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
-                  </div>
-                )}
-              </div>,
-              document.body
-            )
+            <div
+              style={{ position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000 }}
+              className={`p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg max-w-sm ${coords.placement === 'top' ? '' : ''}`}
+            >
+              <div className="whitespace-pre-wrap break-words">{content}</div>
+              {coords.placement === 'top' ? (
+                <div className="absolute" style={{ top: '100%', left: '16px' }}>
+                  <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                </div>
+              ) : (
+                <div className="absolute" style={{ bottom: '100%', left: '16px' }}>
+                  <div className="w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
+                </div>
+              )}
+            </div>,
+            document.body
+          )
           : (
-              <div className="absolute z-50 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg max-w-sm -top-2 left-0 transform -translate-y-full">
-                <div className="whitespace-pre-wrap break-words">{content}</div>
-                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-              </div>
-            )
+            <div className="absolute z-50 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg max-w-sm -top-2 left-0 transform -translate-y-full">
+              <div className="whitespace-pre-wrap break-words">{content}</div>
+              <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+            </div>
+          )
       )}
     </div>
   );
@@ -1514,7 +1509,7 @@ const DetailModal: React.FC<{
             </button>
           </div>
         </div>
-        
+
         <div className="p-6">
           {isProcessedJob ? (
             <div className="space-y-6">
@@ -1531,7 +1526,7 @@ const DetailModal: React.FC<{
                     <div><span className="font-medium">岗位分类:</span> {item.category}</div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2">其他信息</h3>
                   <div className="space-y-2 text-sm">
@@ -1543,7 +1538,7 @@ const DetailModal: React.FC<{
                   </div>
                 </div>
               </div>
-              
+
               {item.tags && item.tags.length > 0 && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2">技能标签</h3>
@@ -1556,7 +1551,7 @@ const DetailModal: React.FC<{
                   </div>
                 </div>
               )}
-              
+
               {item.description && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2">岗位描述</h3>
@@ -1565,7 +1560,7 @@ const DetailModal: React.FC<{
                   </div>
                 </div>
               )}
-              
+
               {item.requirements && item.requirements.length > 0 && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2">岗位要求</h3>
@@ -1579,7 +1574,7 @@ const DetailModal: React.FC<{
                   </ul>
                 </div>
               )}
-              
+
               {item.benefits && item.benefits.length > 0 && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2">福利待遇</h3>
@@ -1607,7 +1602,7 @@ const DetailModal: React.FC<{
                     <div><span className="font-medium">获取时间:</span> {new Date(item.fetchedAt).toLocaleString()}</div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2">链接</h3>
                   <div className="space-y-2 text-sm">
@@ -1626,7 +1621,7 @@ const DetailModal: React.FC<{
                   </div>
                 </div>
               </div>
-              
+
               {item.description && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2">描述内容</h3>
@@ -1635,7 +1630,7 @@ const DetailModal: React.FC<{
                   </div>
                 </div>
               )}
-              
+
               {item.rawContent && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2">原始内容</h3>
