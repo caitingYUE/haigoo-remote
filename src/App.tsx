@@ -13,6 +13,7 @@ import ProfileCenterPage from './pages/ProfileCenterPage'
 import AdminTeamPage from './pages/AdminTeamPage'
 import UserManagementPage from './pages/UserManagementPage'
 import AdminTrustedCompaniesPage from './pages/AdminTrustedCompaniesPage'
+import AdminTagManagementPage from './pages/AdminTagManagementPage'
 import CompanyProfilePage from './pages/CompanyProfilePage'
 import TrustedCompaniesPage from './pages/TrustedCompaniesPage'
 import { AppProvider } from './contexts/AppContext'
@@ -69,6 +70,11 @@ function App() {
                     <Route path="/admin/trusted-companies" element={
                       <ProtectedRoute>
                         <AdminTrustedCompaniesPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/tag-management" element={
+                      <ProtectedRoute>
+                        <AdminTagManagementPage />
                       </ProtectedRoute>
                     } />
                     <Route path="/remote-experience" element={<RemoteExperiencePage />} />
