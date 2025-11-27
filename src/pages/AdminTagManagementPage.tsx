@@ -21,6 +21,7 @@ export default function AdminTagManagementPage() {
     const [editingIndex, setEditingIndex] = useState<{ type: TagType; index: number } | null>(null);
     const [editValue, setEditValue] = useState('');
     const [newValue, setNewValue] = useState<{ [key in TagType]?: string }>({});
+    const [reclassifying, setReclassifying] = useState(false);
 
     useEffect(() => {
         loadConfig();
@@ -118,6 +119,35 @@ export default function AdminTagManagementPage() {
             }
         } catch (error) {
             console.error('Failed to update tag:', error);
+        }
+    };
+
+    const handleReclassify = async () => {
+        if (!confirm('确定要重新分类所有线上岗位数据吗？\n\n这将根据当前的标签配置重新分类所有岗位，可能需要一些时间。')) {
+            return;
+        }
+
+        try {
+            setReclassifying(true);
+            const response = await fetch('/api/data/trusted-companies?action=reclassify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message || '重新分类完成！');
+            } else {
+                alert('重新分类失败：' + (data.error || '未知错误'));
+            }
+        } catch (error) {
+            console.error('Failed to reclassify:', error);
+            alert('重新分类失败，请稍后重试');
+        } finally {
+            setReclassifying(false);
         }
     };
 
@@ -261,6 +291,32 @@ export default function AdminTagManagementPage() {
                                     管理岗位分类、企业行业和企业标签，用于自动分类和筛选
                                 </p>
                             </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleReclassify}
+                                disabled={reclassifying}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 group relative"
+                                title="标签变更后同步应用到线上所有的岗位数据"
+                            >
+                                {reclassifying ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        <span>应用中...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>应用到线上</span>
+                                        <span className="text-white/80">?</span>
+                                    </>
+                                )}
+                                {!reclassifying && (
+                                    <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
+                                        标签变更后同步应用到线上所有的岗位数据
+                                        <div className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>

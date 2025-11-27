@@ -282,6 +282,103 @@ export default async function handler(req, res) {
             const body = req.body || {}
             const { action, resource } = req.query
 
+            // Re-classify all jobs
+            if (action === 'reclassify') {
+                try {
+                    // Import classification service (assuming it's available)
+                    // Since we're in a JS file, we'll implement a simple inline classifier
+                    const JOB_STORAGE_KEY = 'haigoo:processed_jobs'
+
+                    // Get all jobs
+                    let jobs = []
+                    if (UPSTASH_REST_CONFIGURED) {
+                        jobs = await upstashGet(JOB_STORAGE_KEY)
+                    } else if (REDIS_CONFIGURED) {
+                        const client = await getRedisClient()
+                        if (client) jobs = await client.get(JOB_STORAGE_KEY)
+                    } else if (KV_CONFIGURED && kv) {
+                        jobs = await kv.get(JOB_STORAGE_KEY)
+                    } else {
+                        jobs = globalThis.__haigoo_processed_jobs_mem || []
+                    }
+
+                    if (typeof jobs === 'string') jobs = JSON.parse(jobs)
+                    if (!Array.isArray(jobs)) jobs = []
+
+                    console.log(`[trusted-companies] Re-classifying ${jobs.length} jobs`)
+
+                    // Simple classification logic (inline version)
+                    const classifyJob = (title, description) => {
+                        const text = (title + ' ' + description).toLowerCase()
+
+                        // Frontend
+                        if (text.match(/frontend|front-end|react|vue|angular|javascript|typescript|html|css/i)) return '前端开发'
+                        // Backend
+                        if (text.match(/backend|back-end|server|api|database|node\.js|python|java|php|ruby|go|rust/i)) return '后端开发'
+                        // Fullstack
+                        if (text.match(/fullstack|full-stack|full stack/i)) return '全栈开发'
+                        // Mobile
+                        if (text.match(/ios|android|mobile|flutter|react native|swift|kotlin/i)) return '移动开发'
+                        // Algorithm/AI
+                        if (text.match(/algorithm|machine learning|deep learning|ai|artificial intelligence|nlp|computer vision/i)) return '算法工程师'
+                        // Data
+                        if (text.match(/data scientist|data engineer|data analyst|analytics|bi|business intelligence/i)) return '数据分析'
+                        // DevOps
+                        if (text.match(/devops|infrastructure|deployment|ci\/cd|docker|kubernetes|aws|cloud|sysadmin|sre|site reliability/i)) return '运维/SRE'
+                        // QA
+                        if (text.match(/qa|quality assurance|tester|test engineer|testing|automation/i)) return '测试/QA'
+                        // Product
+                        if (text.match(/product manager|product owner|pm|product strategy/i)) return '产品经理'
+                        // Design
+                        if (text.match(/ui|ux|designer|design|figma|sketch/i)) return 'UI/UX设计'
+                        // Marketing
+                        if (text.match(/marketing|growth|seo|sem|social media|content marketing/i)) return '市场营销'
+                        // Sales
+                        if (text.match(/sales|account executive|business development/i)) return '销售'
+                        // Customer Service
+                        if (text.match(/customer service|customer support|help desk|technical support/i)) return '客户服务'
+
+                        return '其他'
+                    }
+
+                    // Re-classify all jobs
+                    let updatedCount = 0
+                    jobs = jobs.map(job => {
+                        const newCategory = classifyJob(job.title || '', job.description || '')
+                        if (job.category !== newCategory) {
+                            updatedCount++
+                            return { ...job, category: newCategory }
+                        }
+                        return job
+                    })
+
+                    // Save back
+                    const jobsStr = JSON.stringify(jobs)
+                    if (UPSTASH_REST_CONFIGURED) {
+                        await upstashSet(JOB_STORAGE_KEY, jobsStr)
+                    } else if (REDIS_CONFIGURED) {
+                        const client = await getRedisClient()
+                        if (client) await client.set(JOB_STORAGE_KEY, jobsStr)
+                    } else if (KV_CONFIGURED && kv) {
+                        await kv.set(JOB_STORAGE_KEY, jobs)
+                    } else {
+                        globalThis.__haigoo_processed_jobs_mem = jobs
+                    }
+
+                    console.log(`[trusted-companies] Re-classified ${updatedCount} jobs out of ${jobs.length}`)
+
+                    return res.status(200).json({
+                        success: true,
+                        message: `成功重新分类 ${updatedCount} 个岗位（共 ${jobs.length} 个）`,
+                        total: jobs.length,
+                        updated: updatedCount
+                    })
+                } catch (error) {
+                    console.error('[trusted-companies] Re-classification error:', error)
+                    return res.status(500).json({ success: false, error: 'Re-classification failed' })
+                }
+            }
+
             // Tag Management
             if (resource === 'tags') {
                 const TAG_CONFIG_KEY = 'haigoo:tag_config'
