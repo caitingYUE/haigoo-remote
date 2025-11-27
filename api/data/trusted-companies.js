@@ -213,8 +213,53 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end()
 
     try {
-        // GET: List all companies
+        // GET: List all companies or get tag config
         if (req.method === 'GET') {
+            const { resource } = req.query
+
+            // Tag Config Resource
+            if (resource === 'tags') {
+                const TAG_CONFIG_KEY = 'haigoo:tag_config'
+                const DEFAULT_CONFIG = {
+                    jobCategories: [
+                        '全栈开发', '前端开发', '后端开发', '移动开发', '算法工程师', '数据开发',
+                        '服务器开发', '运维/SRE', '测试/QA', '网络安全', '操作系统/内核', '技术支持',
+                        '硬件开发', '架构师', 'CTO/技术管理', '软件开发', '产品经理', '产品设计',
+                        '用户研究', '项目管理', 'UI/UX设计', '平面设计', '视觉设计', '数据分析',
+                        '数据科学', '商业分析', '运营', '市场营销', '销售', '客户经理', '客户服务',
+                        '内容创作', '增长黑客', '人力资源', '招聘', '财务', '法务', '行政', '管理',
+                        '教育培训', '咨询', '投资', '其他', '全部'
+                    ],
+                    companyIndustries: [
+                        '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
+                        '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
+                        '硬件/物联网', '消费生活', '其他'
+                    ],
+                    companyTags: [
+                        'AI+陪伴', 'AI+健康', 'AI基础设施', '医药', '远程优先', '全球招聘',
+                        '初创公司', '独角兽', '外企', '出海'
+                    ]
+                }
+
+                let config = null
+                if (UPSTASH_REST_CONFIGURED) {
+                    config = await upstashGet(TAG_CONFIG_KEY)
+                } else if (REDIS_CONFIGURED) {
+                    const client = await getRedisClient()
+                    if (client) config = await client.get(TAG_CONFIG_KEY)
+                } else if (KV_CONFIGURED && kv) {
+                    config = await kv.get(TAG_CONFIG_KEY)
+                }
+
+                if (!config) {
+                    return res.status(200).json({ success: true, config: DEFAULT_CONFIG })
+                }
+
+                const parsedConfig = typeof config === 'string' ? JSON.parse(config) : config
+                return res.status(200).json({ success: true, config: parsedConfig })
+            }
+
+            // Company listing
             const companies = await getAllCompanies()
             const { id } = req.query
 
@@ -235,7 +280,98 @@ export default async function handler(req, res) {
         // POST: Add, Update, or Crawl
         if (req.method === 'POST') {
             const body = req.body || {}
-            const { action } = req.query
+            const { action, resource } = req.query
+
+            // Tag Management
+            if (resource === 'tags') {
+                const TAG_CONFIG_KEY = 'haigoo:tag_config'
+                const DEFAULT_CONFIG = {
+                    jobCategories: [
+                        '全栈开发', '前端开发', '后端开发', '移动开发', '算法工程师', '数据开发',
+                        '服务器开发', '运维/SRE', '测试/QA', '网络安全', '操作系统/内核', '技术支持',
+                        '硬件开发', '架构师', 'CTO/技术管理', '软件开发', '产品经理', '产品设计',
+                        '用户研究', '项目管理', 'UI/UX设计', '平面设计', '视觉设计', '数据分析',
+                        '数据科学', '商业分析', '运营', '市场营销', '销售', '客户经理', '客户服务',
+                        '内容创作', '增长黑客', '人力资源', '招聘', '财务', '法务', '行政', '管理',
+                        '教育培训', '咨询', '投资', '其他', '全部'
+                    ],
+                    companyIndustries: [
+                        '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
+                        '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
+                        '硬件/物联网', '消费生活', '其他'
+                    ],
+                    companyTags: [
+                        'AI+陪伴', 'AI+健康', 'AI基础设施', '医药', '远程优先', '全球招聘',
+                        '初创公司', '独角兽', '外企', '出海'
+                    ]
+                }
+
+                const { action: tagAction, type, value, index } = body
+
+                // Get current config
+                let config = null
+                if (UPSTASH_REST_CONFIGURED) {
+                    config = await upstashGet(TAG_CONFIG_KEY)
+                } else if (REDIS_CONFIGURED) {
+                    const client = await getRedisClient()
+                    if (client) config = await client.get(TAG_CONFIG_KEY)
+                } else if (KV_CONFIGURED && kv) {
+                    config = await kv.get(TAG_CONFIG_KEY)
+                }
+
+                if (!config) {
+                    config = DEFAULT_CONFIG
+                } else {
+                    config = typeof config === 'string' ? JSON.parse(config) : config
+                }
+
+                // Determine which array to modify
+                let targetArray
+                if (type === 'jobCategory') {
+                    targetArray = 'jobCategories'
+                } else if (type === 'companyIndustry') {
+                    targetArray = 'companyIndustries'
+                } else if (type === 'companyTag') {
+                    targetArray = 'companyTags'
+                } else {
+                    return res.status(400).json({ error: 'Invalid type' })
+                }
+
+                // Perform action
+                if (tagAction === 'add') {
+                    if (!value || typeof value !== 'string') {
+                        return res.status(400).json({ error: 'Invalid value' })
+                    }
+                    if (!config[targetArray].includes(value)) {
+                        config[targetArray].push(value)
+                    }
+                } else if (tagAction === 'delete') {
+                    if (typeof index !== 'number') {
+                        return res.status(400).json({ error: 'Invalid index' })
+                    }
+                    config[targetArray].splice(index, 1)
+                } else if (tagAction === 'update') {
+                    if (typeof index !== 'number' || !value || typeof value !== 'string') {
+                        return res.status(400).json({ error: 'Invalid parameters' })
+                    }
+                    config[targetArray][index] = value
+                } else {
+                    return res.status(400).json({ error: 'Invalid action' })
+                }
+
+                // Save updated config
+                const configStr = JSON.stringify(config)
+                if (UPSTASH_REST_CONFIGURED) {
+                    await upstashSet(TAG_CONFIG_KEY, configStr)
+                } else if (REDIS_CONFIGURED) {
+                    const client = await getRedisClient()
+                    if (client) await client.set(TAG_CONFIG_KEY, configStr)
+                } else if (KV_CONFIGURED && kv) {
+                    await kv.set(TAG_CONFIG_KEY, config)
+                }
+
+                return res.status(200).json({ success: true, config })
+            }
 
             // Crawl Action
             if (action === 'crawl') {
