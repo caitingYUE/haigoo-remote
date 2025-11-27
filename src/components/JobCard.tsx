@@ -155,20 +155,20 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         )}
       </div>
 
-      <div className="flex items-center text-gray-600 text-sm mb-2">
+      <h2
+        id={`job-${job.id}-title`}
+        className="font-semibold text-slate-900 text-base mb-2 truncate leading-snug"
+        title={job.translations?.title || job.title}
+      >
+        {job.translations?.title || job.title}
+      </h2>
+
+      <div className="flex items-center text-gray-600 text-sm mb-3">
         <Building className="w-4 h-4 mr-1.5 flex-shrink-0" aria-hidden="true" />
         <span className="truncate font-medium" title={job.translations?.company || job.company}>
           {job.translations?.company || job.company}
         </span>
       </div>
-
-      <h2
-        id={`job-${job.id}-title`}
-        className="font-semibold text-slate-900 text-base mb-3 truncate leading-snug"
-        title={job.translations?.title || job.title}
-      >
-        {job.translations?.title || job.title}
-      </h2>
 
       <div className="flex items-center gap-3 text-sm text-slate-700 mb-3 min-w-0">
         <div className="flex items-center gap-1 min-w-0 flex-1">
