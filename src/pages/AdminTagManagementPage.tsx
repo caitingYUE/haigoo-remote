@@ -272,86 +272,57 @@ export default function AdminTagManagementPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Top Bar */}
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => navigate('/admin_team')}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="返回管理后台"
-                            >
-                                <ArrowLeft className="w-5 h-5 text-gray-600" />
-                            </button>
-                            <div>
-                                <h1 className="text-2xl font-bold text-gray-900">标签管理</h1>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    管理岗位分类、企业行业和企业标签，用于自动分类和筛选
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleReclassify}
-                                disabled={reclassifying}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 group relative"
-                                title="标签变更后同步应用到线上所有的岗位数据"
-                            >
-                                {reclassifying ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                        <span>应用中...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>应用到线上</span>
-                                        <span className="text-white/80">?</span>
-                                    </>
-                                )}
-                                {!reclassifying && (
-                                    <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
-                                        标签变更后同步应用到线上所有的岗位数据
-                                        <div className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
-                                    </div>
-                                )}
-                            </button>
-                        </div>
-                    </div>
+        <div className="h-full bg-gray-50 p-6">
+            {/* Top Actions */}
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900">标签配置</h2>
+                    <p className="text-sm text-gray-600 mt-1">管理岗位分类、企业行业和企业标签</p>
                 </div>
+                <button
+                    onClick={handleReclassify}
+                    disabled={reclassifying}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                    {reclassifying ? (
+                        <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>应用中...</span>
+                        </>
+                    ) : (
+                        <span>应用到线上</span>
+                    )}
+                </button>
             </div>
 
-            {/* Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {renderTagSection(
-                        '岗位分类',
-                        <Briefcase className="w-5 h-5" />,
-                        'jobCategory',
-                        config.jobCategories,
-                        '用于岗位自动分类',
-                        'bg-gradient-to-r from-blue-500 to-blue-600'
-                    )}
+            {/* Tag Sections Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {renderTagSection(
+                    '岗位分类',
+                    <Briefcase className="w-5 h-5" />,
+                    'jobCategory',
+                    config.jobCategories,
+                    '用于岗位自动分类',
+                    'bg-gradient-to-r from-blue-500 to-blue-600'
+                )}
 
-                    {renderTagSection(
-                        '企业行业',
-                        <Building2 className="w-5 h-5" />,
-                        'companyIndustry',
-                        config.companyIndustries,
-                        '企业所属行业',
-                        'bg-gradient-to-r from-purple-500 to-purple-600'
-                    )}
+                {renderTagSection(
+                    '企业行业',
+                    <Building2 className="w-5 h-5" />,
+                    'companyIndustry',
+                    config.companyIndustries,
+                    '企业所属行业',
+                    'bg-gradient-to-r from-purple-500 to-purple-600'
+                )}
 
-                    {renderTagSection(
-                        '企业标签',
-                        <Tag className="w-5 h-5" />,
-                        'companyTag',
-                        config.companyTags,
-                        '企业细分领域标签',
-                        'bg-gradient-to-r from-green-500 to-green-600'
-                    )}
-                </div>
+                {renderTagSection(
+                    '企业标签',
+                    <Tag className="w-5 h-5" />,
+                    'companyTag',
+                    config.companyTags,
+                    '企业细分领域标签',
+                    'bg-gradient-to-r from-green-500 to-green-600'
+                )}
             </div>
         </div>
     );

@@ -338,60 +338,39 @@ export default function AdminCompanyManagementPage() {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Top Bar */}
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => navigate('/admin_team')}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="返回管理后台"
-                            >
-                                <ArrowLeft className="w-5 h-5 text-gray-600" />
-                            </button>
-                            <div>
-                                <h1 className="text-2xl font-bold text-gray-900">企业管理</h1>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    管理所有企业信息和可信企业列表
-                                </p>
-                            </div>
+        <div className="h-full bg-gray-50">
+            {/* Tabs */}
+            <div className="bg-white border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setActiveTab('all')}
+                        className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'all'
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <Building2 className="w-5 h-5" />
+                            <span>全部企业</span>
                         </div>
-                    </div>
-
-                    {/* Tabs */}
-                    <div className="flex items-center gap-4 mt-4">
-                        <button
-                            onClick={() => setActiveTab('all')}
-                            className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'all'
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('trusted')}
+                        className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'trusted'
                                 ? 'bg-blue-600 text-white shadow-lg'
                                 : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                                }`}
-                        >
-                            <div className="flex items-center gap-2">
-                                <Building2 className="w-5 h-5" />
-                                <span>全部企业</span>
-                            </div>
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('trusted')}
-                            className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'trusted'
-                                ? 'bg-blue-600 text-white shadow-lg'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                                }`}
-                        >
-                            <div className="flex items-center gap-2">
-                                <Tag className="w-5 h-5" />
-                                <span>可信企业管理</span>
-                            </div>
-                        </button>
-                    </div>
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <Tag className="w-5 h-5" />
+                            <span>可信企业管理</span>
+                        </div>
+                    </button>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="px-6 py-8">
                 {activeTab === 'all' ? renderAllCompaniesTab() : <AdminTrustedCompaniesPage />}
             </div>
         </div>
