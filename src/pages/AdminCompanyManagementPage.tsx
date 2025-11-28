@@ -88,22 +88,37 @@ export default function AdminCompanyManagementPage() {
                     const confirmCrawl = confirm(`提取成功！发现 ${companiesToCrawl.length} 个企业需要补充信息。\n\n是否立即开始自动抓取？（可能需要一些时间）`);
                     if (confirmCrawl) {
                         let successCount = 0;
+                        let failureCount = 0;
+                        const failures: string[] = [];
+
                         for (let i = 0; i < companiesToCrawl.length; i++) {
                             const company = companiesToCrawl[i];
-                            // Update UI to show progress (optional, maybe via a toast or just console)
                             console.log(`Processing ${i + 1}/${companiesToCrawl.length}: ${company.name}`);
 
                             try {
                                 await handleUpdateInfo(company);
                                 successCount++;
                             } catch (e) {
+                                failureCount++;
+                                failures.push(company.name);
                                 console.error(`Failed to crawl ${company.name}`, e);
                             }
 
                             // Small delay to be nice to the server/target
                             await new Promise(resolve => setTimeout(resolve, 1000));
                         }
-                        alert(`自动抓取完成！成功更新 ${successCount} 个企业。`);
+
+                        // Show detailed summary
+                        let summary = `自动抓取完成！\n\n成功: ${successCount}\n失败: ${failureCount}`;
+                        if (failures.length > 0 && failures.length <= 5) {
+                            summary += `\n\n失败的企业:\n${failures.join('\n')}`;
+                        } else if (failures.length > 5) {
+                            summary += `\n\n失败的企业:\n${failures.slice(0, 5).join('\n')}\n...及其他 ${failures.length - 5} 个`;
+                        }
+                        alert(summary);
+
+                        // Reload to show updated data
+                        await loadCompanies();
                     }
                 } else {
                     alert(data.message || '企业提取完成！所有企业信息已完整。');
@@ -132,8 +147,8 @@ export default function AdminCompanyManagementPage() {
             const info = await CompanyService.fetchCompanyInfo(company.url);
 
             if (!info.description && !info.logo) {
-                alert('未抓取到有效信息，请检查官网链接是否可访问');
-                return;
+                console.warn(`No info crawled for ${company.name} from ${company.url}`);
+                // Don't return here - still try to update with classification
             }
 
             // 2. 重新分类行业
@@ -152,6 +167,10 @@ export default function AdminCompanyManagementPage() {
             };
 
             const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('未登录或登录已过期，请重新登录');
+            }
+
             const response = await fetch('/api/data/trusted-companies?resource=companies', {
                 method: 'POST',
                 headers: {
@@ -165,14 +184,17 @@ export default function AdminCompanyManagementPage() {
             if (data.success) {
                 // 更新本地列表
                 setCompanies(prev => prev.map(c => c.id === company.id ? { ...c, ...updatedCompany } : c));
-                alert('企业信息更新成功！');
+                console.log(`Successfully updated ${company.name}`);
             } else {
-                alert('更新失败：' + (data.error || '未知错误'));
+                console.error(`Failed to update ${company.name}:`, data.error);
+                throw new Error(data.error || '保存失败');
             }
 
         } catch (error) {
-            console.error('Failed to update company info:', error);
-            alert('更新失败，请稍后重试');
+            console.error(`Failed to update company info for ${company.name}:`, error);
+            const errorMsg = error instanceof Error ? error.message : '未知错误';
+            // Don't alert for each failure during batch processing
+            // Just log it - the batch process will show summary
         } finally {
             setUpdatingMap(prev => ({ ...prev, [company.id]: false }));
         }
