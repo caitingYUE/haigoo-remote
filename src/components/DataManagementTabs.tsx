@@ -652,14 +652,47 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">所有分类</option>
-              <option value="全栈开发">全栈开发</option>
               <option value="前端开发">前端开发</option>
               <option value="后端开发">后端开发</option>
+              <option value="全栈开发">全栈开发</option>
+              <option value="移动开发">移动开发</option>
+              <option value="算法工程师">算法工程师</option>
+              <option value="数据开发">数据开发</option>
+              <option value="服务器开发">服务器开发</option>
+              <option value="运维/SRE">运维/SRE</option>
+              <option value="测试/QA">测试/QA</option>
+              <option value="网络安全">网络安全</option>
+              <option value="操作系统/内核">操作系统/内核</option>
+              <option value="技术支持">技术支持</option>
+              <option value="硬件开发">硬件开发</option>
+              <option value="架构师">架构师</option>
+              <option value="CTO/技术管理">CTO/技术管理</option>
+              <option value="产品经理">产品经理</option>
+              <option value="产品设计">产品设计</option>
+              <option value="用户研究">用户研究</option>
               <option value="UI/UX设计">UI/UX设计</option>
+              <option value="视觉设计">视觉设计</option>
+              <option value="平面设计">平面设计</option>
               <option value="数据分析">数据分析</option>
-              <option value="DevOps">DevOps</option>
-              <option value="产品管理">产品管理</option>
+              <option value="商业分析">商业分析</option>
+              <option value="数据科学">数据科学</option>
               <option value="市场营销">市场营销</option>
+              <option value="内容创作">内容创作</option>
+              <option value="销售">销售</option>
+              <option value="客户经理">客户经理</option>
+              <option value="客户服务">客户服务</option>
+              <option value="增长黑客">增长黑客</option>
+              <option value="运营">运营</option>
+              <option value="人力资源">人力资源</option>
+              <option value="招聘">招聘</option>
+              <option value="财务">财务</option>
+              <option value="法务">法务</option>
+              <option value="行政">行政</option>
+              <option value="管理">管理</option>
+              <option value="教育培训">教育培训</option>
+              <option value="咨询">咨询</option>
+              <option value="投资">投资</option>
+              <option value="其他">其他</option>
             </select>
 
             <select
@@ -872,11 +905,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     return (
                       <Tooltip content={normalizedType} maxLines={1} clampChildren={false}>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${normalizedType === '全职' ? 'bg-green-100 text-green-800' :
-                            normalizedType === '兼职' ? 'bg-blue-100 text-blue-800' :
-                              normalizedType === '合同工' ? 'bg-orange-100 text-orange-800' :
-                                normalizedType === '自由职业' ? 'bg-purple-100 text-purple-800' :
-                                  normalizedType === '实习' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-gray-100 text-gray-800'
+                          normalizedType === '兼职' ? 'bg-blue-100 text-blue-800' :
+                            normalizedType === '合同工' ? 'bg-orange-100 text-orange-800' :
+                              normalizedType === '自由职业' ? 'bg-purple-100 text-purple-800' :
+                                normalizedType === '实习' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-gray-100 text-gray-800'
                           }`}>
                           {normalizedType}
                         </span>

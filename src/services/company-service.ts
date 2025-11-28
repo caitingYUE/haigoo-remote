@@ -24,16 +24,39 @@ export class CompanyService {
     static extractCompanyUrlFromDescription(description: string): string {
         if (!description) return '';
 
-        // 匹配 **URL:** 后面的URL
-        const urlMatch = description.match(/\*\*URL:\*\*\s*(https?:\/\/[^\s\n]+)/i);
-        if (urlMatch) {
-            return urlMatch[1].trim();
+        // 1. 尝试移除HTML标签，获取纯文本
+        const text = description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+
+        // 2. 定义多种匹配模式
+        const patterns = [
+            // Markdown风格
+            /\*\*URL:\*\*\s*(https?:\/\/[^\s]+)/i,
+            /\*URL:\*\s*(https?:\/\/[^\s]+)/i,
+            // HTML风格 (如果上面的replace没有完全清除或原始文本就是这样)
+            /URL:\s*(https?:\/\/[^\s]+)/i,
+            /Website:\s*(https?:\/\/[^\s]+)/i,
+            /Company URL:\s*(https?:\/\/[^\s]+)/i,
+            // 链接文本可能是 "Apply" 或 "Link" 但我们找的是官网
+            // 有些RSS源直接在描述里放了链接
+            /Homepage:\s*(https?:\/\/[^\s]+)/i
+        ];
+
+        for (const pattern of patterns) {
+            const match = text.match(pattern);
+            if (match && match[1]) {
+                // 清理URL末尾可能的标点符号
+                return match[1].replace(/[.,;)]$/, '');
+            }
         }
 
-        // 备用匹配：**Headquarters:** 后面可能包含URL
-        const hqMatch = description.match(/\*\*Headquarters:\*\*[^\n]*?(https?:\/\/[^\s\n]+)/i);
-        if (hqMatch) {
-            return hqMatch[1].trim();
+        // 3. 特殊处理：如果描述中包含 **Headquarters:** ... **URL:** ... 结构
+        // 有时候正则可能因为换行符失效，但在移除HTML后应该变成空格了
+
+        // 4. 尝试从HTML中提取 href (如果描述是HTML)
+        // 查找包含 "website", "homepage", "company" 的链接
+        const linkMatch = description.match(/<a[^>]+href="(https?:\/\/[^"]+)"[^>]*>([^<]*(?:website|homepage|company)[^<]*)<\/a>/i);
+        if (linkMatch) {
+            return linkMatch[1];
         }
 
         return '';
