@@ -213,7 +213,57 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end()
 
     try {
-        // GET: List all companies or get tag config
+        // --- Action Dispatcher ---
+        const { action } = req.query
+
+        // 1. Crawl Company Info (Merged from api/crawler/company-info.js)
+        if (req.method === 'GET' && action === 'crawl') {
+            const { url } = req.query
+            if (!url) return res.status(400).json({ error: 'URL is required' })
+
+            try {
+                let targetUrl = url
+                if (!targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`
+
+                console.log(`[trusted-companies] Crawling: ${targetUrl}`)
+                const response = await fetch(targetUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+                    },
+                    timeout: 10000
+                })
+
+                if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`)
+
+                const html = await response.text()
+                const metadata = extractMetadata(html)
+
+                // Handle relative logo URLs
+                if (metadata.image && !metadata.image.startsWith('http')) {
+                    const baseUrl = new URL(targetUrl)
+                    if (metadata.image.startsWith('//')) {
+                        metadata.image = `https:${metadata.image}`
+                    } else if (metadata.image.startsWith('/')) {
+                        metadata.image = `${baseUrl.origin}${metadata.image}`
+                    } else {
+                        metadata.image = `${baseUrl.origin}/${metadata.image}`
+                    }
+                }
+
+                return res.status(200).json({
+                    url: targetUrl,
+                    logo: metadata.image || metadata.icon,
+                    description: metadata.description,
+                    title: metadata.title
+                })
+            } catch (error) {
+                console.error('[trusted-companies] Crawl error:', error)
+                return res.status(500).json({ error: 'Failed to crawl', details: error.message })
+            }
+        }
+
+        // 2. Standard CRUD Operations
         if (req.method === 'GET') {
             const { resource } = req.query
 

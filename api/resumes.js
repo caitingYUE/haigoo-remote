@@ -6,6 +6,9 @@
 import { getResumes, saveResumes } from '../server-utils/resume-storage.js'
 import { kv } from '../server-utils/kv-client.js'
 import { createClient } from 'redis'
+import fs from 'fs/promises'
+import path from 'path'
+import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'
 
 function sendJson(res, body, status = 200) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -22,8 +25,51 @@ export default async function handler(req, res) {
   }
 
   try {
-    // GET - 获取所有简历
+    // GET - 获取所有简历 或 下载简历
     if (req.method === 'GET') {
+      const { action, id } = req.query
+
+      // 下载简历 (Merged from api/resume-file.js)
+      if (action === 'download' && id) {
+        // 验证用户身份
+        const token = extractToken(req)
+        if (!token) return sendJson(res, { success: false, error: 'Authentication required' }, 401)
+
+        const decoded = await verifyToken(token)
+        if (!decoded) return sendJson(res, { success: false, error: 'Invalid token' }, 401)
+
+        const { resumes } = await getResumes()
+        const resume = resumes.find(r => r.id === id)
+        if (!resume) return sendJson(res, { success: false, error: 'Resume not found' }, 404)
+
+        // 权限检查
+        const isOwner = resume.userId === decoded.userId
+        const isAdmin = decoded.admin === true
+        if (!isOwner && !isAdmin) return sendJson(res, { success: false, error: 'Permission denied' }, 403)
+
+        if (!resume.localFilePath) return sendJson(res, { success: false, error: 'Local file not available' }, 404)
+
+        try {
+          await fs.access(resume.localFilePath)
+          const fileBuffer = await fs.readFile(resume.localFilePath)
+
+          const ext = path.extname(resume.fileName).toLowerCase()
+          let contentType = 'application/octet-stream'
+          if (ext === '.pdf') contentType = 'application/pdf'
+          else if (ext === '.doc') contentType = 'application/msword'
+          else if (ext === '.docx') contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          else if (ext === '.txt') contentType = 'text/plain'
+
+          res.setHeader('Content-Type', contentType)
+          res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(resume.fileName)}"`)
+          res.setHeader('Content-Length', fileBuffer.length)
+          return res.status(200).send(fileBuffer)
+        } catch (error) {
+          return sendJson(res, { success: false, error: 'File not found on server' }, 404)
+        }
+      }
+
+      // 获取列表
       const { resumes, provider } = await getResumes()
 
       res.setHeader('X-Storage-Provider', provider)

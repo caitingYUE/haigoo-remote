@@ -571,7 +571,7 @@ const AdminTeamPage: React.FC = () => {
                             </button>
                             {resume.localFilePath && (
                               <button
-                                onClick={() => window.open(`/api/resume-file?id=${resume.id}`, '_blank')}
+                                onClick={() => window.open(`/api/resumes?action=download&id=${resume.id}`, '_blank')}
                                 className="action-btn"
                                 title="下载原文件"
                               >

@@ -192,7 +192,8 @@ export class CompanyService {
      */
     static async fetchCompanyInfo(url: string): Promise<{ logo?: string; description?: string; title?: string }> {
         try {
-            const response = await fetch(`/api/crawler/company-info?url=${encodeURIComponent(url)}`);
+            // Updated to use the merged endpoint in trusted-companies.js
+            const response = await fetch(`/api/data/trusted-companies?action=crawl&url=${encodeURIComponent(url)}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch company info');
             }
