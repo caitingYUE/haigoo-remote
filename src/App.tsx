@@ -14,6 +14,7 @@ import AdminTeamPage from './pages/AdminTeamPage'
 import UserManagementPage from './pages/UserManagementPage'
 import AdminTrustedCompaniesPage from './pages/AdminTrustedCompaniesPage'
 import AdminTagManagementPage from './pages/AdminTagManagementPage'
+import AdminCompanyManagementPage from './pages/AdminCompanyManagementPage'
 import CompanyProfilePage from './pages/CompanyProfilePage'
 import TrustedCompaniesPage from './pages/TrustedCompaniesPage'
 import { AppProvider } from './contexts/AppContext'
@@ -43,6 +44,13 @@ function App() {
               <Route path="/admin/tag-management" element={
                 <ProtectedRoute>
                   <AdminTagManagementPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Company Management - No Layout wrapper */}
+              <Route path="/admin/companies" element={
+                <ProtectedRoute>
+                  <AdminCompanyManagementPage />
                 </ProtectedRoute>
               } />
 

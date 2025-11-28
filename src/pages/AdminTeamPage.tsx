@@ -34,7 +34,8 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
-  Tag
+  Tag,
+  Building
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
@@ -734,7 +735,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'jobs', label: '职位数据', icon: Briefcase },
     { id: 'resumes', label: '简历库', icon: Users },
     { id: 'users', label: '用户管理', icon: Users },
-    { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
+    { id: 'companies', label: '企业管理', icon: Building },
     { id: 'tag-management', label: '标签管理', icon: Tag },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
@@ -835,7 +836,14 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'jobs' && renderJobDataManagement()}
               {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'users' && <UserManagementPage />}
-              {activeTab === 'trusted-companies' && <AdminTrustedCompaniesPage />}
+              {activeTab === 'companies' && (
+                <iframe
+                  src="/admin/companies"
+                  className="w-full h-full border-0"
+                  style={{ minHeight: '800px' }}
+                  title="企业管理"
+                />
+              )}
               {activeTab === 'tag-management' && (
                 <iframe
                   src="/admin/tag-management"
