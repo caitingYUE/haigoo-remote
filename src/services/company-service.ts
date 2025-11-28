@@ -56,7 +56,7 @@ export class CompanyService {
             name: job.company,
             url: companyUrl,
             description: '', // 需要爬取获取
-            logo: job.companyLogo,
+            logo: undefined, // Logo需要单独爬取或手动添加
             industry: classification.industry,
             tags: classification.tags,
             source: job.source as 'rss' | 'crawler' | 'manual',
