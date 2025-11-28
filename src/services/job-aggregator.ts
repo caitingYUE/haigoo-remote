@@ -1,13 +1,78 @@
-import { Job, JobCategory, JobFilter, JobStats, SyncStatus, AdminDashboardData } from '../types/rss-types';
-import { rssService, RSSFeedItem, ParsedRSSData } from './rss-service';
-import { translationMappingService } from './translation-mapping-service';
-import { getStorageAdapter } from './storage-factory';
-import { CloudStorageAdapter } from './cloud-storage-adapter';
-import { recommendationHistoryService } from './recommendation-history-service';
-import { Job as PageJob } from '../types';
-import { processedJobsService } from './processed-jobs-service';
+import { CompanyService } from './company-service';
 
 class JobAggregator {
+  // ... existing code ...
+
+  /**
+   * 将RSS项目转换为Job对象 - 使用基于规则的解析
+   */
+  private async convertRSSItemToJob(item: RSSFeedItem, source: string, sourceCategory: string): Promise<Job> {
+    const id = this.generateJobId(item.link, source);
+    const category = this.categorizeJob(item.title, item.description, sourceCategory);
+    const now = new Date().toISOString();
+    const tags = this.extractTags(item.title, item.description, item.skills);
+    const region = await this.determineJobRegion(item.location || '', tags);
+    const companyWebsite = CompanyService.extractCompanyUrlFromDescription(item.description || '');
+
+    return {
+      id,
+      title: item.title,
+      company: item.company || this.extractCompanyFromDescription(item.description),
+      location: item.location || 'Remote',
+      description: item.description,
+      url: item.link,
+      companyWebsite, // Added field
+      publishedAt: item.pubDate || now,
+      source,
+      category,
+      salary: item.salary,
+      jobType: (item.jobType as Job['jobType']) || 'full-time',
+      experienceLevel: item.experienceLevel || this.determineExperienceLevel(item.title, item.description),
+      remoteLocationRestriction: item.remoteLocationRestriction,
+      tags,
+      requirements: this.extractRequirements(item.description),
+      benefits: this.extractBenefits(item.description),
+      isRemote: item.workType === 'remote' || this.isRemoteJob(item.title, item.description, item.location),
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+      region
+    };
+  }
+
+  /**
+   * 备用转换方法（当AI解析失败时使用）
+   */
+  private convertRSSItemToJobFallback(item: RSSFeedItem, source: string, sourceCategory: string): Job {
+    const id = this.generateJobId(item.link, source);
+    const category = this.categorizeJob(item.title, item.description, sourceCategory);
+    const now = new Date().toISOString();
+    const companyWebsite = CompanyService.extractCompanyUrlFromDescription(item.description || '');
+
+    return {
+      id,
+      title: item.title,
+      company: item.company || this.extractCompanyFromDescription(item.description),
+      location: item.location || 'Remote',
+      description: item.description,
+      url: item.link,
+      companyWebsite, // Added field
+      publishedAt: item.pubDate || now,
+      source,
+      category,
+      salary: item.salary,
+      jobType: (item.jobType as Job['jobType']) || 'full-time',
+      experienceLevel: this.determineExperienceLevel(item.title, item.description),
+      remoteLocationRestriction: undefined,
+      tags: this.extractTags(item.title, item.description, item.skills),
+      requirements: this.extractRequirements(item.description),
+      benefits: this.extractBenefits(item.description),
+      isRemote: this.isRemoteJob(item.title, item.description, item.location),
+      status: 'active',
+      createdAt: now,
+      updatedAt: now
+    };
+  }
   private jobs: Job[] = [];
   private storageAdapter: CloudStorageAdapter | null = null;
   private syncStatus: SyncStatus = {

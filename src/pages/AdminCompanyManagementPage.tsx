@@ -66,7 +66,7 @@ export default function AdminCompanyManagementPage() {
     };
 
     const handleExtractCompanies = async () => {
-        if (!confirm('确定要从岗位数据中提取企业信息吗？\n\n这将分析所有岗位并创建企业列表。')) {
+        if (!confirm('确定要从岗位数据中提取企业信息吗？\n\n这将分析所有岗位并创建企业列表。提取完成后，系统将自动尝试抓取新企业的官网信息。')) {
             return;
         }
 
@@ -76,8 +76,38 @@ export default function AdminCompanyManagementPage() {
             const data = await response.json();
 
             if (data.success) {
-                alert(data.message || '企业提取完成！');
+                // 1. Reload companies to get the latest list
                 await loadCompanies();
+
+                // 2. Auto-crawl for companies with URL but missing info
+                const companiesToCrawl = (data.companies || []).filter((c: Company) =>
+                    c.url && (!c.description || !c.logo)
+                );
+
+                if (companiesToCrawl.length > 0) {
+                    const confirmCrawl = confirm(`提取成功！发现 ${companiesToCrawl.length} 个企业需要补充信息。\n\n是否立即开始自动抓取？（可能需要一些时间）`);
+                    if (confirmCrawl) {
+                        let successCount = 0;
+                        for (let i = 0; i < companiesToCrawl.length; i++) {
+                            const company = companiesToCrawl[i];
+                            // Update UI to show progress (optional, maybe via a toast or just console)
+                            console.log(`Processing ${i + 1}/${companiesToCrawl.length}: ${company.name}`);
+
+                            try {
+                                await handleUpdateInfo(company);
+                                successCount++;
+                            } catch (e) {
+                                console.error(`Failed to crawl ${company.name}`, e);
+                            }
+
+                            // Small delay to be nice to the server/target
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                        alert(`自动抓取完成！成功更新 ${successCount} 个企业。`);
+                    }
+                } else {
+                    alert(data.message || '企业提取完成！所有企业信息已完整。');
+                }
             } else {
                 alert('提取失败：' + (data.error || '未知错误'));
             }

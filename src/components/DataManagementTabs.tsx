@@ -792,16 +792,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <Trash2 className="w-4 h-4" />
               清除数据
             </button>
-
-            <button
-              onClick={handleReprocessUrls}
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
-              title="重新从描述中提取企业官网URL"
-            >
-              <Globe className="w-4 h-4" />
-              提取URL
-            </button>
           </div>
         </div>
       </div>
