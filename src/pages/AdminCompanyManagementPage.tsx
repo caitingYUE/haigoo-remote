@@ -48,7 +48,7 @@ export default function AdminCompanyManagementPage() {
                 ...(industryFilter && { industry: industryFilter })
             });
 
-            const response = await fetch(`/api/data/companies?${params}`);
+            const response = await fetch(`/api/data/trusted-companies?resource=companies&${params}`);
             const data = await response.json();
 
             if (data.success) {
@@ -69,7 +69,7 @@ export default function AdminCompanyManagementPage() {
 
         try {
             setExtracting(true);
-            const response = await fetch('/api/data/companies?action=extract');
+            const response = await fetch('/api/data/trusted-companies?resource=companies&action=extract');
             const data = await response.json();
 
             if (data.success) {
@@ -365,8 +365,8 @@ export default function AdminCompanyManagementPage() {
                         <button
                             onClick={() => setActiveTab('all')}
                             className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'all'
-                                    ? 'bg-blue-600 text-white shadow-lg'
-                                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
                                 }`}
                         >
                             <div className="flex items-center gap-2">
@@ -377,8 +377,8 @@ export default function AdminCompanyManagementPage() {
                         <button
                             onClick={() => setActiveTab('trusted')}
                             className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'trusted'
-                                    ? 'bg-blue-600 text-white shadow-lg'
-                                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
                                 }`}
                         >
                             <div className="flex items-center gap-2">
