@@ -151,9 +151,13 @@ export default function AdminCompanyManagementPage() {
                 tags: Array.from(new Set([...(company.tags || []), ...classification.tags]))
             };
 
+            const token = localStorage.getItem('token');
             const response = await fetch('/api/data/trusted-companies?resource=companies', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(updatedCompany)
             });
 
