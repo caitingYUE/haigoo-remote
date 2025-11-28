@@ -187,6 +187,21 @@ export class CompanyService {
             updatedAt: partial.updatedAt || new Date()
         }));
     }
+    /**
+     * 获取企业官网信息（Logo、简介）
+     */
+    static async fetchCompanyInfo(url: string): Promise<{ logo?: string; description?: string; title?: string }> {
+        try {
+            const response = await fetch(`/api/crawler/company-info?url=${encodeURIComponent(url)}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch company info');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching company info:', error);
+            return {};
+        }
+    }
 }
 
 export const companyService = new CompanyService();

@@ -172,6 +172,25 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     }
   }, []);
 
+  // 重新处理URL
+  const handleReprocessUrls = async () => {
+    if (!confirm('确定要重新分析所有职位的企业URL吗？\n\n这将扫描所有职位描述，提取企业官网链接并更新。')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const result = await dataManagementService.reprocessJobUrls();
+      showSuccess('URL重新处理完成', `更新了 ${result.updated} 个职位。`);
+      await loadProcessedData(); // Assuming loadData should be loadProcessedData
+    } catch (error) {
+      console.error('URL处理失败:', error);
+      showError('处理失败', '请查看控制台日志');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 同步数据
   const handleSyncData = async () => {
     try {
@@ -759,10 +778,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   setLoading(true);
                   // Clear processed jobs data
                   await dataManagementService.clearAllProcessedJobs();
-                  await loadProcessedData();
                   showSuccess('清除成功', '所有职位数据已清除');
+                  await loadProcessedData();
                 } catch (error) {
-                  console.error('清除数据失败:', error);
+                  console.error('清除失败:', error);
                   showError('清除失败', '请稍后重试');
                 } finally {
                   setLoading(false);
@@ -772,6 +791,16 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             >
               <Trash2 className="w-4 h-4" />
               清除数据
+            </button>
+
+            <button
+              onClick={handleReprocessUrls}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+              title="重新从描述中提取企业官网URL"
+            >
+              <Globe className="w-4 h-4" />
+              提取URL
             </button>
           </div>
         </div>

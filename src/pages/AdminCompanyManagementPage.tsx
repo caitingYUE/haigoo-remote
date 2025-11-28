@@ -5,6 +5,8 @@ import {
     ExternalLink, Globe, Tag, Briefcase, ArrowLeft
 } from 'lucide-react';
 import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
+import { CompanyService } from '../services/company-service';
+import { ClassificationService } from '../services/classification-service';
 
 interface Company {
     id: string;
@@ -26,6 +28,7 @@ export default function AdminCompanyManagementPage() {
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(false);
     const [extracting, setExtracting] = useState(false);
+    const [updatingMap, setUpdatingMap] = useState<Record<string, boolean>>({});
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [pageSize] = useState(20);
@@ -83,6 +86,61 @@ export default function AdminCompanyManagementPage() {
             alert('提取失败，请稍后重试');
         } finally {
             setExtracting(false);
+        }
+    };
+
+    const handleUpdateInfo = async (company: Company) => {
+        if (!company.url) {
+            alert('该企业没有官网链接，无法更新信息');
+            return;
+        }
+
+        try {
+            setUpdatingMap(prev => ({ ...prev, [company.id]: true }));
+
+            // 1. 抓取官网信息
+            const info = await CompanyService.fetchCompanyInfo(company.url);
+
+            if (!info.description && !info.logo) {
+                alert('未抓取到有效信息，请检查官网链接是否可访问');
+                return;
+            }
+
+            // 2. 重新分类行业
+            const classification = ClassificationService.classifyCompany(
+                company.name,
+                info.description || company.description || ''
+            );
+
+            // 3. 更新企业信息
+            const updatedCompany = {
+                ...company,
+                description: info.description || company.description,
+                logo: info.logo || company.logo,
+                industry: classification.industry !== '其他' ? classification.industry : company.industry,
+                tags: Array.from(new Set([...(company.tags || []), ...classification.tags]))
+            };
+
+            const response = await fetch('/api/data/trusted-companies?resource=companies', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedCompany)
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // 更新本地列表
+                setCompanies(prev => prev.map(c => c.id === company.id ? { ...c, ...updatedCompany } : c));
+                alert('企业信息更新成功！');
+            } else {
+                alert('更新失败：' + (data.error || '未知错误'));
+            }
+
+        } catch (error) {
+            console.error('Failed to update company info:', error);
+            alert('更新失败，请稍后重试');
+        } finally {
+            setUpdatingMap(prev => ({ ...prev, [company.id]: false }));
         }
     };
 
@@ -297,6 +355,14 @@ export default function AdminCompanyManagementPage() {
                                                         <ExternalLink className="w-4 h-4" />
                                                     </a>
                                                 )}
+                                                <button
+                                                    onClick={() => handleUpdateInfo(company)}
+                                                    disabled={updatingMap[company.id]}
+                                                    className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                                    title="抓取并更新企业信息"
+                                                >
+                                                    <RefreshCw className={`w-4 h-4 ${updatingMap[company.id] ? 'animate-spin' : ''}`} />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -345,8 +411,8 @@ export default function AdminCompanyManagementPage() {
                     <button
                         onClick={() => setActiveTab('all')}
                         className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'all'
-                                ? 'bg-blue-600 text-white shadow-lg'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
                             }`}
                     >
                         <div className="flex items-center gap-2">
@@ -357,8 +423,8 @@ export default function AdminCompanyManagementPage() {
                     <button
                         onClick={() => setActiveTab('trusted')}
                         className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'trusted'
-                                ? 'bg-blue-600 text-white shadow-lg'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
                             }`}
                     >
                         <div className="flex items-center gap-2">

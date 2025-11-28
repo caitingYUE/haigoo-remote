@@ -1,6 +1,7 @@
 import { ClassificationService } from './classification-service';
 import { Job, JobStats, SyncStatus, RSSSource, SyncError, JobCategory } from '../types/rss-types';
 import { RSSFeedItem, ParsedRSSData, rssService } from './rss-service';
+import { CompanyService } from './company-service';
 import { getStorageAdapter } from './storage-factory';
 import { CloudStorageAdapter } from './cloud-storage-adapter';
 
@@ -532,65 +533,93 @@ export class DataManagementService {
   }
 
   /**
+   * 重新处理所有职位的URL
+   */
+  async reprocessJobUrls(): Promise<{ updated: number }> {
+    try {
+      const allJobs = await this.loadProcessedJobs();
+      let updatedCount = 0;
+
+      const updatedJobs = allJobs.map(job => {
+        const url = CompanyService.extractCompanyUrlFromDescription(job.description || '');
+        // 如果提取到了URL，且与当前不同（或者当前为空），则更新
+        if (url && url !== job.companyWebsite) {
+          updatedCount++;
+          return { ...job, companyWebsite: url };
+        }
+        return job;
+      });
+
+      if (updatedCount > 0) {
+        await this.saveProcessedJobs(updatedJobs, 'replace');
+      }
+
+      return { updated: updatedCount };
+    } catch (error) {
+      console.error('重新处理URL失败:', error);
+      return { updated: 0 };
+    }
+  }
+
+  /**
    * 获取存储统计信息
    */
   async getStorageStats(): Promise<StorageStats> {
     try {
       // 优先从后端API读取真实统计信息（来源KV）
-      const t = Date.now()
-      const resp = await fetch(`/api/data/processed-jobs?action=stats&t=${t}`, { cache: 'no-store' })
-      if (!resp.ok) throw new Error(`GET /api/data/processed-jobs?action=stats failed: ${resp.status}`)
-      const stats = await resp.json()
+      const t = Date.now();
+      const resp = await fetch(`/api/data/processed-jobs?action=stats&t=${t}`, { cache: 'no-store' });
+      if (!resp.ok) throw new Error(`GET /api/data/processed-jobs?action=stats failed: ${resp.status}`);
+      const stats = await resp.json();
 
-      const sources = rssService.getRSSSources()
-      // 仅填充来源名称，其余计数由后续拓展对接到KV（当前保留0占位）
+      const sources = rssService.getRSSSources();
       const sourceStats = sources.map(source => ({
         name: `${source.name} - ${source.category}`,
         rawCount: 0,
         processedCount: 0,
         errorCount: 0,
         lastSync: stats?.lastSync ? new Date(stats.lastSync) : undefined
-      }))
+      }));
 
       return {
-        totalRawData: 0, // 原始数据暂未入KV，保持0
+        totalRawData: 0,
         totalProcessedJobs: Number(stats?.totalJobs || 0),
         storageSize: Number(stats?.storageSize || 0),
         dataRetentionDays: this.RETENTION_DAYS,
         sources: sourceStats
-      }
+      };
     } catch (error) {
-      console.warn('API获取存储统计失败，回退本地计算:', error)
+      console.warn('API获取存储统计失败，回退本地计算:', error);
       try {
         const [rawData, processedJobs] = await Promise.all([
           this.loadRawData(),
           this.loadProcessedJobs()
-        ])
-        const sources = rssService.getRSSSources()
+        ]);
+        const sources = rssService.getRSSSources();
         const sourceStats = sources.map(source => {
-          const rawCount = rawData.filter(item => item.source === source.name && item.category === source.category).length
-          const processedCount = processedJobs.filter(job => job.source === source.name).length
-          const errorCount = rawData.filter(item => item.source === source.name && item.status === 'error').length
-          const lastSyncItems = rawData.filter(item => item.source === source.name && item.category === source.category)
-          const lastSync = lastSyncItems.length > 0 ? new Date(Math.max(...lastSyncItems.map(item => new Date(item.fetchedAt).getTime()))) : undefined
-          return { name: `${source.name} - ${source.category}`, rawCount, processedCount, errorCount, lastSync }
-        })
+          const rawCount = rawData.filter(item => item.source === source.name && item.category === source.category).length;
+          const processedCount = processedJobs.filter(job => job.source === source.name).length;
+          const errorCount = rawData.filter(item => item.source === source.name && item.status === 'error').length;
+          const lastSyncItems = rawData.filter(item => item.source === source.name && item.category === source.category);
+          const lastSync = lastSyncItems.length > 0 ? new Date(Math.max(...lastSyncItems.map(item => new Date(item.fetchedAt).getTime()))) : undefined;
+          return { name: `${source.name} - ${source.category}`, rawCount, processedCount, errorCount, lastSync };
+        });
         return {
           totalRawData: rawData.length,
           totalProcessedJobs: processedJobs.length,
           storageSize: JSON.stringify(rawData).length + JSON.stringify(processedJobs).length,
           dataRetentionDays: this.RETENTION_DAYS,
           sources: sourceStats
-        }
+        };
       } catch (fallbackError) {
-        console.error('获取存储统计失败（回退也失败）:', fallbackError)
+        console.error('获取存储统计失败（回退也失败）:', fallbackError);
         return {
           totalRawData: 0,
           totalProcessedJobs: 0,
           storageSize: 0,
           dataRetentionDays: this.RETENTION_DAYS,
           sources: []
-        }
+        };
       }
     }
   }
