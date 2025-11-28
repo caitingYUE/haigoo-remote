@@ -365,5 +365,42 @@ export const ClassificationService = {
             industry,
             tags: Array.from(tags)
         };
+    },
+
+    /**
+     * Determine experience level based on title and description
+     */
+    determineExperienceLevel(title: string, description: string): 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' {
+        const text = (title + ' ' + description).toLowerCase();
+        const titleLower = title.toLowerCase();
+
+        // Priority 1: Executive (C-level, VP, Director, Head)
+        // Check title first for higher precision
+        if (/\b(c[t|e|o|f]o|vp|vice president|director|head of)\b/.test(titleLower)) {
+            return 'Executive';
+        }
+
+        // Priority 2: Lead / Principal / Staff / Architect
+        if (/\b(lead|principal|staff|architect|manager)\b/.test(titleLower)) {
+            return 'Lead';
+        }
+
+        // Priority 3: Senior
+        if (/\b(senior|sr\.?|iii|iv)\b/.test(titleLower)) {
+            return 'Senior';
+        }
+
+        // Priority 4: Entry / Junior
+        if (/\b(junior|jr\.?|entry|intern|internship|graduate)\b/.test(titleLower)) {
+            return 'Entry';
+        }
+
+        // Fallback checks in description if title didn't match
+        // Be more conservative with description matching
+        if (/\b(executive|director|vp)\b/.test(text)) return 'Executive';
+        if (/\b(principal|staff|architect)\b/.test(text)) return 'Lead';
+
+        // Default to Mid if no strong signals
+        return 'Mid';
     }
 };

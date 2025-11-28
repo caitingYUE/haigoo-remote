@@ -88,6 +88,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     search?: string;
     experienceLevel?: string;
     tags?: string[];
+    industry?: string;
+    source?: string;
   }>({});
 
   // 编辑状态
@@ -661,16 +663,36 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             </select>
 
             <select
-              value={processedDataFilters.experienceLevel || ''}
-              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, experienceLevel: e.target.value || undefined })}
+              value={processedDataFilters.industry || ''}
+              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, industry: e.target.value || undefined })}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">所有级别</option>
-              <option value="Entry">初级</option>
-              <option value="Mid">中级</option>
-              <option value="Senior">高级</option>
-              <option value="Lead">专家</option>
-              <option value="Executive">管理层</option>
+              <option value="">所有行业</option>
+              <option value="互联网/软件">互联网/软件</option>
+              <option value="企业服务/SaaS">企业服务/SaaS</option>
+              <option value="人工智能">人工智能</option>
+              <option value="大健康/医疗">大健康/医疗</option>
+              <option value="教育">教育</option>
+              <option value="金融/Fintech">金融/Fintech</option>
+              <option value="Web3/区块链">Web3/区块链</option>
+              <option value="电子商务">电子商务</option>
+              <option value="游戏">游戏</option>
+              <option value="媒体/娱乐">媒体/娱乐</option>
+              <option value="硬件/物联网">硬件/物联网</option>
+              <option value="消费生活">消费生活</option>
+            </select>
+
+            <select
+              value={processedDataFilters.source || ''}
+              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, source: e.target.value || undefined })}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">所有来源</option>
+              <option value="WeWorkRemotely">WeWorkRemotely</option>
+              <option value="Remotive">Remotive</option>
+              <option value="Himalayas">Himalayas</option>
+              <option value="NoDesk">NoDesk</option>
+              <option value="Manual">手动录入</option>
             </select>
 
             <input
@@ -810,15 +832,15 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       <span className="font-medium text-gray-900 text-sm">{job.company}</span>
                     </div>
                   </Tooltip>
-                  {(job.companyWebsite || job.url) && (
+                  {job.companyWebsite && (
                     <a
-                      href={job.companyWebsite || job.url}
+                      href={job.companyWebsite}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs mt-1"
                     >
                       <ExternalLink className="w-2 h-2" />
-                      详情
+                      企业官网
                     </a>
                   )}
                 </td>
@@ -834,27 +856,33 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
                 {/* 岗位类型 */}
                 <td className="px-3 py-2">
-                  <Tooltip content={
-                    job.jobType === 'full-time' ? '全职' :
-                      job.jobType === 'part-time' ? '兼职' :
-                        job.jobType === 'contract' ? '合同' :
-                          job.jobType === 'freelance' ? '自由职业' :
-                            job.jobType === 'internship' ? '实习' : job.jobType || '未定义'
-                  } maxLines={1} clampChildren={false}>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.jobType === 'full-time' ? 'bg-green-100 text-green-800' :
-                      job.jobType === 'part-time' ? 'bg-blue-100 text-blue-800' :
-                        job.jobType === 'contract' ? 'bg-orange-100 text-orange-800' :
-                          job.jobType === 'freelance' ? 'bg-purple-100 text-purple-800' :
-                            job.jobType === 'internship' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-800'
-                      }`}>
-                      {job.jobType === 'full-time' ? '全职' :
-                        job.jobType === 'part-time' ? '兼职' :
-                          job.jobType === 'contract' ? '合同' :
-                            job.jobType === 'freelance' ? '自由职业' :
-                              job.jobType === 'internship' ? '实习' : job.jobType || '未定义'}
-                    </span>
-                  </Tooltip>
+                  {(() => {
+                    const normalizeJobType = (type: string | undefined): string => {
+                      if (!type) return '未定义';
+                      const lower = type.toLowerCase();
+                      if (lower.includes('full') || lower === '全职') return '全职';
+                      if (lower.includes('part') || lower === '兼职') return '兼职';
+                      if (lower.includes('contract') || lower === '合同') return '合同工';
+                      if (lower.includes('freelance') || lower === '自由') return '自由职业';
+                      if (lower.includes('intern') || lower === '实习') return '实习';
+                      return type;
+                    };
+                    const normalizedType = normalizeJobType(job.jobType);
+
+                    return (
+                      <Tooltip content={normalizedType} maxLines={1} clampChildren={false}>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${normalizedType === '全职' ? 'bg-green-100 text-green-800' :
+                            normalizedType === '兼职' ? 'bg-blue-100 text-blue-800' :
+                              normalizedType === '合同工' ? 'bg-orange-100 text-orange-800' :
+                                normalizedType === '自由职业' ? 'bg-purple-100 text-purple-800' :
+                                  normalizedType === '实习' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-gray-100 text-gray-800'
+                          }`}>
+                          {normalizedType}
+                        </span>
+                      </Tooltip>
+                    );
+                  })()}
                 </td>
 
                 {/* 区域限制 */}

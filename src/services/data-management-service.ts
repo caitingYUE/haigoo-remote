@@ -1,3 +1,4 @@
+import { ClassificationService } from './classification-service';
 import { Job, JobStats, SyncStatus, RSSSource, SyncError, JobCategory } from '../types/rss-types';
 import { RSSFeedItem, ParsedRSSData, rssService } from './rss-service';
 import { getStorageAdapter } from './storage-factory';
@@ -852,61 +853,28 @@ export class DataManagementService {
   }
 
   private determineExperienceLevel(title: string, description: string): 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' {
-    const text = (title + ' ' + description).toLowerCase();
-
-    if (text.includes('senior') || text.includes('sr.') || text.includes('lead')) {
-      return 'Senior';
-    }
-    if (text.includes('junior') || text.includes('jr.') || text.includes('entry')) {
-      return 'Entry';
-    }
-    if (text.includes('principal') || text.includes('staff') || text.includes('architect')) {
-      return 'Lead';
-    }
-    if (text.includes('director') || text.includes('vp') || text.includes('cto') || text.includes('ceo')) {
-      return 'Executive';
-    }
-
-    return 'Mid';
+    return ClassificationService.determineExperienceLevel(title, description);
   }
 
   private categorizeJob(title: string, description: string, sourceCategory: string): JobCategory {
-    // 简化的分类逻辑
-    const text = (title + ' ' + description).toLowerCase();
-
-    if (text.includes('frontend') || text.includes('react') || text.includes('vue') || text.includes('angular')) {
-      return '前端开发';
-    }
-    if (text.includes('backend') || text.includes('api') || text.includes('server')) {
-      return '后端开发';
-    }
-    if (text.includes('fullstack') || text.includes('full stack')) {
-      return '全栈开发';
-    }
-    if (text.includes('design') || text.includes('ui') || text.includes('ux')) {
-      return 'UI/UX设计';
-    }
-    if (text.includes('data') || text.includes('analytics') || text.includes('scientist')) {
-      return '数据分析';
-    }
-    if (text.includes('devops') || text.includes('infrastructure') || text.includes('cloud')) {
-      return '运维/SRE';
-    }
-    if (text.includes('product') || text.includes('pm')) {
-      return '产品经理';
-    }
-    if (text.includes('marketing') || text.includes('growth')) {
-      return '市场营销';
+    // 优先使用 ClassificationService 进行分类
+    const category = ClassificationService.classifyJob(title, description);
+    if (category !== '其他') {
+      return category;
     }
 
     // 尝试匹配源分类到标准分类
     const categoryMap: Record<string, JobCategory> = {
-      'tech': '软件开发',
+      'tech': '后端开发', // 默认为后端，或者泛指开发
+      'software engineering': '后端开发',
+      'web development': '前端开发',
       'design': 'UI/UX设计',
       'marketing': '市场营销',
       'sales': '销售',
       'product': '产品经理',
-      'data': '数据分析'
+      'data': '数据分析',
+      'customer support': '客户服务',
+      'devops': '运维/SRE'
     };
 
     const mappedCategory = categoryMap[sourceCategory.toLowerCase()];
