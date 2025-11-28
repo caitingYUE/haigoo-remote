@@ -505,7 +505,23 @@ export class DataManagementService {
    */
   async clearAllProcessedJobs(): Promise<boolean> {
     try {
-      await this.saveProcessedJobs([]);
+      // Send explicit clear request to backend
+      const resp = await fetch('/api/data/processed-jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobs: [], mode: 'replace' })
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Failed to clear jobs: ${resp.status} ${text}`);
+      }
+
+      // Also clear localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(this.PROCESSED_DATA_KEY);
+      }
+
       console.log('已清除所有处理后的职位数据');
       return true;
     } catch (error) {
