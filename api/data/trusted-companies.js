@@ -259,7 +259,185 @@ export default async function handler(req, res) {
                 return res.status(200).json({ success: true, config: parsedConfig })
             }
 
-            // Company listing
+            // Companies Resource
+            if (resource === 'companies') {
+                const COMPANIES_KEY = 'haigoo:all_companies'
+                const JOBS_KEY = 'haigoo:processed_jobs'
+                const { id, action } = req.query
+
+                // Helper functions for company management
+                const extractCompanyFromJob = (job) => {
+                    const extractUrl = (description) => {
+                        if (!description) return ''
+                        const urlMatch = description.match(/\*\*URL:\*\*\s*(https?:\/\/[^\s\n]+)/i)
+                        return urlMatch ? urlMatch[1].trim() : ''
+                    }
+
+                    const companyUrl = job.companyWebsite || extractUrl(job.description || '')
+                    return {
+                        name: job.company,
+                        url: companyUrl,
+                        description: '',
+                        logo: undefined,
+                        industry: job.companyIndustry || '其他',
+                        tags: job.companyTags || [],
+                        source: job.source || 'rss',
+                        jobCount: 1
+                    }
+                }
+
+                const normalizeUrl = (url) => {
+                    if (!url) return ''
+                    try {
+                        const urlObj = new URL(url)
+                        return urlObj.hostname.replace(/^www\./, '').toLowerCase()
+                    } catch {
+                        return url.toLowerCase()
+                    }
+                }
+
+                const normalizeCompanyName = (name) => {
+                    return (name || '').toLowerCase().trim().replace(/\s+/g, ' ').replace(/[,.\-_]/g, '')
+                }
+
+                const deduplicateCompanies = (companies) => {
+                    const companyMap = new Map()
+                    for (const company of companies) {
+                        const key = company.url ? normalizeUrl(company.url) : normalizeCompanyName(company.name)
+                        if (!key) continue
+
+                        const existing = companyMap.get(key)
+                        if (existing) {
+                            companyMap.set(key, {
+                                ...existing,
+                                description: (company.description?.length || 0) > (existing.description?.length || 0)
+                                    ? company.description : existing.description,
+                                logo: company.logo || existing.logo,
+                                url: company.url || existing.url,
+                                tags: Array.from(new Set([...(existing.tags || []), ...(company.tags || [])])),
+                                jobCount: (existing.jobCount || 0) + (company.jobCount || 0),
+                                updatedAt: new Date().toISOString()
+                            })
+                        } else {
+                            companyMap.set(key, {
+                                ...company,
+                                id: company.id || `company_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                createdAt: company.createdAt || new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            })
+                        }
+                    }
+                    return Array.from(companyMap.values())
+                }
+
+                // Extract companies from jobs
+                if (action === 'extract') {
+                    try {
+                        let jobs = null
+                        if (UPSTASH_REST_CONFIGURED) {
+                            jobs = await upstashGet(JOBS_KEY)
+                        } else if (REDIS_CONFIGURED) {
+                            const client = await getRedisClient()
+                            if (client) jobs = await client.get(JOBS_KEY)
+                        } else if (KV_CONFIGURED && kv) {
+                            jobs = await kv.get(JOBS_KEY)
+                        }
+
+                        const jobsArray = jobs ? (typeof jobs === 'string' ? JSON.parse(jobs) : jobs) : []
+
+                        if (!Array.isArray(jobsArray) || jobsArray.length === 0) {
+                            return res.status(200).json({
+                                success: true,
+                                companies: [],
+                                message: '没有找到岗位数据'
+                            })
+                        }
+
+                        const extractedCompanies = jobsArray.map(job => extractCompanyFromJob(job))
+                        const deduplicated = deduplicateCompanies(extractedCompanies)
+
+                        // Save to database
+                        if (UPSTASH_REST_CONFIGURED) {
+                            await upstashSet(COMPANIES_KEY, JSON.stringify(deduplicated))
+                        } else if (REDIS_CONFIGURED) {
+                            const client = await getRedisClient()
+                            if (client) await client.set(COMPANIES_KEY, JSON.stringify(deduplicated))
+                        } else if (KV_CONFIGURED && kv) {
+                            await kv.set(COMPANIES_KEY, deduplicated)
+                        }
+
+                        return res.status(200).json({
+                            success: true,
+                            companies: deduplicated,
+                            message: `成功提取 ${deduplicated.length} 个企业`
+                        })
+                    } catch (error) {
+                        console.error('[companies] Extract error:', error)
+                        return res.status(500).json({ success: false, error: 'Failed to extract companies' })
+                    }
+                }
+
+                // Get companies
+                let companies = null
+                if (UPSTASH_REST_CONFIGURED) {
+                    companies = await upstashGet(COMPANIES_KEY)
+                } else if (REDIS_CONFIGURED) {
+                    const client = await getRedisClient()
+                    if (client) companies = await client.get(COMPANIES_KEY)
+                } else if (KV_CONFIGURED && kv) {
+                    companies = await kv.get(COMPANIES_KEY)
+                }
+
+                const companiesArray = companies ? (typeof companies === 'string' ? JSON.parse(companies) : companies) : []
+
+                // Get single company
+                if (id) {
+                    const company = companiesArray.find(c => c.id === id)
+                    if (!company) return res.status(404).json({ success: false, error: 'Company not found' })
+                    return res.status(200).json({ success: true, company })
+                }
+
+                // List all companies with pagination
+                const page = parseInt(req.query.page) || 1
+                const pageSize = parseInt(req.query.pageSize) || 50
+                const search = req.query.search || ''
+                const industry = req.query.industry || ''
+
+                let filteredCompanies = companiesArray
+
+                // Apply filters
+                if (search) {
+                    const searchLower = search.toLowerCase()
+                    filteredCompanies = filteredCompanies.filter(c =>
+                        c.name.toLowerCase().includes(searchLower) ||
+                        (c.description || '').toLowerCase().includes(searchLower)
+                    )
+                }
+
+                if (industry) {
+                    filteredCompanies = filteredCompanies.filter(c => c.industry === industry)
+                }
+
+                // Sort by job count (descending)
+                filteredCompanies.sort((a, b) => (b.jobCount || 0) - (a.jobCount || 0))
+
+                // Pagination
+                const total = filteredCompanies.length
+                const totalPages = Math.ceil(total / pageSize)
+                const startIndex = (page - 1) * pageSize
+                const paginatedCompanies = filteredCompanies.slice(startIndex, startIndex + pageSize)
+
+                return res.status(200).json({
+                    success: true,
+                    companies: paginatedCompanies,
+                    total,
+                    page,
+                    pageSize,
+                    totalPages
+                })
+            }
+
+            // Company listing (trusted companies - default behavior)
             const companies = await getAllCompanies()
             const { id } = req.query
 
@@ -468,6 +646,59 @@ export default async function handler(req, res) {
                 }
 
                 return res.status(200).json({ success: true, config })
+            }
+
+            // Companies Resource - POST operations
+            if (resource === 'companies') {
+                const COMPANIES_KEY = 'haigoo:all_companies'
+
+                // Get current companies
+                let companies = null
+                if (UPSTASH_REST_CONFIGURED) {
+                    companies = await upstashGet(COMPANIES_KEY)
+                } else if (REDIS_CONFIGURED) {
+                    const client = await getRedisClient()
+                    if (client) companies = await client.get(COMPANIES_KEY)
+                } else if (KV_CONFIGURED && kv) {
+                    companies = await kv.get(COMPANIES_KEY)
+                }
+
+                const companiesArray = companies ? (typeof companies === 'string' ? JSON.parse(companies) : companies) : []
+
+                if (body.id) {
+                    // Update existing company
+                    const index = companiesArray.findIndex(c => c.id === body.id)
+                    if (index === -1) {
+                        return res.status(404).json({ success: false, error: 'Company not found' })
+                    }
+                    companiesArray[index] = {
+                        ...companiesArray[index],
+                        ...body,
+                        updatedAt: new Date().toISOString()
+                    }
+                } else {
+                    // Create new company
+                    const newCompany = {
+                        ...body,
+                        id: `company_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                    companiesArray.push(newCompany)
+                }
+
+                // Save companies
+                const companiesStr = JSON.stringify(companiesArray)
+                if (UPSTASH_REST_CONFIGURED) {
+                    await upstashSet(COMPANIES_KEY, companiesStr)
+                } else if (REDIS_CONFIGURED) {
+                    const client = await getRedisClient()
+                    if (client) await client.set(COMPANIES_KEY, companiesStr)
+                } else if (KV_CONFIGURED && kv) {
+                    await kv.set(COMPANIES_KEY, companiesArray)
+                }
+
+                return res.status(200).json({ success: true, message: 'Company saved successfully' })
             }
 
             // Crawl Action
