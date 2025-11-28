@@ -51,7 +51,7 @@ export default function AdminTagManagementPage() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 },
                 body: JSON.stringify({ action: 'add', type, value })
             });
@@ -74,7 +74,7 @@ export default function AdminTagManagementPage() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 },
                 body: JSON.stringify({ action: 'delete', type, index })
             });
@@ -101,7 +101,7 @@ export default function AdminTagManagementPage() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 },
                 body: JSON.stringify({
                     action: 'update',
@@ -133,7 +133,7 @@ export default function AdminTagManagementPage() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 }
             });
 
