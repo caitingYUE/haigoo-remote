@@ -481,7 +481,7 @@ export class DataManagementService {
   }
 
   /**
-   * 删除处理后的职位数据
+   * 删除处理后的职位
    */
   async deleteProcessedJob(jobId: string): Promise<boolean> {
     try {
@@ -489,13 +489,27 @@ export class DataManagementService {
       const filteredJobs = allJobs.filter(job => job.id !== jobId);
 
       if (filteredJobs.length === allJobs.length) {
-        return false; // 没有找到要删除的职位
+        return false; // 未找到要删除的职位
       }
 
-      await this.saveProcessedJobs(filteredJobs, 'replace');
+      await this.saveProcessedJobs(filteredJobs);
       return true;
     } catch (error) {
-      console.error('删除职位数据失败:', error);
+      console.error('删除职位失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 清除所有处理后的职位数据
+   */
+  async clearAllProcessedJobs(): Promise<boolean> {
+    try {
+      await this.saveProcessedJobs([]);
+      console.log('已清除所有处理后的职位数据');
+      return true;
+    } catch (error) {
+      console.error('清除职位数据失败:', error);
       return false;
     }
   }

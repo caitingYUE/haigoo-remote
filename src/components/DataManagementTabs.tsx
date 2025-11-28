@@ -391,8 +391,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       key={tabKey}
       onClick={() => setActiveTab(tabKey as any)}
       className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === tabKey
-          ? 'bg-blue-600 text-white shadow-lg'
-          : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+        ? 'bg-blue-600 text-white shadow-lg'
+        : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
         }`}
     >
       {icon}
@@ -555,8 +555,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                           item.status === 'error' ? '错误' : '原始'
                       } maxLines={1} clampChildren={false}>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${item.status === 'processed' ? 'bg-green-100 text-green-800' :
-                            item.status === 'error' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
+                          item.status === 'error' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
                           }`}>
                           {item.status === 'processed' ? '已处理' :
                             item.status === 'error' ? '错误' : '原始'}
@@ -689,13 +689,36 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             </button>
           </div>
 
-          <button
-            onClick={() => handleAddJob()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            新增职位
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleAddJob()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              新增职位
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('⚠️ 确定要清除所有职位数据吗？\n\n此操作不可撤销，将删除所有处理后的职位数据！')) return;
+                try {
+                  setLoading(true);
+                  // Clear processed jobs data
+                  await dataManagementService.clearAllProcessedJobs();
+                  await loadProcessedData();
+                  showSuccess('清除成功', '所有职位数据已清除');
+                } catch (error) {
+                  console.error('清除数据失败:', error);
+                  showError('清除失败', '请稍后重试');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              清除数据
+            </button>
+          </div>
         </div>
       </div>
 
@@ -740,14 +763,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <td className="px-3 py-2">
                   <Tooltip content={job.category || '未分类'} maxLines={1} clampChildren={false}>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.category === '前端开发' ? 'bg-blue-100 text-blue-800' :
-                        job.category === '后端开发' ? 'bg-green-100 text-green-800' :
-                          job.category === '全栈开发' ? 'bg-purple-100 text-purple-800' :
-                            job.category === 'UI/UX设计' ? 'bg-pink-100 text-pink-800' :
-                              job.category === '数据分析' ? 'bg-yellow-100 text-yellow-800' :
-                                job.category === '运维/SRE' ? 'bg-indigo-100 text-indigo-800' :
-                                  job.category === '产品经理' ? 'bg-orange-100 text-orange-800' :
-                                    job.category === '市场营销' ? 'bg-red-100 text-red-800' :
-                                      'bg-gray-100 text-gray-800'
+                      job.category === '后端开发' ? 'bg-green-100 text-green-800' :
+                        job.category === '全栈开发' ? 'bg-purple-100 text-purple-800' :
+                          job.category === 'UI/UX设计' ? 'bg-pink-100 text-pink-800' :
+                            job.category === '数据分析' ? 'bg-yellow-100 text-yellow-800' :
+                              job.category === '运维/SRE' ? 'bg-indigo-100 text-indigo-800' :
+                                job.category === '产品经理' ? 'bg-orange-100 text-orange-800' :
+                                  job.category === '市场营销' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'
                       }`}>
                       {job.category || '未分类'}
                     </span>
@@ -764,11 +787,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                             job.experienceLevel === 'Executive' ? '管理层' : '未定义'
                   } maxLines={1} clampChildren={false}>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.experienceLevel === 'Entry' ? 'bg-green-100 text-green-800' :
-                        job.experienceLevel === 'Mid' ? 'bg-blue-100 text-blue-800' :
-                          job.experienceLevel === 'Senior' ? 'bg-orange-100 text-orange-800' :
-                            job.experienceLevel === 'Lead' ? 'bg-red-100 text-red-800' :
-                              job.experienceLevel === 'Executive' ? 'bg-purple-100 text-purple-800' :
-                                'bg-gray-100 text-gray-800'
+                      job.experienceLevel === 'Mid' ? 'bg-blue-100 text-blue-800' :
+                        job.experienceLevel === 'Senior' ? 'bg-orange-100 text-orange-800' :
+                          job.experienceLevel === 'Lead' ? 'bg-red-100 text-red-800' :
+                            job.experienceLevel === 'Executive' ? 'bg-purple-100 text-purple-800' :
+                              'bg-gray-100 text-gray-800'
                       }`}>
                       {job.experienceLevel === 'Entry' ? '初级' :
                         job.experienceLevel === 'Mid' ? '中级' :
@@ -819,11 +842,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                             job.jobType === 'internship' ? '实习' : job.jobType || '未定义'
                   } maxLines={1} clampChildren={false}>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.jobType === 'full-time' ? 'bg-green-100 text-green-800' :
-                        job.jobType === 'part-time' ? 'bg-blue-100 text-blue-800' :
-                          job.jobType === 'contract' ? 'bg-orange-100 text-orange-800' :
-                            job.jobType === 'freelance' ? 'bg-purple-100 text-purple-800' :
-                              job.jobType === 'internship' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-800'
+                      job.jobType === 'part-time' ? 'bg-blue-100 text-blue-800' :
+                        job.jobType === 'contract' ? 'bg-orange-100 text-orange-800' :
+                          job.jobType === 'freelance' ? 'bg-purple-100 text-purple-800' :
+                            job.jobType === 'internship' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
                       }`}>
                       {job.jobType === 'full-time' ? '全职' :
                         job.jobType === 'part-time' ? '兼职' :
