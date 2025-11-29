@@ -1,51 +1,9 @@
-// 安全加载 Vercel KV：避免顶层导入在本地环境报错
-let kv = null
-try {
-  const kvModule = require('@vercel/kv')
-  kv = kvModule?.kv || null
-} catch (e) {
-  console.warn('[raw-rss] Vercel KV module not available, will use fallbacks')
-}
+// 导入 Neon 数据库帮助类
+const { neonHelper } = require('../../server-utils/dal/neon-helper')
+const NEON_CONFIGURED = neonHelper.isConfigured
 
-// 统一环境变量解析
-function getEnv(...names) {
-  const variants = (name) => [
-    name,
-    `haigoo_${name}`,
-    `HAIGOO_${name}`,
-    `pre_${name}`,
-    `PRE_${name}`,
-    `pre_haigoo_${name}`,
-    `PRE_HAIGOO_${name}`
-  ]
-  for (const base of names) {
-    for (const key of variants(base)) {
-      if (process.env[key]) return process.env[key]
-    }
-  }
-  return null
-}
-
-// Upstash Redis REST
-const UPSTASH_REST_URL = getEnv('UPSTASH_REDIS_REST_URL', 'UPSTASH_REST_URL', 'REDIS_REST_API_URL')
-const UPSTASH_REST_TOKEN = getEnv('UPSTASH_REDIS_REST_TOKEN', 'UPSTASH_REST_TOKEN', 'REDIS_REST_API_TOKEN')
-const UPSTASH_REST_CONFIGURED = !!(UPSTASH_REST_URL && UPSTASH_REST_TOKEN)
-
-// Redis TCP
-const REDIS_URL = getEnv('REDIS_URL', 'UPSTASH_REDIS_URL') || null
-const REDIS_CONFIGURED = !!REDIS_URL
-let __redisClient = globalThis.__haigoo_redis_client || null
-
-// Memory fallback
-if (!globalThis.__haigoo_raw_rss_mem) {
-  globalThis.__haigoo_raw_rss_mem = []
-}
-const MEM = globalThis.__haigoo_raw_rss_mem
-
-// Keys
-const RAW_KEY = 'haigoo:raw_rss'
-const STATS_KEY = 'haigoo:raw_stats'
-const LAST_SYNC_KEY = 'haigoo:raw_last_sync'
+// 表名常量
+const RAW_RSS_TABLE = 'raw_rss'
 
 // Sanitizers
 function sanitizeHtml(text) {
@@ -74,7 +32,7 @@ function truncateString(str, maxBytes) {
 // Dedup helpers
 function generateDedupKey(item) {
   if (item.id && typeof item.id === 'string' && item.id.length > 0) return `id:${item.id}`
-  const key = `${(item.link||'').toLowerCase()}|${(item.title||'').toLowerCase()}|${(item.source||'').toLowerCase()}`
+  const key = `${(item.link || '').toLowerCase()}|${(item.title || '').toLowerCase()}|${(item.source || '').toLowerCase()}`
   let hash = 0
   for (let i = 0; i < key.length; i++) {
     const c = key.charCodeAt(i)
@@ -107,126 +65,220 @@ function removeDuplicatesRaw(items) {
   })
 }
 
-// Reader helpers
-async function upstashGet(key) {
-  if (!UPSTASH_REST_CONFIGURED) throw new Error('Upstash REST not configured')
+// Neon 数据库操作函数
+async function readRawFromNeon(queryParams = {}) {
+  if (!NEON_CONFIGURED) {
+    console.warn('[raw-rss] Neon database not configured')
+    return []
+  }
+
   try {
-    const res = await fetch(`${UPSTASH_REST_URL}/get/${encodeURIComponent(key)}`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${UPSTASH_REST_TOKEN}` }
-    })
-    if (res.ok) {
-      const json = await res.json().catch(() => null)
-      if (json && typeof json.result !== 'undefined') return json.result
+    const { page = 1, limit = 50, source, category, status, dateFrom, dateTo } = queryParams
+    const pageNum = Number(page) || 1
+    const pageSize = Number(limit) || 50
+    const offset = (pageNum - 1) * pageSize
+
+    // 构建 WHERE 条件
+    const whereConditions = []
+    const params = []
+    let paramIndex = 1
+
+    if (source) {
+      whereConditions.push(`source = ${paramIndex}`)
+      params.push(source)
+      paramIndex++
     }
-  } catch (e) {}
-  const res2 = await fetch(`${UPSTASH_REST_URL}/get`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_REST_TOKEN}` },
-    body: JSON.stringify({ key })
-  })
-  const json2 = await res2.json().catch(() => null)
-  return json2?.result ?? null
+
+    if (category) {
+      whereConditions.push(`category = ${paramIndex}`)
+      params.push(category)
+      paramIndex++
+    }
+
+    if (status) {
+      whereConditions.push(`status = ${paramIndex}`)
+      params.push(status)
+      paramIndex++
+    }
+
+    if (dateFrom) {
+      whereConditions.push(`fetched_at >= ${paramIndex}`)
+      params.push(new Date(dateFrom).toISOString())
+      paramIndex++
+    }
+
+    if (dateTo) {
+      whereConditions.push(`fetched_at <= ${paramIndex}`)
+      params.push(new Date(dateTo).toISOString())
+      paramIndex++
+    }
+
+    // 添加最近7天的过滤
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    whereConditions.push(`fetched_at >= ${paramIndex}`)
+    params.push(sevenDaysAgo.toISOString())
+    paramIndex++
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
+
+    // 查询数据
+    const query = `
+      SELECT * FROM ${RAW_RSS_TABLE}
+      ${whereClause}
+      ORDER BY fetched_at DESC
+      LIMIT ${paramIndex} OFFSET ${paramIndex + 1}
+    `
+    params.push(pageSize, offset)
+
+    const result = await neonHelper.query(query, params)
+    if (!result || !Array.isArray(result)) return []
+
+    // 转换数据格式
+    return result.map(row => ({
+      id: row.raw_id,
+      source: row.source,
+      category: row.category,
+      url: row.url,
+      title: row.title,
+      description: row.description,
+      link: row.link,
+      pubDate: row.pub_date,
+      rawContent: row.raw_content,
+      fetchedAt: row.fetched_at,
+      status: row.status,
+      processingError: row.processing_error
+    }))
+  } catch (error) {
+    console.error('[raw-rss] Error reading from Neon database:', error)
+    return []
+  }
 }
 
-async function upstashSet(key, value) {
-  if (!UPSTASH_REST_CONFIGURED) throw new Error('Upstash REST not configured')
-  const serialized = typeof value === 'string' ? value : JSON.stringify(value)
+async function countRawFromNeon(queryParams = {}) {
+  if (!NEON_CONFIGURED) return 0
+
   try {
-    const res = await fetch(`${UPSTASH_REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(serialized)}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${UPSTASH_REST_TOKEN}` }
-    })
-    if (res.ok) return true
-  } catch (e) {}
-  const res2 = await fetch(`${UPSTASH_REST_URL}/set`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_REST_TOKEN}` },
-    body: JSON.stringify({ key, value: serialized })
-  })
-  return res2.ok
+    const { source, category, status, dateFrom, dateTo } = queryParams
+
+    // 构建 WHERE 条件
+    const whereConditions = []
+    const params = []
+    let paramIndex = 1
+
+    if (source) {
+      whereConditions.push(`source = ${paramIndex}`)
+      params.push(source)
+      paramIndex++
+    }
+
+    if (category) {
+      whereConditions.push(`category = ${paramIndex}`)
+      params.push(category)
+      paramIndex++
+    }
+
+    if (status) {
+      whereConditions.push(`status = ${paramIndex}`)
+      params.push(status)
+      paramIndex++
+    }
+
+    if (dateFrom) {
+      whereConditions.push(`fetched_at >= ${paramIndex}`)
+      params.push(new Date(dateFrom).toISOString())
+      paramIndex++
+    }
+
+    if (dateTo) {
+      whereConditions.push(`fetched_at <= ${paramIndex}`)
+      params.push(new Date(dateTo).toISOString())
+      paramIndex++
+    }
+
+    // 添加最近7天的过滤
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    whereConditions.push(`fetched_at >= ${paramIndex}`)
+    params.push(sevenDaysAgo.toISOString())
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
+
+    const query = `SELECT COUNT(*) as total FROM ${RAW_RSS_TABLE} ${whereClause}`
+    const result = await neonHelper.query(query, params)
+
+    return result && result[0] ? parseInt(result[0].total) : 0
+  } catch (error) {
+    console.error('[raw-rss] Error counting from Neon database:', error)
+    return 0
+  }
 }
 
-async function readRawFromUpstashREST() {
-  const data = await upstashGet(RAW_KEY)
-  if (!data) return []
-  const items = Array.isArray(data) ? data : JSON.parse(typeof data === 'string' ? data : '[]')
-  return items
-}
+async function writeRawToNeon(items, mode = 'append') {
+  if (!NEON_CONFIGURED) {
+    console.warn('[raw-rss] Neon database not configured')
+    return []
+  }
 
-async function writeRawToUpstashREST(items) {
-  const filtered = filterRecent(removeDuplicatesRaw(items), 7)
-  await upstashSet(RAW_KEY, JSON.stringify(filtered))
-  await upstashSet(STATS_KEY, JSON.stringify({
-    totalRaw: filtered.length,
-    storageSize: JSON.stringify(filtered).length,
-    lastSync: new Date().toISOString(),
-    provider: 'upstash-rest'
-  }))
-  await upstashSet(LAST_SYNC_KEY, new Date().toISOString())
-  return filtered
-}
+  try {
+    const filtered = filterRecent(removeDuplicatesRaw(items), 7)
 
-async function readRawFromKV() {
-  if (!kv) return []
-  const data = await kv.get(RAW_KEY)
-  if (!data) return []
-  const items = Array.isArray(data) ? data : JSON.parse(typeof data === 'string' ? data : '[]')
-  return items
-}
+    if (mode === 'replace') {
+      // 替换模式：先清空表，再插入新数据
+      await neonHelper.query(`DELETE FROM ${RAW_RSS_TABLE}`)
+    }
 
-async function writeRawToKV(items) {
-  if (!kv) return []
-  const filtered = filterRecent(removeDuplicatesRaw(items), 7)
-  await kv.set(RAW_KEY, JSON.stringify(filtered))
-  await kv.set(STATS_KEY, JSON.stringify({
-    totalRaw: filtered.length,
-    storageSize: JSON.stringify(filtered).length,
-    lastSync: new Date().toISOString(),
-    provider: 'vercel-kv'
-  }))
-  await kv.set(LAST_SYNC_KEY, new Date().toISOString())
-  return filtered
-}
+    // 批量插入数据
+    if (filtered.length > 0) {
+      const values = filtered.map(item => {
+        const normalized = normalizeItem(item)
+        return [
+          normalized.id,
+          normalized.source,
+          normalized.category,
+          normalized.url,
+          normalized.title,
+          normalized.description,
+          normalized.link,
+          new Date(normalized.pubDate),
+          normalized.rawContent,
+          new Date(normalized.fetchedAt),
+          normalized.status,
+          normalized.processingError
+        ]
+      })
 
-async function getRedisClient() {
-  if (!REDIS_CONFIGURED) throw new Error('Redis not configured')
-  if (__redisClient && __redisClient.status === 'ready') return __redisClient
-  const Redis = require('ioredis')
-  __redisClient = new Redis(REDIS_URL)
-  globalThis.__haigoo_redis_client = __redisClient
-  return __redisClient
-}
+      const query = `
+        INSERT INTO ${RAW_RSS_TABLE} (
+          raw_id, source, category, url, title, description, link, 
+          pub_date, raw_content, fetched_at, status, processing_error
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ON CONFLICT (raw_id) DO UPDATE SET
+          source = EXCLUDED.source,
+          category = EXCLUDED.category,
+          url = EXCLUDED.url,
+          title = EXCLUDED.title,
+          description = EXCLUDED.description,
+          link = EXCLUDED.link,
+          pub_date = EXCLUDED.pub_date,
+          raw_content = EXCLUDED.raw_content,
+          fetched_at = EXCLUDED.fetched_at,
+          status = EXCLUDED.status,
+          processing_error = EXCLUDED.processing_error,
+          updated_at = CURRENT_TIMESTAMP
+      `
 
-async function readRawFromRedis() {
-  const client = await getRedisClient()
-  const raw = await client.get(RAW_KEY)
-  const items = raw ? JSON.parse(raw) : []
-  return items
-}
+      // 使用事务批量插入
+      await neonHelper.transaction(async (sql) => {
+        for (const value of values) {
+          await sql.query(query, value)
+        }
+      })
+    }
 
-async function writeRawToRedis(items) {
-  const client = await getRedisClient()
-  const filtered = filterRecent(removeDuplicatesRaw(items), 7)
-  await client.set(RAW_KEY, JSON.stringify(filtered))
-  await client.set(STATS_KEY, JSON.stringify({
-    totalRaw: filtered.length,
-    storageSize: JSON.stringify(filtered).length,
-    lastSync: new Date().toISOString(),
-    provider: 'redis'
-  }))
-  await client.set(LAST_SYNC_KEY, new Date().toISOString())
-  return filtered
-}
-
-function readRawFromMemory() {
-  return Array.isArray(MEM) ? MEM : []
-}
-
-function writeRawToMemory(items) {
-  const filtered = filterRecent(removeDuplicatesRaw(items), 7)
-  MEM.splice(0, MEM.length, ...filtered)
-  return filtered
+    return filtered
+  } catch (error) {
+    console.error('[raw-rss] Error writing to Neon database:', error)
+    return []
+  }
 }
 
 function normalizeItem(item) {
@@ -258,31 +310,6 @@ function normalizeItem(item) {
   return safe
 }
 
-function applyFilters(items, q) {
-  let list = items
-  if (q.source) list = list.filter(i => i.source === q.source)
-  if (q.category) list = list.filter(i => i.category === q.category)
-  if (q.status) list = list.filter(i => i.status === q.status)
-  if (q.dateFrom || q.dateTo) {
-    const from = q.dateFrom ? new Date(q.dateFrom) : null
-    const to = q.dateTo ? new Date(q.dateTo) : null
-    list = list.filter(i => {
-      const d = new Date(i.fetchedAt || i.pubDate)
-      return (!from || d >= from) && (!to || d <= to)
-    })
-  }
-  return list.sort((a, b) => new Date(b.fetchedAt || b.pubDate) - new Date(a.fetchedAt || a.pubDate))
-}
-
-function paginate(items, pageNum, pageSize) {
-  const total = items.length
-  const totalPages = Math.ceil(total / pageSize)
-  const start = (pageNum - 1) * pageSize
-  const end = start + pageSize
-  const slice = items.slice(start, end)
-  return { items: slice, total, totalPages }
-}
-
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -299,62 +326,25 @@ export default async function handler(req, res) {
       const pageNum = Number(page) || 1
       const pageSize = Number(limit) || 50
 
-      let items = []
-      let provider = 'memory'
       const startTime = Date.now()
-      if (UPSTASH_REST_CONFIGURED) {
-        try {
-          items = await readRawFromUpstashREST()
-          provider = 'upstash-rest'
-          console.log(`[raw-rss] GET: Upstash REST read success, ${items.length} items, ${Date.now() - startTime}ms`)
-        } catch (e) {
-          console.warn('[raw-rss] GET Upstash REST failed, fallback to Redis:', e?.message || e)
-          if (REDIS_CONFIGURED) {
-            try {
-              items = await readRawFromRedis()
-              provider = 'redis'
-            } catch (er) {
-              console.warn('[raw-rss] GET Redis failed, fallback to KV:', er?.message || er)
-              if (kv) {
-                try {
-                  items = await readRawFromKV()
-                  provider = 'vercel-kv'
-                } catch (err2) {
-                  console.warn('[raw-rss] GET KV failed, use memory:', err2?.message || err2)
-                  items = readRawFromMemory()
-                  provider = 'memory'
-                }
-              } else {
-                items = readRawFromMemory(); provider = 'memory'
-              }
-            }
-          } else if (kv) {
-            try { items = await readRawFromKV(); provider = 'vercel-kv' } catch { items = readRawFromMemory(); provider = 'memory' }
-          } else { items = readRawFromMemory(); provider = 'memory' }
-        }
-      } else if (REDIS_CONFIGURED) {
-        try { items = await readRawFromRedis(); provider = 'redis' } catch (e) { console.warn('[raw-rss] GET Redis failed:', e?.message || e); if (kv) { try { items = await readRawFromKV(); provider = 'vercel-kv' } catch { items = readRawFromMemory(); provider='memory' } } else { items = readRawFromMemory(); provider='memory'} }
-      } else if (kv) {
-        try { items = await readRawFromKV(); provider = 'vercel-kv' } catch (e) { console.warn('[raw-rss] GET KV failed:', e?.message || e); items = readRawFromMemory(); provider='memory' }
-      } else { items = readRawFromMemory(); provider='memory' }
 
-      let filtered = []
-      try {
-        filtered = applyFilters(items, { source, category, status, dateFrom, dateTo })
-      } catch (e) {
-        console.warn('过滤异常，返回未过滤数据：', e?.message || e)
-        filtered = Array.isArray(items) ? items : []
-      }
-      const paged = paginate(filtered, pageNum, pageSize)
+      // 直接从 Neon 数据库读取数据，包含过滤和分页
+      const items = await readRawFromNeon({ page: pageNum, limit: pageSize, source, category, status, dateFrom, dateTo })
+      const total = await countRawFromNeon({ source, category, status, dateFrom, dateTo })
+
+      const totalPages = Math.ceil(total / pageSize)
+      const provider = NEON_CONFIGURED ? 'neon' : 'not-configured'
+
+      console.log(`[raw-rss] GET: Neon database read success, ${items.length} items, total: ${total}, ${Date.now() - startTime}ms`)
+
       // 强制禁用缓存，确保前端刷新拿到最新数据
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
       res.setHeader('Pragma', 'no-cache')
       res.setHeader('Expires', '0')
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       res.setHeader('X-Storage-Provider', provider)
-      res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
-      res.setHeader('X-Diag-Upstash-REST-Configured', String(!!UPSTASH_REST_CONFIGURED))
-      return res.status(200).json({ items: paged.items, total: paged.total, page: pageNum, pageSize, totalPages: paged.totalPages })
+      res.setHeader('X-Diag-Neon-Configured', String(!!NEON_CONFIGURED))
+      return res.status(200).json({ items, total, page: pageNum, pageSize, totalPages })
     }
 
     if (req.method === 'POST') {
@@ -375,91 +365,15 @@ export default async function handler(req, res) {
       }
       const normalized = items.map(normalizeItem)
       const startTime = Date.now()
-      let current = []
-      let provider = 'memory'
-      if (mode === 'append') {
-        if (UPSTASH_REST_CONFIGURED) {
-          try {
-            current = await readRawFromUpstashREST()
-            provider = 'upstash-rest'
-          } catch (e) {
-            console.warn('[raw-rss] POST read Upstash failed, fallback', e?.message || e)
-            if (REDIS_CONFIGURED) {
-              try {
-                current = await readRawFromRedis()
-                provider = 'redis'
-              } catch (er) {
-                console.warn('[raw-rss] POST read Redis failed, fallback', er?.message || er)
-                if (kv) {
-                  try {
-                    current = await readRawFromKV()
-                    provider = 'vercel-kv'
-                  } catch (err2) {
-                    console.warn('[raw-rss] POST read KV failed, use memory', err2?.message || err2)
-                    current = readRawFromMemory()
-                    provider = 'memory'
-                  }
-                } else {
-                  current = readRawFromMemory()
-                  provider = 'memory'
-                }
-              }
-            } else if (kv) {
-              try {
-                current = await readRawFromKV()
-                provider = 'vercel-kv'
-              } catch (err3) {
-                console.warn('[raw-rss] POST read KV failed, use memory', err3?.message || err3)
-                current = readRawFromMemory()
-                provider = 'memory'
-              }
-            } else {
-              current = readRawFromMemory()
-              provider = 'memory'
-            }
-          }
-        } else if (REDIS_CONFIGURED) {
-          try {
-            current = await readRawFromRedis()
-            provider = 'redis'
-          } catch (e) {
-            console.warn('[raw-rss] POST read Redis failed, fallback', e?.message || e)
-            if (kv) {
-              try {
-                current = await readRawFromKV()
-                provider = 'vercel-kv'
-              } catch (er) {
-                console.warn('[raw-rss] POST read KV failed, use memory', er?.message || er)
-                current = readRawFromMemory()
-                provider = 'memory'
-              }
-            } else {
-              current = readRawFromMemory()
-              provider = 'memory'
-            }
-          }
-        } else if (kv) {
-          try {
-            current = await readRawFromKV()
-            provider = 'vercel-kv'
-          } catch (e) {
-            console.warn('[raw-rss] POST read KV failed, use memory', e?.message || e)
-            current = readRawFromMemory()
-            provider = 'memory'
-          }
-        } else {
-          current = readRawFromMemory()
-          provider = 'memory'
-        }
-      }
-      const toWrite = mode === 'append' ? [...current, ...normalized] : [...normalized]
-      let written = []
-      // 优先 Upstash REST -> Redis -> KV -> 内存
-      if (UPSTASH_REST_CONFIGURED) {
-        try { written = await writeRawToUpstashREST(toWrite); provider = 'upstash-rest' } catch (e) { console.warn('[raw-rss] POST write Upstash failed, fallback:', e?.message || e); if (REDIS_CONFIGURED) { try { written = await writeRawToRedis(toWrite); provider='redis' } catch (er) { console.warn('[raw-rss] POST write Redis failed:', er?.message || er); if (kv) { try { written = await writeRawToKV(toWrite); provider='vercel-kv' } catch (err2) { console.warn('[raw-rss] POST write KV failed:', err2?.message || err2); written = writeRawToMemory(toWrite); provider='memory' } } else { written = writeRawToMemory(toWrite); provider='memory' } } } else if (REDIS_CONFIGURED) { try { written = await writeRawToRedis(toWrite); provider='redis' } catch (e) { console.warn('[raw-rss] POST write Redis failed:', e?.message || e); if (kv) { try { written = await writeRawToKV(toWrite); provider='vercel-kv' } catch (er) { console.warn('[raw-rss] POST write KV failed:', er?.message || er); written = writeRawToMemory(toWrite); provider='memory' } } else { written = writeRawToMemory(toWrite); provider='memory' } } } else if (kv) { try { written = await writeRawToKV(toWrite); provider='vercel-kv' } catch (e) { console.warn('[raw-rss] POST write KV failed:', e?.message || e); written = writeRawToMemory(toWrite); provider='memory' } } else { written = writeRawToMemory(toWrite); provider='memory' }
+
+      // 直接写入 Neon 数据库
+      const written = await writeRawToNeon(normalized, mode)
+      const provider = NEON_CONFIGURED ? 'neon' : 'not-configured'
+
       console.log(`[raw-rss] POST ${mode}: stored ${written.length} items via ${provider}, ${Date.now() - startTime}ms`)
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       res.setHeader('X-Storage-Provider', provider)
+      res.setHeader('X-Diag-Neon-Configured', String(!!NEON_CONFIGURED))
       return res.status(200).json({ ok: true, stored: written.length })
     }
 

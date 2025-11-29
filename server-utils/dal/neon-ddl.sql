@@ -70,3 +70,29 @@ CREATE TABLE favorites (
   UNIQUE(user_id, job_id)
 );
 
+-- 表4: raw_rss - 存储原始RSS数据
+CREATE TABLE raw_rss (
+  id SERIAL PRIMARY KEY,
+  raw_id VARCHAR(255) UNIQUE NOT NULL,
+  source VARCHAR(100) NOT NULL,
+  category VARCHAR(100) DEFAULT '',
+  url VARCHAR(2000),
+  title VARCHAR(500) NOT NULL,
+  description TEXT,
+  link VARCHAR(2000),
+  pub_date TIMESTAMP NOT NULL,
+  raw_content TEXT,
+  fetched_at TIMESTAMP NOT NULL,
+  status VARCHAR(50) DEFAULT 'raw',
+  processing_error VARCHAR(2000) DEFAULT '',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- raw_rss表索引
+CREATE INDEX idx_raw_rss_source ON raw_rss(source);
+CREATE INDEX idx_raw_rss_category ON raw_rss(category);
+CREATE INDEX idx_raw_rss_status ON raw_rss(status);
+CREATE INDEX idx_raw_rss_pub_date ON raw_rss(pub_date);
+CREATE INDEX idx_raw_rss_fetched_at ON raw_rss(fetched_at);
+
