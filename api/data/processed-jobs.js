@@ -164,89 +164,136 @@ async function getLocationCategories() {
   return DEFAULT_LOCATION_CATEGORIES
 }
 
-function applyFilters(jobs, q, categories = DEFAULT_LOCATION_CATEGORIES) {
-  let list = jobs
-  if (Array.isArray(q.ids) && q.ids.length > 0) {
-    const idSet = new Set(q.ids.map(String))
-    list = list.filter(j => idSet.has(String(j.id)))
-  }
-  if (q.id) list = list.filter(j => j.id === q.id)
-  if (q.source) list = list.filter(j => j.source === q.source)
-  if (q.category) list = list.filter(j => j.category === q.category)
-  if (q.status) list = list.filter(j => j.status === q.status)
-  if (q.company) list = list.filter(j => (j.company || '').toLowerCase().includes(String(q.company).toLowerCase()))
-  if (typeof q.isRemote !== 'undefined') list = list.filter(j => !!j.isRemote === (q.isRemote === true || q.isRemote === 'true'))
-  if (q.location) list = list.filter(j => (j.location || '').toLowerCase().includes(String(q.location).toLowerCase()))
-  if (q.type) list = list.filter(j => (j.jobType || j.type) === q.type)
+// 构建数据库查询条件
+function buildWhereClause(queryParams) {
+  const conditions = []
+  const params = []
+  let paramIndex = 1
 
-  // Region Filter
-  if (q.region) {
-    const region = String(q.region).toLowerCase()
-    const norm = (v) => (v || '').toLowerCase()
-
-    list = list.filter(job => {
-      const loc = norm(job.location)
-      const tags = (job.tags || []).map(t => norm(t))
-
-      const pool = new Set([loc, ...tags])
-      const hit = (keys) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)))
-
-      const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
-      const domesticHit = hit(categories.domesticKeywords)
-      const overseasHit = hit(categories.overseasKeywords)
-
-      if (region === 'domestic') return globalHit || domesticHit
-      if (region === 'overseas') return globalHit || overseasHit
-      return true
-    })
+  // 基本字段过滤
+  if (queryParams.id) {
+    conditions.push(`job_id = $${paramIndex}`)
+    params.push(queryParams.id)
+    paramIndex++
   }
 
-  if (q.search) {
-    const s = String(q.search).toLowerCase()
-    list = list.filter(j => `${j.title} ${j.company} ${j.description}`.toLowerCase().includes(s))
+  if (queryParams.source) {
+    conditions.push(`source = $${paramIndex}`)
+    params.push(queryParams.source)
+    paramIndex++
   }
-  if (q.dateFrom || q.dateTo) {
-    const from = q.dateFrom ? new Date(q.dateFrom) : null
-    const to = q.dateTo ? new Date(q.dateTo) : null
-    list = list.filter(j => {
-      const d = new Date(j.publishedAt)
-      return (!from || d >= from) && (!to || d <= to)
-    })
+
+  if (queryParams.category) {
+    conditions.push(`category = $${paramIndex}`)
+    params.push(queryParams.category)
+    paramIndex++
   }
-  if (Array.isArray(q.tags) && q.tags.length > 0) {
-    const tagsLower = q.tags.map(t => String(t).toLowerCase())
-    list = list.filter(j => Array.isArray(j.tags) && j.tags.some(t => tagsLower.includes(String(t).toLowerCase())))
+
+  if (queryParams.status) {
+    conditions.push(`status = $${paramIndex}`)
+    params.push(queryParams.status)
+    paramIndex++
   }
-  if (Array.isArray(q.skills) && q.skills.length > 0) {
-    const skillsLower = q.skills.map(t => String(t).toLowerCase())
-    list = list.filter(j => Array.isArray(j.tags) && j.tags.some(t => skillsLower.includes(String(t).toLowerCase())))
+
+  if (queryParams.company) {
+    conditions.push(`company ILIKE $${paramIndex}`)
+    params.push(`%${queryParams.company}%`)
+    paramIndex++
   }
-  // Sort by publishedAt desc (guard against invalid dates/NaN)
-  const safeGetTime = (val) => {
-    const t = new Date(val).getTime()
-    return Number.isFinite(t) ? t : 0
+
+  if (typeof queryParams.isRemote !== 'undefined') {
+    conditions.push(`is_remote = $${paramIndex}`)
+    params.push(queryParams.isRemote === 'true' || queryParams.isRemote === true)
+    paramIndex++
   }
-  return list.sort((a, b) => safeGetTime(b.publishedAt) - safeGetTime(a.publishedAt))
+
+  if (queryParams.location) {
+    conditions.push(`location ILIKE $${paramIndex}`)
+    params.push(`%${queryParams.location}%`)
+    paramIndex++
+  }
+
+  if (queryParams.type) {
+    conditions.push(`job_type = $${paramIndex}`)
+    params.push(queryParams.type)
+    paramIndex++
+  }
+
+  // 日期范围过滤
+  if (queryParams.dateFrom) {
+    conditions.push(`published_at >= $${paramIndex}`)
+    params.push(new Date(queryParams.dateFrom).toISOString())
+    paramIndex++
+  }
+
+  if (queryParams.dateTo) {
+    conditions.push(`published_at <= $${paramIndex}`)
+    params.push(new Date(queryParams.dateTo).toISOString())
+    paramIndex++
+  }
+
+  // 全文搜索
+  if (queryParams.search) {
+    conditions.push(`(
+      title ILIKE $${paramIndex} OR 
+      company ILIKE $${paramIndex} OR 
+      description ILIKE $${paramIndex}
+    )`)
+    params.push(`%${queryParams.search}%`)
+    paramIndex++
+  }
+
+  // Region 过滤（简化版本，主要处理location字段）
+  if (queryParams.region) {
+    const region = String(queryParams.region).toLowerCase()
+
+    if (region === 'domestic') {
+      // 国内：包含中国相关关键词
+      conditions.push(`(
+        location ILIKE $${paramIndex} OR 
+        location ILIKE $${paramIndex + 1} OR
+        location ILIKE $${paramIndex + 2} OR
+        location ILIKE $${paramIndex + 3} OR
+        location ILIKE $${paramIndex + 4}
+      )`)
+      params.push('%china%', '%中国%', '%cn%', '%beijing%', '%shanghai%')
+      paramIndex += 5
+    } else if (region === 'overseas') {
+      // 海外：排除中国相关关键词，包含其他国际关键词
+      conditions.push(`(
+        (location ILIKE $${paramIndex} OR location ILIKE $${paramIndex + 1} OR location ILIKE $${paramIndex + 2}) AND
+        location NOT ILIKE $${paramIndex + 3} AND location NOT ILIKE $${paramIndex + 4}
+      )`)
+      params.push('%usa%', '%europe%', '%uk%', '%china%', '%中国%')
+      paramIndex += 5
+    }
+  }
+
+  return {
+    where: conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '',
+    params
+  }
 }
 
-function paginate(jobs, pageNum, pageSize) {
-  const total = jobs.length
-  const totalPages = Math.ceil(total / pageSize)
-  const start = (pageNum - 1) * pageSize
-  const end = start + pageSize
-  const items = jobs.slice(start, end)
-  return { items, total, totalPages }
-}
-
-
-
-async function readJobsFromNeon() {
+async function readJobsFromNeon(queryParams = {}, pagination = {}) {
   if (!NEON_CONFIGURED) throw new Error('Neon database not configured')
-  
+
   try {
-    const result = await neonHelper.select(JOBS_TABLE, {}, { orderBy: 'published_at', orderDirection: 'DESC' })
+    const { where, params } = buildWhereClause(queryParams)
+    const { page = 1, limit = 50 } = pagination
+    const offset = (page - 1) * limit
+
+    // 构建查询语句
+    const query = `
+      SELECT * FROM ${JOBS_TABLE}
+      ${where}
+      ORDER BY published_at DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `
+
+    const result = await neonHelper.query(query, [...params, limit, offset])
     if (!result || !result.rows) return []
-    
+
     // 将数据库行转换为前端需要的格式
     return result.rows.map(row => ({
       id: row.job_id,
@@ -283,18 +330,36 @@ async function readJobsFromNeon() {
   }
 }
 
+// 获取符合条件的记录总数
+async function countJobsFromNeon(queryParams = {}) {
+  if (!NEON_CONFIGURED) throw new Error('Neon database not configured')
+
+  try {
+    const { where, params } = buildWhereClause(queryParams)
+    const query = `SELECT COUNT(*) FROM ${JOBS_TABLE} ${where}`
+
+    const result = await neonHelper.query(query, params)
+    if (!result || !result.rows || result.rows.length === 0) return 0
+
+    return parseInt(result.rows[0].count, 10)
+  } catch (e) {
+    console.warn('Neon database count error:', e?.message || e)
+    return 0
+  }
+}
+
 async function writeJobsToNeon(jobs) {
   if (!NEON_CONFIGURED) throw new Error('Neon database not configured')
-  
+
   const recent = filterRecentJobs(jobs, RETAIN_DAYS)
   const unique = removeDuplicates(recent)
-  
+
   try {
     // 使用事务批量写入
     await neonHelper.transaction(async (sql) => {
       // 先清空表（如果是replace模式）
       await sql.query(`DELETE FROM ${JOBS_TABLE}`)
-      
+
       // 批量插入数据
       for (const job of unique) {
         await sql.query(`
@@ -333,7 +398,7 @@ async function writeJobsToNeon(jobs) {
         ])
       }
     })
-    
+
     console.log(`✅ 成功写入 ${unique.length} 个岗位到 Neon 数据库`)
     return unique
   } catch (e) {
@@ -368,15 +433,15 @@ export default async function handler(req, res) {
           if (NEON_CONFIGURED) {
             const result = await neonHelper.count(JOBS_TABLE)
             jobsCount = result || 0
-            
+
             // 估算存储大小（每个岗位约1KB）
             storageSize = jobsCount * 1024
-            
+
             // 获取最新更新时间
-            const latestJob = await neonHelper.select(JOBS_TABLE, {}, { 
-              orderBy: 'updated_at', 
-              orderDirection: 'DESC', 
-              limit: 1 
+            const latestJob = await neonHelper.select(JOBS_TABLE, {}, {
+              orderBy: 'updated_at',
+              orderDirection: 'DESC',
+              limit: 1
             })
             if (latestJob && latestJob.rows.length > 0) {
               lastSync = latestJob.rows[0].updated_at
@@ -418,65 +483,52 @@ export default async function handler(req, res) {
       const pageNum = Number(page) || 1
       const pageSize = Number(limit) || 50
 
-      // Fetch location categories for filtering
-      const categories = await getLocationCategories()
-
-      let jobs = []
-      let provider = 'neon'
-      const startTime = Date.now()
-      // 只使用 Neon 数据库
-      if (NEON_CONFIGURED) {
-        try {
-          jobs = await readJobsFromNeon()
-          provider = 'neon'
-          console.log(`[processed-jobs] GET: Neon database read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
-        } catch (e) {
-          console.warn(`[processed-jobs] GET: Neon database read failed:`, e?.message || e)
-          jobs = []
-          provider = 'neon-error'
-        }
-      } else {
-        jobs = []
-        provider = 'neon-not-configured'
-      }
-      let filtered = []
-      try {
-        filtered = applyFilters(jobs, {
-          source,
-          category,
-          status,
-          dateFrom,
-          dateTo,
-          company,
-          isRemote,
-          search,
-          location,
-          type,
-          type,
-          type,
-          tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? [tags] : []),
-          skills: Array.isArray(skills) ? skills : (typeof skills === 'string' ? [skills] : []),
-          id,
-          region
-        }, categories)
-      } catch (e) {
-        console.warn('过滤处理异常，返回未过滤数据：', e?.message || e)
-        filtered = Array.isArray(jobs) ? jobs : []
-      }
-
       let items = []
       let total = 0
       let totalPages = 0
-      try {
-        const paged = paginate(filtered, pageNum, pageSize)
-        items = Array.isArray(paged.items) ? paged.items : []
-        total = Number.isFinite(paged.total) ? paged.total : 0
-        totalPages = Number.isFinite(paged.totalPages) ? paged.totalPages : 0
-      } catch (e) {
-        console.warn('分页处理异常，返回空集：', e?.message || e)
+      let provider = 'neon'
+      const startTime = Date.now()
+
+      // 只使用 Neon 数据库，直接在数据库层面进行过滤和分页
+      if (NEON_CONFIGURED) {
+        try {
+          // 构建查询参数
+          const queryParams = {
+            source,
+            category,
+            status,
+            dateFrom,
+            dateTo,
+            company,
+            isRemote,
+            search,
+            location,
+            type,
+            id,
+            region
+          }
+
+          // 获取总记录数（用于分页）
+          total = await countJobsFromNeon(queryParams)
+          totalPages = Math.ceil(total / pageSize)
+
+          // 获取分页数据
+          items = await readJobsFromNeon(queryParams, { page: pageNum, limit: pageSize })
+          provider = 'neon'
+
+          console.log(`[processed-jobs] GET: Neon database query success, ${items.length} items (total: ${total}), ${Date.now() - startTime}ms`)
+        } catch (e) {
+          console.warn(`[processed-jobs] GET: Neon database query failed:`, e?.message || e)
+          items = []
+          total = 0
+          totalPages = 0
+          provider = 'neon-error'
+        }
+      } else {
         items = []
         total = 0
         totalPages = 0
+        provider = 'neon-not-configured'
       }
 
       // DEBUG: Log first few jobs to check for companyId
