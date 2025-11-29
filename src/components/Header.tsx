@@ -16,7 +16,6 @@ export default function Header() {
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const userMenuButtonRef = useRef<HTMLButtonElement>(null)
 
-  const isActive = (path: string) => location.pathname === path
 
   // 处理登出
   const handleLogout = () => {

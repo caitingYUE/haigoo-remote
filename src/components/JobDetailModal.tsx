@@ -1,7 +1,6 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Share2, Bookmark, ExternalLink, MapPin, Clock, DollarSign, Building2, Zap, Star, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { X, Share2, Bookmark, MapPin, Clock, DollarSign, Building2, Zap, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
 import { Job } from '../types'
 import { segmentJobDescription } from '../utils/translation'
 import { SingleLineTags } from './SingleLineTags'
@@ -31,7 +30,6 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   currentJobIndex = -1,
   onNavigateJob
 }) => {
-  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'description' | 'company' | 'openings'>('description')
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
   const [feedbackAccuracy, setFeedbackAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
@@ -62,6 +60,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
       }
     }
   }, [isOpen])
+
+  const handleNavigate = useCallback((direction: 'prev' | 'next') => {
+    onNavigateJob?.(direction)
+  }, [onNavigateJob])
 
   // 键盘事件处理
   useEffect(() => {
@@ -102,7 +104,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, handleNavigate])
 
   // Tab 键导航处理
   const handleTabNavigation = (e: KeyboardEvent) => {
@@ -172,9 +174,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     }
   }, [isOpen])
 
-  if (!job || !isOpen) return null
+  
 
   const handleApply = () => {
+    if (!job) return
     if (job.sourceUrl) {
       window.open(job.sourceUrl, '_blank', 'noopener,noreferrer')
     } else {
@@ -182,11 +185,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     }
   }
 
-  const handleNavigate = (direction: 'prev' | 'next') => {
-    onNavigateJob?.(direction)
-  }
-
   const handleShare = async () => {
+    if (!job) return
     try {
       if (navigator.share) {
         await navigator.share({
@@ -203,6 +203,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     }
   }
   const handleSave = () => {
+    if (!job) return
     onSave?.(job.id)
   }
 
@@ -216,6 +217,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   }
 
   const submitFeedback = async () => {
+    if (!job) {
+      setFeedbackMessage('职位信息缺失')
+      return
+    }
     if (!feedbackContent.trim()) {
       setFeedbackMessage('请填写反馈内容')
       return
@@ -290,6 +295,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const canNavigatePrev = currentJobIndex > 0
   const canNavigateNext = currentJobIndex < jobs.length - 1
 
+  
+  if (!job || !isOpen) return null
   return createPortal(
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1000] flex items-stretch justify-end"
@@ -526,7 +533,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 { key: 'description', label: '职位描述', shortcut: 'Alt+1' },
                 { key: 'company', label: '公司信息', shortcut: 'Alt+2' },
                 { key: 'openings', label: '在招职位', shortcut: 'Alt+3' }
-              ].map((tab, index) => (
+              ].map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}

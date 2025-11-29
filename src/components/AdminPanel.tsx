@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { processedJobsService } from '../services/processed-jobs-service'
-import { Job as PageJob } from '../types'
 import { Job as RSSJob } from '../types/rss-types';
 import { dataRetentionService, RetentionStats } from '../services/data-retention-service';
 import './AdminPanel.css';
@@ -461,102 +460,6 @@ const RawJobsTable: React.FC<{ jobs: RSSJob[]; onExport: () => void }> = ({ jobs
   );
 };
 
-// 统一岗位数据表格组件
-const UnifiedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => void }> = ({ jobs, onExport }) => {
-  return (
-    <div className="table-container">
-      <div className="table-header">
-        <h3 className="table-title">统一岗位数据</h3>
-        <div className="table-controls">
-          <div className="search-input">
-            <span className="material-symbols-outlined">search</span>
-            <input type="text" placeholder="搜索岗位..." />
-          </div>
-          <button className="filter-btn">
-            <span className="material-symbols-outlined">filter_list</span>
-            筛选
-          </button>
-          <button onClick={onExport} className="btn-primary">
-            <span className="material-symbols-outlined">download</span>
-            导出数据
-          </button>
-        </div>
-      </div>
-      <div className="table-wrapper">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>岗位标题</th>
-              <th>公司</th>
-              <th>地点</th>
-              <th>薪资范围</th>
-              <th>技能要求</th>
-              <th>数据质量</th>
-              <th>来源</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {jobs.map(job => (
-              <tr key={job.id}>
-                <td>{job.id}</td>
-                <td className="job-title">{job.jobTitle}</td>
-                <td>{job.companyName}</td>
-                <td>{job.locationRestriction}</td>
-                <td>-</td>
-                <td>
-                  <div className="skills-container">
-                    {job.skillTags.slice(0, 2).map((skill, index) => (
-                      <span key={index} className="skill-tag">{skill}</span>
-                    ))}
-                    {job.skillTags.length > 2 && (
-                      <span className="skill-tag more">+{job.skillTags.length - 2}</span>
-                    )}
-                  </div>
-                </td>
-                <td>
-                  <div className="quality-score">
-                    <div className="score-bar">
-                      <div
-                        className="score-fill"
-                        style={{ width: `${job.dataQuality}%` }}
-                      ></div>
-                    </div>
-                    <span className="score-text">{job.dataQuality}%</span>
-                  </div>
-                </td>
-                <td>
-                  <a href={job.sourceUrl} target="_blank" rel="noopener noreferrer">
-                    查看原文
-                  </a>
-                </td>
-                <td>
-                  <button className="action-btn">
-                    <span className="material-symbols-outlined">edit</span>
-                  </button>
-                  <button className="action-btn">
-                    <span className="material-symbols-outlined">visibility</span>
-                  </button>
-                  <button className="action-btn danger">
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="pagination">
-        <span>显示 1-{jobs.length} 条，共 {jobs.length} 条记录</span>
-        <div className="pagination-controls">
-          <button className="pagination-btn" disabled>上一页</button>
-          <button className="pagination-btn">下一页</button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // 处理后数据表格组件
 const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => void }> = ({ jobs, onExport }) => {

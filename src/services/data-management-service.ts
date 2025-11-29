@@ -845,7 +845,7 @@ export class DataManagementService {
     const candidates = rawMatches
       .map(u => cleanUrl(u))
       .map(u => {
-        let hostname = this.getDomain(u) || '';
+        const hostname = this.getDomain(u) || '';
         let score = 0;
         // 排除项给负分
         if (excludeDomains.has(hostname)) score -= 100;

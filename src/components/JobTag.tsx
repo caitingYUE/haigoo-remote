@@ -305,17 +305,29 @@ export const JobTagEditor: React.FC<JobTagEditorProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   
   const filteredSuggestions = React.useMemo(() => {
-    if (!inputValue.trim()) {
-      return tagUtils.getRecommended(tags, 5);
-    }
-    
-    const searchResults = tagUtils.search(inputValue);
     const existingIds = new Set(tags.map(tag => tag.id));
-    
-    return searchResults
-      .filter(tag => !existingIds.has(tag.id))
-      .slice(0, 8);
-  }, [inputValue, tags]);
+    if (!inputValue.trim()) {
+      const base = (suggestions && suggestions.length > 0)
+        ? suggestions
+        : tagUtils.getRecommended(tags, 5);
+      return base
+        .filter(tag => !existingIds.has(tag.id))
+        .slice(0, 8);
+    }
+    const searchResults = tagUtils.search(inputValue);
+    const suggestionMatches = (suggestions || [])
+      .filter(s => s.label.toLowerCase().includes(inputValue.toLowerCase()));
+    const merged = [...searchResults, ...suggestionMatches];
+    const unique: JobTagType[] = [];
+    const seen = new Set<string>();
+    for (const t of merged) {
+      if (!seen.has(t.id) && !existingIds.has(t.id)) {
+        seen.add(t.id);
+        unique.push(t);
+      }
+    }
+    return unique.slice(0, 8);
+  }, [inputValue, tags, suggestions]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);

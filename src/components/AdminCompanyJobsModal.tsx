@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Plus, RefreshCw, ExternalLink, Trash2, Loader2, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { TrustedCompany } from '../services/trusted-companies-service';
@@ -17,11 +17,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
     const [crawling, setCrawling] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        fetchJobs();
-    }, [company.id]);
-
-    const fetchJobs = async () => {
+    const fetchJobs = useCallback(async () => {
         try {
             setLoading(true);
             // Fetch jobs filtered by company ID
@@ -35,7 +31,11 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
         } finally {
             setLoading(false);
         }
-    };
+    }, [company.name]);
+
+    useEffect(() => {
+        fetchJobs();
+    }, [fetchJobs]);
 
     const handleCrawl = async () => {
         try {
@@ -60,7 +60,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
         }
     };
 
-    const handleDeleteJob = async (jobId: string) => {
+    const handleDeleteJob = async (_jobId: string) => {
         if (!confirm('确定要删除这个职位吗？')) return;
         // Note: Currently no direct delete API for single job in processed-jobs, 
         // usually we rely on re-sync or specific delete endpoint. 

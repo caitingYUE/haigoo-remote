@@ -29,7 +29,7 @@ module.exports = {
         'no-control-regex': 'off',
         'no-extra-semi': 'off',
         'no-empty': 'off',
-        'prefer-const': 'off',
+        'prefer-const': 'warn',
         'no-case-declarations': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/ban-ts-comment': 'off',
@@ -37,7 +37,13 @@ module.exports = {
         'no-unused-vars': 'off',
         'no-console': 'off',
         'react-refresh/only-export-components': 'off',
-        'react-hooks/exhaustive-deps': 'off'
+        'react-hooks/exhaustive-deps': 'warn'
+      }
+    },
+    {
+      files: ['src/pages/**/*.ts', 'src/pages/**/*.tsx', 'src/components/**/*.tsx'],
+      rules: {
+        '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }]
       }
     }
   ]

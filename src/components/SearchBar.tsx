@@ -110,7 +110,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setSelectedIndex(-1);
   };
 
-  const handleBlur = (e: React.FocusEvent) => {
+  const handleBlur = (_e: React.FocusEvent) => {
     // 延迟关闭以允许点击建议项
     setTimeout(() => {
       if (!suggestionsRef.current?.contains(document.activeElement)) {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck, Eye, Calendar, User, Tag } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Bookmark, BookmarkCheck, Eye, Calendar, Tag } from 'lucide-react'
 
 interface Post {
   id: string

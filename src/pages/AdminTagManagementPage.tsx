@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Save, X, Tag, Briefcase, Building2, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Trash2, Edit2, Save, X, Tag, Briefcase, Building2 } from 'lucide-react';
 
 interface TagConfig {
     jobCategories: string[];
@@ -11,7 +10,6 @@ interface TagConfig {
 type TagType = 'jobCategory' | 'companyIndustry' | 'companyTag';
 
 export default function AdminTagManagementPage() {
-    const navigate = useNavigate();
     const [config, setConfig] = useState<TagConfig>({
         jobCategories: [],
         companyIndustries: [],

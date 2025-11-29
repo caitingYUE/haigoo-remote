@@ -3,26 +3,23 @@
  * 用于管理员查看和管理所有注册用户
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Search,
-  Filter,
   Download,
   RefreshCw,
   Eye,
   Ban,
   CheckCircle,
-  XCircle,
   Calendar,
   Mail,
-  MapPin,
   User as UserIcon,
-  Shield,
   Activity,
   Users,
   TrendingUp,
   Clock,
-  Bookmark
+  Bookmark,
+  XCircle
 } from 'lucide-react'
 import type { User } from '../types/auth-types'
 import { useAuth } from '../contexts/AuthContext'
@@ -56,10 +53,28 @@ export default function UserManagementPage() {
   const [editUsername, setEditUsername] = useState('')
   const [editAdmin, setEditAdmin] = useState(false)
 
+  const fetchUsers = useCallback(async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/users', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      })
+      const data = await response.json()
+      if (data.success) {
+        setUsers(data.users)
+        calculateStats(data.users)
+      }
+    } catch (error) {
+      console.error('[UserManagement] Failed to fetch users:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [token])
+
   // 加载用户列表
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [fetchUsers])
 
   // 过滤用户
   useEffect(() => {
@@ -87,23 +102,7 @@ export default function UserManagementPage() {
     setFilteredUsers(filtered)
   }, [users, searchTerm, statusFilter, providerFilter])
 
-  const fetchUsers = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/users', {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined
-      })
-      const data = await response.json()
-      if (data.success) {
-        setUsers(data.users)
-        calculateStats(data.users)
-      }
-    } catch (error) {
-      console.error('[UserManagement] Failed to fetch users:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  
 
   const calculateStats = (userList: User[]) => {
     const now = new Date()
@@ -521,4 +520,3 @@ export default function UserManagementPage() {
     </div>
   )
 }
-

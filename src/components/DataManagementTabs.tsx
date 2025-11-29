@@ -1,46 +1,27 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Search,
   Filter,
   RefreshCw,
-  Upload,
   Trash2,
-  Edit3,
   Eye,
-  MoreHorizontal,
-  CheckCircle,
-  XCircle,
-  Clock,
-  TrendingUp,
-  Briefcase,
-  Globe,
-  Database,
-  Settings,
-  AlertCircle,
   Info,
   Loader,
   Plus,
-  Save,
-  X,
-  ChevronUp,
-  ChevronDown,
   BarChart3,
-  PieChart,
-  Activity,
-  Rss,
-  Tag,
   Calendar,
   Server,
   ExternalLink,
   Building,
-  MapPin,
-  DollarSign,
-  FileText,
+  Database,
+  Briefcase,
   Link as LinkIcon,
-  FolderOpen
+  MapPin,
+  Edit3,
+  CheckCircle,
+  X
 } from 'lucide-react';
-import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
+import { JobCategory } from '../types/rss-types';
 import { dataManagementService, RawRSSData, ProcessedJobData, StorageStats } from '../services/data-management-service';
 import { processedJobsService } from '../services/processed-jobs-service';
 import { useNotificationHelpers } from './NotificationSystem';
@@ -173,23 +154,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   }, []);
 
   // 重新处理URL
-  const handleReprocessUrls = async () => {
-    if (!confirm('确定要重新分析所有职位的企业URL吗？\n\n这将扫描所有职位描述，提取企业官网链接并更新。')) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const result = await dataManagementService.reprocessJobUrls();
-      showSuccess('URL重新处理完成', `更新了 ${result.updated} 个职位。`);
-      await loadProcessedData(); // Assuming loadData should be loadProcessedData
-    } catch (error) {
-      console.error('URL处理失败:', error);
-      showError('处理失败', '请查看控制台日志');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   // 同步数据
   const handleSyncData = async () => {
@@ -279,30 +244,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   };
 
   // 导出数据
-  const handleExportData = async (type: 'raw' | 'processed') => {
-    try {
-      let data;
-      if (type === 'raw') {
-        const result = await dataManagementService.getRawData(1, 10000);
-        data = result.data;
-      } else {
-        const result = await dataManagementService.getProcessedJobs(1, 10000);
-        data = result.data;
-      }
-
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${type}_data_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('导出数据失败:', error);
-    }
-  };
+  
 
   // 删除职位
   const handleDeleteJob = async (jobId: string) => {
@@ -1488,7 +1430,7 @@ const Tooltip: React.FC<{
     return () => {
       if (ro) ro.disconnect();
     };
-  }, [content, maxLines]);
+  }, [content, maxLines, clampChildren]);
 
   // 计算并更新 Portal 模式下的位置
   const updatePosition = useCallback(() => {
@@ -1499,7 +1441,7 @@ const Tooltip: React.FC<{
     const viewportWidth = window.innerWidth;
     const maxWidth = 360; // 与样式的 max-w-sm 接近
     const placement = rect.top > 120 ? 'top' : 'bottom';
-    let left = Math.min(Math.max(rect.left, 8), viewportWidth - maxWidth - 8);
+    const left = Math.min(Math.max(rect.left, 8), viewportWidth - maxWidth - 8);
     const top = placement === 'top' ? rect.top - margin : rect.bottom + margin;
     setCoords({ top, left, placement });
   }, []);

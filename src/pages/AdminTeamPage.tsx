@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search,
-  Filter,
   RefreshCw,
   Download,
-  Upload,
   Trash2,
   Edit3,
   Eye,
-  MoreHorizontal,
   CheckCircle,
   XCircle,
   Clock,
@@ -16,7 +13,6 @@ import {
   Users,
   Briefcase,
   Globe,
-  Database,
   Settings,
   AlertCircle,
   Info,
@@ -24,13 +20,10 @@ import {
   Plus,
   Save,
   X,
-  ChevronUp,
-  ChevronDown,
   BarChart3,
   PieChart,
   Activity,
   Rss,
-  Menu,
   ChevronLeft,
   ChevronRight,
   MessageSquare,
@@ -38,12 +31,11 @@ import {
   Building,
   FileText
 } from 'lucide-react';
-import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
+import { Job, JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
 import DataManagementTabs from '../components/DataManagementTabs';
 import UserManagementPage from './UserManagementPage';
-import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
 import AdminFeedbackList from '../components/AdminFeedbackList';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,21 +50,21 @@ interface ExtendedRSSSource extends RSSSource {
 const AdminTeamPage: React.FC = () => {
   // 主要状态管理
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [_jobs, setJobs] = useState<Job[]>([]);
   const [stats, setStats] = useState<JobStats | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [syncStatus, _setSyncStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
-  const [filter, setFilter] = useState<JobFilter>({});
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
-  const [showFilters, setShowFilters] = useState(false);
+  const [_selectedJobs, _setSelectedJobs] = useState<string[]>([]);
+  const [filter, _setFilter] = useState<JobFilter>({});
+  const [_searchTerm, _setSearchTerm] = useState('');
+  const [_currentPage, _setCurrentPage] = useState(1);
+  const [_itemsPerPage] = useState(20);
+  const [_showFilters, _setShowFilters] = useState(false);
 
   // 排序相关状态
-  const [sortBy, setSortBy] = useState<'publishedAt' | 'title' | 'company' | 'remoteLocationRestriction'>('publishedAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [_sortBy, _setSortBy] = useState<'publishedAt' | 'title' | 'company' | 'remoteLocationRestriction'>('publishedAt');
+  const [_sortOrder, _setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // RSS配置相关状态
   const [rssSources, setRssSources] = useState<ExtendedRSSSource[]>([]);
@@ -141,18 +133,44 @@ const AdminTeamPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filter]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // 获取简历数据
+  const fetchResumes = useCallback(async () => {
+    setResumeLoading(true);
+    try {
+      const token = localStorage.getItem('haigoo_auth_token');
+      const res = await fetch('/api/resumes', {
+        headers: {
+          'Authorization': `Bearer ${token || ''}`
+        }
+      });
+
+    
+      if (res.ok) {
+        const data = await res.json();
+        setResumes(data.data || []);
+        setStorageProvider(data.provider || 'unknown');
+      } else {
+        console.error('Failed to fetch resumes');
+      }
+    } catch (error) {
+      console.error('Error fetching resumes:', error);
+    } finally {
+      setResumeLoading(false);
+    }
+  }, []);
 
   // 加载简历数据当切换到简历库标签时
   useEffect(() => {
     if (activeTab === 'resumes') {
       fetchResumes();
     }
-  }, [activeTab]);
+  }, [activeTab, fetchResumes]);
 
   // 同步RSS数据
   const handleSync = async () => {
@@ -258,7 +276,7 @@ const AdminTeamPage: React.FC = () => {
           <h2>快速操作</h2>
         </div>
         <div className="card-content">
-          <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4">
             <button
               onClick={() => handleExport('processed')}
               className="btn-secondary"
@@ -267,13 +285,21 @@ const AdminTeamPage: React.FC = () => {
               导出数据
             </button>
 
-            <button
-              onClick={() => setShowRSSForm(true)}
-              className="btn-secondary"
-            >
-              <Plus className="w-4 h-4" />
-              添加RSS源
-            </button>
+              <button
+                onClick={() => setShowRSSForm(true)}
+                className="btn-secondary"
+              >
+                <Plus className="w-4 h-4" />
+                添加RSS源
+              </button>
+              <button
+                onClick={handleSync}
+                className="btn-primary"
+                disabled={syncing}
+              >
+                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                同步RSS数据
+              </button>
           </div>
         </div>
       </div>
@@ -357,30 +383,7 @@ const AdminTeamPage: React.FC = () => {
     <AdminFeedbackList />
   );
 
-  // 获取简历数据
-  const fetchResumes = useCallback(async () => {
-    setResumeLoading(true);
-    try {
-      const token = localStorage.getItem('haigoo_auth_token');
-      const res = await fetch('/api/resumes', {
-        headers: {
-          'Authorization': `Bearer ${token || ''}`
-        }
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setResumes(data.data || []);
-        setStorageProvider(data.provider || 'unknown');
-      } else {
-        console.error('Failed to fetch resumes');
-      }
-    } catch (error) {
-      console.error('Error fetching resumes:', error);
-    } finally {
-      setResumeLoading(false);
-    }
-  }, []);
+  
 
   // 删除简历
   const handleDeleteResume = async (id: string) => {
@@ -637,7 +640,7 @@ const AdminTeamPage: React.FC = () => {
           </div>
           <div className="card-content">
             <div className="space-y-3">
-              {['技术开发', '产品设计', '市场营销', '运营管理', '其他'].map((category, index) => (
+              {['技术开发', '产品设计', '市场营销', '运营管理', '其他'].map((category) => (
                 <div key={category} className="flex items-center justify-between">
                   <span className="text-sm font-medium">{category}</span>
                   <div className="flex items-center space-x-2">

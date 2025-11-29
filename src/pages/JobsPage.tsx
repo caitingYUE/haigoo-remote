@@ -1,103 +1,23 @@
-import { useState, useEffect, useRef } from 'react'
-import { Search, MapPin, Building, DollarSign, Bookmark, Calendar, Briefcase, RefreshCw, Filter, ChevronDown, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, ChevronDown } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCard from '../components/JobCard'
 import JobDetailModal from '../components/JobDetailModal'
-import JobAlertSubscribe from '../components/JobAlertSubscribe'
-import BrandHero from '../components/BrandHero'
-import HeroVisual from '../components/HeroVisual'
-import HeroIllustration from '../components/HeroIllustration'
-import SearchBar from '../components/SearchBar'
-import homeBgSvg from '../assets/home_bg.svg'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
-import { DateFormatter } from '../utils/date-formatter'
-import { processJobDescription } from '../utils/text-formatter'
+ 
 import { usePageCache } from '../hooks/usePageCache'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 
-const jobTypes = [
-  { value: 'all', label: '全部类型' },
-  { value: 'full-time', label: '全职' },
-  { value: 'part-time', label: '兼职' },
-  { value: 'contract', label: '合同工' },
-  { value: 'freelance', label: '自由职业' },
-  { value: 'internship', label: '实习' }
-]
-
-const jobCategories = [
-  { value: 'all', label: '全部岗位' },
-  { value: '软件开发', label: '软件开发' },
-  { value: '前端开发', label: '前端开发' },
-  { value: '后端开发', label: '后端开发' },
-  { value: '全栈开发', label: '全栈开发' },
-  { value: 'DevOps', label: 'DevOps' },
-  { value: '数据科学', label: '数据科学' },
-  { value: '数据分析', label: '数据分析' },
-  { value: '产品管理', label: '产品管理' },
-  { value: '项目管理', label: '项目管理' },
-  { value: 'UI/UX设计', label: 'UI/UX设计' },
-  { value: '平面设计', label: '平面设计' },
-  { value: '市场营销', label: '市场营销' },
-  { value: '数字营销', label: '数字营销' },
-  { value: '销售', label: '销售' },
-  { value: '客户服务', label: '客户服务' },
-  { value: '客户支持', label: '客户支持' },
-  { value: '人力资源', label: '人力资源' },
-  { value: '财务', label: '财务' },
-  { value: '法律', label: '法律' },
-  { value: '写作', label: '写作' },
-  { value: '内容创作', label: '内容创作' },
-  { value: '质量保证', label: '质量保证' },
-  { value: '测试', label: '测试' },
-  { value: '运营', label: '运营' },
-  { value: '商务拓展', label: '商务拓展' },
-  { value: '咨询', label: '咨询' },
-  { value: '教育培训', label: '教育培训' },
-  { value: '其他', label: '其他' }
-]
-
-const experienceLevels = [
-  { value: 'all', label: '全部经验' },
-  { value: 'Entry', label: '入门级' },
-  { value: 'Mid', label: '中级' },
-  { value: 'Senior', label: '高级' },
-  { value: 'Lead', label: '技术负责人' },
-  { value: 'Executive', label: '管理层' }
-]
-
-const locations = [
-  { value: 'all', label: '全部地点' },
-  { value: '北京', label: '北京' },
-  { value: '上海', label: '上海' },
-  { value: '深圳', label: '深圳' },
-  { value: '杭州', label: '杭州' },
-  { value: '广州', label: '广州' },
-  { value: '成都', label: '成都' },
-  { value: '西安', label: '西安' },
-  { value: '南京', label: '南京' },
-  { value: '武汉', label: '武汉' },
-  { value: '苏州', label: '苏州' },
-  { value: 'Remote', label: '远程工作' },
-  { value: 'Worldwide', label: '全球远程' }
-]
-
-const remoteOptions = [
-  { value: 'all', label: '全部' },
-  { value: 'yes', label: '仅远程' },
-  { value: 'no', label: '非远程' }
-]
+ 
 
 export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token, isAuthenticated } = useAuth()
 
-  // Refs for focus management
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  const filterSectionRef = useRef<HTMLDivElement>(null)
-  const jobListRef = useRef<HTMLDivElement>(null)
+  
 
   const [searchTerm, setSearchTerm] = useState('')
   const [activeRegion, setActiveRegion] = useState<'domestic' | 'overseas'>(() => {
@@ -123,17 +43,15 @@ export default function JobsPage() {
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
 
   // 加载阶段状态
-  const [loadingStage, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
+  const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
   // 使用页面缓存 Hook
   const {
     data: jobs,
     loading,
-    error: loadError,
     refresh,
-    isFromCache,
-    cacheAge
+    isFromCache
   } = usePageCache<Job[]>('jobs-all-list', {
     fetcher: async () => {
       try {
@@ -159,27 +77,7 @@ export default function JobsPage() {
     }
   })
 
-  // Filter keyboard navigation
-  const handleFilterKeyDown = (event: React.KeyboardEvent, filterType: string, value: string) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      setFilters(prev => ({ ...prev, [filterType]: value }))
-    }
-  }
-
-  // Clear filters keyboard handler
-  const handleClearFiltersKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      setFilters({
-        type: 'all',
-        category: 'all',
-        location: 'all',
-        experience: 'all',
-        remote: 'all'
-      })
-    }
-  }
+  
 
   // 从URL参数中获取初始搜索词
   useEffect(() => {
@@ -256,12 +154,7 @@ export default function JobsPage() {
     }
   }
 
-  const handleApply = (jobId: string) => {
-    const job = (jobs || []).find(j => j.id === jobId)
-    if (job && job.sourceUrl) {
-      window.open(job.sourceUrl, '_blank', 'noopener,noreferrer')
-    }
-  }
+  
 
   // 初始化拉取收藏集
   useEffect(() => {
@@ -377,7 +270,7 @@ export default function JobsPage() {
     return matchesSearch && matchesType && matchesLocation && matchesExperience && matchesRemote && matchesRegion
   })
 
-  const activeFiltersCount = Object.values(filters).filter(value => value !== 'all').length
+  
 
   // 初始化加载已收藏的岗位，用于高亮 Bookmark 状态
   useEffect(() => {

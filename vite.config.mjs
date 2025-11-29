@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -16,7 +15,6 @@ export default defineConfig({
       }
     }
   },
-  // 配置构建选项
   build: {
     outDir: 'dist',
     sourcemap: true

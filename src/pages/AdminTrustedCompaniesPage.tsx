@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+ 
 import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { ClassificationService } from '../services/classification-service'
@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 
 export default function AdminTrustedCompaniesPage() {
-    const navigate = useNavigate()
+    
     const { showSuccess, showError } = useNotificationHelpers()
     const { token } = useAuth()
     const [fetchDetailsEnabled, setFetchDetailsEnabled] = useState(false)
@@ -33,9 +33,21 @@ export default function AdminTrustedCompaniesPage() {
         canRefer: false
     })
 
+    const loadCompanies = React.useCallback(async () => {
+        try {
+            setLoading(true)
+            const data = await trustedCompaniesService.getAllCompanies()
+            setCompanies(data)
+        } catch (error) {
+            showError('加载失败', '无法获取公司列表')
+        } finally {
+            setLoading(false)
+        }
+    }, [showError])
+
     useEffect(() => {
         loadCompanies()
-    }, [])
+    }, [loadCompanies])
 
     // Lock body scroll when modal is open
     useEffect(() => {
@@ -49,17 +61,7 @@ export default function AdminTrustedCompaniesPage() {
         }
     }, [isModalOpen])
 
-    const loadCompanies = async () => {
-        try {
-            setLoading(true)
-            const data = await trustedCompaniesService.getAllCompanies()
-            setCompanies(data)
-        } catch (error) {
-            showError('加载失败', '无法获取公司列表')
-        } finally {
-            setLoading(false)
-        }
-    }
+    
 
     const handleEdit = (company: TrustedCompany) => {
         setEditingCompany(company)

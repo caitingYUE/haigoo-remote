@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import {
-    Building2, Search, Filter, RefreshCw, Plus, Trash2, Edit2,
-    ExternalLink, Globe, Tag, Briefcase, ArrowLeft, Eye, X
+    Building2, Search, RefreshCw,
+    ExternalLink, Globe, Tag, Briefcase, Eye, X, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
 import { CompanyService } from '../services/company-service';
@@ -25,7 +24,6 @@ interface Company {
 }
 
 export default function AdminCompanyManagementPage() {
-    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'all' | 'trusted'>('all');
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(false);
@@ -35,20 +33,15 @@ export default function AdminCompanyManagementPage() {
     const [updatingMap, setUpdatingMap] = useState<Record<string, boolean>>({});
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
-    const [pageSize] = useState(20);
+    const [pageSize, setPageSize] = useState(20);
     const [searchQuery, setSearchQuery] = useState('');
     const [industryFilter, setIndustryFilter] = useState('');
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
     const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
     const [jobSearchTerm, setJobSearchTerm] = useState('');
+    const [rowDensity, setRowDensity] = useState<'cozy' | 'compact'>('cozy');
 
-    useEffect(() => {
-        if (activeTab === 'all') {
-            loadCompanies();
-        }
-    }, [activeTab, page, searchQuery, industryFilter]);
-
-    const loadCompanies = async () => {
+    const loadCompanies = useCallback(async () => {
         try {
             setLoading(true);
             const params = new URLSearchParams({
@@ -64,7 +57,6 @@ export default function AdminCompanyManagementPage() {
             if (data.success) {
                 let list: Company[] = data.companies || [];
 
-                // 额外合并可信企业信息，补齐URL与Logo
                 try {
                     const trustedList = await trustedCompaniesService.getAllCompanies();
                     const normalize = (name: string) => name.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[,._\-]/g, '');
@@ -94,7 +86,14 @@ export default function AdminCompanyManagementPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, pageSize, searchQuery, industryFilter]);
+
+    useEffect(() => {
+        if (activeTab === 'all') {
+            loadCompanies();
+        }
+    }, [activeTab, loadCompanies]);
+
 
     const handleRefresh = async () => {
         if (!confirm('确定要重新从岗位数据中提取企业信息吗？\n\n这将更新企业的岗位数、来源等统计信息。')) {
@@ -120,29 +119,6 @@ export default function AdminCompanyManagementPage() {
         }
     };
 
-    const handleExtractCompanies = async () => {
-        if (!confirm('确定要从岗位数据中提取企业信息吗？\n\n这将分析所有岗位并创建企业列表。')) {
-            return;
-        }
-
-        try {
-            setExtracting(true);
-            const response = await fetch('/api/data/trusted-companies?resource=companies&action=extract');
-            const data = await response.json();
-
-            if (data.success) {
-                alert(`提取成功！共提取 ${data.companies?.length || 0} 个企业`);
-                await loadCompanies();
-            } else {
-                alert('提取失败：' + (data.error || '未知错误'));
-            }
-        } catch (error) {
-            console.error('Failed to extract companies:', error);
-            alert('提取失败，请稍后重试');
-        } finally {
-            setExtracting(false);
-        }
-    };
 
     const handleAutoCrawl = async () => {
         const companiesToCrawl = companies.filter(c => c.url && (!c.description || !c.logo));
@@ -334,8 +310,6 @@ export default function AdminCompanyManagementPage() {
 
         } catch (error) {
             console.error(`Failed to update company info for ${company.name}:`, error);
-            const errorMsg = error instanceof Error ? error.message : '未知错误';
-            // Re-throw so batch processing can track failures
             throw error;
         } finally {
             setUpdatingMap(prev => ({ ...prev, [company.id]: false }));
@@ -348,7 +322,7 @@ export default function AdminCompanyManagementPage() {
 
         const maxPagesToShow = 7;
         let startPage = Math.max(1, page - Math.floor(maxPagesToShow / 2));
-        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+        const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
         if (endPage - startPage + 1 < maxPagesToShow) {
             startPage = Math.max(1, endPage - maxPagesToShow + 1);
@@ -361,8 +335,27 @@ export default function AdminCompanyManagementPage() {
 
         return (
             <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                    显示 {((page - 1) * pageSize) + 1} 到 {Math.min(page * pageSize, total)} 条，共 {total} 条
+                <div className="flex items-center gap-3">
+                    <div className="text-sm text-gray-500">
+                        显示 {((page - 1) * pageSize) + 1} 到 {Math.min(page * pageSize, total)} 条，共 {total} 条
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">每页</span>
+                        <select
+                            value={pageSize}
+                            onChange={(e) => {
+                                const size = parseInt(e.target.value, 10) || 20;
+                                setPageSize(size);
+                                setPage(1);
+                            }}
+                            className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                        </select>
+                        <span className="text-sm text-gray-600">条</span>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -422,17 +415,28 @@ export default function AdminCompanyManagementPage() {
         );
     };
 
-    // Lock body scroll when modal is open
     useEffect(() => {
         if (selectedCompany) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
         }
+        const handleKey = (e: KeyboardEvent) => {
+            if (!selectedCompany) return;
+            if (e.key === 'ArrowLeft') {
+                const idx = companies.findIndex(c => c.id === selectedCompany.id);
+                if (idx > 0) setSelectedCompany(companies[idx - 1]);
+            } else if (e.key === 'ArrowRight') {
+                const idx = companies.findIndex(c => c.id === selectedCompany.id);
+                if (idx >= 0 && idx < companies.length - 1) setSelectedCompany(companies[idx + 1]);
+            }
+        };
+        document.addEventListener('keydown', handleKey);
         return () => {
             document.body.style.overflow = 'unset';
+            document.removeEventListener('keydown', handleKey);
         };
-    }, [selectedCompany]);
+    }, [selectedCompany, companies]);
 
     const renderCompanyDetailModal = () => {
         if (!selectedCompany) return null;
@@ -463,9 +467,31 @@ export default function AdminCompanyManagementPage() {
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => setSelectedCompany(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                            <X className="w-6 h-6" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    const idx = companies.findIndex(c => c.id === selectedCompany.id);
+                                    if (idx > 0) setSelectedCompany(companies[idx - 1]);
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                                aria-label="上一条"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const idx = companies.findIndex(c => c.id === selectedCompany.id);
+                                    if (idx >= 0 && idx < companies.length - 1) setSelectedCompany(companies[idx + 1]);
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                                aria-label="下一条"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </button>
+                            <button onClick={() => setSelectedCompany(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto">
@@ -547,7 +573,7 @@ export default function AdminCompanyManagementPage() {
     const renderAllCompaniesTab = () => (
         <div className="space-y-6">
             {/* Header Actions */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between sticky top-0 z-20 bg-gray-50/80 backdrop-blur supports-[backdrop-filter]:bg-gray-50/60 border-b py-2">
                 <div className="flex items-center gap-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -597,9 +623,34 @@ export default function AdminCompanyManagementPage() {
                     >
                         清除筛选
                     </button>
+
+                    <div className="flex items-center gap-2 ml-2">
+                        <span className="text-sm text-gray-600">每页</span>
+                        <select
+                            value={pageSize}
+                            onChange={(e) => {
+                                const size = parseInt(e.target.value, 10) || 20;
+                                setPageSize(size);
+                                setPage(1);
+                            }}
+                            className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                        </select>
+                        <span className="text-sm text-gray-600">条</span>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setRowDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                        title="切换行密度"
+                    >
+                        {rowDensity === 'compact' ? '紧凑行距' : '标准行距'}
+                    </button>
                     <button
                         onClick={handleRefresh}
                         disabled={extracting}
@@ -642,29 +693,29 @@ export default function AdminCompanyManagementPage() {
 
             {/* Company List */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] overscroll-contain">
-                    <table className="w-full">
+                <div className="overflow-x-auto group" data-density={rowDensity}>
+                    <table className="w-full group-data-[density=compact]:text-sm">
                         <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     企业名称
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     简介
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     行业
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     标签
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     岗位数
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     来源
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     操作
                                 </th>
                             </tr>
@@ -672,7 +723,7 @@ export default function AdminCompanyManagementPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center">
+                                    <td colSpan={7} className="px-6 py-12 group-data-[density=compact]:px-4 group-data-[density=compact]:py-8 text-center">
                                         <div className="flex items-center justify-center gap-2 text-gray-500">
                                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                                             <span>加载中...</span>
@@ -681,7 +732,7 @@ export default function AdminCompanyManagementPage() {
                                 </tr>
                             ) : companies.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                                    <td colSpan={7} className="px-6 py-12 group-data-[density=compact]:px-4 group-data-[density=compact]:py-8 text-center text-gray-500">
                                         <div className="flex flex-col items-center gap-2">
                                             <Building2 className="w-12 h-12 text-gray-300" />
                                             <p>暂无企业数据</p>
@@ -692,7 +743,7 @@ export default function AdminCompanyManagementPage() {
                             ) : (
                                 companies.map((company) => (
                                     <tr key={company.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
                                             <div className="flex items-center gap-3">
                                                 {company.logo ? (
                                                     <img
@@ -701,7 +752,7 @@ export default function AdminCompanyManagementPage() {
                                                         className="w-10 h-10 rounded-lg object-cover"
                                                     />
                                                 ) : (
-                                                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                    <div className="w-10 h-10 group-data-[density=compact]:w-8 group-data-[density=compact]:h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                                                         <Building2 className="w-5 h-5 text-gray-400" />
                                                     </div>
                                                 )}
@@ -721,17 +772,17 @@ export default function AdminCompanyManagementPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
                                             <div className="text-sm text-gray-600 max-w-xs truncate" title={company.description}>
                                                 {company.description || <span className="text-gray-400">-</span>}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                                 {company.industry || '未分类'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
                                             <div className="flex flex-wrap gap-1">
                                                 {company.tags && company.tags.length > 0 ? (
                                                     company.tags.slice(0, 3).map((tag, index) => (
@@ -750,18 +801,18 @@ export default function AdminCompanyManagementPage() {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
                                             <div className="flex items-center gap-1 text-sm text-gray-900">
                                                 <Briefcase className="w-4 h-4 text-gray-400" />
                                                 {company.jobCount || 0}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                 {company.source}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={() => handleViewDetail(company)}

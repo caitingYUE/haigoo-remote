@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MapPin, Clock, DollarSign, ExternalLink, Building, Briefcase, Globe, Award, Bookmark, UserCheck } from 'lucide-react';
+import React from 'react';
+import { MapPin, Building, Globe, Award, Bookmark, UserCheck } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
@@ -63,22 +63,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     }
   };
 
-  const handleSourceClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (job.sourceUrl) {
-      window.open(job.sourceUrl, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  const handleSourceKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      e.stopPropagation();
-      if (job.sourceUrl) {
-        window.open(job.sourceUrl, '_blank', 'noopener,noreferrer');
-      }
-    }
-  };
+  
 
   // 生成职位卡片的 ARIA 标签（使用翻译后的内容）
   const getJobCardAriaLabel = () => {

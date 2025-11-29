@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Wifi, WifiOff, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react'
+import { WifiOff, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react'
 
 interface RSSStatusIndicatorProps {
   className?: string
@@ -24,7 +24,7 @@ export default function RSSStatusIndicator({ className = '' }: RSSStatusIndicato
   useEffect(() => {
     // 监听RSS获取状态
     const handleRSSError = (event: CustomEvent) => {
-      const { source, error } = event.detail
+      const { source, error: _error } = event.detail
       setStatus(prev => ({
         ...prev,
         failedSources: [...prev.failedSources.filter(s => s !== source), source],

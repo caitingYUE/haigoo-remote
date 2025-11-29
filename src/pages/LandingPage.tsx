@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+ 
 import '../styles/landing-upgrade.css'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import homeBgSvg from '../assets/home_bg.svg'

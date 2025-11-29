@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Globe, Linkedin, Briefcase, MapPin, CheckCircle, ArrowLeft, ExternalLink } from 'lucide-react'
+import { Globe, Linkedin, Briefcase, CheckCircle, ArrowLeft, ExternalLink } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { Job } from '../types'
@@ -20,13 +20,7 @@ export default function CompanyProfilePage() {
     const [typeFilter, setTypeFilter] = useState<'all' | 'full-time' | 'part-time' | 'contract' | 'internship'>('all')
     const [remoteFilter, setRemoteFilter] = useState<'all' | 'remote' | 'onsite'>('all')
 
-    useEffect(() => {
-        if (id) {
-            loadData(id)
-        }
-    }, [id])
-
-    const loadData = async (companyId: string) => {
+    const loadData = useCallback(async (companyId: string) => {
         try {
             setLoading(true)
             // 1. Fetch Company Details
@@ -53,7 +47,13 @@ export default function CompanyProfilePage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [showError])
+
+    useEffect(() => {
+        if (id) {
+            loadData(id)
+        }
+    }, [id, loadData])
 
     if (loading) {
         return (

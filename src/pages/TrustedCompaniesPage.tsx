@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, Building, Users, Globe } from 'lucide-react'
+import { Building } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import SearchBar from '../components/SearchBar'

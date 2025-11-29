@@ -3,7 +3,7 @@
  * 支持邮箱密码登录和 Google OAuth 登录
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import logoSvg from '../assets/logo.svg'
@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [googleReady, setGoogleReady] = useState(false)
+  
   const { login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -24,63 +24,7 @@ export default function LoginPage() {
   // 获取重定向目标（登录后跳转到原页面）
   const from = (location.state as any)?.from?.pathname || '/'
 
-  // 初始化 Google Identity Services
-  useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) {
-      console.warn('[LoginPage] Google Client ID not configured')
-      return
-    }
-
-    // 等待 Google Identity Services 库加载
-    const checkGoogleLoaded = setInterval(() => {
-      if (window.google?.accounts?.id) {
-        clearInterval(checkGoogleLoaded)
-        initializeGoogleSignIn()
-      }
-    }, 100)
-
-    // 10秒超时
-    const timeout = setTimeout(() => {
-      clearInterval(checkGoogleLoaded)
-      if (!window.google?.accounts?.id) {
-        console.error('[LoginPage] Google Identity Services failed to load')
-      }
-    }, 10000)
-
-    return () => {
-      clearInterval(checkGoogleLoaded)
-      clearTimeout(timeout)
-    }
-  }, [])
-
-  const initializeGoogleSignIn = () => {
-    try {
-      if (!window.google?.accounts?.id) {
-        return
-      }
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCallback,
-        auto_select: false,
-        cancel_on_tap_outside: true
-      })
-      const container = document.getElementById('googleSignInBtn')
-      if (container) {
-        window.google.accounts.id.renderButton(container, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: 'signin_with',
-          shape: 'rectangular'
-        })
-      }
-      setGoogleReady(true)
-    } catch (error) {
-      console.error('[LoginPage] Failed to initialize Google Sign-In:', error)
-    }
-  }
-
-  const handleGoogleCallback = async (response: any) => {
+  const handleGoogleCallback = useCallback(async (response: any) => {
     if (!response.credential) {
       setError('Google 登录失败：未获取到凭证')
       return
@@ -106,7 +50,61 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [loginWithGoogle, navigate, from])
+
+  const initializeGoogleSignIn = useCallback(() => {
+    try {
+      if (!window.google?.accounts?.id) {
+        return
+      }
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCallback,
+        auto_select: false,
+        cancel_on_tap_outside: true
+      })
+      const container = document.getElementById('googleSignInBtn')
+      if (container) {
+        window.google.accounts.id.renderButton(container, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'signin_with',
+          shape: 'rectangular'
+        })
+      }
+      
+    } catch (error) {
+      console.error('[LoginPage] Failed to initialize Google Sign-In:', error)
+    }
+  }, [handleGoogleCallback])
+
+  // 初始化 Google Identity Services
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) {
+      console.warn('[LoginPage] Google Client ID not configured')
+      return
+    }
+
+    const checkGoogleLoaded = setInterval(() => {
+      if (window.google?.accounts?.id) {
+        clearInterval(checkGoogleLoaded)
+        initializeGoogleSignIn()
+      }
+    }, 100)
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkGoogleLoaded)
+      if (!window.google?.accounts?.id) {
+        console.error('[LoginPage] Google Identity Services failed to load')
+      }
+    }, 10000)
+
+    return () => {
+      clearInterval(checkGoogleLoaded)
+      clearTimeout(timeout)
+    }
+  }, [initializeGoogleSignIn])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,17 +125,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleLogin = () => {
-    if (!googleReady || !window.google?.accounts?.id) {
-      setError('Google 登录服务未就绪，请稍后重试')
-      return
-    }
-    try {
-      window.google.accounts.id.prompt()
-    } catch (error) {
-      setError('无法启动 Google 登录，请稍后重试')
-    }
-  }
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -234,4 +222,3 @@ export default function LoginPage() {
     </div>
   )
 }
-
