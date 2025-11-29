@@ -1,0 +1,41 @@
+-- Neon数据库DDL脚本
+-- 此脚本包含项目所需的所有表结构定义
+
+-- 表1: users - 存储用户信息
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  username VARCHAR(255),
+  avatar VARCHAR(255),
+  auth_provider VARCHAR(50),
+  password_hash VARCHAR(255),
+  google_id VARCHAR(255),
+  verification_token VARCHAR(255),
+  verification_expires TIMESTAMP,
+  email_verified BOOLEAN DEFAULT false,
+  status VARCHAR(50) DEFAULT 'active',
+  roles JSONB DEFAULT '{}',
+  last_login_at TIMESTAMP,
+  profile JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 初始化管理员账号
+INSERT INTO users (user_id, email, username, status, roles)
+VALUES ('admin-1', 'caitlinyct@gmail.com', '超级管理员', 'active', '{"admin": true}')
+ON CONFLICT (email) DO NOTHING;
+INSERT INTO users (user_id, email, username, status, roles)
+VALUES ('admin-2', 'mrzhangzy1996@gmail.com', '超级管理员', 'active', '{"admin": true}')
+ON CONFLICT (email) DO NOTHING;
+
+-- 表2: favorites - 存储用户收藏的工作
+CREATE TABLE favorites (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255),
+  job_id VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, job_id)
+);
+
