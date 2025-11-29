@@ -1,12 +1,3 @@
-// 安全加载 Vercel KV：避免顶层导入在本地环境报错
-let kv = null
-try {
-  const kvModule = require('@vercel/kv')
-  kv = kvModule?.kv || null
-} catch (e) {
-  console.warn('[processed-jobs] Vercel KV module not available, will use fallbacks')
-}
-
 // 统一环境变量解析：兼容 preview 专用前缀（pre_haigoo_*、pre_*、haigoo_* 等）
 function getEnv(...names) {
   const variants = (name) => [
@@ -36,35 +27,26 @@ try {
   console.warn('⚠️ 翻译服务未找到，将跳过自动翻译')
 }
 
-// Detect KV configuration (REST-only). Avoid misinterpreting KV_URL without REST creds.
-const KV_REST_API_URL = getEnv('KV_REST_API_URL')
-const KV_REST_API_TOKEN = getEnv('KV_REST_API_TOKEN')
-if (KV_REST_API_URL && !process.env.KV_REST_API_URL) process.env.KV_REST_API_URL = KV_REST_API_URL
-if (KV_REST_API_TOKEN && !process.env.KV_REST_API_TOKEN) process.env.KV_REST_API_TOKEN = KV_REST_API_TOKEN
-const KV_CONFIGURED = !!(KV_REST_API_URL && KV_REST_API_TOKEN)
+// 🆕 导入 Neon 数据库帮助类
+let neonHelper = null
+try {
+  neonHelper = require('../../server-utils/dal/neon-helper').default
+  console.log('✅ Neon 数据库帮助类已加载')
+} catch (error) {
+  console.error('❌ Neon 数据库帮助类加载失败:', error.message)
+  neonHelper = null
+}
 
-// Detect Upstash Redis REST configuration (Preview 优先)
-const UPSTASH_REST_URL = getEnv('UPSTASH_REDIS_REST_URL', 'UPSTASH_REST_URL', 'REDIS_REST_API_URL')
-const UPSTASH_REST_TOKEN = getEnv('UPSTASH_REDIS_REST_TOKEN', 'UPSTASH_REST_TOKEN', 'REDIS_REST_API_TOKEN')
-const UPSTASH_REST_CONFIGURED = !!(UPSTASH_REST_URL && UPSTASH_REST_TOKEN)
+const NEON_CONFIGURED = !!neonHelper?.isConfigured
 
-// Detect Redis configuration (accept multiple env var names)
-// Prefer standard REDIS_URL, but also support project-specific or provider-specific names
-const REDIS_URL = getEnv('REDIS_URL', 'UPSTASH_REDIS_URL') ||
-  process.env.haigoo_REDIS_URL ||
-  process.env.HAIGOO_REDIS_URL ||
-  null
-const REDIS_CONFIGURED = !!REDIS_URL
-let __redisClient = globalThis.__haigoo_redis_client || null
 if (!globalThis.__haigoo_processed_jobs_mem) {
   globalThis.__haigoo_processed_jobs_mem = []
 }
 const MEM = globalThis.__haigoo_processed_jobs_mem
 
-// Keys used in KV
-const JOBS_KEY = 'haigoo:processed_jobs'
-const STATS_KEY = 'haigoo:stats'
-const LAST_SYNC_KEY = 'haigoo:last_sync'
+// 表名常量
+const JOBS_TABLE = 'jobs'
+const FAVORITES_TABLE = 'favorites'
 
 // Retention window in days (env-configurable, defaults to 30)
 const RETAIN_DAYS_ENV = getEnv('PROCESSED_JOBS_RETAIN_DAYS', 'RETAIN_DAYS', 'MAX_DAYS')
@@ -178,24 +160,7 @@ const DEFAULT_LOCATION_CATEGORIES = {
 }
 
 async function getLocationCategories() {
-  const key = 'haigoo:location_categories'
-  try {
-    if (UPSTASH_REST_CONFIGURED) {
-      const data = await upstashGet(key)
-      if (data) return typeof data === 'string' ? JSON.parse(data) : data
-    }
-    if (REDIS_CONFIGURED) {
-      const client = await getRedisClient()
-      const data = await client.get(key)
-      if (data) return JSON.parse(data)
-    }
-    if (KV_CONFIGURED) {
-      const data = await kv.get(key)
-      if (data) return data
-    }
-  } catch (e) {
-    console.warn('Failed to fetch location categories', e)
-  }
+  // 目前暂时使用默认配置，未来可以存储在数据库中
   return DEFAULT_LOCATION_CATEGORIES
 }
 
@@ -273,147 +238,108 @@ function paginate(jobs, pageNum, pageSize) {
   return { items, total, totalPages }
 }
 
-async function readJobsFromKV() {
-  if (!kv) return []
-  const data = await kv.get(JOBS_KEY)
-  if (!data) return []
-  const jobs = Array.isArray(data) ? data : JSON.parse(typeof data === 'string' ? data : '[]')
-  return jobs
-}
 
-// --- Upstash Redis REST helpers ---
-async function upstashGet(key) {
-  if (!UPSTASH_REST_CONFIGURED) throw new Error('Upstash REST not configured')
-  try {
-    const res = await fetch(`${UPSTASH_REST_URL}/get/${encodeURIComponent(key)}`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${UPSTASH_REST_TOKEN}` }
-    })
-    if (res.ok) {
-      const json = await res.json().catch(() => null)
-      if (json && typeof json.result !== 'undefined') return json.result
-    }
-  } catch (e) {
-    // ignore, try POST fallback
-  }
-  const res2 = await fetch(`${UPSTASH_REST_URL}/get`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_REST_TOKEN}` },
-    body: JSON.stringify({ key })
-  })
-  const json2 = await res2.json().catch(() => null)
-  return json2?.result ?? null
-}
 
-async function upstashSet(key, value) {
-  if (!UPSTASH_REST_CONFIGURED) throw new Error('Upstash REST not configured')
-  const serialized = typeof value === 'string' ? value : JSON.stringify(value)
+async function readJobsFromNeon() {
+  if (!NEON_CONFIGURED) throw new Error('Neon database not configured')
+  
   try {
-    const res = await fetch(`${UPSTASH_REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(serialized)}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${UPSTASH_REST_TOKEN}` }
-    })
-    if (res.ok) return true
+    const result = await neonHelper.select(JOBS_TABLE, {}, { orderBy: 'published_at', orderDirection: 'DESC' })
+    if (!result || !result.rows) return []
+    
+    // 将数据库行转换为前端需要的格式
+    return result.rows.map(row => ({
+      id: row.job_id,
+      title: row.title,
+      company: row.company,
+      location: row.location,
+      description: row.description,
+      url: row.url,
+      publishedAt: row.published_at,
+      source: row.source,
+      category: row.category,
+      salary: row.salary,
+      jobType: row.job_type,
+      experienceLevel: row.experience_level,
+      tags: row.tags || [],
+      requirements: row.requirements || [],
+      benefits: row.benefits || [],
+      isRemote: row.is_remote,
+      status: row.status,
+      region: row.region,
+      translations: row.translations,
+      isTranslated: row.is_translated,
+      translatedAt: row.translated_at,
+      companyId: row.company_id,
+      sourceType: row.source_type,
+      isTrusted: row.is_trusted,
+      canRefer: row.can_refer,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }))
   } catch (e) {
-    // try JSON endpoint
-  }
-  const res2 = await fetch(`${UPSTASH_REST_URL}/set`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${UPSTASH_REST_TOKEN}` },
-    body: JSON.stringify({ key, value: serialized })
-  })
-  return res2.ok
-}
-
-async function readJobsFromUpstashREST() {
-  const data = await upstashGet(JOBS_KEY)
-  if (!data) return []
-  try {
-    const parsed = typeof data === 'string' ? JSON.parse(data) : data
-    return Array.isArray(parsed) ? parsed : []
-  } catch (e) {
-    console.warn('Upstash REST get parse error:', e?.message || e)
+    console.warn('Neon database read error:', e?.message || e)
     return []
   }
 }
 
-async function writeJobsToUpstashREST(jobs) {
+async function writeJobsToNeon(jobs) {
+  if (!NEON_CONFIGURED) throw new Error('Neon database not configured')
+  
   const recent = filterRecentJobs(jobs, RETAIN_DAYS)
   const unique = removeDuplicates(recent)
-  await upstashSet(JOBS_KEY, JSON.stringify(unique))
-  await upstashSet(LAST_SYNC_KEY, new Date().toISOString())
-  await upstashSet(STATS_KEY, JSON.stringify({
-    totalJobs: unique.length,
-    storageSize: JSON.stringify(unique).length,
-    lastSync: new Date().toISOString(),
-    provider: 'upstash-rest'
-  }))
-  return unique
-}
-
-async function getRedisClient() {
-  if (!REDIS_CONFIGURED) throw new Error('Redis not configured')
-  if (__redisClient) return __redisClient
-  const { createClient } = await import('redis')
-  const client = createClient({ url: REDIS_URL })
-  client.on('error', (err) => console.warn('Redis client error:', err?.message || err))
-  await client.connect()
-  __redisClient = client
-  globalThis.__haigoo_redis_client = client
-  return client
-}
-
-async function readJobsFromRedis() {
-  const client = await getRedisClient()
-  const data = await client.get(JOBS_KEY)
-  if (!data) return []
+  
   try {
-    const parsed = JSON.parse(data)
-    return Array.isArray(parsed) ? parsed : []
+    // 使用事务批量写入
+    await neonHelper.transaction(async (sql) => {
+      // 先清空表（如果是replace模式）
+      await sql.query(`DELETE FROM ${JOBS_TABLE}`)
+      
+      // 批量插入数据
+      for (const job of unique) {
+        await sql.query(`
+          INSERT INTO ${JOBS_TABLE} (
+            job_id, title, company, location, description, url, published_at,
+            source, category, salary, job_type, experience_level, tags, 
+            requirements, benefits, is_remote, status, region, translations,
+            is_translated, translated_at, company_id, source_type, is_trusted, can_refer
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+        `, [
+          job.id,
+          job.title,
+          job.company,
+          job.location,
+          job.description,
+          job.url,
+          job.publishedAt,
+          job.source,
+          job.category,
+          job.salary,
+          job.jobType,
+          job.experienceLevel,
+          JSON.stringify(job.tags || []),
+          JSON.stringify(job.requirements || []),
+          JSON.stringify(job.benefits || []),
+          job.isRemote,
+          job.status,
+          job.region,
+          job.translations ? JSON.stringify(job.translations) : null,
+          job.isTranslated,
+          job.translatedAt,
+          job.companyId,
+          job.sourceType,
+          job.isTrusted,
+          job.canRefer
+        ])
+      }
+    })
+    
+    console.log(`✅ 成功写入 ${unique.length} 个岗位到 Neon 数据库`)
+    return unique
   } catch (e) {
-    console.warn('Redis get parse error:', e?.message || e)
-    return []
+    console.error('Neon database write error:', e?.message || e)
+    throw e
   }
-}
-
-function readJobsFromMemory() {
-  return Array.isArray(MEM) ? MEM : []
-}
-
-function writeJobsToMemory(jobs) {
-  MEM.length = 0
-  MEM.push(...jobs)
-  return MEM
-}
-
-async function writeJobsToKV(jobs) {
-  if (!kv) return jobs
-  const recent = filterRecentJobs(jobs, RETAIN_DAYS)
-  const unique = removeDuplicates(recent)
-  await kv.set(JOBS_KEY, unique)
-  await kv.set(LAST_SYNC_KEY, new Date().toISOString())
-  await kv.set(STATS_KEY, {
-    totalJobs: unique.length,
-    storageSize: JSON.stringify(unique).length,
-    lastSync: new Date().toISOString(),
-    provider: 'vercel-kv'
-  })
-  return unique
-}
-
-async function writeJobsToRedis(jobs) {
-  const recent = filterRecentJobs(jobs, RETAIN_DAYS)
-  const unique = removeDuplicates(recent)
-  const client = await getRedisClient()
-  await client.set(JOBS_KEY, JSON.stringify(unique))
-  await client.set(LAST_SYNC_KEY, new Date().toISOString())
-  await client.set(STATS_KEY, JSON.stringify({
-    totalJobs: unique.length,
-    storageSize: JSON.stringify(unique).length,
-    lastSync: new Date().toISOString(),
-    provider: 'redis'
-  }))
-  return unique
 }
 
 export default async function handler(req, res) {
@@ -432,52 +358,30 @@ export default async function handler(req, res) {
 
       // Stats Action
       if (action === 'stats') {
-        let provider = 'memory'
+        let provider = 'neon'
         let jobsCount = 0
         let storageSize = 0
         let lastSync = null
 
         try {
-          // Try to read pre-calculated stats first
-          if (UPSTASH_REST_CONFIGURED) {
-            const stats = await upstashGet(STATS_KEY)
-            if (stats) {
-              const s = typeof stats === 'string' ? JSON.parse(stats) : stats
-              jobsCount = s.totalJobs || 0
-              storageSize = s.storageSize || 0
-              lastSync = s.lastSync || null
-              provider = 'upstash-rest'
+          // 直接从数据库统计
+          if (NEON_CONFIGURED) {
+            const result = await neonHelper.count(JOBS_TABLE)
+            jobsCount = result || 0
+            
+            // 估算存储大小（每个岗位约1KB）
+            storageSize = jobsCount * 1024
+            
+            // 获取最新更新时间
+            const latestJob = await neonHelper.select(JOBS_TABLE, {}, { 
+              orderBy: 'updated_at', 
+              orderDirection: 'DESC', 
+              limit: 1 
+            })
+            if (latestJob && latestJob.rows.length > 0) {
+              lastSync = latestJob.rows[0].updated_at
             }
-          } else if (REDIS_CONFIGURED) {
-            const client = await getRedisClient()
-            const statsStr = await client.get(STATS_KEY)
-            if (statsStr) {
-              const s = JSON.parse(statsStr)
-              jobsCount = s.totalJobs || 0
-              storageSize = s.storageSize || 0
-              lastSync = s.lastSync || null
-              provider = 'redis'
-            }
-          } else if (KV_CONFIGURED && kv) {
-            const stats = await kv.get(STATS_KEY)
-            if (stats) {
-              jobsCount = stats.totalJobs || 0
-              storageSize = stats.storageSize || 0
-              lastSync = stats.lastSync || null
-              provider = 'vercel-kv'
-            }
-          }
-
-          // Fallback: if no stats found, count jobs
-          if (jobsCount === 0) {
-            let jobs = []
-            if (UPSTASH_REST_CONFIGURED) jobs = await readJobsFromUpstashREST()
-            else if (REDIS_CONFIGURED) jobs = await readJobsFromRedis()
-            else if (KV_CONFIGURED) jobs = await readJobsFromKV()
-            else jobs = readJobsFromMemory()
-
-            jobsCount = jobs.length
-            storageSize = JSON.stringify(jobs).length
+            provider = 'neon'
           }
 
           return res.status(200).json({
@@ -518,88 +422,22 @@ export default async function handler(req, res) {
       const categories = await getLocationCategories()
 
       let jobs = []
-      let provider = 'memory'
+      let provider = 'neon'
       const startTime = Date.now()
-      // 统一策略：优先 Upstash REST -> 其次 Redis TCP -> 再次 KV -> 最后内存
-      if (UPSTASH_REST_CONFIGURED) {
+      // 只使用 Neon 数据库
+      if (NEON_CONFIGURED) {
         try {
-          jobs = await readJobsFromUpstashREST()
-          provider = 'upstash-rest'
-          console.log(`[processed-jobs] GET: Upstash REST read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
+          jobs = await readJobsFromNeon()
+          provider = 'neon'
+          console.log(`[processed-jobs] GET: Neon database read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
         } catch (e) {
-          console.warn(`[processed-jobs] GET: Upstash REST read failed, fallback to Redis:`, e?.message || e)
-          if (REDIS_CONFIGURED) {
-            try {
-              jobs = await readJobsFromRedis()
-              provider = 'redis'
-              console.log(`[processed-jobs] GET: Redis read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
-            } catch (er) {
-              console.warn(`[processed-jobs] GET: Redis read failed, fallback to KV:`, er?.message || er)
-              if (KV_CONFIGURED) {
-                try {
-                  jobs = await readJobsFromKV()
-                  provider = 'vercel-kv'
-                  console.log(`[processed-jobs] GET: KV read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
-                } catch (err2) {
-                  console.warn(`[processed-jobs] GET: KV read failed, fallback to memory:`, err2?.message || err2)
-                  jobs = readJobsFromMemory()
-                  provider = 'memory'
-                }
-              } else {
-                jobs = readJobsFromMemory()
-                provider = 'memory'
-              }
-            }
-          } else if (KV_CONFIGURED) {
-            try {
-              jobs = await readJobsFromKV()
-              provider = 'vercel-kv'
-              console.log(`[processed-jobs] GET: KV read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
-            } catch (err3) {
-              console.warn(`[processed-jobs] GET: KV read failed, fallback to memory:`, err3?.message || err3)
-              jobs = readJobsFromMemory()
-              provider = 'memory'
-            }
-          } else {
-            jobs = readJobsFromMemory()
-            provider = 'memory'
-          }
-        }
-      } else if (REDIS_CONFIGURED) {
-        try {
-          jobs = await readJobsFromRedis()
-          provider = 'redis'
-          console.log(`[processed-jobs] GET: Redis read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
-        } catch (e) {
-          console.warn(`[processed-jobs] GET: Redis read failed, fallback to KV:`, e?.message || e)
-          if (KV_CONFIGURED) {
-            try {
-              jobs = await readJobsFromKV()
-              provider = 'vercel-kv'
-              console.log(`[processed-jobs] GET: KV read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
-            } catch (er) {
-              console.warn(`[processed-jobs] GET: KV read failed, fallback to memory:`, er?.message || er)
-              jobs = readJobsFromMemory()
-              provider = 'memory'
-            }
-          } else {
-            jobs = readJobsFromMemory()
-            provider = 'memory'
-          }
-        }
-      } else if (KV_CONFIGURED) {
-        try {
-          jobs = await readJobsFromKV()
-          provider = 'vercel-kv'
-          console.log(`[processed-jobs] GET: KV read success, ${jobs.length} jobs, ${Date.now() - startTime}ms`)
-        } catch (e) {
-          console.warn(`[processed-jobs] GET: KV read failed, fallback to memory:`, e?.message || e)
-          jobs = readJobsFromMemory()
-          provider = 'memory'
+          console.warn(`[processed-jobs] GET: Neon database read failed:`, e?.message || e)
+          jobs = []
+          provider = 'neon-error'
         }
       } else {
-        jobs = readJobsFromMemory()
-        provider = 'memory'
+        jobs = []
+        provider = 'neon-not-configured'
       }
       let filtered = []
       try {
@@ -659,9 +497,7 @@ export default async function handler(req, res) {
       res.setHeader('Expires', '0')
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       res.setHeader('X-Storage-Provider', provider)
-      res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED))
-      res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
-      res.setHeader('X-Diag-Upstash-REST-Configured', String(!!UPSTASH_REST_CONFIGURED))
+      res.setHeader('X-Diag-Neon-Configured', String(!!NEON_CONFIGURED))
       return res.status(200).json({
         jobs: items,
         total,
@@ -806,179 +642,44 @@ export default async function handler(req, res) {
       }
 
       let toWrite = normalized
-      let provider = 'memory'
+      let provider = 'neon'
       if (mode === 'append') {
-        // 统一策略：优先 Upstash REST -> 其次 Redis -> 再次 KV -> 最后内存
-        if (UPSTASH_REST_CONFIGURED) {
+        // 只使用 Neon 数据库
+        if (NEON_CONFIGURED) {
           try {
-            const existing = await readJobsFromUpstashREST()
+            const existing = await readJobsFromNeon()
             toWrite = [...existing, ...normalized]
-            provider = 'upstash-rest'
+            provider = 'neon'
           } catch (e) {
-            console.warn(`[processed-jobs] POST append: Upstash REST read failed, fallback to Redis:`, e?.message || e)
-            if (REDIS_CONFIGURED) {
-              try {
-                const existing = await readJobsFromRedis()
-                toWrite = [...existing, ...normalized]
-                provider = 'redis'
-              } catch (er) {
-                console.warn(`[processed-jobs] POST append: Redis read failed, fallback to KV:`, er?.message || er)
-                if (KV_CONFIGURED) {
-                  try {
-                    const existing = await readJobsFromKV()
-                    toWrite = [...existing, ...normalized]
-                    provider = 'vercel-kv'
-                  } catch (er2) {
-                    console.warn(`[processed-jobs] POST append: KV read failed, fallback to memory:`, er2?.message || er2)
-                    const existing = readJobsFromMemory()
-                    toWrite = [...existing, ...normalized]
-                    provider = 'memory'
-                  }
-                } else {
-                  const existing = readJobsFromMemory()
-                  toWrite = [...existing, ...normalized]
-                  provider = 'memory'
-                }
-              }
-            } else if (KV_CONFIGURED) {
-              try {
-                const existing = await readJobsFromKV()
-                toWrite = [...existing, ...normalized]
-                provider = 'vercel-kv'
-              } catch (er3) {
-                console.warn(`[processed-jobs] POST append: KV read failed, fallback to memory:`, er3?.message || er3)
-                const existing = readJobsFromMemory()
-                toWrite = [...existing, ...normalized]
-                provider = 'memory'
-              }
-            } else {
-              const existing = readJobsFromMemory()
-              toWrite = [...existing, ...normalized]
-              provider = 'memory'
-            }
-          }
-        } else if (REDIS_CONFIGURED) {
-          try {
-            const existing = await readJobsFromRedis()
-            toWrite = [...existing, ...normalized]
-            provider = 'redis'
-          } catch (e) {
-            console.warn(`[processed-jobs] POST append: Redis read failed, fallback to KV:`, e?.message || e)
-            if (KV_CONFIGURED) {
-              try {
-                const existing = await readJobsFromKV()
-                toWrite = [...existing, ...normalized]
-                provider = 'vercel-kv'
-              } catch (er) {
-                console.warn(`[processed-jobs] POST append: KV read failed, fallback to memory:`, er?.message || er)
-                const existing = readJobsFromMemory()
-                toWrite = [...existing, ...normalized]
-                provider = 'memory'
-              }
-            } else {
-              const existing = readJobsFromMemory()
-              toWrite = [...existing, ...normalized]
-              provider = 'memory'
-            }
-          }
-        } else if (KV_CONFIGURED) {
-          try {
-            const existing = await readJobsFromKV()
-            toWrite = [...existing, ...normalized]
-            provider = 'vercel-kv'
-          } catch (e) {
-            console.warn(`[processed-jobs] POST append: KV read failed, fallback to memory:`, e?.message || e)
-            const existing = readJobsFromMemory()
-            toWrite = [...existing, ...normalized]
-            provider = 'memory'
+            console.warn(`[processed-jobs] POST append: Neon database read failed:`, e?.message || e)
+            toWrite = normalized
+            provider = 'neon-error'
           }
         } else {
-          const existing = readJobsFromMemory()
-          toWrite = [...existing, ...normalized]
-          provider = 'memory'
+          toWrite = normalized
+          provider = 'neon-not-configured'
         }
       }
 
       let saved = [];
 
-      if (UPSTASH_REST_CONFIGURED) {
+      // 只使用 Neon 数据库
+      if (NEON_CONFIGURED) {
         try {
-          saved = await writeJobsToUpstashREST(toWrite);
-          provider = 'upstash-rest';
+          saved = await writeJobsToNeon(toWrite);
+          provider = 'neon';
         } catch (e) {
-          console.warn('Upstash REST 写入失败，尝试写入 Redis:', e?.message || e);
-          if (REDIS_CONFIGURED) {
-            try {
-              saved = await writeJobsToRedis(toWrite);
-              provider = 'redis';
-            } catch (er) {
-              console.warn('Redis 写入失败，尝试写入 KV:', er?.message || er);
-              if (KV_CONFIGURED) {
-                try {
-                  saved = await writeJobsToKV(toWrite);
-                  provider = 'vercel-kv';
-                } catch (er2) {
-                  console.warn('KV 写入失败，写入到内存:', er2?.message || er2);
-                  saved = writeJobsToMemory(toWrite);
-                  provider = 'memory';
-                }
-              } else {
-                saved = writeJobsToMemory(toWrite);
-                provider = 'memory';
-              }
-            }
-          } else if (KV_CONFIGURED) {
-            try {
-              saved = await writeJobsToKV(toWrite);
-              provider = 'vercel-kv';
-            } catch (er3) {
-              console.warn('KV 写入失败，写入到内存:', er3?.message || er3);
-              saved = writeJobsToMemory(toWrite);
-              provider = 'memory';
-            }
-          } else {
-            saved = writeJobsToMemory(toWrite);
-            provider = 'memory';
-          }
-        }
-      } else if (REDIS_CONFIGURED) {
-        try {
-          saved = await writeJobsToRedis(toWrite);
-          provider = 'redis';
-        } catch (e) {
-          console.warn('Redis 写入失败，尝试写入 KV:', e?.message || e);
-          if (KV_CONFIGURED) {
-            try {
-              saved = await writeJobsToKV(toWrite);
-              provider = 'vercel-kv';
-            } catch (er) {
-              console.warn('KV 写入失败，写入到内存:', er?.message || er);
-              saved = writeJobsToMemory(toWrite);
-              provider = 'memory';
-            }
-          } else {
-            saved = writeJobsToMemory(toWrite);
-            provider = 'memory';
-          }
-        }
-      } else if (KV_CONFIGURED) {
-        try {
-          saved = await writeJobsToKV(toWrite);
-          provider = 'vercel-kv';
-        } catch (e) {
-          console.warn('KV 写入失败，写入到内存:', e?.message || e);
-          saved = writeJobsToMemory(toWrite);
-          provider = 'memory';
+          console.warn('Neon 数据库写入失败:', e?.message || e);
+          saved = [];
+          provider = 'neon-error';
         }
       } else {
-        saved = writeJobsToMemory(toWrite);
-        provider = 'memory';
+        saved = [];
+        provider = 'neon-not-configured';
       }
 
       res.setHeader('X-Storage-Provider', provider)
-      res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED))
-      res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
-      res.setHeader('X-Diag-Upstash-REST-Configured', String(!!UPSTASH_REST_CONFIGURED))
+      res.setHeader('X-Diag-Neon-Configured', String(!!NEON_CONFIGURED))
       console.log(`[processed-jobs] POST: Saved ${saved.length} jobs via ${provider}, mode=${mode}`)
       return res.status(200).json({ success: true, saved: saved.length, mode, provider })
     }
@@ -987,9 +688,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('processed-jobs API error:', error)
     try {
-      res.setHeader('X-Diag-KV-Configured', String(!!KV_CONFIGURED))
-      res.setHeader('X-Diag-Redis-Configured', String(!!REDIS_CONFIGURED))
-      res.setHeader('X-Diag-Upstash-REST-Configured', String(!!UPSTASH_REST_CONFIGURED))
+      res.setHeader('X-Diag-Neon-Configured', String(!!NEON_CONFIGURED))
     } catch { }
     return res.status(500).json({ error: 'Failed to process jobs', message: error?.message || String(error) })
   }

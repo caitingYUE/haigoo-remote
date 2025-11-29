@@ -26,9 +26,40 @@ CREATE TABLE users (
 INSERT INTO users (user_id, email, username, status, roles)
 VALUES ('admin-1', 'caitlinyct@gmail.com', '超级管理员', 'active', '{"admin": true}')
 ON CONFLICT (email) DO NOTHING;
-INSERT INTO users (user_id, email, username, status, roles)
-VALUES ('admin-2', 'mrzhangzy1996@gmail.com', '超级管理员', 'active', '{"admin": true}')
-ON CONFLICT (email) DO NOTHING;
+
+-- 表3: jobs - 存储岗位信息
+CREATE TABLE jobs (
+  id SERIAL PRIMARY KEY,
+  job_id VARCHAR(255) UNIQUE NOT NULL,
+  title VARCHAR(500) NOT NULL,
+  company VARCHAR(200) NOT NULL,
+  location VARCHAR(200) DEFAULT 'Remote',
+  description TEXT,
+  url VARCHAR(2000),
+  published_at TIMESTAMP NOT NULL,
+  source VARCHAR(100) DEFAULT 'unknown',
+  category VARCHAR(100) DEFAULT '其他',
+  salary VARCHAR(200),
+  job_type VARCHAR(50) DEFAULT 'full-time',
+  experience_level VARCHAR(50) DEFAULT 'Mid',
+  tags JSONB DEFAULT '[]',
+  requirements JSONB DEFAULT '[]',
+  benefits JSONB DEFAULT '[]',
+  is_remote BOOLEAN DEFAULT true,
+  status VARCHAR(50) DEFAULT 'active',
+  region VARCHAR(50) DEFAULT 'overseas',
+  translations JSONB,
+  is_translated BOOLEAN DEFAULT false,
+  translated_at TIMESTAMP,
+  company_id VARCHAR(255),
+  source_type VARCHAR(50) DEFAULT 'rss',
+  is_trusted BOOLEAN DEFAULT false,
+  can_refer BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- jobs表索引（根据需要后续添加）
 
 -- 表2: favorites - 存储用户收藏的工作
 CREATE TABLE favorites (
