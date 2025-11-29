@@ -139,22 +139,23 @@ export default function TrustedCompaniesPage() {
                                         />
                                     ) : null}
 
-                                    {/* Fallback: Clean background with Logo */}
-                                    <div className={`w-full h-full flex items-center justify-center relative bg-gray-50 ${company.coverImage ? 'hidden' : ''}`}>
-                                        {/* Logo centered */}
+                                    {/* Fallback: Logo as Cover */}
+                                    <div className={`w-full h-full bg-gray-50 relative ${company.coverImage ? 'hidden' : ''}`}>
                                         {company.logo ? (
                                             <img
                                                 src={company.logo}
                                                 alt={company.name}
-                                                className="w-24 h-24 object-contain p-2"
+                                                className="w-full h-full object-cover"
                                                 onError={(e) => {
                                                     (e.target as HTMLImageElement).style.display = 'none';
                                                     (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                                                 }}
                                             />
-                                        ) : (
+                                        ) : null}
+
+                                        <div className={`w-full h-full flex items-center justify-center ${company.logo ? 'hidden' : ''}`}>
                                             <Building className="w-12 h-12 text-gray-300" />
-                                        )}
+                                        </div>
                                     </div>
 
                                     {/* Verified Badge Overlay */}
