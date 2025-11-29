@@ -526,7 +526,7 @@ export default function AdminCompanyManagementPage() {
                                 <div className="text-sm text-gray-500">共 {companyJobs.length} 个职位</div>
                             </div>
 
-                            <div className="overflow-y-auto">
+                            <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead className="bg-gray-50 sticky top-0 z-10">
                                         <tr>
@@ -692,7 +692,7 @@ export default function AdminCompanyManagementPage() {
             </div>
 
             {/* Company List */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="bg-white rounded-xl border border-gray-200">
                 <div className="overflow-x-auto group" data-density={rowDensity}>
                     <table className="w-full group-data-[density=compact]:text-sm">
                         <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">

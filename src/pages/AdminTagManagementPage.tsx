@@ -157,7 +157,7 @@ export default function AdminTagManagementPage() {
         description: string,
         color: string
     ) => (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col h-full">
+        <div className="bg-white rounded-lg border border-gray-200 flex flex-col">
             {/* Header */}
             <div className={`${color} p-4`}>
                 <div className="flex items-center gap-3">
@@ -196,7 +196,7 @@ export default function AdminTagManagementPage() {
             </div>
 
             {/* Tag list */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2" style={{ maxHeight: '500px' }}>
+            <div className="p-4 space-y-2">
                 {tags.map((tag, index) => (
                     <div
                         key={index}
@@ -270,7 +270,7 @@ export default function AdminTagManagementPage() {
     }
 
     return (
-        <div className="h-full bg-gray-50 p-6">
+        <div className="min-h-screen bg-gray-50 p-6">
             {/* Top Actions */}
             <div className="flex items-center justify-between mb-6">
                 <div>
