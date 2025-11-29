@@ -66,7 +66,7 @@ class TrustedCompaniesService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 },
                 body: JSON.stringify(company)
             });
@@ -82,7 +82,7 @@ class TrustedCompaniesService {
             const response = await fetch(`${this.API_BASE}?id=${id}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 }
             });
             return response.ok;

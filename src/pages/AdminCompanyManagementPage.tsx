@@ -173,7 +173,7 @@ export default function AdminCompanyManagementPage() {
 
             console.log(`[${company.name}] Step 3: Saving to database...`);
 
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('haigoo_auth_token');
             if (!token) {
                 throw new Error('未登录或登录已过期，请重新登录');
             }
@@ -200,8 +200,8 @@ export default function AdminCompanyManagementPage() {
         } catch (error) {
             console.error(`Failed to update company info for ${company.name}:`, error);
             const errorMsg = error instanceof Error ? error.message : '未知错误';
-            // Don't alert for each failure during batch processing
-            // Just log it - the batch process will show summary
+            // Re-throw so batch processing can track failures
+            throw error;
         } finally {
             setUpdatingMap(prev => ({ ...prev, [company.id]: false }));
         }
