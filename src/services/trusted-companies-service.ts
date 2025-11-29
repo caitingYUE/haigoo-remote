@@ -98,7 +98,7 @@ class TrustedCompaniesService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 },
                 body: JSON.stringify({ url })
             });
