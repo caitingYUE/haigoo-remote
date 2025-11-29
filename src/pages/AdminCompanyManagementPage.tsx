@@ -650,29 +650,29 @@ export default function AdminCompanyManagementPage() {
 
             {/* Company List */}
             <div className="bg-white rounded-xl border border-gray-200">
-                <div className="overflow-x-auto group" data-density={rowDensity}>
-                    <table className="w-full group-data-[density=compact]:text-sm">
+                <div className="overflow-x-auto group">
+                    <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                             <tr>
-                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     企业名称
                                 </th>
-                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     简介
                                 </th>
-                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     行业
                                 </th>
-                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     标签
                                 </th>
-                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     岗位数
                                 </th>
-                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     来源
                                 </th>
-                                <th className="px-6 py-3 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     操作
                                 </th>
                             </tr>
@@ -680,7 +680,7 @@ export default function AdminCompanyManagementPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 group-data-[density=compact]:px-4 group-data-[density=compact]:py-8 text-center">
+                                    <td colSpan={7} className="px-6 py-12 text-center">
                                         <div className="flex items-center justify-center gap-2 text-gray-500">
                                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                                             <span>加载中...</span>
@@ -689,7 +689,7 @@ export default function AdminCompanyManagementPage() {
                                 </tr>
                             ) : companies.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 group-data-[density=compact]:px-4 group-data-[density=compact]:py-8 text-center text-gray-500">
+                                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                                         <div className="flex flex-col items-center gap-2">
                                             <Building2 className="w-12 h-12 text-gray-300" />
                                             <p>暂无企业数据</p>
@@ -700,7 +700,7 @@ export default function AdminCompanyManagementPage() {
                             ) : (
                                 companies.map((company) => (
                                     <tr key={company.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
+                                        <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 {company.logo ? (
                                                     <img
@@ -709,7 +709,7 @@ export default function AdminCompanyManagementPage() {
                                                         className="w-10 h-10 rounded-lg object-cover"
                                                     />
                                                 ) : (
-                                                    <div className="w-10 h-10 group-data-[density=compact]:w-8 group-data-[density=compact]:h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                                                         <Building2 className="w-5 h-5 text-gray-400" />
                                                     </div>
                                                 )}
@@ -729,17 +729,17 @@ export default function AdminCompanyManagementPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
+                                        <td className="px-6 py-4">
                                             <div className="text-sm text-gray-600 max-w-xs truncate" title={company.description}>
                                                 {company.description || <span className="text-gray-400">-</span>}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
+                                        <td className="px-6 py-4">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                                 {company.industry || '未分类'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
+                                        <td className="px-6 py-4">
                                             <div className="flex flex-wrap gap-1">
                                                 {company.tags && company.tags.length > 0 ? (
                                                     company.tags.slice(0, 3).map((tag, index) => (
@@ -758,18 +758,18 @@ export default function AdminCompanyManagementPage() {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
+                                        <td className="px-6 py-4">
                                             <div className="flex items-center gap-1 text-sm text-gray-900">
                                                 <Briefcase className="w-4 h-4 text-gray-400" />
                                                 {company.jobCount || 0}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
+                                        <td className="px-6 py-4">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                 {company.source}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 group-data-[density=compact]:px-4 group-data-[density=compact]:py-2">
+                                        <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={() => handleViewDetail(company)}
