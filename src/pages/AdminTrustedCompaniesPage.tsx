@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
- 
+
 import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { ClassificationService } from '../services/classification-service'
@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 
 export default function AdminTrustedCompaniesPage() {
-    
+
     const { showSuccess, showError } = useNotificationHelpers()
     const { token } = useAuth()
     const [fetchDetailsEnabled, setFetchDetailsEnabled] = useState(false)
@@ -28,6 +28,7 @@ export default function AdminTrustedCompaniesPage() {
         linkedin: '',
         description: '',
         logo: '',
+        coverImage: '',
         tags: '',
         industry: '其他' as CompanyIndustry,
         canRefer: false
@@ -61,7 +62,7 @@ export default function AdminTrustedCompaniesPage() {
         }
     }, [isModalOpen])
 
-    
+
 
     const handleEdit = (company: TrustedCompany) => {
         setEditingCompany(company)
@@ -72,6 +73,7 @@ export default function AdminTrustedCompaniesPage() {
             linkedin: company.linkedin || '',
             description: company.description || '',
             logo: company.logo || '',
+            coverImage: company.coverImage || '',
             tags: company.tags ? company.tags.join(', ') : '',
             industry: company.industry || '其他',
             canRefer: !!company.canRefer
@@ -88,6 +90,7 @@ export default function AdminTrustedCompaniesPage() {
             linkedin: '',
             description: '',
             logo: '',
+            coverImage: '',
             tags: '',
             industry: '其他',
             canRefer: false
@@ -148,7 +151,8 @@ export default function AdminTrustedCompaniesPage() {
                 ...prev,
                 name: prev.name || metadata.title || '',
                 description: prev.description || metadata.description || '',
-                logo: prev.logo || metadata.icon || metadata.image || '',
+                logo: prev.logo || metadata.icon || '',
+                coverImage: prev.coverImage || metadata.image || '', // Map image to coverImage
                 industry: classification.industry,
                 tags: prev.tags ? prev.tags : classification.tags.join(', ')
             }))
@@ -405,14 +409,29 @@ export default function AdminTrustedCompaniesPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Logo 链接</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
                                         <input
-                                            type="url"
+                                            type="text"
                                             value={formData.logo}
-                                            onChange={e => setFormData({ ...formData, logo: e.target.value })}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             placeholder="https://..."
                                         />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">封面图 URL (Cover Image)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.coverImage}
+                                            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="https://..."
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            用于卡片顶部展示。建议比例 16:9 (e.g., 1200x675)，支持 JPG/PNG/WebP。
+                                            如未填写，将显示默认样式。
+                                        </p>
                                     </div>
 
                                     <div className="col-span-full">

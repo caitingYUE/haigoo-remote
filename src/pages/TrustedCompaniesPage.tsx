@@ -139,32 +139,22 @@ export default function TrustedCompaniesPage() {
                                         />
                                     ) : null}
 
-                                    {/* Fallback: Logo with blurred background or pattern */}
-                                    <div className={`w-full h-full flex items-center justify-center relative ${company.coverImage ? 'hidden' : ''}`}>
-                                        {/* Blurred background if logo exists */}
-                                        {company.logo && (
-                                            <div
-                                                className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-10 blur-xl scale-150"
-                                                style={{ backgroundImage: `url(${company.logo})` }}
-                                            />
-                                        )}
-
-                                        {/* Logo or Icon */}
+                                    {/* Fallback: Clean background with Logo */}
+                                    <div className={`w-full h-full flex items-center justify-center relative bg-gray-50 ${company.coverImage ? 'hidden' : ''}`}>
+                                        {/* Logo centered */}
                                         {company.logo ? (
                                             <img
                                                 src={company.logo}
                                                 alt={company.name}
-                                                className="w-20 h-20 object-contain relative z-10 drop-shadow-sm"
+                                                className="w-24 h-24 object-contain p-2"
                                                 onError={(e) => {
                                                     (e.target as HTMLImageElement).style.display = 'none';
                                                     (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                                                 }}
                                             />
-                                        ) : null}
-
-                                        <div className={`relative z-10 ${company.logo ? 'hidden' : ''}`}>
+                                        ) : (
                                             <Building className="w-12 h-12 text-gray-300" />
-                                        </div>
+                                        )}
                                     </div>
 
                                     {/* Verified Badge Overlay */}
