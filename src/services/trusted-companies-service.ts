@@ -16,6 +16,7 @@ export interface TrustedCompany {
     linkedin?: string;
     description?: string;
     logo?: string;
+    coverImage?: string;
     tags?: CompanyTag[];
     industry?: CompanyIndustry;
     isTrusted: boolean;

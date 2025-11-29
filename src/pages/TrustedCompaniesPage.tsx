@@ -126,27 +126,49 @@ export default function TrustedCompaniesPage() {
                                 className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-100 group overflow-hidden flex flex-col h-full"
                             >
                                 {/* Large Preview Image Area */}
-                                <div className="w-full h-40 bg-gray-50 relative border-b border-gray-100">
-                                    {company.logo ? (
+                                <div className="w-full h-40 bg-gray-50 relative border-b border-gray-100 overflow-hidden">
+                                    {company.coverImage ? (
                                         <img
-                                            src={company.logo}
-                                            alt={company.name}
+                                            src={company.coverImage}
+                                            alt={`${company.name} cover`}
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
-                                                // Fallback if image fails
                                                 (e.target as HTMLImageElement).style.display = 'none';
                                                 (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                                             }}
                                         />
                                     ) : null}
 
-                                    {/* Fallback Icon (shown if no logo or load error) */}
-                                    <div className={`w-full h-full flex items-center justify-center ${company.logo ? 'hidden' : ''}`}>
-                                        <Building className="w-12 h-12 text-gray-300" />
+                                    {/* Fallback: Logo with blurred background or pattern */}
+                                    <div className={`w-full h-full flex items-center justify-center relative ${company.coverImage ? 'hidden' : ''}`}>
+                                        {/* Blurred background if logo exists */}
+                                        {company.logo && (
+                                            <div
+                                                className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-10 blur-xl scale-150"
+                                                style={{ backgroundImage: `url(${company.logo})` }}
+                                            />
+                                        )}
+
+                                        {/* Logo or Icon */}
+                                        {company.logo ? (
+                                            <img
+                                                src={company.logo}
+                                                alt={company.name}
+                                                className="w-20 h-20 object-contain relative z-10 drop-shadow-sm"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                                }}
+                                            />
+                                        ) : null}
+
+                                        <div className={`relative z-10 ${company.logo ? 'hidden' : ''}`}>
+                                            <Building className="w-12 h-12 text-gray-300" />
+                                        </div>
                                     </div>
 
                                     {/* Verified Badge Overlay */}
-                                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-[#1A365D] shadow-sm border border-gray-100">
+                                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-[#1A365D] shadow-sm border border-gray-100 z-20">
                                         <div className="w-3 h-3 bg-[#3182CE] rounded-full flex items-center justify-center">
                                             <svg viewBox="0 0 24 24" fill="none" className="w-2 h-2 text-white" stroke="currentColor" strokeWidth="3">
                                                 <polyline points="20 6 9 17 4 12" />
