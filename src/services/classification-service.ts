@@ -435,29 +435,53 @@ export const ClassificationService = {
      * Classify a company based on name and description
      */
     classifyCompany(name: string, description: string = ''): { industry: CompanyIndustry; tags: CompanyTag[] } {
-        const text = (name + ' ' + description).toLowerCase();
-        let industry: CompanyIndustry = '其他';
-        const tags: Set<CompanyTag> = new Set();
-
-        // Determine Industry
-        for (const [keyword, ind] of Object.entries(INDUSTRY_KEYWORDS)) {
-            if (text.includes(keyword)) {
-                industry = ind;
-                break; // Take the first strong match
-            }
-        }
-
-        // Determine Tags
-        for (const [keyword, tag] of Object.entries(TAG_KEYWORDS)) {
-            if (text.includes(keyword)) {
-                tags.add(tag);
-            }
-        }
-
-        return {
-            industry,
-            tags: Array.from(tags)
+        const n = name.toLowerCase();
+        const d = description.toLowerCase();
+        const scores: Record<CompanyIndustry, number> = {
+            '互联网/软件': 0,
+            '人工智能': 0,
+            '大健康/医疗': 0,
+            '教育': 0,
+            '金融/Fintech': 0,
+            '电子商务': 0,
+            'Web3/区块链': 0,
+            '游戏': 0,
+            '媒体/娱乐': 0,
+            '企业服务/SaaS': 0,
+            '硬件/物联网': 0,
+            '消费生活': 0,
+            '其他': 0
         };
+
+        for (const [kw, ind] of Object.entries(INDUSTRY_KEYWORDS)) {
+            let w = 0;
+            if (n.includes(kw)) w += 2;
+            if (d.includes(kw)) w += 1;
+            if (kw.length >= 7 || kw.includes(' ')) w += 1;
+            if (w > 0) scores[ind] += w;
+        }
+
+        let industry: CompanyIndustry = '其他';
+        let max = -1;
+        for (const [ind, score] of Object.entries(scores)) {
+            if (score > max) {
+                max = score;
+                industry = ind as CompanyIndustry;
+            }
+        }
+
+        if (max <= 0) {
+            const techHints = ['software','internet','technology','app','mobile app','platform','cloud'];
+            const t = (n + ' ' + d);
+            if (techHints.some(h => t.includes(h))) industry = '互联网/软件';
+        }
+
+        const tags: Set<CompanyTag> = new Set();
+        for (const [kw, tag] of Object.entries(TAG_KEYWORDS)) {
+            if (n.includes(kw) || d.includes(kw)) tags.add(tag);
+        }
+
+        return { industry, tags: Array.from(tags) };
     },
 
     /**
