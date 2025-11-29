@@ -737,10 +737,10 @@ const AdminTeamPage: React.FC = () => {
     { id: 'dashboard', label: '数据概览', icon: BarChart3 },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
-    { id: 'resumes', label: '简历数据', icon: FileText },
-    { id: 'users', label: '用户管理', icon: Users },
     { id: 'companies', label: '企业管理', icon: Building },
     { id: 'tag-management', label: '标签管理', icon: Tag },
+    { id: 'resumes', label: '简历数据', icon: FileText },
+    { id: 'users', label: '用户管理', icon: Users },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'settings', label: '系统设置', icon: Settings }

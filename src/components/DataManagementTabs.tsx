@@ -747,7 +747,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位分类</th>
               <th className="w-20 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位级别</th>
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
-              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业类型</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位类型</th>
               <th className="w-32 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">区域限制</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">区域分类</th>
@@ -837,15 +836,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       企业官网
                     </a>
                   )}
-                </td>
-
-                {/* 行业类型 */}
-                <td className="px-3 py-2">
-                  <Tooltip content="未定义" maxLines={1}>
-                    <span className="text-xs text-gray-600">
-                      未定义
-                    </span>
-                  </Tooltip>
                 </td>
 
                 {/* 岗位类型 */}
@@ -1014,9 +1004,55 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           >
             上一页
           </button>
-          <span className="px-3 py-1 text-sm">
-            第 {processedDataPage} 页，共 {Math.ceil(processedDataTotal / processedDataPageSize)} 页
-          </span>
+          
+          {(() => {
+            const totalPages = Math.ceil(processedDataTotal / processedDataPageSize);
+            const maxVisiblePages = 5;
+            const pages = [];
+            
+            if (totalPages <= maxVisiblePages) {
+              for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+              }
+            } else {
+              if (processedDataPage <= 3) {
+                for (let i = 1; i <= 4; i++) pages.push(i);
+                pages.push(-1); // Ellipsis
+                pages.push(totalPages);
+              } else if (processedDataPage >= totalPages - 2) {
+                pages.push(1);
+                pages.push(-1); // Ellipsis
+                for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+              } else {
+                pages.push(1);
+                pages.push(-1);
+                pages.push(processedDataPage - 1);
+                pages.push(processedDataPage);
+                pages.push(processedDataPage + 1);
+                pages.push(-1);
+                pages.push(totalPages);
+              }
+            }
+
+            return pages.map((p, i) => (
+              p === -1 ? (
+                <span key={`ellipsis-${i}`} className="px-2 text-gray-400">...</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setProcessedDataPage(p)}
+                  className={`px-3 py-1 text-sm border rounded-lg transition-colors ${
+                    processedDataPage === p
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            ));
+          })()}
+
           <button
             onClick={() => setProcessedDataPage(processedDataPage + 1)}
             disabled={processedDataPage >= Math.ceil(processedDataTotal / processedDataPageSize)}
