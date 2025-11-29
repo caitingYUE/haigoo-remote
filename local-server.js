@@ -19,12 +19,13 @@ async function startServer() {
         console.log('Importing users handler...');
         const usersHandler = (await import('./api/users.js')).default;
         app.all('/api/users', async (req, res) => { await usersHandler(req, res); });
+        app.all('/api/user-profile', async (req, res) => { await usersHandler(req, res); });
         console.log('Users handler imported.');
 
-        console.log('Importing user-profile handler...');
-        const userProfileHandler = (await import('./api/user-profile.js')).default;
-        app.all('/api/user-profile', async (req, res) => { await userProfileHandler(req, res); });
-        console.log('User-profile handler imported.');
+        console.log('Importing data handler...');
+        const dataHandler = (await import('./api/data.js')).default;
+        app.all('/api/data*', async (req, res) => { await dataHandler(req, res); });
+        console.log('Data handler imported.');
 
         console.log('Importing parse-resume handler...');
         const parseResumeHandler = (await import('./api/parse-resume-new.js')).default;
