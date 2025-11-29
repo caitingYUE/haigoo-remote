@@ -43,6 +43,7 @@ export default function AdminTrustedCompaniesPage() {
         description: '',
         logo: '',
         coverImage: '',
+        address: '',
         tags: '',
         industry: '其他' as CompanyIndustry,
         canRefer: false
@@ -88,6 +89,7 @@ export default function AdminTrustedCompaniesPage() {
             description: company.description || '',
             logo: company.logo || '',
             coverImage: company.coverImage || '',
+            address: company.address || '',
             tags: company.tags ? company.tags.join(', ') : '',
             industry: company.industry || '其他',
             canRefer: !!company.canRefer
@@ -105,6 +107,7 @@ export default function AdminTrustedCompaniesPage() {
             description: '',
             logo: '',
             coverImage: '',
+            address: '',
             tags: '',
             industry: '其他',
             canRefer: false
@@ -167,6 +170,7 @@ export default function AdminTrustedCompaniesPage() {
                 description: prev.description || metadata.description || '',
                 logo: prev.logo || metadata.icon || '',
                 coverImage: prev.coverImage || metadata.image || '', // Map image to coverImage
+                address: prev.address || metadata.address || '',
                 industry: classification.industry,
                 tags: prev.tags ? prev.tags : classification.tags.join(', ')
             }))
@@ -478,6 +482,17 @@ export default function AdminTrustedCompaniesPage() {
                                             onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
                                             className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="https://linkedin.com/company/..."
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">企业地址 (国家/城市)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.address}
+                                            onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            placeholder="例如：美国, 旧金山"
                                         />
                                     </div>
 

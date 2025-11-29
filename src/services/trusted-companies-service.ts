@@ -17,6 +17,7 @@ export interface TrustedCompany {
     description?: string;
     logo?: string;
     coverImage?: string;
+    address?: string;
     tags?: CompanyTag[];
     industry?: CompanyIndustry;
     isTrusted: boolean;
@@ -30,6 +31,7 @@ export interface CompanyMetadata {
     description: string;
     image: string;
     icon: string;
+    address?: string;
     _source?: string;
     _fallbackUrl?: string;
 }
