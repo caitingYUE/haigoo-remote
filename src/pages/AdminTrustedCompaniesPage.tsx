@@ -37,6 +37,18 @@ export default function AdminTrustedCompaniesPage() {
         loadCompanies()
     }, [])
 
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isModalOpen) {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = 'unset'
+        }
+        return () => {
+            document.body.style.overflow = 'unset'
+        }
+    }, [isModalOpen])
+
     const loadCompanies = async () => {
         try {
             setLoading(true)

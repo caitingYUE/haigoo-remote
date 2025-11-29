@@ -523,6 +523,23 @@ export default async function handler(req, res) {
                 const startIndex = (page - 1) * pageSize
                 const paginatedCompanies = filteredCompanies.slice(startIndex, startIndex + pageSize)
 
+                // Enrich with Trusted Company data (Logo, URL, etc.)
+                try {
+                    const trustedCompanies = await getAllCompanies()
+                    paginatedCompanies.forEach(company => {
+                        const trusted = trustedCompanies.find(tc => tc.name === company.name || (tc.name.toLowerCase() === company.name.toLowerCase()))
+                        if (trusted) {
+                            if (!company.logo && trusted.logo) company.logo = trusted.logo
+                            if (!company.url && trusted.website) company.url = trusted.website
+                            if (!company.description && trusted.description) company.description = trusted.description
+                            // Mark as trusted for UI if needed
+                            company.isTrusted = true
+                        }
+                    })
+                } catch (e) {
+                    console.warn('Failed to enrich with trusted companies:', e)
+                }
+
                 return res.status(200).json({
                     success: true,
                     companies: paginatedCompanies,

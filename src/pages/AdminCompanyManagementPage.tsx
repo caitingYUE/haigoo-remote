@@ -7,6 +7,8 @@ import {
 import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
 import { CompanyService } from '../services/company-service';
 import { ClassificationService } from '../services/classification-service';
+import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
+import { Job } from '../types';
 
 interface Company {
     id: string;
@@ -37,7 +39,8 @@ export default function AdminCompanyManagementPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [industryFilter, setIndustryFilter] = useState('');
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-    const [companyJobs, setCompanyJobs] = useState<any[]>([]);
+    const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
+    const [jobSearchTerm, setJobSearchTerm] = useState('');
 
     useEffect(() => {
         if (activeTab === 'all') {
@@ -59,7 +62,31 @@ export default function AdminCompanyManagementPage() {
             const data = await response.json();
 
             if (data.success) {
-                setCompanies(data.companies || []);
+                let list: Company[] = data.companies || [];
+
+                // 额外合并可信企业信息，补齐URL与Logo
+                try {
+                    const trustedList = await trustedCompaniesService.getAllCompanies();
+                    const normalize = (name: string) => name.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[,._\-]/g, '');
+                    const trustedMap = new Map<string, TrustedCompany>();
+                    trustedList.forEach(tc => trustedMap.set(normalize(tc.name), tc));
+
+                    list = list.map(c => {
+                        const tc = trustedMap.get(normalize(c.name));
+                        if (!tc) return c;
+                        return {
+                            ...c,
+                            url: c.url || tc.website || tc.careersPage || c.url,
+                            logo: c.logo || tc.logo || c.logo,
+                            description: c.description || tc.description || c.description,
+                            tags: Array.from(new Set([...(c.tags || []), ...(tc.tags || [])]))
+                        };
+                    });
+                } catch (e) {
+                    console.warn('合并可信企业信息失败:', e);
+                }
+
+                setCompanies(list);
                 setTotal(data.total || 0);
             }
         } catch (error) {
@@ -232,11 +259,10 @@ export default function AdminCompanyManagementPage() {
         setSelectedCompany(company);
 
         try {
-            const response = await fetch(`/api/data/processed-jobs`);
+            const response = await fetch(`/api/data/processed-jobs?company=${encodeURIComponent(company.name)}&limit=200`);
             const data = await response.json();
-            const jobs = data.jobs || [];
-            const companyJobs = jobs.filter((job: any) => job.company === company.name);
-            setCompanyJobs(companyJobs);
+            const jobs: Job[] = data.jobs || [];
+            setCompanyJobs(jobs);
         } catch (error) {
             console.error('Failed to load company jobs:', error);
             setCompanyJobs([]);
@@ -396,13 +422,25 @@ export default function AdminCompanyManagementPage() {
         );
     };
 
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (selectedCompany) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [selectedCompany]);
+
     const renderCompanyDetailModal = () => {
         if (!selectedCompany) return null;
 
         return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-                    <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl">
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
                         <div className="flex items-center gap-4">
                             {selectedCompany.logo ? (
                                 <img src={selectedCompany.logo} alt={selectedCompany.name} className="w-12 h-12 rounded-lg object-contain bg-gray-50" />
@@ -425,13 +463,13 @@ export default function AdminCompanyManagementPage() {
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => setSelectedCompany(null)} className="text-gray-400 hover:text-gray-600">
+                        <button onClick={() => setSelectedCompany(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
                             <X className="w-6 h-6" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-6">
-                        <div className="mb-8">
+                    <div className="flex-1 overflow-y-auto">
+                        <div className="p-6">
                             <h3 className="text-lg font-semibold mb-3">企业简介</h3>
                             <p className="text-gray-600 leading-relaxed">
                                 {selectedCompany.description || '暂无简介'}
@@ -447,42 +485,58 @@ export default function AdminCompanyManagementPage() {
                             )}
                         </div>
 
-                        <div>
-                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <Briefcase className="w-5 h-5" />
-                                招聘岗位 ({companyJobs.length})
-                            </h3>
+                        <div className="border-t border-gray-100">
+                            <div className="p-4 bg-gray-50 flex items-center gap-4">
+                                <div className="flex-1 relative">
+                                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="搜索职位..."
+                                        value={jobSearchTerm}
+                                        onChange={(e) => setJobSearchTerm(e.target.value)}
+                                        className="w-full pl-9 pr-4 py-2 rounded-lg border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div className="text-sm text-gray-500">共 {companyJobs.length} 个职位</div>
+                            </div>
 
-                            {companyJobs.length > 0 ? (
-                                <div className="space-y-3">
-                                    {companyJobs.map((job, index) => (
-                                        <div key={index} className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h4 className="font-medium text-gray-900">{job.title}</h4>
-                                                    <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
-                                                        <span>{job.location || '远程'}</span>
-                                                        <span>•</span>
-                                                        <span>{new Date(job.pubDate).toLocaleDateString()}</span>
-                                                    </div>
-                                                </div>
-                                                <a
-                                                    href={job.link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                                                >
-                                                    申请
-                                                </a>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                                    暂无岗位数据
-                                </div>
-                            )}
+                            <div className="overflow-y-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-gray-50 sticky top-0 z-10">
+                                        <tr>
+                                            <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">职位名称</th>
+                                            <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">地点</th>
+                                            <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">发布时间</th>
+                                            <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">来源</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {companyJobs.filter(j => j.title.toLowerCase().includes(jobSearchTerm.toLowerCase())).length === 0 ? (
+                                            <tr>
+                                                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">暂无职位数据</td>
+                                            </tr>
+                                        ) : (
+                                            companyJobs
+                                                .filter(j => j.title.toLowerCase().includes(jobSearchTerm.toLowerCase()))
+                                                .map(job => (
+                                                    <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                                                        <td className="px-6 py-4">
+                                                            <div className="font-medium text-gray-900">{job.title}</div>
+                                                            <div className="text-xs text-gray-500 mt-0.5">{job.type}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">{job.location}</td>
+                                                        <td className="px-6 py-4 text-sm text-gray-500">{new Date(job.postedAt).toLocaleDateString()}</td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            {job.sourceUrl && (
+                                                                <a href={job.sourceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm">查看原文</a>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -751,7 +805,7 @@ export default function AdminCompanyManagementPage() {
     );
 
     return (
-        <div className="h-full bg-gray-50">
+        <div className="min-h-screen bg-gray-50">
             {/* Tabs */}
             <div className="bg-white border-b border-gray-200 px-6 py-4">
                 <div className="flex items-center gap-4">
