@@ -1,7 +1,7 @@
 -- Neon数据库DDL脚本
 -- 此脚本包含项目所需的所有表结构定义
 
--- 表1: users - 存储用户信息
+-- users - 存储用户信息
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   user_id VARCHAR(255) UNIQUE NOT NULL,
@@ -27,7 +27,7 @@ INSERT INTO users (user_id, email, username, status, roles)
 VALUES ('admin-1', 'caitlinyct@gmail.com', '超级管理员', 'active', '{"admin": true}')
 ON CONFLICT (email) DO NOTHING;
 
--- 表3: jobs - 存储岗位信息
+-- jobs - 存储岗位信息
 CREATE TABLE jobs (
   id SERIAL PRIMARY KEY,
   job_id VARCHAR(255) UNIQUE NOT NULL,
@@ -59,9 +59,7 @@ CREATE TABLE jobs (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- jobs表索引（根据需要后续添加）
-
--- 表2: favorites - 存储用户收藏的工作
+-- favorites - 存储用户收藏的工作
 CREATE TABLE favorites (
   id SERIAL PRIMARY KEY,
   user_id VARCHAR(255),
@@ -70,7 +68,7 @@ CREATE TABLE favorites (
   UNIQUE(user_id, job_id)
 );
 
--- 表4: raw_rss - 存储原始RSS数据
+-- raw_rss - 存储原始RSS数据
 CREATE TABLE raw_rss (
   id SERIAL PRIMARY KEY,
   raw_id VARCHAR(255) UNIQUE NOT NULL,
@@ -89,10 +87,20 @@ CREATE TABLE raw_rss (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- raw_rss表索引
-CREATE INDEX idx_raw_rss_source ON raw_rss(source);
-CREATE INDEX idx_raw_rss_category ON raw_rss(category);
-CREATE INDEX idx_raw_rss_status ON raw_rss(status);
-CREATE INDEX idx_raw_rss_pub_date ON raw_rss(pub_date);
-CREATE INDEX idx_raw_rss_fetched_at ON raw_rss(fetched_at);
+-- trusted_companies - 存储可信公司信息
+CREATE TABLE trusted_companies (
+  id SERIAL PRIMARY KEY,
+  company_id VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(500) NOT NULL,
+  website VARCHAR(2000),
+  careers_page VARCHAR(2000),
+  linkedin VARCHAR(2000),
+  description TEXT,
+  logo VARCHAR(2000),
+  tags JSONB DEFAULT '[]',
+  is_trusted BOOLEAN DEFAULT true,
+  can_refer BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
