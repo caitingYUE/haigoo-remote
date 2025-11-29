@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MapPin, Building, Globe, Award, Bookmark, UserCheck } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
 // 移除语义标签行：不再使用 JobTags/tagUtils，仅保留描述下的处理后技能标签
 import { SingleLineTags } from './SingleLineTags';
+import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
 
 interface JobCardProps {
   job: Job;
@@ -95,6 +96,48 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     return parts.join('，') + '。';
   };
 
+  const [company, setCompany] = useState<TrustedCompany | null>(null);
+  const companyInitial = useMemo(() => (job.translations?.company || job.company || '海狗').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
+  const palette = useMemo(() => {
+    const colors = [
+      { bg: 'rgba(49, 130, 206, 0.12)', text: '#3182CE' },
+      { bg: 'rgba(16, 185, 129, 0.12)', text: '#10B981' },
+      { bg: 'rgba(139, 92, 246, 0.12)', text: '#8B5CF6' },
+      { bg: 'rgba(236, 72, 153, 0.12)', text: '#EC4899' },
+      { bg: 'rgba(245, 158, 11, 0.12)', text: '#F59E0B' },
+      { bg: 'rgba(6, 182, 212, 0.12)', text: '#06B6D4' },
+      { bg: 'rgba(239, 68, 68, 0.12)', text: '#EF4444' },
+      { bg: 'rgba(107, 114, 128, 0.12)', text: '#6B7280' },
+      { bg: 'rgba(34, 197, 94, 0.12)', text: '#22C55E' },
+      { bg: 'rgba(37, 99, 235, 0.12)', text: '#2563EB' },
+      { bg: 'rgba(124, 58, 237, 0.12)', text: '#7C3AED' },
+      { bg: 'rgba(217, 119, 6, 0.12)', text: '#D97706' }
+    ];
+    const idx = Math.max(0, companyInitial.charCodeAt(0) % colors.length);
+    return colors[idx];
+  }, [companyInitial]);
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(job.logo);
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (!job.companyId) return;
+      try {
+        const data = await trustedCompaniesService.getCompanyById(job.companyId);
+        if (mounted) {
+          setCompany(data);
+          setLogoUrl(job.logo || data?.logo);
+        }
+      } catch {
+        if (mounted) {
+          setCompany(null);
+          setLogoUrl(job.logo);
+        }
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, [job.companyId, job.logo]);
+
   return (
     <article
       className="group bg-white rounded-2xl p-4 shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer relative h-full flex flex-col"
@@ -148,11 +191,34 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         {job.translations?.title || job.title}
       </h2>
 
-      <div className="flex items-center text-gray-600 text-sm mb-3">
-        <Building className="w-4 h-4 mr-1.5 flex-shrink-0" aria-hidden="true" />
-        <span className="truncate font-medium" title={job.translations?.company || job.company}>
-          {job.translations?.company || job.company}
-        </span>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0" aria-hidden="true">
+          {logoUrl ? (
+            <img src={logoUrl} alt="company logo" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-sm font-semibold" style={{ backgroundColor: palette.bg, color: palette.text, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {companyInitial}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center text-gray-700 text-sm">
+            <Building className="w-4 h-4 mr-1.5 flex-shrink-0" aria-hidden="true" />
+            <span className="truncate font-medium" title={job.translations?.company || job.company}>
+              {job.translations?.company || job.company}
+            </span>
+          </div>
+          <div className="mt-1 flex items-center gap-2">
+            {company?.industry && (
+              <span className="px-2 py-0.5 text-xs rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                {company.industry}
+              </span>
+            )}
+            {company?.tags && company.tags.length > 0 && (
+              <SingleLineTags size="xs" tags={company.tags.slice(0, 6)} />
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 text-sm text-slate-700 mb-3 min-w-0">

@@ -505,6 +505,11 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                       <dd className="truncate">{displayText(job.type)}</dd>
                     </div>
                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                      <Building2 className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden="true" />
+                      <dt className="sr-only">岗位分类</dt>
+                      <dd className="truncate">{job.category || '未分类'}</dd>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                       <Clock className="w-4 h-4 flex-shrink-0 text-slate-400" aria-hidden="true" />
                       <dt className="sr-only">发布时间</dt>
                       <dd className="truncate">{new Date(job.postedAt).toLocaleDateString('zh-CN')}</dd>

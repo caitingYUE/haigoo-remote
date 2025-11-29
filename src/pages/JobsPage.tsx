@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Search, ChevronDown } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -9,6 +9,8 @@ import { processedJobsService } from '../services/processed-jobs-service'
  
 import { usePageCache } from '../hooks/usePageCache'
 import { useNotificationHelpers } from '../components/NotificationSystem'
+import { STANDARD_TAG_LIBRARY } from '../utils/tagSystem'
+import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 
  
 
@@ -34,13 +36,13 @@ export default function JobsPage() {
     type: 'all',
     category: 'all',
     location: 'all',
-    experience: 'all',
-    remote: 'all'
+    industry: 'all'
   })
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
+  const jobTypeTags = useMemo(() => Object.values(STANDARD_TAG_LIBRARY).filter(t => t.category === 'job_type'), [])
 
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
@@ -185,6 +187,19 @@ export default function JobsPage() {
   }, [])
 
   // 筛选逻辑
+  const [companyMap, setCompanyMap] = useState<Record<string, TrustedCompany>>({})
+  useEffect(() => {
+    const loadCompanies = async () => {
+      const ids = Array.from(new Set((jobs || []).map(j => j.companyId).filter(Boolean))) as string[]
+      if (ids.length === 0) { setCompanyMap({}); return }
+      const results = await Promise.all(ids.map(id => trustedCompaniesService.getCompanyById(id)))
+      const map: Record<string, TrustedCompany> = {}
+      ids.forEach((id, i) => { const c = results[i]; if (c) map[id] = c })
+      setCompanyMap(map)
+    }
+    loadCompanies()
+  }, [jobs])
+
   const filteredJobs = (jobs || []).filter(job => {
     // 搜索匹配
     const matchesSearch = searchTerm === '' ||
@@ -207,14 +222,8 @@ export default function JobsPage() {
       (filters.location === 'Remote' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
       (filters.location === 'Worldwide' && (job.location.includes('全球') || job.location.includes('远程') || job.isRemote))
 
-    // 经验等级匹配 - 支持处理后数据的experienceLevel字段
-    const matchesExperience = filters.experience === 'all' ||
-      (job.experienceLevel && job.experienceLevel === filters.experience)
-
-    // 远程工作匹配 - 支持处理后数据的isRemote字段
-    const matchesRemote = filters.remote === 'all' ||
-      (filters.remote === 'yes' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
-      (filters.remote === 'no' && !(job.type === 'remote' || job.location.includes('远程') || job.isRemote))
+    const companyIndustry = job.companyId ? companyMap[job.companyId]?.industry || '' : ''
+    const matchesIndustry = filters.industry === 'all' || (companyIndustry && companyIndustry === filters.industry)
 
     const norm = (v: string) => (v || '').toLowerCase()
     const loc = norm(job.location)
@@ -226,7 +235,7 @@ export default function JobsPage() {
     const overseasHit = hit(categories.overseasKeywords)
     const matchesRegion = activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || overseasHit)
 
-    return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesExperience && matchesRemote && matchesRegion
+    return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesIndustry && matchesRegion
   }).sort((a, b) => {
     if (a.canRefer && !b.canRefer) return -1
     if (!a.canRefer && b.canRefer) return 1
@@ -249,13 +258,8 @@ export default function JobsPage() {
       job.location.includes(filters.location) ||
       (filters.location === 'Remote' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
       (filters.location === 'Worldwide' && (job.location.includes('全球') || job.location.includes('远程') || job.isRemote))
-
-    const matchesExperience = filters.experience === 'all' ||
-      (job.experienceLevel && job.experienceLevel === filters.experience)
-
-    const matchesRemote = filters.remote === 'all' ||
-      (filters.remote === 'yes' && (job.type === 'remote' || job.location.includes('远程') || job.isRemote)) ||
-      (filters.remote === 'no' && !(job.type === 'remote' || job.location.includes('远程') || job.isRemote))
+    const companyIndustry = job.companyId ? companyMap[job.companyId]?.industry || '' : ''
+    const matchesIndustry = filters.industry === 'all' || (companyIndustry && companyIndustry === filters.industry)
 
     const norm = (v: string) => (v || '').toLowerCase()
     const loc = norm(job.location)
@@ -267,7 +271,7 @@ export default function JobsPage() {
     const overseasHit = hit(categories.overseasKeywords)
     const matchesRegion = activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || overseasHit)
 
-    return matchesSearch && matchesType && matchesLocation && matchesExperience && matchesRemote && matchesRegion
+    return matchesSearch && matchesType && matchesLocation && matchesIndustry && matchesRegion
   })
 
   
@@ -310,17 +314,32 @@ export default function JobsPage() {
               />
             </div>
 
-            {/* Filter Dropdowns */}
+            {/* Filter Controls */}
             <div className="flex items-center gap-2">
               <div className="relative group">
-                <button className="flex items-center gap-1 text-gray-700 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  <span>所有地点</span>
+                <button
+                  onClick={() => setFilters(prev => ({ ...prev, location: prev.location === 'all' ? 'Remote' : prev.location === 'Remote' ? 'Worldwide' : 'all' }))}
+                  className="flex items-center gap-1 text-gray-700 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <span>{filters.location === 'all' ? '所有地点' : filters.location === 'Remote' ? '远程' : '全球'}</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>
               <div className="relative group">
-                <button className="flex items-center gap-1 text-gray-700 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  <span>全部类型</span>
+                <button
+                  onClick={() => setFilters(prev => ({ ...prev, industry: prev.industry === 'all' ? '互联网/软件' : prev.industry === '互联网/软件' ? '人工智能' : prev.industry === '人工智能' ? '金融/Fintech' : prev.industry === '金融/Fintech' ? '企业服务/SaaS' : 'all' }))}
+                  className="flex items-center gap-1 text-gray-700 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <span>{filters.industry === 'all' ? '全部行业' : filters.industry}</span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="relative group">
+                <button
+                  onClick={() => setFilters(prev => ({ ...prev, type: prev.type === 'all' ? 'full-time' : prev.type === 'full-time' ? 'part-time' : prev.type === 'part-time' ? 'contract' : prev.type === 'contract' ? 'freelance' : prev.type === 'freelance' ? 'internship' : 'all' }))}
+                  className="flex items-center gap-1 text-gray-700 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <span>{filters.type === 'all' ? '岗位类型' : filters.type === 'full-time' ? '全职' : filters.type === 'part-time' ? '兼职' : filters.type === 'contract' ? '合同' : filters.type === 'freelance' ? '自由职业' : '实习'}</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>
@@ -335,36 +354,15 @@ export default function JobsPage() {
             >
               全部 ({baseFilteredJobs.length})
             </button>
-            <button
-              onClick={() => setFilters(prev => ({ ...prev, category: '市场营销' }))}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '市场营销' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              市场营销
-            </button>
-            <button
-              onClick={() => setFilters(prev => ({ ...prev, category: '销售' }))}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '销售' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              销售
-            </button>
-            <button
-              onClick={() => setFilters(prev => ({ ...prev, category: '软件开发' }))}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '软件开发' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              软件开发
-            </button>
-            <button
-              onClick={() => setFilters(prev => ({ ...prev, category: '客户支持' }))}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '客户支持' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              客户支持
-            </button>
-            <button
-              onClick={() => setFilters(prev => ({ ...prev, category: '产品管理' }))}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === '产品管理' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              产品管理
-            </button>
+            {jobTypeTags.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setFilters(prev => ({ ...prev, category: t.label }))}
+                className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === t.label ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                {t.label}
+              </button>
+            ))}
             <span className="ml-auto text-gray-500 whitespace-nowrap text-xs">共 {filteredJobs.length} 个职位</span>
           </div>
         </div>
@@ -383,7 +381,7 @@ export default function JobsPage() {
               <div className="text-gray-400 text-lg mb-2">暂无符合条件的职位</div>
               <p className="text-gray-500">尝试调整筛选条件或搜索关键词</p>
               <button
-                onClick={() => { setSearchTerm(''); setFilters({ type: 'all', category: 'all', location: 'all', experience: 'all', remote: 'all' }); }}
+                onClick={() => { setSearchTerm(''); setFilters({ type: 'all', category: 'all', location: 'all', industry: 'all' }); }}
                 className="mt-4 px-6 py-2 bg-[#3182CE] text-white rounded-full hover:bg-[#2b6cb0] transition-colors"
               >
                 清除所有筛选
