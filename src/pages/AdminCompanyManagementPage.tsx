@@ -272,23 +272,67 @@ export default function AdminCompanyManagementPage() {
                         刷新
                     </button>
 
-                    <button
-                        onClick={handleExtractCompanies}
-                        disabled={extracting}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        {extracting ? (
-                            <>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleExtractCompanies}
+                            disabled={extracting}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        >
+                            {extracting ? (
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                <span>提取中...</span>
-                            </>
-                        ) : (
-                            <>
+                            ) : (
                                 <Plus className="w-4 h-4" />
-                                <span>从岗位提取企业</span>
-                            </>
-                        )}
-                    </button>
+                            )}
+                            从岗位提取企业
+                        </button>
+
+                        <button
+                            onClick={async () => {
+                                const companiesToCrawl = companies.filter(c => c.url && (!c.description || !c.logo));
+                                if (companiesToCrawl.length === 0) {
+                                    alert('所有企业信息已完整！');
+                                    return;
+                                }
+
+                                const confirmCrawl = confirm(`发现 ${companiesToCrawl.length} 个企业需要补充信息。\n\n是否立即开始自动抓取？`);
+                                if (!confirmCrawl) return;
+
+                                let successCount = 0;
+                                let failureCount = 0;
+                                const failures: string[] = [];
+
+                                for (let i = 0; i < companiesToCrawl.length; i++) {
+                                    const company = companiesToCrawl[i];
+                                    console.log(`Processing ${i + 1}/${companiesToCrawl.length}: ${company.name}`);
+
+                                    try {
+                                        await handleUpdateInfo(company);
+                                        successCount++;
+                                    } catch (e) {
+                                        failureCount++;
+                                        failures.push(company.name);
+                                        console.error(`Failed to crawl ${company.name}`, e);
+                                    }
+
+                                    await new Promise(resolve => setTimeout(resolve, 1000));
+                                }
+
+                                let summary = `自动抓取完成！\n\n成功: ${successCount}\n失败: ${failureCount}`;
+                                if (failures.length > 0 && failures.length <= 5) {
+                                    summary += `\n\n失败的企业:\n${failures.join('\n')}`;
+                                } else if (failures.length > 5) {
+                                    summary += `\n\n失败的企业:\n${failures.slice(0, 5).join('\n')}\n...及其他 ${failures.length - 5} 个`;
+                                }
+                                alert(summary);
+                                await loadCompanies();
+                            }}
+                            disabled={loading}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            自动抓取企业信息
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -300,6 +344,9 @@ export default function AdminCompanyManagementPage() {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     企业名称
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    简介
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     行业
@@ -321,7 +368,7 @@ export default function AdminCompanyManagementPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center">
+                                    <td colSpan={7} className="px-6 py-12 text-center">
                                         <div className="flex items-center justify-center gap-2 text-gray-500">
                                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                                             <span>加载中...</span>
@@ -330,7 +377,7 @@ export default function AdminCompanyManagementPage() {
                                 </tr>
                             ) : companies.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                                         <div className="flex flex-col items-center gap-2">
                                             <Building2 className="w-12 h-12 text-gray-300" />
                                             <p>暂无企业数据</p>

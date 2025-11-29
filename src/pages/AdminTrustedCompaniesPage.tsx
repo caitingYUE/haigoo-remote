@@ -321,8 +321,8 @@ export default function AdminTrustedCompaniesPage() {
                 {/* Modal */}
                 {isModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
                                 <h2 className="text-xl font-bold text-gray-900">
                                     {editingCompany ? '编辑企业' : '新增企业'}
                                 </h2>
@@ -331,7 +331,7 @@ export default function AdminTrustedCompaniesPage() {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSave} className="p-6 space-y-6">
+                            <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="col-span-full">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">企业名称 *</label>

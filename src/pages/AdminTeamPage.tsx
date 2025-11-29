@@ -35,7 +35,8 @@ import {
   ChevronRight,
   MessageSquare,
   Tag,
-  Building
+  Building,
+  FileText
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
@@ -452,7 +453,7 @@ const AdminTeamPage: React.FC = () => {
       <div className="space-y-6">
         <div className="card">
           <div className="card-header">
-            <h2>简历库</h2>
+            <h2>简历数据</h2>
             <div className="flex space-x-2">
               <button
                 onClick={handleClearResumes}
@@ -733,7 +734,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'dashboard', label: '数据概览', icon: BarChart3 },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
-    { id: 'resumes', label: '简历库', icon: Users },
+    { id: 'resumes', label: '简历数据', icon: FileText },
     { id: 'users', label: '用户管理', icon: Users },
     { id: 'companies', label: '企业管理', icon: Building },
     { id: 'tag-management', label: '标签管理', icon: Tag },
