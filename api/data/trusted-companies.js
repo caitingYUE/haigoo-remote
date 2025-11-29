@@ -1,5 +1,6 @@
 import { verifyToken, extractToken } from '../../server-utils/auth-helpers.js'
 import { createClient } from 'redis'
+import * as cheerio from 'cheerio'
 
 // 安全加载 Vercel KV
 let kv = null
@@ -10,20 +11,34 @@ try {
     console.warn('[trusted-companies] Vercel KV module not available')
 }
 
-// Simple HTML parser using regex
+// HTML parser using Cheerio
 function extractMetadata(html) {
+    const $ = cheerio.load(html)
     const metadata = { title: '', description: '', image: '', icon: '' }
-    const getMeta = (prop) => {
-        const regex = new RegExp(`<meta\\s+(?:property|name)=["']${prop}["']\\s+content=["']([^"']*)["']`, 'i')
-        const match = html.match(regex)
-        return match ? match[1] : ''
+
+    metadata.title = $('meta[property="og:title"]').attr('content') || 
+                     $('title').text() || ''
+    
+    metadata.description = $('meta[property="og:description"]').attr('content') || 
+                           $('meta[name="description"]').attr('content') || ''
+    
+    // Fallback description from content if missing or too short
+    if (!metadata.description || metadata.description.length < 50) {
+        // Try generic description classes and common content containers
+        // Webflow often uses w-richtext
+        const desc = $('.description, [class*="description"], main p, article p, .w-richtext p, .hero-text, .intro-text').first().text().trim()
+        if (desc.length > 20) {
+            metadata.description = desc.substring(0, 300) + (desc.length > 300 ? '...' : '')
+        }
     }
-    const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i)
-    metadata.title = getMeta('og:title') || (titleMatch ? titleMatch[1] : '')
-    metadata.description = getMeta('og:description') || getMeta('description')
-    metadata.image = getMeta('og:image')
-    const iconMatch = html.match(/<link\\s+rel=["'](?:shortcut )?icon["']\\s+href=["']([^"']*)["']/i)
-    metadata.icon = iconMatch ? iconMatch[1] : ''
+    
+    metadata.image = $('meta[property="og:image"]').attr('content') || 
+                     $('meta[name="twitter:image"]').attr('content') || ''
+    
+    metadata.icon = $('link[rel="icon"]').attr('href') || 
+                    $('link[rel="shortcut icon"]').attr('href') || 
+                    $('link[rel="apple-touch-icon"]').attr('href') || ''
+
     return metadata
 }
 
@@ -246,6 +261,66 @@ export default async function handler(req, res) {
                     return res.status(200).json({ success: true, metadata })
                 } catch (error) {
                     console.error('[trusted-companies] Crawl error:', error)
+
+                    // Fallback strategy for blocked sites (e.g. Whatnot returns 403)
+                    // Try to guess the ATS/Career page URL based on the domain name
+                    try {
+                        let slug = ''
+                        try {
+                            const urlObj = new URL(url)
+                            const hostname = urlObj.hostname.replace(/^www\./, '')
+                            slug = hostname.split('.')[0]
+                        } catch (e) { /* ignore */ }
+
+                        if (slug && slug.length > 2) {
+                            console.log(`[trusted-companies] Main crawl failed. Trying fallbacks for slug: ${slug}`)
+                            const fallbacks = [
+                                `https://jobs.ashbyhq.com/${slug}`,
+                                `https://boards.greenhouse.io/${slug}`,
+                                `https://jobs.lever.co/${slug}`
+                            ]
+
+                            for (const fbUrl of fallbacks) {
+                                try {
+                                    console.log(`[trusted-companies] Trying fallback: ${fbUrl}`)
+                                    const fbRes = await fetch(fbUrl, {
+                                        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+                                    })
+                                    
+                                    if (fbRes.ok) {
+                                        const fbHtml = await fbRes.text()
+                                        const fbMetadata = extractMetadata(fbHtml)
+                                        
+                                        // If we got something useful
+                                        if (fbMetadata.title || fbMetadata.description) {
+                                            console.log(`[trusted-companies] Fallback success: ${fbUrl}`)
+                                            
+                                            // Normalize URLs
+                                            if (fbMetadata.icon && !fbMetadata.icon.startsWith('http')) {
+                                                const urlObj = new URL(fbUrl)
+                                                fbMetadata.icon = new URL(fbMetadata.icon, urlObj.origin).toString()
+                                            }
+                                            if (fbMetadata.image && !fbMetadata.image.startsWith('http')) {
+                                                const urlObj = new URL(fbUrl)
+                                                fbMetadata.image = new URL(fbMetadata.image, urlObj.origin).toString()
+                                            }
+                                            
+                                            // Add a note that this is from fallback
+                                            fbMetadata._source = 'fallback_ats'
+                                            fbMetadata._fallbackUrl = fbUrl
+                                            
+                                            return res.status(200).json({ success: true, metadata: fbMetadata })
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Ignore fallback errors
+                                }
+                            }
+                        }
+                    } catch (fbError) {
+                        console.error('[trusted-companies] Fallback error:', fbError)
+                    }
+
                     return res.status(500).json({ success: false, error: error.message })
                 }
             }
@@ -273,7 +348,22 @@ export default async function handler(req, res) {
 
                     console.log('[trusted-companies] Crawl options:', crawlOptions)
 
-                    const crawledJobs = await crawlCompanyJobs(company.id, url, crawlOptions)
+                    const crawlResult = await crawlCompanyJobs(company.id, url, crawlOptions)
+                    const crawledJobs = crawlResult.jobs || []
+                    const crawledCompany = crawlResult.company
+
+                    // If we found company info (e.g. logo from Ashby), update the company record
+                    if (crawledCompany && crawledCompany.logo && !company.logo) {
+                        console.log(`[trusted-companies] Updating company logo from crawler: ${crawledCompany.logo}`)
+                        company.logo = crawledCompany.logo
+                        // We should persist this update
+                        const allCompanies = await getAllCompanies()
+                        const idx = allCompanies.findIndex(c => c.id === company.id)
+                        if (idx !== -1) {
+                            allCompanies[idx].logo = crawledCompany.logo
+                            await saveAllCompanies(allCompanies)
+                        }
+                    }
 
                     // Enrich jobs with company name
                     const enrichedJobs = crawledJobs.map(job => ({
