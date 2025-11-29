@@ -406,14 +406,60 @@ export default async function handler(req, res) {
                         const extractedCompanies = jobsArray.map(job => extractCompanyFromJob(job))
                         const deduplicated = deduplicateCompanies(extractedCompanies)
 
+                        // Get existing companies to preserve metadata (logo, description, tags, etc.)
+                        let existingCompanies = []
+                        try {
+                            if (UPSTASH_REST_CONFIGURED) {
+                                const data = await upstashGet(COMPANIES_KEY)
+                                existingCompanies = data ? (typeof data === 'string' ? JSON.parse(data) : data) : []
+                            } else if (REDIS_CONFIGURED) {
+                                const client = await getRedisClient()
+                                if (client) {
+                                    const data = await client.get(COMPANIES_KEY)
+                                    existingCompanies = data ? (typeof data === 'string' ? JSON.parse(data) : data) : []
+                                }
+                            } else if (KV_CONFIGURED && kv) {
+                                const data = await kv.get(COMPANIES_KEY)
+                                existingCompanies = data || []
+                            }
+                        } catch (e) {
+                            console.warn('[companies] Failed to load existing companies for merge:', e)
+                        }
+
+                        // Merge logic: Update existing companies with new stats, add new companies
+                        const mergedCompanies = deduplicated.map(newComp => {
+                            const existing = existingCompanies.find(c => c.name === newComp.name)
+                            if (existing) {
+                                return {
+                                    ...existing,
+                                    // Update fields that might change from jobs
+                                    jobCount: newComp.jobCount,
+                                    source: newComp.source,
+                                    // Preserve existing metadata if present, otherwise use new (though new usually has none)
+                                    url: existing.url || newComp.url,
+                                    updatedAt: new Date().toISOString()
+                                }
+                            }
+                            return newComp
+                        })
+
+                        // Also keep companies that exist but weren't found in current jobs? 
+                        // User requirement implies "Refresh" updates from *current* jobs. 
+                        // If a company has no jobs now, should it be removed?
+                        // The current logic (before my change) replaced the list, so it effectively removed them.
+                        // I will stick to that behavior but preserve metadata for the ones that remain.
+                        // However, if we want to keep "historical" companies, we should append.
+                        // Given "Extract Companies from Jobs", it implies the list should reflect current jobs.
+                        // So I will only keep the ones found in jobs, but with their metadata preserved.
+
                         // Save to database
                         if (UPSTASH_REST_CONFIGURED) {
-                            await upstashSet(COMPANIES_KEY, JSON.stringify(deduplicated))
+                            await upstashSet(COMPANIES_KEY, JSON.stringify(mergedCompanies))
                         } else if (REDIS_CONFIGURED) {
                             const client = await getRedisClient()
-                            if (client) await client.set(COMPANIES_KEY, JSON.stringify(deduplicated))
+                            if (client) await client.set(COMPANIES_KEY, JSON.stringify(mergedCompanies))
                         } else if (KV_CONFIGURED && kv) {
-                            await kv.set(COMPANIES_KEY, deduplicated)
+                            await kv.set(COMPANIES_KEY, mergedCompanies)
                         }
 
                         return res.status(200).json({

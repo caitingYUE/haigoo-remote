@@ -190,76 +190,148 @@ const JOB_KEYWORDS: Record<string, JobCategory> = {
     'venture capital': '投资'
 };
 
-// Company Industry Keywords
+// Company Industry Keywords - Expanded
 const INDUSTRY_KEYWORDS: Record<string, CompanyIndustry> = {
-    'software': '互联网/软件',
-    'internet': '互联网/软件',
-    'saas': '企业服务/SaaS',
-    'enterprise': '企业服务/SaaS',
-    'b2b': '企业服务/SaaS',
-
+    // AI & Data
     'ai': '人工智能',
     'artificial intelligence': '人工智能',
     'machine learning': '人工智能',
+    'deep learning': '人工智能',
+    'computer vision': '人工智能',
+    'nlp': '人工智能',
     'llm': '人工智能',
-    'gpt': '人工智能',
+    'generative ai': '人工智能',
+    'neural network': '人工智能',
+    'data science': '人工智能',
+    'big data': '人工智能',
+    'analytics': '人工智能',
 
+    // Web3 & Blockchain
+    'blockchain': 'Web3/区块链',
+    'crypto': 'Web3/区块链',
+    'web3': 'Web3/区块链',
+    'bitcoin': 'Web3/区块链',
+    'ethereum': 'Web3/区块链',
+    'defi': 'Web3/区块链',
+    'nft': 'Web3/区块链',
+    'smart contract': 'Web3/区块链',
+    'wallet': 'Web3/区块链',
+    'exchange': 'Web3/区块链',
+    'dao': 'Web3/区块链',
+
+    // SaaS & Enterprise
+    'saas': '企业服务/SaaS',
+    'enterprise': '企业服务/SaaS',
+    'b2b': '企业服务/SaaS',
+    'crm': '企业服务/SaaS',
+    'erp': '企业服务/SaaS',
+    'cloud platform': '企业服务/SaaS',
+    'productivity': '企业服务/SaaS',
+    'collaboration': '企业服务/SaaS',
+    'workflow': '企业服务/SaaS',
+    'automation': '企业服务/SaaS',
+    'hr tech': '企业服务/SaaS',
+    'marketing tech': '企业服务/SaaS',
+
+    // Fintech
+    'fintech': '金融/Fintech',
+    'finance': '金融/Fintech',
+    'banking': '金融/Fintech',
+    'payment': '金融/Fintech',
+    'trading': '金融/Fintech',
+    'investment': '金融/Fintech',
+    'insurance': '金融/Fintech',
+    'insurtech': '金融/Fintech',
+    'wealth': '金融/Fintech',
+    'lending': '金融/Fintech',
+
+    // Healthcare
     'health': '大健康/医疗',
     'medical': '大健康/医疗',
     'biotech': '大健康/医疗',
     'pharma': '大健康/医疗',
+    'therapeutics': '大健康/医疗',
+    'digital health': '大健康/医疗',
+    'medtech': '大健康/医疗',
+    'life sciences': '大健康/医疗',
     'fitness': '大健康/医疗',
     'wellness': '大健康/医疗',
 
+    // E-commerce
+    'ecommerce': '电子商务',
+    'e-commerce': '电子商务',
+    'retail': '电子商务',
+    'marketplace': '电子商务',
+    'shopping': '电子商务',
+    'dtc': '电子商务',
+    'consumer goods': '电子商务',
+    'fashion': '电子商务',
+    'apparel': '电子商务',
+
+    // Gaming
+    'game': '游戏',
+    'gaming': '游戏',
+    'esports': '游戏',
+    'video game': '游戏',
+    'mobile game': '游戏',
+    'console': '游戏',
+    'unity': '游戏',
+    'unreal engine': '游戏',
+
+    // Hardware & IoT
+    'hardware': '硬件/物联网',
+    'iot': '硬件/物联网',
+    'robotics': '硬件/物联网',
+    'semiconductor': '硬件/物联网',
+    'chip': '硬件/物联网',
+    'electronics': '硬件/物联网',
+    'manufacturing': '硬件/物联网',
+    'autonomous': '硬件/物联网',
+    'drone': '硬件/物联网',
+
+    // Education
     'education': '教育',
     'edtech': '教育',
     'learning': '教育',
     'university': '教育',
     'school': '教育',
+    'training': '教育',
+    'course': '教育',
 
-    'fintech': '金融/Fintech',
-    'finance': '金融/Fintech',
-    'bank': '金融/Fintech',
-    'insurance': '金融/Fintech',
-    'crypto': 'Web3/区块链',
-    'blockchain': 'Web3/区块链',
-    'web3': 'Web3/区块链',
-    'bitcoin': 'Web3/区块链',
-    'nft': 'Web3/区块链',
-
-    'ecommerce': '电子商务',
-    'e-commerce': '电子商务',
-    'retail': '电子商务',
-    'marketplace': '电子商务',
-    'shop': '电子商务',
-
-    'game': '游戏',
-    'gaming': '游戏',
-    'esports': '游戏',
-
+    // Media & Entertainment
     'media': '媒体/娱乐',
     'entertainment': '媒体/娱乐',
     'news': '媒体/娱乐',
     'video': '媒体/娱乐',
     'music': '媒体/娱乐',
-    'social': '媒体/娱乐',
+    'streaming': '媒体/娱乐',
+    'social media': '媒体/娱乐',
+    'content': '媒体/娱乐',
 
-    'hardware': '硬件/物联网',
-    'iot': '硬件/物联网',
-    'robotics': '硬件/物联网',
-    'semiconductor': '硬件/物联网',
-
+    // Consumer
     'consumer': '消费生活',
     'lifestyle': '消费生活',
     'travel': '消费生活',
-    'food': '消费生活'
+    'food': '消费生活',
+    'beverage': '消费生活',
+    'hospitality': '消费生活',
+
+    // General Tech (Fallback)
+    'software': '互联网/软件',
+    'internet': '互联网/软件',
+    'technology': '互联网/软件',
+    'app': '互联网/软件',
+    'mobile app': '互联网/软件',
+    'platform': '互联网/软件'
 };
 
-// Company Tag Keywords
+// Company Tag Keywords - Expanded
 const TAG_KEYWORDS: Record<string, CompanyTag> = {
+    // AI Related
     'companion': 'AI+陪伴',
     'chatbot': 'AI+陪伴',
     'character ai': 'AI+陪伴',
+    'virtual friend': 'AI+陪伴',
 
     'healthcare ai': 'AI+健康',
     'medical ai': 'AI+健康',
@@ -268,31 +340,52 @@ const TAG_KEYWORDS: Record<string, CompanyTag> = {
     'infrastructure': 'AI基础设施',
     'gpu': 'AI基础设施',
     'compute': 'AI基础设施',
-    'cloud': 'AI基础设施',
     'vector db': 'AI基础设施',
+    'model training': 'AI基础设施',
 
+    'copilot': 'AI+工具',
+    'assistant': 'AI+工具',
+    'productivity ai': 'AI+工具',
+
+    // Industry Specific
     'pharmaceutical': '医药',
     'drug discovery': '医药',
+    'clinical': '医药',
 
+    // Work Culture
     'remote first': '远程优先',
     'remote-first': '远程优先',
     'distributed team': '远程优先',
+    'fully remote': '远程优先',
+    'work from anywhere': '远程优先',
+    'async': '远程优先',
 
     'global': '全球招聘',
     'worldwide': '全球招聘',
+    'international': '全球招聘',
 
+    // Company Stage/Type
     'startup': '初创公司',
+    'early stage': '初创公司',
     'seed': '初创公司',
     'series a': '初创公司',
+    'fast-growing': '初创公司',
+    'yc': '初创公司',
+    'y combinator': '初创公司',
 
     'unicorn': '独角兽',
+    'billion valuation': '独角兽',
     'ipo': '独角兽',
+    'public company': '独角兽',
 
     'foreign': '外企',
     'mnc': '外企',
+    'global 500': '外企',
+    'fortune 500': '外企',
 
     'cross-border': '出海',
-    'global expansion': '出海'
+    'global expansion': '出海',
+    'overseas': '出海'
 };
 
 export const ClassificationService = {
