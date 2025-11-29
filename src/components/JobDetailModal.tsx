@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Share2, Bookmark, MapPin, Clock, DollarSign, Building2, Zap, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
+import { X, Share2, Bookmark, MapPin, Clock, DollarSign, Building2, Zap, ChevronLeft, ChevronRight, MessageSquare, Globe } from 'lucide-react'
 import { Job } from '../types'
 import { segmentJobDescription } from '../utils/translation'
 import { SingleLineTags } from './SingleLineTags'
 import { processedJobsService } from '../services/processed-jobs-service'
+import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 
 interface JobDetailModalProps {
   job: Job | null
@@ -38,6 +39,16 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState('')
   // 仅显示原始文本，不进行语言切换或翻译
+
+  const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null);
+
+  useEffect(() => {
+    if (job?.companyId) {
+      trustedCompaniesService.getCompanyById(job.companyId).then(setCompanyInfo).catch(() => setCompanyInfo(null));
+    } else {
+      setCompanyInfo(null);
+    }
+  }, [job?.companyId]);
 
   // 可访问性相关的 refs
   const modalRef = useRef<HTMLDivElement>(null)
@@ -618,13 +629,27 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
               {activeTab === 'company' && (
                 <div className="space-y-6">
                   <section>
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-3">
-                      {`关于 ${displayText(job.company || '')}`}
-                    </h3>
-                    <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
+                        {`关于 ${displayText(companyInfo?.name || job.company || '')}`}
+                      </h3>
+                      {companyInfo?.website && (
+                         <a 
+                           href={companyInfo.website} 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                         >
+                           <Globe className="w-4 h-4" />
+                           访问官网
+                         </a>
+                      )}
+                    </div>
+                    
+                    <div className="text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap">
                       {renderFormattedText(displayText(
-                        (jobDescriptionData.sections.find(s => /About|公司介绍|关于我们/i.test(s.title))?.content) || '',
-
+                        companyInfo?.description || 
+                        (jobDescriptionData.sections.find(s => /About|公司介绍|关于我们/i.test(s.title))?.content) || ''
                       )) || (
                           <p>暂无公司介绍信息。</p>
                         )}
@@ -634,30 +659,27 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <section>
                     <h4 className="text-base font-semibold text-slate-800 dark:text-white mb-4">公司详情</h4>
                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <dt className="font-semibold text-slate-800 dark:text-white mb-2">
-                          公司规模
-                        </dt>
-                        <dd className="text-slate-600 dark:text-slate-400">
-                          1000-5000人
-                        </dd>
-                      </div>
+                      {/* Only show if we have data, otherwise fallback or hide */}
                       <div>
                         <dt className="font-semibold text-slate-800 dark:text-white mb-2">
                           行业
                         </dt>
                         <dd className="text-slate-600 dark:text-slate-400">
-                          科技/互联网
+                          {companyInfo?.industry || '未分类'}
                         </dd>
                       </div>
-                      <div>
-                        <dt className="font-semibold text-slate-800 dark:text-white mb-2">
-                          成立时间
-                        </dt>
-                        <dd className="text-slate-600 dark:text-slate-400">
-                          2010年
-                        </dd>
-                      </div>
+                      
+                      {companyInfo?.tags && companyInfo.tags.length > 0 && (
+                        <div className="col-span-full">
+                           <dt className="font-semibold text-slate-800 dark:text-white mb-2">
+                            标签
+                          </dt>
+                          <dd>
+                            <SingleLineTags tags={companyInfo.tags} size="sm" />
+                          </dd>
+                        </div>
+                      )}
+
                       <div>
                         <dt className="font-semibold text-slate-800 dark:text-white mb-2">
                           总部
