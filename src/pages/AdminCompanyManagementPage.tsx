@@ -55,7 +55,7 @@ export default function AdminCompanyManagementPage() {
                 ...(industryFilter && { industry: industryFilter })
             });
 
-            const response = await fetch(`/ api / data / trusted - companies ? resource = companies & ${params} `);
+            const response = await fetch(`/api/data/trusted-companies?resource=companies&${params}`);
             const data = await response.json();
 
             if (data.success) {
