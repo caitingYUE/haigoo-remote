@@ -33,13 +33,12 @@ export default function AdminCompanyManagementPage() {
     const [updatingMap, setUpdatingMap] = useState<Record<string, boolean>>({});
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
-    const [pageSize, setPageSize] = useState(20);
+    const [pageSize] = useState(20);
     const [searchQuery, setSearchQuery] = useState('');
     const [industryFilter, setIndustryFilter] = useState('');
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
     const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
     const [jobSearchTerm, setJobSearchTerm] = useState('');
-    const [rowDensity, setRowDensity] = useState<'cozy' | 'compact'>('cozy');
 
     const loadCompanies = useCallback(async () => {
         try {
@@ -339,23 +338,6 @@ export default function AdminCompanyManagementPage() {
                     <div className="text-sm text-gray-500">
                         显示 {((page - 1) * pageSize) + 1} 到 {Math.min(page * pageSize, total)} 条，共 {total} 条
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">每页</span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                const size = parseInt(e.target.value, 10) || 20;
-                                setPageSize(size);
-                                setPage(1);
-                            }}
-                            className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
-                        </select>
-                        <span className="text-sm text-gray-600">条</span>
-                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -623,34 +605,9 @@ export default function AdminCompanyManagementPage() {
                     >
                         清除筛选
                     </button>
-
-                    <div className="flex items-center gap-2 ml-2">
-                        <span className="text-sm text-gray-600">每页</span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                const size = parseInt(e.target.value, 10) || 20;
-                                setPageSize(size);
-                                setPage(1);
-                            }}
-                            className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
-                        </select>
-                        <span className="text-sm text-gray-600">条</span>
-                    </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setRowDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
-                        className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                        title="切换行密度"
-                    >
-                        {rowDensity === 'compact' ? '紧凑行距' : '标准行距'}
-                    </button>
                     <button
                         onClick={handleRefresh}
                         disabled={extracting}
