@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Building2, Search, Filter, RefreshCw, Plus, Trash2, Edit2,
-    ExternalLink, Globe, Tag, Briefcase, ArrowLeft
+    ExternalLink, Globe, Tag, Briefcase, ArrowLeft, Eye
 } from 'lucide-react';
 import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
 import { CompanyService } from '../services/company-service';
@@ -28,12 +28,16 @@ export default function AdminCompanyManagementPage() {
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(false);
     const [extracting, setExtracting] = useState(false);
+    const [crawling, setCrawling] = useState(false);
+    const [analyzing, setAnalyzing] = useState(false);
     const [updatingMap, setUpdatingMap] = useState<Record<string, boolean>>({});
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [pageSize] = useState(20);
     const [searchQuery, setSearchQuery] = useState('');
     const [industryFilter, setIndustryFilter] = useState('');
+    const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+    const [companyJobs, setCompanyJobs] = useState<any[]>([]);
 
     useEffect(() => {
         if (activeTab === 'all') {
@@ -51,7 +55,7 @@ export default function AdminCompanyManagementPage() {
                 ...(industryFilter && { industry: industryFilter })
             });
 
-            const response = await fetch(`/api/data/trusted-companies?resource=companies&${params}`);
+            const response = await fetch(`/ api / data / trusted - companies ? resource = companies & ${params} `);
             const data = await response.json();
 
             if (data.success) {
@@ -65,8 +69,8 @@ export default function AdminCompanyManagementPage() {
         }
     };
 
-    const handleExtractCompanies = async () => {
-        if (!confirm('确定要从岗位数据中提取企业信息吗？\n\n这将分析所有岗位并创建企业列表。提取完成后，系统将自动尝试抓取新企业的官网信息。')) {
+    const handleRefresh = async () => {
+        if (!confirm('确定要重新从岗位数据中提取企业信息吗？\n\n这将更新企业的岗位数、来源等统计信息。')) {
             return;
         }
 
@@ -76,53 +80,32 @@ export default function AdminCompanyManagementPage() {
             const data = await response.json();
 
             if (data.success) {
-                // 1. Reload companies to get the latest list
+                alert(`刷新成功！共提取 ${data.companies?.length || 0} 个企业`);
                 await loadCompanies();
+            } else {
+                alert('刷新失败：' + (data.error || '未知错误'));
+            }
+        } catch (error) {
+            console.error('Failed to refresh companies:', error);
+            alert('刷新失败，请稍后重试');
+        } finally {
+            setExtracting(false);
+        }
+    };
 
-                // 2. Auto-crawl for companies with URL but missing info
-                const companiesToCrawl = (data.companies || []).filter((c: Company) =>
-                    c.url && (!c.description || !c.logo)
-                );
+    const handleExtractCompanies = async () => {
+        if (!confirm('确定要从岗位数据中提取企业信息吗？\n\n这将分析所有岗位并创建企业列表。')) {
+            return;
+        }
 
-                if (companiesToCrawl.length > 0) {
-                    const confirmCrawl = confirm(`提取成功！发现 ${companiesToCrawl.length} 个企业需要补充信息。\n\n是否立即开始自动抓取？（可能需要一些时间）`);
-                    if (confirmCrawl) {
-                        let successCount = 0;
-                        let failureCount = 0;
-                        const failures: string[] = [];
+        try {
+            setExtracting(true);
+            const response = await fetch('/api/data/trusted-companies?resource=companies&action=extract');
+            const data = await response.json();
 
-                        for (let i = 0; i < companiesToCrawl.length; i++) {
-                            const company = companiesToCrawl[i];
-                            console.log(`Processing ${i + 1}/${companiesToCrawl.length}: ${company.name}`);
-
-                            try {
-                                await handleUpdateInfo(company);
-                                successCount++;
-                            } catch (e) {
-                                failureCount++;
-                                failures.push(company.name);
-                                console.error(`Failed to crawl ${company.name}`, e);
-                            }
-
-                            // Small delay to be nice to the server/target
-                            await new Promise(resolve => setTimeout(resolve, 1000));
-                        }
-
-                        // Show detailed summary
-                        let summary = `自动抓取完成！\n\n成功: ${successCount}\n失败: ${failureCount}`;
-                        if (failures.length > 0 && failures.length <= 5) {
-                            summary += `\n\n失败的企业:\n${failures.join('\n')}`;
-                        } else if (failures.length > 5) {
-                            summary += `\n\n失败的企业:\n${failures.slice(0, 5).join('\n')}\n...及其他 ${failures.length - 5} 个`;
-                        }
-                        alert(summary);
-
-                        // Reload to show updated data
-                        await loadCompanies();
-                    }
-                } else {
-                    alert(data.message || '企业提取完成！所有企业信息已完整。');
-                }
+            if (data.success) {
+                alert(`提取成功！共提取 ${data.companies?.length || 0} 个企业`);
+                await loadCompanies();
             } else {
                 alert('提取失败：' + (data.error || '未知错误'));
             }
@@ -131,6 +114,132 @@ export default function AdminCompanyManagementPage() {
             alert('提取失败，请稍后重试');
         } finally {
             setExtracting(false);
+        }
+    };
+
+    const handleAutoCrawl = async () => {
+        const companiesToCrawl = companies.filter(c => c.url && (!c.description || !c.logo));
+
+        if (companiesToCrawl.length === 0) {
+            alert('所有企业信息已完整！');
+            return;
+        }
+
+        if (!confirm(`发现 ${companiesToCrawl.length} 个企业需要补充信息。\n\n是否立即开始自动抓取？`)) {
+            return;
+        }
+
+        try {
+            setCrawling(true);
+            let successCount = 0;
+            let failureCount = 0;
+            const failures: string[] = [];
+
+            for (let i = 0; i < companiesToCrawl.length; i++) {
+                const company = companiesToCrawl[i];
+                console.log(`Crawling ${i + 1}/${companiesToCrawl.length}: ${company.name}`);
+
+                try {
+                    await handleUpdateInfo(company);
+                    successCount++;
+                } catch (e) {
+                    failureCount++;
+                    failures.push(company.name);
+                    console.error(`Failed to crawl ${company.name}`, e);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            let summary = `自动抓取完成！\n\n成功: ${successCount}\n失败: ${failureCount}`;
+            if (failures.length > 0 && failures.length <= 5) {
+                summary += `\n\n失败的企业:\n${failures.join('\n')}`;
+            } else if (failures.length > 5) {
+                summary += `\n\n失败的企业:\n${failures.slice(0, 5).join('\n')}\n...及其他 ${failures.length - 5} 个`;
+            }
+            alert(summary);
+            await loadCompanies();
+        } catch (error) {
+            console.error('Auto crawl error:', error);
+            alert('自动抓取失败');
+        } finally {
+            setCrawling(false);
+        }
+    };
+
+    const handleAnalyzeIndustryAndTags = async () => {
+        const companiesToAnalyze = companies.filter(c => c.description);
+
+        if (companiesToAnalyze.length === 0) {
+            alert('没有企业有简介信息，无法进行分析！\n\n请先执行"自动抓取企业信息"。');
+            return;
+        }
+
+        if (!confirm(`将对 ${companiesToAnalyze.length} 个企业进行行业和标签分析。\n\n是否继续？`)) {
+            return;
+        }
+
+        try {
+            setAnalyzing(true);
+            let successCount = 0;
+
+            for (const company of companiesToAnalyze) {
+                try {
+                    const classification = ClassificationService.classifyCompany(
+                        company.name,
+                        company.description || ''
+                    );
+
+                    const token = localStorage.getItem('haigoo_auth_token');
+                    if (!token) {
+                        throw new Error('未登录');
+                    }
+
+                    const updatedCompany = {
+                        ...company,
+                        industry: classification.industry !== '其他' ? classification.industry : company.industry,
+                        tags: Array.from(new Set([...(company.tags || []), ...classification.tags]))
+                    };
+
+                    const response = await fetch('/api/data/trusted-companies?resource=companies', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(updatedCompany)
+                    });
+
+                    if (response.ok) {
+                        successCount++;
+                    }
+                } catch (e) {
+                    console.error(`Failed to analyze ${company.name}`, e);
+                }
+            }
+
+            alert(`分析完成！\n\n成功分析 ${successCount} 个企业`);
+            await loadCompanies();
+        } catch (error) {
+            console.error('Analysis error:', error);
+            alert('分析失败');
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
+    const handleViewDetail = async (company: Company) => {
+        setSelectedCompany(company);
+
+        try {
+            const response = await fetch(`/api/data/processed-jobs`);
+            const data = await response.json();
+            const jobs = data.jobs || [];
+            const companyJobs = jobs.filter((job: any) => job.company === company.name);
+            setCompanyJobs(companyJobs);
+        } catch (error) {
+            console.error('Failed to load company jobs:', error);
+            setCompanyJobs([]);
         }
     };
 
@@ -264,75 +373,42 @@ export default function AdminCompanyManagementPage() {
 
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={loadCompanies}
-                        disabled={loading}
+                        onClick={handleRefresh}
+                        disabled={extracting}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                        title="从岗位数据重新提取企业信息，更新统计数据"
                     >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-4 h-4 ${extracting ? 'animate-spin' : ''}`} />
                         刷新
                     </button>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleExtractCompanies}
-                            disabled={extracting}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                        >
-                            {extracting ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            ) : (
-                                <Plus className="w-4 h-4" />
-                            )}
-                            从岗位提取企业
-                        </button>
-
-                        <button
-                            onClick={async () => {
-                                const companiesToCrawl = companies.filter(c => c.url && (!c.description || !c.logo));
-                                if (companiesToCrawl.length === 0) {
-                                    alert('所有企业信息已完整！');
-                                    return;
-                                }
-
-                                const confirmCrawl = confirm(`发现 ${companiesToCrawl.length} 个企业需要补充信息。\n\n是否立即开始自动抓取？`);
-                                if (!confirmCrawl) return;
-
-                                let successCount = 0;
-                                let failureCount = 0;
-                                const failures: string[] = [];
-
-                                for (let i = 0; i < companiesToCrawl.length; i++) {
-                                    const company = companiesToCrawl[i];
-                                    console.log(`Processing ${i + 1}/${companiesToCrawl.length}: ${company.name}`);
-
-                                    try {
-                                        await handleUpdateInfo(company);
-                                        successCount++;
-                                    } catch (e) {
-                                        failureCount++;
-                                        failures.push(company.name);
-                                        console.error(`Failed to crawl ${company.name}`, e);
-                                    }
-
-                                    await new Promise(resolve => setTimeout(resolve, 1000));
-                                }
-
-                                let summary = `自动抓取完成！\n\n成功: ${successCount}\n失败: ${failureCount}`;
-                                if (failures.length > 0 && failures.length <= 5) {
-                                    summary += `\n\n失败的企业:\n${failures.join('\n')}`;
-                                } else if (failures.length > 5) {
-                                    summary += `\n\n失败的企业:\n${failures.slice(0, 5).join('\n')}\n...及其他 ${failures.length - 5} 个`;
-                                }
-                                alert(summary);
-                                await loadCompanies();
-                            }}
-                            disabled={loading}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                        >
+                    <button
+                        onClick={handleAutoCrawl}
+                        disabled={crawling}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                        title="批量爬取企业Logo和简介"
+                    >
+                        {crawling ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
                             <RefreshCw className="w-4 h-4" />
-                            自动抓取企业信息
-                        </button>
-                    </div>
+                        )}
+                        自动抓取企业信息
+                    </button>
+
+                    <button
+                        onClick={handleAnalyzeIndustryAndTags}
+                        disabled={analyzing}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                        title="基于简介分析行业和标签"
+                    >
+                        {analyzing ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                            <Tag className="w-4 h-4" />
+                        )}
+                        分析行业与标签
+                    </button>
                 </div>
             </div>
 
@@ -459,6 +535,13 @@ export default function AdminCompanyManagementPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleViewDetail(company)}
+                                                    className="text-gray-600 hover:text-gray-800"
+                                                    title="查看企业详情"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
                                                 {company.url && (
                                                     <a
                                                         href={company.url}
@@ -473,8 +556,8 @@ export default function AdminCompanyManagementPage() {
                                                 <button
                                                     onClick={() => handleUpdateInfo(company)}
                                                     disabled={updatingMap[company.id]}
-                                                    className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                                                    title="抓取并更新企业信息"
+                                                    className="text-green-600 hover:text-green-800 disabled:opacity-50"
+                                                    title="重新爬取企业信息"
                                                 >
                                                     <RefreshCw className={`w-4 h-4 ${updatingMap[company.id] ? 'animate-spin' : ''}`} />
                                                 </button>
