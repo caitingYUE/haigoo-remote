@@ -32,6 +32,11 @@ async function startServer() {
         app.all('/api/parse-resume-new', async (req, res) => { await parseResumeHandler(req, res); });
         console.log('Parse-resume handler imported.');
 
+        console.log('Importing process-image handler...');
+        const processImageHandler = (await import('./api/process-image.js')).default;
+        app.all('/api/process-image', async (req, res) => { await processImageHandler(req, res); });
+        console.log('Process-image handler imported.');
+
         app.get('/api/health', (req, res) => {
             res.json({ status: 'ok', env: 'local' });
         });

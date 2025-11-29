@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { ClassificationService } from '../services/classification-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -19,6 +19,7 @@ export default function AdminTrustedCompaniesPage() {
     const [editingCompany, setEditingCompany] = useState<Partial<TrustedCompany> | null>(null)
     const [managingJobsCompany, setManagingJobsCompany] = useState<TrustedCompany | null>(null)
     const [crawling, setCrawling] = useState(false)
+    const [processingImage, setProcessingImage] = useState(false)
 
     // Form State
     const [formData, setFormData] = useState({
@@ -197,6 +198,57 @@ export default function AdminTrustedCompaniesPage() {
             showError('抓取失败', '网络或服务器错误')
         } finally {
             setCrawling(false)
+        }
+    }
+
+    const processImageFile = async (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            showError('文件格式错误', '请上传图片文件')
+            return
+        }
+
+        try {
+            setProcessingImage(true)
+            const reader = new FileReader()
+            reader.onloadend = async () => {
+                const base64 = reader.result as string
+                try {
+                    const res = await fetch('/api/process-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64 })
+                    })
+                    const data = await res.json()
+                    if (data.success) {
+                        setFormData(prev => ({ ...prev, coverImage: data.image }))
+                        showSuccess('图片处理成功', '已自动裁剪为 16:9')
+                    } else {
+                        showError('处理失败', data.error)
+                    }
+                } catch (err) {
+                    showError('上传失败', '网络错误')
+                } finally {
+                    setProcessingImage(false)
+                }
+            }
+            reader.readAsDataURL(file)
+        } catch (error) {
+            setProcessingImage(false)
+            showError('读取失败', '无法读取文件')
+        }
+    }
+
+    const handlePaste = async (e: React.ClipboardEvent) => {
+        const items = e.clipboardData.items
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile()
+                if (file) {
+                    e.preventDefault()
+                    await processImageFile(file)
+                    return
+                }
+            }
         }
     }
 
@@ -420,18 +472,53 @@ export default function AdminTrustedCompaniesPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">封面图 URL (Cover Image)</label>
-                                        <input
-                                            type="text"
-                                            value={formData.coverImage}
-                                            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            placeholder="https://..."
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            用于卡片顶部展示。建议比例 16:9 (e.g., 1200x675)，支持 JPG/PNG/WebP。
-                                            如未填写，将显示默认样式。
-                                        </p>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">封面图 (Cover Image)</label>
+                                        <div
+                                            className="space-y-2"
+                                            onPaste={handlePaste}
+                                        >
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.coverImage}
+                                                    onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+                                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    placeholder="输入 URL 或粘贴图片 (Ctrl+V)"
+                                                />
+                                                <label className={`px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${processingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                    {processingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                    上传
+                                                    <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        disabled={processingImage}
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0]
+                                                            if (file) processImageFile(file)
+                                                        }}
+                                                    />
+                                                </label>
+                                            </div>
+
+                                            {/* Preview */}
+                                            {formData.coverImage && (
+                                                <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group">
+                                                    <img src={formData.coverImage} alt="Preview" className="w-full h-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData({ ...formData, coverImage: '' })}
+                                                        className="absolute top-2 right-2 p-1 bg-white/90 text-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                                                    >
+                                                        <XCircle className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            <p className="text-xs text-gray-500">
+                                                支持粘贴图片、上传文件或输入 URL。系统会自动裁剪为 16:9 (1200x675)。
+                                            </p>
+                                        </div>
                                     </div>
 
                                     <div className="col-span-full">
