@@ -418,6 +418,11 @@ export default function AdminCompanyManagementPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
+                                            <div className="text-sm text-gray-600 max-w-xs truncate" title={company.description}>
+                                                {company.description || <span className="text-gray-400">-</span>}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                                 {company.industry || '未分类'}
                                             </span>
