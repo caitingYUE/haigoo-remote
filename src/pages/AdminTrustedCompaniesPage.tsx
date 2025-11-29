@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import Cropper from 'react-easy-crop'
+import getCroppedImg from '../utils/cropImage'
 
-import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload } from 'lucide-react'
+import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload, ZoomIn, ZoomOut } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { ClassificationService } from '../services/classification-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -20,6 +22,17 @@ export default function AdminTrustedCompaniesPage() {
     const [managingJobsCompany, setManagingJobsCompany] = useState<TrustedCompany | null>(null)
     const [crawling, setCrawling] = useState(false)
     const [processingImage, setProcessingImage] = useState(false)
+
+    // Crop State
+    const [cropModalOpen, setCropModalOpen] = useState(false)
+    const [tempImgSrc, setTempImgSrc] = useState<string | null>(null)
+    const [crop, setCrop] = useState({ x: 0, y: 0 })
+    const [zoom, setZoom] = useState(1)
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
+
+    const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+        setCroppedAreaPixels(croppedAreaPixels)
+    }, [])
 
     // Form State
     const [formData, setFormData] = useState({
@@ -201,40 +214,46 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
-    const processImageFile = async (file: File) => {
+    const processImageFile = (file: File) => {
         if (!file.type.startsWith('image/')) {
             showError('文件格式错误', '请上传图片文件')
             return
         }
+        const reader = new FileReader()
+        reader.onload = () => {
+            setTempImgSrc(reader.result as string)
+            setCropModalOpen(true)
+            setZoom(1)
+            setCrop({ x: 0, y: 0 })
+        }
+        reader.readAsDataURL(file)
+    }
 
+    const handleCropSave = async () => {
+        if (!tempImgSrc || !croppedAreaPixels) return
         try {
             setProcessingImage(true)
-            const reader = new FileReader()
-            reader.onloadend = async () => {
-                const base64 = reader.result as string
-                try {
-                    const res = await fetch('/api/process-image', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ image: base64 })
-                    })
-                    const data = await res.json()
-                    if (data.success) {
-                        setFormData(prev => ({ ...prev, coverImage: data.image }))
-                        showSuccess('图片处理成功', '已自动裁剪为 16:9')
-                    } else {
-                        showError('处理失败', data.error)
-                    }
-                } catch (err) {
-                    showError('上传失败', '网络错误')
-                } finally {
-                    setProcessingImage(false)
-                }
+            const croppedImageBase64 = await getCroppedImg(tempImgSrc, croppedAreaPixels)
+            
+            const res = await fetch('/api/process-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: croppedImageBase64 })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setFormData(prev => ({ ...prev, coverImage: data.image }))
+                showSuccess('图片上传成功', '已更新封面图')
+                setCropModalOpen(false)
+                setTempImgSrc(null)
+            } else {
+                showError('上传失败', data.error)
             }
-            reader.readAsDataURL(file)
-        } catch (error) {
+        } catch (err) {
+            console.error(err)
+            showError('处理失败', '无法处理图片')
+        } finally {
             setProcessingImage(false)
-            showError('读取失败', '无法读取文件')
         }
     }
 
@@ -607,6 +626,65 @@ export default function AdminTrustedCompaniesPage() {
                         company={managingJobsCompany}
                         onClose={() => setManagingJobsCompany(null)}
                     />
+                )}
+                {/* Crop Modal */}
+                {cropModalOpen && tempImgSrc && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-2xl w-full max-w-2xl flex flex-col shadow-xl overflow-hidden h-[80vh]">
+                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
+                                <h2 className="text-lg font-bold text-gray-900">裁剪封面图 (16:9)</h2>
+                                <button onClick={() => setCropModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                    <XCircle className="w-6 h-6" />
+                                </button>
+                            </div>
+                            
+                            <div className="relative flex-1 bg-gray-900 w-full">
+                                <Cropper
+                                    image={tempImgSrc}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={16 / 9}
+                                    onCropChange={setCrop}
+                                    onCropComplete={onCropComplete}
+                                    onZoomChange={setZoom}
+                                    objectFit="contain"
+                                />
+                            </div>
+
+                            <div className="p-4 bg-white border-t border-gray-100">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <ZoomOut className="w-5 h-5 text-gray-500" />
+                                    <input
+                                        type="range"
+                                        value={zoom}
+                                        min={1}
+                                        max={3}
+                                        step={0.1}
+                                        aria-labelledby="Zoom"
+                                        onChange={(e) => setZoom(Number(e.target.value))}
+                                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                    />
+                                    <ZoomIn className="w-5 h-5 text-gray-500" />
+                                </div>
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        onClick={() => setCropModalOpen(false)}
+                                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                    >
+                                        取消
+                                    </button>
+                                    <button
+                                        onClick={handleCropSave}
+                                        disabled={processingImage}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {processingImage && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        确认裁剪并上传
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div >
