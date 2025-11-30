@@ -270,7 +270,7 @@ export default function AdminTagManagementPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="w-full bg-gray-50 p-6">
             {/* Top Actions */}
             <div className="flex items-center justify-between mb-6">
                 <div>

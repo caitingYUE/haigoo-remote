@@ -36,6 +36,8 @@ import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
 import DataManagementTabs from '../components/DataManagementTabs';
 import UserManagementPage from './UserManagementPage';
+import AdminCompanyManagementPage from './AdminCompanyManagementPage';
+import AdminTagManagementPage from './AdminTagManagementPage';
 import AdminFeedbackList from '../components/AdminFeedbackList';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
@@ -840,22 +842,8 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'jobs' && renderJobDataManagement()}
               {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'users' && <UserManagementPage />}
-              {activeTab === 'companies' && (
-                <iframe
-                  src="/admin/companies"
-                  className="w-full h-full border-0"
-                  style={{ minHeight: '800px' }}
-                  title="企业管理"
-                />
-              )}
-              {activeTab === 'tag-management' && (
-                <iframe
-                  src="/admin/tag-management"
-                  className="w-full h-full border-0"
-                  style={{ minHeight: '800px' }}
-                  title="标签管理"
-                />
-              )}
+              {activeTab === 'companies' && <AdminCompanyManagementPage />}
+              {activeTab === 'tag-management' && <AdminTagManagementPage />}
               {activeTab === 'analytics' && renderAnalytics()}
               {activeTab === 'feedback' && renderFeedbackList()}
               {activeTab === 'settings' && renderSettings()}

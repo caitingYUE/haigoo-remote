@@ -841,9 +841,9 @@ export default function AdminCompanyManagementPage() {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="h-full flex flex-col bg-gray-50">
             {/* Tabs */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => setActiveTab('all')}
