@@ -16,47 +16,65 @@ export default function LandingPage() {
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>([])
   const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>([])
   const [loading, setLoading] = useState(true)
+  const [categories, setCategories] = useState<string[]>([])
   const [stats, setStats] = useState({ totalJobs: 0, companiesCount: 0, activeUsers: 0 })
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true)
-        const [jobs, companies] = await Promise.all([
-          processedJobsService.getAllProcessedJobsFull(50, 1),
-          trustedCompaniesService.getAllCompanies()
+        
+        // 并行获取：精选职位、热门企业、常规职位（用于统计和分类）
+        const [featuredResp, companies, jobs] = await Promise.all([
+          processedJobsService.getProcessedJobs(1, 12, { isFeatured: true }),
+          trustedCompaniesService.getAllCompanies(),
+          processedJobsService.getAllProcessedJobsFull(50, 1)
         ])
 
-        // Filter for domestic jobs (reuse logic)
-        const domesticJobs = jobs.filter(job => {
-          const loc = (job.location || '').toLowerCase()
-          const tags = (job.skills || []).map(t => t.toLowerCase())
-          const pool = new Set([loc, ...tags])
+        // 设置精选职位（如果有，否则回退到常规职位）
+        if (featuredResp.jobs.length > 0) {
+          setFeaturedJobs(featuredResp.jobs)
+        } else {
+          // 回退逻辑：使用常规职位中的国内职位
+          const domesticJobs = jobs.filter(job => {
+             const loc = (job.location || '').toLowerCase()
+             const tags = (job.skills || []).map(t => t.toLowerCase())
+             const pool = new Set([loc, ...tags])
+   
+             const domesticKeywords = ['china', '中国', 'cn', 'apac', 'asia', 'east asia', 'greater china', 'utc+8', 'gmt+8', 'beijing', 'shanghai', 'shenzhen', 'guangzhou', 'hangzhou', 'chongqing', 'chengdu', 'nanjing', '不限地点']
+             const globalKeywords = ['anywhere', 'everywhere', 'worldwide', 'global', '不限地点']
+             const overseasKeywords = ['usa', 'united states', 'us', 'uk', 'england', 'britain', 'canada', 'mexico', 'brazil', 'europe', 'eu', 'emea', 'germany', 'france', 'spain', 'italy', 'australia', 'new zealand']
+   
+             const hit = (keys: string[]) => keys.some(k => pool.has(k) || loc.includes(k))
+             const globalHit = hit(globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
+             const domesticHit = hit(domesticKeywords)
+             const overseasHit = hit(overseasKeywords)
+   
+             return domesticHit || (globalHit && !overseasHit)
+          })
+          setFeaturedJobs(domesticJobs.slice(0, 12))
+        }
 
-          const domesticKeywords = ['china', '中国', 'cn', 'apac', 'asia', 'east asia', 'greater china', 'utc+8', 'gmt+8', 'beijing', 'shanghai', 'shenzhen', 'guangzhou', 'hangzhou', 'chongqing', 'chengdu', 'nanjing', '不限地点']
-          const globalKeywords = ['anywhere', 'everywhere', 'worldwide', 'global', '不限地点']
-          const overseasKeywords = ['usa', 'united states', 'us', 'uk', 'england', 'britain', 'canada', 'mexico', 'brazil', 'europe', 'eu', 'emea', 'germany', 'france', 'spain', 'italy', 'australia', 'new zealand']
-
-          const hit = (keys: string[]) => keys.some(k => pool.has(k) || loc.includes(k))
-          const globalHit = hit(globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
-          const domesticHit = hit(domesticKeywords)
-          const overseasHit = hit(overseasKeywords)
-
-          return domesticHit || (globalHit && !overseasHit)
-        })
-
-        // Filter for featured jobs
-        const featured = domesticJobs.filter(job => job.isFeatured === true)
-        const displayJobs = featured.length > 0 ? featured : domesticJobs
-        setFeaturedJobs(displayJobs.slice(0, 12)) // Show 12 cards
-
-        // Set trusted companies (top 9)
+        // 设置热门企业 (top 9)
         setTrustedCompanies(companies.slice(0, 9))
 
-        // Set stats
+        // 提取热门分类 (基于 job.category)
+        const categoryCounts = new Map<string, number>()
+        jobs.forEach(job => {
+          if (job.category) {
+            categoryCounts.set(job.category, (categoryCounts.get(job.category) || 0) + 1)
+          }
+        })
+        const topCategories = Array.from(categoryCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([cat]) => cat)
+        setCategories(topCategories)
+
+        // 设置统计数据
         const uniqueCompanies = new Set(jobs.map(j => j.company).filter(Boolean))
         setStats({
-          totalJobs: domesticJobs.length,
+          totalJobs: jobs.length, // 简化统计，使用获取到的数量
           companiesCount: uniqueCompanies.size,
           activeUsers: 1200
         })
@@ -82,9 +100,26 @@ export default function LandingPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">精选岗位</h2>
             <div className="flex gap-4 text-sm font-medium text-gray-500">
-              {['销售', '直播/影视/传媒', '供应链/物流', '人力/财务/行政', '客服/运营', '教育培训', '服务业', '市场/公关/广告', '设计'].map(cat => (
-                <span key={cat} className="hidden lg:block cursor-pointer hover:text-blue-600 transition-colors">{cat}</span>
-              ))}
+              {categories.length > 0 ? categories.map(cat => (
+                <button 
+                  key={cat} 
+                  onClick={() => navigate(`/jobs?category=${encodeURIComponent(cat)}`)}
+                  className="hidden lg:block cursor-pointer hover:text-blue-600 transition-colors"
+                >
+                  {cat}
+                </button>
+              )) : (
+                // Fallback categories if no data
+                ['销售', '技术', '运营', '设计', '市场', '产品'].map(cat => (
+                  <button 
+                    key={cat}
+                    onClick={() => navigate(`/jobs?category=${encodeURIComponent(cat)}`)}
+                    className="hidden lg:block cursor-pointer hover:text-blue-600 transition-colors"
+                  >
+                    {cat}
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
