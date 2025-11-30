@@ -262,9 +262,9 @@ const userHelper = {
 
             // 获取用户信息
             const userResult = await neonHelper.query(`
-        SELECT id, email, username, status, roles, createdAt, updatedAt 
+        SELECT user_id, email, username, status, roles, createdAt, updatedAt 
         FROM users 
-        WHERE id = $1
+        WHERE user_id = $1
       `, [userId])
 
             const user = userResult?.[0]

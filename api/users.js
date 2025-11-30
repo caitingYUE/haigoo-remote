@@ -102,9 +102,9 @@ export default async function handler(req, res) {
   let requester = null
   if (payload?.userId) {
     const result = await neonHelper.query(`
-      SELECT id, email, roles 
+      SELECT user_id, email, roles 
       FROM users 
-      WHERE id = $1
+      WHERE user_id = $1
     `, [payload.userId])
     requester = result?.rows?.[0]
   }
@@ -159,9 +159,9 @@ export default async function handler(req, res) {
 
       // 获取更新后的用户信息
       const updatedUserResult = await neonHelper.query(`
-        SELECT id, email, username, status, roles, createdAt, updatedAt 
+        SELECT user_id, email, username, status, roles, createdAt, updatedAt 
         FROM users 
-        WHERE id = $1
+        WHERE user_id = $1
       `, [id])
       const updatedUser = updatedUserResult?.rows?.[0]
 
