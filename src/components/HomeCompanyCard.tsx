@@ -1,5 +1,5 @@
 import React from 'react'
-import { Building2, Users, Globe, CheckCircle2 } from 'lucide-react'
+import { Building2, Users, Globe } from 'lucide-react'
 import { TrustedCompany } from '../services/trusted-companies-service'
 
 interface HomeCompanyCardProps {
@@ -22,14 +22,9 @@ export default function HomeCompanyCard({ company, onClick }: HomeCompanyCardPro
                     )}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1 mb-1">
-                        <h3 className="font-bold text-gray-900 text-lg truncate group-hover:text-blue-600 transition-colors">
-                            {company.name}
-                        </h3>
-                        {company.isTrusted && (
-                            <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-50" />
-                        )}
-                    </div>
+                    <h3 className="font-bold text-gray-900 text-lg truncate mb-1 group-hover:text-blue-600 transition-colors">
+                        {company.name}
+                    </h3>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                         {company.industry && <span>{company.industry}</span>}
                     </div>
