@@ -149,7 +149,8 @@ class JobAggregator {
       experienceLevel: rssJob.experienceLevel,
       category: rssJob.category,
       isRemote: rssJob.isRemote,
-      remoteLocationRestriction: rssJob.remoteLocationRestriction
+      remoteLocationRestriction: rssJob.remoteLocationRestriction,
+      isFeatured: rssJob.isFeatured
     };
   }
 

@@ -397,8 +397,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       }
       setShowEditModal(false);
       setEditingJob(null);
-      // 后台静默刷新以确保数据一致性
-      loadProcessedData();
+      // 后台静默刷新以确保数据一致性 - 暂时移除以避免覆盖乐观更新
+      // loadProcessedData();
     } catch (error) {
       console.error('保存职位失败:', error);
       showError('保存失败', '请重试');

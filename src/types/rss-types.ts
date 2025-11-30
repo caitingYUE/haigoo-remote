@@ -37,6 +37,9 @@ export interface Job {
 
   // AI-generated job summary (30-50 characters)
   summary?: string;
+
+  // Featured status
+  isFeatured?: boolean;
 }
 
 // 标准化的工作分类

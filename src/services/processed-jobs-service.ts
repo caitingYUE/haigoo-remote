@@ -23,6 +23,7 @@ export interface ProcessedJobsFilters {
   skills?: string[]
   id?: string
   region?: 'domestic' | 'overseas'
+  isFeatured?: boolean
 }
 
 class ProcessedJobsService {
@@ -54,6 +55,7 @@ class ProcessedJobsService {
       if (filters.type) params.append('type', filters.type)
       if (filters.id) params.append('id', filters.id)
       if (filters.region) params.append('region', filters.region)
+      if (filters.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString())
 
       if (filters.tags && filters.tags.length > 0) {
         filters.tags.forEach(tag => params.append('tags', tag))
@@ -141,7 +143,12 @@ class ProcessedJobsService {
         companyId: job.companyId,
         sourceType: job.sourceType,
         isTrusted: job.isTrusted,
-        canRefer: job.canRefer
+        canRefer: job.canRefer,
+        isFeatured: job.isFeatured,
+        companyIndustry: job.companyIndustry,
+        companyTags: job.companyTags,
+        companyWebsite: job.companyWebsite,
+        companyDescription: job.companyDescription
       }))
 
       return {
