@@ -36,6 +36,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [translating, setTranslating] = useState(false); // 🆕 翻译按钮专用状态
+  const [translationProgress, setTranslationProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 }); // 🆕 翻译进度状态
   const { showSuccess, showError } = useNotificationHelpers();
 
   // 原始数据状态
@@ -78,6 +79,9 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [viewingItem, setViewingItem] = useState<RawRSSData | ProcessedJobData | null>(null);
+
+  // 新增：控制是否自动处理原始数据
+  const [autoProcess, setAutoProcess] = useState(true);
 
   // 简历库已拆分为独立页面，不在此组件维护状态
 
@@ -160,12 +164,20 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const handleSyncData = async () => {
     try {
       setSyncing(true);
-      await dataManagementService.syncAllRSSData();
+      // 根据 autoProcess 状态决定是否跳过处理
+      await dataManagementService.syncAllRSSData(!autoProcess);
+
       // 重新加载所有相关数据，确保两个页签都更新
       await loadRawData();
-      await loadProcessedData();
+      if (autoProcess) {
+        await loadProcessedData();
+      }
       await loadStorageStats();
-      showSuccess('同步完成', '已拉取最新RSS并更新原始与处理后数据');
+
+      const msg = autoProcess
+        ? '已拉取最新RSS并自动处理为岗位数据'
+        : '已拉取最新RSS原始数据（未处理）';
+      showSuccess('同步完成', msg);
     } catch (error) {
       console.error('同步数据失败:', error);
       showError('同步失败', '请检查后端服务或网络连接');
@@ -178,7 +190,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const handleRefreshProcessedOnly = async () => {
     try {
       setSyncing(true);
-      await dataManagementService.syncAllRSSData();
+      // 强制处理，因为这是在"处理后数据"页签
+      await dataManagementService.syncAllRSSData(false);
       await loadProcessedData();
       await loadStorageStats();
       showSuccess('刷新完成', '处理后数据已更新至最新');
@@ -196,65 +209,97 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     }
   };
 
-  // 🆕 手动触发后端翻译任务 - 分页翻译
+  // 🆕 手动触发后端翻译任务 - 自动分页翻译所有数据
   const handleTriggerTranslation = async () => {
+    if (translating) return;
+
     try {
       setTranslating(true);
-      console.log(`🌍 开始翻译第 ${processedDataPage} 页数据...`);
+      let currentPage = 1;
+      let totalPages = 1;
+      let totalTranslated = 0;
+      let totalSkipped = 0;
+      let totalFailed = 0;
 
-      // 调用新的翻译API，传入当前页码
-      const response = await fetch('/api/translate-jobs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          page: processedDataPage,
-          pageSize: processedDataPageSize
-        })
-      });
+      // Initial fetch to get total pages (translate page 1)
+      showSuccess('开始翻译', '正在获取数据总量并开始自动翻译...');
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `翻译失败: ${response.status}`);
-      }
+      do {
+        console.log(`🌍 正在自动翻译第 ${currentPage}/${totalPages === 1 ? '?' : totalPages} 页...`);
+        setTranslationProgress({ current: currentPage, total: totalPages });
 
-      const result = await response.json();
-      console.log('✅ 翻译完成:', result);
+        const response = await fetch('/api/translate-jobs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            page: currentPage,
+            pageSize: processedDataPageSize
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `第 ${currentPage} 页翻译失败: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        // Update totals
+        if (currentPage === 1) {
+          totalPages = result.totalPages || 1;
+        }
+        
+        totalTranslated += result.translated || 0;
+        totalSkipped += result.skipped || 0;
+        totalFailed += result.failed || 0;
+        
+        setTranslationProgress({ current: currentPage, total: totalPages });
+        
+        currentPage++;
+        
+        // 每次翻译完一页，如果正好是当前查看的页面，刷新一下视图
+        if (currentPage - 1 === processedDataPage) {
+           loadProcessedData();
+        }
+
+      } while (currentPage <= totalPages);
+
+      console.log('✅ 所有数据翻译完成');
 
       // 重新加载当前页数据
       await loadProcessedData();
 
-      // 🆕 清除前端页面缓存，确保用户看到最新翻译
+      // 🆕 清除前端页面缓存
       try {
-        // 清除jobs相关的所有缓存
         const cacheKeys = Object.keys(localStorage).filter(key =>
           key.includes('jobs') || key.includes('cache')
         );
         cacheKeys.forEach(key => localStorage.removeItem(key));
-        console.log('🗑️ 已清除前端缓存，用户刷新页面后将看到翻译内容');
+        console.log('🗑️ 已清除前端缓存');
       } catch (e) {
         console.warn('清除缓存失败:', e);
       }
 
-      // 显示翻译结果
-      const { translated, failed, skipped, page, totalPages } = result;
+      // 显示最终结果
       showSuccess(
-        '翻译完成',
-        `第 ${page}/${totalPages} 页: 成功 ${translated} 条，跳过 ${skipped} 条，失败 ${failed} 条。前端缓存已清除，刷新页面即可看到翻译内容。`
+        '全量翻译完成',
+        `共扫描 ${totalPages} 页: 成功翻译 ${totalTranslated} 条，跳过 ${totalSkipped} 条，失败 ${totalFailed} 条。页面已刷新。`
       );
 
-      // 广播全局事件，通知前台页面刷新
+      // 广播全局事件
       try {
         window.dispatchEvent(new Event('processed-jobs-updated'));
       } catch (e) {
         console.warn('广播事件失败', e);
       }
     } catch (error) {
-      console.error('❌ 翻译失败:', error);
-      showError('翻译失败', error instanceof Error ? error.message : '请检查网络连接');
+      console.error('❌ 翻译中断:', error);
+      showError('翻译中断', error instanceof Error ? error.message : '请检查网络连接');
     } finally {
       setTranslating(false);
+      setTranslationProgress({ current: 0, total: 0 });
     }
   };
 
@@ -1171,14 +1216,25 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
         <div className="flex gap-2">
           {activeTab === 'raw' && (
-            <button
-              onClick={handleSyncData}
-              disabled={syncing}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-blue-300 text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? '同步中...' : '同步数据'}
-            </button>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={autoProcess}
+                  onChange={(e) => setAutoProcess(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                自动处理为岗位
+              </label>
+              <button
+                onClick={handleSyncData}
+                disabled={syncing}
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-blue-300 text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? '同步中...' : '同步数据'}
+              </button>
+            </div>
           )}
           {activeTab === 'processed' && (
             <div className="flex gap-2">
@@ -1199,7 +1255,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <svg className={`w-3 h-3 ${translating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                 </svg>
-                {translating ? '翻译中...' : '翻译数据'}
+                {translating ? (translationProgress.total > 0 ? `翻译中 ${translationProgress.current}/${translationProgress.total}页...` : '翻译中...') : '翻译数据'}
               </button>
             </div>
           )}

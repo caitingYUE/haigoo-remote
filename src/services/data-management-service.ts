@@ -62,8 +62,7 @@ export interface PaginatedResult<T> {
 
 export class DataManagementService {
   private storageAdapter: CloudStorageAdapter | null = null;
-  private readonly RAW_DATA_KEY = 'haigoo:raw_data';
-  private readonly PROCESSED_DATA_KEY = 'haigoo:processed_data';
+
   private readonly STATS_KEY = 'haigoo:data_stats';
   private readonly RETENTION_DAYS = 7;
   private readonly MAX_STORAGE_SIZE = 20 * 1024 * 1024; // 20MB
@@ -85,8 +84,9 @@ export class DataManagementService {
 
   /**
    * 同步所有RSS源数据
+   * @param skipProcessing 是否跳过处理步骤（仅拉取原始数据）
    */
-  async syncAllRSSData(): Promise<SyncStatus> {
+  async syncAllRSSData(skipProcessing: boolean = false): Promise<SyncStatus> {
     const syncStatus: SyncStatus = {
       isRunning: true,
       lastSync: new Date(),
@@ -104,7 +104,7 @@ export class DataManagementService {
       const sources = rssService.getRSSSources();
       syncStatus.totalSources = sources.length;
 
-      console.log(`开始同步 ${sources.length} 个RSS源...`);
+      console.log(`开始同步 ${sources.length} 个RSS源... (跳过处理: ${skipProcessing})`);
 
       // 并发同步所有RSS源
       const syncPromises = sources.map(async (source, index) => {
@@ -112,13 +112,18 @@ export class DataManagementService {
           console.log(`[${index + 1}/${sources.length}] 同步 ${source.name} - ${source.category}`);
 
           const rawData = await this.fetchAndStoreRawData(source);
-          const processedJobs = await this.processRawData(rawData);
+
+          let processedJobs: ProcessedJobData[] = [];
+          if (!skipProcessing) {
+            processedJobs = await this.processRawData(rawData);
+            syncStatus.newJobsAdded += processedJobs.length;
+          }
 
           syncStatus.successfulSources++;
           syncStatus.totalJobsProcessed += rawData.length;
-          syncStatus.newJobsAdded += processedJobs.length;
 
-          console.log(`✅ ${source.name} - ${source.category}: ${rawData.length} 原始数据, ${processedJobs.length} 处理后职位`);
+          console.log(`✅ ${source.name} - ${source.category}: ${rawData.length} 原始数据` +
+            (skipProcessing ? '' : `, ${processedJobs.length} 处理后职位`));
         } catch (error) {
           syncStatus.failedSources++;
           const syncError: SyncError = {
@@ -519,11 +524,6 @@ export class DataManagementService {
         throw new Error(`Failed to clear jobs: ${resp.status} ${text}`);
       }
 
-      // Also clear localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(this.PROCESSED_DATA_KEY);
-      }
-
       console.log('已清除所有处理后的职位数据');
       return true;
     } catch (error) {
@@ -567,8 +567,7 @@ export class DataManagementService {
   async getStorageStats(): Promise<StorageStats> {
     try {
       // 优先从后端API读取真实统计信息（来源KV）
-      const t = Date.now();
-      const resp = await fetch(`/api/data/processed-jobs?action=stats&t=${t}`, { cache: 'no-store' });
+      const resp = await fetch(`/api/data/processed-jobs?action=stats`);
       if (!resp.ok) throw new Error(`GET /api/data/processed-jobs?action=stats failed: ${resp.status}`);
       const stats = await resp.json();
 
@@ -696,43 +695,19 @@ export class DataManagementService {
         }
       }
     } catch (error) {
-      console.warn('保存原始数据到API失败，回退到localStorage:', error)
-      if (typeof window !== 'undefined') {
-        const existingStr = localStorage.getItem(this.RAW_DATA_KEY)
-        const existing = existingStr ? JSON.parse(existingStr) : []
-        let merged = []
-        if (mode === 'append') {
-          merged = [...existing, ...data]
-        } else {
-          merged = [...data]
-        }
-        const cutoff = new Date(Date.now() - this.RETENTION_DAYS * 24 * 60 * 60 * 1000)
-        const seen = new Set()
-        const unique = merged.filter(item => {
-          const key = (item.id || `${item.link}|${item.title}|${item.source}`).toLowerCase()
-          if (seen.has(key)) return false
-          seen.add(key)
-          const ts = new Date(item.fetchedAt || item.pubDate)
-          return ts >= cutoff
-        })
-        localStorage.setItem(this.RAW_DATA_KEY, JSON.stringify(unique))
-      }
+      console.error('保存原始数据到API失败:', error)
+      throw error
     }
   }
 
   private async loadRawData(): Promise<RawRSSData[]> {
     try {
-      const t = Date.now()
-      const resp = await fetch(`/api/data/raw-rss?page=1&limit=10000&t=${t}`, { cache: 'no-store' })
+      const resp = await fetch(`/api/data/raw-rss?page=1&limit=10000`)
       if (!resp.ok) throw new Error(`GET /api/data/raw-rss failed: ${resp.status}`)
       const json = await resp.json()
       return Array.isArray(json?.items) ? json.items : (Array.isArray(json?.data) ? json.data : [])
     } catch (error) {
-      console.warn('加载原始数据API失败，回退到localStorage:', error)
-      if (typeof window !== 'undefined') {
-        const data = localStorage.getItem(this.RAW_DATA_KEY)
-        return data ? JSON.parse(data) : []
-      }
+      console.error('加载原始数据API失败:', error)
       return []
     }
   }
@@ -755,29 +730,22 @@ export class DataManagementService {
         }
       }
     } catch (error) {
-      console.warn('保存处理后数据到API失败，回退到localStorage:', error)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(this.PROCESSED_DATA_KEY, JSON.stringify(jobs))
-      }
+      console.error('保存处理后数据到API失败:', error)
+      throw error
     }
   }
 
   private async loadProcessedJobs(): Promise<ProcessedJobData[]> {
     try {
-      const t = Date.now()
-      const resp = await fetch(`/api/data/processed-jobs?page=1&limit=1000&t=${t}`, { cache: 'no-store' })
+      const resp = await fetch(`/api/data/processed-jobs?page=1&limit=1000`)
       if (!resp.ok) {
         throw new Error(`GET /api/data/processed-jobs failed: ${resp.status}`)
       }
       const json = await resp.json()
       return Array.isArray(json?.jobs) ? json.jobs : []
     } catch (error) {
-      console.warn('加载处理后数据API失败，回退到localStorage:', error)
-      if (typeof window !== 'undefined') {
-        const data = localStorage.getItem(this.PROCESSED_DATA_KEY)
-        return data ? JSON.parse(data) : []
-      }
-      return []
+      console.error('加载处理后数据API失败:', error)
+      throw error
     }
   }
 
