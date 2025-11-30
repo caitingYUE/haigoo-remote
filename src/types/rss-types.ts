@@ -27,13 +27,16 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
   region?: 'domestic' | 'overseas';
-  
+
   // New Company Sync Fields
   companyIndustry?: string;
   companyTags?: string[];
   companyLogo?: string;
   companyDescription?: string;
   companyId?: string;
+
+  // AI-generated job summary (30-50 characters)
+  summary?: string;
 }
 
 // 标准化的工作分类
@@ -192,6 +195,9 @@ export interface Job {
   status: 'active' | 'inactive' | 'archived';
   createdAt: string;
   updatedAt: string;
+
+  // AI-generated job summary (30-50 characters)
+  summary?: string;
 }
 
 export interface JobFilter {

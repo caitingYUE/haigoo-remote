@@ -113,7 +113,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
     return colors[idx];
   }, [companyInitial]);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(job.logo);
-  
+
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -155,7 +155,7 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             </span>
           )}
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <h2
@@ -175,15 +175,15 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
               </button>
             )}
           </div>
-          
+
           <div className="flex items-center text-slate-600 text-sm gap-2 flex-wrap">
             {job.companyWebsite ? (
-              <a 
+              <a
                 href={job.companyWebsite}
-                target="_blank" 
+                target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="font-medium truncate max-w-[200px] hover:text-blue-600 hover:underline" 
+                className="font-medium truncate max-w-[200px] hover:text-blue-600 hover:underline"
                 title={job.translations?.company || job.company}
               >
                 {job.translations?.company || job.company}
@@ -193,11 +193,11 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
                 {job.translations?.company || job.company}
               </span>
             )}
-            
+
             {job.companyIndustry && (
-               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
-                 {job.companyIndustry}
-               </span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+                {job.companyIndustry}
+              </span>
             )}
 
             {job.isTrusted && (
@@ -227,15 +227,26 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
         )}
       </div>
 
-      {/* Description Preview */}
+      {/* Description Preview or AI Summary */}
       <div className="flex-1 mb-4 min-h-[3rem]">
-         <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">
+        {job.summary ? (
+          <div className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+            <p className="text-slate-700 text-sm font-medium leading-relaxed">
+              {job.summary}
+            </p>
+          </div>
+        ) : (
+          <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">
             {processJobDescription(job.translations?.description || job.description || '', {
               formatMarkdown: false,
               maxLength: 100,
               preserveHtml: false
             })}
           </p>
+        )}
       </div>
 
       {/* Skills Tags (Bottom) */}
@@ -246,10 +257,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             tags={[
               ...(job.companyTags || []),
               ...((
-              Array.isArray((job as any).tags) && (job as any).tags.length > 0
-                ? (job as any).tags
-                : (job.skills || [])
-            ) as string[])
+                Array.isArray((job as any).tags) && (job as any).tags.length > 0
+                  ? (job as any).tags
+                  : (job.skills || [])
+              ) as string[])
             ]}
           />
         </div>
@@ -263,10 +274,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             <span className="truncate max-w-[100px]">{job.translations?.location || job.location}</span>
           </div>
           <div className="flex items-center gap-1">
-             <time dateTime={job.postedAt}>{DateFormatter.formatPublishTime(job.postedAt)}</time>
+            <time dateTime={job.postedAt}>{DateFormatter.formatPublishTime(job.postedAt)}</time>
           </div>
         </div>
-        
+
         <div className="font-semibold text-emerald-600 text-sm">
           {formatSalary(job.salary)}
         </div>

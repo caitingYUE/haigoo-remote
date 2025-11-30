@@ -207,8 +207,8 @@ export class DataManagementService {
       try {
         const rssItem: RSSFeedItem = JSON.parse(rawData.rawContent);
 
-        // 使用现有的转换逻辑
-        const job = this.convertRSSItemToProcessedJob(rssItem, rawData);
+        // 使用现有的转换逻辑（现在是异步的）
+        const job = await this.convertRSSItemToProcessedJob(rssItem, rawData);
 
         processedJobs.push(job);
 
@@ -230,7 +230,7 @@ export class DataManagementService {
   /**
    * 转换RSS项目为处理后的职位数据
    */
-  private convertRSSItemToProcessedJob(item: RSSFeedItem, rawData: RawRSSData): ProcessedJobData {
+  private async convertRSSItemToProcessedJob(item: RSSFeedItem, rawData: RawRSSData): Promise<ProcessedJobData> {
     // 基础职位信息
     const baseJob: Job = {
       id: this.generateJobId(item.link, rawData.source),
@@ -256,6 +256,21 @@ export class DataManagementService {
       updatedAt: new Date().toISOString()
     };
 
+    // Generate AI summary (30-50 characters)
+    try {
+      const summaryResult = await this.generateJobSummary(
+        baseJob.title,
+        baseJob.description || '',
+        baseJob.requirements
+      );
+      if (summaryResult) {
+        baseJob.summary = summaryResult;
+      }
+    } catch (error) {
+      console.warn(`Failed to generate summary for job ${baseJob.id}:`, error);
+      // Continue without summary - it's optional
+    }
+
     // 扩展为处理后的职位数据
     const processedJob: ProcessedJobData = {
       ...baseJob,
@@ -268,6 +283,38 @@ export class DataManagementService {
 
     return processedJob;
   }
+
+  /**
+   * 生成岗位简介（30-50字）
+   */
+  private async generateJobSummary(
+    title: string,
+    description: string,
+    responsibilities: string[]
+  ): Promise<string | undefined> {
+    try {
+      const response = await fetch('/api/generate-job-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description,
+          responsibilities
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Summary API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.success ? data.summary : undefined;
+    } catch (error) {
+      console.error('Generate job summary error:', error);
+      return undefined;
+    }
+  }
+
 
   /**
    * 获取原始RSS数据（分页查询）

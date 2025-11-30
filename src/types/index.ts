@@ -46,12 +46,15 @@ export interface Job {
   sourceType?: 'trusted' | 'rss'
   isTrusted?: boolean
   canRefer?: boolean
-  
+
   // Enterprise Fields (Synced)
   companyIndustry?: string
   companyTags?: string[]
   companyWebsite?: string
   companyDescription?: string
+
+  // AI-generated job summary (30-50 characters)
+  summary?: string
 }
 
 export interface User {

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>岗位详情 - Haigoo 海外远程工作助手</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+<!-- 顶部导航 -->
+<header class="bg-white shadow-sm sticky top-0 z-50">
+  <nav class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+    <a class="text-xl font-semibold text-blue-600" href="/">Haigoo Remote Club</a>
+    <div class="hidden md:flex space-x-6 text-gray-600">
+      <a href="/jobs" class="hover:text-blue-600">岗位</a>
+      <a href="/trusted-companies" class="hover:text-blue-600">可信企业</a>
+      <a href="/about" class="hover:text-blue-600">关于我们</a>
+    </div>
+  </nav>
+</header>
+
+<!-- 页面主体 -->
+<main class="max-w-4xl mx-auto px-4 mt-10 mb-20">
+
+  <!-- 返回 -->
+  <a href="/jobs" class="text-gray-500 text-sm hover:text-blue-600">返回岗位列表</a>
+
+  <!-- 顶部信息 -->
+  <section class="bg-white shadow-sm border border-gray-100 rounded-2xl p-8 mt-6">
+    <div class="flex space-x-6">
+
+      <img src="company-logo.png" class="w-20 h-20 rounded-xl border" />
+
+      <div class="flex-1">
+        <h1 class="text-2xl font-semibold text-gray-900 mb-2">
+          Mid Performance Marketer
+        </h1>
+
+        <div class="flex items-center space-x-2 text-gray-600 text-sm">
+          <span class="font-medium">EverAI</span>
+          <span class="bg-blue-50 text-blue-600 text-xs px-2 py-0.5 rounded-full">已认证</span>
+        </div>
+
+        <div class="flex flex-wrap items-center space-x-3 mt-3 text-gray-700 text-sm">
+          <span>全职</span>
+          <span>·</span>
+          <span>远程</span>
+          <span>·</span>
+          <span class="text-green-600 font-medium">可从国内申请</span>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mt-4 text-sm">
+          <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-lg">Marketing</span>
+          <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-lg">Growth</span>
+          <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-lg">Data Analysis</span>
+        </div>
+      </div>
+
+      <div class="hidden md:flex flex-col items-end space-y-3">
+        <button class="border rounded-lg px-4 py-2 hover:bg-gray-100 text-gray-700">
+          收藏岗位
+        </button>
+        <a href="#" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium">
+          申请岗位
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 岗位详情内容 -->
+  <section class="bg-white border border-gray-100 shadow-sm rounded-2xl p-8 mt-8 space-y-10">
+
+    <!-- 岗位简介 -->
+    <div>
+      <h2 class="text-xl font-semibold mb-4">岗位简介</h2>
+      <p class="leading-7 text-gray-700">
+        该岗位负责全球渠道广告投放策略制定及执行，通过数据分析优化投放逻辑，并持续提升转化效率。
+        候选人需要具备一定的增长思维，能够独立拆解目标、搭建执行计划并落实方案。
+      </p>
+    </div>
+
+    <!-- 岗位职责 -->
+    <div>
+      <h2 class="text-xl font-semibold mb-4">岗位职责</h2>
+      <ul class="list-disc pl-5 text-gray-700 space-y-2 leading-7">
+        <li>负责多个广告渠道的投放管理与策略制定。</li>
+        <li>通过数据分析优化投放效率，提升 ROI。</li>
+        <li>与创意团队协作，持续输出高质量素材。</li>
+        <li>构建增长实验并验证假设。</li>
+      </ul>
+    </div>
+
+    <!-- 任职要求 -->
+    <div>
+      <h2 class="text-xl font-semibold mb-4">任职要求</h2>
+      <ul class="list-disc pl-5 text-gray-700 space-y-2 leading-7">
+        <li>3 年以上增长、广告或相关岗位经验。</li>
+        <li>熟悉海外广告渠道（如 Meta、Google Ads）。</li>
+        <li>具备扎实的数据分析能力，熟练使用分析工具。</li>
+        <li>具备较强的自驱力和项目推进能力。</li>
+      </ul>
+    </div>
+
+    <!-- 薪资及其他信息 -->
+    <div>
+      <h2 class="text-xl font-semibold mb-4">薪资与信息</h2>
+      <div class="space-y-2 text-gray-700 leading-7">
+        <p>薪资范围：面议</p>
+        <p>工作地点：远程（支持全球时区）</p>
+        <p>发布日期：11-20</p>
+        <p>岗位来源：EverAI 官方网站</p>
+      </div>
+    </div>
+
+    <!-- 操作按钮（移动端可见） -->
+    <div class="md:hidden border-t pt-6 flex flex-col space-y-3">
+      <button class="border rounded-lg px-4 py-2 hover:bg-gray-100 text-gray-700">
+        收藏岗位
+      </button>
+      <a href="#" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-center font-medium">
+        申请岗位
+      </a>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- 页脚 -->
+<footer class="py-10 text-center text-gray-500">
+  <p>© 2024 Haigoo 海外远程工作助手</p>
+  <div class="mt-3 flex justify-center space-x-5 text-sm">
+    <a href="/about" class="hover:text-blue-600">关于我们</a>
+    <a href="/contact" class="hover:text-blue-600">联系我们</a>
+    <a href="/privacy" class="hover:text-blue-600">隐私政策</a>
+  </div>
+</footer>
+
+</body>
+</html>
