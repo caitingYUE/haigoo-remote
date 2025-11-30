@@ -210,7 +210,71 @@ export default function JobsPage() {
     loadCompanies()
   }, [jobs])
 
-  const filteredJobs = (jobs || []).filter(job => {
+  // Derived Data for Dynamic Filters
+  const regionJobs = useMemo(() => {
+    if (!jobs) return [];
+    const norm = (v: string) => (v || '').toLowerCase()
+    
+    return jobs.filter(job => {
+      const loc = norm(job.location)
+      const tags = (job.skills || []).map(t => norm(t)) // job.skills is used as tags in current code? or job.tags? Reading below uses job.skills for filtering.
+      // Let's verify if job.tags exists. Code uses job.skills in filter (line 219).
+      // But TrustedCompaniesPage used company.tags.
+      // Let's stick to job.skills for now as per existing filter logic.
+      const pool = new Set([loc, ...tags])
+      const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)))
+      const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
+      const domesticHit = hit(categories.domesticKeywords)
+      const overseasHit = hit(categories.overseasKeywords)
+      return activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || overseasHit)
+    })
+  }, [jobs, activeRegion, categories])
+
+  const locationOptions = useMemo(() => {
+    const locs = new Set<string>()
+    regionJobs.forEach(j => {
+      if (j.location) {
+        // Simple normalization: remove trailing spaces, maybe split?
+        // For now, just use the raw string as requested "actual locations from DB"
+        // But maybe trim it.
+        locs.add(j.location.trim())
+      }
+    })
+    return Array.from(locs).sort().map(l => ({ label: l, value: l }))
+  }, [regionJobs])
+
+  const industryOptions = useMemo(() => {
+    const inds = new Set<string>()
+    regionJobs.forEach(j => {
+      const ind = j.companyId ? companyMap[j.companyId]?.industry : ''
+      if (ind) inds.add(ind)
+    })
+    return Array.from(inds).sort().map(i => ({ label: i, value: i }))
+  }, [regionJobs, companyMap])
+
+  const typeOptions = useMemo(() => {
+    const types = new Set<string>()
+    regionJobs.forEach(j => {
+      if (j.type) types.add(j.type)
+    })
+    return Array.from(types).sort().map(t => ({ label: t, value: t }))
+  }, [regionJobs])
+
+  const topCategories = useMemo(() => {
+    const counts: Record<string, number> = {}
+    regionJobs.forEach(j => {
+      if (j.category) {
+        counts[j.category] = (counts[j.category] || 0) + 1
+      }
+    })
+    // Sort by count descending
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20) // Top 20
+      .map(e => e[0])
+  }, [regionJobs])
+
+  const filteredJobs = (regionJobs || []).filter(job => { // Filter from regionJobs instead of all jobs
     // 搜索匹配
     const matchesSearch = searchTerm === '' ||
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -228,26 +292,17 @@ export default function JobsPage() {
 
     // 地点匹配 (Multi-select OR logic)
     const matchesLocation = filters.location.length === 0 || filters.location.some(loc => {
-      if (loc === 'Remote') return job.type === 'remote' || job.location.includes('远程') || job.isRemote
-      if (loc === 'Worldwide') return job.location.includes('全球') || job.location.includes('远程') || job.isRemote
-      return job.location.includes(loc)
+      // Exact match for dynamic locations
+      return job.location === loc || job.location.includes(loc)
     })
 
     // 行业匹配 (Multi-select OR logic)
     const companyIndustry = job.companyId ? companyMap[job.companyId]?.industry || '' : ''
     const matchesIndustry = filters.industry.length === 0 || filters.industry.includes(companyIndustry)
 
-    const norm = (v: string) => (v || '').toLowerCase()
-    const loc = norm(job.location)
-    const skills = (job.skills || []).map((t: string) => norm(t))
-    const pool = new Set([loc, ...skills])
-    const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)))
-    const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
-    const domesticHit = hit(categories.domesticKeywords)
-    const overseasHit = hit(categories.overseasKeywords)
-    const matchesRegion = activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || overseasHit)
-
-    return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesIndustry && matchesRegion
+    // Region logic is already handled by regionJobs, so we don't need to repeat it here.
+    
+    return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesIndustry
   }).sort((a, b) => {
     if (a.canRefer && !b.canRefer) return -1
     if (!a.canRefer && b.canRefer) return 1
@@ -300,19 +355,19 @@ export default function JobsPage() {
             <div className="flex items-center gap-2">
               <MultiSelectDropdown
                 label="地点"
-                options={LOCATION_OPTIONS}
+                options={locationOptions}
                 selected={filters.location}
                 onChange={(val) => setFilters(prev => ({ ...prev, location: val }))}
               />
               <MultiSelectDropdown
                 label="行业"
-                options={INDUSTRY_OPTIONS}
+                options={industryOptions}
                 selected={filters.industry}
                 onChange={(val) => setFilters(prev => ({ ...prev, industry: val }))}
               />
               <MultiSelectDropdown
                 label="岗位类型"
-                options={JOB_TYPE_OPTIONS}
+                options={typeOptions}
                 selected={filters.type}
                 onChange={(val) => setFilters(prev => ({ ...prev, type: val }))}
               />
@@ -328,24 +383,33 @@ export default function JobsPage() {
             </div>
           </div>
 
-          {/* Category Tabs */}
-          <div className="flex items-center gap-4 text-sm overflow-x-auto pb-2 scrollbar-hide bg-slate-50 rounded-lg px-3 py-2">
+          {/* Category Tags */}
+          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: 'all' }))}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === 'all' ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                filters.category === 'all' 
+                  ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                  : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+              }`}
             >
               全部
             </button>
-            {ALL_JOB_CATEGORIES.map(cat => (
+            {topCategories.map((cat, idx) => (
               <button
                 key={cat}
                 onClick={() => setFilters(prev => ({ ...prev, category: cat }))}
-                className={`whitespace-nowrap px-3 py-1.5 rounded-md transition-colors ${filters.category === cat ? 'bg-blue-500 text-white font-medium' : 'text-gray-600 hover:text-gray-900'}`}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  filters.category === cat
+                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                    : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                }`}
+                // Simple color cycling could be added here if desired, but uniform look is cleaner
               >
                 {cat}
               </button>
             ))}
-            <span className="ml-auto text-gray-500 whitespace-nowrap text-xs">共 {filteredJobs.length} 个职位</span>
+            <span className="ml-auto text-gray-500 whitespace-nowrap text-xs self-center">共 {filteredJobs.length} 个职位</span>
           </div>
         </div>
       </div>

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import SearchBar from '../components/SearchBar'
 import LoadingSpinner from '../components/LoadingSpinner'
+import MultiSelectDropdown from '../components/MultiSelectDropdown'
 
 export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
@@ -12,6 +13,10 @@ export default function TrustedCompaniesPage() {
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [jobCounts, setJobCounts] = useState<Record<string, number>>({})
+    
+    // Filters
+    const [selectedIndustries, setSelectedIndustries] = useState<string[]>([])
+    const [selectedRegions, setSelectedRegions] = useState<string[]>([])
 
     const [allJobs, setAllJobs] = useState<any[]>([])
 
@@ -48,6 +53,29 @@ export default function TrustedCompaniesPage() {
         }
     }
 
+    // Derived Filter Options
+    const industryOptions = useMemo(() => {
+        const industries = new Set<string>()
+        companies.forEach(c => {
+            if (c.industry) industries.add(c.industry)
+        })
+        return Array.from(industries).sort().map(i => ({ label: i, value: i }))
+    }, [companies])
+
+    const regionOptions = useMemo(() => {
+        const regions = new Set<string>()
+        companies.forEach(c => {
+            if (c.address) {
+                // Extract country or city from address if possible, or just use full address
+                // Simple strategy: split by comma and take the last part as Country/Region
+                const parts = c.address.split(',')
+                const region = parts[parts.length - 1].trim()
+                if (region) regions.add(region)
+            }
+        })
+        return Array.from(regions).sort().map(r => ({ label: r, value: r }))
+    }, [companies])
+
     const filteredCompanies = companies.filter(company => {
         const searchLower = searchTerm.toLowerCase()
         // Basic company info match
@@ -64,8 +92,14 @@ export default function TrustedCompaniesPage() {
             job.title &&
             job.title.toLowerCase().includes(searchLower)
         )
+        
+        // Industry Filter
+        const industryMatch = selectedIndustries.length === 0 || (company.industry && selectedIndustries.includes(company.industry))
+        
+        // Region Filter
+        const regionMatch = selectedRegions.length === 0 || (company.address && selectedRegions.some(r => company.address?.includes(r)))
 
-        return infoMatch || hasMatchingJobs
+        return (infoMatch || hasMatchingJobs) && industryMatch && regionMatch
     })
 
     return (
@@ -91,17 +125,28 @@ export default function TrustedCompaniesPage() {
                             />
                         </div>
 
-                        {/* Filters (Visual only for now) */}
-                        <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                            <button className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 flex items-center gap-2 whitespace-nowrap text-sm">
-                                行业 <span className="text-xs">▼</span>
-                            </button>
-                            <button className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 flex items-center gap-2 whitespace-nowrap text-sm">
-                                公司规模 <span className="text-xs">▼</span>
-                            </button>
-                            <button className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 flex items-center gap-2 whitespace-nowrap text-sm">
-                                地区 <span className="text-xs">▼</span>
-                            </button>
+                        {/* Filters */}
+                        <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar items-center">
+                            <MultiSelectDropdown
+                                label="行业"
+                                options={industryOptions}
+                                selected={selectedIndustries}
+                                onChange={setSelectedIndustries}
+                            />
+                            <MultiSelectDropdown
+                                label="地区"
+                                options={regionOptions}
+                                selected={selectedRegions}
+                                onChange={setSelectedRegions}
+                            />
+                            {(selectedIndustries.length > 0 || selectedRegions.length > 0) && (
+                                <button 
+                                    onClick={() => { setSelectedIndustries([]); setSelectedRegions([]); }}
+                                    className="text-sm text-gray-500 hover:text-blue-600 whitespace-nowrap"
+                                >
+                                    重置
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
