@@ -4,7 +4,8 @@ import {
   Database, RefreshCw, Trash2, CheckCircle, AlertCircle,
   Search, Filter, Download, Upload, FileText,
   Briefcase, BarChart3, Loader, Edit3, Eye, Link as LinkIcon,
-  MapPin, Calendar, Server, Star, ExternalLink, Info, Plus, Building, X
+  MapPin, Calendar, Server, Star, ExternalLink, Info, Plus, Building, X,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { JobCategory } from '../types/rss-types';
 import { dataManagementService, RawRSSData, ProcessedJobData, StorageStats } from '../services/data-management-service';
@@ -368,6 +369,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     if (!editingJob) return;
 
     try {
+      // 乐观更新：立即更新本地状态
+      const updatedData = processedData.map(job =>
+        job.id === editingJob.id ? { ...job, ...updatedJob } : job
+      );
+      setProcessedData(updatedData as ProcessedJobData[]);
+
       if (editingJob.id) {
         // 更新现有职位
         await dataManagementService.updateProcessedJob(editingJob.id, updatedJob, 'admin');
@@ -390,9 +397,67 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       }
       setShowEditModal(false);
       setEditingJob(null);
-      await loadProcessedData();
+      // 后台静默刷新以确保数据一致性
+      loadProcessedData();
     } catch (error) {
       console.error('保存职位失败:', error);
+      showError('保存失败', '请重试');
+      // 如果失败，回滚状态
+      loadProcessedData();
+    }
+  };
+
+  // 切换精选状态（乐观更新）
+  const handleToggleFeatured = async (jobId: string, currentStatus: boolean) => {
+    try {
+      const newStatus = !currentStatus;
+
+      // 1. 乐观更新：立即更新UI
+      setProcessedData(prev => prev.map(job =>
+        job.id === jobId ? { ...job, isFeatured: newStatus } : job
+      ));
+
+      // 2. 如果当前正在查看详情，也更新详情数据
+      if (viewingItem && 'rawDataId' in viewingItem && viewingItem.id === jobId) {
+        setViewingItem({ ...viewingItem, isFeatured: newStatus } as ProcessedJobData);
+      }
+
+      // 3. 调用API
+      await dataManagementService.updateProcessedJob(jobId, { isFeatured: newStatus }, 'admin');
+
+      showSuccess(newStatus ? '已设为精选' : '已取消精选', '');
+    } catch (error) {
+      console.error('更新精选状态失败:', error);
+      showError('更新失败', '请重试');
+      // 失败回滚
+      loadProcessedData();
+    }
+  };
+
+  // 导航切换
+  const handleNavigate = (direction: 'prev' | 'next') => {
+    const currentList = activeTab === 'processed' ? processedData : rawData;
+    const currentItem = showEditModal ? editingJob : viewingItem;
+
+    if (!currentItem || !currentList.length) return;
+
+    const currentIndex = currentList.findIndex(item => item.id === currentItem.id);
+    if (currentIndex === -1) return;
+
+    let nextIndex;
+    if (direction === 'prev') {
+      nextIndex = currentIndex - 1;
+    } else {
+      nextIndex = currentIndex + 1;
+    }
+
+    if (nextIndex >= 0 && nextIndex < currentList.length) {
+      const nextItem = currentList[nextIndex];
+      if (showEditModal) {
+        setEditingJob(nextItem as ProcessedJobData);
+      } else {
+        setViewingItem(nextItem);
+      }
     }
   };
 
@@ -831,7 +896,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <td className="px-3 py-2">
                   <Tooltip content={job.title} maxLines={3}>
                     <div className="flex flex-col gap-1">
-                      <span className="font-medium text-gray-900 text-sm">{job.title}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium text-gray-900 text-sm">{job.title}</span>
+                        {job.isFeatured && (
+                          <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0" />
+                        )}
+                      </div>
                       {(job as any).translations?.title && (
                         <span className="text-xs text-gray-600 italic">
                           {(job as any).translations.title}
@@ -1061,8 +1131,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 {/* 精选状态 */}
                 <td className="px-3 py-2">
                   <button
-                    onClick={() => handleSaveEdit({ ...job, isFeatured: !job.isFeatured })}
-                    className={`p-1 rounded-full hover:bg-gray-100 transition-colors ${job.isFeatured ? 'text-yellow-500' : 'text-gray-300'}`}
+                    onClick={() => handleToggleFeatured(job.id, !!job.isFeatured)}
+                    className={`p-1 rounded-full transition-colors ${job.isFeatured
+                      ? 'text-yellow-500 hover:bg-yellow-50'
+                      : 'text-gray-300 hover:text-yellow-500 hover:bg-gray-50'
+                      }`}
                     title={job.isFeatured ? '取消精选' : '设为精选'}
                   >
                     <Star className={`w-4 h-4 ${job.isFeatured ? 'fill-current' : ''}`} />
@@ -1302,6 +1375,9 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             setShowEditModal(false);
             setEditingJob(null);
           }}
+          onNavigate={handleNavigate}
+          hasPrev={(activeTab === 'processed' ? processedData : rawData).findIndex(i => i.id === editingJob.id) > 0}
+          hasNext={(activeTab === 'processed' ? processedData : rawData).findIndex(i => i.id === editingJob.id) < (activeTab === 'processed' ? processedData : rawData).length - 1}
         />
       )}
 
@@ -1313,6 +1389,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             setShowDetailModal(false);
             setViewingItem(null);
           }}
+          onToggleFeatured={activeTab === 'processed' ? handleToggleFeatured : undefined}
+          onNavigate={handleNavigate}
+          hasPrev={(activeTab === 'processed' ? processedData : rawData).findIndex(i => i.id === viewingItem.id) > 0}
+          hasNext={(activeTab === 'processed' ? processedData : rawData).findIndex(i => i.id === viewingItem.id) < (activeTab === 'processed' ? processedData : rawData).length - 1}
         />
       )}
 
@@ -1326,7 +1406,10 @@ const EditJobModal: React.FC<{
   job: ProcessedJobData;
   onSave: (updatedJob: Partial<ProcessedJobData>) => void;
   onClose: () => void;
-}> = ({ job, onSave, onClose }) => {
+  onNavigate?: (direction: 'prev' | 'next') => void;
+  hasPrev?: boolean;
+  hasNext?: boolean;
+}> = ({ job, onSave, onClose, onNavigate, hasPrev, hasNext }) => {
   const [formData, setFormData] = useState({
     title: job.title,
     company: job.company,
@@ -1343,6 +1426,41 @@ const EditJobModal: React.FC<{
     isFeatured: job.isFeatured || false
   });
 
+  // 监听job变化，更新表单数据 (当导航切换时)
+  useEffect(() => {
+    setFormData({
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      salary: job.salary || '',
+      jobType: job.jobType as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship',
+      experienceLevel: job.experienceLevel as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive',
+      category: job.category,
+      description: job.description,
+      tags: job.tags?.join(', ') || '',
+      requirements: job.requirements?.join('\n') || '',
+      benefits: job.benefits?.join('\n') || '',
+      region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
+      isFeatured: job.isFeatured || false
+    });
+  }, [job]);
+
+  // 监听键盘事件
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 避免在输入框中触发
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return;
+
+      if (e.key === 'ArrowLeft' && hasPrev && onNavigate) {
+        onNavigate('prev');
+      } else if (e.key === 'ArrowRight' && hasNext && onNavigate) {
+        onNavigate('next');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasPrev, hasNext, onNavigate]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
@@ -1358,7 +1476,33 @@ const EditJobModal: React.FC<{
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">编辑职位信息</h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-semibold text-gray-900">编辑职位信息</h2>
+              {/* 导航按钮 */}
+              {onNavigate && (
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('prev')}
+                    disabled={!hasPrev}
+                    className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
+                    title="上一条 (←)"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('next')}
+                    disabled={!hasNext}
+                    className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
+                    title="下一条 (→)"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+              )}
+            </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -1499,6 +1643,16 @@ const EditJobModal: React.FC<{
             </div>
 
             <div className="md:col-span-2">
+              {(job as any).translations?.description && (
+                <div className="mb-4 bg-blue-50 border border-blue-100 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2 text-blue-800 font-medium">
+                    <span className="text-xs bg-blue-200 px-2 py-0.5 rounded text-blue-800">中文翻译 (参考)</span>
+                  </div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                    {(job as any).translations.description}
+                  </div>
+                </div>
+              )}
               <label className="block text-sm font-medium text-gray-700 mb-2">岗位描述</label>
               <textarea
                 value={formData.description}
@@ -1705,23 +1859,82 @@ const Tooltip: React.FC<{
 const DetailModal: React.FC<{
   item: RawRSSData | ProcessedJobData;
   onClose: () => void;
-}> = ({ item, onClose }) => {
+  onToggleFeatured?: (id: string, currentStatus: boolean) => void;
+  onNavigate?: (direction: 'prev' | 'next') => void;
+  hasPrev?: boolean;
+  hasNext?: boolean;
+}> = ({ item, onClose, onToggleFeatured, onNavigate, hasPrev, hasNext }) => {
   const isProcessedJob = 'rawDataId' in item;
+  const processedJob = isProcessedJob ? (item as ProcessedJobData) : null;
+
+  // 监听键盘事件支持左右键切换
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && hasPrev && onNavigate) {
+        onNavigate('prev');
+      } else if (e.key === 'ArrowRight' && hasNext && onNavigate) {
+        onNavigate('next');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasPrev, hasNext, onNavigate]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
+        <div className="p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {isProcessedJob ? '处理后数据详情' : '原始数据详情'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {isProcessedJob ? '处理后数据详情' : '原始数据详情'}
+              </h2>
+              {/* 导航按钮 */}
+              {onNavigate && (
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => onNavigate('prev')}
+                    disabled={!hasPrev}
+                    className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
+                    title="上一条 (←)"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                  <button
+                    onClick={() => onNavigate('next')}
+                    disabled={!hasNext}
+                    className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
+                    title="下一条 (→)"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* 精选按钮 */}
+              {isProcessedJob && onToggleFeatured && (
+                <button
+                  onClick={() => onToggleFeatured(item.id, !!processedJob?.isFeatured)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors ${processedJob?.isFeatured
+                    ? 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100'
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                  <Star className={`w-4 h-4 ${processedJob?.isFeatured ? 'fill-current' : ''}`} />
+                  <span className="text-sm font-medium">{processedJob?.isFeatured ? '已精选' : '设为精选'}</span>
+                </button>
+              )}
+
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1770,6 +1983,19 @@ const DetailModal: React.FC<{
               {item.description && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2">岗位描述</h3>
+
+                  {/* 翻译内容展示 */}
+                  {(item as any).translations?.description && (
+                    <div className="mb-4 bg-blue-50 border border-blue-100 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2 text-blue-800 font-medium">
+                        <span className="text-xs bg-blue-200 px-2 py-0.5 rounded text-blue-800">中文翻译</span>
+                      </div>
+                      <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                        {(item as any).translations.description}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
                     {item.description}
                   </div>
