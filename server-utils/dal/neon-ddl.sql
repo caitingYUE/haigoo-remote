@@ -121,3 +121,32 @@ CREATE TABLE subscriptions (
   UNIQUE(channel, identifier)
 );
 
+-- resumes - 存储简历信息
+CREATE TABLE resumes (
+  id SERIAL PRIMARY KEY,
+  resume_id VARCHAR(255) UNIQUE NOT NULL,
+  user_id VARCHAR(255),
+  file_name VARCHAR(500),
+  file_size INTEGER,
+  file_type VARCHAR(100),
+  parse_status VARCHAR(50) DEFAULT 'pending',
+  parse_result JSONB,
+  parse_error TEXT,
+  content_text TEXT,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- resume_stats - 存储简历统计信息
+CREATE TABLE resume_stats (
+  id SERIAL PRIMARY KEY,
+  total_count INTEGER DEFAULT 0,
+  success_count INTEGER DEFAULT 0,
+  failed_count INTEGER DEFAULT 0,
+  last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  storage_provider VARCHAR(50) DEFAULT 'neon',
+  estimated_size INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
