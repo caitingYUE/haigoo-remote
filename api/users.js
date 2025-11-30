@@ -33,7 +33,7 @@ function setCorsHeaders(res) {
           ORDER BY u.createdAt DESC
         `)
 
-        return usersResult?.rows || []
+        return usersResult || []
       } catch (error) {
         console.error('[users] Neon getAllUsers error:', error.message)
         return null
@@ -48,16 +48,16 @@ function setCorsHeaders(res) {
         // 使用JOIN查询获取用户及其收藏信息
         const result = await neonHelper.query(`
           SELECT 
-            u.id, u.email, u.username, u.status, u.roles, u.createdAt, u.updatedAt,
+            u.user_id, u.email, u.username, u.status, u.roles, u.createdAt, u.updatedAt,
             COALESCE(array_agg(f.jobId) FILTER (WHERE f.jobId IS NOT NULL), '{}') as favorites,
             COUNT(f.id) as favoritesCount
           FROM users u
-          LEFT JOIN favorites f ON u.id = f.userId
-          WHERE u.id = $1
-          GROUP BY u.id
+          LEFT JOIN favorites f ON u.user_id = f.user_id
+          WHERE u.user_id = $1
+          GROUP BY u.user_id
         `, [userId])
 
-        return result?.rows?.[0] || null
+        return result?.[0] || null
       } catch (error) {
         console.error(`[users] Neon getUser error for ${userId}:`, error.message)
         return null
@@ -106,8 +106,10 @@ export default async function handler(req, res) {
       FROM users 
       WHERE user_id = $1
     `, [payload.userId])
-    requester = result?.rows?.[0]
+    requester = result?.[0]
   }
+  console.log('[users] payload:', payload)
+  console.log('[users] requester:', requester)
 
   const isAdmin = !!(requester?.roles?.admin || requester?.email === SUPER_ADMIN_EMAIL)
   if (!isAdmin) {
@@ -124,7 +126,7 @@ export default async function handler(req, res) {
 
       // 查找用户
       const userResult = await neonHelper.select('users', { id })
-      const user = userResult?.rows?.[0]
+      const user = userResult?.[0]
 
       if (!user) {
         return res.status(404).json({ success: false, error: 'User not found' })
@@ -163,7 +165,7 @@ export default async function handler(req, res) {
         FROM users 
         WHERE user_id = $1
       `, [id])
-      const updatedUser = updatedUserResult?.rows?.[0]
+      const updatedUser = updatedUserResult?.[0]
 
       return res.status(200).json({
         success: true,
@@ -185,7 +187,7 @@ export default async function handler(req, res) {
 
       // 查找用户
       const targetResult = await neonHelper.select('users', { id })
-      const target = targetResult?.rows?.[0]
+      const target = targetResult?.[0]
 
       // 超级管理员不可删除
       if (target?.email === SUPER_ADMIN_EMAIL) {
