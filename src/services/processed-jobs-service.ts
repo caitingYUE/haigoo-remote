@@ -141,7 +141,8 @@ class ProcessedJobsService {
         companyId: job.companyId,
         sourceType: job.sourceType,
         isTrusted: job.isTrusted,
-        canRefer: job.canRefer
+        canRefer: job.canRefer,
+        isFeatured: job.isFeatured
       }))
 
       return {
