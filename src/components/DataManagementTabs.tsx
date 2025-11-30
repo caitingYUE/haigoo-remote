@@ -154,7 +154,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   }, []);
 
   // 重新处理URL
-  
+
 
   // 同步数据
   const handleSyncData = async () => {
@@ -196,55 +196,58 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     }
   };
 
-  // 🆕 手动触发后端翻译任务
+  // 🆕 手动触发后端翻译任务 - 分页翻译
   const handleTriggerTranslation = async () => {
     try {
-      setTranslating(true); // 使用独立的翻译状态
-      console.log('🌍 触发后端翻译任务...');
+      setTranslating(true);
+      console.log(`🌍 开始翻译第 ${processedDataPage} 页数据...`);
 
-      // 调用后端cron job API进行翻译
-      const response = await fetch('/api/cron/sync-jobs', {
+      // 调用新的翻译API，传入当前页码
+      const response = await fetch('/api/translate-jobs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          page: processedDataPage,
+          pageSize: processedDataPageSize
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `翻译任务失败: ${response.status}`);
+        throw new Error(errorData.error || `翻译失败: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('✅ 翻译任务完成:', result);
+      console.log('✅ 翻译完成:', result);
 
-      // 重新加载数据
+      // 重新加载当前页数据
       await loadProcessedData();
-      await loadStorageStats();
 
-      // 显示详细统计
-      const stats = result.stats;
+      // 显示翻译结果
+      const { translated, failed, skipped, page, totalPages } = result;
       showSuccess(
         '翻译完成',
-        `共处理 ${stats.totalJobs} 个岗位，翻译 ${stats.translatedJobs} 个，跳过 ${stats.skippedJobs} 个，失败 ${stats.failedJobs} 个`
+        `第 ${page}/${totalPages} 页: 成功 ${translated} 条，跳过 ${skipped} 条，失败 ${failed} 条`
       );
 
       // 广播全局事件，通知前台页面刷新
       try {
         window.dispatchEvent(new Event('processed-jobs-updated'));
       } catch (e) {
-        console.warn('广播处理后数据更新事件失败', e);
+        console.warn('广播事件失败', e);
       }
     } catch (error) {
-      console.error('❌ 翻译任务失败:', error);
-      showError('翻译失败', error instanceof Error ? error.message : '请检查后端服务或网络连接');
+      console.error('❌ 翻译失败:', error);
+      showError('翻译失败', error instanceof Error ? error.message : '请检查网络连接');
     } finally {
-      setTranslating(false); // 使用独立的翻译状态
+      setTranslating(false);
     }
   };
 
   // 导出数据
-  
+
 
   // 删除职位
   const handleDeleteJob = async (jobId: string) => {
@@ -765,8 +768,13 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 {/* 岗位名称 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.title} maxLines={3}>
-                    <div className="font-medium text-gray-900 text-sm">
-                      {job.title}
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium text-gray-900 text-sm">{job.title}</span>
+                      {(job as any).translations?.title && (
+                        <span className="text-xs text-gray-600 italic">
+                          {(job as any).translations.title}
+                        </span>
+                      )}
                     </div>
                   </Tooltip>
                   {job.salary && (
@@ -1033,12 +1041,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           >
             上一页
           </button>
-          
+
           {(() => {
             const totalPages = Math.ceil(processedDataTotal / processedDataPageSize);
             const maxVisiblePages = 5;
             const pages = [];
-            
+
             if (totalPages <= maxVisiblePages) {
               for (let i = 1; i <= totalPages; i++) {
                 pages.push(i);
@@ -1070,11 +1078,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <button
                   key={p}
                   onClick={() => setProcessedDataPage(p)}
-                  className={`px-3 py-1 text-sm border rounded-lg transition-colors ${
-                    processedDataPage === p
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'border-gray-300 hover:bg-gray-50 text-gray-700'
-                  }`}
+                  className={`px-3 py-1 text-sm border rounded-lg transition-colors ${processedDataPage === p
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                    }`}
                 >
                   {p}
                 </button>

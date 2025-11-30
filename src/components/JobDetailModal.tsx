@@ -38,7 +38,12 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const [feedbackContact, setFeedbackContact] = useState('')
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState('')
-  // 仅显示原始文本，不进行语言切换或翻译
+
+  // 语言切换状态：true = 显示翻译，false = 显示原文
+  const [showTranslation, setShowTranslation] = useState(true)
+
+  // 检查是否有翻译内容
+  const hasTranslation = !!(job?.translations?.title || job?.translations?.description)
 
   const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null);
 
@@ -149,9 +154,13 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   }
 
   const jobDescriptionData = useMemo(() => {
-    const desc = typeof job?.description === 'string' ? job?.description as string : (job?.description ? String(job?.description) : '')
+    // 根据语言切换状态选择描述
+    const descToUse = showTranslation && job?.translations?.description
+      ? job.translations.description
+      : job?.description
+    const desc = typeof descToUse === 'string' ? descToUse as string : (descToUse ? String(descToUse) : '')
     return segmentJobDescription(desc)
-  }, [job])
+  }, [job, showTranslation])
 
   const [companyJobs, setCompanyJobs] = useState<Job[]>([])
   const [companyLoading, setCompanyLoading] = useState<boolean>(false)
@@ -185,7 +194,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     }
   }, [isOpen])
 
-  
+
 
   const handleApply = () => {
     if (!job) return
@@ -272,8 +281,13 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     }
   }
 
-  // 显示文本的辅助函数：直接返回原文
-  const displayText = (originalText: string): string => {
+  // 显示文本的辅助函数：支持翻译切换
+  const displayText = (originalText: string, translatedText?: string): string => {
+    // 如果显示翻译且有翻译内容，返回翻译
+    if (showTranslation && translatedText) {
+      return translatedText
+    }
+    // 否则返回原文
     return originalText || ''
   }
 
@@ -306,7 +320,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const canNavigatePrev = currentJobIndex > 0
   const canNavigateNext = currentJobIndex < jobs.length - 1
 
-  
+
   if (!job || !isOpen) return null
   return createPortal(
     <div
@@ -382,7 +396,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   id="job-modal-title"
                   className="text-lg font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 dark:from-white dark:via-slate-100 dark:to-white bg-clip-text text-transparent truncate leading-tight"
                 >
-                  {displayText(job.title)}
+                  {displayText(job.title, job.translations?.title)}
                 </h1>
               </div>
               <div className="flex items-center">
@@ -405,7 +419,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 id="job-modal-description"
                 className="text-slate-600 dark:text-slate-400 font-medium text-sm truncate"
               >
-                {displayText(job.company || '')} • {displayText(job.location || '')}
+                {displayText(job.company || '')} • {displayText(job.location || '', job.translations?.location)}
               </p>
               <div className="flex items-center gap-2" role="toolbar" aria-label="职位操作">
                 {/* 分享 */}
@@ -424,8 +438,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   onClick={handleSave}
                   onKeyDown={(e) => handleKeyDown(e, handleSave)}
                   className={`px-2.5 py-1.5 rounded-lg transition-all duration-200 border ${isSaved
-                      ? 'bg-[#3182CE]/5 text-[#3182CE] border-[#3182CE]/20'
-                      : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 border-slate-200/50 dark:border-zinc-700/50'
+                    ? 'bg-[#3182CE]/5 text-[#3182CE] border-[#3182CE]/20'
+                    : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 border-slate-200/50 dark:border-zinc-700/50'
                     }`}
                   title={isSaved ? '已收藏' : '收藏'}
                   aria-label={isSaved ? '取消收藏职位' : '收藏职位'}
@@ -433,6 +447,22 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 >
                   <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
                 </button>
+
+                {/* 语言切换 - 仅在有翻译时显示 */}
+                {hasTranslation && (
+                  <button
+                    onClick={() => setShowTranslation(!showTranslation)}
+                    onKeyDown={(e) => handleKeyDown(e, () => setShowTranslation(!showTranslation))}
+                    className={`px-2.5 py-1.5 rounded-lg transition-all duration-200 border text-xs font-medium ${showTranslation
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                      : 'bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 border-slate-200/50 dark:border-zinc-700/50'
+                      }`}
+                    title={showTranslation ? '切换到原文' : '切换到翻译'}
+                    aria-label={showTranslation ? '切换到原文' : '切换到翻译'}
+                  >
+                    {showTranslation ? '译' : '原'}
+                  </button>
+                )}
 
                 {/* 反馈 */}
                 <button
@@ -555,8 +585,8 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   onClick={() => setActiveTab(tab.key as any)}
                   onKeyDown={(e) => handleKeyDown(e, () => setActiveTab(tab.key as any))}
                   className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 ${activeTab === tab.key
-                      ? 'bg-white dark:bg-gray-700 text-[#3182CE] shadow-sm border border-gray-200 dark:border-gray-600'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    ? 'bg-white dark:bg-gray-700 text-[#3182CE] shadow-sm border border-gray-200 dark:border-gray-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   role="tab"
                   aria-selected={activeTab === tab.key}
@@ -586,7 +616,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                     </h3>
                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
                       <div className="text-slate-700 dark:text-slate-300 font-medium">
-                        {displayText(job.location)}
+                        {displayText(job.location, job.translations?.location)}
                       </div>
                       <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                         此职位可能有特定的地点要求或远程工作选项。
@@ -634,21 +664,21 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                         {`关于 ${displayText(companyInfo?.name || job.company || '')}`}
                       </h3>
                       {companyInfo?.website && (
-                         <a 
-                           href={companyInfo.website} 
-                           target="_blank" 
-                           rel="noopener noreferrer"
-                           className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                         >
-                           <Globe className="w-4 h-4" />
-                           访问官网
-                         </a>
+                        <a
+                          href={companyInfo.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <Globe className="w-4 h-4" />
+                          访问官网
+                        </a>
                       )}
                     </div>
-                    
+
                     <div className="text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap">
                       {renderFormattedText(displayText(
-                        companyInfo?.description || 
+                        companyInfo?.description ||
                         (jobDescriptionData.sections.find(s => /About|公司介绍|关于我们/i.test(s.title))?.content) || ''
                       )) || (
                           <p>暂无公司介绍信息。</p>
@@ -668,10 +698,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                           {companyInfo?.industry || '未分类'}
                         </dd>
                       </div>
-                      
+
                       {companyInfo?.tags && companyInfo.tags.length > 0 && (
                         <div className="col-span-full">
-                           <dt className="font-semibold text-slate-800 dark:text-white mb-2">
+                          <dt className="font-semibold text-slate-800 dark:text-white mb-2">
                             标签
                           </dt>
                           <dd>
@@ -751,26 +781,26 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <label className="block text-sm font-medium mb-2">该岗位信息是否准确？</label>
                   <div className="flex items-center gap-3">
                     <label className="inline-flex items-center gap-1 text-sm">
-                      <input type="radio" name="accuracy" value="accurate" checked={feedbackAccuracy==='accurate'} onChange={() => setFeedbackAccuracy('accurate')} />
+                      <input type="radio" name="accuracy" value="accurate" checked={feedbackAccuracy === 'accurate'} onChange={() => setFeedbackAccuracy('accurate')} />
                       准确
                     </label>
                     <label className="inline-flex items-center gap-1 text-sm">
-                      <input type="radio" name="accuracy" value="inaccurate" checked={feedbackAccuracy==='inaccurate'} onChange={() => setFeedbackAccuracy('inaccurate')} />
+                      <input type="radio" name="accuracy" value="inaccurate" checked={feedbackAccuracy === 'inaccurate'} onChange={() => setFeedbackAccuracy('inaccurate')} />
                       不准确
                     </label>
                     <label className="inline-flex items-center gap-1 text-sm">
-                      <input type="radio" name="accuracy" value="unknown" checked={feedbackAccuracy==='unknown'} onChange={() => setFeedbackAccuracy('unknown')} />
+                      <input type="radio" name="accuracy" value="unknown" checked={feedbackAccuracy === 'unknown'} onChange={() => setFeedbackAccuracy('unknown')} />
                       不确定
                     </label>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">反馈内容</label>
-                  <textarea value={feedbackContent} onChange={(e)=>setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
+                  <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">联系方式（可选）</label>
-                  <input value={feedbackContact} onChange={(e)=>setFeedbackContact(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm" placeholder="邮箱或微信" />
+                  <input value={feedbackContact} onChange={(e) => setFeedbackContact(e.target.value)} className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm" placeholder="邮箱或微信" />
                 </div>
                 {feedbackMessage && (
                   <div className="text-sm text-slate-600 dark:text-slate-300">{feedbackMessage}</div>
