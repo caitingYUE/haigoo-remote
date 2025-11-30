@@ -4,53 +4,8 @@
  * Endpoint: POST /api/translate-jobs
  */
 
-// Storage configuration
-const UPSTASH_REST_URL = process.env.UPSTASH_REDIS_REST_URL
-const UPSTASH_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
-const UPSTASH_REST_CONFIGURED = !!(UPSTASH_REST_URL && UPSTASH_REST_TOKEN)
-
-const JOBS_KEY = 'haigoo:processed_jobs'
-
-// Helper: Get jobs from storage
-async function getJobs() {
-    try {
-        if (UPSTASH_REST_CONFIGURED) {
-            const response = await fetch(`${UPSTASH_REST_URL}/get/${JOBS_KEY}`, {
-                headers: { Authorization: `Bearer ${UPSTASH_REST_TOKEN}` }
-            })
-            const data = await response.json()
-            if (data.result) {
-                const parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result
-                return Array.isArray(parsed) ? parsed : []
-            }
-        }
-        return []
-    } catch (error) {
-        console.error('[translate-jobs] Error fetching jobs:', error)
-        return []
-    }
-}
-
-// Helper: Save jobs to storage
-async function saveJobs(jobs) {
-    try {
-        if (UPSTASH_REST_CONFIGURED) {
-            await fetch(`${UPSTASH_REST_URL}/set/${JOBS_KEY}`, {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${UPSTASH_REST_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(jobs)
-            })
-            return true
-        }
-        return false
-    } catch (error) {
-        console.error('[translate-jobs] Error saving jobs:', error)
-        return false
-    }
-}
+// Import storage functions from processed-jobs handler to ensure consistency
+import { getAllJobs, saveAllJobs } from '../lib/api-handlers/processed-jobs.js'
 
 // Simple translation using Google Translate API (free, no key required)
 async function translateWithGoogle(text, targetLang = 'zh-CN', sourceLang = 'en') {
@@ -186,8 +141,8 @@ export default async function handler(req, res) {
 
         console.log(`[translate-jobs] Starting translation for page ${page}, pageSize ${pageSize}`)
 
-        // Get all jobs
-        const allJobs = await getJobs()
+        // Get all jobs using shared storage function
+        const allJobs = await getAllJobs()
         if (!allJobs || allJobs.length === 0) {
             console.log('[translate-jobs] No jobs found in storage')
             return res.status(200).json({
@@ -277,10 +232,12 @@ export default async function handler(req, res) {
             }
         }
 
-        // Save updated jobs
-        const saved = await saveJobs(allJobs)
-        if (!saved) {
+        // Save updated jobs using shared storage function
+        const saved = await saveAllJobs(allJobs)
+        if (!saved || saved.length === 0) {
             console.error('[translate-jobs] Failed to save translated jobs')
+        } else {
+            console.log(`[translate-jobs] Saved ${saved.length} jobs to storage`)
         }
 
         const totalPages = Math.ceil(allJobs.length / pageSize)
