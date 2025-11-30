@@ -4,13 +4,6 @@
  * Endpoint: POST /api/translate-jobs
  */
 
-import { GoogleTranslateService } from '../src/services/google-translate-service'
-import { MyMemoryTranslateService } from '../src/services/mymemory-translate-service'
-
-// Initialize translation services
-const googleTranslate = new GoogleTranslateService()
-const myMemoryTranslate = new MyMemoryTranslateService()
-
 // Storage configuration
 const UPSTASH_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 const UPSTASH_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
@@ -59,6 +52,42 @@ async function saveJobs(jobs) {
     }
 }
 
+// Simple translation using Google Translate API (free, no key required)
+async function translateWithGoogle(text, targetLang = 'zh-CN', sourceLang = 'en') {
+    try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+        const response = await fetch(url)
+        const data = await response.json()
+
+        if (data && data[0]) {
+            const translatedText = data[0].map(item => item[0]).join('')
+            return { success: true, text: translatedText }
+        }
+        return { success: false, text: '' }
+    } catch (error) {
+        console.error('[translate-jobs] Google Translate error:', error)
+        return { success: false, text: '' }
+    }
+}
+
+// Fallback translation using MyMemory API
+async function translateWithMyMemory(text, targetLang = 'zh-CN', sourceLang = 'en') {
+    try {
+        const langPair = `${sourceLang}|${targetLang}`
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`
+        const response = await fetch(url)
+        const data = await response.json()
+
+        if (data && data.responseData && data.responseData.translatedText) {
+            return { success: true, text: data.responseData.translatedText }
+        }
+        return { success: false, text: '' }
+    } catch (error) {
+        console.error('[translate-jobs] MyMemory error:', error)
+        return { success: false, text: '' }
+    }
+}
+
 // Helper: Translate text with fallback
 async function translateText(text, targetLang = 'zh-CN', sourceLang = 'en') {
     if (!text || text.trim().length === 0) {
@@ -66,23 +95,15 @@ async function translateText(text, targetLang = 'zh-CN', sourceLang = 'en') {
     }
 
     // Try Google Translate first
-    try {
-        const result = await googleTranslate.translateText(text, targetLang, sourceLang)
-        if (result.success && result.data?.translatedText) {
-            return { success: true, text: result.data.translatedText }
-        }
-    } catch (error) {
-        console.warn('[translate-jobs] Google Translate failed:', error.message)
+    const googleResult = await translateWithGoogle(text, targetLang, sourceLang)
+    if (googleResult.success) {
+        return googleResult
     }
 
     // Fallback to MyMemory
-    try {
-        const result = await myMemoryTranslate.translateText(text, targetLang, sourceLang)
-        if (result.success && result.data?.translatedText) {
-            return { success: true, text: result.data.translatedText }
-        }
-    } catch (error) {
-        console.warn('[translate-jobs] MyMemory Translate failed:', error.message)
+    const myMemoryResult = await translateWithMyMemory(text, targetLang, sourceLang)
+    if (myMemoryResult.success) {
+        return myMemoryResult
     }
 
     return { success: false, text: '' }
