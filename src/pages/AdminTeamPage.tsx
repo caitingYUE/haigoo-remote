@@ -188,26 +188,6 @@ const AdminTeamPage: React.FC = () => {
     }
   };
 
-  // 同步企业数据到线上
-  const handleSyncToProduction = async () => {
-    if (!confirm('确定要将企业数据同步到所有岗位吗？这将更新岗位中的空缺字段（如行业、标签、简介等）。')) return;
-    
-    setSyncing(true);
-    try {
-      const result = await trustedCompaniesService.syncJobsToProduction();
-      if (result.success) {
-        alert(`同步成功: 已更新 ${result.count} 个岗位的企业信息`);
-        await loadData();
-      } else {
-        alert(`同步失败: ${result.error || '未知错误'}`);
-      }
-    } catch (error) {
-      alert(`同步失败: ${error instanceof Error ? error.message : '未知错误'}`);
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   // 导出数据
   const handleExport = (type: 'raw' | 'processed') => {
     const data = type === 'raw' ? rawJobs : processedJobs;
@@ -832,15 +812,6 @@ const AdminTeamPage: React.FC = () => {
           <header className="admin-header">
             <h1>{activeTab === 'overview' ? '数据概览' : activeTab === 'data' ? '数据管理' : activeTab === 'rss' ? 'RSS源管理' : activeTab === 'companies' ? '企业管理' : activeTab === 'team' ? '团队管理' : activeTab === 'users' ? '用户管理' : activeTab === 'tags' ? '标签管理' : activeTab === 'feedback' ? '用户反馈' : activeTab === 'analytics' ? '数据分析' : activeTab === 'settings' ? '系统设置' : '海狗招聘团队管理后台'}</h1>
             <div className="flex items-center gap-4">
-              <button
-                onClick={handleSyncToProduction}
-                disabled={syncing}
-                className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
-                title="将企业库中的信息（简介、行业、标签）同步到所有岗位"
-              >
-                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                同步数据到线上
-              </button>
               {user && (
                 <div className="flex items-center gap-2 text-sm text-gray-700">
                   {user.avatar ? (

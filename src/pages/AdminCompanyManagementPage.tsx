@@ -30,6 +30,7 @@ export default function AdminCompanyManagementPage() {
     const [extracting, setExtracting] = useState(false);
     const [crawling, setCrawling] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
+    const [syncing, setSyncing] = useState(false);
     const [updatingMap, setUpdatingMap] = useState<Record<string, boolean>>({});
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
@@ -93,6 +94,24 @@ export default function AdminCompanyManagementPage() {
         }
     }, [activeTab, loadCompanies]);
 
+    const handleSyncToJobs = async () => {
+        if (!confirm('确定要将企业库中的数据（简介、行业、标签等）同步到职位数据库中吗？')) return;
+        
+        try {
+            setSyncing(true);
+            const result = await trustedCompaniesService.syncJobsToProduction();
+            
+            if (result.success) {
+                alert(`同步成功: 已更新 ${result.count} 个岗位的企业信息`);
+            } else {
+                alert(`同步失败: ${result.error || '未知错误'}`);
+            }
+        } catch (error) {
+            alert(`同步失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        } finally {
+            setSyncing(false);
+        }
+    };
 
     const syncJobData = async () => {
         try {
@@ -844,30 +863,41 @@ export default function AdminCompanyManagementPage() {
         <div className="h-full flex flex-col bg-gray-50">
             {/* Tabs */}
             <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setActiveTab('all')}
+                            className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'all'
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Building2 className="w-5 h-5" />
+                                <span>全部企业</span>
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('trusted')}
+                            className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'trusted'
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Tag className="w-5 h-5" />
+                                <span>可信企业管理</span>
+                            </div>
+                        </button>
+                    </div>
                     <button
-                        onClick={() => setActiveTab('all')}
-                        className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'all'
-                            ? 'bg-blue-600 text-white shadow-lg'
-                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                            }`}
+                        onClick={handleSyncToJobs}
+                        disabled={syncing}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                        title="将企业库中的信息（简介、行业、标签）同步到职位数据库"
                     >
-                        <div className="flex items-center gap-2">
-                            <Building2 className="w-5 h-5" />
-                            <span>全部企业</span>
-                        </div>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('trusted')}
-                        className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'trusted'
-                            ? 'bg-blue-600 text-white shadow-lg'
-                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                            }`}
-                    >
-                        <div className="flex items-center gap-2">
-                            <Tag className="w-5 h-5" />
-                            <span>可信企业管理</span>
-                        </div>
+                        <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                        同步到职位数据
                     </button>
                 </div>
             </div>
