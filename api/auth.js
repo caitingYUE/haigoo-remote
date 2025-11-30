@@ -19,7 +19,7 @@ import {
   sanitizeUser,
   isTokenExpired
 } from '../server-utils/auth-helpers.js'
-import { getUserByEmail, getUserById, saveUser } from '../server-utils/user-helper.js'
+import { getUserByEmail, getUserById, saveUser, updateUser } from '../server-utils/user-helper.js'
 import { sendVerificationEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
@@ -175,9 +175,8 @@ async function handleLogin(req, res) {
     return res.status(403).json({ success: false, error: '账户已被停用' })
   }
 
-  user.last_login_at = new Date().toISOString()
-  user.updated_at = new Date().toISOString()
-  await saveUser(user)
+  // 使用统一的更新函数更新最后登录时间
+  await updateUser(user.user_id, { lastLoginAt: true })
 
   console.log(`[auth] User logged in: ${email}`)
 
@@ -214,10 +213,11 @@ async function handleGoogleLogin(req, res) {
     if (user.auth_provider !== 'google') {
     return res.status(400).json({ success: false, error: `该邮箱已使用 ${user.auth_provider} 方式注册` })
   }
-    user.last_login_at = new Date().toISOString()
-  user.updated_at = new Date().toISOString()
-  if (googleUser.picture) user.avatar = googleUser.picture
-  await saveUser(user)
+    // 使用统一的更新函数更新最后登录时间和头像
+    await updateUser(user.user_id, { 
+      lastLoginAt: true,
+      avatar: googleUser.picture 
+    })
   } else {
     const userId = crypto.randomUUID()
     user = {
@@ -298,28 +298,24 @@ async function handleUpdateProfile(req, res) {
 
   const { username, fullName, title, location, targetRole, phone, bio } = req.body
 
-  if (username !== undefined && typeof username === 'string' && username.trim().length > 0) {
-    user.username = username.trim()
-  }
-
-  if (!user.profile) user.profile = {}
-  if (fullName !== undefined) user.profile.fullName = typeof fullName === 'string' ? fullName.trim() : undefined
-  if (title !== undefined) user.profile.title = typeof title === 'string' ? title.trim() : undefined
-  if (location !== undefined) user.profile.location = typeof location === 'string' ? location.trim() : undefined
-  if (targetRole !== undefined) user.profile.targetRole = typeof targetRole === 'string' ? targetRole.trim() : undefined
-  if (phone !== undefined) user.profile.phone = typeof phone === 'string' ? phone.trim() : undefined
-  if (bio !== undefined) user.profile.bio = typeof bio === 'string' ? bio.trim() : undefined
-
-  user.updated_at = new Date().toISOString()
-
-  const { success } = await saveUser(user)
+  // 使用统一的更新函数更新用户资料
+  const { success, user: updatedUser } = await updateUser(payload.userId, {
+    username,
+    fullName,
+    title,
+    location,
+    targetRole,
+    phone,
+    bio
+  })
+  
   if (!success) {
     return res.status(500).json({ success: false, error: '更新失败，请稍后重试' })
   }
 
   return res.status(200).json({
     success: true,
-    user: sanitizeUser(user),
+    user: sanitizeUser(updatedUser),
     message: '资料更新成功'
   })
 }
@@ -359,12 +355,13 @@ async function handleVerifyEmail(req, res) {
     return res.status(400).json({ success: false, error: '验证令牌已过期' })
   }
 
-  user.email_verified = true
-  user.verification_token = undefined
-  user.verification_expires = undefined
-  user.updated_at = new Date().toISOString()
-
-  const { success } = await saveUser(user)
+  // 使用统一的更新函数更新邮箱验证状态
+  const { success } = await updateUser(user.user_id, {
+    emailVerified: true,
+    verificationToken: undefined,
+    verificationExpires: undefined
+  })
+  
   if (!success) {
     return res.status(500).json({ success: false, error: '验证失败' })
   }

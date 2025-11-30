@@ -294,43 +294,120 @@ const userHelper = {
     },
 
     /**
-     * 更新用户信息（管理员功能）
+     * 更新用户信息（统一更新函数）
      * @param {string} userId - 用户ID
      * @param {Object} updates - 更新字段
+     * @param {Object} options - 更新选项
      * @returns {Promise<Object>} 更新结果
      */
-    async updateUser(userId, updates) {
+    async updateUser(userId, updates, options = {}) {
         try {
             if (!neonHelper.isConfigured) {
                 return { success: false, error: 'Neon/PostgreSQL not configured' }
             }
 
-            const { status, username, roles } = updates || {}
+            const { 
+                status, 
+                username, 
+                roles, 
+                avatar,
+                profile,
+                fullName,
+                title,
+                location,
+                targetRole,
+                phone,
+                bio,
+                lastLoginAt
+            } = updates || {}
+
+            const { isAdmin = false } = options
 
             // 查找用户
             const user = await this.getUserById(userId)
             if (!user) {
-                return { success: false, error: 'User not found' }
+                return { success: false, error: '用户不存在' }
             }
 
             // 构建更新字段（使用下划线命名）
             const updateFields = { updated_at: new Date().toISOString() }
 
-            if (status && ['active', 'suspended'].includes(status)) {
-                updateFields.status = status
-            }
-
+            // 基本字段更新（所有用户都可以更新）
             if (typeof username === 'string' && username.trim()) {
                 updateFields.username = username.trim()
             }
 
-            if (roles && typeof roles === 'object') {
-                // 超级管理员不可更改权限
-                if (user.email === SUPER_ADMIN_EMAIL) {
-                    updateFields.roles = { ...(user.roles || {}), admin: true }
-                } else {
-                    updateFields.roles = { ...(user.roles || {}), ...roles }
+            if (typeof avatar === 'string' && avatar.trim()) {
+                updateFields.avatar = avatar.trim()
+            }
+
+            // 处理个人资料字段
+            let profileData = user.profile || {}
+            
+            if (typeof fullName === 'string') {
+                profileData.fullName = fullName.trim()
+            } else if (fullName === null || fullName === undefined) {
+                profileData.fullName = undefined
+            }
+            
+            if (typeof title === 'string') {
+                profileData.title = title.trim()
+            } else if (title === null || title === undefined) {
+                profileData.title = undefined
+            }
+            
+            if (typeof location === 'string') {
+                profileData.location = location.trim()
+            } else if (location === null || location === undefined) {
+                profileData.location = undefined
+            }
+            
+            if (typeof targetRole === 'string') {
+                profileData.targetRole = targetRole.trim()
+            } else if (targetRole === null || targetRole === undefined) {
+                profileData.targetRole = undefined
+            }
+            
+            if (typeof phone === 'string') {
+                profileData.phone = phone.trim()
+            } else if (phone === null || phone === undefined) {
+                profileData.phone = undefined
+            }
+            
+            if (typeof bio === 'string') {
+                profileData.bio = bio.trim()
+            } else if (bio === null || bio === undefined) {
+                profileData.bio = undefined
+            }
+
+            // 如果提供了完整的profile对象，则合并
+            if (profile && typeof profile === 'object') {
+                profileData = { ...profileData, ...profile }
+            }
+
+            updateFields.profile = profileData
+
+            // 管理员专用字段
+            if (isAdmin) {
+                if (status && ['active', 'suspended'].includes(status)) {
+                    updateFields.status = status
                 }
+
+                if (roles && typeof roles === 'object') {
+                    // 超级管理员不可更改权限
+                    if (user.email === SUPER_ADMIN_EMAIL) {
+                        updateFields.roles = { ...(user.roles || {}), admin: true }
+                    } else {
+                        updateFields.roles = { ...(user.roles || {}), ...roles }
+                    }
+                }
+            }
+
+            // 特殊字段处理
+            if (lastLoginAt === true) {
+                updateFields.last_login_at = new Date().toISOString()
+            } else if (lastLoginAt instanceof Date) {
+                updateFields.last_login_at = lastLoginAt.toISOString()
             }
 
             // 执行更新
@@ -341,14 +418,12 @@ const userHelper = {
             }
 
             // 获取更新后的用户信息
-            const userResult = await neonHelper.query(`
-        SELECT user_id, email, username, status, roles, created_at, updated_at 
-        FROM users 
-        WHERE user_id = $1
-      `, [userId])
-
-            const updatedUser = userResult?.[0]
-            return { success: true, user: updatedUser }
+            const updatedUser = await this.getUserById(userId)
+            return { 
+                success: true, 
+                user: this.sanitizeUser(updatedUser),
+                message: '更新成功'
+            }
         } catch (error) {
             console.error('[user-helper] Error updating user:', error.message)
             return { success: false, error: '服务器错误' }
@@ -436,3 +511,4 @@ export const saveUser = (user) => userHelper.saveUser(user)
 export const deleteUserById = (userId) => userHelper.deleteUserById(userId)
 export const getUserByEmail = (email) => userHelper.getUserByEmail(email)
 export const isEmailTaken = (email) => userHelper.isEmailTaken(email)
+export const updateUser = (userId, updates) => userHelper.updateUser(userId, updates)
