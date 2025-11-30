@@ -1,25 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Filter,
-  RefreshCw,
-  Trash2,
-  Eye,
-  Info,
-  Loader,
-  Plus,
-  BarChart3,
-  Calendar,
-  Server,
-  ExternalLink,
-  Building,
-  Database,
-  Briefcase,
-  Link as LinkIcon,
-  MapPin,
-  Edit3,
-  CheckCircle,
-  X
+  Database, RefreshCw, Trash2, CheckCircle, AlertCircle,
+  Search, Filter, Download, Upload, FileText,
+  Briefcase, BarChart3, Loader, Edit3, Eye, Link as LinkIcon,
+  MapPin, Calendar, Server, Star, ExternalLink, Info, Plus, Building, X
 } from 'lucide-react';
 import { JobCategory } from '../types/rss-types';
 import { dataManagementService, RawRSSData, ProcessedJobData, StorageStats } from '../services/data-management-service';
@@ -263,23 +248,23 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         }
 
         const result = await response.json();
-        
+
         // Update totals
         if (currentPage === 1) {
           totalPages = result.totalPages || 1;
         }
-        
+
         totalTranslated += result.translated || 0;
         totalSkipped += result.skipped || 0;
         totalFailed += result.failed || 0;
-        
+
         setTranslationProgress({ current: currentPage, total: totalPages });
-        
+
         currentPage++;
-        
+
         // 每次翻译完一页，如果正好是当前查看的页面，刷新一下视图
         if (currentPage - 1 === processedDataPage) {
-           loadProcessedData();
+          loadProcessedData();
         }
 
       } while (currentPage <= totalPages);
@@ -505,6 +490,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">工作类型</th>
                 <th className="w-48 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">地点</th>
                 <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">来源</th>
+                <th className="w-16 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">精选</th>
                 <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">发布时间</th>
                 <th className="w-20 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <span className="inline-flex items-center gap-1">
@@ -834,6 +820,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">语言要求</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">发布日期</th>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位来源</th>
+              <th className="w-16 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">精选</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
@@ -1069,6 +1056,17 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       </a>
                     </div>
                   </Tooltip>
+                </td>
+
+                {/* 精选状态 */}
+                <td className="px-3 py-2">
+                  <button
+                    onClick={() => handleSaveEdit({ ...job, isFeatured: !job.isFeatured })}
+                    className={`p-1 rounded-full hover:bg-gray-100 transition-colors ${job.isFeatured ? 'text-yellow-500' : 'text-gray-300'}`}
+                    title={job.isFeatured ? '取消精选' : '设为精选'}
+                  >
+                    <Star className={`w-4 h-4 ${job.isFeatured ? 'fill-current' : ''}`} />
+                  </button>
                 </td>
 
                 {/* 操作 */}
@@ -1341,7 +1339,8 @@ const EditJobModal: React.FC<{
     tags: job.tags?.join(', ') || '',
     requirements: job.requirements?.join('\n') || '',
     benefits: job.benefits?.join('\n') || '',
-    region: (job.region as 'domestic' | 'overseas' | undefined) || undefined
+    region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
+    isFeatured: job.isFeatured || false
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1473,6 +1472,19 @@ const EditJobModal: React.FC<{
                 <option value="产品管理">产品管理</option>
                 <option value="市场营销">市场营销</option>
               </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isFeatured}
+                  onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">设为精选岗位 (Featured)</span>
+                <Star className={`w-4 h-4 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-gray-400'}`} />
+              </label>
             </div>
 
             <div className="md:col-span-2">
