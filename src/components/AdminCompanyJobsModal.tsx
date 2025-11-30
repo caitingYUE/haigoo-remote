@@ -74,7 +74,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
     );
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl">
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-2xl">

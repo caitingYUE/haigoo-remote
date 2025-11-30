@@ -293,7 +293,7 @@ export default function AdminTrustedCompaniesPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-8">
+        <div className="w-full p-8">
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <div>
@@ -439,7 +439,7 @@ export default function AdminTrustedCompaniesPage() {
 
                 {/* Modal */}
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                         <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
                             <div className="p-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
                                 <h2 className="text-xl font-bold text-gray-900">

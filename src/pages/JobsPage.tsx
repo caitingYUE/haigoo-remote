@@ -76,11 +76,13 @@ export default function JobsPage() {
     loading,
     refresh,
     isFromCache
-  } = usePageCache<Job[]>('jobs-all-list', {
+  } = usePageCache<Job[]>('jobs-all-list-full-v1', {
     fetcher: async () => {
       try {
         setLoadingStage('fetching')
-        const response = await processedJobsService.getAllProcessedJobs(200)
+        // Fetch up to 2000 jobs (20 pages * 100) to ensure we get most recent translated jobs
+        // This fixes the issue where only the first 200 jobs were loaded, causing "partial sync" appearance
+        const response = await processedJobsService.getAllProcessedJobsFull(100, 20)
         setLoadingStage('idle')
         console.log(`✅ 获取到 ${response.length} 个岗位（后端已翻译）`)
         return response
@@ -89,7 +91,7 @@ export default function JobsPage() {
         throw error
       }
     },
-    ttl: 10 * 60 * 1000,
+    ttl: 5 * 60 * 1000, // Reduced to 5 minutes for better sync while keeping cache effective
     persist: true,
     namespace: 'jobs',
     onSuccess: (jobs) => {

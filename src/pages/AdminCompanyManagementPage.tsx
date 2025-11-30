@@ -452,7 +452,7 @@ export default function AdminCompanyManagementPage() {
         if (!selectedCompany) return null;
 
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                 <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl">
                     <div className="p-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
                         <div className="flex items-center gap-4">
@@ -873,7 +873,7 @@ export default function AdminCompanyManagementPage() {
             </div>
 
             {/* Content */}
-            <div className="px-6 py-8">
+            <div className={activeTab === 'all' ? "px-6 py-8" : ""}>
                 {activeTab === 'all' ? renderAllCompaniesTab() : <AdminTrustedCompaniesPage />}
             </div>
 
