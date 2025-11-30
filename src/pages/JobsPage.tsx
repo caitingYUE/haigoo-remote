@@ -7,6 +7,7 @@ import JobDetailModal from '../components/JobDetailModal'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
+import { extractLocations, matchesLocationFilter } from '../utils/locationHelper'
 
 import { usePageCache } from '../hooks/usePageCache'
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -234,10 +235,9 @@ export default function JobsPage() {
     const locs = new Set<string>()
     regionJobs.forEach(j => {
       if (j.location) {
-        // Simple normalization: remove trailing spaces, maybe split?
-        // For now, just use the raw string as requested "actual locations from DB"
-        // But maybe trim it.
-        locs.add(j.location.trim())
+        // Extract standardized locations using the helper
+        const extracted = extractLocations(j.location)
+        extracted.forEach(loc => locs.add(loc))
       }
     })
     return Array.from(locs).sort().map(l => ({ label: l, value: l }))
@@ -246,7 +246,32 @@ export default function JobsPage() {
   const industryOptions = useMemo(() => {
     const inds = new Set<string>()
     regionJobs.forEach(j => {
-      const ind = j.companyId ? companyMap[j.companyId]?.industry : ''
+      let ind = ''
+      // 1. Try getting industry from company map
+      if (j.companyId) {
+        const company = companyMap[j.companyId]
+        if (company) {
+          // Check direct industry field
+          if (company.industry) {
+            ind = company.industry
+          } 
+          // Fallback: Check company tags for potential industry keywords
+          // We check if any tag exists in our known Industry list or STANDARD_TAG_LIBRARY industry category
+          else if (company.tags && company.tags.length > 0) {
+             // This logic relies on us knowing what tags are "industries".
+             // For now, let's just assume tags might contain industry info if we match against a list
+             // But simpler: if we find a tag that matches one of the standard industries, use it.
+             const KNOWN_INDUSTRIES = [
+               '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
+               '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
+               '硬件/物联网', '消费生活', 'SaaS', 'AI', 'Fintech', 'EdTech', 'HealthTech', 'Crypto', 'Web3', 'E-commerce'
+             ]
+             const found = company.tags.find(t => KNOWN_INDUSTRIES.some(k => k.toLowerCase() === t.toLowerCase()))
+             if (found) ind = found
+          }
+        }
+      }
+      
       if (ind) inds.add(ind)
     })
     return Array.from(inds).sort().map(i => ({ label: i, value: i }))
@@ -291,10 +316,7 @@ export default function JobsPage() {
       (job.skills && job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase())))
 
     // 地点匹配 (Multi-select OR logic)
-    const matchesLocation = filters.location.length === 0 || filters.location.some(loc => {
-      // Exact match for dynamic locations
-      return job.location === loc || job.location.includes(loc)
-    })
+    const matchesLocation = matchesLocationFilter(job.location, filters.location)
 
     // 行业匹配 (Multi-select OR logic)
     const companyIndustry = job.companyId ? companyMap[job.companyId]?.industry || '' : ''
