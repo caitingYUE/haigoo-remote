@@ -941,7 +941,7 @@ class JobAggregator {
       console.log('正在从服务端API刷新职位数据...');
       // 获取所有处理后的职位数据（默认限制为1000条，可根据需要调整）
       const processedJobs = await processedJobsService.getAllProcessedJobs(1000);
-      
+
       if (processedJobs && processedJobs.length > 0) {
         // 转换类型: ProcessedJob -> RSSJob
         const jobs: Job[] = processedJobs.map(job => ({
@@ -967,7 +967,7 @@ class JobAggregator {
           createdAt: job.postedAt,
           updatedAt: new Date().toISOString(),
           region: job.region,
-          
+
           // Sync Fields
           companyIndustry: job.companyIndustry,
           companyTags: job.companyTags,
@@ -978,12 +978,12 @@ class JobAggregator {
 
         // 更新内存中的数据
         this.jobs = jobs;
-        
+
         // 同时更新本地存储，以便下次加载
         if (this.storageAdapter) {
           await this.storageAdapter.saveJobs(jobs);
         }
-        
+
         console.log(`成功从API刷新了 ${jobs.length} 个职位数据`);
         return jobs;
       } else {
@@ -1112,9 +1112,23 @@ class JobAggregator {
    * 删除岗位
    */
   deleteJob(jobId: string): boolean {
-    const jobIndex = this.jobs.findIndex(job => job.id === jobId);
-    if (jobIndex !== -1) {
-      this.jobs.splice(jobIndex, 1);
+    const index = this.jobs.findIndex(job => job.id === jobId);
+    if (index !== -1) {
+      this.jobs.splice(index, 1);
+      this.saveJobsToStorage();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * 更新岗位精选状态
+   */
+  updateJobFeaturedStatus(jobId: string, isFeatured: boolean): boolean {
+    const job = this.jobs.find(j => j.id === jobId);
+    if (job) {
+      job.isFeatured = isFeatured;
+      this.saveJobsToStorage();
       return true;
     }
     return false;

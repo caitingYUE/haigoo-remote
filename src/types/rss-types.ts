@@ -198,6 +198,8 @@ export interface Job {
 
   // AI-generated job summary (30-50 characters)
   summary?: string;
+  // Featured job flag for homepage display
+  isFeatured?: boolean;
 }
 
 export interface JobFilter {

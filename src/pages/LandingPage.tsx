@@ -20,7 +20,8 @@ export default function LandingPage() {
     const loadFeaturedJobs = async () => {
       try {
         setLoading(true)
-        const jobs = await processedJobsService.getAllProcessedJobsFull(16, 1)
+        const jobs = await processedJobsService.getAllProcessedJobsFull(50, 1)
+
         // Filter for domestic jobs (this logic should match JobsPage filtering)
         const domesticJobs = jobs.filter(job => {
           const loc = (job.location || '').toLowerCase()
@@ -39,7 +40,13 @@ export default function LandingPage() {
           return domesticHit || (globalHit && !overseasHit)
         })
 
-        setFeaturedJobs(domesticJobs.slice(0, 16))
+        // Filter for featured jobs only
+        const featuredJobs = domesticJobs.filter(job => job.isFeatured === true)
+
+        // If no featured jobs, show recent domestic jobs as fallback
+        const displayJobs = featuredJobs.length > 0 ? featuredJobs : domesticJobs
+
+        setFeaturedJobs(displayJobs.slice(0, 16))
 
         // Set stats
         const uniqueCompanies = new Set(jobs.map(j => j.company).filter(Boolean))
