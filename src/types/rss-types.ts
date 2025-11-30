@@ -27,6 +27,13 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
   region?: 'domestic' | 'overseas';
+  
+  // New Company Sync Fields
+  companyIndustry?: string;
+  companyTags?: string[];
+  companyLogo?: string;
+  companyDescription?: string;
+  companyId?: string;
 }
 
 // 标准化的工作分类

@@ -747,6 +747,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位分类</th>
               <th className="w-20 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位级别</th>
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
+              <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业行业</th>
+              <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业标签</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位类型</th>
               <th className="w-32 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">区域限制</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">区域分类</th>
@@ -836,6 +838,33 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       企业官网
                     </a>
                   )}
+                </td>
+
+                {/* 企业行业 */}
+                <td className="px-3 py-2">
+                  <Tooltip content={job.companyIndustry || '未分类'} maxLines={1} clampChildren={false}>
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                      {job.companyIndustry || '未分类'}
+                    </span>
+                  </Tooltip>
+                </td>
+
+                {/* 企业标签 */}
+                <td className="px-3 py-2">
+                  <Tooltip content={job.companyTags?.join(', ') || '无标签'} maxLines={2} clampChildren={false}>
+                    <div className="flex flex-wrap gap-1">
+                      {job.companyTags?.slice(0, 2).map((tag: string, index: number) => (
+                        <span key={index} className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-blue-50 text-blue-700 border border-blue-100">
+                          {tag}
+                        </span>
+                      ))}
+                      {job.companyTags && job.companyTags.length > 2 && (
+                        <span className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-gray-50 text-gray-600 border border-gray-100">
+                          +{job.companyTags.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  </Tooltip>
                 </td>
 
                 {/* 岗位类型 */}

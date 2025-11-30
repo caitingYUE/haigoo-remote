@@ -94,6 +94,30 @@ export default function AdminCompanyManagementPage() {
     }, [activeTab, loadCompanies]);
 
 
+    const syncJobData = async () => {
+        try {
+            const token = localStorage.getItem('haigoo_auth_token');
+            if (!token) return;
+            
+            console.log('Syncing company data to jobs...');
+            
+            const response = await fetch('/api/data/trusted-companies?action=sync-jobs', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                console.log(`Synced jobs: ${data.message}`);
+                // Could add a toast here if needed, but keep it "hidden"/background as requested
+            }
+        } catch (error) {
+            console.error('Failed to sync job data:', error);
+        }
+    };
+
     const handleRefresh = async () => {
         if (!confirm('确定要重新从岗位数据中提取企业信息吗？\n\n这将更新企业的岗位数、来源等统计信息。')) {
             return;
@@ -107,6 +131,8 @@ export default function AdminCompanyManagementPage() {
             if (data.success) {
                 alert(`刷新成功！共提取 ${data.companies?.length || 0} 个企业`);
                 await loadCompanies();
+                // Trigger sync after refresh
+                syncJobData();
             } else {
                 alert('刷新失败：' + (data.error || '未知错误'));
             }
@@ -161,6 +187,7 @@ export default function AdminCompanyManagementPage() {
             }
             alert(summary);
             await loadCompanies();
+            syncJobData();
         } catch (error) {
             console.error('Auto crawl error:', error);
             alert('自动抓取失败');
@@ -222,6 +249,7 @@ export default function AdminCompanyManagementPage() {
 
             alert(`分析完成！\n\n成功分析 ${successCount} 个企业`);
             await loadCompanies();
+            syncJobData();
         } catch (error) {
             console.error('Analysis error:', error);
             alert('分析失败');
