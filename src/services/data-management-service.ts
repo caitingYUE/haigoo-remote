@@ -505,6 +505,11 @@ export class DataManagementService {
 
       const currentJob = allJobs[jobIndex];
       const updatedJob = { ...currentJob };
+      
+      // Ensure editHistory exists
+      if (!updatedJob.editHistory) {
+        updatedJob.editHistory = [];
+      }
 
       // 记录编辑历史
       Object.keys(updates).forEach(field => {
