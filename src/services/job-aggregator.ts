@@ -934,6 +934,69 @@ class JobAggregator {
   }
 
   /**
+   * 从API刷新职位数据（获取服务端处理后的最新数据）
+   */
+  async refreshJobsFromAPI(): Promise<Job[]> {
+    try {
+      console.log('正在从服务端API刷新职位数据...');
+      // 获取所有处理后的职位数据（默认限制为1000条，可根据需要调整）
+      const processedJobs = await processedJobsService.getAllProcessedJobs(1000);
+      
+      if (processedJobs && processedJobs.length > 0) {
+        // 转换类型: ProcessedJob -> RSSJob
+        const jobs: Job[] = processedJobs.map(job => ({
+          id: job.id,
+          title: job.title,
+          company: job.company || 'Unknown Company',
+          location: job.location,
+          description: job.description || '',
+          url: job.sourceUrl || '#',
+          companyWebsite: job.companyWebsite,
+          publishedAt: job.postedAt,
+          source: job.source,
+          category: (job.category as JobCategory) || '其他',
+          salary: job.salary ? `${job.salary.min}-${job.salary.max} ${job.salary.currency}` : undefined,
+          jobType: (job.type as any) || 'full-time',
+          experienceLevel: job.experienceLevel || 'Entry',
+          remoteLocationRestriction: job.remoteLocationRestriction,
+          tags: job.skills || [],
+          requirements: job.requirements || [],
+          benefits: job.benefits || [], // Fix: benefits map correctly
+          isRemote: job.isRemote || false,
+          status: 'active',
+          createdAt: job.postedAt,
+          updatedAt: new Date().toISOString(),
+          region: job.region,
+          
+          // Sync Fields
+          companyIndustry: job.companyIndustry,
+          companyTags: job.companyTags,
+          companyLogo: job.logo,
+          companyDescription: job.companyDescription,
+          companyId: job.companyId
+        }));
+
+        // 更新内存中的数据
+        this.jobs = jobs;
+        
+        // 同时更新本地存储，以便下次加载
+        if (this.storageAdapter) {
+          await this.storageAdapter.saveJobs(jobs);
+        }
+        
+        console.log(`成功从API刷新了 ${jobs.length} 个职位数据`);
+        return jobs;
+      } else {
+        console.warn('API返回的职位数据为空');
+        return this.jobs;
+      }
+    } catch (error) {
+      console.error('刷新职位数据失败:', error);
+      return this.jobs;
+    }
+  }
+
+  /**
    * 获取所有岗位
    */
   getJobs(filter?: JobFilter): Job[] {
