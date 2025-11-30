@@ -345,7 +345,7 @@ const neonHelper = {
 
             const sql = createNeonClient()
             const result = await sql.query(query, params)
-            return parseInt(result.rows[0].count, 10)
+            return parseInt(result?.[0].count, 10)
         } catch (error) {
             console.error('[Neon/PostgreSQL] Count error:', error.message)
             console.error('[Neon/PostgreSQL] Error stack:', error.stack)

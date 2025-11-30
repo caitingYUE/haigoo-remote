@@ -433,9 +433,9 @@ async function handleSubscribe(req, res) {
       identifier 
     })
 
-    if (existingSubscription && existingSubscription.rows && existingSubscription.rows.length > 0) {
+    if (existingSubscription && existingSubscription.length > 0) {
       // 更新现有订阅
-      const subscriptionId = existingSubscription.rows[0].subscription_id
+      const subscriptionId = existingSubscription[0].subscription_id
       await neonHelper.update('subscriptions', 
         { 
           topic, 
