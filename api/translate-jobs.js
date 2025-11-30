@@ -114,27 +114,48 @@ async function translateJob(job) {
     const translations = job.translations || {}
     let updated = false
 
+    // Get title field (could be 'title' or 'jobTitle')
+    const titleField = job.title || job.jobTitle
+    const descField = job.description || job.jobDescription
+
+    console.log(`[translate-jobs] Processing job ${job.id}:`, {
+        hasTitle: !!titleField,
+        hasDesc: !!descField,
+        hasTranslations: !!job.translations,
+        existingTransTitle: !!translations.title,
+        existingTransDesc: !!translations.description
+    })
+
     // Translate title if not already translated
-    if (job.title && !translations.title) {
-        const result = await translateText(job.title)
+    if (titleField && !translations.title) {
+        console.log(`[translate-jobs] Translating title: "${titleField.substring(0, 50)}..."`)
+        const result = await translateText(titleField)
         if (result.success) {
             translations.title = result.text
             updated = true
+            console.log(`[translate-jobs] Title translated: "${result.text.substring(0, 50)}..."`)
+        } else {
+            console.warn(`[translate-jobs] Failed to translate title for job ${job.id}`)
         }
     }
 
     // Translate description if not already translated
-    if (job.description && !translations.description) {
+    if (descField && !translations.description) {
         // Limit description length to avoid API limits
-        const descToTranslate = job.description.substring(0, 1000)
+        const descToTranslate = descField.substring(0, 1000)
+        console.log(`[translate-jobs] Translating description (${descToTranslate.length} chars)...`)
         const result = await translateText(descToTranslate)
         if (result.success) {
             translations.description = result.text
             updated = true
+            console.log(`[translate-jobs] Description translated (${result.text.length} chars)`)
+        } else {
+            console.warn(`[translate-jobs] Failed to translate description for job ${job.id}`)
         }
     }
 
     if (updated) {
+        console.log(`[translate-jobs] Job ${job.id} updated with translations`)
         return {
             ...job,
             translations,
@@ -142,6 +163,7 @@ async function translateJob(job) {
         }
     }
 
+    console.log(`[translate-jobs] Job ${job.id} not updated (already translated or no content)`)
     return job
 }
 
@@ -167,6 +189,7 @@ export default async function handler(req, res) {
         // Get all jobs
         const allJobs = await getJobs()
         if (!allJobs || allJobs.length === 0) {
+            console.log('[translate-jobs] No jobs found in storage')
             return res.status(200).json({
                 success: true,
                 message: 'No jobs to translate',
@@ -175,6 +198,23 @@ export default async function handler(req, res) {
                 skipped: 0,
                 page,
                 totalJobs: 0
+            })
+        }
+
+        console.log(`[translate-jobs] Found ${allJobs.length} total jobs`)
+
+        // Log first job structure for debugging
+        if (allJobs.length > 0) {
+            const firstJob = allJobs[0]
+            console.log('[translate-jobs] First job structure:', {
+                id: firstJob.id,
+                hasTitle: !!firstJob.title,
+                hasJobTitle: !!firstJob.jobTitle,
+                hasDescription: !!firstJob.description,
+                hasJobDescription: !!firstJob.jobDescription,
+                hasTranslations: !!firstJob.translations,
+                titleValue: firstJob.title || firstJob.jobTitle || 'N/A',
+                fields: Object.keys(firstJob).slice(0, 10)
             })
         }
 
