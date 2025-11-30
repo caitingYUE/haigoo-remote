@@ -176,10 +176,30 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
             )}
           </div>
           
-          <div className="flex items-center text-slate-600 text-sm gap-2">
-            <span className="font-medium truncate max-w-[200px]" title={job.translations?.company || job.company}>
-              {job.translations?.company || job.company}
-            </span>
+          <div className="flex items-center text-slate-600 text-sm gap-2 flex-wrap">
+            {job.companyWebsite ? (
+              <a 
+                href={job.companyWebsite}
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium truncate max-w-[200px] hover:text-blue-600 hover:underline" 
+                title={job.translations?.company || job.company}
+              >
+                {job.translations?.company || job.company}
+              </a>
+            ) : (
+              <span className="font-medium truncate max-w-[200px]" title={job.translations?.company || job.company}>
+                {job.translations?.company || job.company}
+              </span>
+            )}
+            
+            {job.companyIndustry && (
+               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+                 {job.companyIndustry}
+               </span>
+            )}
+
             {job.isTrusted && (
               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
                 <Award className="w-3 h-3 mr-0.5" />
@@ -219,15 +239,18 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
       </div>
 
       {/* Skills Tags (Bottom) */}
-      {((Array.isArray((job as any).tags) && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0)) && (
+      {((Array.isArray((job as any).tags) && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0) || (job.companyTags && job.companyTags.length > 0)) && (
         <div className="mb-4">
           <SingleLineTags
             size="xs"
-            tags={(
+            tags={[
+              ...(job.companyTags || []),
+              ...((
               Array.isArray((job as any).tags) && (job as any).tags.length > 0
                 ? (job as any).tags
                 : (job.skills || [])
-            ) as string[]}
+            ) as string[])
+            ]}
           />
         </div>
       )}

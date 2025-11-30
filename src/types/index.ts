@@ -46,6 +46,12 @@ export interface Job {
   sourceType?: 'trusted' | 'rss'
   isTrusted?: boolean
   canRefer?: boolean
+  
+  // Enterprise Fields (Synced)
+  companyIndustry?: string
+  companyTags?: string[]
+  companyWebsite?: string
+  companyDescription?: string
 }
 
 export interface User {

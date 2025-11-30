@@ -227,7 +227,15 @@ export default function JobsPage() {
       const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
       const domesticHit = hit(categories.domesticKeywords)
       const overseasHit = hit(categories.overseasKeywords)
-      return activeRegion === 'domestic' ? (globalHit || domesticHit) : (globalHit || overseasHit)
+      
+      // Strict Isolation Logic:
+      // Domestic: Matches domestic keywords OR (Global/Remote AND NOT Overseas keywords)
+      // Overseas: Matches overseas keywords OR (Global/Remote AND NOT Domestic keywords)
+      if (activeRegion === 'domestic') {
+        return domesticHit || (globalHit && !overseasHit)
+      } else {
+        return overseasHit || (globalHit && !domesticHit)
+      }
     })
   }, [jobs, activeRegion, categories])
 

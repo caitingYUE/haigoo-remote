@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
 import getCroppedImg from '../utils/cropImage'
 
-import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload, ZoomIn, ZoomOut } from 'lucide-react'
+import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { ClassificationService } from '../services/classification-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -218,6 +218,23 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
+    const handleSyncToProduction = async () => {
+        if (!window.confirm('确定要将企业数据同步到所有岗位吗？这将更新岗位中的空缺字段（如行业、标签、简介等）。')) return
+        try {
+            setLoading(true)
+            const result = await trustedCompaniesService.syncJobsToProduction()
+            if (result.success) {
+                showSuccess('同步成功', `已更新 ${result.count} 个岗位的企业信息`)
+            } else {
+                showError('同步失败', result.error || '未知错误')
+            }
+        } catch (error) {
+            showError('同步失败', error instanceof Error ? error.message : '未知错误')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const processImageFile = (file: File) => {
         if (!file.type.startsWith('image/')) {
             showError('文件格式错误', '请上传图片文件')
@@ -293,6 +310,13 @@ export default function AdminTrustedCompaniesPage() {
                             />
                             抓取详细描述
                         </label>
+                        <button
+                            onClick={handleSyncToProduction}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            数据同步到线上
+                        </button>
                         <button
                             onClick={handleAdd}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"

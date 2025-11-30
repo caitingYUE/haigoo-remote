@@ -21,6 +21,11 @@ export interface RSSFeedItem {
   };
   skills?: string[];
   remoteLocationRestriction?: string;
+  // Reserve enterprise fields
+  companyIndustry?: string;
+   companyTags?: string[];
+   companyWebsite?: string;
+   companyDescription?: string;
 }
 
 export interface ParsedRSSData {

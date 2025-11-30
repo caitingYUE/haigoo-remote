@@ -130,6 +130,23 @@ class TrustedCompaniesService {
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     }
+
+    async syncJobsToProduction(): Promise<{ success: boolean; count?: number; error?: string }> {
+        try {
+            const response = await fetch(`${this.API_BASE}?action=sync-jobs`, {
+                method: 'GET', // The handler checks req.query.action, usually GET for simple triggers or POST. The handler code uses req.query.action inside GET block? Let's check handler.
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
+                }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to sync jobs');
+            return { success: true, count: data.updatedCount };
+        } catch (error) {
+            console.error('Error syncing jobs:', error);
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        }
+    }
 }
 
 export const trustedCompaniesService = new TrustedCompaniesService();
