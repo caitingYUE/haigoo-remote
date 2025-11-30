@@ -22,9 +22,12 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 初始化管理员账号
-INSERT INTO users (user_id, email, username, status, roles)
-VALUES ('admin-1', 'caitlinyct@gmail.com', '超级管理员', 'active', '{"admin": true}')
+-- 初始化管理员账号(密码123456)
+INSERT INTO users (user_id, email, password_hash, username, status, roles)
+VALUES ('admin-1', 'caitlinyct@gmail.com', '$2b$10$/MXqVv06y6pPb39e1NXRiuEmUC6dbFsIaMVBZNmx9iIjP8x6j40dG', '超级管理员', 'active', '{"admin": true}')
+ON CONFLICT (email) DO NOTHING;
+INSERT INTO users (user_id, email, password_hash, username, status, roles)
+VALUES ('admin-2', 'mrzhangzy1996@gmail.com', '$2b$10$/MXqVv06y6pPb39e1NXRiuEmUC6dbFsIaMVBZNmx9iIjP8x6j40dG', '超级管理员', 'active', '{"admin": true}')
 ON CONFLICT (email) DO NOTHING;
 
 -- jobs - 存储岗位信息
@@ -102,5 +105,19 @@ CREATE TABLE trusted_companies (
   can_refer BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- subscriptions - 存储用户订阅信息
+CREATE TABLE subscriptions (
+  id SERIAL PRIMARY KEY,
+  subscription_id VARCHAR(255) UNIQUE NOT NULL,
+  channel VARCHAR(100) NOT NULL,
+  identifier VARCHAR(255) NOT NULL,
+  topic VARCHAR(500) NOT NULL,
+  user_id VARCHAR(255),
+  status VARCHAR(50) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(channel, identifier)
 );
 

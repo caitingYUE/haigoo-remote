@@ -136,7 +136,7 @@ export function isValidPassword(password) {
  */
 export function sanitizeUser(user) {
   if (!user) return null
-  
+
   // 统一处理可能的不同命名格式
   const safeUser = {
     // 基本信息
@@ -155,14 +155,14 @@ export function sanitizeUser(user) {
     authProvider: user.authProvider || user.auth_provider,
     emailVerified: user.emailVerified ?? user.email_verified ?? false
   }
-  
+
   // 移除所有值为undefined的属性
   Object.keys(safeUser).forEach(key => {
     if (safeUser[key] === undefined) {
       delete safeUser[key]
     }
   })
-  
+
   return safeUser
 }
 

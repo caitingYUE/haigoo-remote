@@ -23,8 +23,7 @@ import { getUserByEmail, getUserById, saveUser } from '../server-utils/user-help
 import { sendVerificationEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
-import { kv } from '../server-utils/kv-client.js'
-import { createClient } from 'redis'
+import neonHelper from '../server-utils/dal/neon-helper.js'
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
@@ -38,16 +37,7 @@ function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
 
-// optional Redis client for Hobby plan without KV
-const REDIS_URL = process.env.REDIS_URL
-let redisClient = null
-async function getRedis() {
-  if (redisClient) return redisClient
-  if (!REDIS_URL) return null
-  redisClient = createClient({ url: REDIS_URL })
-  await redisClient.connect()
-  return redisClient
-}
+
 
 /**
  * 验证 Google ID Token
@@ -428,29 +418,54 @@ async function handleResendVerification(req, res) {
   })
 }
 
-// subscribe job alerts
+/**
+ * 处理用户订阅
+ */
 async function handleSubscribe(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
+  
   const { channel, identifier, topic } = req.body || {}
   if (!channel || !identifier || !topic) {
-    return res.status(400).json({ success: false, error: 'Missing fields' })
+    return res.status(400).json({ success: false, error: '缺少必要字段' })
   }
-  const key = `haigoo:subscribe:${channel}:${identifier}`
-  const data = { channel, identifier, topic, createdAt: new Date().toISOString() }
+
   try {
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      await kv.set(key, data)
-      await kv.sadd('haigoo:subscribe:list', key)
+    // 检查订阅是否已存在
+    const existingSubscription = await neonHelper.select('subscriptions', { 
+      channel, 
+      identifier 
+    })
+
+    if (existingSubscription && existingSubscription.rows && existingSubscription.rows.length > 0) {
+      // 更新现有订阅
+      const subscriptionId = existingSubscription.rows[0].subscription_id
+      await neonHelper.update('subscriptions', 
+        { 
+          topic, 
+          updated_at: new Date().toISOString() 
+        }, 
+        { 
+          subscription_id: subscriptionId 
+        }
+      )
     } else {
-      const r = await getRedis()
-      if (r) {
-        await r.set(key, JSON.stringify(data))
-        await r.sAdd('haigoo:subscribe:list', key)
-      }
+      // 创建新订阅
+      const subscriptionId = crypto.randomUUID()
+      await neonHelper.insert('subscriptions', {
+        subscription_id: subscriptionId,
+        channel,
+        identifier,
+        topic,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
     }
-    return res.status(200).json({ success: true })
-  } catch (e) {
-    return res.status(500).json({ success: false, error: 'Server error' })
+
+    return res.status(200).json({ success: true, message: '订阅成功' })
+  } catch (error) {
+    console.error('[auth] Subscription error:', error)
+    return res.status(500).json({ success: false, error: '服务器错误' })
   }
 }
 
