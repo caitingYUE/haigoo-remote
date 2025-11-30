@@ -29,7 +29,7 @@ async function getAllUsersFromNeon() {
         COUNT(f.id) as favoritesCount
       FROM users u
       LEFT JOIN favorites f ON u.user_id = f.user_id
-      GROUP BY u.user_id
+      GROUP BY u.user_id, u.email, u.username, u.status, u.roles, u.created_at, u.updated_at
       ORDER BY u.created_at DESC
     `)
 
@@ -54,7 +54,7 @@ async function getUserFromNeon(userId) {
       FROM users u
       LEFT JOIN favorites f ON u.user_id = f.user_id
       WHERE u.user_id = $1
-      GROUP BY u.user_id
+      GROUP BY u.user_id, u.email, u.username, u.status, u.roles, u.created_at, u.updated_at
     `, [userId])
 
     return result?.[0] || null
@@ -108,8 +108,6 @@ export default async function handler(req, res) {
     `, [payload.userId])
     requester = result?.[0]
   }
-  console.log('[users] payload:', payload)
-  console.log('[users] requester:', requester)
 
   const isAdmin = !!(requester?.roles?.admin || requester?.email === SUPER_ADMIN_EMAIL)
   if (!isAdmin) {
