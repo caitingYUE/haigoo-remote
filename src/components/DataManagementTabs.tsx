@@ -225,11 +225,23 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       // 重新加载当前页数据
       await loadProcessedData();
 
+      // 🆕 清除前端页面缓存，确保用户看到最新翻译
+      try {
+        // 清除jobs相关的所有缓存
+        const cacheKeys = Object.keys(localStorage).filter(key =>
+          key.includes('jobs') || key.includes('cache')
+        );
+        cacheKeys.forEach(key => localStorage.removeItem(key));
+        console.log('🗑️ 已清除前端缓存，用户刷新页面后将看到翻译内容');
+      } catch (e) {
+        console.warn('清除缓存失败:', e);
+      }
+
       // 显示翻译结果
       const { translated, failed, skipped, page, totalPages } = result;
       showSuccess(
         '翻译完成',
-        `第 ${page}/${totalPages} 页: 成功 ${translated} 条，跳过 ${skipped} 条，失败 ${failed} 条`
+        `第 ${page}/${totalPages} 页: 成功 ${translated} 条，跳过 ${skipped} 条，失败 ${failed} 条。前端缓存已清除，刷新页面即可看到翻译内容。`
       );
 
       // 广播全局事件，通知前台页面刷新
