@@ -37,6 +37,13 @@ async function startServer() {
         app.all('/api/process-image', async (req, res) => { await processImageHandler(req, res); });
         console.log('Process-image handler imported.');
 
+        console.log('Importing cron handlers...');
+        const crawlTrustedJobsHandler = (await import('./api/cron/crawl-trusted-jobs.js')).default;
+        const syncJobsHandler = (await import('./api/cron/sync-jobs.js')).default;
+        app.all('/api/cron/crawl-trusted-jobs', async (req, res) => { await crawlTrustedJobsHandler(req, res); });
+        app.all('/api/cron/sync-jobs', async (req, res) => { await syncJobsHandler(req, res); });
+        console.log('Cron handlers imported.');
+
         app.get('/api/health', (req, res) => {
             res.json({ status: 'ok', env: 'local' });
         });

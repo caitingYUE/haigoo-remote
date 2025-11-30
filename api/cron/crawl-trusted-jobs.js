@@ -1,4 +1,5 @@
 import { getAllCompanies, saveAllCompanies } from '../../lib/api-handlers/trusted-companies.js'
+import { getAllJobs, saveAllJobs } from '../../lib/api-handlers/processed-jobs.js'
 import { crawlCompanyJobs } from '../../lib/job-crawler.js'
 
 export default async function handler(req, res) {
@@ -19,6 +20,7 @@ export default async function handler(req, res) {
         // Crawl sequentially to avoid resource exhaustion
         const results = []
         let updatedCount = 0
+        let allCrawledJobs = []
         
         for (const company of companies) {
             // Skip if no URL
@@ -54,6 +56,19 @@ export default async function handler(req, res) {
                 }
                 
                 if (companyUpdated) updatedCount++
+
+                // Collect jobs
+                if (result.jobs && result.jobs.length > 0) {
+                    const enrichedJobs = result.jobs.map(job => ({
+                        ...job,
+                        company: company.name,
+                        companyLogo: company.logo,
+                        sourceType: 'trusted',
+                        isTrusted: true,
+                        canRefer: !!company.canRefer
+                    }))
+                    allCrawledJobs.push(...enrichedJobs)
+                }
                 
                 results.push({ 
                     name: company.name, 
@@ -71,6 +86,16 @@ export default async function handler(req, res) {
             }
         }
         
+        // Save all crawled jobs
+        if (allCrawledJobs.length > 0) {
+            console.log(`[cron] Saving ${allCrawledJobs.length} crawled jobs...`)
+            const existingJobs = await getAllJobs()
+            // saveAllJobs handles deduplication internally
+            const mergedJobs = [...existingJobs, ...allCrawledJobs]
+            await saveAllJobs(mergedJobs)
+            console.log(`[cron] Jobs saved successfully`)
+        }
+
         if (updatedCount > 0) {
             await saveAllCompanies(companies)
             console.log(`[cron] Updated metadata for ${updatedCount} companies`)
@@ -80,6 +105,7 @@ export default async function handler(req, res) {
             success: true, 
             processed: companies.length, 
             updatedCompanies: updatedCount,
+            newJobsFound: allCrawledJobs.length,
             results 
         })
         
