@@ -64,14 +64,6 @@ function setCorsHeaders(res) {
       }
     }
 
-/**
- * 清理用户敏感信息
- */
-function sanitizeUser(user) {
-  const { passwordHash, verificationToken, ...safeUser } = user
-  return safeUser
-}
-
 const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
 
 /**
