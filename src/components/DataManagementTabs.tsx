@@ -74,6 +74,24 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     source?: string;
   }>({});
 
+  // Search debounce state
+  const [searchTerm, setSearchTerm] = useState(processedDataFilters.search || '');
+
+  // Sync local search term when filters are updated externally (e.g. clear filters)
+  useEffect(() => {
+    setSearchTerm(processedDataFilters.search || '');
+  }, [processedDataFilters.search]);
+
+  // Debounce search: update filters when searchTerm changes after delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== (processedDataFilters.search || '')) {
+        setProcessedDataFilters(prev => ({ ...prev, search: searchTerm || undefined }));
+      }
+    }, 800); // 800ms delay for better user experience
+    return () => clearTimeout(timer);
+  }, [searchTerm, processedDataFilters.search]);
+
   // 编辑状态
   const [editingJob, setEditingJob] = useState<ProcessedJobData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -752,8 +770,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <input
               type="text"
               placeholder="搜索岗位名称或公司..."
-              value={processedDataFilters.search || ''}
-              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, search: e.target.value || undefined })}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
 
