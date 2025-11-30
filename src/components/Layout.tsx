@@ -13,7 +13,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className={`min-h-screen flex flex-col ${pathname.startsWith('/profile') ? '' : 'landing-bg-page'}`}>
       <Header />
-      <main className="flex-1 relative overflow-hidden">
+      <main className="flex-1 relative overflow-y-auto overflow-x-hidden">
         <div className="relative z-10">
           {children}
         </div>

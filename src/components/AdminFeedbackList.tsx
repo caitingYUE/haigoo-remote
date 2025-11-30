@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Loader2, CheckCircle, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -20,11 +20,7 @@ export default function AdminFeedbackList() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        fetchFeedbacks();
-    }, []);
-
-    const fetchFeedbacks = async () => {
+    const fetchFeedbacks = useCallback(async () => {
         try {
             setLoading(true);
             const res = await fetch('/api/user-profile?action=feedbacks_list', {
@@ -43,7 +39,11 @@ export default function AdminFeedbackList() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
+
+    useEffect(() => {
+        fetchFeedbacks();
+    }, [fetchFeedbacks]);
 
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
     if (error) return <div className="text-red-500 p-4">{error}</div>;

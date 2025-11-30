@@ -1,5 +1,7 @@
+import { ClassificationService } from './classification-service';
 import { Job, JobStats, SyncStatus, RSSSource, SyncError, JobCategory } from '../types/rss-types';
 import { RSSFeedItem, ParsedRSSData, rssService } from './rss-service';
+import { CompanyService } from './company-service';
 import { getStorageAdapter } from './storage-factory';
 import { CloudStorageAdapter } from './cloud-storage-adapter';
 
@@ -60,8 +62,7 @@ export interface PaginatedResult<T> {
 
 export class DataManagementService {
   private storageAdapter: CloudStorageAdapter | null = null;
-  private readonly RAW_DATA_KEY = 'haigoo:raw_data';
-  private readonly PROCESSED_DATA_KEY = 'haigoo:processed_data';
+
   private readonly STATS_KEY = 'haigoo:data_stats';
   private readonly RETENTION_DAYS = 7;
   private readonly MAX_STORAGE_SIZE = 20 * 1024 * 1024; // 20MB
@@ -83,8 +84,9 @@ export class DataManagementService {
 
   /**
    * 同步所有RSS源数据
+   * @param skipProcessing 是否跳过处理步骤（仅拉取原始数据）
    */
-  async syncAllRSSData(): Promise<SyncStatus> {
+  async syncAllRSSData(skipProcessing: boolean = false): Promise<SyncStatus> {
     const syncStatus: SyncStatus = {
       isRunning: true,
       lastSync: new Date(),
@@ -102,7 +104,7 @@ export class DataManagementService {
       const sources = rssService.getRSSSources();
       syncStatus.totalSources = sources.length;
 
-      console.log(`开始同步 ${sources.length} 个RSS源...`);
+      console.log(`开始同步 ${sources.length} 个RSS源... (跳过处理: ${skipProcessing})`);
 
       // 并发同步所有RSS源
       const syncPromises = sources.map(async (source, index) => {
@@ -110,13 +112,18 @@ export class DataManagementService {
           console.log(`[${index + 1}/${sources.length}] 同步 ${source.name} - ${source.category}`);
 
           const rawData = await this.fetchAndStoreRawData(source);
-          const processedJobs = await this.processRawData(rawData);
+
+          let processedJobs: ProcessedJobData[] = [];
+          if (!skipProcessing) {
+            processedJobs = await this.processRawData(rawData);
+            syncStatus.newJobsAdded += processedJobs.length;
+          }
 
           syncStatus.successfulSources++;
           syncStatus.totalJobsProcessed += rawData.length;
-          syncStatus.newJobsAdded += processedJobs.length;
 
-          console.log(`✅ ${source.name} - ${source.category}: ${rawData.length} 原始数据, ${processedJobs.length} 处理后职位`);
+          console.log(`✅ ${source.name} - ${source.category}: ${rawData.length} 原始数据` +
+            (skipProcessing ? '' : `, ${processedJobs.length} 处理后职位`));
         } catch (error) {
           syncStatus.failedSources++;
           const syncError: SyncError = {
@@ -200,8 +207,8 @@ export class DataManagementService {
       try {
         const rssItem: RSSFeedItem = JSON.parse(rawData.rawContent);
 
-        // 使用现有的转换逻辑
-        const job = this.convertRSSItemToProcessedJob(rssItem, rawData);
+        // 使用现有的转换逻辑（现在是异步的）
+        const job = await this.convertRSSItemToProcessedJob(rssItem, rawData);
 
         processedJobs.push(job);
 
@@ -223,7 +230,7 @@ export class DataManagementService {
   /**
    * 转换RSS项目为处理后的职位数据
    */
-  private convertRSSItemToProcessedJob(item: RSSFeedItem, rawData: RawRSSData): ProcessedJobData {
+  private async convertRSSItemToProcessedJob(item: RSSFeedItem, rawData: RawRSSData): Promise<ProcessedJobData> {
     // 基础职位信息
     const baseJob: Job = {
       id: this.generateJobId(item.link, rawData.source),
@@ -249,6 +256,21 @@ export class DataManagementService {
       updatedAt: new Date().toISOString()
     };
 
+    // Generate AI summary (30-50 characters)
+    try {
+      const summaryResult = await this.generateJobSummary(
+        baseJob.title,
+        baseJob.description || '',
+        baseJob.requirements
+      );
+      if (summaryResult) {
+        baseJob.summary = summaryResult;
+      }
+    } catch (error) {
+      console.warn(`Failed to generate summary for job ${baseJob.id}:`, error);
+      // Continue without summary - it's optional
+    }
+
     // 扩展为处理后的职位数据
     const processedJob: ProcessedJobData = {
       ...baseJob,
@@ -261,6 +283,38 @@ export class DataManagementService {
 
     return processedJob;
   }
+
+  /**
+   * 生成岗位简介（30-50字）
+   */
+  private async generateJobSummary(
+    title: string,
+    description: string,
+    responsibilities: string[]
+  ): Promise<string | undefined> {
+    try {
+      const response = await fetch('/api/generate-job-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description,
+          responsibilities
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Summary API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.success ? data.summary : undefined;
+    } catch (error) {
+      console.error('Generate job summary error:', error);
+      return undefined;
+    }
+  }
+
 
   /**
    * 获取原始RSS数据（分页查询）
@@ -481,7 +535,7 @@ export class DataManagementService {
   }
 
   /**
-   * 删除处理后的职位数据
+   * 删除处理后的职位
    */
   async deleteProcessedJob(jobId: string): Promise<boolean> {
     try {
@@ -489,14 +543,68 @@ export class DataManagementService {
       const filteredJobs = allJobs.filter(job => job.id !== jobId);
 
       if (filteredJobs.length === allJobs.length) {
-        return false; // 没有找到要删除的职位
+        return false; // 未找到要删除的职位
       }
 
-      await this.saveProcessedJobs(filteredJobs, 'replace');
+      await this.saveProcessedJobs(filteredJobs);
       return true;
     } catch (error) {
-      console.error('删除职位数据失败:', error);
+      console.error('删除职位失败:', error);
       return false;
+    }
+  }
+
+  /**
+   * 清除所有处理后的职位数据
+   */
+  async clearAllProcessedJobs(): Promise<boolean> {
+    try {
+      // Send explicit clear request to backend
+      const resp = await fetch('/api/data/processed-jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobs: [], mode: 'replace' })
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Failed to clear jobs: ${resp.status} ${text}`);
+      }
+
+      console.log('已清除所有处理后的职位数据');
+      return true;
+    } catch (error) {
+      console.error('清除职位数据失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 重新处理所有职位的URL
+   */
+  async reprocessJobUrls(): Promise<{ updated: number }> {
+    try {
+      const allJobs = await this.loadProcessedJobs();
+      let updatedCount = 0;
+
+      const updatedJobs = allJobs.map(job => {
+        const url = CompanyService.extractCompanyUrlFromDescription(job.description || '');
+        // 如果提取到了URL，且与当前不同（或者当前为空），则更新
+        if (url && url !== job.companyWebsite) {
+          updatedCount++;
+          return { ...job, companyWebsite: url };
+        }
+        return job;
+      });
+
+      if (updatedCount > 0) {
+        await this.saveProcessedJobs(updatedJobs, 'replace');
+      }
+
+      return { updated: updatedCount };
+    } catch (error) {
+      console.error('重新处理URL失败:', error);
+      return { updated: 0 };
     }
   }
 
@@ -506,60 +614,58 @@ export class DataManagementService {
   async getStorageStats(): Promise<StorageStats> {
     try {
       // 优先从后端API读取真实统计信息（来源KV）
-      const t = Date.now()
-      const resp = await fetch(`/api/data/processed-jobs?action=stats&t=${t}`, { cache: 'no-store' })
-      if (!resp.ok) throw new Error(`GET /api/data/processed-jobs?action=stats failed: ${resp.status}`)
-      const stats = await resp.json()
+      const resp = await fetch(`/api/data/processed-jobs?action=stats`);
+      if (!resp.ok) throw new Error(`GET /api/data/processed-jobs?action=stats failed: ${resp.status}`);
+      const stats = await resp.json();
 
-      const sources = rssService.getRSSSources()
-      // 仅填充来源名称，其余计数由后续拓展对接到KV（当前保留0占位）
+      const sources = rssService.getRSSSources();
       const sourceStats = sources.map(source => ({
         name: `${source.name} - ${source.category}`,
         rawCount: 0,
         processedCount: 0,
         errorCount: 0,
         lastSync: stats?.lastSync ? new Date(stats.lastSync) : undefined
-      }))
+      }));
 
       return {
-        totalRawData: 0, // 原始数据暂未入KV，保持0
+        totalRawData: 0,
         totalProcessedJobs: Number(stats?.totalJobs || 0),
         storageSize: Number(stats?.storageSize || 0),
         dataRetentionDays: this.RETENTION_DAYS,
         sources: sourceStats
-      }
+      };
     } catch (error) {
-      console.warn('API获取存储统计失败，回退本地计算:', error)
+      console.warn('API获取存储统计失败，回退本地计算:', error);
       try {
         const [rawData, processedJobs] = await Promise.all([
           this.loadRawData(),
           this.loadProcessedJobs()
-        ])
-        const sources = rssService.getRSSSources()
+        ]);
+        const sources = rssService.getRSSSources();
         const sourceStats = sources.map(source => {
-          const rawCount = rawData.filter(item => item.source === source.name && item.category === source.category).length
-          const processedCount = processedJobs.filter(job => job.source === source.name).length
-          const errorCount = rawData.filter(item => item.source === source.name && item.status === 'error').length
-          const lastSyncItems = rawData.filter(item => item.source === source.name && item.category === source.category)
-          const lastSync = lastSyncItems.length > 0 ? new Date(Math.max(...lastSyncItems.map(item => new Date(item.fetchedAt).getTime()))) : undefined
-          return { name: `${source.name} - ${source.category}`, rawCount, processedCount, errorCount, lastSync }
-        })
+          const rawCount = rawData.filter(item => item.source === source.name && item.category === source.category).length;
+          const processedCount = processedJobs.filter(job => job.source === source.name).length;
+          const errorCount = rawData.filter(item => item.source === source.name && item.status === 'error').length;
+          const lastSyncItems = rawData.filter(item => item.source === source.name && item.category === source.category);
+          const lastSync = lastSyncItems.length > 0 ? new Date(Math.max(...lastSyncItems.map(item => new Date(item.fetchedAt).getTime()))) : undefined;
+          return { name: `${source.name} - ${source.category}`, rawCount, processedCount, errorCount, lastSync };
+        });
         return {
           totalRawData: rawData.length,
           totalProcessedJobs: processedJobs.length,
           storageSize: JSON.stringify(rawData).length + JSON.stringify(processedJobs).length,
           dataRetentionDays: this.RETENTION_DAYS,
           sources: sourceStats
-        }
+        };
       } catch (fallbackError) {
-        console.error('获取存储统计失败（回退也失败）:', fallbackError)
+        console.error('获取存储统计失败（回退也失败）:', fallbackError);
         return {
           totalRawData: 0,
           totalProcessedJobs: 0,
           storageSize: 0,
           dataRetentionDays: this.RETENTION_DAYS,
           sources: []
-        }
+        };
       }
     }
   }
@@ -636,43 +742,19 @@ export class DataManagementService {
         }
       }
     } catch (error) {
-      console.warn('保存原始数据到API失败，回退到localStorage:', error)
-      if (typeof window !== 'undefined') {
-        const existingStr = localStorage.getItem(this.RAW_DATA_KEY)
-        const existing = existingStr ? JSON.parse(existingStr) : []
-        let merged = []
-        if (mode === 'append') {
-          merged = [...existing, ...data]
-        } else {
-          merged = [...data]
-        }
-        const cutoff = new Date(Date.now() - this.RETENTION_DAYS * 24 * 60 * 60 * 1000)
-        const seen = new Set()
-        const unique = merged.filter(item => {
-          const key = (item.id || `${item.link}|${item.title}|${item.source}`).toLowerCase()
-          if (seen.has(key)) return false
-          seen.add(key)
-          const ts = new Date(item.fetchedAt || item.pubDate)
-          return ts >= cutoff
-        })
-        localStorage.setItem(this.RAW_DATA_KEY, JSON.stringify(unique))
-      }
+      console.error('保存原始数据到API失败:', error)
+      throw error
     }
   }
 
   private async loadRawData(): Promise<RawRSSData[]> {
     try {
-      const t = Date.now()
-      const resp = await fetch(`/api/data/raw-rss?page=1&limit=10000&t=${t}`, { cache: 'no-store' })
+      const resp = await fetch(`/api/data/raw-rss?page=1&limit=10000`)
       if (!resp.ok) throw new Error(`GET /api/data/raw-rss failed: ${resp.status}`)
       const json = await resp.json()
       return Array.isArray(json?.items) ? json.items : (Array.isArray(json?.data) ? json.data : [])
     } catch (error) {
-      console.warn('加载原始数据API失败，回退到localStorage:', error)
-      if (typeof window !== 'undefined') {
-        const data = localStorage.getItem(this.RAW_DATA_KEY)
-        return data ? JSON.parse(data) : []
-      }
+      console.error('加载原始数据API失败:', error)
       return []
     }
   }
@@ -695,29 +777,22 @@ export class DataManagementService {
         }
       }
     } catch (error) {
-      console.warn('保存处理后数据到API失败，回退到localStorage:', error)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(this.PROCESSED_DATA_KEY, JSON.stringify(jobs))
-      }
+      console.error('保存处理后数据到API失败:', error)
+      throw error
     }
   }
 
   private async loadProcessedJobs(): Promise<ProcessedJobData[]> {
     try {
-      const t = Date.now()
-      const resp = await fetch(`/api/data/processed-jobs?page=1&limit=1000&t=${t}`, { cache: 'no-store' })
+      const resp = await fetch(`/api/data/processed-jobs?page=1&limit=1000`)
       if (!resp.ok) {
         throw new Error(`GET /api/data/processed-jobs failed: ${resp.status}`)
       }
       const json = await resp.json()
       return Array.isArray(json?.jobs) ? json.jobs : []
     } catch (error) {
-      console.warn('加载处理后数据API失败，回退到localStorage:', error)
-      if (typeof window !== 'undefined') {
-        const data = localStorage.getItem(this.PROCESSED_DATA_KEY)
-        return data ? JSON.parse(data) : []
-      }
-      return []
+      console.error('加载处理后数据API失败:', error)
+      throw error
     }
   }
 
@@ -785,7 +860,7 @@ export class DataManagementService {
     const candidates = rawMatches
       .map(u => cleanUrl(u))
       .map(u => {
-        let hostname = this.getDomain(u) || '';
+        const hostname = this.getDomain(u) || '';
         let score = 0;
         // 排除项给负分
         if (excludeDomains.has(hostname)) score -= 100;
@@ -822,61 +897,28 @@ export class DataManagementService {
   }
 
   private determineExperienceLevel(title: string, description: string): 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' {
-    const text = (title + ' ' + description).toLowerCase();
-
-    if (text.includes('senior') || text.includes('sr.') || text.includes('lead')) {
-      return 'Senior';
-    }
-    if (text.includes('junior') || text.includes('jr.') || text.includes('entry')) {
-      return 'Entry';
-    }
-    if (text.includes('principal') || text.includes('staff') || text.includes('architect')) {
-      return 'Lead';
-    }
-    if (text.includes('director') || text.includes('vp') || text.includes('cto') || text.includes('ceo')) {
-      return 'Executive';
-    }
-
-    return 'Mid';
+    return ClassificationService.determineExperienceLevel(title, description);
   }
 
   private categorizeJob(title: string, description: string, sourceCategory: string): JobCategory {
-    // 简化的分类逻辑
-    const text = (title + ' ' + description).toLowerCase();
-
-    if (text.includes('frontend') || text.includes('react') || text.includes('vue') || text.includes('angular')) {
-      return '前端开发';
-    }
-    if (text.includes('backend') || text.includes('api') || text.includes('server')) {
-      return '后端开发';
-    }
-    if (text.includes('fullstack') || text.includes('full stack')) {
-      return '全栈开发';
-    }
-    if (text.includes('design') || text.includes('ui') || text.includes('ux')) {
-      return 'UI/UX设计';
-    }
-    if (text.includes('data') || text.includes('analytics') || text.includes('scientist')) {
-      return '数据分析';
-    }
-    if (text.includes('devops') || text.includes('infrastructure') || text.includes('cloud')) {
-      return 'DevOps';
-    }
-    if (text.includes('product') || text.includes('pm')) {
-      return '产品管理';
-    }
-    if (text.includes('marketing') || text.includes('growth')) {
-      return '市场营销';
+    // 优先使用 ClassificationService 进行分类
+    const category = ClassificationService.classifyJob(title, description);
+    if (category !== '其他') {
+      return category;
     }
 
     // 尝试匹配源分类到标准分类
     const categoryMap: Record<string, JobCategory> = {
-      'tech': '软件开发',
+      'tech': '后端开发', // 默认为后端，或者泛指开发
+      'software engineering': '后端开发',
+      'web development': '前端开发',
       'design': 'UI/UX设计',
       'marketing': '市场营销',
       'sales': '销售',
-      'product': '产品管理',
-      'data': '数据分析'
+      'product': '产品经理',
+      'data': '数据分析',
+      'customer support': '客户服务',
+      'devops': '运维/SRE'
     };
 
     const mappedCategory = categoryMap[sourceCategory.toLowerCase()];

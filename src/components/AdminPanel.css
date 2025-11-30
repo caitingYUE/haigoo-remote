@@ -214,12 +214,12 @@
 }
 
 .nav-item:hover {
-  background: rgba(128, 58, 242, 0.1);
+  background: rgba(49, 130, 206, 0.1);
   color: var(--primary);
 }
 
 .nav-item.active {
-  background: rgba(128, 58, 242, 0.1);
+  background: rgba(49, 130, 206, 0.1);
   color: var(--primary);
   font-weight: 600;
 }
@@ -330,9 +330,9 @@
 }
 
 .btn-primary:hover {
-  background: var(--primary-light);
+  background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(128, 58, 242, 0.3);
+  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
 }
 
 .btn-primary:active {
@@ -428,7 +428,7 @@
   flex-shrink: 0;
   width: 2.5rem;
   height: 2.5rem;
-  background: rgba(128, 58, 242, 0.1);
+  background: rgba(49, 130, 206, 0.1);
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
@@ -666,7 +666,7 @@
 .search-input input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(128, 58, 242, 0.1);
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
 }
 
 .filter-btn {
@@ -760,7 +760,7 @@
 }
 
 .status-badge.medium {
-  background: rgba(128, 58, 242, 0.1);
+  background: rgba(49, 130, 206, 0.1);
   color: var(--primary);
 }
 

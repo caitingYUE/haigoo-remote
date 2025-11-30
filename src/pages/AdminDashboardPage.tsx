@@ -4,15 +4,11 @@ import {
   Search,
   Filter,
   RefreshCw,
-  Download,
-  Upload,
   Trash2,
   Edit3,
   Eye,
-  MoreHorizontal,
   CheckCircle,
   XCircle,
-  Clock,
   TrendingUp,
   Users,
   Briefcase,
@@ -20,7 +16,6 @@ import {
   Database,
   Settings,
   AlertCircle,
-  Info,
   Loader,
   Plus,
   Save,
@@ -28,11 +23,15 @@ import {
   ChevronUp,
   ChevronDown,
   MapPin,
-  FileText
+  FileText,
+  Star,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
+import JobDetailModal from '../components/JobDetailModal';
 
 const AdminDashboardPage: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -104,6 +103,11 @@ const AdminDashboardPage: React.FC = () => {
     errors: [],
     isRunning: false
   });
+
+  // Job detail modal state
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [showJobDetail, setShowJobDetail] = useState(false);
+  const [currentJobIndex, setCurrentJobIndex] = useState(-1);
 
   // 加载数据 - 添加错误处理
   const loadData = useCallback(async () => {
@@ -496,6 +500,46 @@ const AdminDashboardPage: React.FC = () => {
     if (confirm('确定要删除这个岗位吗？')) {
       jobAggregator.deleteJob(jobId);
       await loadData();
+    }
+  };
+
+  // Job detail modal handlers
+  const handleViewJobDetail = (job: Job, index: number) => {
+    setSelectedJob(job);
+    setCurrentJobIndex(index);
+    setShowJobDetail(true);
+  };
+
+  const handleCloseJobDetail = () => {
+    setShowJobDetail(false);
+    setSelectedJob(null);
+    setCurrentJobIndex(-1);
+  };
+
+  const handleNavigateJob = (direction: 'prev' | 'next') => {
+    const newIndex = direction === 'prev' ? currentJobIndex - 1 : currentJobIndex + 1;
+    if (newIndex >= 0 && newIndex < currentJobs.length) {
+      setCurrentJobIndex(newIndex);
+      setSelectedJob(currentJobs[newIndex]);
+    }
+  };
+
+  const handleToggleFeatured = async (jobId: string, isFeatured: boolean) => {
+    try {
+      // Update job featured status in aggregator
+      const success = jobAggregator.updateJobFeaturedStatus(jobId, isFeatured);
+      if (success) {
+        await loadData();
+        // Update selected job if it's the current one
+        if (selectedJob?.id === jobId) {
+          setSelectedJob({ ...selectedJob, isFeatured });
+        }
+      } else {
+        alert('更新精选状态失败：未找到该岗位');
+      }
+    } catch (error) {
+      console.error('Failed to toggle featured status:', error);
+      alert('更新精选状态失败');
     }
   };
 
@@ -1549,11 +1593,18 @@ const AdminDashboardPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => window.open(job.url, '_blank')}
+                          onClick={() => handleViewJobDetail(job, currentJobs.indexOf(job))}
                           className="text-blue-600 hover:text-blue-900"
                           title="查看详情"
                         >
                           <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleFeatured(job.id, !job.isFeatured)}
+                          className={`${job.isFeatured ? 'text-yellow-500' : 'text-gray-400'} hover:text-yellow-600`}
+                          title={job.isFeatured ? '取消精选' : '标记为精选'}
+                        >
+                          <Star className={`w-4 h-4 ${job.isFeatured ? 'fill-current' : ''}`} />
                         </button>
                         <button
                           onClick={() => handleJobStatusUpdate(job.id, job.status === 'active' ? 'inactive' : 'active')}
@@ -1898,6 +1949,173 @@ const AdminDashboardPage: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Job Detail Modal with Featured Toggle and Navigation */}
+        {showJobDetail && selectedJob && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              {/* Modal Header with Navigation */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleNavigateJob('prev')}
+                    disabled={currentJobIndex === 0}
+                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="上一个岗位"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    {currentJobIndex + 1} / {currentJobs.length}
+                  </span>
+                  <button
+                    onClick={() => handleNavigateJob('next')}
+                    disabled={currentJobIndex === currentJobs.length - 1}
+                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="下一个岗位"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleToggleFeatured(selectedJob.id, !selectedJob.isFeatured)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${selectedJob.isFeatured
+                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                  >
+                    <Star className={`w-4 h-4 ${selectedJob.isFeatured ? 'fill-current' : ''}`} />
+                    {selectedJob.isFeatured ? '已精选' : '标记精选'}
+                  </button>
+                  <button
+                    onClick={handleCloseJobDetail}
+                    className="p-2 rounded-lg hover:bg-gray-100"
+                    title="关闭"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-6">
+                  {/* Job Title and Company */}
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedJob.title}</h2>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className="font-medium">{selectedJob.company}</span>
+                      <span>•</span>
+                      <span>{selectedJob.location}</span>
+                    </div>
+                  </div>
+
+                  {/* Job Meta */}
+                  <div className="flex flex-wrap gap-2">
+                    {selectedJob.salary && (
+                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                        {selectedJob.salary}
+                      </span>
+                    )}
+                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                      {selectedJob.jobType}
+                    </span>
+                    {selectedJob.isRemote && (
+                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                        远程
+                      </span>
+                    )}
+                    <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+                      {selectedJob.experienceLevel}
+                    </span>
+                    {selectedJob.remoteLocationRestriction && (
+                      <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                        {selectedJob.remoteLocationRestriction}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Job Description */}
+                  {selectedJob.description && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">岗位描述</h3>
+                      <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                        {selectedJob.description}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Requirements */}
+                  {selectedJob.requirements && selectedJob.requirements.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">任职要求</h3>
+                      <ul className="list-disc list-inside space-y-2 text-gray-700">
+                        {selectedJob.requirements.map((req, index) => (
+                          <li key={index}>{req}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Benefits */}
+                  {selectedJob.benefits && selectedJob.benefits.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">福利待遇</h3>
+                      <ul className="list-disc list-inside space-y-2 text-gray-700">
+                        {selectedJob.benefits.map((benefit, index) => (
+                          <li key={index}>{benefit}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Job Meta Info */}
+                  <div className="border-t pt-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">来源:</span>
+                        <span className="ml-2 text-gray-900">{selectedJob.source}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">分类:</span>
+                        <span className="ml-2 text-gray-900">{selectedJob.category}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">发布时间:</span>
+                        <span className="ml-2 text-gray-900">{formatDate(selectedJob.publishedAt)}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">状态:</span>
+                        <span className={`ml-2 px-2 py-0.5 rounded text-xs ${getStatusColor(selectedJob.status)}`}>
+                          {selectedJob.status === 'active' ? '活跃' : selectedJob.status === 'inactive' ? '非活跃' : '已删除'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Original Job Link */}
+                  {selectedJob.url && (
+                    <div className="border-t pt-4">
+                      <a
+                        href={selectedJob.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        查看原始岗位信息
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}

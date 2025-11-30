@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/sync-jobs",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/crawl-trusted-jobs",
+      "schedule": "0 3 * * *"
     }
   ],
   "headers": [
@@ -35,6 +39,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/data/(.*)", "destination": "/api/data" },
+    { "source": "/api/user-profile", "destination": "/api/users" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

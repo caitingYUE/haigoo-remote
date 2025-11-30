@@ -87,7 +87,8 @@ function sanitizeUser(user) {
  * 主处理器
  */
 export default async function handler(req, res) {
-  setCorsHeaders(res)
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const path = url.pathname;
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
@@ -274,4 +275,3 @@ export default async function handler(req, res) {
   return res.status(405).json({ success: false, error: 'Method not allowed' })
 
 }
-

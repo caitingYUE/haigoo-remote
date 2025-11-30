@@ -183,7 +183,6 @@ export function usePageCache<T>(
   // 初始加载
   useEffect(() => {
     if (autoLoad) {
-      // 标记为已挂载
       isMountedRef.current = true
       loadData(false)
     }
@@ -191,20 +190,17 @@ export function usePageCache<T>(
     return () => {
       isMountedRef.current = false
     }
-  }, []) // 只在挂载时执行一次
+  }, [autoLoad, loadData])
   
   // 依赖项变化时重新加载
   useEffect(() => {
-    // 跳过初始挂载
     if (!isMountedRef.current) {
       return
     }
-    
-    // 依赖项变化时，清除缓存并重新加载
     if (dependencies.length > 0) {
       refresh()
     }
-  }, dependencies)
+  }, [dependencies.length, refresh])
   
   return {
     data,
@@ -217,4 +213,3 @@ export function usePageCache<T>(
     cacheAge
   }
 }
-

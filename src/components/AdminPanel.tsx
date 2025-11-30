@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { processedJobsService } from '../services/processed-jobs-service'
-import { Job as PageJob } from '../types'
 import { Job as RSSJob } from '../types/rss-types';
 import { dataRetentionService, RetentionStats } from '../services/data-retention-service';
 import './AdminPanel.css';
@@ -53,7 +53,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // 模拟RSS原始数据
       const mockRawJobs: RSSJob[] = [
@@ -90,7 +90,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           publishedAt: '2024-01-14',
           source: 'https://example.com/job/2',
           tags: ['产品管理', '数据分析'],
-          category: '产品管理',
+          category: '产品经理',
           jobType: 'full-time',
           experienceLevel: 'Mid',
           benefits: ['五险一金', '年终奖'],
@@ -111,7 +111,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           publishedAt: '2024-01-13',
           source: 'https://example.com/job/3',
           tags: ['DevOps', 'AWS', 'Docker'],
-          category: 'DevOps',
+          category: '运维/SRE',
           jobType: 'full-time',
           experienceLevel: 'Mid',
           benefits: ['Stock Options', 'Flexible Hours'],
@@ -275,22 +275,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           </div>
 
           <nav className="sidebar-nav">
-            <a href="#" className="nav-item active">
+            <Link to="/admin_team" className="nav-item">
               <span className="material-symbols-outlined">dashboard</span>
               数据概览
-            </a>
-            <a href="#" className="nav-item">
+            </Link>
+            <Link to="/admin/data" className="nav-item active">
               <span className="material-symbols-outlined">rss_feed</span>
-              RSS管理
-            </a>
-            <a href="#" className="nav-item">
-              <span className="material-symbols-outlined">people</span>
-              求职者管理
-            </a>
-            <a href="#" className="nav-item">
+              职位数据
+            </Link>
+            <Link to="/admin/companies" className="nav-item">
               <span className="material-symbols-outlined">business</span>
               企业管理
-            </a>
+            </Link>
+            <Link to="/admin/tag-management" className="nav-item">
+              <span className="material-symbols-outlined">label</span>
+              标签管理
+            </Link>
+            <Link to="/admin/users" className="nav-item">
+              <span className="material-symbols-outlined">people</span>
+              求职者管理
+            </Link>
             <a href="#" className="nav-item">
               <span className="material-symbols-outlined">storage</span>
               数据保留
@@ -325,8 +329,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           <header className="admin-header">
             <h1>海狗招聘数据管理后台</h1>
             <div className="header-actions">
-              <button 
-                className="btn-primary" 
+              <button
+                className="btn-primary"
                 onClick={handleRefresh}
                 disabled={loading}
               >
@@ -339,28 +343,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           {/* 标签页导航 */}
           <div className="admin-tabs">
             <nav className="tabs-nav">
-              <a 
+              <a
                 href="#"
                 className={`tab-item ${activeTab === 'raw' ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); setActiveTab('raw'); }}
               >
                 RSS原始数据 ({rawJobs.length})
               </a>
-              <a 
+              <a
                 href="#"
                 className={`tab-item ${activeTab === 'processed' ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); setActiveTab('processed'); }}
               >
                 处理后数据 ({processedJobs.length})
               </a>
-              <a 
+              <a
                 href="#"
                 className={`tab-item ${activeTab === 'stats' ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); setActiveTab('stats'); }}
               >
                 统计信息
               </a>
-              <a 
+              <a
                 href="#"
                 className={`tab-item ${activeTab === 'retention' ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); setActiveTab('retention'); }}
@@ -382,6 +386,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
 
 // RSS原始数据表格组件
 const RawJobsTable: React.FC<{ jobs: RSSJob[]; onExport: () => void }> = ({ jobs, onExport }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  const totalPages = Math.ceil(jobs.length / itemsPerPage);
+  
+  const currentJobs = jobs.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
+
+  // Reset to page 1 when jobs change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [jobs]);
+
   return (
     <div className="table-container">
       <div className="table-header">
@@ -419,7 +437,7 @@ const RawJobsTable: React.FC<{ jobs: RSSJob[]; onExport: () => void }> = ({ jobs
             </tr>
           </thead>
           <tbody>
-            {jobs.map(job => (
+            {currentJobs.map(job => (
               <tr key={job.id}>
                 <td>{job.id}</td>
                 <td className="job-title">{job.title}</td>
@@ -451,116 +469,96 @@ const RawJobsTable: React.FC<{ jobs: RSSJob[]; onExport: () => void }> = ({ jobs
         </table>
       </div>
       <div className="pagination">
-        <span>显示 1-{jobs.length} 条，共 {jobs.length} 条记录</span>
-        <div className="pagination-controls">
-          <button className="pagination-btn" disabled>上一页</button>
-          <button className="pagination-btn">下一页</button>
+        <span>
+          显示 {Math.min((currentPage - 1) * itemsPerPage + 1, jobs.length)}-
+          {Math.min(currentPage * itemsPerPage, jobs.length)} 条，
+          共 {jobs.length} 条记录
+        </span>
+        <div className="pagination-controls" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+          >
+            上一页
+          </button>
+          
+          {(() => {
+            const pages = [];
+            if (totalPages > 0) {
+                pages.push(
+                <button 
+                    key={1} 
+                    className={`pagination-btn ${currentPage === 1 ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(1)}
+                    style={currentPage === 1 ? { backgroundColor: '#3b82f6', color: 'white', borderColor: '#3b82f6' } : {}}
+                >1</button>
+                );
+            }
+
+            if (currentPage > 3) {
+              pages.push(<span key="dots1" style={{ margin: '0 4px' }}>...</span>);
+            }
+
+            for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+              pages.push(
+                <button 
+                  key={i} 
+                  className={`pagination-btn ${currentPage === i ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(i)}
+                  style={currentPage === i ? { backgroundColor: '#3b82f6', color: 'white', borderColor: '#3b82f6' } : {}}
+                >{i}</button>
+              );
+            }
+
+            if (currentPage < totalPages - 2) {
+              pages.push(<span key="dots2" style={{ margin: '0 4px' }}>...</span>);
+            }
+
+            if (totalPages > 1) {
+              pages.push(
+                <button 
+                  key={totalPages} 
+                  className={`pagination-btn ${currentPage === totalPages ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(totalPages)}
+                  style={currentPage === totalPages ? { backgroundColor: '#3b82f6', color: 'white', borderColor: '#3b82f6' } : {}}
+                >{totalPages}</button>
+              );
+            }
+            return pages;
+          })()}
+
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === totalPages || totalPages === 0}
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+          >
+            下一页
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-// 统一岗位数据表格组件
-const UnifiedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => void }> = ({ jobs, onExport }) => {
-  return (
-    <div className="table-container">
-      <div className="table-header">
-        <h3 className="table-title">统一岗位数据</h3>
-        <div className="table-controls">
-          <div className="search-input">
-            <span className="material-symbols-outlined">search</span>
-            <input type="text" placeholder="搜索岗位..." />
-          </div>
-          <button className="filter-btn">
-            <span className="material-symbols-outlined">filter_list</span>
-            筛选
-          </button>
-          <button onClick={onExport} className="btn-primary">
-            <span className="material-symbols-outlined">download</span>
-            导出数据
-          </button>
-        </div>
-      </div>
-      <div className="table-wrapper">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>岗位标题</th>
-              <th>公司</th>
-              <th>地点</th>
-              <th>薪资范围</th>
-              <th>技能要求</th>
-              <th>数据质量</th>
-              <th>来源</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {jobs.map(job => (
-              <tr key={job.id}>
-                <td>{job.id}</td>
-                <td className="job-title">{job.jobTitle}</td>
-                <td>{job.companyName}</td>
-                <td>{job.locationRestriction}</td>
-                <td>-</td>
-                <td>
-                  <div className="skills-container">
-                    {job.skillTags.slice(0, 2).map((skill, index) => (
-                      <span key={index} className="skill-tag">{skill}</span>
-                    ))}
-                    {job.skillTags.length > 2 && (
-                      <span className="skill-tag more">+{job.skillTags.length - 2}</span>
-                    )}
-                  </div>
-                </td>
-                <td>
-                  <div className="quality-score">
-                    <div className="score-bar">
-                      <div 
-                        className="score-fill" 
-                        style={{ width: `${job.dataQuality}%` }}
-                      ></div>
-                    </div>
-                    <span className="score-text">{job.dataQuality}%</span>
-                  </div>
-                </td>
-                <td>
-                  <a href={job.sourceUrl} target="_blank" rel="noopener noreferrer">
-                    查看原文
-                  </a>
-                </td>
-                <td>
-                  <button className="action-btn">
-                    <span className="material-symbols-outlined">edit</span>
-                  </button>
-                  <button className="action-btn">
-                    <span className="material-symbols-outlined">visibility</span>
-                  </button>
-                  <button className="action-btn danger">
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="pagination">
-        <span>显示 1-{jobs.length} 条，共 {jobs.length} 条记录</span>
-        <div className="pagination-controls">
-          <button className="pagination-btn" disabled>上一页</button>
-          <button className="pagination-btn">下一页</button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // 处理后数据表格组件
 const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => void }> = ({ jobs, onExport }) => {
-  const [regionDetailOpen, setRegionDetailOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  const totalPages = Math.ceil(jobs.length / itemsPerPage);
+  
+  const currentJobs = jobs.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
+
+  // Reset to page 1 when jobs change (e.g. filter)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [jobs]);
+
+  const [regionDetailOpen, setRegionDetailOpen] = useState(false);
   const [regionDetailLoading, setRegionDetailLoading] = useState(false)
   const [regionDetailError, setRegionDetailError] = useState<string | null>(null)
   const [regionDetail, setRegionDetail] = useState<{
@@ -651,7 +649,6 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
               <th>分类</th>
               <th>级别</th>
               <th>企业名称</th>
-              <th>行业类型</th>
               <th>岗位类型</th>
               <th>区域分类</th>
               <th>区域限制</th>
@@ -663,15 +660,18 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
             </tr>
           </thead>
           <tbody>
-            {jobs.map(job => (
+            {currentJobs.map(job => (
               <tr key={job.id}>
                 <td>{job.id}</td>
                 <td className="job-title">{job.jobTitle}</td>
                 <td>{job.category}</td>
                 <td>{job.level}</td>
                 <td>{job.companyName}</td>
-                <td>{job.industryType}</td>
-                <td>{job.jobType}</td>
+                <td>
+                  <span className={`tag type ${job.jobType === '全职' ? 'full-time' : job.jobType === '兼职' ? 'part-time' : 'contract'}`}>
+                    {job.jobType}
+                  </span>
+                </td>
                 <td>
                   <div className="flex items-center gap-2">
                     <span className={`badge ${job.region === 'domestic' ? 'badge-success' : job.region === 'overseas' ? 'badge-info' : 'badge-default'}`}>
@@ -735,7 +735,7 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
                     <div><strong>企业：</strong>{regionDetail.company}</div>
                     <div><strong>区域分类：</strong>{regionDetail.region === 'domestic' ? '国内' : regionDetail.region === 'overseas' ? '海外' : '未分类'}</div>
                     <div><strong>地点：</strong>{regionDetail.location || '-'}</div>
-                    <div><strong>标签：</strong>{regionDetail.tags.length > 0 ? regionDetail.tags.slice(0,6).join(' / ') : '-'}</div>
+                    <div><strong>标签：</strong>{regionDetail.tags.length > 0 ? regionDetail.tags.slice(0, 6).join(' / ') : '-'}</div>
                     <div><strong>命中：</strong>{regionDetail.hits.keywords.length > 0 ? `${regionDetail.hits.type}：${regionDetail.hits.keywords.join(', ')}` : '无直接命中，使用启发式'}</div>
                     <div><strong>判定来源：</strong>{regionDetail.decision}</div>
                   </div>
@@ -749,10 +749,75 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
         )}
       </div>
       <div className="pagination">
-        <span>显示 1-{jobs.length} 条，共 {jobs.length} 条记录</span>
-        <div className="pagination-controls">
-          <button className="pagination-btn" disabled>上一页</button>
-          <button className="pagination-btn">下一页</button>
+        <span>
+          显示 {Math.min((currentPage - 1) * itemsPerPage + 1, jobs.length)}-
+          {Math.min(currentPage * itemsPerPage, jobs.length)} 条，
+          共 {jobs.length} 条记录
+        </span>
+        <div className="pagination-controls" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+          >
+            上一页
+          </button>
+          
+          {(() => {
+            const pages = [];
+            // Always show first
+            if (totalPages > 0) {
+                pages.push(
+                <button 
+                    key={1} 
+                    className={`pagination-btn ${currentPage === 1 ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(1)}
+                    style={currentPage === 1 ? { backgroundColor: '#3b82f6', color: 'white', borderColor: '#3b82f6' } : {}}
+                >1</button>
+                );
+            }
+
+            if (currentPage > 3) {
+              pages.push(<span key="dots1" style={{ margin: '0 4px' }}>...</span>);
+            }
+
+            // Middle pages
+            for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+              pages.push(
+                <button 
+                  key={i} 
+                  className={`pagination-btn ${currentPage === i ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(i)}
+                  style={currentPage === i ? { backgroundColor: '#3b82f6', color: 'white', borderColor: '#3b82f6' } : {}}
+                >{i}</button>
+              );
+            }
+
+            if (currentPage < totalPages - 2) {
+              pages.push(<span key="dots2" style={{ margin: '0 4px' }}>...</span>);
+            }
+
+            // Always show last if > 1
+            if (totalPages > 1) {
+              pages.push(
+                <button 
+                  key={totalPages} 
+                  className={`pagination-btn ${currentPage === totalPages ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(totalPages)}
+                  style={currentPage === totalPages ? { backgroundColor: '#3b82f6', color: 'white', borderColor: '#3b82f6' } : {}}
+                >{totalPages}</button>
+              );
+            }
+            return pages;
+          })()}
+
+          <button 
+            className="pagination-btn" 
+            disabled={currentPage === totalPages || totalPages === 0}
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+          >
+            下一页
+          </button>
         </div>
       </div>
     </div>
@@ -794,8 +859,8 @@ const StatsPanel: React.FC<{ stats: SimpleStats | null }> = ({ stats }) => {
               <div key={category} className="chart-bar">
                 <span className="bar-label">{category}</span>
                 <div className="bar-container">
-                  <div 
-                    className="bar-fill" 
+                  <div
+                    className="bar-fill"
                     style={{ width: `${(count / stats.totalProcessed) * 100}%` }}
                   ></div>
                 </div>
@@ -812,8 +877,8 @@ const StatsPanel: React.FC<{ stats: SimpleStats | null }> = ({ stats }) => {
               <div key={source} className="chart-bar">
                 <span className="bar-label">{source}</span>
                 <div className="bar-container">
-                  <div 
-                    className="bar-fill" 
+                  <div
+                    className="bar-fill"
                     style={{ width: `${(count / stats.totalProcessed) * 100}%` }}
                   ></div>
                 </div>
@@ -828,10 +893,10 @@ const StatsPanel: React.FC<{ stats: SimpleStats | null }> = ({ stats }) => {
 };
 
 // 数据保留管理面板组件
-const RetentionPanel: React.FC<{ 
-  stats: RetentionStats | null; 
-  onCleanup: () => void; 
-  loading: boolean; 
+const RetentionPanel: React.FC<{
+  stats: RetentionStats | null;
+  onCleanup: () => void;
+  loading: boolean;
 }> = ({ stats, onCleanup, loading }) => {
   if (!stats) {
     return <div className="loading">加载数据保留信息中...</div>;
@@ -854,9 +919,9 @@ const RetentionPanel: React.FC<{
     <div className="retention-panel">
       <div className="retention-header">
         <h3>数据保留策略管理</h3>
-        <button 
-          onClick={onCleanup} 
-          className="cleanup-btn" 
+        <button
+          onClick={onCleanup}
+          className="cleanup-btn"
           disabled={loading}
         >
           {loading ? '清理中...' : '手动清理'}
@@ -869,19 +934,19 @@ const RetentionPanel: React.FC<{
           <div className="retention-value">{stats.totalRecords}</div>
           <div className="retention-desc">RSS + 统一数据</div>
         </div>
-        
+
         <div className="retention-card">
           <h4>过期记录</h4>
           <div className="retention-value expired">{stats.expiredRecords}</div>
           <div className="retention-desc">超过7天的数据</div>
         </div>
-        
+
         <div className="retention-card">
           <h4>已清理记录</h4>
           <div className="retention-value cleaned">{stats.cleanedRecords}</div>
           <div className="retention-desc">本次清理删除</div>
         </div>
-        
+
         <div className="retention-card">
           <h4>存储使用</h4>
           <div className="retention-value">{formatBytes(stats.storageUsage.total)}</div>

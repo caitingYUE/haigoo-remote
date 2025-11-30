@@ -37,6 +37,14 @@ interface NotificationProviderProps {
 export function NotificationProvider({ children }: NotificationProviderProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
 
+  const removeNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id))
+  }, [])
+
+  const clearAll = useCallback(() => {
+    setNotifications([])
+  }, [])
+
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const id = Math.random().toString(36).substring(2, 11)
     const newNotification: Notification = {
@@ -47,21 +55,12 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 
     setNotifications(prev => [...prev, newNotification])
 
-    // Auto remove after duration
     if (newNotification.duration && newNotification.duration > 0) {
       setTimeout(() => {
         removeNotification(id)
       }, newNotification.duration)
     }
-  }, [])
-
-  const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id))
-  }, [])
-
-  const clearAll = useCallback(() => {
-    setNotifications([])
-  }, [])
+  }, [removeNotification])
 
   return (
     <NotificationContext.Provider value={{
@@ -82,7 +81,7 @@ function NotificationContainer() {
   if (notifications.length === 0) return null
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm w-full">
+    <div className="fixed top-4 right-4 z-[100] space-y-2 max-w-sm w-full">
       {notifications.map(notification => (
         <NotificationItem
           key={notification.id}

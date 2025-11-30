@@ -112,7 +112,7 @@ export const SingleLineTags: React.FC<SingleLineTagsProps> = ({ tags, size = 'sm
 
     compute();
     const RO = (window as any).ResizeObserver;
-    const ro = RO ? new RO((entries: any) => compute()) : undefined;
+    const ro = RO ? new RO((_entries: any) => compute()) : undefined;
     if (ro) ro.observe(el);
     return () => {
       if (ro) ro.disconnect();

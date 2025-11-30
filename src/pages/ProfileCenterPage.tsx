@@ -3,8 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
-import { ResumeStorageService } from '../services/resume-storage-service'
-import type { ResumeItem } from '../types/resume-types'
 import { resumeService } from '../services/resume-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
@@ -30,7 +28,7 @@ export default function ProfileCenterPage() {
   const [tab, setTab] = useState<TabKey>(initialTab)
   const [isUploading, setIsUploading] = useState(false)
   const [resumeScore, setResumeScore] = useState<number>(0)
-  const [suggestions, setSuggestions] = useState<string[]>([])
+  
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
   const [favorites, setFavorites] = useState<any[]>([])
@@ -74,7 +72,7 @@ export default function ProfileCenterPage() {
     navigate({ pathname: '/profile', search: `?${sp.toString()}` }, { replace: true })
   }
 
-  const { data: jobs } = usePageCache<Job[]>('profile-jobs-source', {
+  const { data: _jobs } = usePageCache<Job[]>('profile-jobs-source', {
     fetcher: async () => await processedJobsService.getAllProcessedJobs(300),
     ttl: 60000,
     persist: false,
@@ -153,7 +151,6 @@ export default function ProfileCenterPage() {
             const analysis = await resumeService.analyzeResume(parsed.textContent)
             if (analysis.success && analysis.data) {
               setResumeScore(analysis.data.score || 0)
-              setSuggestions(analysis.data.suggestions || [])
               showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
             }
           } catch (aiError) {
@@ -198,7 +195,6 @@ export default function ProfileCenterPage() {
         setLatestResume(null)
         setResumeText('')
         setResumeScore(0)
-        setSuggestions([])
         showSuccess('简历已删除')
       } else {
         throw new Error('删除失败')

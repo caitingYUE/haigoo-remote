@@ -65,7 +65,7 @@ class VercelKVProvider implements CloudStorageProvider {
     if (typeof window !== 'undefined') {
       return false;
     }
-    
+
     try {
       if (!kv) return false;
       // 简单测试连接
@@ -101,7 +101,7 @@ class VercelKVProvider implements CloudStorageProvider {
     try {
       const jobsData = await kv.get(this.JOBS_KEY);
       if (!jobsData) return [];
-      
+
       const jobs = typeof jobsData === 'string' ? JSON.parse(jobsData) : jobsData;
       return Array.isArray(jobs) ? jobs : [];
     } catch (error) {
@@ -225,17 +225,17 @@ class RedisProvider implements CloudStorageProvider {
     if (typeof window !== 'undefined') {
       return false;
     }
-    
+
     try {
       if (!redis) return false;
-      
+
       if (!this.client) {
         this.client = redis.createClient({
           url: this.redisUrl
         });
         await this.client.connect();
       }
-      
+
       // 测试连接
       await this.client.ping();
       return true;
@@ -269,7 +269,7 @@ class RedisProvider implements CloudStorageProvider {
     try {
       const jobsData = await this.client.get(this.JOBS_KEY);
       if (!jobsData) return [];
-      
+
       const jobs = JSON.parse(jobsData);
       return Array.isArray(jobs) ? jobs : [];
     } catch (error) {
@@ -410,7 +410,7 @@ class LocalStorageProvider implements CloudStorageProvider {
     try {
       const jobsData = localStorage.getItem(this.JOBS_KEY);
       if (!jobsData) return [];
-      
+
       const jobs = JSON.parse(jobsData);
       return Array.isArray(jobs) ? jobs : [];
     } catch (error) {
@@ -440,7 +440,7 @@ class LocalStorageProvider implements CloudStorageProvider {
           provider: 'localStorage'
         };
       }
-      
+
       // 如果没有统计数据，基于现有作业生成
       const jobs = await this.loadJobs();
       return {
@@ -526,6 +526,11 @@ class LocalStorageProvider implements CloudStorageProvider {
   }
 }
 
+/**
+ * @deprecated This adapter is being phased out in favor of direct API calls in DataManagementService.
+ * It is currently only used by legacy components (JobAggregator).
+ * Do not use for new features.
+ */
 export class CloudStorageAdapter {
   private provider: CloudStorageProvider;
 
@@ -591,7 +596,7 @@ export const createStorageAdapter = async (config?: Partial<StorageConfig>): Pro
       if (await kvAdapter.isAvailable()) {
         return kvAdapter;
       }
-      
+
       const redisAdapter = new CloudStorageAdapter({ ...finalConfig, provider: 'redis' });
       if (await redisAdapter.isAvailable()) {
         return redisAdapter;
@@ -603,8 +608,8 @@ export const createStorageAdapter = async (config?: Partial<StorageConfig>): Pro
 };
 
 // 检查是否在 Vercel 环境
-const isVercelEnvironment = typeof window === 'undefined' && 
-  typeof globalThis !== 'undefined' && 
+const isVercelEnvironment = typeof window === 'undefined' &&
+  typeof globalThis !== 'undefined' &&
   (globalThis as any).process?.env?.VERCEL;
 
 // 全局存储适配器实例

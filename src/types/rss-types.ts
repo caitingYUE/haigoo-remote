@@ -27,6 +27,16 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
   region?: 'domestic' | 'overseas';
+
+  // New Company Sync Fields
+  companyIndustry?: string;
+  companyTags?: string[];
+  companyLogo?: string;
+  companyDescription?: string;
+  companyId?: string;
+
+  // AI-generated job summary (30-50 characters)
+  summary?: string;
 }
 
 // 标准化的工作分类
@@ -35,51 +45,89 @@ export type JobCategory =
   | '全栈开发'
   | '前端开发'
   | '后端开发'
-  | '移动开发'
-  | '软件开发'
-  | 'DevOps'
-  | '数据分析'
-  | '数据科学'
-  | '人工智能'
-  | '质量保证'
+  | '移动开发' // 包含 iOS, Android
+  | '算法工程师'
+  | '数据开发'
+  | '服务器开发'
+  | '运维/SRE'
+  | '测试/QA'
   | '网络安全'
+  | '操作系统/内核'
+  | '技术支持'
+  | '硬件开发'
+  | '架构师'
+  | 'CTO/技术管理'
+  | '软件开发' // 通用
+
+  // 产品类
+  | '产品经理'
+  | '产品设计'
+  | '用户研究'
+  | '项目管理'
 
   // 设计类
   | 'UI/UX设计'
   | '平面设计'
-  | '产品设计'
+  | '视觉设计'
 
-  // 商业类
-  | '产品管理'
-  | '项目管理'
+  // 数据类
+  | '数据分析'
+  | '数据科学'
   | '商业分析'
 
-  // 市场营销类
+  // 运营/市场/销售
+  | '运营'
   | '市场营销'
   | '销售'
-  | '内容写作'
+  | '客户经理'
+  | '客户服务'
+  | '内容创作'
+  | '增长黑客'
 
-  // 客户服务类
-  | '客户支持'
-
-  // 人力资源类
+  // 职能类
   | '人力资源'
   | '招聘'
-
-  // 财务法律类
   | '财务'
-  | '法律'
-  | '会计'
-
-  // 运营类
-  | '运营'
-  | '商务拓展'
-  | '咨询'
-  | '教育培训'
+  | '法务'
+  | '行政'
+  | '管理' // CEO, VP, etc.
 
   // 其他
+  | '教育培训'
+  | '咨询'
+  | '投资'
   | '其他'
   | '全部';
+
+// 行业分类
+export type CompanyIndustry =
+  | '互联网/软件'
+  | '人工智能'
+  | '大健康/医疗'
+  | '教育'
+  | '金融/Fintech'
+  | '电子商务'
+  | 'Web3/区块链'
+  | '游戏'
+  | '媒体/娱乐'
+  | '企业服务/SaaS'
+  | '硬件/物联网'
+  | '消费生活'
+  | '其他';
+
+// 公司标签
+export type CompanyTag =
+  | 'AI+陪伴'
+  | 'AI+健康'
+  | 'AI基础设施'
+  | '医药'
+  | '远程优先'
+  | '全球招聘'
+  | '初创公司'
+  | '独角兽'
+  | '外企'
+  | '出海'
+  | string; // 允许自定义
 
 // 工作类型
 export type WorkType = 'remote' | 'hybrid' | 'onsite';
@@ -147,6 +195,11 @@ export interface Job {
   status: 'active' | 'inactive' | 'archived';
   createdAt: string;
   updatedAt: string;
+
+  // AI-generated job summary (30-50 characters)
+  summary?: string;
+  // Featured job flag for homepage display
+  isFeatured?: boolean;
 }
 
 export interface JobFilter {

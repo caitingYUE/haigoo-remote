@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import React, { useState, useEffect, useCallback } from 'react'
+import Cropper from 'react-easy-crop'
+import getCroppedImg from '../utils/cropImage'
+
+import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import { ClassificationService } from '../services/classification-service'
+import { CompanyIndustry } from '../types/rss-types'
 import AdminCompanyJobsModal from '../components/AdminCompanyJobsModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 
 export default function AdminTrustedCompaniesPage() {
-    const navigate = useNavigate()
+
     const { showSuccess, showError } = useNotificationHelpers()
     const { token } = useAuth()
     const [fetchDetailsEnabled, setFetchDetailsEnabled] = useState(false)
@@ -17,6 +21,18 @@ export default function AdminTrustedCompaniesPage() {
     const [editingCompany, setEditingCompany] = useState<Partial<TrustedCompany> | null>(null)
     const [managingJobsCompany, setManagingJobsCompany] = useState<TrustedCompany | null>(null)
     const [crawling, setCrawling] = useState(false)
+    const [processingImage, setProcessingImage] = useState(false)
+
+    // Crop State
+    const [cropModalOpen, setCropModalOpen] = useState(false)
+    const [tempImgSrc, setTempImgSrc] = useState<string | null>(null)
+    const [crop, setCrop] = useState({ x: 0, y: 0 })
+    const [zoom, setZoom] = useState(1)
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
+
+    const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+        setCroppedAreaPixels(croppedAreaPixels)
+    }, [])
 
     // Form State
     const [formData, setFormData] = useState({
@@ -26,15 +42,14 @@ export default function AdminTrustedCompaniesPage() {
         linkedin: '',
         description: '',
         logo: '',
+        coverImage: '',
+        address: '',
         tags: '',
+        industry: '其他' as CompanyIndustry,
         canRefer: false
     })
 
-    useEffect(() => {
-        loadCompanies()
-    }, [])
-
-    const loadCompanies = async () => {
+    const loadCompanies = React.useCallback(async () => {
         try {
             setLoading(true)
             const data = await trustedCompaniesService.getAllCompanies()
@@ -44,7 +59,25 @@ export default function AdminTrustedCompaniesPage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [showError])
+
+    useEffect(() => {
+        loadCompanies()
+    }, [loadCompanies])
+
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isModalOpen) {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = 'unset'
+        }
+        return () => {
+            document.body.style.overflow = 'unset'
+        }
+    }, [isModalOpen])
+
+
 
     const handleEdit = (company: TrustedCompany) => {
         setEditingCompany(company)
@@ -55,7 +88,10 @@ export default function AdminTrustedCompaniesPage() {
             linkedin: company.linkedin || '',
             description: company.description || '',
             logo: company.logo || '',
+            coverImage: company.coverImage || '',
+            address: company.address || '',
             tags: company.tags ? company.tags.join(', ') : '',
+            industry: company.industry || '其他',
             canRefer: !!company.canRefer
         })
         setIsModalOpen(true)
@@ -70,7 +106,10 @@ export default function AdminTrustedCompaniesPage() {
             linkedin: '',
             description: '',
             logo: '',
+            coverImage: '',
+            address: '',
             tags: '',
+            industry: '其他',
             canRefer: false
         })
         setIsModalOpen(true)
@@ -115,11 +154,25 @@ export default function AdminTrustedCompaniesPage() {
             setCrawling(true)
             const metadata = await trustedCompaniesService.fetchMetadata(url)
 
+            if (!metadata) {
+                showError('抓取失败', '无法获取网页信息，请手动输入')
+                return
+            }
+
+            const classification = ClassificationService.classifyCompany(
+                metadata.title || '',
+                metadata.description || ''
+            )
+
             setFormData(prev => ({
                 ...prev,
                 name: prev.name || metadata.title || '',
                 description: prev.description || metadata.description || '',
-                logo: prev.logo || metadata.icon || metadata.image || ''
+                logo: prev.logo || metadata.icon || '',
+                coverImage: prev.coverImage || metadata.image || '', // Map image to coverImage
+                address: prev.address || metadata.address || '',
+                industry: classification.industry,
+                tags: prev.tags ? prev.tags : classification.tags.join(', ')
             }))
             showSuccess('抓取成功', '已自动填充部分信息')
         } catch (error) {
@@ -165,13 +218,70 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
+    const processImageFile = (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            showError('文件格式错误', '请上传图片文件')
+            return
+        }
+        const reader = new FileReader()
+        reader.onload = () => {
+            setTempImgSrc(reader.result as string)
+            setCropModalOpen(true)
+            setZoom(1)
+            setCrop({ x: 0, y: 0 })
+        }
+        reader.readAsDataURL(file)
+    }
+
+    const handleCropSave = async () => {
+        if (!tempImgSrc || !croppedAreaPixels) return
+        try {
+            setProcessingImage(true)
+            const croppedImageBase64 = await getCroppedImg(tempImgSrc, croppedAreaPixels)
+            
+            const res = await fetch('/api/process-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: croppedImageBase64 })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setFormData(prev => ({ ...prev, coverImage: data.image }))
+                showSuccess('图片上传成功', '已更新封面图')
+                setCropModalOpen(false)
+                setTempImgSrc(null)
+            } else {
+                showError('上传失败', data.error)
+            }
+        } catch (err) {
+            console.error(err)
+            showError('处理失败', '无法处理图片')
+        } finally {
+            setProcessingImage(false)
+        }
+    }
+
+    const handlePaste = async (e: React.ClipboardEvent) => {
+        const items = e.clipboardData.items
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile()
+                if (file) {
+                    e.preventDefault()
+                    await processImageFile(file)
+                    return
+                }
+            }
+        }
+    }
+
     return (
-        <div className="min-h-screen bg-gray-50 p-8">
+        <div className="w-full p-8">
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">可信远程企业管理</h1>
-                        <p className="text-gray-500 mt-1">管理经过认证工作栈的优质远程企业名单</p>
+                        <h1 className="text-2xl font-bold text-gray-900">企业库</h1>
+                        <p className="text-gray-500 mt-1">管理经过认证的优质远程企业名单，支持行业分类和标签</p>
                     </div>
                     <div className="flex items-center gap-4">
                         <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -204,7 +314,9 @@ export default function AdminTrustedCompaniesPage() {
                             <div key={company.id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
                                 {/* Image Preview Area */}
                                 <div className="w-full h-32 bg-gray-50 relative border-b border-gray-100 group">
-                                    {company.logo ? (
+                                    {company.coverImage ? (
+                                        <img src={company.coverImage} alt={company.name} className="w-full h-full object-cover" />
+                                    ) : company.logo ? (
                                         <img src={company.logo} alt={company.name} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -252,7 +364,14 @@ export default function AdminTrustedCompaniesPage() {
                                 <div className="p-5 flex flex-col flex-1">
                                     <div className="flex items-start justify-between mb-2">
                                         <div>
-                                            <h3 className="font-bold text-gray-900 line-clamp-1 text-lg">{company.name}</h3>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-bold text-gray-900 line-clamp-1 text-lg">{company.name}</h3>
+                                                {company.industry && (
+                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-100 whitespace-nowrap">
+                                                        {company.industry}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                                                 <span>更新于 {new Date(company.updatedAt).toLocaleDateString()}</span>
                                             </div>
@@ -296,9 +415,9 @@ export default function AdminTrustedCompaniesPage() {
 
                 {/* Modal */}
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
                                 <h2 className="text-xl font-bold text-gray-900">
                                     {editingCompany ? '编辑企业' : '新增企业'}
                                 </h2>
@@ -307,7 +426,7 @@ export default function AdminTrustedCompaniesPage() {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSave} className="p-6 space-y-6">
+                            <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="col-span-full">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">企业名称 *</label>
@@ -367,14 +486,75 @@ export default function AdminTrustedCompaniesPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Logo 链接</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">企业地址 (国家/城市)</label>
                                         <input
-                                            type="url"
-                                            value={formData.logo}
-                                            onChange={e => setFormData({ ...formData, logo: e.target.value })}
+                                            type="text"
+                                            value={formData.address}
+                                            onChange={e => setFormData({ ...formData, address: e.target.value })}
                                             className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            placeholder="例如：美国, 旧金山"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
+                                        <input
+                                            type="text"
+                                            value={formData.logo}
+                                            onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             placeholder="https://..."
                                         />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">封面图 (Cover Image)</label>
+                                        <div
+                                            className="space-y-2"
+                                            onPaste={handlePaste}
+                                        >
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.coverImage}
+                                                    onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+                                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    placeholder="输入 URL 或粘贴图片 (Ctrl+V)"
+                                                />
+                                                <label className={`px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${processingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                    {processingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                    上传
+                                                    <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        disabled={processingImage}
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0]
+                                                            if (file) processImageFile(file)
+                                                        }}
+                                                    />
+                                                </label>
+                                            </div>
+
+                                            {/* Preview */}
+                                            {formData.coverImage && (
+                                                <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group">
+                                                    <img src={formData.coverImage} alt="Preview" className="w-full h-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData({ ...formData, coverImage: '' })}
+                                                        className="absolute top-2 right-2 p-1 bg-white/90 text-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                                                    >
+                                                        <XCircle className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            <p className="text-xs text-gray-500">
+                                                支持粘贴图片、上传文件或输入 URL。系统会自动裁剪为 16:9 (1200x675)。
+                                            </p>
+                                        </div>
                                     </div>
 
                                     <div className="col-span-full">
@@ -386,6 +566,29 @@ export default function AdminTrustedCompaniesPage() {
                                             className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="简要介绍企业业务、文化及远程办公政策..."
                                         />
+                                    </div>
+
+                                    <div className="col-span-full">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">行业分类</label>
+                                        <select
+                                            value={formData.industry}
+                                            onChange={e => setFormData({ ...formData, industry: e.target.value as CompanyIndustry })}
+                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        >
+                                            <option value="其他">其他</option>
+                                            <option value="互联网/软件">互联网/软件</option>
+                                            <option value="人工智能">人工智能</option>
+                                            <option value="大健康/医疗">大健康/医疗</option>
+                                            <option value="教育">教育</option>
+                                            <option value="金融/Fintech">金融/Fintech</option>
+                                            <option value="电子商务">电子商务</option>
+                                            <option value="Web3/区块链">Web3/区块链</option>
+                                            <option value="游戏">游戏</option>
+                                            <option value="媒体/娱乐">媒体/娱乐</option>
+                                            <option value="企业服务/SaaS">企业服务/SaaS</option>
+                                            <option value="硬件/物联网">硬件/物联网</option>
+                                            <option value="消费生活">消费生活</option>
+                                        </select>
                                     </div>
 
                                     <div className="col-span-full">
@@ -438,6 +641,65 @@ export default function AdminTrustedCompaniesPage() {
                         company={managingJobsCompany}
                         onClose={() => setManagingJobsCompany(null)}
                     />
+                )}
+                {/* Crop Modal */}
+                {cropModalOpen && tempImgSrc && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                        <div className="bg-white rounded-2xl w-full max-w-2xl flex flex-col shadow-xl overflow-hidden h-[80vh]">
+                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
+                                <h2 className="text-lg font-bold text-gray-900">裁剪封面图 (16:9)</h2>
+                                <button onClick={() => setCropModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                    <XCircle className="w-6 h-6" />
+                                </button>
+                            </div>
+                            
+                            <div className="relative flex-1 bg-gray-900 w-full">
+                                <Cropper
+                                    image={tempImgSrc}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={16 / 9}
+                                    onCropChange={setCrop}
+                                    onCropComplete={onCropComplete}
+                                    onZoomChange={setZoom}
+                                    objectFit="contain"
+                                />
+                            </div>
+
+                            <div className="p-4 bg-white border-t border-gray-100">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <ZoomOut className="w-5 h-5 text-gray-500" />
+                                    <input
+                                        type="range"
+                                        value={zoom}
+                                        min={1}
+                                        max={3}
+                                        step={0.1}
+                                        aria-labelledby="Zoom"
+                                        onChange={(e) => setZoom(Number(e.target.value))}
+                                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                    />
+                                    <ZoomIn className="w-5 h-5 text-gray-500" />
+                                </div>
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        onClick={() => setCropModalOpen(false)}
+                                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                    >
+                                        取消
+                                    </button>
+                                    <button
+                                        onClick={handleCropSave}
+                                        disabled={processingImage}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {processingImage && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        确认裁剪并上传
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div >

@@ -19,17 +19,30 @@ async function startServer() {
         console.log('Importing users handler...');
         const usersHandler = (await import('./api/users.js')).default;
         app.all('/api/users', async (req, res) => { await usersHandler(req, res); });
+        app.all('/api/user-profile', async (req, res) => { await usersHandler(req, res); });
         console.log('Users handler imported.');
 
-        console.log('Importing user-profile handler...');
-        const userProfileHandler = (await import('./api/user-profile.js')).default;
-        app.all('/api/user-profile', async (req, res) => { await userProfileHandler(req, res); });
-        console.log('User-profile handler imported.');
+        console.log('Importing data handler...');
+        const dataHandler = (await import('./api/data.js')).default;
+        app.all('/api/data*', async (req, res) => { await dataHandler(req, res); });
+        console.log('Data handler imported.');
 
         console.log('Importing parse-resume handler...');
         const parseResumeHandler = (await import('./api/parse-resume-new.js')).default;
         app.all('/api/parse-resume-new', async (req, res) => { await parseResumeHandler(req, res); });
         console.log('Parse-resume handler imported.');
+
+        console.log('Importing process-image handler...');
+        const processImageHandler = (await import('./api/process-image.js')).default;
+        app.all('/api/process-image', async (req, res) => { await processImageHandler(req, res); });
+        console.log('Process-image handler imported.');
+
+        console.log('Importing cron handlers...');
+        const crawlTrustedJobsHandler = (await import('./api/cron/crawl-trusted-jobs.js')).default;
+        const syncJobsHandler = (await import('./api/cron/sync-jobs.js')).default;
+        app.all('/api/cron/crawl-trusted-jobs', async (req, res) => { await crawlTrustedJobsHandler(req, res); });
+        app.all('/api/cron/sync-jobs', async (req, res) => { await syncJobsHandler(req, res); });
+        console.log('Cron handlers imported.');
 
         app.get('/api/health', (req, res) => {
             res.json({ status: 'ok', env: 'local' });

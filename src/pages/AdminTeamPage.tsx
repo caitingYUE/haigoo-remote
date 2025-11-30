@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search,
-  Filter,
   RefreshCw,
   Download,
-  Upload,
   Trash2,
   Edit3,
   Eye,
-  MoreHorizontal,
   CheckCircle,
   XCircle,
   Clock,
@@ -16,7 +13,6 @@ import {
   Users,
   Briefcase,
   Globe,
-  Database,
   Settings,
   AlertCircle,
   Info,
@@ -24,23 +20,25 @@ import {
   Plus,
   Save,
   X,
-  ChevronUp,
-  ChevronDown,
   BarChart3,
   PieChart,
   Activity,
   Rss,
-  Menu,
   ChevronLeft,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Tag,
+  Building,
+  FileText
 } from 'lucide-react';
-import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
+import { Job, JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
+import { trustedCompaniesService } from '../services/trusted-companies-service';
 import DataManagementTabs from '../components/DataManagementTabs';
 import UserManagementPage from './UserManagementPage';
-import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
+import AdminCompanyManagementPage from './AdminCompanyManagementPage';
+import AdminTagManagementPage from './AdminTagManagementPage';
 import AdminFeedbackList from '../components/AdminFeedbackList';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
@@ -55,21 +53,21 @@ interface ExtendedRSSSource extends RSSSource {
 const AdminTeamPage: React.FC = () => {
   // 主要状态管理
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [_jobs, setJobs] = useState<Job[]>([]);
   const [stats, setStats] = useState<JobStats | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [syncStatus, _setSyncStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
-  const [filter, setFilter] = useState<JobFilter>({});
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
-  const [showFilters, setShowFilters] = useState(false);
+  const [_selectedJobs, _setSelectedJobs] = useState<string[]>([]);
+  const [filter, _setFilter] = useState<JobFilter>({});
+  const [_searchTerm, _setSearchTerm] = useState('');
+  const [_currentPage, _setCurrentPage] = useState(1);
+  const [_itemsPerPage] = useState(20);
+  const [_showFilters, _setShowFilters] = useState(false);
 
   // 排序相关状态
-  const [sortBy, setSortBy] = useState<'publishedAt' | 'title' | 'company' | 'remoteLocationRestriction'>('publishedAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [_sortBy, _setSortBy] = useState<'publishedAt' | 'title' | 'company' | 'remoteLocationRestriction'>('publishedAt');
+  const [_sortOrder, _setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // RSS配置相关状态
   const [rssSources, setRssSources] = useState<ExtendedRSSSource[]>([]);
@@ -106,8 +104,8 @@ const AdminTeamPage: React.FC = () => {
     console.log('开始加载管理后台数据...');
     setLoading(true);
     try {
-      // 加载RSS数据
-      const rssJobs = jobAggregator.getJobs();
+      // 优先从API刷新最新数据
+      const rssJobs = await jobAggregator.refreshJobsFromAPI();
       setJobs(rssJobs);
 
       // 加载统计数据
@@ -138,18 +136,44 @@ const AdminTeamPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filter]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // 获取简历数据
+  const fetchResumes = useCallback(async () => {
+    setResumeLoading(true);
+    try {
+      const token = localStorage.getItem('haigoo_auth_token');
+      const res = await fetch('/api/resumes', {
+        headers: {
+          'Authorization': `Bearer ${token || ''}`
+        }
+      });
+
+    
+      if (res.ok) {
+        const data = await res.json();
+        setResumes(data.data || []);
+        setStorageProvider(data.provider || 'unknown');
+      } else {
+        console.error('Failed to fetch resumes');
+      }
+    } catch (error) {
+      console.error('Error fetching resumes:', error);
+    } finally {
+      setResumeLoading(false);
+    }
+  }, []);
 
   // 加载简历数据当切换到简历库标签时
   useEffect(() => {
     if (activeTab === 'resumes') {
       fetchResumes();
     }
-  }, [activeTab]);
+  }, [activeTab, fetchResumes]);
 
   // 同步RSS数据
   const handleSync = async () => {
@@ -255,7 +279,7 @@ const AdminTeamPage: React.FC = () => {
           <h2>快速操作</h2>
         </div>
         <div className="card-content">
-          <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4">
             <button
               onClick={() => handleExport('processed')}
               className="btn-secondary"
@@ -264,13 +288,21 @@ const AdminTeamPage: React.FC = () => {
               导出数据
             </button>
 
-            <button
-              onClick={() => setShowRSSForm(true)}
-              className="btn-secondary"
-            >
-              <Plus className="w-4 h-4" />
-              添加RSS源
-            </button>
+              <button
+                onClick={() => setShowRSSForm(true)}
+                className="btn-secondary"
+              >
+                <Plus className="w-4 h-4" />
+                添加RSS源
+              </button>
+              <button
+                onClick={handleSync}
+                className="btn-primary"
+                disabled={syncing}
+              >
+                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                同步RSS数据
+              </button>
           </div>
         </div>
       </div>
@@ -354,30 +386,7 @@ const AdminTeamPage: React.FC = () => {
     <AdminFeedbackList />
   );
 
-  // 获取简历数据
-  const fetchResumes = useCallback(async () => {
-    setResumeLoading(true);
-    try {
-      const token = localStorage.getItem('haigoo_auth_token');
-      const res = await fetch('/api/resumes', {
-        headers: {
-          'Authorization': `Bearer ${token || ''}`
-        }
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setResumes(data.data || []);
-        setStorageProvider(data.provider || 'unknown');
-      } else {
-        console.error('Failed to fetch resumes');
-      }
-    } catch (error) {
-      console.error('Error fetching resumes:', error);
-    } finally {
-      setResumeLoading(false);
-    }
-  }, []);
+  
 
   // 删除简历
   const handleDeleteResume = async (id: string) => {
@@ -450,7 +459,7 @@ const AdminTeamPage: React.FC = () => {
       <div className="space-y-6">
         <div className="card">
           <div className="card-header">
-            <h2>简历库</h2>
+            <h2>简历数据</h2>
             <div className="flex space-x-2">
               <button
                 onClick={handleClearResumes}
@@ -569,7 +578,7 @@ const AdminTeamPage: React.FC = () => {
                             </button>
                             {resume.localFilePath && (
                               <button
-                                onClick={() => window.open(`/api/resume-file?id=${resume.id}`, '_blank')}
+                                onClick={() => window.open(`/api/resumes?action=download&id=${resume.id}`, '_blank')}
                                 className="action-btn"
                                 title="下载原文件"
                               >
@@ -634,7 +643,7 @@ const AdminTeamPage: React.FC = () => {
           </div>
           <div className="card-content">
             <div className="space-y-3">
-              {['技术开发', '产品设计', '市场营销', '运营管理', '其他'].map((category, index) => (
+              {['技术开发', '产品设计', '市场营销', '运营管理', '其他'].map((category) => (
                 <div key={category} className="flex items-center justify-between">
                   <span className="text-sm font-medium">{category}</span>
                   <div className="flex items-center space-x-2">
@@ -731,9 +740,10 @@ const AdminTeamPage: React.FC = () => {
     { id: 'dashboard', label: '数据概览', icon: BarChart3 },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
-    { id: 'resumes', label: '简历库', icon: Users },
+    { id: 'companies', label: '企业管理', icon: Building },
+    { id: 'tag-management', label: '标签管理', icon: Tag },
+    { id: 'resumes', label: '简历数据', icon: FileText },
     { id: 'users', label: '用户管理', icon: Users },
-    { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'settings', label: '系统设置', icon: Settings }
@@ -800,7 +810,7 @@ const AdminTeamPage: React.FC = () => {
         <div className="admin-container">
           {/* 页面头部 */}
           <header className="admin-header">
-            <h1>海狗招聘团队管理后台</h1>
+            <h1>{activeTab === 'overview' ? '数据概览' : activeTab === 'data' ? '数据管理' : activeTab === 'rss' ? 'RSS源管理' : activeTab === 'companies' ? '企业管理' : activeTab === 'team' ? '团队管理' : activeTab === 'users' ? '用户管理' : activeTab === 'tags' ? '标签管理' : activeTab === 'feedback' ? '用户反馈' : activeTab === 'analytics' ? '数据分析' : activeTab === 'settings' ? '系统设置' : '海狗招聘团队管理后台'}</h1>
             <div className="flex items-center gap-4">
               {user && (
                 <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -833,7 +843,8 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'jobs' && renderJobDataManagement()}
               {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'users' && <UserManagementPage />}
-              {activeTab === 'trusted-companies' && <AdminTrustedCompaniesPage />}
+              {activeTab === 'companies' && <AdminCompanyManagementPage />}
+              {activeTab === 'tag-management' && <AdminTagManagementPage />}
               {activeTab === 'analytics' && renderAnalytics()}
               {activeTab === 'feedback' && renderFeedbackList()}
               {activeTab === 'settings' && renderSettings()}

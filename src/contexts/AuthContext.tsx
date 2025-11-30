@@ -32,6 +32,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const logout = useCallback(() => {
+    setToken(null)
+    setUser(null)
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    console.log('[AuthContext] User logged out')
+  }, [])
+
+  const refreshUserSilently = useCallback(async (authToken: string) => {
+    try {
+      const response = await fetch(`${API_BASE}?action=me`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.user) {
+          setUser(data.user)
+          localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+        }
+      } else {
+        logout()
+      }
+    } catch (error) {
+      console.error('[AuthContext] Silent refresh failed:', error)
+    }
+  }, [logout])
+
   // 从 localStorage 恢复认证状态
   useEffect(() => {
     const storedToken = localStorage.getItem(TOKEN_KEY)
@@ -51,28 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setIsLoading(false)
-  }, [])
+  }, [refreshUserSilently])
 
-  // 静默刷新用户信息（不显示loading）
-  const refreshUserSilently = async (authToken: string) => {
-    try {
-      const response = await fetch(`${API_BASE}?action=me`, {
-        headers: { Authorization: `Bearer ${authToken}` }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.user) {
-          setUser(data.user)
-          localStorage.setItem(USER_KEY, JSON.stringify(data.user))
-        }
-      } else {
-        // Token 无效，清除认证状态
-        logout()
-      }
-    } catch (error) {
-      console.error('[AuthContext] Silent refresh failed:', error)
-    }
-  }
+  
 
   // 刷新用户信息（显式调用）
   const refreshUser = useCallback(async () => {
@@ -96,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [token])
+  }, [token, logout])
 
   // 邮箱密码登录
   const login = useCallback(async (email: string, password: string): Promise<AuthResponse> => {
@@ -170,14 +178,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // 登出
-  const logout = useCallback(() => {
-    setToken(null)
-    setUser(null)
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
-    console.log('[AuthContext] User logged out')
-  }, [])
 
   // 验证邮箱
   const verifyEmail = useCallback(async (email: string, verificationToken: string): Promise<AuthResponse> => {
@@ -272,4 +272,3 @@ export function useAuth() {
   }
   return context
 }
-

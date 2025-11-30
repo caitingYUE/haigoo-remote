@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Globe, Linkedin, Briefcase, MapPin, CheckCircle, ArrowLeft, ExternalLink } from 'lucide-react'
+import { Globe, Linkedin, Briefcase, CheckCircle, ArrowLeft, ExternalLink } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { Job } from '../types'
@@ -13,20 +13,14 @@ export default function CompanyProfilePage() {
     const { id } = useParams<{ id: string }>()
     const { showError } = useNotificationHelpers()
     const [company, setCompany] = useState<TrustedCompany | null>(null)
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [typeFilter, setTypeFilter] = useState<'all' | 'full-time' | 'part-time' | 'contract' | 'internship'>('all')
-  const [remoteFilter, setRemoteFilter] = useState<'all' | 'remote' | 'onsite'>('all')
+    const [jobs, setJobs] = useState<Job[]>([])
+    const [loading, setLoading] = useState(true)
+    const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [typeFilter, setTypeFilter] = useState<'all' | 'full-time' | 'part-time' | 'contract' | 'internship'>('all')
+    const [remoteFilter, setRemoteFilter] = useState<'all' | 'remote' | 'onsite'>('all')
 
-    useEffect(() => {
-        if (id) {
-            loadData(id)
-        }
-    }, [id])
-
-    const loadData = async (companyId: string) => {
+    const loadData = useCallback(async (companyId: string) => {
         try {
             setLoading(true)
             // 1. Fetch Company Details
@@ -42,7 +36,7 @@ export default function CompanyProfilePage() {
                 if (job.companyId && job.companyId === companyId) return true
 
                 // Fallback to name matching
-                return job.company && companyData.name &&
+                return job.company && companyData && companyData.name &&
                     job.company.toLowerCase().includes(companyData.name.toLowerCase())
             })
             setJobs(relatedJobs)
@@ -53,10 +47,16 @@ export default function CompanyProfilePage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [showError])
+
+    useEffect(() => {
+        if (id) {
+            loadData(id)
+        }
+    }, [id, loadData])
 
     if (loading) {
-  return (
+        return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
@@ -115,24 +115,7 @@ export default function CompanyProfilePage() {
                             </div>
 
                             <div className="flex flex-wrap gap-4 text-gray-600 mb-6">
-                                {company.website && (
-                                    <a href={company.website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
-                                        <Globe className="w-4 h-4" />
-                                        官网
-                                    </a>
-                                )}
-                                {company.careersPage && (
-                                    <a href={company.careersPage} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
-                                        <Briefcase className="w-4 h-4" />
-                                        招聘主页
-                                    </a>
-                                )}
-                                {company.linkedin && (
-                                    <a href={company.linkedin} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
-                                        <Linkedin className="w-4 h-4" />
-                                        LinkedIn
-                                    </a>
-                                )}
+                                {/* Links hidden as per request */}
                             </div>
 
                             <p className="text-gray-600 leading-relaxed max-w-3xl">
@@ -150,19 +133,9 @@ export default function CompanyProfilePage() {
                             )}
                         </div>
 
-                        {/* Actions */}
+                        {/* Actions - Hidden */}
                         <div className="flex flex-col gap-3 w-full md:w-auto">
-                            {company.careersPage && (
-                                <a
-                                    href={company.careersPage}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm whitespace-nowrap"
-                                >
-                                    访问招聘官网
-                                    <ExternalLink className="w-4 h-4" />
-                                </a>
-                            )}
+                            {/* Careers link removed */}
                         </div>
                     </div>
                 </div>
@@ -171,89 +144,89 @@ export default function CompanyProfilePage() {
             {/* Jobs Section */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="mb-6 flex flex-col lg:flex-row lg:items-end gap-4 lg:justify-between">
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                      <Briefcase className="w-5 h-5 text-blue-600" />
-                      在招职位 ({jobs.length})
-                  </h2>
+                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                        <Briefcase className="w-5 h-5 text-blue-600" />
+                        在招职位 ({jobs.length})
+                    </h2>
 
-                  {/* Search & Filters */}
-                  <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                    {/* Search */}
-                    <div className="flex-1 sm:flex-none">
-                      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm min-w-[260px]">
-                        <input
-                          type="text"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="搜索职位名称、地点、类型..."
-                          className="w-full bg-transparent border-none focus:ring-0 text-sm text-gray-700"
-                        />
-                      </div>
+                    {/* Search & Filters */}
+                    <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                        {/* Search */}
+                        <div className="flex-1 sm:flex-none">
+                            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm min-w-[260px]">
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="搜索职位名称、地点、类型..."
+                                    className="w-full bg-transparent border-none focus:ring-0 text-sm text-gray-700"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Type Filter */}
+                        <select
+                            value={typeFilter}
+                            onChange={e => setTypeFilter(e.target.value as any)}
+                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 shadow-sm"
+                        >
+                            <option value="all">全部类型</option>
+                            <option value="full-time">全职</option>
+                            <option value="part-time">兼职</option>
+                            <option value="contract">合同</option>
+                            <option value="internship">实习</option>
+                        </select>
+
+                        {/* Remote Filter */}
+                        <select
+                            value={remoteFilter}
+                            onChange={e => setRemoteFilter(e.target.value as any)}
+                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 shadow-sm"
+                        >
+                            <option value="all">全部地点</option>
+                            <option value="remote">仅远程</option>
+                            <option value="onsite">非远程</option>
+                        </select>
                     </div>
-
-                    {/* Type Filter */}
-                    <select
-                      value={typeFilter}
-                      onChange={e => setTypeFilter(e.target.value as any)}
-                      className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 shadow-sm"
-                    >
-                      <option value="all">全部类型</option>
-                      <option value="full-time">全职</option>
-                      <option value="part-time">兼职</option>
-                      <option value="contract">合同</option>
-                      <option value="internship">实习</option>
-                    </select>
-
-                    {/* Remote Filter */}
-                    <select
-                      value={remoteFilter}
-                      onChange={e => setRemoteFilter(e.target.value as any)}
-                      className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 shadow-sm"
-                    >
-                      <option value="all">全部地点</option>
-                      <option value="remote">仅远程</option>
-                      <option value="onsite">非远程</option>
-                    </select>
-                  </div>
                 </div>
 
                 {/* Filtered Jobs */}
                 {(() => {
-                  const keyword = searchTerm.trim().toLowerCase()
-                  const filtered = jobs.filter(job => {
-                    const matchKeyword = keyword.length === 0 || (
-                      (job.title || '').toLowerCase().includes(keyword) ||
-                      (job.location || '').toLowerCase().includes(keyword) ||
-                      (job.type || '').toLowerCase().includes(keyword)
+                    const keyword = searchTerm.trim().toLowerCase()
+                    const filtered = jobs.filter(job => {
+                        const matchKeyword = keyword.length === 0 || (
+                            (job.title || '').toLowerCase().includes(keyword) ||
+                            (job.location || '').toLowerCase().includes(keyword) ||
+                            (job.type || '').toLowerCase().includes(keyword)
+                        )
+                        const matchType = typeFilter === 'all' || ((job.type || '').toLowerCase() === typeFilter)
+                        const isRemote = job.isRemote === true || /remote/i.test(job.location || '')
+                        const matchRemote = remoteFilter === 'all' || (remoteFilter === 'remote' ? isRemote : !isRemote)
+                        return matchKeyword && matchType && matchRemote
+                    })
+                    return (
+                        filtered.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {filtered.map((job) => (
+                                    <JobCard
+                                        key={job.id}
+                                        job={job}
+                                        isSaved={false}
+                                        onSave={() => { }}
+                                        onClick={(job) => setSelectedJob(job)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-gray-200">
+                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                                    <Briefcase className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">未找到匹配的职位</h3>
+                                <p className="text-gray-500">试试调整搜索关键词或筛选条件。</p>
+                            </div>
+                        )
                     )
-                    const matchType = typeFilter === 'all' || ((job.type || '').toLowerCase() === typeFilter)
-                    const isRemote = job.isRemote === true || /remote/i.test(job.location || '')
-                    const matchRemote = remoteFilter === 'all' || (remoteFilter === 'remote' ? isRemote : !isRemote)
-                    return matchKeyword && matchType && matchRemote
-                  })
-                  return (
-                    filtered.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filtered.map((job) => (
-                          <JobCard
-                            key={job.id}
-                            job={job}
-                            isSaved={false}
-                            onSave={() => { }}
-                            onClick={(job) => setSelectedJob(job)}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-gray-200">
-                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
-                          <Briefcase className="w-8 h-8" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">未找到匹配的职位</h3>
-                        <p className="text-gray-500">试试调整搜索关键词或筛选条件。</p>
-                      </div>
-                    )
-                  )
                 })()}
             </div>
 

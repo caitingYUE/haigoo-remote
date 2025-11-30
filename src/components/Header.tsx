@@ -16,7 +16,6 @@ export default function Header() {
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const userMenuButtonRef = useRef<HTMLButtonElement>(null)
 
-  const isActive = (path: string) => location.pathname === path
 
   // 处理登出
   const handleLogout = () => {
@@ -119,56 +118,37 @@ export default function Header() {
 
           {/* Center Navigation - 核心功能导航 */}
           <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-            <div className="flex items-end group relative">
+            <div className="flex items-center gap-6">
               <Link
-                to={`/jobs${location.search}`}
-                className={`text-base font-medium transition-colors ${location.pathname === '/jobs'
-                  ? 'text-[#3182CE]'
-                  : 'text-gray-600 hover:text-gray-900'
+                to="/jobs?region=domestic"
+                className={`text-base font-semibold transition-colors ${location.pathname === '/jobs' && !location.search.includes('region=overseas')
+                    ? 'text-[#3182CE]'
+                    : 'text-gray-700 hover:text-gray-900'
                   }`}
               >
-                远程岗位搜索
+                国内可申
               </Link>
 
-              {/* Region badges moved to the right of title, bottom aligned */}
-              <div className="ml-3 flex items-end gap-2 text-xs">
-                <button
-                  onClick={(e) => {
-                    e.preventDefault()
-                    navigate('/jobs?region=domestic')
-                  }}
-                  className={`transition-colors ${location.pathname === '/jobs' && !location.search.includes('region=overseas')
-                    ? 'text-[#3182CE] font-medium'
+              <Link
+                to="/jobs?region=overseas"
+                className={`text-sm font-medium transition-colors ${location.pathname === '/jobs' && location.search.includes('region=overseas')
+                    ? 'text-[#3182CE]'
                     : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  国内可申
-                </button>
-                <span className="text-gray-300">|</span>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault()
-                    navigate('/jobs?region=overseas')
-                  }}
-                  className={`transition-colors ${location.pathname === '/jobs' && location.search.includes('region=overseas')
-                    ? 'text-[#3182CE] font-medium'
-                    : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  海外可申
-                </button>
-              </div>
-            </div>
+                  }`}
+              >
+                海外可申
+              </Link>
 
-            <Link
-              to="/trusted-companies"
-              className={`ml-8 text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
-                ? 'text-[#3182CE]'
-                : 'text-gray-600 hover:text-gray-900'
-                }`}
-            >
-              可信企业列表
-            </Link>
+              <Link
+                to="/trusted-companies"
+                className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
+                    ? 'text-[#3182CE]'
+                    : 'text-gray-600 hover:text-gray-900'
+                  }`}
+              >
+                可信企业列表
+              </Link>
+            </div>
           </div>
 
           {/* Right side actions */}

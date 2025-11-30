@@ -154,7 +154,7 @@ export default async function handler(req, res) {
   const cronSecret = process.env.CRON_SECRET
   const isVercelCron = req.headers['x-vercel-cron'] === '1'
   const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production'
-  
+
   // 验证逻辑：
   // 1. Vercel Cron自动调用 - 总是允许
   // 2. 生产环境 + 配置了CRON_SECRET - 需要验证令牌
@@ -162,7 +162,7 @@ export default async function handler(req, res) {
   if (!isVercelCron && isProduction && cronSecret) {
     // 生产环境：严格验证
     if (authHeader !== `Bearer ${cronSecret}`) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
         error: 'Unauthorized',
         message: '需要有效的授权令牌'
@@ -196,7 +196,7 @@ export default async function handler(req, res) {
 
     // 1. 分页获取处理后的岗位数据
     currentStep = 'fetch-processed-jobs'
-    
+
     // 构建baseUrl：优先使用SITE_URL，其次VERCEL_URL，最后从请求头推断
     let baseUrl = process.env.SITE_URL
     if (!baseUrl && process.env.VERCEL_URL) {
@@ -209,7 +209,7 @@ export default async function handler(req, res) {
     if (!baseUrl) {
       baseUrl = 'http://localhost:3000'
     }
-    
+
     console.log(`📍 环境变量检查:`)
     console.log(`  - SITE_URL: ${process.env.SITE_URL || '(未设置)'}`)
     console.log(`  - VERCEL_URL: ${process.env.VERCEL_URL || '(未设置)'}`)
@@ -271,18 +271,22 @@ export default async function handler(req, res) {
       // 4. 合并原数据与翻译结果
       const merged = jobs.map(job => job.isTranslated ? job : (translated.find(t => t.id === job.id) || job))
 
-      // 5. 分批保存（从较小分片开始，避免 413）
+      // 5. 分批保存（使用 append 模式防止数据丢失）
       currentStep = `save-translated-jobs(page:${pageIndex})`
       let CHUNK_SIZE = Number(process.env.CRON_SAVE_CHUNK || '100')
+
+      // ⚠️ 安全改进：始终使用 append 模式，依赖后端去重逻辑
+      // 这样即使同步中途失败，也不会丢失现有数据
+      const saveMode = 'append'
+
       for (let i = 0; i < merged.length;) {
         const chunk = merged.slice(i, i + CHUNK_SIZE)
-        const mode = (pageIndex === 1 && i === 0) ? 'replace' : 'append'
         let saveResponse
         try {
           saveResponse = await fetch(`${baseUrl}/api/data/processed-jobs`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ jobs: chunk, mode })
+            body: JSON.stringify({ jobs: chunk, mode: saveMode })
           })
         } catch (fetchError) {
           console.error(`❌ 保存请求失败 (page ${pageIndex}, chunk ${i}):`, fetchError.message)
@@ -301,6 +305,7 @@ export default async function handler(req, res) {
           throw new Error(`保存数据失败 (page ${pageIndex}, chunk ${i}, size=${CHUNK_SIZE}): ${saveResponse.status} - ${errorText.substring(0, 200)}`)
         }
         await saveResponse.json().catch(() => ({}))
+        console.log(`✅ 保存成功 (page ${pageIndex}, chunk ${i}-${i + chunk.length}, mode: ${saveMode})`)
         i += CHUNK_SIZE
       }
     }

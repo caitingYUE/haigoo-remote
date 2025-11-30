@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+.vercel
+coverage
+*.min.js
+*.bundle.js
+*.d.ts
