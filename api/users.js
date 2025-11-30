@@ -17,52 +17,52 @@ function setCorsHeaders(res) {
 }
 
 /**
-     * 从Neon/PostgreSQL获取所有用户
-     */
-    async function getAllUsersFromNeon() {
-      try {
-        // 使用JOIN查询一次性获取用户及其收藏信息
-        const usersResult = await neonHelper.query(`
-          SELECT 
-            u.id, u.email, u.username, u.status, u.roles, u.createdAt, u.updatedAt,
-            COALESCE(array_agg(f.jobId) FILTER (WHERE f.jobId IS NOT NULL), '{}') as favorites,
-            COUNT(f.id) as favoritesCount
-          FROM users u
-          LEFT JOIN favorites f ON u.id = f.userId
-          GROUP BY u.id
-          ORDER BY u.createdAt DESC
-        `)
+ * 从Neon/PostgreSQL获取所有用户
+ */
+async function getAllUsersFromNeon() {
+  try {
+    // 使用JOIN查询一次性获取用户及其收藏信息
+    const usersResult = await neonHelper.query(`
+      SELECT 
+        u.user_id, u.email, u.username, u.status, u.roles, u.created_at as "createdAt", u.updated_at as "updatedAt",
+        COALESCE(array_agg(f.job_id) FILTER (WHERE f.job_id IS NOT NULL), '{}') as favorites,
+        COUNT(f.id) as favoritesCount
+      FROM users u
+      LEFT JOIN favorites f ON u.user_id = f.user_id
+      GROUP BY u.user_id
+      ORDER BY u.created_at DESC
+    `)
 
-        return usersResult || []
-      } catch (error) {
-        console.error('[users] Neon getAllUsers error:', error.message)
-        return null
-      }
-    }
+    return usersResult || []
+  } catch (error) {
+    console.error('[users] Neon getAllUsers error:', error.message)
+    return null
+  }
+}
 
 /**
-     * 从Neon/PostgreSQL获取单个用户
-     */
-    async function getUserFromNeon(userId) {
-      try {
-        // 使用JOIN查询获取用户及其收藏信息
-        const result = await neonHelper.query(`
-          SELECT 
-            u.user_id, u.email, u.username, u.status, u.roles, u.createdAt, u.updatedAt,
-            COALESCE(array_agg(f.jobId) FILTER (WHERE f.jobId IS NOT NULL), '{}') as favorites,
-            COUNT(f.id) as favoritesCount
-          FROM users u
-          LEFT JOIN favorites f ON u.user_id = f.user_id
-          WHERE u.user_id = $1
-          GROUP BY u.user_id
-        `, [userId])
+ * 从Neon/PostgreSQL获取单个用户
+ */
+async function getUserFromNeon(userId) {
+  try {
+    // 使用JOIN查询获取用户及其收藏信息
+    const result = await neonHelper.query(`
+      SELECT 
+        u.user_id, u.email, u.username, u.status, u.roles, u.created_at as "createdAt", u.updated_at as "updatedAt",
+        COALESCE(array_agg(f.job_id) FILTER (WHERE f.job_id IS NOT NULL), '{}') as favorites,
+        COUNT(f.id) as favoritesCount
+      FROM users u
+      LEFT JOIN favorites f ON u.user_id = f.user_id
+      WHERE u.user_id = $1
+      GROUP BY u.user_id
+    `, [userId])
 
-        return result?.[0] || null
-      } catch (error) {
-        console.error(`[users] Neon getUser error for ${userId}:`, error.message)
-        return null
-      }
-    }
+    return result?.[0] || null
+  } catch (error) {
+    console.error(`[users] Neon getUser error for ${userId}:`, error.message)
+    return null
+  }
+}
 
 const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
 
@@ -125,7 +125,7 @@ export default async function handler(req, res) {
       }
 
       // 查找用户
-      const userResult = await neonHelper.select('users', { id })
+      const userResult = await neonHelper.select('users', { user_id: id })
       const user = userResult?.[0]
 
       if (!user) {
@@ -133,7 +133,7 @@ export default async function handler(req, res) {
       }
 
       // 更新用户信息
-      const updateFields = { updatedAt: new Date().toISOString() }
+      const updateFields = { updated_at: new Date().toISOString() }
 
       if (status && ['active', 'suspended'].includes(status)) {
         updateFields.status = status
@@ -153,15 +153,15 @@ export default async function handler(req, res) {
       }
 
       // 执行更新
-      const result = await neonHelper.update('users', updateFields, { id })
+      const result = await neonHelper.update('users', updateFields, { user_id: id })
 
-      if (!result || result.matchedCount === 0) {
+      if (!result || result.length === 0) {
         return res.status(500).json({ success: false, error: '更新失败，请稍后重试' })
       }
 
       // 获取更新后的用户信息
       const updatedUserResult = await neonHelper.query(`
-        SELECT user_id, email, username, status, roles, createdAt, updatedAt 
+        SELECT user_id, email, username, status, roles, created_at as "createdAt", updated_at as "updatedAt" 
         FROM users 
         WHERE user_id = $1
       `, [id])
@@ -186,7 +186,7 @@ export default async function handler(req, res) {
       }
 
       // 查找用户
-      const targetResult = await neonHelper.select('users', { id })
+      const targetResult = await neonHelper.select('users', { user_id: id })
       const target = targetResult?.[0]
 
       // 超级管理员不可删除
@@ -195,16 +195,16 @@ export default async function handler(req, res) {
       }
 
       // 删除用户
-      const userResult = await neonHelper.delete('users', { id })
+      const userResult = await neonHelper.delete('users', { user_id: id })
 
       // 如果用户被删除，同时删除其收藏记录
-      if (userResult && userResult.rows?.length > 0) {
-        await neonHelper.delete('favorites', { userId: id })
+      if (userResult && userResult.length > 0) {
+        await neonHelper.delete('favorites', { user_id: id })
       }
 
       return res.status(200).json({
-        success: result && result.deletedCount > 0,
-        deletedCount: result ? result.deletedCount : 0
+        success: userResult && userResult.length > 0,
+        deletedCount: userResult ? userResult.length : 0
       })
     } catch (e) {
       console.error('[users] DELETE error:', e)
