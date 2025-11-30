@@ -90,23 +90,6 @@ CREATE TABLE raw_rss (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- trusted_companies - 存储可信公司信息
-CREATE TABLE trusted_companies (
-  id SERIAL PRIMARY KEY,
-  company_id VARCHAR(255) UNIQUE NOT NULL,
-  name VARCHAR(500) NOT NULL,
-  website VARCHAR(2000),
-  careers_page VARCHAR(2000),
-  linkedin VARCHAR(2000),
-  description TEXT,
-  logo VARCHAR(2000),
-  tags JSONB DEFAULT '[]',
-  is_trusted BOOLEAN DEFAULT true,
-  can_refer BOOLEAN DEFAULT false,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- subscriptions - 存储用户订阅信息
 CREATE TABLE subscriptions (
   id SERIAL PRIMARY KEY,
@@ -148,5 +131,44 @@ CREATE TABLE resume_stats (
   storage_provider VARCHAR(50) DEFAULT 'neon',
   estimated_size INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- trusted_companies - 存储可信企业信息
+CREATE TABLE trusted_companies (
+  id SERIAL PRIMARY KEY,
+  company_id VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(500) NOT NULL,
+  website VARCHAR(2000),
+  description TEXT,
+  logo VARCHAR(2000),
+  cover_image VARCHAR(2000),
+  industry VARCHAR(100) DEFAULT '其他',
+  tags JSONB DEFAULT '[]',
+  source VARCHAR(50) DEFAULT 'manual',
+  job_count INTEGER DEFAULT 0,
+  can_refer BOOLEAN DEFAULT false,
+  status VARCHAR(50) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- company_stats - 存储企业统计信息
+CREATE TABLE company_stats (
+  id SERIAL PRIMARY KEY,
+  total_companies INTEGER DEFAULT 0,
+  total_jobs INTEGER DEFAULT 0,
+  active_companies INTEGER DEFAULT 0,
+  last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- tag_config - 存储标签配置信息
+CREATE TABLE tag_config (
+  id SERIAL PRIMARY KEY,
+  config_type VARCHAR(50) NOT NULL,
+  config_data JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(config_type)
 );
 
