@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
 import getCroppedImg from '../utils/cropImage'
 
-import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react'
+import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload, ZoomIn, ZoomOut, RefreshCw, Database } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { ClassificationService } from '../services/classification-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -22,6 +22,7 @@ export default function AdminTrustedCompaniesPage() {
     const [managingJobsCompany, setManagingJobsCompany] = useState<TrustedCompany | null>(null)
     const [crawling, setCrawling] = useState(false)
     const [processingImage, setProcessingImage] = useState(false)
+    const [batchImporting, setBatchImporting] = useState(false)
 
     // Crop State
     const [cropModalOpen, setCropModalOpen] = useState(false)
@@ -238,7 +239,7 @@ export default function AdminTrustedCompaniesPage() {
         try {
             setProcessingImage(true)
             const croppedImageBase64 = await getCroppedImg(tempImgSrc, croppedAreaPixels)
-            
+
             const res = await fetch('/api/process-image', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -275,6 +276,46 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
+    const handleBatchImport = async () => {
+        if (!window.confirm('确定要从Excel文件批量导入企业吗？这将导入所有未重复的企业数据并自动爬取logo等信息。')) {
+            return
+        }
+
+        try {
+            setBatchImporting(true)
+            showSuccess('开始导入', '正在从Excel文件读取企业数据...')
+
+            const response = await fetch('/api/batch-import-companies', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'import-from-file',
+                    crawlMetadata: true
+                })
+            })
+
+            const data = await response.json()
+
+            if (data.success) {
+                showSuccess(
+                    '导入成功',
+                    `成功导入 ${data.imported} 个企业，跳过 ${data.skipped} 个重复企业，爬取 ${data.crawled} 个企业的元数据`
+                )
+                loadCompanies()
+            } else {
+                showError('导入失败', data.error || '未知错误')
+            }
+        } catch (error) {
+            console.error('Batch import error:', error)
+            showError('导入失败', error instanceof Error ? error.message : '网络或服务器错误')
+        } finally {
+            setBatchImporting(false)
+        }
+    }
+
     return (
         <div className="w-full p-8">
             <div className="max-w-7xl mx-auto">
@@ -293,6 +334,14 @@ export default function AdminTrustedCompaniesPage() {
                             />
                             抓取详细描述
                         </label>
+                        <button
+                            onClick={handleBatchImport}
+                            disabled={batchImporting}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {batchImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+                            {batchImporting ? '导入中...' : '批量导入'}
+                        </button>
                         <button
                             onClick={handleAdd}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -652,7 +701,7 @@ export default function AdminTrustedCompaniesPage() {
                                     <XCircle className="w-6 h-6" />
                                 </button>
                             </div>
-                            
+
                             <div className="relative flex-1 bg-gray-900 w-full">
                                 <Cropper
                                     image={tempImgSrc}
