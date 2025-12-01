@@ -276,41 +276,77 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
-    const handleBatchImport = async () => {
-        if (!window.confirm('确定要从Excel文件批量导入企业吗？这将导入所有未重复的企业数据并自动爬取logo等信息。')) {
+    const handleBatchImport = async (file?: File) => {
+        let selectedFile = file
+
+        // If no file provided, prompt user to select one
+        if (!selectedFile) {
+            const input = document.createElement('input')
+            input.type = 'file'
+            input.accept = '.xlsx,.xls'
+            input.onchange = async (e) => {
+                const target = e.target as HTMLInputElement
+                if (target.files && target.files[0]) {
+                    await handleBatchImport(target.files[0])
+                }
+            }
+            input.click()
+            return
+        }
+
+        if (!window.confirm(`确定要导入 "${selectedFile.name}" 吗？这将导入所有未重复的企业数据并自动爬取logo等信息。`)) {
             return
         }
 
         try {
             setBatchImporting(true)
-            showSuccess('开始导入', '正在从Excel文件读取企业数据...')
+            showSuccess('开始导入', '正在读取Excel文件...')
 
-            const response = await fetch('/api/data/trusted-companies?action=batch-import', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    crawlMetadata: true
-                })
-            })
+            // Read file as base64
+            const reader = new FileReader()
+            reader.onload = async (e) => {
+                try {
+                    const base64 = e.target?.result as string
+                    const fileBuffer = base64.split(',')[1] // Remove data:...;base64, prefix
 
-            const data = await response.json()
+                    const response = await fetch('/api/data/trusted-companies?action=batch-import', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            fileBuffer,
+                            crawlMetadata: true
+                        })
+                    })
 
-            if (data.success) {
-                showSuccess(
-                    '导入成功',
-                    `成功导入 ${data.imported} 个企业，跳过 ${data.skipped} 个重复企业，爬取 ${data.crawled} 个企业的元数据`
-                )
-                loadCompanies()
-            } else {
-                showError('导入失败', data.error || '未知错误')
+                    const data = await response.json()
+
+                    if (data.success) {
+                        showSuccess(
+                            '导入成功',
+                            `成功导入 ${data.imported} 个企业，跳过 ${data.skipped} 个重复企业，爬取 ${data.crawled} 个企业的元数据`
+                        )
+                        loadCompanies()
+                    } else {
+                        showError('导入失败', data.error || '未知错误')
+                    }
+                } catch (error) {
+                    console.error('Batch import error:', error)
+                    showError('导入失败', error instanceof Error ? error.message : '网络或服务器错误')
+                } finally {
+                    setBatchImporting(false)
+                }
             }
+            reader.onerror = () => {
+                showError('文件读取失败', '无法读取Excel文件')
+                setBatchImporting(false)
+            }
+            reader.readAsDataURL(selectedFile)
         } catch (error) {
-            console.error('Batch import error:', error)
-            showError('导入失败', error instanceof Error ? error.message : '网络或服务器错误')
-        } finally {
+            console.error('File selection error:', error)
+            showError('文件选择失败', error instanceof Error ? error.message : '未知错误')
             setBatchImporting(false)
         }
     }
@@ -334,7 +370,7 @@ export default function AdminTrustedCompaniesPage() {
                             抓取详细描述
                         </label>
                         <button
-                            onClick={handleBatchImport}
+                            onClick={() => handleBatchImport()}
                             disabled={batchImporting}
                             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
