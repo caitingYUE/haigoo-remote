@@ -174,21 +174,22 @@ export default function LandingPage() {
 
         {/* Job Alert Subscription */}
         <div className="mt-32">
-          <div className="relative bg-gray-900 rounded-3xl p-10 md:p-20 text-center text-white overflow-hidden shadow-2xl">
+          <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-10 md:p-20 text-center overflow-hidden border border-blue-100 shadow-lg shadow-blue-50">
             {/* Subtle Background Pattern */}
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/60 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-100/40 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
 
             <div className="relative z-10 max-w-2xl mx-auto">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight">
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight text-gray-900 flex items-center justify-center gap-3">
+                <Zap className="w-8 h-8 text-blue-600 fill-current" />
                 不错过任何机会
               </h2>
-              <p className="text-gray-300 mb-10 text-lg font-light leading-relaxed">
+              <p className="text-gray-600 mb-10 text-lg leading-relaxed">
                 订阅岗位提醒，第一时间获取最新的远程工作机会。<br />
-                加入我们的社区，开启自由职业之旅。
+                支持 <span className="font-semibold text-blue-600">Email</span> 和 <span className="font-semibold text-blue-600">飞书</span> 推送，不错过每一个好机会。
               </p>
-              <div className="bg-white/10 backdrop-blur-md p-2 rounded-2xl inline-block w-full max-w-md border border-white/10 shadow-xl">
-                <JobAlertSubscribe variant="minimal" />
+              <div className="bg-white/50 backdrop-blur-md p-2 rounded-2xl inline-block w-full max-w-md border border-white/50 shadow-sm">
+                <JobAlertSubscribe variant="minimal" theme="light" />
               </div>
             </div>
           </div>
