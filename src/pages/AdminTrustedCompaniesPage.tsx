@@ -285,14 +285,13 @@ export default function AdminTrustedCompaniesPage() {
             setBatchImporting(true)
             showSuccess('开始导入', '正在从Excel文件读取企业数据...')
 
-            const response = await fetch('/api/batch-import-companies', {
+            const response = await fetch('/api/data/trusted-companies?action=batch-import', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    action: 'import-from-file',
                     crawlMetadata: true
                 })
             })
