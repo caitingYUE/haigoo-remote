@@ -172,3 +172,52 @@ CREATE TABLE tag_config (
   UNIQUE(config_type)
 );
 
+-- feedbacks - 存储用户反馈信息
+CREATE TABLE feedbacks (
+  id SERIAL PRIMARY KEY,
+  feedback_id VARCHAR(255) UNIQUE NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
+  job_id VARCHAR(255) NOT NULL,
+  accuracy INTEGER DEFAULT 0,
+  content TEXT,
+  contact TEXT,
+  source VARCHAR(100),
+  source_url VARCHAR(2000),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- recommendations - 存储用户推荐信息
+CREATE TABLE recommendations (
+  id SERIAL PRIMARY KEY,
+  recommendation_id VARCHAR(255) UNIQUE NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
+  job_id VARCHAR(255) NOT NULL,
+  content TEXT,
+  contact TEXT,
+  source VARCHAR(100),
+  source_url VARCHAR(2000),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- location_categories - 存储地址分类配置
+CREATE TABLE location_categories (
+  id SERIAL PRIMARY KEY,
+  config_id VARCHAR(255) UNIQUE NOT NULL,
+  categories JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- user_profile_stats - 存储用户资料统计信息
+CREATE TABLE user_profile_stats (
+  id SERIAL PRIMARY KEY,
+  total_users INTEGER DEFAULT 0,
+  total_favorites INTEGER DEFAULT 0,
+  total_feedbacks INTEGER DEFAULT 0,
+  total_recommendations INTEGER DEFAULT 0,
+  last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
