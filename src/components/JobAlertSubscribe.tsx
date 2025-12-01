@@ -39,19 +39,19 @@ export default function JobAlertSubscribe({ variant = 'card' }: { variant?: Vari
     return (
       <div className="flex flex-col sm:flex-row gap-3">
         <input
-          className="flex-1 px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-blue-100 focus:outline-none focus:bg-white/30 transition-colors"
+          className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-200 focus:outline-none focus:bg-white/20 transition-colors backdrop-blur-sm"
           placeholder="输入您的邮箱地址"
           value={identifier}
           onChange={e => setIdentifier(e.target.value)}
         />
         <button
           onClick={submit}
-          className="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg"
+          className="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg shadow-blue-900/20"
         >
           立即订阅
         </button>
         {status === 'done' && <div className="absolute -bottom-8 left-0 text-white text-sm font-medium">订阅成功！</div>}
-        {status === 'error' && <div className="absolute -bottom-8 left-0 text-red-200 text-sm font-medium">订阅失败，请重试</div>}
+        {status === 'error' && <div className="absolute -bottom-8 left-0 text-red-100 text-sm font-medium">订阅失败，请重试</div>}
       </div>
     )
   }

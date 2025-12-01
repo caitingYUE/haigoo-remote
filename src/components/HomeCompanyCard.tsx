@@ -11,10 +11,10 @@ export default function HomeCompanyCard({ company, onClick }: HomeCompanyCardPro
     return (
         <div
             onClick={onClick}
-            className="group bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
+            className="group bg-white rounded-xl border border-gray-100 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
         >
             <div className="p-5 flex items-start gap-4">
-                <div className="w-14 h-14 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform">
+                <div className="w-14 h-14 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform group-hover:border-blue-100">
                     {company.logo ? (
                         <img src={company.logo} alt={company.name} className="w-full h-full object-cover" />
                     ) : (
@@ -34,7 +34,7 @@ export default function HomeCompanyCard({ company, onClick }: HomeCompanyCardPro
             <div className="px-5 pb-5 mt-auto">
                 <div className="flex flex-wrap gap-2 mb-4">
                     {(company.tags || []).slice(0, 3).map((tag, i) => (
-                        <span key={i} className="px-2 py-1 bg-gray-50 text-gray-600 text-xs rounded-md">
+                        <span key={i} className="px-2 py-1 bg-gray-50 text-gray-600 text-xs rounded-md group-hover:bg-blue-50/50 group-hover:text-blue-600/80 transition-colors">
                             {tag}
                         </span>
                     ))}
@@ -42,7 +42,7 @@ export default function HomeCompanyCard({ company, onClick }: HomeCompanyCardPro
 
                 <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
                     <span className="text-xs text-gray-400">热招职位</span>
-                    <span className="text-sm font-medium text-blue-600 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                    <span className="text-sm font-medium text-blue-500 group-hover:translate-x-1 transition-transform flex items-center gap-1">
                         查看详情
                     </span>
                 </div>
