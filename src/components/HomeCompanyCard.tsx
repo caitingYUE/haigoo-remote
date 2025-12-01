@@ -26,14 +26,24 @@ export default function HomeCompanyCard({ company, onClick }: HomeCompanyCardPro
             onClick={onClick}
             className="group bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
         >
-            {/* Cover Area */}
-            <div className={`h-24 bg-gradient-to-r ${getGradient(company.name)} relative`}>
-                <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
+            {/* Cover Area - 16:9 Aspect Ratio */}
+            <div className="relative w-full pt-[56.25%] overflow-hidden bg-gray-50">
+                {company.coverImage ? (
+                    <img
+                        src={company.coverImage}
+                        alt={`${company.name} cover`}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                ) : (
+                    <div className={`absolute inset-0 bg-gradient-to-r ${getGradient(company.name)}`}>
+                        <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
+                    </div>
+                )}
             </div>
 
             <div className="px-6 pb-6 flex-1 flex flex-col relative">
                 {/* Logo - Overlapping Cover */}
-                <div className="-mt-10 mb-4 flex justify-center">
+                <div className="-mt-10 mb-4 flex justify-center relative z-10">
                     <div className="w-20 h-20 rounded-xl bg-white p-1 shadow-sm border border-gray-100 group-hover:scale-105 transition-transform duration-300">
                         <div className="w-full h-full rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden">
                             {company.logo ? (
