@@ -212,9 +212,9 @@ const userHelper = {
 
             // 查询所有用户，排除敏感信息
             const result = await neonHelper.query(`
-        SELECT userId, email, username, status, roles, createdAt, updatedAt 
+        SELECT user_id, email, username, status, roles, created_at, updated_at 
         FROM users 
-        ORDER BY createdAt DESC
+        ORDER BY created_at DESC
       `)
 
             if (!result?.[0]) return null
