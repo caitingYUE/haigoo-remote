@@ -20,39 +20,57 @@ export default function HomeJobCard({ job, onClick }: HomeJobCardProps) {
     return (
         <div
             onClick={onClick}
-            className="group bg-white rounded-xl p-5 border border-gray-100 hover:border-orange-200 hover:shadow-lg hover:shadow-orange-50 transition-all duration-300 cursor-pointer flex flex-col h-full"
+            className="group bg-white rounded-xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50/50 transition-all duration-300 cursor-pointer flex flex-col h-full relative overflow-hidden"
         >
-            <div className="flex justify-between items-start mb-3">
-                <h3 className="font-bold text-gray-900 text-lg line-clamp-1 group-hover:text-orange-600 transition-colors">
-                    {job.title}
-                </h3>
-                <span className="text-orange-500 font-bold text-base whitespace-nowrap ml-2">
-                    {formatSalary()}
-                </span>
-            </div>
+            {/* Hover Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
-            <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
-                {job.location && (
-                    <span className="flex items-center gap-1 bg-blue-50/50 text-blue-600/80 px-2 py-0.5 rounded text-xs font-medium">
-                        {job.location}
-                    </span>
-                )}
-                <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded text-xs">
-                    {job.experienceLevel || '经验不限'}
-                </span>
-            </div>
-
-            <div className="mt-auto flex items-center gap-3 pt-4 border-t border-gray-50">
-                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:border-orange-100 transition-colors">
-                    {job.logo ? (
-                        <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
-                    ) : (
-                        <Building2 className="w-4 h-4 text-gray-300" />
-                    )}
+            <div className="relative z-10 flex flex-col h-full">
+                <div className="flex justify-between items-start mb-4">
+                    <div className="flex gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:border-blue-100 transition-colors flex-shrink-0">
+                            {job.logo ? (
+                                <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
+                            ) : (
+                                <Building2 className="w-6 h-6 text-gray-300" />
+                            )}
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-gray-900 text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
+                                {job.title}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="text-sm text-gray-500 font-medium">{job.company}</span>
+                                {job.companyIndustry && (
+                                    <>
+                                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                        <span className="text-xs text-gray-400">{job.companyIndustry}</span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate group-hover:text-gray-700">{job.company}</p>
-                    <p className="text-xs text-gray-500 truncate">{job.companyIndustry || '互联网'}</p>
+
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {job.location && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium">
+                            {job.location}
+                        </span>
+                    )}
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 text-xs font-medium">
+                        {job.experienceLevel || '经验不限'}
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-green-50 text-green-600 text-xs font-medium">
+                        {formatSalary()}
+                    </span>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between text-xs text-gray-400">
+                    <span>刚刚发布</span>
+                    <span className="group-hover:translate-x-1 transition-transform text-blue-500 font-medium opacity-0 group-hover:opacity-100">
+                        立即申请 &rarr;
+                    </span>
                 </div>
             </div>
         </div>

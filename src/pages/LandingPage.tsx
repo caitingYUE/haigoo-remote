@@ -75,24 +75,20 @@ export default function LandingPage() {
       {/* New Hero Section */}
       <HomeHero stats={stats} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
 
         {/* Featured Jobs Section */}
-        <div id="featured-jobs" className="mt-16">
-          <div className="flex items-center justify-between mb-8">
+        <div id="featured-jobs" className="mt-20">
+          <div className="flex items-end justify-between mb-10">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-1 h-8 bg-orange-500 rounded-full"></div>
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-orange-500" />
-                  精选岗位
-                </h2>
-              </div>
-              <p className="text-gray-500 ml-7 text-sm">为你精心挑选的优质远程机会</p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight">
+                精选机会
+              </h2>
+              <p className="text-gray-500 text-base">为你精心挑选的优质远程机会</p>
             </div>
             <button
               onClick={() => navigate('/jobs?region=domestic')}
-              className="group flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600 transition-all duration-200 text-sm font-medium shadow-sm"
+              className="group flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 transition-all duration-200 text-sm font-medium shadow-sm"
             >
               <span>查看全部 {stats.totalJobs}+ 个岗位</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -103,7 +99,7 @@ export default function LandingPage() {
             <div className="flex justify-center py-20">
               <div className="relative">
                 <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-100"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent absolute top-0 left-0"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-600 border-t-transparent absolute top-0 left-0"></div>
               </div>
             </div>
           ) : featuredJobs.length === 0 ? (
@@ -112,7 +108,7 @@ export default function LandingPage() {
               <p className="text-gray-500">暂无精选岗位</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredJobs.map((job) => (
                 <HomeJobCard
                   key={job.id}
@@ -123,10 +119,10 @@ export default function LandingPage() {
             </div>
           )}
 
-          <div className="mt-10 text-center">
+          <div className="mt-12 text-center">
             <button
               onClick={() => navigate('/jobs?region=domestic')}
-              className="px-8 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all duration-200 inline-flex items-center gap-2 shadow-sm hover:shadow-md"
+              className="px-8 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 transition-all duration-200 inline-flex items-center gap-2 shadow-sm hover:shadow-md"
             >
               查看更多职位
               <ArrowRight className="w-4 h-4" />
@@ -135,17 +131,13 @@ export default function LandingPage() {
         </div>
 
         {/* Trusted Companies Section */}
-        <div className="mt-20">
-          <div className="flex items-center justify-between mb-8">
+        <div className="mt-24">
+          <div className="flex items-end justify-between mb-10">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-1 h-8 bg-blue-600 rounded-full"></div>
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Building2 className="w-6 h-6 text-blue-600" />
-                  可信企业
-                </h2>
-              </div>
-              <p className="text-gray-500 ml-7 text-sm">经过验证的优质远程企业</p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight">
+                可信企业
+              </h2>
+              <p className="text-gray-500 text-base">经过验证的优质远程企业</p>
             </div>
             <button
               onClick={() => navigate('/companies')}
@@ -168,7 +160,7 @@ export default function LandingPage() {
               <p className="text-gray-500">暂无企业数据</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {trustedCompanies.map((company) => (
                 <HomeCompanyCard
                   key={company.id}
@@ -181,20 +173,21 @@ export default function LandingPage() {
         </div>
 
         {/* Job Alert Subscription */}
-        <div className="mt-24">
-          <div className="relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-10 md:p-16 text-center text-white overflow-hidden shadow-2xl shadow-blue-200">
+        <div className="mt-32">
+          <div className="relative bg-gray-900 rounded-3xl p-10 md:p-20 text-center text-white overflow-hidden shadow-2xl">
             {/* Subtle Background Pattern */}
-            <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
 
             <div className="relative z-10 max-w-2xl mx-auto">
-              <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-3">
-                <Zap className="w-6 h-6 text-yellow-300 fill-current" />
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight">
                 不错过任何机会
               </h2>
-              <p className="text-blue-50 mb-10 text-lg font-light">订阅岗位提醒，第一时间获取最新的远程工作机会</p>
-              <div className="bg-white/10 backdrop-blur-md p-1.5 rounded-2xl inline-block w-full max-w-md border border-white/20 shadow-lg">
+              <p className="text-gray-300 mb-10 text-lg font-light leading-relaxed">
+                订阅岗位提醒，第一时间获取最新的远程工作机会。<br />
+                加入我们的社区，开启自由职业之旅。
+              </p>
+              <div className="bg-white/10 backdrop-blur-md p-2 rounded-2xl inline-block w-full max-w-md border border-white/10 shadow-xl">
                 <JobAlertSubscribe variant="minimal" />
               </div>
             </div>
