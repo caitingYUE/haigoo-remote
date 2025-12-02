@@ -25,9 +25,9 @@ export default async function handler(req, res) {
 
     // Fallback: check resource query param
     const resource = url.searchParams.get('resource');
-    if (resource === 'processed-jobs') return await processedJobsHandler(req, res);
-    if (resource === 'raw-rss') return await rawRssHandler(req, res);
-    if (resource === 'companies' || resource === 'tags') return await trustedCompaniesHandler(req, res);
+    if (resource && (resource === 'processed-jobs' || resource.startsWith('processed-jobs/'))) return await processedJobsHandler(req, res);
+    if (resource && (resource === 'raw-rss' || resource.startsWith('raw-rss/'))) return await rawRssHandler(req, res);
+    if (resource === 'companies' || resource === 'tags' || resource?.startsWith('trusted-companies')) return await trustedCompaniesHandler(req, res);
 
     return res.status(404).json({ error: 'Data resource not found' });
 }

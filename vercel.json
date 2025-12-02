@@ -19,6 +19,10 @@
       "destination": "/api/cron/index?task=translate-jobs"
     },
     {
+      "source": "/api/data/:path*",
+      "destination": "/api/data?resource=:path*"
+    },
+    {
       "source": "/api/:match*",
       "destination": "/api/:match*"
     },
