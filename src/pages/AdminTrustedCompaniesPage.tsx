@@ -444,7 +444,7 @@ export default function AdminTrustedCompaniesPage() {
             showSuccess('开始导出', '正在生成Excel文件...')
 
             const response = await fetch('/api/data/trusted-companies?action=batch-export', {
-                method: 'GET',
+                method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
