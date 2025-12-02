@@ -5,6 +5,7 @@ import { neon } from '@neondatabase/serverless'
 const DATABASE_URL =
     process.env.DATABASE_URL ||
     process.env.NEON_DATABASE_URL ||
+    process.env.NEON_DATABASE_DATABASE_URL ||
     process.env.HAIGOO_DATABASE_URL ||
     process.env.haigoo_DATABASE_URL ||
     process.env.pre_haigoo_DATABASE_URL ||
