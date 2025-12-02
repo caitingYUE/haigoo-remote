@@ -1,24 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/cron/fetch-rss",
+      "path": "/api/cron/daily-ingest",
       "schedule": "0 18 * * *"
     },
     {
-      "path": "/api/cron/process-rss",
-      "schedule": "15 18 * * *"
-    },
-    {
-      "path": "/api/cron/translate-jobs",
+      "path": "/api/cron/daily-enrich",
       "schedule": "30 18 * * *"
-    },
-    {
-      "path": "/api/cron/enrich-companies",
-      "schedule": "45 18 * * *"
-    },
-    {
-      "path": "/api/cron/crawl-trusted-jobs",
-      "schedule": "0 19 * * *"
     }
   ],
   "rewrites": [
