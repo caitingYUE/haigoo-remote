@@ -12,9 +12,10 @@ interface JobCardProps {
   onSave?: (jobId: string) => void;
   isSaved?: boolean;
   onClick?: (job: Job) => void;
+  isActive?: boolean;
 }
 
-export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps) {
+export default function JobCard({ job, onSave, isSaved, onClick, isActive }: JobCardProps) {
 
   // 不再生成语义标签，仅保留处理后数据的技能标签展示
 
@@ -137,7 +138,10 @@ export default function JobCard({ job, onSave, isSaved, onClick }: JobCardProps)
 
   return (
     <article
-      className="group bg-white rounded-xl p-5 shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer relative flex flex-col h-full"
+      className={`group bg-white rounded-xl p-5 shadow-sm border transition-all duration-200 cursor-pointer relative flex flex-col h-full ${isActive
+          ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/30'
+          : 'border-slate-200 hover:shadow-md hover:border-blue-200'
+        }`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       tabIndex={0}
