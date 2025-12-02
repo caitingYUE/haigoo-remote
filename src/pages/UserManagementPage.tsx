@@ -102,7 +102,7 @@ export default function UserManagementPage() {
     setFilteredUsers(filtered)
   }, [users, searchTerm, statusFilter, providerFilter])
 
-  
+
 
   const calculateStats = (userList: User[]) => {
     const now = new Date()
@@ -509,6 +509,62 @@ export default function UserManagementPage() {
                 <input type="checkbox" disabled={editingUser?.email === SUPER_ADMIN_EMAIL} checked={editAdmin} onChange={(e) => setEditAdmin(e.target.checked)} />
                 <span>{editingUser?.email === SUPER_ADMIN_EMAIL ? '超级管理员（不可更改）' : '管理员权限'}</span>
               </label>
+
+              {/* 求职期望展示 */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <h4 className="font-semibold text-sm mb-3 text-gray-900">求职期望</h4>
+                {editingUser?.jobPreferences ? (
+                  <div className="space-y-3 text-sm">
+                    {editingUser.jobPreferences.jobTypes?.length > 0 && (
+                      <div>
+                        <span className="text-gray-500 block mb-1">职位类型</span>
+                        <div className="flex flex-wrap gap-1">
+                          {editingUser.jobPreferences.jobTypes.map(t => (
+                            <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {editingUser.jobPreferences.industries?.length > 0 && (
+                      <div>
+                        <span className="text-gray-500 block mb-1">行业类型</span>
+                        <div className="flex flex-wrap gap-1">
+                          {editingUser.jobPreferences.industries.map(t => (
+                            <span key={t} className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {editingUser.jobPreferences.locations?.length > 0 && (
+                      <div>
+                        <span className="text-gray-500 block mb-1">地点偏好</span>
+                        <div className="flex flex-wrap gap-1">
+                          {editingUser.jobPreferences.locations.map(t => (
+                            <span key={t} className="px-2 py-0.5 bg-green-50 text-green-700 rounded text-xs">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {editingUser.jobPreferences.levels?.length > 0 && (
+                      <div>
+                        <span className="text-gray-500 block mb-1">级别偏好</span>
+                        <div className="flex flex-wrap gap-1">
+                          {editingUser.jobPreferences.levels.map(t => (
+                            <span key={t} className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded text-xs">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {editingUser.preferencesUpdatedAt && (
+                      <div className="text-xs text-gray-400 mt-2">
+                        更新于：{new Date(editingUser.preferencesUpdatedAt).toLocaleString('zh-CN')}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">未设置求职期望</p>
+                )}
+              </div>
             </div>
             <div className="mt-6 flex justify-end gap-2">
               <button onClick={() => setEditingUser(null)} className="px-4 py-2 border rounded-lg">取消</button>

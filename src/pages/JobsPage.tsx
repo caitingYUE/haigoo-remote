@@ -13,6 +13,8 @@ import { extractLocations, matchesLocationFilter } from '../utils/locationHelper
 import { usePageCache } from '../hooks/usePageCache'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import { JobPreferenceModal, JobPreferences } from '../components/JobPreferenceModal'
+import { Settings } from 'lucide-react'
 
 // Industry Options
 const INDUSTRY_OPTIONS = [
@@ -61,10 +63,63 @@ export default function JobsPage() {
     industry: [] as string[]
   })
 
+  // Load user preferences
+  useEffect(() => {
+    loadUserPreferences()
+  }, [isAuthenticated])
+
+  const loadUserPreferences = async () => {
+    if (!isAuthenticated || !token) return
+
+    try {
+      const resp = await fetch('/api/user-profile?action=get_preferences', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (resp.ok) {
+        const data = await resp.json()
+        if (data.preferences) {
+          setUserPreferences(data.preferences)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load preferences:', error)
+    }
+  }
+
+  const saveUserPreferences = async (preferences: JobPreferences) => {
+    if (!isAuthenticated || !token) {
+      navigate('/login')
+      return
+    }
+
+    try {
+      const resp = await fetch('/api/user-profile?action=save_preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ preferences })
+      })
+
+      if (resp.ok) {
+        setUserPreferences(preferences)
+        showSuccess('求职期望已保存')
+      } else {
+        showError('保存失败，请稍后重试')
+      }
+    } catch (error) {
+      console.error('Failed to save preferences:', error)
+      showError('保存失败，请检查网络连接')
+    }
+  }
+
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
+  const [isPreferenceModalOpen, setIsPreferenceModalOpen] = useState(false)
+  const [userPreferences, setUserPreferences] = useState<JobPreferences | null>(null)
 
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
@@ -412,6 +467,21 @@ export default function JobsPage() {
       <div className="flex-shrink-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm py-2.5 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 mb-2.5">
+            {/* Job Preference Button */}
+            <button
+              onClick={() => setIsPreferenceModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-slate-700"
+              title="设置求职期望"
+            >
+              <Settings className="w-4 h-4" />
+              <span>求职期望</span>
+              {userPreferences && (userPreferences.jobTypes.length > 0 || userPreferences.industries.length > 0 || userPreferences.locations.length > 0 || userPreferences.levels.length > 0) && (
+                <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                  {userPreferences.jobTypes.length + userPreferences.industries.length + userPreferences.locations.length + userPreferences.levels.length}
+                </span>
+              )}
+            </button>
+
             <div className="max-w-xl flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
               <input
@@ -565,6 +635,16 @@ export default function JobsPage() {
           }}
         />
       )}
+
+      {/* Job Preference Modal */}
+      <JobPreferenceModal
+        isOpen={isPreferenceModalOpen}
+        onClose={() => setIsPreferenceModalOpen(false)}
+        onSave={saveUserPreferences}
+        initialPreferences={userPreferences || undefined}
+        jobTypeOptions={topCategories}
+        industryOptions={industryOptions.map(opt => opt.label)}
+      />
     </div>
   )
 }
