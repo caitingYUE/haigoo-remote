@@ -23,6 +23,10 @@ export default function AdminTrustedCompaniesPage() {
     const [crawling, setCrawling] = useState(false)
     const [processingImage, setProcessingImage] = useState(false)
     const [batchImporting, setBatchImporting] = useState(false)
+    
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1)
+    const [pageSize] = useState(12)
 
     // Crop State
     const [cropModalOpen, setCropModalOpen] = useState(false)
@@ -77,6 +81,88 @@ export default function AdminTrustedCompaniesPage() {
             document.body.style.overflow = 'unset'
         }
     }, [isModalOpen])
+
+    const totalPages = Math.ceil(companies.length / pageSize)
+    const paginatedCompanies = companies.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+    const renderPagination = () => {
+        if (totalPages <= 1) return null
+
+        const maxPagesToShow = 7
+        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2))
+        const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1)
+
+        if (endPage - startPage + 1 < maxPagesToShow) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1)
+        }
+
+        const pages = []
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i)
+        }
+
+        return (
+            <div className="py-8 flex items-center justify-between border-t border-gray-200 mt-8">
+                <div className="text-sm text-gray-500">
+                    显示 {((currentPage - 1) * pageSize) + 1} 到 {Math.min(currentPage * pageSize, companies.length)} 条，共 {companies.length} 条
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                        上一页
+                    </button>
+
+                    {startPage > 1 && (
+                        <>
+                            <button
+                                onClick={() => setCurrentPage(1)}
+                                className={`px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 ${currentPage === 1 ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                            >
+                                1
+                            </button>
+                            {startPage > 2 && <span className="px-2 text-gray-400">...</span>}
+                        </>
+                    )}
+
+                    {pages.map(p => (
+                        <button
+                            key={p}
+                            onClick={() => setCurrentPage(p)}
+                            className={`px-3 py-1 text-sm border rounded-lg hover:bg-gray-50 ${currentPage === p
+                                ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                                : 'border-gray-300 text-gray-700'
+                                }`}
+                        >
+                            {p}
+                        </button>
+                    ))}
+
+                    {endPage < totalPages && (
+                        <>
+                            {endPage < totalPages - 1 && <span className="px-2 text-gray-400">...</span>}
+                            <button
+                                onClick={() => setCurrentPage(totalPages)}
+                                className={`px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 ${currentPage === totalPages ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                            >
+                                {totalPages}
+                            </button>
+                        </>
+                    )}
+
+                    <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                        下一页
+                    </button>
+                </div>
+            </div>
+        )
+    }
 
 
 
@@ -394,8 +480,8 @@ export default function AdminTrustedCompaniesPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {companies.map(company => (
-                            <div key={company.id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
+                        {paginatedCompanies.map(company => (
+                                <div key={company.id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
                                 {/* Image Preview Area */}
                                 <div className="w-full h-32 bg-gray-50 relative border-b border-gray-100 group">
                                     {company.coverImage ? (
@@ -496,6 +582,9 @@ export default function AdminTrustedCompaniesPage() {
                         ))}
                     </div>
                 )}
+
+                {/* Pagination */}
+                {renderPagination()}
 
                 {/* Modal */}
                 {isModalOpen && (

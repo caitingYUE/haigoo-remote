@@ -40,6 +40,7 @@ import UserManagementPage from './UserManagementPage';
 import AdminCompanyManagementPage from './AdminCompanyManagementPage';
 import AdminTagManagementPage from './AdminTagManagementPage';
 import AdminFeedbackList from '../components/AdminFeedbackList';
+import CronTestControl from '../components/CronTestControl';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -852,6 +853,9 @@ const AdminTeamPage: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* 定时任务测试控件 */}
+      <CronTestControl />
 
       {/* RSS表单模态框 */}
       {showRSSForm && (
