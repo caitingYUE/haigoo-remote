@@ -5,7 +5,7 @@ import {
   Search, Filter, Download, Upload, FileText,
   Briefcase, BarChart3, Loader, Edit3, Eye, Link as LinkIcon,
   MapPin, Calendar, Server, Star, ExternalLink, Info, Plus, Building, X,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-react';
 import { JobCategory } from '../types/rss-types';
 import { dataManagementService, RawRSSData, ProcessedJobData, StorageStats } from '../services/data-management-service';
@@ -23,6 +23,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [syncing, setSyncing] = useState(false);
   const [translating, setTranslating] = useState(false); // 🆕 翻译按钮专用状态
   const [translationProgress, setTranslationProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 }); // 🆕 翻译进度状态
+  const [showTranslateMenu, setShowTranslateMenu] = useState(false); // 🆕 翻译菜单显示状态
+  const translateMenuRef = useRef<HTMLDivElement>(null); // 🆕 翻译菜单引用
   const { showSuccess, showError } = useNotificationHelpers();
 
   // 原始数据状态
@@ -129,6 +131,18 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     if (activeTab === 'processed') {
       processedJobsService.getLocationCategories().then((c) => setLocationCategories(c)).catch(() => { });
     }
+
+    // 点击外部关闭翻译菜单
+    const handleClickOutside = (event: MouseEvent) => {
+      if (translateMenuRef.current && !translateMenuRef.current.contains(event.target as Node)) {
+        setShowTranslateMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [activeTab]);
 
   const computeRegion = useCallback((job: ProcessedJobData): 'domestic' | 'overseas' | undefined => {
@@ -213,24 +227,36 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     }
   };
 
-  // 🆕 手动触发后端翻译任务 - 自动分页翻译所有数据
-  const handleTriggerTranslation = async () => {
+  // 🆕 手动触发后端翻译任务 - 支持 "current" (当前页) 或 "all" (所有页)
+  const handleTriggerTranslation = async (scope: 'current' | 'all') => {
     if (translating) return;
+    setShowTranslateMenu(false);
 
     try {
       setTranslating(true);
-      let currentPage = 1;
-      let totalPages = 1;
+
+      // 如果是 'current'，只翻译当前页
+      // 如果是 'all'，从第1页开始翻译到最后一页
+      let currentPage = scope === 'current' ? processedDataPage : 1;
+      let endPage = scope === 'current' ? processedDataPage : 1; // 初始值，'all' 模式下会在第一次请求后更新
+
       let totalTranslated = 0;
       let totalSkipped = 0;
       let totalFailed = 0;
+      let totalPages = 1;
 
       // Initial fetch to get total pages (translate page 1)
-      showSuccess('开始翻译', '正在获取数据总量并开始自动翻译...');
+      showSuccess('开始翻译', scope === 'current' ? `正在翻译第 ${currentPage} 页...` : '正在获取数据总量并开始自动翻译...');
 
       do {
-        console.log(`🌍 正在自动翻译第 ${currentPage}/${totalPages === 1 ? '?' : totalPages} 页...`);
-        setTranslationProgress({ current: currentPage, total: totalPages });
+        console.log(`🌍 正在自动翻译第 ${currentPage}${scope === 'all' ? `/${totalPages === 1 ? '?' : totalPages}` : ''} 页...`);
+
+        // 更新进度显示
+        if (scope === 'all') {
+          setTranslationProgress({ current: currentPage, total: totalPages });
+        } else {
+          setTranslationProgress({ current: 1, total: 1 });
+        }
 
         const response = await fetch('/api/translate-jobs', {
           method: 'POST',
@@ -251,15 +277,18 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         const result = await response.json();
 
         // Update totals
-        if (currentPage === 1) {
+        if (scope === 'all' && currentPage === 1) {
           totalPages = result.totalPages || 1;
+          endPage = totalPages;
         }
 
         totalTranslated += result.translated || 0;
         totalSkipped += result.skipped || 0;
         totalFailed += result.failed || 0;
 
-        setTranslationProgress({ current: currentPage, total: totalPages });
+        if (scope === 'all') {
+          setTranslationProgress({ current: currentPage, total: totalPages });
+        }
 
         currentPage++;
 
@@ -268,9 +297,9 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           loadProcessedData();
         }
 
-      } while (currentPage <= totalPages);
+      } while (currentPage <= endPage);
 
-      console.log('✅ 所有数据翻译完成');
+      console.log('✅ 翻译任务完成');
 
       // 重新加载当前页数据
       await loadProcessedData();
@@ -288,8 +317,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
       // 显示最终结果
       showSuccess(
-        '全量翻译完成',
-        `共扫描 ${totalPages} 页: 成功翻译 ${totalTranslated} 条，跳过 ${totalSkipped} 条，失败 ${totalFailed} 条。页面已刷新。`
+        scope === 'current' ? '当前页翻译完成' : '全量翻译完成',
+        `共扫描 ${scope === 'current' ? 1 : totalPages} 页: 成功翻译 ${totalTranslated} 条，跳过 ${totalSkipped} 条，失败 ${totalFailed} 条。页面已刷新。`
       );
 
       // 广播全局事件
@@ -1335,17 +1364,40 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? '刷新中...' : '刷新处理后数据'}
               </button>
-              <button
-                onClick={handleTriggerTranslation}
-                disabled={translating || syncing} // 翻译或刷新时都禁用
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-green-300 text-green-700 bg-green-50 rounded-md hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title="将现有岗位数据翻译成中文"
-              >
-                <svg className={`w-3 h-3 ${translating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                </svg>
-                {translating ? (translationProgress.total > 0 ? `翻译中 ${translationProgress.current}/${translationProgress.total}页...` : '翻译中...') : '翻译数据'}
-              </button>
+              <div className="relative" ref={translateMenuRef}>
+                <button
+                  onClick={() => setShowTranslateMenu(!showTranslateMenu)}
+                  disabled={translating || syncing}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-green-300 text-green-700 bg-green-50 rounded-md hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="将岗位数据翻译成中文"
+                >
+                  <svg className={`w-3 h-3 ${translating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                  </svg>
+                  {translating ? (translationProgress.total > 0 ? `翻译中 ${translationProgress.current}/${translationProgress.total}...` : '翻译中...') : '翻译数据'}
+                  <ChevronDown className="w-3 h-3 ml-1" />
+                </button>
+
+                {/* 翻译选项菜单 */}
+                {showTranslateMenu && !translating && (
+                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <button
+                      onClick={() => handleTriggerTranslation('current')}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-700 flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4" />
+                      仅翻译当前页
+                    </button>
+                    <button
+                      onClick={() => handleTriggerTranslation('all')}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-700 flex items-center gap-2"
+                    >
+                      <Database className="w-4 h-4" />
+                      翻译所有数据
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {/* 按需：导出数据按钮已移除 */}
