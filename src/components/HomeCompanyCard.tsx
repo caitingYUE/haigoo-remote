@@ -4,10 +4,14 @@ import { TrustedCompany } from '../services/trusted-companies-service'
 
 interface HomeCompanyCardProps {
     company: TrustedCompany
+    jobStats?: {
+        total: number
+        categories: Record<string, number>
+    }
     onClick?: () => void
 }
 
-export default function HomeCompanyCard({ company, onClick }: HomeCompanyCardProps) {
+export default function HomeCompanyCard({ company, jobStats, onClick }: HomeCompanyCardProps) {
     // Generate a consistent gradient based on company name length
     const getGradient = (name: string) => {
         const gradients = [
@@ -31,6 +35,13 @@ export default function HomeCompanyCard({ company, onClick }: HomeCompanyCardPro
         }
     }
 
+    // Get top 2 categories
+    const topCategories = jobStats
+        ? Object.entries(jobStats.categories)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 2)
+        : []
+
     return (
         <div
             onClick={onClick}
@@ -44,16 +55,20 @@ export default function HomeCompanyCard({ company, onClick }: HomeCompanyCardPro
                         alt={`${company.name} cover`}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
+                ) : company.logo ? (
+                    <div className="absolute inset-0 bg-white flex items-center justify-center p-8">
+                        <img
+                            src={company.logo}
+                            alt={`${company.name} logo`}
+                            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                        />
+                    </div>
                 ) : (
                     <div className={`absolute inset-0 bg-gradient-to-r ${getGradient(company.name)}`}>
                         <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
-                        {/* Fallback Logo in center if no cover */}
+                        {/* Fallback Icon if absolutely no image */}
                         <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                            {company.logo ? (
-                                <img src={company.logo} alt={company.name} className="w-16 h-16 object-contain grayscale" />
-                            ) : (
-                                <Building2 className="w-16 h-16 text-gray-400" />
-                            )}
+                            <Building2 className="w-16 h-16 text-gray-400" />
                         </div>
                     </div>
                 )}
@@ -100,15 +115,21 @@ export default function HomeCompanyCard({ company, onClick }: HomeCompanyCardPro
                     {company.description || '暂无简介'}
                 </p>
 
-                {/* Footer Icons */}
-                <div className="pt-4 border-t border-gray-50 flex items-center gap-4 text-gray-400">
-                    <div className="flex items-center gap-1.5 hover:text-blue-600 transition-colors" title="官方网站">
-                        <Globe className="w-4 h-4" />
+                {/* Footer: Hiring Info */}
+                <div className="pt-4 border-t border-gray-50 flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                        <Briefcase className="w-4 h-4 text-blue-500" />
+                        {topCategories.length > 0 ? (
+                            <span className="font-medium">
+                                {topCategories.map(([cat, count]) => `${cat} ${count}`).join(' · ')}
+                            </span>
+                        ) : (
+                            <span className="text-gray-400">暂无在招岗位</span>
+                        )}
                     </div>
-                    <div className="flex items-center gap-1.5 hover:text-blue-600 transition-colors" title="在招职位">
-                        <Briefcase className="w-4 h-4" />
-                        <span className="text-xs">查看岗位</span>
-                    </div>
+                    <span className="text-xs text-blue-600 font-medium group-hover:translate-x-1 transition-transform">
+                        查看岗位 &rarr;
+                    </span>
                 </div>
             </div>
         </div>
