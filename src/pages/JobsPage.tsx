@@ -470,13 +470,15 @@ export default function JobsPage() {
             {/* Job Preference Button */}
             <button
               onClick={() => setIsPreferenceModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-slate-700"
+              className="group flex items-center gap-2 px-4 py-2 bg-white border border-blue-100 hover:border-blue-300 shadow-sm hover:shadow-md rounded-full transition-all duration-200"
               title="设置求职期望"
             >
-              <Settings className="w-4 h-4" />
-              <span>求职期望</span>
+              <div className="p-1 bg-blue-50 group-hover:bg-blue-100 rounded-full transition-colors">
+                <Settings className="w-3.5 h-3.5 text-blue-600" />
+              </div>
+              <span className="text-sm font-medium text-slate-700 group-hover:text-blue-700">求职期望</span>
               {userPreferences && (userPreferences.jobTypes.length > 0 || userPreferences.industries.length > 0 || userPreferences.locations.length > 0 || userPreferences.levels.length > 0) && (
-                <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white text-xs font-bold rounded-full min-w-[1.25rem] text-center">
                   {userPreferences.jobTypes.length + userPreferences.industries.length + userPreferences.locations.length + userPreferences.levels.length}
                 </span>
               )}

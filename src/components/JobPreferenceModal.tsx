@@ -305,13 +305,21 @@ export function JobPreferenceModal({
                     >
                         取消
                     </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={preferences.jobTypes.length === 0}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
-                    >
-                        保存
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPreferences(DEFAULT_PREFERENCES)}
+                            className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                            清空
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={preferences.jobTypes.length === 0}
+                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                            保存
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
