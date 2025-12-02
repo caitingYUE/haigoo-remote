@@ -454,7 +454,7 @@ export default function AdminTrustedCompaniesPage() {
             
             if (data.success) {
                 // Convert base64 to blob and download
-                const binaryString = atob(data.fileData)
+                const binaryString = window.atob(data.fileData)
                 const bytes = new Uint8Array(binaryString.length)
                 for (let i = 0; i < binaryString.length; i++) {
                     bytes[i] = binaryString.charCodeAt(i)
