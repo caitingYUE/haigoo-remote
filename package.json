@@ -16,7 +16,9 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
+    "@neondatabase/serverless": "^1.0.2",
     "@tailwindcss/line-clamp": "^0.4.4",
+    "@vercel/functions": "^3.3.3",
     "@vercel/kv": "^3.0.0",
     "@vitalets/google-translate-api": "^9.2.0",
     "axios": "^1.6.2",
@@ -25,6 +27,7 @@
     "cheerio": "^1.1.2",
     "clsx": "^2.0.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "file-type": "^21.0.0",
     "google-auth-library": "^10.5.0",

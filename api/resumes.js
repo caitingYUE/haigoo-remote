@@ -4,8 +4,6 @@
  */
 
 import { getResumes, saveResumes } from '../server-utils/resume-storage.js'
-import { kv } from '../server-utils/kv-client.js'
-import { createClient } from 'redis'
 import fs from 'fs/promises'
 import path from 'path'
 import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'

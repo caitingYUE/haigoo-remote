@@ -19,12 +19,11 @@ import {
   sanitizeUser,
   isTokenExpired
 } from '../server-utils/auth-helpers.js'
-import { getUserByEmail, getUserById, saveUser } from '../server-utils/user-storage.js'
+import { getUserByEmail, getUserById, saveUser, updateUser } from '../server-utils/user-helper.js'
 import { sendVerificationEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
-import { kv } from '../server-utils/kv-client.js'
-import { createClient } from 'redis'
+import neonHelper from '../server-utils/dal/neon-helper.js'
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
@@ -38,16 +37,7 @@ function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
 
-// optional Redis client for Hobby plan without KV
-const REDIS_URL = process.env.REDIS_URL
-let redisClient = null
-async function getRedis() {
-  if (redisClient) return redisClient
-  if (!REDIS_URL) return null
-  redisClient = createClient({ url: REDIS_URL })
-  await redisClient.connect()
-  return redisClient
-}
+
 
 /**
  * 验证 Google ID Token
@@ -106,21 +96,23 @@ async function handleRegister(req, res) {
   const verificationExpires = generateVerificationExpiry()
 
   const user = {
-    id: userId,
+    user_id: userId,
     email,
     username: finalUsername,
     avatar,
-    authProvider: 'email',
-    passwordHash,
-    emailVerified: false,
-    verificationToken,
-    verificationExpires,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    auth_provider: 'email',
+    password_hash: passwordHash,
+    email_verified: false,
+    verification_token: verificationToken,
+    verification_expires: verificationExpires,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    last_login_at: null,
     status: 'active',
     roles: {
       admin: email === 'caitlinyct@gmail.com' || email === 'test@example.com'
-    }
+    },
+    profile: null
   }
 
   const { success } = await saveUser(user)
@@ -161,6 +153,7 @@ async function handleLogin(req, res) {
   if (!user) {
     return res.status(401).json({ success: false, error: '邮箱或密码错误' })
   }
+  console.log(`[auth] User found: ${JSON.stringify(user)}`)
 
   // 验证密码
   const passwordMatch = await comparePassword(password, user.passwordHash)
@@ -182,13 +175,12 @@ async function handleLogin(req, res) {
     return res.status(403).json({ success: false, error: '账户已被停用' })
   }
 
-  user.lastLoginAt = new Date().toISOString()
-  user.updatedAt = new Date().toISOString()
-  await saveUser(user)
+  // 使用统一的更新函数更新最后登录时间
+  await updateUser(user.user_id, { lastLoginAt: true })
 
   console.log(`[auth] User logged in: ${email}`)
 
-  const token = generateToken({ userId: user.id, email: user.email })
+  const token = generateToken({ userId: user.user_id, email: user.email })
   return res.status(200).json({
     success: true,
     token,
@@ -218,33 +210,35 @@ async function handleGoogleLogin(req, res) {
   let user = await getUserByEmail(googleUser.email)
 
   if (user) {
-    if (user.authProvider !== 'google') {
-      return res.status(400).json({ success: false, error: `该邮箱已使用 ${user.authProvider} 方式注册` })
-    }
-    user.lastLoginAt = new Date().toISOString()
-    user.updatedAt = new Date().toISOString()
-    if (googleUser.picture) user.avatar = googleUser.picture
-    await saveUser(user)
+    if (user.auth_provider !== 'google') {
+    return res.status(400).json({ success: false, error: `该邮箱已使用 ${user.auth_provider} 方式注册` })
+  }
+    // 使用统一的更新函数更新最后登录时间和头像
+    await updateUser(user.user_id, { 
+      lastLoginAt: true,
+      avatar: googleUser.picture 
+    })
   } else {
     const userId = crypto.randomUUID()
     user = {
-      id: userId,
+      user_id: userId,
       email: googleUser.email,
       username: googleUser.name || generateRandomUsername(),
       avatar: googleUser.picture || generateRandomAvatar(userId, 'personas'),
-      authProvider: 'google',
-      googleId: googleUser.googleId,
-      emailVerified: googleUser.emailVerified,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
+      auth_provider: 'google',
+      google_id: googleUser.googleId,
+      email_verified: googleUser.emailVerified,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_login_at: new Date().toISOString(),
       status: 'active',
-      roles: { admin: googleUser.email === 'caitlinyct@gmail.com' }
+      roles: { admin: googleUser.email === 'caitlinyct@gmail.com' },
+      profile: null
     }
     await saveUser(user)
   }
 
-  const token = generateToken({ userId: user.id, email: user.email })
+  const token = generateToken({ userId: user.user_id, email: user.email })
   return res.status(200).json({
     success: true,
     token,
@@ -304,28 +298,24 @@ async function handleUpdateProfile(req, res) {
 
   const { username, fullName, title, location, targetRole, phone, bio } = req.body
 
-  if (username !== undefined && typeof username === 'string' && username.trim().length > 0) {
-    user.username = username.trim()
-  }
-
-  if (!user.profile) user.profile = {}
-  if (fullName !== undefined) user.profile.fullName = typeof fullName === 'string' ? fullName.trim() : undefined
-  if (title !== undefined) user.profile.title = typeof title === 'string' ? title.trim() : undefined
-  if (location !== undefined) user.profile.location = typeof location === 'string' ? location.trim() : undefined
-  if (targetRole !== undefined) user.profile.targetRole = typeof targetRole === 'string' ? targetRole.trim() : undefined
-  if (phone !== undefined) user.profile.phone = typeof phone === 'string' ? phone.trim() : undefined
-  if (bio !== undefined) user.profile.bio = typeof bio === 'string' ? bio.trim() : undefined
-
-  user.updatedAt = new Date().toISOString()
-
-  const { success } = await saveUser(user)
+  // 使用统一的更新函数更新用户资料
+  const { success, user: updatedUser } = await updateUser(payload.userId, {
+    username,
+    fullName,
+    title,
+    location,
+    targetRole,
+    phone,
+    bio
+  })
+  
   if (!success) {
     return res.status(500).json({ success: false, error: '更新失败，请稍后重试' })
   }
 
   return res.status(200).json({
     success: true,
-    user: sanitizeUser(user),
+    user: sanitizeUser(updatedUser),
     message: '资料更新成功'
   })
 }
@@ -349,7 +339,7 @@ async function handleVerifyEmail(req, res) {
     return res.status(404).json({ success: false, error: '用户不存在' })
   }
 
-  if (user.emailVerified) {
+  if (user.email_verified) {
     return res.status(200).json({
       success: true,
       message: '邮箱已验证',
@@ -357,20 +347,21 @@ async function handleVerifyEmail(req, res) {
     })
   }
 
-  if (user.verificationToken !== token) {
+  if (user.verification_token !== token) {
     return res.status(400).json({ success: false, error: '验证令牌无效' })
   }
 
-  if (isTokenExpired(user.verificationExpires)) {
+  if (isTokenExpired(user.verification_expires)) {
     return res.status(400).json({ success: false, error: '验证令牌已过期' })
   }
 
-  user.emailVerified = true
-  user.verificationToken = undefined
-  user.verificationExpires = undefined
-  user.updatedAt = new Date().toISOString()
-
-  const { success } = await saveUser(user)
+  // 使用统一的更新函数更新邮箱验证状态
+  const { success } = await updateUser(user.user_id, {
+    emailVerified: true,
+    verificationToken: undefined,
+    verificationExpires: undefined
+  })
+  
   if (!success) {
     return res.status(500).json({ success: false, error: '验证失败' })
   }
@@ -408,9 +399,9 @@ async function handleResendVerification(req, res) {
     return res.status(200).json({ success: true, message: '该邮箱已验证' })
   }
 
-  user.verificationToken = generateVerificationToken()
-  user.verificationExpires = generateVerificationExpiry()
-  user.updatedAt = new Date().toISOString()
+  user.verification_token = generateVerificationToken()
+  user.verification_expires = generateVerificationExpiry()
+  user.updated_at = new Date().toISOString()
 
   await saveUser(user)
 
@@ -424,29 +415,54 @@ async function handleResendVerification(req, res) {
   })
 }
 
-// subscribe job alerts
+/**
+ * 处理用户订阅
+ */
 async function handleSubscribe(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
+  
   const { channel, identifier, topic } = req.body || {}
   if (!channel || !identifier || !topic) {
-    return res.status(400).json({ success: false, error: 'Missing fields' })
+    return res.status(400).json({ success: false, error: '缺少必要字段' })
   }
-  const key = `haigoo:subscribe:${channel}:${identifier}`
-  const data = { channel, identifier, topic, createdAt: new Date().toISOString() }
+
   try {
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      await kv.set(key, data)
-      await kv.sadd('haigoo:subscribe:list', key)
+    // 检查订阅是否已存在
+    const existingSubscription = await neonHelper.select('subscriptions', { 
+      channel, 
+      identifier 
+    })
+
+    if (existingSubscription && existingSubscription.length > 0) {
+      // 更新现有订阅
+      const subscriptionId = existingSubscription[0].subscription_id
+      await neonHelper.update('subscriptions', 
+        { 
+          topic, 
+          updated_at: new Date().toISOString() 
+        }, 
+        { 
+          subscription_id: subscriptionId 
+        }
+      )
     } else {
-      const r = await getRedis()
-      if (r) {
-        await r.set(key, JSON.stringify(data))
-        await r.sAdd('haigoo:subscribe:list', key)
-      }
+      // 创建新订阅
+      const subscriptionId = crypto.randomUUID()
+      await neonHelper.insert('subscriptions', {
+        subscription_id: subscriptionId,
+        channel,
+        identifier,
+        topic,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
     }
-    return res.status(200).json({ success: true })
-  } catch (e) {
-    return res.status(500).json({ success: false, error: 'Server error' })
+
+    return res.status(200).json({ success: true, message: '订阅成功' })
+  } catch (error) {
+    console.error('[auth] Subscription error:', error)
+    return res.status(500).json({ success: false, error: '服务器错误' })
   }
 }
 

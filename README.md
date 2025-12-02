@@ -71,11 +71,14 @@ VITE_ALIBABA_BAILIAN_BASE_URL=https://dashscope.aliyuncs.com/api/v1
 
 ### 本地开发
 ```bash
-# 启动开发服务器
+# 启动开发-前端 3001端口
 npm run dev
+# 启动开发-后端 3000端口
+npm i -g vercel
+vercel dev
 
 # 访问应用
-# http://localhost:5173
+# http://localhost:3001
 ```
 
 ### 生产构建
@@ -123,6 +126,11 @@ src/
 - 遵循 ESLint 和 Prettier 代码规范
 - 组件采用函数式组件 + Hooks 模式
 - 使用 Tailwind CSS 进行样式开发
+- 后端：
+    - 数据库：Neon PostgreSQL
+        - 建表SQL：/server-utils/dal/neon-ddl.sql
+        - 数据操作工具类：/server-utils/dal/neon-helper.js
+    - API 服务：Vercel Serverless Functions
 
 ### 提交规范
 ```bash

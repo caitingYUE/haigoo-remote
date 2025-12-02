@@ -14,7 +14,7 @@ export const ENV = {
   vercelEnv: process.env.VERCEL_ENV || 'development',
   
   // 站点配置
-  siteUrl: process.env.SITE_URL || process.env.VERCEL_URL || 'http://localhost:3000',
+  siteUrl: process.env.SITE_URL || process.env.VERCEL_URL || 'http://localhost:3001',
   
   // Redis 配置
   redisUrl: process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL || null,
