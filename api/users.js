@@ -6,6 +6,8 @@ export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const path = url.pathname;
 
+  console.log('[API:Users] Request Path:', path);
+
   if (path.includes('user-profile')) {
     return await userProfileHandler(req, res);
   }
