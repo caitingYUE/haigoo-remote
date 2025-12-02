@@ -126,6 +126,11 @@ src/
 - 遵循 ESLint 和 Prettier 代码规范
 - 组件采用函数式组件 + Hooks 模式
 - 使用 Tailwind CSS 进行样式开发
+- 后端：
+    - 数据库：Neon PostgreSQL
+        - 建表SQL：/server-utils/dal/neon-ddl.sql
+        - 数据操作工具类：/server-utils/dal/neon-helper.js
+    - API 服务：Vercel Serverless Functions
 
 ### 提交规范
 ```bash
