@@ -23,6 +23,7 @@ const AdminTagManagementPage = lazy(() => import('./pages/AdminTagManagementPage
 const AdminCompanyManagementPage = lazy(() => import('./pages/AdminCompanyManagementPage'))
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'))
 const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
+const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
 
 function App() {
   return (
@@ -81,6 +82,7 @@ function App() {
                         <Route path="/jobs" element={<JobsPage />} />
                         <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
                         <Route path="/company/:id" element={<CompanyProfilePage />} />
+                        <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
                         <Route path="/admin/location-categories" element={
                           <ProtectedRoute>
                             <AdminLocationPage />

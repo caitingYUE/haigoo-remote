@@ -15,6 +15,7 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>([])
   const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>([])
+  const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({ totalJobs: 0, companiesCount: 0, activeUsers: 0 })
 
@@ -23,7 +24,7 @@ export default function LandingPage() {
       try {
         setLoading(true)
         const [jobs, companies] = await Promise.all([
-          processedJobsService.getAllProcessedJobsFull(50, 1),
+          processedJobsService.getAllProcessedJobsFull(100, 1), // Fetch more jobs for better stats
           trustedCompaniesService.getAllCompanies()
         ])
 
@@ -45,13 +46,46 @@ export default function LandingPage() {
           return domesticHit || (globalHit && !overseasHit)
         })
 
+        // Calculate Job Stats per Company
+        const statsMap: Record<string, { total: number, categories: Record<string, number> }> = {}
+        const normalize = (name: string) => name?.toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ').trim() || ''
+
+        // Use all jobs for stats, not just domestic
+        jobs.forEach(job => {
+          if (!job.company) return
+          const jobCompanyNorm = normalize(job.company)
+
+          // Find matching trusted company
+          const company = companies.find(c => {
+            const cName = normalize(c.name)
+            return cName === jobCompanyNorm || cName.includes(jobCompanyNorm) || jobCompanyNorm.includes(cName)
+          })
+
+          if (company) {
+            if (!statsMap[company.name]) {
+              statsMap[company.name] = { total: 0, categories: {} }
+            }
+            statsMap[company.name].total++
+            const cat = job.category || '其他'
+            statsMap[company.name].categories[cat] = (statsMap[company.name].categories[cat] || 0) + 1
+          }
+        })
+        setCompanyJobStats(statsMap)
+
         // Filter for featured jobs
         const featured = domesticJobs.filter(job => job.isFeatured === true)
         const displayJobs = featured.length > 0 ? featured : domesticJobs
         setFeaturedJobs(displayJobs.slice(0, 12)) // Show 12 cards
 
+        // Sort companies by total active jobs
+        const sortedCompanies = [...companies].sort((a, b) => {
+          const countA = statsMap[a.name]?.total || 0
+          const countB = statsMap[b.name]?.total || 0
+          return countB - countA
+        })
+
         // Set trusted companies (top 9)
-        setTrustedCompanies(companies.slice(0, 9))
+        setTrustedCompanies(sortedCompanies.slice(0, 9))
 
         // Set stats
         const uniqueCompanies = new Set(jobs.map(j => j.company).filter(Boolean))
@@ -165,6 +199,7 @@ export default function LandingPage() {
                 <HomeCompanyCard
                   key={company.id}
                   company={company}
+                  jobStats={companyJobStats[company.name]}
                   onClick={() => navigate(`/company/${company.id}`)}
                 />
               ))}

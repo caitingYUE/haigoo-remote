@@ -32,6 +32,7 @@ import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '..
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
 import JobDetailModal from '../components/JobDetailModal';
+import CronTestControl from '../components/CronTestControl';
 
 const AdminDashboardPage: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -2120,6 +2121,7 @@ const AdminDashboardPage: React.FC = () => {
           </div>
         )}
       </div>
+      <CronTestControl />
     </div>
   );
 };

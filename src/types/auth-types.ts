@@ -9,17 +9,17 @@ export interface User {
   email: string // 邮箱（唯一标识）
   username: string // 用户名（随机生成或从简历提取）
   avatar: string // 头像URL（随机生成或Gravatar）
-  
+
   // 认证信息
   authProvider: 'google' | 'email' // 认证提供方
   googleId?: string // Google OAuth ID
   passwordHash?: string // 密码哈希（仅邮箱登录）
-  
+
   // 邮箱验证
   emailVerified: boolean // 邮箱是否已验证
   verificationToken?: string // 验证令牌
   verificationExpires?: string // 验证令牌过期时间
-  
+
   // 从简历提取的信息（可选）
   profile?: {
     fullName?: string // 真实姓名
@@ -29,17 +29,26 @@ export interface User {
     phone?: string // 电话
     bio?: string // 个人简介
   }
-  
+
   // 时间戳
   createdAt: string // 注册时间
   updatedAt: string // 更新时间
   lastLoginAt?: string // 最后登录时间
-  
+
   // 状态
   status: 'active' | 'suspended' | 'deleted' // 账户状态
   roles?: {
     admin?: boolean
   }
+
+  // 求职偏好
+  jobPreferences?: {
+    jobTypes: string[]
+    industries: string[]
+    locations: string[]
+    levels: string[]
+  }
+  preferencesUpdatedAt?: string
 }
 
 // 登录请求

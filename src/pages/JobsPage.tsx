@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCard from '../components/JobCard'
 import JobDetailModal from '../components/JobDetailModal'
+import { JobDetailPanel } from '../components/JobDetailPanel'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -11,8 +12,9 @@ import { extractLocations, matchesLocationFilter } from '../utils/locationHelper
 
 import { usePageCache } from '../hooks/usePageCache'
 import { useNotificationHelpers } from '../components/NotificationSystem'
-import { ALL_JOB_CATEGORIES } from '../utils/tagSystem'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import { JobPreferenceModal, JobPreferences } from '../components/JobPreferenceModal'
+import { Settings } from 'lucide-react'
 
 // Industry Options
 const INDUSTRY_OPTIONS = [
@@ -52,7 +54,7 @@ export default function JobsPage() {
     overseasKeywords: ['usa', 'united states', 'us', 'uk', 'england', 'britain', 'canada', 'mexico', 'brazil', 'argentina', 'chile', 'peru', 'colombia', 'latam', 'europe', 'eu', 'emea', 'germany', 'france', 'spain', 'italy', 'netherlands', 'belgium', 'sweden', 'norway', 'denmark', 'finland', 'poland', 'czech', 'ireland', 'switzerland', 'australia', 'new zealand', 'oceania', 'india', 'pakistan', 'bangladesh', 'sri lanka', 'nepal', 'japan', 'korea', 'south korea', 'singapore', 'malaysia', 'indonesia', 'thailand', 'vietnam', 'philippines', 'uae', 'saudi', 'turkey', 'russia', 'israel', 'africa'],
     globalKeywords: ['anywhere', 'everywhere', 'worldwide', 'global', '不限地点']
   })
-  
+
   // New Filter State Structure
   const [filters, setFilters] = useState({
     type: [] as string[],
@@ -61,10 +63,63 @@ export default function JobsPage() {
     industry: [] as string[]
   })
 
+  // Load user preferences
+  useEffect(() => {
+    loadUserPreferences()
+  }, [isAuthenticated])
+
+  const loadUserPreferences = async () => {
+    if (!isAuthenticated || !token) return
+
+    try {
+      const resp = await fetch('/api/user-profile?action=get_preferences', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (resp.ok) {
+        const data = await resp.json()
+        if (data.preferences) {
+          setUserPreferences(data.preferences)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load preferences:', error)
+    }
+  }
+
+  const saveUserPreferences = async (preferences: JobPreferences) => {
+    if (!isAuthenticated || !token) {
+      navigate('/login')
+      return
+    }
+
+    try {
+      const resp = await fetch('/api/user-profile?action=save_preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ preferences })
+      })
+
+      if (resp.ok) {
+        setUserPreferences(preferences)
+        showSuccess('求职期望已保存')
+      } else {
+        showError('保存失败，请稍后重试')
+      }
+    } catch (error) {
+      console.error('Failed to save preferences:', error)
+      showError('保存失败，请检查网络连接')
+    }
+  }
+
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
+  const [isPreferenceModalOpen, setIsPreferenceModalOpen] = useState(false)
+  const [userPreferences, setUserPreferences] = useState<JobPreferences | null>(null)
 
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
@@ -81,7 +136,6 @@ export default function JobsPage() {
       try {
         setLoadingStage('fetching')
         // Fetch up to 2000 jobs (20 pages * 100) to ensure we get most recent translated jobs
-        // This fixes the issue where only the first 200 jobs were loaded, causing "partial sync" appearance
         const response = await processedJobsService.getAllProcessedJobsFull(100, 20)
         setLoadingStage('idle')
         console.log(`✅ 获取到 ${response.length} 个岗位（后端已翻译）`)
@@ -91,7 +145,7 @@ export default function JobsPage() {
         throw error
       }
     },
-    ttl: 5 * 60 * 1000, // Reduced to 5 minutes for better sync while keeping cache effective
+    ttl: 5 * 60 * 1000,
     persist: true,
     namespace: 'jobs',
     onSuccess: (jobs) => {
@@ -217,22 +271,16 @@ export default function JobsPage() {
   const regionJobs = useMemo(() => {
     if (!jobs) return [];
     const norm = (v: string) => (v || '').toLowerCase()
-    
+
     return jobs.filter(job => {
       const loc = norm(job.location)
-      const tags = (job.skills || []).map(t => norm(t)) // job.skills is used as tags in current code? or job.tags? Reading below uses job.skills for filtering.
-      // Let's verify if job.tags exists. Code uses job.skills in filter (line 219).
-      // But TrustedCompaniesPage used company.tags.
-      // Let's stick to job.skills for now as per existing filter logic.
+      const tags = (job.skills || []).map(t => norm(t))
       const pool = new Set([loc, ...tags])
       const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)))
       const globalHit = hit(categories.globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
       const domesticHit = hit(categories.domesticKeywords)
       const overseasHit = hit(categories.overseasKeywords)
-      
-      // Strict Isolation Logic:
-      // Domestic: Matches domestic keywords OR (Global/Remote AND NOT Overseas keywords)
-      // Overseas: Matches overseas keywords OR (Global/Remote AND NOT Domestic keywords)
+
       if (activeRegion === 'domestic') {
         return domesticHit || (globalHit && !overseasHit)
       } else {
@@ -245,7 +293,6 @@ export default function JobsPage() {
     const locs = new Set<string>()
     regionJobs.forEach(j => {
       if (j.location) {
-        // Extract standardized locations using the helper
         const extracted = extractLocations(j.location)
         extracted.forEach(loc => locs.add(loc))
       }
@@ -257,31 +304,24 @@ export default function JobsPage() {
     const inds = new Set<string>()
     regionJobs.forEach(j => {
       let ind = ''
-      // 1. Try getting industry from company map
       if (j.companyId) {
         const company = companyMap[j.companyId]
         if (company) {
-          // Check direct industry field
           if (company.industry) {
             ind = company.industry
-          } 
-          // Fallback: Check company tags for potential industry keywords
-          // We check if any tag exists in our known Industry list or STANDARD_TAG_LIBRARY industry category
+          }
           else if (company.tags && company.tags.length > 0) {
-             // This logic relies on us knowing what tags are "industries".
-             // For now, let's just assume tags might contain industry info if we match against a list
-             // But simpler: if we find a tag that matches one of the standard industries, use it.
-             const KNOWN_INDUSTRIES = [
-               '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
-               '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
-               '硬件/物联网', '消费生活', 'SaaS', 'AI', 'Fintech', 'EdTech', 'HealthTech', 'Crypto', 'Web3', 'E-commerce'
-             ]
-             const found = company.tags.find(t => KNOWN_INDUSTRIES.some(k => k.toLowerCase() === t.toLowerCase()))
-             if (found) ind = found
+            const KNOWN_INDUSTRIES = [
+              '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
+              '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
+              '硬件/物联网', '消费生活', 'SaaS', 'AI', 'Fintech', 'EdTech', 'HealthTech', 'Crypto', 'Web3', 'E-commerce'
+            ]
+            const found = company.tags.find(t => KNOWN_INDUSTRIES.some(k => k.toLowerCase() === t.toLowerCase()))
+            if (found) ind = found
           }
         }
       }
-      
+
       if (ind) inds.add(ind)
     })
     return Array.from(inds).sort().map(i => ({ label: i, value: i }))
@@ -302,88 +342,170 @@ export default function JobsPage() {
         counts[j.category] = (counts[j.category] || 0) + 1
       }
     })
-    // Sort by count descending
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 20) // Top 20
+      .slice(0, 20)
       .map(e => e[0])
   }, [regionJobs])
 
-  const filteredJobs = (regionJobs || []).filter(job => { // Filter from regionJobs instead of all jobs
-    // 搜索匹配
-    const matchesSearch = searchTerm === '' ||
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (job.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (job.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (job.skills && job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
+  const filteredJobs = useMemo(() => {
+    return (regionJobs || []).filter(job => {
+      const matchesSearch = searchTerm === '' ||
+        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (job.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (job.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (job.skills && job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
 
-    // 工作类型匹配 (Multi-select OR logic)
-    const matchesType = filters.type.length === 0 || filters.type.includes(job.type)
+      const matchesType = filters.type.length === 0 || filters.type.includes(job.type)
 
-    // 岗位分类匹配 (Single select for tabs)
-    const matchesCategory = filters.category === 'all' ||
-      (job.category && job.category === filters.category) ||
-      (job.skills && job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase())))
+      const matchesCategory = filters.category === 'all' ||
+        (job.category && job.category === filters.category) ||
+        (job.skills && job.skills.some(skill => skill.toLowerCase().includes(filters.category.toLowerCase())))
 
-    // 地点匹配 (Multi-select OR logic)
-    const matchesLocation = matchesLocationFilter(job.location, filters.location)
+      const matchesLocation = matchesLocationFilter(job.location, filters.location)
 
-    // 行业匹配 (Multi-select OR logic)
-    const companyIndustry = job.companyId ? companyMap[job.companyId]?.industry || '' : ''
-    const matchesIndustry = filters.industry.length === 0 || filters.industry.includes(companyIndustry)
+      const companyIndustry = job.companyId ? companyMap[job.companyId]?.industry || '' : ''
+      const matchesIndustry = filters.industry.length === 0 || filters.industry.includes(companyIndustry)
 
-    // Region logic is already handled by regionJobs, so we don't need to repeat it here.
-    
-    return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesIndustry
-  }).sort((a, b) => {
-    if (a.canRefer && !b.canRefer) return -1
-    if (!a.canRefer && b.canRefer) return 1
-    if (a.isTrusted && !b.isTrusted) return -1
-    if (!a.isTrusted && b.isTrusted) return 1
-    return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
-  })
+      return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesIndustry
+    }).sort((a, b) => {
+      if (a.canRefer && !b.canRefer) return -1
+      if (!a.canRefer && b.canRefer) return 1
+      if (a.isTrusted && !b.isTrusted) return -1
+      if (!a.isTrusted && b.isTrusted) return 1
+      return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
+    })
+  }, [regionJobs, searchTerm, filters, companyMap])
 
-  // Reset Filters
+  // Job Distribution Logic: Limit consecutive jobs from same company to max 2
+  const distributedJobs = useMemo(() => {
+    if (filteredJobs.length === 0) return []
+
+    const result: Job[] = []
+    const remaining: Job[] = [...filteredJobs]
+
+    const countRecentCompanyJobs = (jobs: Job[], company: string, window: number): number => {
+      const recentJobs = jobs.slice(-window)
+      return recentJobs.filter(j => j.company === company).length
+    }
+
+    while (remaining.length > 0) {
+      let added = false
+
+      // Try to find a job that doesn't create 3 consecutive from same company
+      for (let i = 0; i < remaining.length; i++) {
+        const job = remaining[i]
+        const company = job.company || 'Unknown'
+        const recentCount = countRecentCompanyJobs(result, company, 2)
+
+        if (recentCount < 2) {
+          result.push(job)
+          remaining.splice(i, 1)
+          added = true
+          break
+        }
+      }
+
+      // If no job can be added without creating 3 consecutive, add the first one anyway
+      if (!added && remaining.length > 0) {
+        result.push(remaining.shift()!)
+      }
+    }
+
+    return result
+  }, [filteredJobs])
+
+  // Deep Linking: Sync URL with selectedJob
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const jobId = params.get('jobId')
+
+    if (jobId && distributedJobs.length > 0) {
+      const job = distributedJobs.find(j => j.id === jobId)
+      if (job) {
+        if (selectedJob?.id !== job.id) {
+          setSelectedJob(job)
+          const idx = distributedJobs.findIndex(j => j.id === jobId)
+          if (idx !== -1) setCurrentJobIndex(idx)
+        }
+      }
+    } else if (!jobId && distributedJobs.length > 0 && !selectedJob && window.innerWidth >= 1024) {
+      // Auto-select first job on desktop if no jobId in URL
+      setSelectedJob(distributedJobs[0])
+      setCurrentJobIndex(0)
+    }
+  }, [distributedJobs, location.search, selectedJob])
+
+  const handleJobSelect = (job: Job, index: number) => {
+    setSelectedJob(job)
+    setCurrentJobIndex(index)
+
+    // Update URL
+    const params = new URLSearchParams(location.search)
+    params.set('jobId', job.id)
+    navigate({ search: params.toString() }, { replace: true })
+
+    // Mobile behavior
+    if (window.innerWidth < 1024) {
+      setIsJobDetailOpen(true)
+    }
+  }
+
   const clearAllFilters = () => {
     setSearchTerm('');
     setFilters({ type: [], category: 'all', location: [], industry: [] });
   }
 
+
   return (
     <div
-      className="min-h-screen bg-[#F0F4F8] relative overflow-x-hidden"
+      className="h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 via-blue-50/30 to-orange-50/20 flex flex-col"
       role="main"
       aria-label="职位搜索页面"
     >
-      {/* 搜索和筛选栏 */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm py-4">
+      {/* 搜索和筛选栏 - Sticky Header */}
+      <div className="flex-shrink-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm py-2.5 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Search and Filter Row */}
-          <div className="flex items-center gap-4 mb-4">
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="flex items-center gap-3 mb-2.5">
+            {/* Job Preference Button */}
+            <button
+              onClick={() => setIsPreferenceModalOpen(true)}
+              className="group flex items-center gap-2 px-4 py-2 bg-white border border-blue-100 hover:border-blue-300 shadow-sm hover:shadow-md rounded-full transition-all duration-200"
+              title="设置求职期望"
+            >
+              <div className="p-1 bg-blue-50 group-hover:bg-blue-100 rounded-full transition-colors">
+                <Settings className="w-3.5 h-3.5 text-blue-600" />
+              </div>
+              <span className="text-sm font-medium text-slate-700 group-hover:text-blue-700">求职期望</span>
+              {userPreferences && (userPreferences.jobTypes.length > 0 || userPreferences.industries.length > 0 || userPreferences.locations.length > 0 || userPreferences.levels.length > 0) && (
+                <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white text-xs font-bold rounded-full min-w-[1.25rem] text-center">
+                  {userPreferences.jobTypes.length + userPreferences.industries.length + userPreferences.locations.length + userPreferences.levels.length}
+                </span>
+              )}
+            </button>
+
+            <div className="max-w-xl flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="搜索岗位、公司或地点..."
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
               />
               {searchTerm && (
-                <button 
+                <button
                   onClick={() => setSearchTerm('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <span className="sr-only">清除搜索</span>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               )}
             </div>
 
-            {/* Filter Controls */}
             <div className="flex items-center gap-2">
               <MultiSelectDropdown
                 label="地点"
@@ -403,11 +525,11 @@ export default function JobsPage() {
                 selected={filters.type}
                 onChange={(val) => setFilters(prev => ({ ...prev, type: val }))}
               />
-              
+
               {(filters.location.length > 0 || filters.industry.length > 0 || filters.type.length > 0 || filters.category !== 'all' || searchTerm) && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-sm text-gray-500 hover:text-blue-600 px-2"
+                  className="text-xs text-gray-500 hover:text-blue-600 px-2 transition-colors"
                 >
                   重置
                 </button>
@@ -415,15 +537,13 @@ export default function JobsPage() {
             </div>
           </div>
 
-          {/* Category Tags */}
-          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: 'all' }))}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                filters.category === 'all' 
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200' 
-                  : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
-              }`}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${filters.category === 'all'
+                ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50'
+                }`}
             >
               全部
             </button>
@@ -431,72 +551,102 @@ export default function JobsPage() {
               <button
                 key={cat}
                 onClick={() => setFilters(prev => ({ ...prev, category: cat }))}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                  filters.category === cat
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
-                }`}
-                // Simple color cycling could be added here if desired, but uniform look is cleaner
+                className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${filters.category === cat
+                  ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                  : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50'
+                  }`}
               >
                 {cat}
               </button>
             ))}
-            <span className="ml-auto text-gray-500 whitespace-nowrap text-xs self-center">共 {filteredJobs.length} 个职位</span>
+            <span className="ml-auto text-gray-500 whitespace-nowrap text-xs self-center">共 {distributedJobs.length} 个职位</span>
           </div>
         </div>
       </div>
 
-      {/* 主内容区域 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {loading ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3182CE]" aria-hidden="true"></div>
-              <p className="mt-4 text-gray-500">正在加载精彩职位...</p>
-            </div>
-          ) : filteredJobs.length === 0 ? (
-            <div className="col-span-full text-center py-20 bg-white rounded-2xl shadow-sm">
-              <div className="text-gray-400 text-lg mb-2">暂无符合条件的职位</div>
-              <p className="text-gray-500">尝试调整筛选条件或搜索关键词</p>
-              <button
-                onClick={clearAllFilters}
-                className="mt-4 px-6 py-2 bg-[#3182CE] text-white rounded-full hover:bg-[#2b6cb0] transition-colors"
-              >
-                清除所有筛选
-              </button>
-            </div>
-          ) : (
-            filteredJobs.map((job, index) => (
-              <div key={job.id} className="h-full">
-                <JobCard
-                  job={job}
-                  onSave={() => toggleSaveJob(job.id)}
-                  isSaved={savedJobs.has(job.id)}
-                  onClick={() => { setSelectedJob(job); setIsJobDetailOpen(true); setCurrentJobIndex(index) }}
-                />
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3182CE]" aria-hidden="true"></div>
+            <p className="mt-4 text-gray-500">正在加载精彩职位...</p>
+          </div>
+        ) : distributedJobs.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
+            <div className="text-gray-400 text-lg mb-2">暂无符合条件的职位</div>
+            <p className="text-gray-500">尝试调整筛选条件或搜索关键词</p>
+            <button
+              onClick={clearAllFilters}
+              className="mt-4 px-6 py-2 bg-[#3182CE] text-white rounded-full hover:bg-[#2b6cb0] transition-colors"
+            >
+              清除所有筛选
+            </button>
+          </div>
+        ) : (
+          <div className="flex h-full gap-6">
+            {/* Left Column: Job List */}
+            <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+              <div className="space-y-3">
+                {distributedJobs.map((job, index) => (
+                  <div key={job.id} onClick={() => handleJobSelect(job, index)}>
+                    <JobCard
+                      job={job}
+                      onSave={() => toggleSaveJob(job.id)}
+                      isSaved={savedJobs.has(job.id)}
+                      isActive={selectedJob?.id === job.id}
+                      variant={window.innerWidth >= 1024 ? 'compact' : 'default'}
+                    />
+                  </div>
+                ))}
               </div>
-            ))
-          )}
-        </div>
+            </div>
+
+            {/* Right Column: Job Detail Panel (Desktop Only) */}
+            <div className="hidden lg:flex flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              {selectedJob ? (
+                <JobDetailPanel
+                  job={selectedJob}
+                  onSave={() => toggleSaveJob(selectedJob.id)}
+                  isSaved={savedJobs.has(selectedJob.id)}
+                  onApply={() => { /* Handle apply logic if needed, usually just opens URL */ }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  选择一个职位查看详情
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 详情弹窗 */}
+      {/* Mobile Detail Modal */}
       {isJobDetailOpen && selectedJob && (
         <JobDetailModal
           job={selectedJob}
           isOpen={isJobDetailOpen}
-          onClose={() => { setIsJobDetailOpen(false); setSelectedJob(null) }}
+          onClose={() => { setIsJobDetailOpen(false); }}
           onSave={() => toggleSaveJob(selectedJob.id)}
           isSaved={savedJobs.has(selectedJob.id)}
-          jobs={filteredJobs}
+          jobs={distributedJobs}
           currentJobIndex={currentJobIndex}
           onNavigateJob={(direction: 'prev' | 'next') => {
-            const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(filteredJobs.length - 1, currentJobIndex + 1)
-            setCurrentJobIndex(nextIndex)
-            setSelectedJob(filteredJobs[nextIndex])
+            const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(distributedJobs.length - 1, currentJobIndex + 1)
+            handleJobSelect(distributedJobs[nextIndex], nextIndex)
           }}
         />
       )}
+
+      {/* Job Preference Modal */}
+      <JobPreferenceModal
+        isOpen={isPreferenceModalOpen}
+        onClose={() => setIsPreferenceModalOpen(false)}
+        onSave={saveUserPreferences}
+        initialPreferences={userPreferences || undefined}
+        jobTypeOptions={topCategories}
+        industryOptions={industryOptions.map(opt => opt.label)}
+      />
     </div>
   )
 }

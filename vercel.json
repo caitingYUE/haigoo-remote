@@ -1,47 +1,34 @@
 {
-  "version": 2,
   "crons": [
     {
-      "path": "/api/cron/sync-jobs",
-      "schedule": "0 2 * * *"
+      "path": "/api/cron/daily-ingest",
+      "schedule": "0 18 * * *"
     },
     {
-      "path": "/api/cron/crawl-trusted-jobs",
-      "schedule": "0 3 * * *"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "X-Requested-With, Content-Type, Authorization"
-        }
-      ]
-    },
-    {
-      "source": "/index.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, max-age=0"
-        }
-      ]
+      "path": "/api/cron/daily-enrich",
+      "schedule": "30 18 * * *"
     }
   ],
   "rewrites": [
-    { "source": "/api/data/(.*)", "destination": "/api/data" },
-    { "source": "/api/user-profile", "destination": "/api/users" },
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/cron/:task",
+      "destination": "/api/cron/index?task=:task"
+    },
+    {
+      "source": "/api/translate-jobs",
+      "destination": "/api/cron/index?task=translate-jobs"
+    },
+    {
+      "source": "/api/data/:path*",
+      "destination": "/api/data?resource=:path*"
+    },
+    {
+      "source": "/api/:match*",
+      "destination": "/api/:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
