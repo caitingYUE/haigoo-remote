@@ -475,7 +475,7 @@ export default function JobsPage() {
           <div className="flex h-full gap-6">
             {/* Left Column: Job List */}
             <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {filteredJobs.map((job, index) => (
                   <div key={job.id} onClick={() => handleJobSelect(job, index)}>
                     <JobCard
@@ -483,6 +483,7 @@ export default function JobsPage() {
                       onSave={() => toggleSaveJob(job.id)}
                       isSaved={savedJobs.has(job.id)}
                       isActive={selectedJob?.id === job.id}
+                      variant={window.innerWidth >= 1024 ? 'compact' : 'default'}
                     />
                   </div>
                 ))}

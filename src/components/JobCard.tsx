@@ -13,9 +13,10 @@ interface JobCardProps {
   isSaved?: boolean;
   onClick?: (job: Job) => void;
   isActive?: boolean;
+  variant?: 'default' | 'compact';
 }
 
-export default function JobCard({ job, onSave, isSaved, onClick, isActive }: JobCardProps) {
+export default function JobCard({ job, onSave, isSaved, onClick, isActive, variant = 'default' }: JobCardProps) {
 
   // 不再生成语义标签，仅保留处理后数据的技能标签展示
 
@@ -136,11 +137,76 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive }: Job
     return () => { mounted = false; };
   }, [job.companyId, job.logo]);
 
+  if (variant === 'compact') {
+    return (
+      <article
+        className={`group bg-white rounded-lg p-3 shadow-sm border transition-all duration-200 cursor-pointer relative flex items-start gap-3 ${isActive
+          ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/30'
+          : 'border-slate-200 hover:shadow-md hover:border-blue-200'
+          }`}
+        onClick={handleCardClick}
+        onKeyDown={handleCardKeyDown}
+        tabIndex={0}
+        aria-label={getJobCardAriaLabel()}
+      >
+        {/* Logo */}
+        <div className="w-12 h-12 rounded-lg border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0 bg-white mt-1">
+          {logoUrl ? (
+            <img src={logoUrl} alt="company logo" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-base font-bold" style={{ backgroundColor: palette.bg, color: palette.text, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {companyInitial}
+            </span>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start gap-2">
+            <h2 className="font-semibold text-slate-900 text-base leading-tight truncate hover:text-blue-600 transition-colors" title={job.translations?.title || job.title}>
+              {job.translations?.title || job.title}
+            </h2>
+            {onSave && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
+                className={`flex-shrink-0 p-1 rounded-md transition-colors ${isSaved ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-50'}`}
+              >
+                <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
+              </button>
+            )}
+          </div>
+
+          <div className="text-sm text-slate-600 truncate mt-0.5">
+            {job.translations?.company || job.company}
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 truncate">
+            <span className="truncate">{job.translations?.location || job.location}</span>
+            {job.isRemote && (
+              <span className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700 border border-green-200">
+                远程
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between mt-2">
+            <div className="font-medium text-emerald-600 text-sm">
+              {formatSalary(job.salary)}
+            </div>
+            <time className="text-xs text-slate-400" dateTime={job.postedAt}>
+              {DateFormatter.formatPublishTime(job.postedAt)}
+            </time>
+          </div>
+        </div>
+      </article>
+    )
+  }
+
   return (
     <article
       className={`group bg-white rounded-xl p-5 shadow-sm border transition-all duration-200 cursor-pointer relative flex flex-col h-full ${isActive
-          ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/30'
-          : 'border-slate-200 hover:shadow-md hover:border-blue-200'
+        ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/30'
+        : 'border-slate-200 hover:shadow-md hover:border-blue-200'
         }`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
