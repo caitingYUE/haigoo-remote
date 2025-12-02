@@ -363,24 +363,25 @@ export default function JobsPage() {
     setFilters({ type: [], category: 'all', location: [], industry: [] });
   }
 
+
   return (
     <div
-      className="h-[calc(100vh-64px)] bg-[#F0F4F8] flex flex-col"
+      className="h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 via-blue-50/30 to-orange-50/20 flex flex-col"
       role="main"
       aria-label="职位搜索页面"
     >
       {/* 搜索和筛选栏 - Sticky Header */}
-      <div className="flex-shrink-0 bg-white border-b border-gray-200 shadow-sm py-4 z-40">
+      <div className="flex-shrink-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm py-2.5 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-3 mb-2.5">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="搜索岗位、公司或地点..."
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
               />
               {searchTerm && (
                 <button
@@ -388,7 +389,7 @@ export default function JobsPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <span className="sr-only">清除搜索</span>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -418,7 +419,7 @@ export default function JobsPage() {
               {(filters.location.length > 0 || filters.industry.length > 0 || filters.type.length > 0 || filters.category !== 'all' || searchTerm) && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-sm text-gray-500 hover:text-blue-600 px-2"
+                  className="text-xs text-gray-500 hover:text-blue-600 px-2 transition-colors"
                 >
                   重置
                 </button>
@@ -426,12 +427,12 @@ export default function JobsPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
             <button
               onClick={() => setFilters(prev => ({ ...prev, category: 'all' }))}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filters.category === 'all'
-                ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+              className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${filters.category === 'all'
+                ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50'
                 }`}
             >
               全部
@@ -440,9 +441,9 @@ export default function JobsPage() {
               <button
                 key={cat}
                 onClick={() => setFilters(prev => ({ ...prev, category: cat }))}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filters.category === cat
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                  : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${filters.category === cat
+                  ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                  : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50'
                   }`}
               >
                 {cat}
@@ -452,6 +453,7 @@ export default function JobsPage() {
           </div>
         </div>
       </div>
+
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
