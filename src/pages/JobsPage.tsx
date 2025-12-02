@@ -322,26 +322,64 @@ export default function JobsPage() {
     })
   }, [regionJobs, searchTerm, filters, companyMap])
 
+  // Job Distribution Logic: Limit consecutive jobs from same company to max 2
+  const distributedJobs = useMemo(() => {
+    if (filteredJobs.length === 0) return []
+
+    const result: Job[] = []
+    const remaining: Job[] = [...filteredJobs]
+
+    const countRecentCompanyJobs = (jobs: Job[], company: string, window: number): number => {
+      const recentJobs = jobs.slice(-window)
+      return recentJobs.filter(j => j.company === company).length
+    }
+
+    while (remaining.length > 0) {
+      let added = false
+
+      // Try to find a job that doesn't create 3 consecutive from same company
+      for (let i = 0; i < remaining.length; i++) {
+        const job = remaining[i]
+        const company = job.company || 'Unknown'
+        const recentCount = countRecentCompanyJobs(result, company, 2)
+
+        if (recentCount < 2) {
+          result.push(job)
+          remaining.splice(i, 1)
+          added = true
+          break
+        }
+      }
+
+      // If no job can be added without creating 3 consecutive, add the first one anyway
+      if (!added && remaining.length > 0) {
+        result.push(remaining.shift()!)
+      }
+    }
+
+    return result
+  }, [filteredJobs])
+
   // Deep Linking: Sync URL with selectedJob
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const jobId = params.get('jobId')
 
-    if (jobId && filteredJobs.length > 0) {
-      const job = filteredJobs.find(j => j.id === jobId)
+    if (jobId && distributedJobs.length > 0) {
+      const job = distributedJobs.find(j => j.id === jobId)
       if (job) {
         if (selectedJob?.id !== job.id) {
           setSelectedJob(job)
-          const idx = filteredJobs.findIndex(j => j.id === jobId)
+          const idx = distributedJobs.findIndex(j => j.id === jobId)
           if (idx !== -1) setCurrentJobIndex(idx)
         }
       }
-    } else if (!jobId && filteredJobs.length > 0 && !selectedJob && window.innerWidth >= 1024) {
+    } else if (!jobId && distributedJobs.length > 0 && !selectedJob && window.innerWidth >= 1024) {
       // Auto-select first job on desktop if no jobId in URL
-      setSelectedJob(filteredJobs[0])
+      setSelectedJob(distributedJobs[0])
       setCurrentJobIndex(0)
     }
-  }, [filteredJobs, location.search, selectedJob])
+  }, [distributedJobs, location.search, selectedJob])
 
   const handleJobSelect = (job: Job, index: number) => {
     setSelectedJob(job)
@@ -374,7 +412,7 @@ export default function JobsPage() {
       <div className="flex-shrink-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm py-2.5 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 mb-2.5">
-            <div className="flex-1 relative">
+            <div className="max-w-xl flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
               <input
                 type="text"
@@ -449,7 +487,7 @@ export default function JobsPage() {
                 {cat}
               </button>
             ))}
-            <span className="ml-auto text-gray-500 whitespace-nowrap text-xs self-center">共 {filteredJobs.length} 个职位</span>
+            <span className="ml-auto text-gray-500 whitespace-nowrap text-xs self-center">共 {distributedJobs.length} 个职位</span>
           </div>
         </div>
       </div>
@@ -462,7 +500,7 @@ export default function JobsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3182CE]" aria-hidden="true"></div>
             <p className="mt-4 text-gray-500">正在加载精彩职位...</p>
           </div>
-        ) : filteredJobs.length === 0 ? (
+        ) : distributedJobs.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
             <div className="text-gray-400 text-lg mb-2">暂无符合条件的职位</div>
             <p className="text-gray-500">尝试调整筛选条件或搜索关键词</p>
@@ -478,7 +516,7 @@ export default function JobsPage() {
             {/* Left Column: Job List */}
             <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
               <div className="space-y-3">
-                {filteredJobs.map((job, index) => (
+                {distributedJobs.map((job, index) => (
                   <div key={job.id} onClick={() => handleJobSelect(job, index)}>
                     <JobCard
                       job={job}
@@ -519,11 +557,11 @@ export default function JobsPage() {
           onClose={() => { setIsJobDetailOpen(false); }}
           onSave={() => toggleSaveJob(selectedJob.id)}
           isSaved={savedJobs.has(selectedJob.id)}
-          jobs={filteredJobs}
+          jobs={distributedJobs}
           currentJobIndex={currentJobIndex}
           onNavigateJob={(direction: 'prev' | 'next') => {
-            const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(filteredJobs.length - 1, currentJobIndex + 1)
-            handleJobSelect(filteredJobs[nextIndex], nextIndex)
+            const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(distributedJobs.length - 1, currentJobIndex + 1)
+            handleJobSelect(distributedJobs[nextIndex], nextIndex)
           }}
         />
       )}

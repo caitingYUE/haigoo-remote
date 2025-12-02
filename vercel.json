@@ -23,6 +23,14 @@
   ],
   "rewrites": [
     {
+      "source": "/api/cron/:task",
+      "destination": "/api/cron/index?task=:task"
+    },
+    {
+      "source": "/api/translate-jobs",
+      "destination": "/api/cron/index?task=translate-jobs"
+    },
+    {
       "source": "/api/:match*",
       "destination": "/api/:match*"
     },
