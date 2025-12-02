@@ -22,13 +22,13 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 初始化管理员账号(密码123456)
-INSERT INTO users (user_id, email, password_hash, username, status, roles)
-VALUES ('admin-1', 'caitlinyct@gmail.com', '$2b$10$/MXqVv06y6pPb39e1NXRiuEmUC6dbFsIaMVBZNmx9iIjP8x6j40dG', '超级管理员', 'active', '{"admin": true}')
-ON CONFLICT (email) DO NOTHING;
-INSERT INTO users (user_id, email, password_hash, username, status, roles)
-VALUES ('admin-2', 'mrzhangzy1996@gmail.com', '$2b$10$/MXqVv06y6pPb39e1NXRiuEmUC6dbFsIaMVBZNmx9iIjP8x6j40dG', '超级管理员', 'active', '{"admin": true}')
-ON CONFLICT (email) DO NOTHING;
+-- 初始化管理员账号(密码123456，仅预发环境通过此方式)
+-- INSERT INTO users (user_id, email, password_hash, username, status, roles)
+-- VALUES ('admin-1', 'caitlinyct@gmail.com', '$2b$10$/MXqVv06y6pPb39e1NXRiuEmUC6dbFsIaMVBZNmx9iIjP8x6j40dG', '超级管理员', 'active', '{"admin": true}')
+-- ON CONFLICT (email) DO NOTHING;
+-- INSERT INTO users (user_id, email, password_hash, username, status, roles)
+-- VALUES ('admin-2', 'mrzhangzy1996@gmail.com', '$2b$10$/MXqVv06y6pPb39e1NXRiuEmUC6dbFsIaMVBZNmx9iIjP8x6j40dG', '超级管理员', 'active', '{"admin": true}')
+-- ON CONFLICT (email) DO NOTHING;
 
 -- jobs - 存储岗位信息
 CREATE TABLE jobs (
