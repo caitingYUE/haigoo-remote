@@ -1,9 +1,3 @@
-import fetchRssHandler from '../../lib/cron-handlers/fetch-rss.js';
-import processRssHandler from '../../lib/cron-handlers/process-rss.js';
-import translateJobsHandler from '../../lib/cron-handlers/translate-jobs.js';
-import enrichCompaniesHandler from '../../lib/cron-handlers/enrich-companies.js';
-import crawlTrustedJobsHandler from '../../lib/cron-handlers/crawl-trusted-jobs.js';
-
 export default async function handler(req, res) {
   const { task } = req.query;
 
@@ -21,28 +15,45 @@ export default async function handler(req, res) {
 
   try {
     switch (taskName) {
-      case 'fetch-rss':
+      case 'fetch-rss': {
+        const { default: fetchRssHandler } = await import('../../lib/cron-handlers/fetch-rss.js');
         return await fetchRssHandler(req, res);
-      case 'process-rss':
+      }
+      case 'process-rss': {
+        const { default: processRssHandler } = await import('../../lib/cron-handlers/process-rss.js');
         return await processRssHandler(req, res);
-      case 'translate-jobs':
+      }
+      case 'translate-jobs': {
+        const { default: translateJobsHandler } = await import('../../lib/cron-handlers/translate-jobs.js');
         return await translateJobsHandler(req, res);
-      case 'enrich-companies':
+      }
+      case 'enrich-companies': {
+        const { default: enrichCompaniesHandler } = await import('../../lib/cron-handlers/enrich-companies.js');
         return await enrichCompaniesHandler(req, res);
-      case 'crawl-trusted-jobs':
+      }
+      case 'crawl-trusted-jobs': {
+        const { default: crawlTrustedJobsHandler } = await import('../../lib/cron-handlers/crawl-trusted-jobs.js');
         return await crawlTrustedJobsHandler(req, res);
-      case 'daily-ingest':
+      }
+      case 'daily-ingest': {
+        const { default: fetchRssHandler } = await import('../../lib/cron-handlers/fetch-rss.js');
+        const { default: processRssHandler } = await import('../../lib/cron-handlers/process-rss.js');
         return await runSequence(req, res, [
           { name: 'fetch-rss', handler: fetchRssHandler },
           { name: 'process-rss', handler: processRssHandler }
         ]);
+      }
 
-      case 'daily-enrich':
+      case 'daily-enrich': {
+        const { default: translateJobsHandler } = await import('../../lib/cron-handlers/translate-jobs.js');
+        const { default: enrichCompaniesHandler } = await import('../../lib/cron-handlers/enrich-companies.js');
+        const { default: crawlTrustedJobsHandler } = await import('../../lib/cron-handlers/crawl-trusted-jobs.js');
         return await runSequence(req, res, [
           { name: 'translate-jobs', handler: translateJobsHandler },
           { name: 'enrich-companies', handler: enrichCompaniesHandler },
           { name: 'crawl-trusted-jobs', handler: crawlTrustedJobsHandler }
         ]);
+      }
 
       default:
         return res.status(400).json({
@@ -62,7 +73,11 @@ export default async function handler(req, res) {
     console.error(`[CronRouter] Error executing task ${taskName}:`, error);
     // Ensure we return JSON even on crash
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message, stack: error.stack });
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   }
 }
@@ -98,3 +113,4 @@ async function runSequence(req, mainRes, tasks) {
     sequence: results
   });
 }
+
