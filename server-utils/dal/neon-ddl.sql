@@ -141,7 +141,7 @@ CREATE TABLE trusted_companies (
   website VARCHAR(2000),
   description TEXT,
   logo VARCHAR(2000),
-  cover_image VARCHAR(2000),
+  cover_image TEXT,
   industry VARCHAR(100) DEFAULT '其他',
   tags JSONB DEFAULT '[]',
   source VARCHAR(50) DEFAULT 'manual',

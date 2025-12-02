@@ -110,7 +110,7 @@ async function handleRegister(req, res) {
     last_login_at: null,
     status: 'active',
     roles: {
-      admin: email === 'caitlinyct@gmail.com' || email === 'test@example.com'
+      admin: email === 'caitlinyct@gmail.com' || email === 'mrzhangzy1996@gmail.com'
     },
     profile: null
   }
