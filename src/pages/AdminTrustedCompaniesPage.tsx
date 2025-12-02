@@ -23,6 +23,7 @@ export default function AdminTrustedCompaniesPage() {
     const [crawling, setCrawling] = useState(false)
     const [processingImage, setProcessingImage] = useState(false)
     const [batchImporting, setBatchImporting] = useState(false)
+    const [batchExporting, setBatchExporting] = useState(false)
     
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1)
@@ -437,6 +438,51 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
+    const handleBatchExport = async () => {
+        try {
+            setBatchExporting(true)
+            showSuccess('开始导出', '正在生成Excel文件...')
+
+            const response = await fetch('/api/data/trusted-companies?action=batch-export', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+                // Convert base64 to blob and download
+                const binaryString = atob(data.fileData)
+                const bytes = new Uint8Array(binaryString.length)
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i)
+                }
+                const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+                
+                // Create download link
+                const url = window.URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = data.fileName
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                window.URL.revokeObjectURL(url)
+                
+                showSuccess('导出成功', `成功导出 ${data.count} 个企业数据`)
+            } else {
+                showError('导出失败', data.error || '未知错误')
+            }
+        } catch (error) {
+            console.error('Batch export error:', error)
+            showError('导出失败', error instanceof Error ? error.message : '网络或服务器错误')
+        } finally {
+            setBatchExporting(false)
+        }
+    }
+
     return (
         <div className="w-full p-8">
             <div className="max-w-7xl mx-auto">
@@ -455,6 +501,14 @@ export default function AdminTrustedCompaniesPage() {
                             />
                             抓取详细描述
                         </label>
+                        <button
+                            onClick={handleBatchExport}
+                            disabled={batchExporting || companies.length === 0}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {batchExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+                            {batchExporting ? '导出中...' : '批量导出'}
+                        </button>
                         <button
                             onClick={() => handleBatchImport()}
                             disabled={batchImporting}
