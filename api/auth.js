@@ -232,7 +232,7 @@ async function handleGoogleLogin(req, res) {
       updated_at: new Date().toISOString(),
       last_login_at: new Date().toISOString(),
       status: 'active',
-      roles: { admin: googleUser.email === 'caitlinyct@gmail.com' },
+      roles: { admin: googleUser.email === 'caitlinyct@gmail.com' || googleUser.email === 'mrzhangzy1996@gmail.com' },
       profile: null
     }
     await saveUser(user)
