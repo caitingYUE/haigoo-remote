@@ -31,7 +31,11 @@ export default function AdminTagManagementPage() {
             const response = await fetch('/api/data/trusted-companies?resource=tags');
             const data = await response.json();
             if (data.success) {
-                setConfig(data.config);
+                setConfig(data.config || {
+                    jobCategories: [],
+                    companyIndustries: [],
+                    companyTags: []
+                });
             }
         } catch (error) {
             console.error('Failed to load tag config:', error);
