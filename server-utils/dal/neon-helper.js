@@ -2,15 +2,14 @@ import { neon } from '@neondatabase/serverless'
 
 
 // Neon/PostgreSQL 配置检测
-// const DATABASE_URL =
-//     process.env.DATABASE_URL ||
-//     process.env.NEON_DATABASE_URL ||
-//     process.env.HAIGOO_DATABASE_URL ||
-//     process.env.haigoo_DATABASE_URL ||
-//     process.env.pre_haigoo_DATABASE_URL ||
-//     process.env.PRE_HAIGOO_DATABASE_URL ||
-//     null
-const DATABASE_URL = "postgresql://neondb_owner:npg_T4Vvm1ryXBwI@ep-crimson-lab-a1pn20hz-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+const DATABASE_URL =
+    process.env.DATABASE_URL ||
+    process.env.NEON_DATABASE_URL ||
+    process.env.HAIGOO_DATABASE_URL ||
+    process.env.haigoo_DATABASE_URL ||
+    process.env.pre_haigoo_DATABASE_URL ||
+    process.env.PRE_HAIGOO_DATABASE_URL ||
+    null
 const DATABASE_CONFIGURED = !!DATABASE_URL
 
 // 创建 Neon SQL 客户端
