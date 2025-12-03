@@ -84,6 +84,7 @@ CREATE TABLE raw_rss (
   category VARCHAR(100) DEFAULT '',
   url VARCHAR(2000),
   title VARCHAR(500) NOT NULL,
+  company_name VARCHAR(500),
   description TEXT,
   link VARCHAR(2000),
   pub_date TIMESTAMP NOT NULL,
