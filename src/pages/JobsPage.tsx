@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Search } from 'lucide-react'
+import { Search, SortAsc, LayoutGrid, List as ListIcon } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import JobCard from '../components/JobCard'
+import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
-import { JobDetailPanel } from '../components/JobDetailPanel'
-import MultiSelectDropdown from '../components/MultiSelectDropdown'
+import JobFilterSidebar from '../components/JobFilterSidebar'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { extractLocations, matchesLocationFilter } from '../utils/locationHelper'
@@ -14,7 +13,6 @@ import { usePageCache } from '../hooks/usePageCache'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { JobPreferenceModal, JobPreferences } from '../components/JobPreferenceModal'
-import { Settings } from 'lucide-react'
 
 // Industry Options
 const INDUSTRY_OPTIONS = [
@@ -60,7 +58,11 @@ export default function JobsPage() {
     type: [] as string[],
     category: 'all', // Keep category as single select for tabs
     location: [] as string[],
-    industry: [] as string[]
+    industry: [] as string[],
+    jobType: [] as string[], // Mapping new sidebar filter
+    salary: [] as string[],
+    isTrusted: false,
+    isNew: false
   })
 
   // Load user preferences
@@ -357,6 +359,7 @@ export default function JobsPage() {
         (job.skills && job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
 
       const matchesType = filters.type.length === 0 || filters.type.includes(job.type)
+      const matchesJobType = filters.jobType.length === 0 || filters.jobType.includes(job.type)
 
       const matchesCategory = filters.category === 'all' ||
         (job.category && job.category === filters.category) ||
@@ -367,7 +370,23 @@ export default function JobsPage() {
       const companyIndustry = job.companyId ? companyMap[job.companyId]?.industry || '' : ''
       const matchesIndustry = filters.industry.length === 0 || filters.industry.includes(companyIndustry)
 
-      return matchesSearch && matchesType && matchesCategory && matchesLocation && matchesIndustry
+      const matchesTrusted = !filters.isTrusted || job.isTrusted
+      
+      // New Postings: posted within last 7 days
+      const matchesNew = !filters.isNew || (new Date().getTime() - new Date(job.postedAt).getTime() < 7 * 24 * 60 * 60 * 1000)
+
+      const matchesSalary = filters.salary.length === 0 || filters.salary.some(range => {
+        if (!job.salary) return false
+        const [minStr, maxStr] = range.split('-')
+        const min = parseInt(minStr)
+        const max = parseInt(maxStr)
+        const jobMin = job.salary.min || 0
+        const jobMax = job.salary.max || jobMin
+        // Check for overlap: startA <= endB && endA >= startB
+        return jobMin <= max && jobMax >= min
+      })
+
+      return matchesSearch && matchesType && matchesJobType && matchesCategory && matchesLocation && matchesIndustry && matchesTrusted && matchesNew && matchesSalary
     }).sort((a, b) => {
       if (a.canRefer && !b.canRefer) return -1
       if (!a.canRefer && b.canRefer) return 1
@@ -453,175 +472,99 @@ export default function JobsPage() {
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    setFilters({ type: [], category: 'all', location: [], industry: [] });
+    setFilters({ type: [], category: 'all', location: [], industry: [], jobType: [], salary: [], isTrusted: false, isNew: false });
   }
 
 
   return (
     <div
-      className="h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 via-blue-50/30 to-orange-50/20 flex flex-col"
+      className="min-h-[calc(100vh-64px)] bg-blue-50/30"
       role="main"
       aria-label="职位搜索页面"
     >
-      {/* 搜索和筛选栏 - Sticky Header */}
-      <div className="flex-shrink-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm py-2.5 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 mb-2.5">
-            {/* Job Preference Button */}
-            <button
-              onClick={() => setIsPreferenceModalOpen(true)}
-              className="group flex items-center gap-2 px-4 py-2 bg-white border border-blue-100 hover:border-blue-300 shadow-sm hover:shadow-md rounded-full transition-all duration-200"
-              title="设置求职期望"
-            >
-              <div className="p-1 bg-blue-50 group-hover:bg-blue-100 rounded-full transition-colors">
-                <Settings className="w-3.5 h-3.5 text-blue-600" />
-              </div>
-              <span className="text-sm font-medium text-slate-700 group-hover:text-blue-700">求职期望</span>
-              {userPreferences && (userPreferences.jobTypes.length > 0 || userPreferences.industries.length > 0 || userPreferences.locations.length > 0 || userPreferences.levels.length > 0) && (
-                <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white text-xs font-bold rounded-full min-w-[1.25rem] text-center">
-                  {userPreferences.jobTypes.length + userPreferences.industries.length + userPreferences.locations.length + userPreferences.levels.length}
-                </span>
-              )}
-            </button>
+      {/* Hero / Header Section - Matching the "Explore Quality Remote Work" visual */}
+      <div className="bg-white border-b border-gray-200 py-8 px-4 sm:px-6 lg:px-8">
+         <div className="max-w-7xl mx-auto">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl mb-2">
+               探索优质远程工作机会 (Explore Quality Remote Work)
+            </h1>
+            <p className="text-gray-500 text-lg">
+               所有职位均由海鸽俱乐部筛选审核，助你高效求职。(All positions are screened by Haigoo Club.)
+            </p>
+         </div>
+      </div>
 
-            <div className="max-w-xl flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="搜索岗位、公司或地点..."
-                className="w-full pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <span className="sr-only">清除搜索</span>
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <MultiSelectDropdown
-                label="地点"
-                options={locationOptions}
-                selected={filters.location}
-                onChange={(val) => setFilters(prev => ({ ...prev, location: val }))}
-              />
-              <MultiSelectDropdown
-                label="行业"
-                options={industryOptions}
-                selected={filters.industry}
-                onChange={(val) => setFilters(prev => ({ ...prev, industry: val }))}
-              />
-              <MultiSelectDropdown
-                label="岗位类型"
-                options={typeOptions}
-                selected={filters.type}
-                onChange={(val) => setFilters(prev => ({ ...prev, type: val }))}
-              />
-
-              {(filters.location.length > 0 || filters.industry.length > 0 || filters.type.length > 0 || filters.category !== 'all' || searchTerm) && (
-                <button
-                  onClick={clearAllFilters}
-                  className="text-xs text-gray-500 hover:text-blue-600 px-2 transition-colors"
-                >
-                  重置
-                </button>
-              )}
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          
+          {/* Left Sidebar: Filters */}
+          <div className="w-full lg:w-64 flex-shrink-0">
+             <JobFilterSidebar 
+                filters={filters}
+                onFilterChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))}
+             />
           </div>
 
-          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-            <button
-              onClick={() => setFilters(prev => ({ ...prev, category: 'all' }))}
-              className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${filters.category === 'all'
-                ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-200 shadow-sm'
-                : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50'
-                }`}
-            >
-              全部
-            </button>
-            {topCategories.map((cat, idx) => (
-              <button
-                key={cat}
-                onClick={() => setFilters(prev => ({ ...prev, category: cat }))}
-                className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${filters.category === cat
-                  ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border border-blue-200 shadow-sm'
-                  : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50'
-                  }`}
-              >
-                {cat}
-              </button>
-            ))}
-            <span className="ml-auto text-gray-500 whitespace-nowrap text-xs self-center">共 {distributedJobs.length} 个职位</span>
+          {/* Main Content: Search + Job List */}
+          <div className="flex-1">
+             {/* Search Bar & Sort */}
+             <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                   <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="搜索职位、公司、技能 (Search job, company, skills)"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                   />
+                </div>
+                
+                <div className="flex items-center gap-2 flex-shrink-0">
+                   <button className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors">
+                      <SortAsc className="w-4 h-4" />
+                      Sort by: Most Recent
+                   </button>
+                </div>
+             </div>
+
+             {/* Job List Grid */}
+             {loading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" aria-hidden="true"></div>
+                   <p className="mt-4 text-gray-500">Loading jobs...</p>
+                </div>
+             ) : distributedJobs.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
+                   <div className="text-gray-400 text-lg mb-2">暂无符合条件的职位</div>
+                   <p className="text-gray-500 mb-6">尝试调整筛选条件或搜索关键词</p>
+                   <button
+                      onClick={clearAllFilters}
+                      className="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors"
+                   >
+                      清除所有筛选
+                   </button>
+                </div>
+             ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {distributedJobs.map((job, index) => (
+                      <JobCardNew
+                         key={job.id}
+                         job={job}
+                         onClick={() => handleJobSelect(job, index)}
+                      />
+                   ))}
+                </div>
+             )}
           </div>
         </div>
       </div>
 
-
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3182CE]" aria-hidden="true"></div>
-            <p className="mt-4 text-gray-500">正在加载精彩职位...</p>
-          </div>
-        ) : distributedJobs.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
-            <div className="text-gray-400 text-lg mb-2">暂无符合条件的职位</div>
-            <p className="text-gray-500">尝试调整筛选条件或搜索关键词</p>
-            <button
-              onClick={clearAllFilters}
-              className="mt-4 px-6 py-2 bg-[#3182CE] text-white rounded-full hover:bg-[#2b6cb0] transition-colors"
-            >
-              清除所有筛选
-            </button>
-          </div>
-        ) : (
-          <div className="flex h-full gap-6">
-            {/* Left Column: Job List */}
-            <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-              <div className="space-y-3">
-                {distributedJobs.map((job, index) => (
-                  <div key={job.id} onClick={() => handleJobSelect(job, index)}>
-                    <JobCard
-                      job={job}
-                      onSave={() => toggleSaveJob(job.id)}
-                      isSaved={savedJobs.has(job.id)}
-                      isActive={selectedJob?.id === job.id}
-                      variant={window.innerWidth >= 1024 ? 'compact' : 'default'}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right Column: Job Detail Panel (Desktop Only) */}
-            <div className="hidden lg:flex flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              {selectedJob ? (
-                <JobDetailPanel
-                  job={selectedJob}
-                  onSave={() => toggleSaveJob(selectedJob.id)}
-                  isSaved={savedJobs.has(selectedJob.id)}
-                  onApply={() => { /* Handle apply logic if needed, usually just opens URL */ }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  选择一个职位查看详情
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Mobile Detail Modal */}
+      {/* Job Detail Modal (Desktop & Mobile) */}
+      {/* Note: In the new design, we might want to use a modal for desktop too, or keep the split view? 
+          The visual reference doesn't explicitly show the detail view, but usually card clicks open details.
+          Let's stick to the Modal for now to keep the clean grid layout on the main page. 
+      */}
       {isJobDetailOpen && selectedJob && (
         <JobDetailModal
           job={selectedJob}
@@ -637,8 +580,8 @@ export default function JobsPage() {
           }}
         />
       )}
-
-      {/* Job Preference Modal */}
+      
+      {/* Hidden for now as we moved it to sidebar or top */}
       <JobPreferenceModal
         isOpen={isPreferenceModalOpen}
         onClose={() => setIsPreferenceModalOpen(false)}
