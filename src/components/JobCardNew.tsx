@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { MapPin, Clock, DollarSign, CheckCircle } from 'lucide-react';
+import { CheckCircle, Briefcase, Clock, Globe, ChevronRight, Sparkles } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { useNavigate } from 'react-router-dom';
@@ -26,86 +26,84 @@ export default function JobCardNew({ job, onClick }: JobCardNewProps) {
     return `${currencySymbol}${formatAmount(salary.min)} - ${currencySymbol}${formatAmount(salary.max)}`;
   };
 
-  // Determine "AI Match Score" - MOCKED for visual fidelity as per request (referencing the image "85%", "72%" etc)
-  // Wait, instruction said: "不要mock任何数据...没有开发的后台功能和数据就不在前端实现"
-  // BUT the visual reference shows it.
-  // "视觉稿里有些没有开发的功能就先不展示出来，比如岗位匹配度啥的" -> OK, so DO NOT SHOW MATCH SCORE.
-  
   const isVerified = job.isTrusted || job.canRefer;
 
   return (
     <div 
       onClick={() => onClick?.(job)}
-      className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group relative"
+      className="group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer overflow-hidden"
     >
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex gap-4">
-          {/* Company Logo Placeholder */}
-          <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 font-bold text-xl flex-shrink-0 overflow-hidden">
+      {/* Top Decoration for Verified Jobs */}
+      {isVerified && (
+        <div className="absolute top-0 right-0 p-0">
+           <div className="bg-gradient-to-bl from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              CLUB VERIFIED
+           </div>
+        </div>
+      )}
+
+      <div className="flex flex-col h-full">
+        {/* Header Section */}
+        <div className="flex items-start gap-4 mb-5">
+          {/* Company Logo */}
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 flex items-center justify-center text-gray-400 font-bold text-2xl shadow-inner flex-shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
              {job.logo ? (
                 <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
              ) : (
-                companyInitial
+                <span className="font-serif italic">{companyInitial}</span>
              )}
           </div>
           
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1">
-              {job.translations?.title || job.title}
-            </h3>
-            <p className="text-sm text-gray-500 font-medium mt-0.5">
-               {job.translations?.company || job.company}
-            </p>
+          <div className="flex-1 min-w-0 pt-0.5">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors truncate tracking-tight">
+                {job.translations?.title || job.title}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+               <span>{job.translations?.company || job.company}</span>
+            </div>
           </div>
         </div>
 
-        {isVerified && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
-             <CheckCircle className="w-3 h-3" />
-             <span>认证</span>
-          </div>
-        )}
-      </div>
+        {/* Tags Section - Pill Shape */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100">
+             <Briefcase className="w-3 h-3 mr-1.5 text-slate-400" />
+             {job.type === 'full-time' ? '全职' : job.type}
+          </span>
+          {job.category && (
+             <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100">
+                {job.category}
+             </span>
+          )}
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100">
+             <Globe className="w-3 h-3 mr-1.5 text-indigo-500" />
+             {job.isRemote ? '远程' : (job.translations?.location || job.location)}
+          </span>
+        </div>
 
-      {/* Tags */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-md border border-gray-200">
-           {job.type === 'full-time' ? 'Full-time' : job.type}
-        </span>
-        {job.category && (
-           <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-md border border-gray-200">
-              {job.category}
-           </span>
-        )}
-        {job.isRemote && (
-           <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-md border border-gray-200">
-              Remote
-           </span>
-        )}
-      </div>
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-4 mb-6 py-4 border-t border-dashed border-slate-100">
+           <div>
+              <p className="text-xs text-slate-400 mb-1">薪资范围 (Salary)</p>
+              <p className="font-bold text-slate-900">{formatSalary(job.salary)}</p>
+           </div>
+           <div>
+              <p className="text-xs text-slate-400 mb-1">发布日期 (Date)</p>
+              <p className="font-bold text-slate-900">{DateFormatter.formatPublishTime(job.postedAt)}</p>
+           </div>
+        </div>
 
-      {/* Metadata */}
-      <div className="space-y-2 mb-6">
-         <div className="flex items-center text-sm text-gray-600">
-            <span className="w-24 text-gray-400 flex-shrink-0">薪资范围 (Salary):</span>
-            <span className="font-medium text-gray-900">{formatSalary(job.salary)}</span>
-         </div>
-         <div className="flex items-center text-sm text-gray-600">
-            <span className="w-24 text-gray-400 flex-shrink-0">发布日期 (Date):</span>
-            <span className="font-medium text-gray-900">{DateFormatter.formatPublishTime(job.postedAt)}</span>
-         </div>
-      </div>
-
-      {/* Footer Action */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-         {/* AI Score Placeholder - Hidden as per instructions */}
-         <div className="text-sm font-bold text-orange-500 opacity-0">
-            AI 匹配度 85%
-         </div>
-
-         <button className="px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-            {job.canRefer ? '一键投递 (Apply)' : '查看详情 (Details)'}
-         </button>
+        {/* Footer Action */}
+        <div className="mt-auto pt-2">
+           <button className="w-full group/btn relative flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-sm hover:shadow-indigo-200 hover:shadow-lg overflow-hidden">
+              <span className="relative z-10">{job.canRefer ? '一键投递 (Apply Now)' : '查看详情 (View Details)'}</span>
+              <ChevronRight className="w-4 h-4 relative z-10 group-hover/btn:translate-x-1 transition-transform" />
+              <div className="absolute inset-0 bg-indigo-600 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-left duration-300"></div>
+           </button>
+        </div>
       </div>
     </div>
   );

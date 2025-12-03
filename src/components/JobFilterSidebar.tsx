@@ -68,9 +68,19 @@ interface JobFilterSidebarProps {
     isNew: boolean;
   };
   onFilterChange: (newFilters: any) => void;
+  // Optional dynamic options
+  industryOptions?: { label: string, value: string }[];
+  jobTypeOptions?: { label: string, value: string }[];
+  locationOptions?: { label: string, value: string }[];
 }
 
-export default function JobFilterSidebar({ filters, onFilterChange }: JobFilterSidebarProps) {
+export default function JobFilterSidebar({ 
+  filters, 
+  onFilterChange, 
+  industryOptions,
+  jobTypeOptions,
+  locationOptions
+}: JobFilterSidebarProps) {
   const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
     industry: true,
     jobType: true,
@@ -104,19 +114,32 @@ export default function JobFilterSidebar({ filters, onFilterChange }: JobFilterS
       : filters.salary.filter(s => s !== range);
     onFilterChange({ ...filters, salary: newSalaries });
   };
+  
+  const handleLocationChange = (loc: string, checked: boolean) => {
+    const newLocations = checked 
+      ? [...filters.location, loc]
+      : filters.location.filter(l => l !== loc);
+    onFilterChange({ ...filters, location: newLocations });
+  };
 
-  // Hardcoded options based on provided constraints (existing data)
-  const INDUSTRIES = [
+  // Fallback options if not provided
+  const DEFAULT_INDUSTRIES = [
     '互联网/IT', '市场营销', '设计', '产品', '运营', '销售', '人事/行政', '金融'
   ];
+  const INDUSTRIES = industryOptions && industryOptions.length > 0 
+    ? industryOptions.map(o => o.label) 
+    : DEFAULT_INDUSTRIES;
 
-  const JOB_TYPES = [
+  const DEFAULT_JOB_TYPES = [
     { label: '全职 (Full-time)', value: 'full-time' },
     { label: '兼职 (Part-time)', value: 'part-time' },
     { label: '合同 (Contract)', value: 'contract' },
     { label: '实习 (Internship)', value: 'internship' }
   ];
-  
+  const JOB_TYPES = jobTypeOptions && jobTypeOptions.length > 0 
+    ? jobTypeOptions 
+    : DEFAULT_JOB_TYPES;
+
   const SALARY_RANGES = [
     { label: '< 10k', value: '0-10000' },
     { label: '10k - 20k', value: '10000-20000' },
@@ -124,7 +147,7 @@ export default function JobFilterSidebar({ filters, onFilterChange }: JobFilterS
     { label: '> 50k', value: '50000-999999' }
   ];
 
-  const LOCATIONS = [
+  const DEFAULT_LOCATIONS = [
     { label: '远程 (Remote)', value: 'Remote' },
     { label: '全球 (Worldwide)', value: 'Worldwide' },
     { label: '中国 (China)', value: 'China' },
@@ -132,25 +155,33 @@ export default function JobFilterSidebar({ filters, onFilterChange }: JobFilterS
     { label: '欧洲 (Europe)', value: 'Europe' },
     { label: '亚太 (APAC)', value: 'APAC' }
   ];
+  const LOCATIONS = locationOptions && locationOptions.length > 0 
+    ? locationOptions 
+    : DEFAULT_LOCATIONS;
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">筛选职位 (Filter Jobs)</h2>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+          <span>筛选职位</span>
+          <span className="text-slate-400 text-sm font-normal">(Filter Jobs)</span>
+        </h2>
         
         <FilterSection 
           title="行业分类 (Industry)" 
           isOpen={openSections.industry} 
           onToggle={() => toggleSection('industry')}
         >
-          {INDUSTRIES.map(ind => (
-            <CheckboxItem 
-              key={ind} 
-              label={ind} 
-              checked={filters.industry.includes(ind)}
-              onChange={(c) => handleIndustryChange(ind, c)}
-            />
-          ))}
+          <div className="max-h-60 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+            {INDUSTRIES.map(ind => (
+              <CheckboxItem 
+                key={ind} 
+                label={ind} 
+                checked={filters.industry.includes(ind)}
+                onChange={(c) => handleIndustryChange(ind, c)}
+              />
+            ))}
+          </div>
         </FilterSection>
 
         <FilterSection 
@@ -183,7 +214,24 @@ export default function JobFilterSidebar({ filters, onFilterChange }: JobFilterS
           ))}
         </FilterSection>
 
-        <div className="border-b border-gray-200 py-4 space-y-3">
+        <FilterSection 
+          title="地点/时区 (Location)" 
+          isOpen={openSections.location} 
+          onToggle={() => toggleSection('location')}
+        >
+          <div className="max-h-60 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+            {LOCATIONS.map(loc => (
+              <CheckboxItem 
+                key={loc.value} 
+                label={loc.label} 
+                checked={filters.location.includes(loc.value)}
+                onChange={(c) => handleLocationChange(loc.value, c)}
+              />
+            ))}
+          </div>
+        </FilterSection>
+
+        <div className="border-b border-slate-100 py-6 space-y-4">
             <CheckboxItem 
               label="俱乐部认证 (Club Verified)" 
               checked={filters.isTrusted}
