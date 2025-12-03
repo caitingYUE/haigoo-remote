@@ -244,19 +244,33 @@ async function translateText(text, targetLang, sourceLang = 'auto') {
 
   let lastError = null
 
-  for (const service of services) {
+  // 尝试所有可用的翻译服务
+  for (const [index, service] of services.entries()) {
+    const providerName = service.name.replace('translateWith', '') || 'unknown';
+    console.log(`[api/translate] 尝试第 ${index + 1} 个服务 (${providerName})...`);
     try {
-      const result = await service()
+      const result = await service();
       if (result.success) {
-        return result
+        // Check if it returned original text or empty value, as per user's snippet intent
+        if (result.data.translatedText === text || !result.data.translatedText) {
+          console.warn(`[api/translate] ⚠️ 服务 (${providerName}) 返回了原文或空值，尝试下一个服务。`);
+          lastError = `Provider ${providerName} returned original text or empty.`;
+          continue; // Try next service
+        }
+        console.log(`[api/translate] ✅ 服务调用成功 (${providerName})`);
+        return result;
       }
-      lastError = result.error
+      // If result.success is false, it's an error from the service itself
+      console.error(`[api/translate] ❌ 服务 (${providerName}) 调用失败: ${result.error}`);
+      lastError = result.error;
     } catch (error) {
-      lastError = error.message
-      continue
+      console.error(`[api/translate] ❌ 服务 (${providerName}) 调用失败 (异常): ${error.message}`);
+      lastError = error.message;
+      // continue; // Loop will naturally continue to the next service
     }
   }
 
+  console.error(`[api/translate] ❌ 所有服务均失败`);
   // 所有服务都失败，返回原文
   return {
     success: false,
