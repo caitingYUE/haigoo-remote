@@ -17,28 +17,28 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false, // 生产环境关闭sourcemap
-    minify: 'terser', // 使用Terser进行代码压缩和混淆
-    terserOptions: {
-      compress: {
-        drop_console: false, // 移除console.log
-        drop_debugger: true, // 移除debugger
-        pure_funcs: ['console.info'] // 移除特定函数
-      },
-      mangle: {
-        toplevel: true, // 混淆顶级变量名
-        properties: {
-          regex: /^_/ // 不混淆以下划线开头的属性
-        }
-      }
-    },
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          utils: ['axios', 'zustand']
-        }
-      }
-    }
+    // sourcemap: false, // 生产环境关闭sourcemap
+    // minify: 'terser', // 使用Terser进行代码压缩和混淆
+    // terserOptions: {
+    //   compress: {
+    //     drop_console: false, // 移除console.log
+    //     drop_debugger: true, // 移除debugger
+    //     pure_funcs: ['console.info'] // 移除特定函数
+    //   },
+    //   mangle: {
+    //     toplevel: true, // 混淆顶级变量名
+    //     properties: {
+    //       regex: /^_/ // 不混淆以下划线开头的属性
+    //     }
+    //   }
+    // },
+    // rollupOptions: {
+    //   output: {
+    //     manualChunks: {
+    //       vendor: ['react', 'react-dom'],
+    //       utils: ['axios', 'zustand']
+    //     }
+    //   }
+    // }
   }
 })
