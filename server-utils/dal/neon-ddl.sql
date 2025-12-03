@@ -58,6 +58,11 @@ CREATE TABLE jobs (
   source_type VARCHAR(50) DEFAULT 'rss',
   is_trusted BOOLEAN DEFAULT false,
   can_refer BOOLEAN DEFAULT false,
+  company_logo VARCHAR(2000),
+  company_website VARCHAR(2000),
+  company_description TEXT,
+  industry VARCHAR(100),
+  company_tags JSONB DEFAULT '[]',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -148,6 +153,23 @@ CREATE TABLE trusted_companies (
   job_count INTEGER DEFAULT 0,
   can_refer BOOLEAN DEFAULT false,
   status VARCHAR(50) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- extracted_companies - 存储从岗位数据提取的企业信息
+CREATE TABLE extracted_companies (
+  id SERIAL PRIMARY KEY,
+  company_id VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(500) NOT NULL,
+  url VARCHAR(2000),
+  description TEXT,
+  logo VARCHAR(2000),
+  cover_image TEXT,
+  industry VARCHAR(100) DEFAULT '其他',
+  tags JSONB DEFAULT '[]',
+  source VARCHAR(50) DEFAULT 'extracted',
+  job_count INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -58,37 +58,27 @@ const neonHelper = {
 
     /**
      * 执行事务（serverless 模式）
+     * 注意：Neon HTTP 驱动不支持跨请求的事务。此实现仅为了兼容接口，实际上是顺序执行。
+     * 如果需要真正的原子性，请考虑使用 neonConfig.pipelineConnect = false 或 WebSocket Pool。
      * @param {Function} callback - 事务回调函数，接收 sql 客户端作为参数
      * @returns {Promise<any>} 事务执行结果
      */
     async transaction(callback) {
         if (!DATABASE_CONFIGURED) throw new Error('Database not configured')
 
-        const originalSql = createNeonClient()
-        if (!originalSql) throw new Error('Failed to create database client')
-
-        // 创建兼容层函数，确保在事务回调中使用的sql()方法实际上调用query()方法
-        function sql(query, params) {
-            return originalSql.query(query, params)
-        }
-
-        // 添加query方法以保持一致性
-        sql.query = (query, params) => originalSql.query(query, params)
+        const sql = createNeonClient()
+        if (!sql) throw new Error('Failed to create database client')
 
         try {
-            // 开始事务
-            await originalSql.query('BEGIN')
-
+            // HTTP 模式下无法使用 BEGIN/COMMIT 跨请求事务
+            // 暂时直接执行回调，依靠业务逻辑保证一致性或接受非原子性
+            // console.warn('[Neon/PostgreSQL] Transaction is simulated in HTTP mode (non-atomic).')
+            
             // 执行事务回调
             const result = await callback(sql)
-
-            // 提交事务
-            await originalSql.query('COMMIT')
             return result
         } catch (error) {
-            // 回滚事务
-            await originalSql.query('ROLLBACK')
-            console.error('[Neon/PostgreSQL] Transaction error:', error.message)
+            console.error('[Neon/PostgreSQL] Transaction simulation error:', error.message)
             console.error('[Neon/PostgreSQL] Error stack:', error.stack)
             throw error
         }
