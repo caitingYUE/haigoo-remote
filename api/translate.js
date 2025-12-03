@@ -295,7 +295,7 @@ async function batchTranslate(texts, targetLang, sourceLang = 'auto') {
 // Simple in-memory rate limiter for Edge Functions
 const rateLimitStore = new Map();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 20; // 20 translation requests per minute per IP
+const RATE_LIMIT_MAX_REQUESTS = 300; // 300 translation requests per minute per IP (Increased for batch processing)
 
 function checkRateLimit(ip) {
   const now = Date.now();

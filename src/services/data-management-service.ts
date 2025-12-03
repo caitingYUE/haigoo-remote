@@ -619,7 +619,7 @@ export class DataManagementService {
   async getStorageStats(): Promise<StorageStats> {
     try {
       // 优先从后端API读取真实统计信息（来源KV）
-      const resp = await fetch(`/api/data/processed-jobs?action=stats`);
+      const resp = await fetch(`/api/data/processed-jobs?action=stats&_t=${Date.now()}`);
       if (!resp.ok) throw new Error(`GET /api/data/processed-jobs?action=stats failed: ${resp.status}`);
       const stats = await resp.json();
 
@@ -754,7 +754,7 @@ export class DataManagementService {
 
   private async loadRawData(): Promise<RawRSSData[]> {
     try {
-      const resp = await fetch(`/api/data/raw-rss?page=1&limit=10000`)
+      const resp = await fetch(`/api/data/raw-rss?page=1&limit=10000&_t=${Date.now()}`)
       if (!resp.ok) throw new Error(`GET /api/data/raw-rss failed: ${resp.status}`)
       const json = await resp.json()
       return Array.isArray(json?.items) ? json.items : (Array.isArray(json?.data) ? json.data : [])
@@ -789,7 +789,7 @@ export class DataManagementService {
 
   private async loadProcessedJobs(): Promise<ProcessedJobData[]> {
     try {
-      const resp = await fetch(`/api/data/processed-jobs?page=1&limit=1000`)
+      const resp = await fetch(`/api/data/processed-jobs?page=1&limit=1000&_t=${Date.now()}`)
       if (!resp.ok) {
         throw new Error(`GET /api/data/processed-jobs failed: ${resp.status}`)
       }
