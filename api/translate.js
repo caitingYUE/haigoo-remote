@@ -55,7 +55,7 @@ async function translateWithMyMemory(text, targetLang, sourceLang = 'auto') {
     const clipped = typeof text === 'string' ? text.substring(0, maxLen) : ''
     const langPair = sourceLang === 'auto' ? `auto|${targetLang}` : `${sourceLang}|${targetLang}`
     const url = `${TRANSLATION_SERVICES.mymemory.baseUrl}?q=${encodeURIComponent(clipped)}&langpair=${langPair}`
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -69,7 +69,7 @@ async function translateWithMyMemory(text, targetLang, sourceLang = 'auto') {
     }
 
     const data = await response.json()
-    
+
     if (data.responseStatus !== 200) {
       throw new Error(data.responseDetails || 'MyMemory translation failed')
     }
@@ -119,7 +119,7 @@ async function translateWithLibreTranslate(text, targetLang, sourceLang = 'auto'
     }
 
     const data = await response.json()
-    
+
     return {
       success: true,
       data: {
@@ -168,7 +168,7 @@ async function translateWithGoogle(text, targetLang, sourceLang = 'auto') {
     }
 
     const data = await response.json()
-    
+
     if (!data || !Array.isArray(data) || !data[0]) {
       throw new Error('Invalid Google Translate response')
     }
@@ -223,24 +223,24 @@ async function translateText(text, targetLang, sourceLang = 'auto') {
   const normalizedSourceLang = sourceLang === 'auto' ? 'auto' : (LANGUAGE_MAP[sourceLang] || sourceLang)
 
   // 按优先级尝试各个翻译服务
-  // 优先使用 LibreTranslate，其次 Google，最后 MyMemory
-  const preferred = (process.env.PREFERRED_TRANSLATION_PROVIDER || '').toLowerCase()
+  // 🔧 FIX: 优先使用 Google Translate（质量最好），其次 LibreTranslate，最后 MyMemory
+  const preferred = (process.env.PREFERRED_TRANSLATION_PROVIDER || 'google').toLowerCase()
   const byProvider = {
     libretranslate: () => translateWithLibreTranslate(text, normalizedTargetLang, normalizedSourceLang),
     google: () => translateWithGoogle(text, normalizedTargetLang, normalizedSourceLang),
     mymemory: () => translateWithMyMemory(text, normalizedTargetLang, normalizedSourceLang)
   }
 
-  // 构建服务顺序：ENV 优先，否则默认 [LibreTranslate, Google, MyMemory]
+  // 构建服务顺序：ENV 优先，否则默认 [Google, LibreTranslate, MyMemory]
   const services = preferred && byProvider[preferred]
     ? [byProvider[preferred], ...Object.entries(byProvider)
-        .filter(([k]) => k !== preferred)
-        .map(([_, fn]) => fn)]
+      .filter(([k]) => k !== preferred)
+      .map(([_, fn]) => fn)]
     : [
-        byProvider.libretranslate,
-        byProvider.google,
-        byProvider.mymemory
-      ]
+      byProvider.google,          // 🔧 FIX: Google 优先
+      byProvider.libretranslate,
+      byProvider.mymemory
+    ]
 
   let lastError = null
 
@@ -279,7 +279,7 @@ async function batchTranslate(texts, targetLang, sourceLang = 'auto') {
     texts.map(text => translateText(text, targetLang, sourceLang))
   )
 
-  const translatedTexts = results.map((result, index) => 
+  const translatedTexts = results.map((result, index) =>
     result.success && result.data ? result.data.translatedText : texts[index]
   )
 
@@ -300,7 +300,7 @@ const RATE_LIMIT_MAX_REQUESTS = 300; // 300 translation requests per minute per 
 function checkRateLimit(ip) {
   const now = Date.now();
   const record = rateLimitStore.get(ip);
-  
+
   if (!record) {
     rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
     // Cleanup old entries periodically
@@ -311,17 +311,17 @@ function checkRateLimit(ip) {
     }
     return true;
   }
-  
+
   if (record.resetAt < now) {
     record.count = 1;
     record.resetAt = now + RATE_LIMIT_WINDOW;
     return true;
   }
-  
+
   if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
     return false;
   }
-  
+
   record.count++;
   return true;
 }
@@ -348,9 +348,9 @@ export default async function handler(request) {
 
   // 只允许POST请求
   if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Method not allowed' 
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Method not allowed'
     }), {
       status: 405,
       headers: {
@@ -361,9 +361,9 @@ export default async function handler(request) {
   }
 
   // Rate limiting（支持内部鉴权绕过）
-  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-                   request.headers.get('x-real-ip') || 
-                   'unknown';
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
   const internalSecret = process.env.TRANSLATE_INTERNAL_SECRET || ''
   const authHeader = request.headers.get('authorization') || ''
   const isInternal = internalSecret && authHeader === `Bearer ${internalSecret}`
