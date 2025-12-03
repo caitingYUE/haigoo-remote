@@ -1,9 +1,20 @@
 
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables
+dotenv.config({ path: '.env.local' });
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
+
+// Ensure SITE_URL is set for services that rely on it (like translation-service)
+if (!process.env.SITE_URL) {
+    process.env.SITE_URL = `http://localhost:${PORT}`;
+    console.log(`Set SITE_URL to ${process.env.SITE_URL}`);
+}
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -24,7 +35,7 @@ async function startServer() {
 
         console.log('Importing data handler...');
         const dataHandler = (await import('./api/data.js')).default;
-        app.all('/api/data*', async (req, res) => { await dataHandler(req, res); });
+        app.all(/^\/api\/data/, async (req, res) => { await dataHandler(req, res); });
         console.log('Data handler imported.');
 
         console.log('Importing parse-resume handler...');
@@ -38,11 +49,68 @@ async function startServer() {
         console.log('Process-image handler imported.');
 
         console.log('Importing cron handlers...');
-        const crawlTrustedJobsHandler = (await import('./api/cron/crawl-trusted-jobs.js')).default;
-        const syncJobsHandler = (await import('./api/cron/sync-jobs.js')).default;
+        const crawlTrustedJobsHandler = (await import('./lib/cron-handlers/crawl-trusted-jobs.js')).default;
+        // sync-jobs usually refers to translate-jobs in this context or process-rss
+        // But translate-jobs is the one user cares about
+        // I'll map sync-jobs to translate-jobs.js as it seems most relevant
+        const syncJobsHandler = (await import('./lib/cron-handlers/translate-jobs.js')).default;
+        
         app.all('/api/cron/crawl-trusted-jobs', async (req, res) => { await crawlTrustedJobsHandler(req, res); });
         app.all('/api/cron/sync-jobs', async (req, res) => { await syncJobsHandler(req, res); });
         console.log('Cron handlers imported.');
+
+        console.log('Importing translation handlers...');
+        // Mock /api/translate using google-translate-api for local dev
+        // Note: In production this is handled by api/translate.js Edge Function
+        const { translate } = await import('@vitalets/google-translate-api');
+        
+        app.post('/api/translate', async (req, res) => {
+            try {
+                const { texts, targetLanguage = 'zh-CN', sourceLanguage = 'auto' } = req.body;
+                if (!texts || !Array.isArray(texts)) {
+                    return res.status(400).json({ success: false, error: 'Missing texts array' });
+                }
+                
+                console.log(`[LocalTranslate] Translating ${texts.length} texts to ${targetLanguage}...`);
+                const results = [];
+                
+                // Simple sequential translation to avoid rate limits locally
+                for (const text of texts) {
+                    if (!text || !text.trim()) {
+                        results.push(text || '');
+                        continue;
+                    }
+                    try {
+                        // Map language codes if necessary (zh-CN -> zh-CN works for google)
+                        const { text: translated } = await translate(text, { 
+                            to: targetLanguage, 
+                            from: sourceLanguage === 'auto' ? undefined : sourceLanguage 
+                        });
+                        results.push(translated);
+                    } catch (e) {
+                        console.error('[LocalTranslate] Item error:', e.message);
+                        results.push(text); // Fallback
+                    }
+                    // Small delay
+                    await new Promise(r => setTimeout(r, 100));
+                }
+                
+                res.json({ success: true, data: results });
+            } catch (error) {
+                console.error('[LocalTranslate] Global error:', error);
+                res.status(500).json({ success: false, error: error.message });
+            }
+        });
+
+        // /api/translate-jobs -> lib/cron-handlers/translate-jobs.js
+        // Note: In production this is routed via vercel.json rewrites
+        const translateJobsHandler = (await import('./lib/cron-handlers/translate-jobs.js')).default;
+        app.all('/api/translate-jobs', async (req, res) => { 
+            console.log('[LocalServer] Route /api/translate-jobs hit');
+            await translateJobsHandler(req, res); 
+        });
+        
+        console.log('Translation handlers imported.');
 
         app.get('/api/health', (req, res) => {
             res.json({ status: 'ok', env: 'local' });
