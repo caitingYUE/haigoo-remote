@@ -6,6 +6,8 @@ import trustedCompaniesHandler from '../lib/api-handlers/trusted-companies.js';
 export default async function handler(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const path = url.pathname;
+
+    console.log('[API:Data] Request Path:', path);
     
     // Dispatch based on path or query
     // /api/data/processed-jobs
