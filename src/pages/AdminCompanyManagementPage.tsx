@@ -51,7 +51,7 @@ export default function AdminCompanyManagementPage() {
                 ...(industryFilter && { industry: industryFilter })
             });
 
-            const response = await fetch(`/api/data/trusted-companies?resource=companies&${params}`);
+            const response = await fetch(`/api/data/trusted-companies?target=companies&${params}`);
             const data = await response.json();
 
             if (data.success) {
@@ -144,7 +144,7 @@ export default function AdminCompanyManagementPage() {
 
         try {
             setExtracting(true);
-            const response = await fetch('/api/data/trusted-companies?resource=companies&action=extract');
+            const response = await fetch('/api/data/trusted-companies?target=companies&action=extract');
             const data = await response.json();
 
             if (data.success) {
@@ -249,7 +249,7 @@ export default function AdminCompanyManagementPage() {
                         tags: Array.from(new Set([...(company.tags || []), ...classification.tags]))
                     };
 
-                    const response = await fetch('/api/data/trusted-companies?resource=companies', {
+                    const response = await fetch('/api/data/trusted-companies?target=companies', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -335,7 +335,7 @@ export default function AdminCompanyManagementPage() {
                 throw new Error('未登录或登录已过期，请重新登录');
             }
 
-            const response = await fetch('/api/data/trusted-companies?resource=companies', {
+            const response = await fetch('/api/data/trusted-companies?target=companies', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

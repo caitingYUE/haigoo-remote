@@ -28,7 +28,7 @@ export default function AdminTagManagementPage() {
     const loadConfig = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/data/trusted-companies?resource=tags');
+            const response = await fetch('/api/data/trusted-companies?target=tags');
             const data = await response.json();
             if (data.success) {
                 setConfig(data.config || {
@@ -49,7 +49,7 @@ export default function AdminTagManagementPage() {
         if (!value) return;
 
         try {
-            const response = await fetch('/api/data/trusted-companies?resource=tags', {
+            const response = await fetch('/api/data/trusted-companies?target=tags', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export default function AdminTagManagementPage() {
         if (!confirm('确定要删除这个标签吗？')) return;
 
         try {
-            const response = await fetch('/api/data/trusted-companies?resource=tags', {
+            const response = await fetch('/api/data/trusted-companies?target=tags', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export default function AdminTagManagementPage() {
         if (!editingIndex || !editValue.trim()) return;
 
         try {
-            const response = await fetch('/api/data/trusted-companies?resource=tags', {
+            const response = await fetch('/api/data/trusted-companies?target=tags', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
