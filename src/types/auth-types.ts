@@ -41,6 +41,11 @@ export interface User {
     admin?: boolean
   }
 
+  // 会员信息
+  membershipLevel?: 'none' | 'club_go' | 'goo_plus';
+  membershipStartAt?: string;
+  membershipExpireAt?: string;
+
   // 求职偏好
   jobPreferences?: {
     jobTypes: string[]

@@ -5,6 +5,7 @@ import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
 import { segmentJobDescription } from '../utils/translation'
 import { SingleLineTags } from './SingleLineTags'
+import { MembershipUpgradeModal } from './MembershipUpgradeModal'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 
@@ -35,6 +36,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [showTranslation, setShowTranslation] = useState(true)
     const hasTranslation = !!(job?.translations?.title || job?.translations?.description)
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
     useEffect(() => {
         if (job?.companyId) {
@@ -57,9 +59,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (job.canRefer) {
              const isMember = user?.membershipLevel && user.membershipLevel !== 'none' && user.membershipExpireAt && new Date(user.membershipExpireAt) > new Date();
              if (!isMember) {
-                 if (window.confirm('该岗位支持内推直达，仅限俱乐部会员申请。是否前往开通会员？')) {
-                     navigate('/membership');
-                 }
+                 setShowUpgradeModal(true)
                  return;
              }
         }
@@ -378,6 +378,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </div>
                 </div>
             )}
+            <MembershipUpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                triggerSource="referral"
+            />
         </div>
     )
 }

@@ -9,6 +9,7 @@ import { usePageCache } from '../hooks/usePageCache'
 import { Job } from '../types'
 import JobCard from '../components/JobCard'
 import JobDetailModal from '../components/JobDetailModal'
+import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import '../styles/landing-upgrade.css'
 
@@ -36,6 +37,8 @@ export default function ProfileCenterPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const { showSuccess, showError } = useNotificationHelpers()
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [upgradeSource, setUpgradeSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
 
   const handleRemoveFavorite = async (jobId: string) => {
     try {
@@ -151,9 +154,8 @@ export default function ProfileCenterPage() {
           
           if (!isMember) {
              showSuccess('简历上传成功', '开通会员可解锁AI深度优化建议');
-             if(confirm('解锁AI简历深度优化需要会员权益，是否前往开通？')) {
-                 navigate('/membership');
-             }
+             setUpgradeSource('ai_resume');
+             setShowUpgradeModal(true);
           } else {
               try {
                 const analysis = await resumeService.analyzeResume(parsed.textContent)
@@ -572,6 +574,11 @@ export default function ProfileCenterPage() {
               />
             )}
           </main>
+          <MembershipUpgradeModal
+            isOpen={showUpgradeModal}
+            onClose={() => setShowUpgradeModal(false)}
+            triggerSource={upgradeSource}
+          />
         </div>
       </div>
     </div>
