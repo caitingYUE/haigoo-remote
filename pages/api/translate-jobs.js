@@ -92,8 +92,9 @@ export default async function handler(req, res) {
 
             try {
                 // 🔧 FIX: 使用 writeJobsToNeon 直接保存到数据库（upsert模式）
-                console.log(`[translate-jobs API] 使用 writeJobsToNeon 保存...`)
-                await writeJobsToNeon(toSave, 'upsert')
+                // 🔧 FIX: 传递 skipFilter=true，防止旧岗位被过滤掉
+                console.log(`[translate-jobs API] 使用 writeJobsToNeon 保存 (skipFilter=true)...`)
+                await writeJobsToNeon(toSave, 'upsert', true)
                 console.log(`[translate-jobs API] ✅ 保存成功`)
             } catch (saveError) {
                 console.error(`[translate-jobs API] ❌ 保存失败:`, saveError)
