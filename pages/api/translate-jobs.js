@@ -5,7 +5,7 @@
 
 // 🔧 FIX: 直接导入，不使用动态导入
 const { translateJobs } = require('../../lib/services/translation-service.cjs')
-const { getAllJobs, saveJobs } = require('../../lib/api-handlers/processed-jobs.js')
+const { getAllJobs, saveAllJobs, writeJobsToNeon } = require('../../lib/api-handlers/processed-jobs.js')
 
 export default async function handler(req, res) {
     // Only allow POST
@@ -89,17 +89,31 @@ export default async function handler(req, res) {
         if (successCount > 0) {
             const toSave = translated.filter(j => j.isTranslated)
             console.log(`[translate-jobs API] Step 6: 保存 ${toSave.length} 个翻译结果...`)
+
             try {
-                await saveJobs(toSave)
+                // 🔧 FIX: 使用 writeJobsToNeon 直接保存到数据库（upsert模式）
+                console.log(`[translate-jobs API] 使用 writeJobsToNeon 保存...`)
+                await writeJobsToNeon(toSave, 'upsert')
                 console.log(`[translate-jobs API] ✅ 保存成功`)
             } catch (saveError) {
                 console.error(`[translate-jobs API] ❌ 保存失败:`, saveError)
-                return res.status(500).json({
-                    success: false,
-                    error: 'Failed to save translations',
-                    message: saveError.message,
-                    details: saveError.stack
-                })
+                console.error(`[translate-jobs API] 错误详情:`, saveError.stack)
+
+                // 尝试备用方法
+                try {
+                    console.log(`[translate-jobs API] 尝试备用方法 saveAllJobs...`)
+                    await saveAllJobs(toSave)
+                    console.log(`[translate-jobs API] ✅ 备用方法保存成功`)
+                } catch (backupError) {
+                    console.error(`[translate-jobs API] ❌ 备用方法也失败:`, backupError)
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Failed to save translations',
+                        message: saveError.message,
+                        details: saveError.stack,
+                        backupError: backupError.message
+                    })
+                }
             }
         }
 
@@ -117,6 +131,7 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('[translate-jobs API] ❌ 未知错误:', error)
+        console.error('[translate-jobs API] 错误堆栈:', error.stack)
         return res.status(500).json({
             success: false,
             error: 'Translation failed',
