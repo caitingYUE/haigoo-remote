@@ -1201,6 +1201,14 @@ class JobAggregator {
         console.log('存储数据已清除');
       }
 
+      // 清除服务端数据库中的数据
+      try {
+        await processedJobsService.clearAllJobs();
+        console.log('服务端数据库数据已清除');
+      } catch (e) {
+        console.error('清除服务端数据库失败 (但这不影响本地清除):', e);
+      }
+
       console.log('所有数据清除完成');
     } catch (error) {
       console.error('清除数据失败:', error);

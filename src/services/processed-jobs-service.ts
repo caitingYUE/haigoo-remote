@@ -252,6 +252,32 @@ class ProcessedJobsService {
         return 'full-time'
     }
   }
+
+  // 清除所有处理后的职位数据
+  async clearAllJobs(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/data/processed-jobs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          jobs: [],
+          mode: 'replace'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to clear jobs: ${response.statusText}`)
+      }
+
+      console.log('[processed-jobs-service] 所有职位数据已清除')
+      return true
+    } catch (error) {
+      console.error('清除所有职位数据失败:', error)
+      throw error
+    }
+  }
 }
 
 export const processedJobsService = new ProcessedJobsService()
