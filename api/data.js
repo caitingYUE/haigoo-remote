@@ -8,8 +8,7 @@ export default async function handler(req, res) {
     const path = url.pathname;
 
     console.log('[API:Data] Request Path:', path);
-    console.log('[API:Data] Resource param:', req.query.resource);
-    console.log('[API:Data] Resource param from URL:', url.searchParams.get('resource'));
+    console.log('[API:Data] Request Query:', req.query);
     
     // Dispatch based on path or query
     // /api/data/processed-jobs
