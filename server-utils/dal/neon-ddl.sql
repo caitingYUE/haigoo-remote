@@ -243,3 +243,22 @@ CREATE TABLE user_profile_stats (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- payment_records - 存储支付记录
+CREATE TABLE payment_records (
+  id SERIAL PRIMARY KEY,
+  payment_id VARCHAR(255) UNIQUE NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  currency VARCHAR(10) DEFAULT 'CNY',
+  payment_method VARCHAR(50) NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending',
+  plan_id VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2025-12-04: Add membership fields to users table
+-- ALTER TABLE users ADD COLUMN membership_level VARCHAR(50) DEFAULT 'none';
+-- ALTER TABLE users ADD COLUMN membership_start_at TIMESTAMP;
+-- ALTER TABLE users ADD COLUMN membership_expire_at TIMESTAMP;
+

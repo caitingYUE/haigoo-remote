@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
+import { useAuth } from '../contexts/AuthContext'
 import { segmentJobDescription } from '../utils/translation'
 import { SingleLineTags } from './SingleLineTags'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -25,6 +26,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     showCloseButton = false
 }) => {
     const navigate = useNavigate()
+    const { user } = useAuth()
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
     const [feedbackAccuracy, setFeedbackAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
     const [feedbackContent, setFeedbackContent] = useState('')
@@ -51,6 +53,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job, showTranslation])
 
     const handleApply = () => {
+        // 检查会员权限
+        if (job.canRefer) {
+             const isMember = user?.membershipLevel && user.membershipLevel !== 'none' && user.membershipExpireAt && new Date(user.membershipExpireAt) > new Date();
+             if (!isMember) {
+                 if (window.confirm('该岗位支持内推直达，仅限俱乐部会员申请。是否前往开通会员？')) {
+                     navigate('/membership');
+                 }
+                 return;
+             }
+        }
+
         if (job.sourceUrl) {
             window.open(job.sourceUrl, '_blank', 'noopener,noreferrer')
         } else {

@@ -30,8 +30,15 @@ async function startServer() {
         console.log('Importing users handler...');
         const usersHandler = (await import('./api/users.js')).default;
         app.all('/api/users', async (req, res) => { await usersHandler(req, res); });
-        app.all('/api/user-profile', async (req, res) => { await usersHandler(req, res); });
-        console.log('Users handler imported.');
+        console.log('Importing user-profile handler...');
+        const userProfileHandler = (await import('./lib/api-handlers/user-profile.js')).default;
+        app.all('/api/user-profile', async (req, res) => { await userProfileHandler(req, res); });
+        console.log('User-profile handler imported.');
+
+        console.log('Importing membership handler...');
+        const membershipHandler = (await import('./lib/api-handlers/membership.js')).default;
+        app.all('/api/membership', async (req, res) => { await membershipHandler(req, res); });
+        console.log('Membership handler imported.');
 
         console.log('Importing data handler...');
         const dataHandler = (await import('./api/data.js')).default;

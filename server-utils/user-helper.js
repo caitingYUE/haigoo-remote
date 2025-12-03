@@ -43,6 +43,9 @@ const userHelper = {
                 if (user.last_login_at) user.lastLoginAt = user.last_login_at
                 if (user.created_at) user.createdAt = user.created_at
                 if (user.updated_at) user.updatedAt = user.updated_at
+                if (user.membership_level) user.membershipLevel = user.membership_level
+                if (user.membership_start_at) user.membershipStartAt = user.membership_start_at
+                if (user.membership_expire_at) user.membershipExpireAt = user.membership_expire_at
             }
 
             return user
@@ -79,6 +82,9 @@ const userHelper = {
                 if (user.last_login_at) user.lastLoginAt = user.last_login_at
                 if (user.created_at) user.createdAt = user.created_at
                 if (user.updated_at) user.updatedAt = user.updated_at
+                if (user.membership_level) user.membershipLevel = user.membership_level
+                if (user.membership_start_at) user.membershipStartAt = user.membership_start_at
+                if (user.membership_expire_at) user.membershipExpireAt = user.membership_expire_at
             }
 
             return user

@@ -153,7 +153,11 @@ export function sanitizeUser(user) {
     // 其他非敏感字段
     profile: user.profile,
     authProvider: user.authProvider || user.auth_provider,
-    emailVerified: user.emailVerified ?? user.email_verified ?? false
+    emailVerified: user.emailVerified ?? user.email_verified ?? false,
+    // 会员字段
+    membershipLevel: user.membershipLevel || user.membership_level || 'none',
+    membershipStartAt: user.membershipStartAt || user.membership_start_at,
+    membershipExpireAt: user.membershipExpireAt || user.membership_expire_at
   }
 
   // 移除所有值为undefined的属性

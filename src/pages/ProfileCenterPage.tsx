@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp } from 'lucide-react'
+import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { resumeService } from '../services/resume-service'
@@ -146,16 +146,25 @@ export default function ProfileCenterPage() {
 
           showSuccess('简历上传成功！', '正在分析简历内容...')
 
-          // 4. 获取 AI 建议
-          try {
-            const analysis = await resumeService.analyzeResume(parsed.textContent)
-            if (analysis.success && analysis.data) {
-              setResumeScore(analysis.data.score || 0)
-              showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
-            }
-          } catch (aiError) {
-            console.warn('AI analysis failed:', aiError)
-            // AI 分析失败不影响简历上传状态
+          // 4. 获取 AI 建议 (需会员)
+          const isMember = authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date();
+          
+          if (!isMember) {
+             showSuccess('简历上传成功', '开通会员可解锁AI深度优化建议');
+             if(confirm('解锁AI简历深度优化需要会员权益，是否前往开通？')) {
+                 navigate('/membership');
+             }
+          } else {
+              try {
+                const analysis = await resumeService.analyzeResume(parsed.textContent)
+                if (analysis.success && analysis.data) {
+                  setResumeScore(analysis.data.score || 0)
+                  showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
+                }
+              } catch (aiError) {
+                console.warn('AI analysis failed:', aiError)
+                // AI 分析失败不影响简历上传状态
+              }
           }
         } else {
           // 解析内容太少，可能解析不完全
@@ -517,6 +526,36 @@ export default function ProfileCenterPage() {
                 <ThumbsUp className={`w-5 h-5 ${tab === 'recommend' ? 'text-white' : 'text-gray-400'}`} />
                 <span className="text-sm font-medium">我要推荐</span>
               </button>
+            </div>
+
+            {/* Membership Card */}
+            <div className="mt-6 mx-2 p-4 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl text-white shadow-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Crown className="w-5 h-5 text-yellow-300" />
+                <h3 className="font-bold text-sm">会员权益</h3>
+              </div>
+              {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
+                  <div>
+                    <p className="text-xs opacity-90 mb-2">您当前是 <span className="font-bold text-yellow-200">{authUser.membershipLevel === 'club_go' ? '俱乐部Go会员' : 'Goo+会员'}</span></p>
+                    <p className="text-xs opacity-75">有效期至 {new Date(authUser.membershipExpireAt).toLocaleDateString()}</p>
+                    <button 
+                        onClick={() => navigate('/membership')}
+                        className="mt-3 w-full py-1.5 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white/20 transition-colors"
+                    >
+                        续费/升级
+                    </button>
+                  </div>
+              ) : (
+                  <div>
+                    <p className="text-xs opacity-90 mb-3 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
+                    <button 
+                        onClick={() => navigate('/membership')}
+                        className="w-full py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        立即开通
+                    </button>
+                  </div>
+              )}
             </div>
           </aside>
 
