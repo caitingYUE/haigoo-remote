@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
+import { JobDetailPanel } from '../components/JobDetailPanel'
 import JobFilterSidebar from '../components/JobFilterSidebar'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -119,6 +120,7 @@ export default function JobsPage() {
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
+  const [showInlineDetail, setShowInlineDetail] = useState(false)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
   const [isPreferenceModalOpen, setIsPreferenceModalOpen] = useState(false)
   const [userPreferences, setUserPreferences] = useState<JobPreferences | null>(null)
@@ -446,12 +448,19 @@ export default function JobsPage() {
           setSelectedJob(job)
           const idx = distributedJobs.findIndex(j => j.id === jobId)
           if (idx !== -1) setCurrentJobIndex(idx)
+          
+          if (window.innerWidth >= 1024) {
+            setShowInlineDetail(true)
+          } else {
+            setIsJobDetailOpen(true)
+          }
         }
       }
-    } else if (!jobId && distributedJobs.length > 0 && !selectedJob && window.innerWidth >= 1024) {
-      // Auto-select first job on desktop if no jobId in URL
-      setSelectedJob(distributedJobs[0])
-      setCurrentJobIndex(0)
+    } else if (!jobId) {
+      // If no jobId, ensure we show list view
+      setShowInlineDetail(false)
+      setIsJobDetailOpen(false)
+      setSelectedJob(null)
     }
   }, [distributedJobs, location.search, selectedJob])
 
@@ -464,9 +473,23 @@ export default function JobsPage() {
     params.set('jobId', job.id)
     navigate({ search: params.toString() }, { replace: true })
 
-    // Always open modal in this new grid layout
-    setIsJobDetailOpen(true)
+    // Determine view mode based on screen size
+    if (window.innerWidth >= 1024) {
+      setShowInlineDetail(true)
+      setIsJobDetailOpen(false)
+    } else {
+      setIsJobDetailOpen(true)
+    }
   }
+
+  const handleBackToList = () => {
+    setShowInlineDetail(false)
+    setSelectedJob(null)
+    const params = new URLSearchParams(location.search)
+    params.delete('jobId')
+    navigate({ search: params.toString() }, { replace: true })
+  }
+
 
   const clearAllFilters = () => {
     setSearchTerm('');
@@ -510,8 +533,21 @@ export default function JobsPage() {
              />
           </div>
 
-          {/* Main Content: Search + Job List */}
+          {/* Main Content: Search + Job List OR Job Detail */}
           <div className="flex-1">
+            {showInlineDetail && selectedJob ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 h-[calc(100vh-180px)] overflow-hidden flex flex-col animate-in fade-in duration-300">
+                  <JobDetailPanel
+                    job={selectedJob}
+                    onSave={() => toggleSaveJob(selectedJob.id)}
+                    isSaved={savedJobs.has(selectedJob.id)}
+                    onApply={() => { /* apply logic if needed */ }}
+                    onClose={handleBackToList}
+                    showCloseButton={true}
+                  />
+              </div>
+            ) : (
+             <>
              {/* Search Bar & Sort */}
              <div className="sticky top-4 z-30 mb-6">
                <div className="flex flex-col sm:flex-row gap-4 p-2 bg-white/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-lg shadow-slate-200/50">
@@ -585,6 +621,8 @@ export default function JobsPage() {
                    ))}
                 </div>
              )}
+             </>
+            )}
           </div>
         </div>
       </div>
