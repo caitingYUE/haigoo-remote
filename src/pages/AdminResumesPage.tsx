@@ -29,7 +29,7 @@ interface ResumeRecord {
     fileName: string;
     size: number;
     parseStatus: 'success' | 'failed' | 'partial';
-    parsedData: ParsedResume;
+    parseResult: ParsedResume;
     uploadedAt: string;
 }
 
@@ -91,8 +91,8 @@ const AdminResumesPage: React.FC = () => {
 
     const filteredResumes = resumes.filter(resume => {
         const term = searchTerm.toLowerCase();
-        const name = resume.parsedData?.name?.toLowerCase() || '';
-        const email = resume.parsedData?.email?.toLowerCase() || '';
+        const name = resume.parseResult?.name?.toLowerCase() || '';
+        const email = resume.parseResult?.email?.toLowerCase() || '';
         const fileName = resume.fileName.toLowerCase();
 
         return name.includes(term) || email.includes(term) || fileName.includes(term);
@@ -190,10 +190,10 @@ const AdminResumesPage: React.FC = () => {
                                                     </div>
                                                     <div className="ml-4">
                                                         <div className="text-sm font-medium text-slate-900">
-                                                            {resume.parsedData?.name || '未知姓名'}
+                                                            {resume.parseResult?.name || '未知姓名'}
                                                         </div>
                                                         <div className="text-sm text-slate-500">
-                                                            {resume.parsedData?.email || '无邮箱'}
+                                                            {resume.parseResult?.email || '无邮箱'}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -232,7 +232,7 @@ const AdminResumesPage: React.FC = () => {
                                                 <div className="flex space-x-3">
                                                     <button
                                                         onClick={() => {
-                                                            alert(JSON.stringify(resume.parsedData, null, 2))
+                                                            alert(JSON.stringify(resume.parseResult, null, 2))
                                                         }}
                                                         className="text-indigo-600 hover:text-indigo-900"
                                                         title="查看详情"
