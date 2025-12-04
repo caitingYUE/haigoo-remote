@@ -142,8 +142,8 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
     return (
       <article
         className={`group bg-white rounded-lg p-3 shadow-sm border transition-all duration-200 cursor-pointer relative flex items-start gap-3 ${isActive
-          ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/30'
-          : 'border-slate-200 hover:shadow-md hover:border-blue-200'
+          ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/30'
+          : 'border-slate-200 hover:shadow-md hover:border-indigo-200'
           }`}
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
@@ -164,13 +164,13 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start gap-2">
-            <h2 className="font-semibold text-slate-900 text-base leading-tight truncate hover:text-blue-600 transition-colors" title={job.translations?.title || job.title}>
+            <h2 className="font-semibold text-slate-900 text-base leading-tight truncate hover:text-indigo-600 transition-colors" title={job.translations?.title || job.title}>
               {job.translations?.title || job.title}
             </h2>
             {onSave && (
               <button
                 onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
-                className={`flex-shrink-0 p-1 rounded-md transition-colors ${isSaved ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-50'}`}
+                className={`flex-shrink-0 p-1 rounded-md transition-colors ${isSaved ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50'}`}
               >
                 <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
               </button>
@@ -206,8 +206,8 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
   return (
     <article
       className={`group bg-white rounded-xl p-5 shadow-sm border transition-all duration-200 cursor-pointer relative flex flex-col h-full ${isActive
-        ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/30'
-        : 'border-slate-200 hover:shadow-md hover:border-blue-200'
+        ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/30'
+        : 'border-slate-200 hover:shadow-md hover:border-indigo-200'
         }`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
@@ -231,7 +231,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
           <div className="flex items-start justify-between gap-2">
             <h2
               id={`job-${job.id}-title`}
-              className="font-bold text-slate-900 text-lg leading-tight truncate hover:text-blue-600 transition-colors mb-1"
+              className="font-bold text-slate-900 text-lg leading-tight truncate hover:text-indigo-600 transition-colors mb-1"
               title={job.translations?.title || job.title}
             >
               {job.translations?.title || job.title}
@@ -239,7 +239,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
             {onSave && (
               <button
                 onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
-                className={`p-1.5 -mr-1.5 rounded-lg transition-colors ${isSaved ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-50'}`}
+                className={`p-1.5 -mr-1.5 rounded-lg transition-colors ${isSaved ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50'}`}
                 title={isSaved ? '已收藏' : '收藏'}
               >
                 <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
@@ -254,7 +254,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="font-medium truncate max-w-[200px] hover:text-blue-600 hover:underline"
+                className="font-medium truncate max-w-[200px] hover:text-indigo-600 hover:underline"
                 title={job.translations?.company || job.company}
               >
                 {job.translations?.company || job.company}
@@ -272,7 +272,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
             )}
 
             {job.isTrusted && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100">
                 <Award className="w-3 h-3 mr-0.5" />
                 认证
               </span>
@@ -302,7 +302,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
       <div className="flex-1 mb-4 min-h-[3rem]">
         {job.summary ? (
           <div className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
             <p className="text-slate-700 text-sm font-medium leading-relaxed">

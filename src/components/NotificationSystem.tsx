@@ -110,7 +110,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
       case 'warning':
         return <AlertTriangle className="w-5 h-5 text-yellow-600" />
       case 'info':
-        return <Info className="w-5 h-5 text-blue-600" />
+        return <Info className="w-5 h-5 text-indigo-600" />
     }
   }
 
@@ -123,7 +123,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
       case 'warning':
         return 'bg-yellow-50 border-yellow-200'
       case 'info':
-        return 'bg-blue-50 border-blue-200'
+        return 'bg-indigo-50 border-indigo-200'
     }
   }
 
@@ -150,7 +150,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
           {action && (
             <button
               onClick={action.onClick}
-              className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+              className="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
             >
               {action.label}
             </button>
