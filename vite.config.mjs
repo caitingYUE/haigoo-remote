@@ -39,7 +39,10 @@ export default defineConfig({
       },
       mangle: {
         toplevel: false,          // ❗不要混淆顶层变量（避免破坏 Vercel 入口）
-        properties: false         // ❗不要混淆属性名（避免破坏 Node 内部属性）
+        properties: {
+          regex: /^[a-zA-Z]\w+$/,  // 只混淆你自己写的业务属性
+          keep_quoted: true        // "xx" 这种不会被动
+        }
       }
     },
     rollupOptions: {
