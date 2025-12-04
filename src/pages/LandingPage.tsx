@@ -174,7 +174,7 @@ export default function LandingPage() {
               <p className="text-slate-500 text-base">经过验证的优质远程企业</p>
             </div>
             <button
-              onClick={() => navigate('/companies')}
+              onClick={() => navigate('/trusted-companies')}
               className="text-slate-500 hover:text-indigo-600 text-sm font-medium flex items-center gap-1 transition-colors"
             >
               查看全部 <ArrowRight className="w-4 h-4" />

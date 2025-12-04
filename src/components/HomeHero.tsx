@@ -115,15 +115,15 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     </div>
 
                     {/* Right Side: Brand Banner */}
-                    <div className="flex-1 relative rounded-xl overflow-hidden bg-gradient-to-br from-[#F8FAFC] to-[#EFF6FF] border border-blue-50/50">
+                    <div className="flex-1 relative rounded-xl overflow-hidden bg-gradient-to-br from-[#F8FAFC] to-[#EFF6FF] border border-indigo-50/50">
                         {/* Abstract Background Shapes */}
-                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-100/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
                         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-50/60 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
 
                         <div className="relative z-10 h-full flex flex-col justify-center px-10 md:px-16 py-12">
                             <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 leading-[1.15] tracking-tight">
                                 国内求职者专属的<br />
-                                <span className="text-blue-600">海外远程工作库</span>
+                                <span className="text-indigo-600">海外远程工作库</span>
                             </h1>
 
                             <p className="text-slate-500 text-lg mb-10 max-w-xl leading-relaxed">
@@ -133,7 +133,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                             {/* Search Bar */}
                             <div className="max-w-xl relative">
-                                <div className="relative bg-white p-1.5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-300 transition-all">
+                                <div className="relative bg-white p-1.5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-2 focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-300 transition-all">
                                     <div className="flex-1 flex items-center gap-3 px-3">
                                         <Search className="w-5 h-5 text-slate-400" />
                                         <input

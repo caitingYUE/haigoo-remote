@@ -53,7 +53,7 @@ class TrustedCompaniesService {
 
     async getCompanyById(id: string): Promise<TrustedCompany | null> {
         try {
-            const response = await fetch(`${this.API_BASE}?id=${id}`);
+            const response = await fetch(`${this.API_BASE}?target=companies&id=${id}`);
             if (!response.ok) throw new Error('Failed to fetch company');
             const data = await response.json();
             return data.company || null;

@@ -424,7 +424,7 @@ export default function ProfileCenterPage() {
             <p className="text-slate-500 mt-1">反馈岗位或平台信息问题与建议。</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-3">信息准确度</label>
@@ -522,7 +522,7 @@ export default function ProfileCenterPage() {
             <p className="text-slate-500 mt-1">推荐企业、岗位或优秀用户。</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">推荐类型</label>

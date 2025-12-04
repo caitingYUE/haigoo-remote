@@ -45,7 +45,7 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
           <button
             onClick={() => setChannel('email')}
             className={`text-sm font-medium transition-colors ${channel === 'email'
-              ? (isLight ? 'text-blue-600' : 'text-white')
+              ? (isLight ? 'text-indigo-600' : 'text-white')
               : (isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/60 hover:text-white')}`}
           >
             Email 订阅
@@ -54,7 +54,7 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
           <button
             onClick={() => setChannel('feishu')}
             className={`text-sm font-medium transition-colors ${channel === 'feishu'
-              ? (isLight ? 'text-blue-600' : 'text-white')
+              ? (isLight ? 'text-indigo-600' : 'text-white')
               : (isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/60 hover:text-white')}`}
           >
             飞书订阅
@@ -65,8 +65,8 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
           <input
             className={`flex-1 px-4 py-3 rounded-xl border focus:outline-none transition-colors backdrop-blur-sm
                 ${isLight
-                ? 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-blue-300 focus:ring-2 focus:ring-blue-100'
-                : 'bg-white/10 border-white/20 text-white placeholder-blue-200 focus:bg-white/20'}`}
+                ? 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100'
+                : 'bg-white/10 border-white/20 text-white placeholder-indigo-200 focus:bg-white/20'}`}
             placeholder={channel === 'email' ? "输入您的邮箱地址" : "输入您的飞书 ID"}
             value={identifier}
             onChange={e => setIdentifier(e.target.value)}
@@ -75,8 +75,8 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
             onClick={submit}
             className={`px-6 py-3 font-bold rounded-xl transition-colors shadow-lg 
                 ${isLight
-                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
-                : 'bg-white text-blue-600 hover:bg-blue-50 shadow-blue-900/20'}`}
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
+                : 'bg-white text-indigo-600 hover:bg-indigo-50 shadow-indigo-900/20'}`}
           >
             立即订阅
           </button>
@@ -101,7 +101,7 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
           <option value="feishu">Feishu</option>
         </select>
         <input className="input" placeholder={channel === 'email' ? 'you@example.com' : 'Feishu ID'} value={identifier} onChange={e => setIdentifier(e.target.value)} />
-        <button onClick={submit} className="px-4 py-2 bg-[#3182CE] text-white rounded-lg hover:bg-[#256bb0] transition-colors">Subscribe</button>
+        <button onClick={submit} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">Subscribe</button>
       </div>
       {status === 'done' && <div className="mt-2 text-green-600 text-sm">Subscribed successfully</div>}
       {status === 'error' && <div className="mt-2 text-red-600 text-sm">Subscription failed</div>}
