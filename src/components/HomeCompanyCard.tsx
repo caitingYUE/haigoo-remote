@@ -45,10 +45,10 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
     return (
         <div
             onClick={onClick}
-            className="group bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
+            className="group bg-white rounded-xl border border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
         >
             {/* Cover Area - 16:9 Aspect Ratio */}
-            <div className="relative w-full pt-[56.25%] overflow-hidden bg-gray-50">
+            <div className="relative w-full pt-[56.25%] overflow-hidden bg-slate-50">
                 {company.coverImage ? (
                     <img
                         src={company.coverImage}
@@ -68,7 +68,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                         <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
                         {/* Fallback Icon if absolutely no image */}
                         <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                            <Building2 className="w-16 h-16 text-gray-400" />
+                            <Building2 className="w-16 h-16 text-slate-400" />
                         </div>
                     </div>
                 )}
@@ -94,7 +94,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
             <div className="p-5 flex-1 flex flex-col">
                 {/* Header: Name & Industry */}
                 <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-bold text-gray-900 text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
+                    <h3 className="font-bold text-slate-900 text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
                         {company.name}
                     </h3>
                     {company.industry && (
@@ -105,26 +105,26 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                 </div>
 
                 {/* Updated At */}
-                <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-3">
                     <Clock className="w-3 h-3" />
                     <span>更新于 {formatDate(company.updatedAt || new Date().toISOString())}</span>
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-1">
+                <p className="text-sm text-slate-500 line-clamp-2 mb-4 flex-1">
                     {company.description || '暂无简介'}
                 </p>
 
                 {/* Footer: Hiring Info */}
-                <div className="pt-4 border-t border-gray-50 flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
+                <div className="pt-4 border-t border-slate-50 flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-slate-600">
                         <Briefcase className="w-4 h-4 text-blue-500" />
                         {topCategories.length > 0 ? (
                             <span className="font-medium">
                                 {topCategories.map(([cat, count]) => `${cat} ${count}`).join(' · ')}
                             </span>
                         ) : (
-                            <span className="text-gray-400">暂无在招岗位</span>
+                            <span className="text-slate-400">暂无在招岗位</span>
                         )}
                     </div>
                     <span className="text-xs text-blue-600 font-medium group-hover:translate-x-1 transition-transform">

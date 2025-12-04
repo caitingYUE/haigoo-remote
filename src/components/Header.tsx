@@ -117,29 +117,37 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Center Navigation - 核心功能导航 */}
-          <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-            <div className="flex items-center gap-6">
-              <Link
-                to="/jobs"
-                className={`text-base font-semibold transition-colors ${location.pathname === '/jobs'
-                  ? 'text-[#3182CE]'
-                  : 'text-gray-700 hover:text-gray-900'
-                  }`}
-              >
-                远程岗位
-              </Link>
+          {/* Center Navigation - Moved to Right as per request */}
+          <div className="hidden md:flex items-center gap-6 ml-auto mr-8">
+            <Link
+              to="/"
+              className={`text-base font-medium transition-colors ${location.pathname === '/'
+                ? 'text-[#3182CE] font-semibold'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
+            >
+              首页
+            </Link>
 
-              <Link
-                to="/trusted-companies"
-                className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
-                  ? 'text-[#3182CE]'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                可信企业列表
-              </Link>
-            </div>
+            <Link
+              to="/jobs"
+              className={`text-base font-medium transition-colors ${location.pathname === '/jobs'
+                ? 'text-[#3182CE] font-semibold'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
+            >
+              远程岗位
+            </Link>
+
+            <Link
+              to="/trusted-companies"
+              className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
+                ? 'text-[#3182CE] font-semibold'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
+            >
+              精选企业
+            </Link>
           </div>
 
           {/* Right side actions */}

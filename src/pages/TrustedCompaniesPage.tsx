@@ -103,14 +103,14 @@ export default function TrustedCompaniesPage() {
     })
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA]">
+        <div className="min-h-screen bg-slate-50">
             {/* Hero Section */}
-            <div className="bg-white border-b border-gray-100">
+            <div className="bg-white border-b border-slate-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-center">
-                    <h1 className="text-3xl font-bold text-[#1A365D] mb-3">
+                    <h1 className="text-3xl font-bold text-slate-900 mb-3">
                         遇见创新者：我们的可信远程企业
                     </h1>
-                    <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+                    <p className="text-lg text-slate-500 max-w-3xl mx-auto mb-8">
                         探索我们精选的经过验证的企业，它们以远程文化、使命和提供的机会而闻名。
                     </p>
 
@@ -142,7 +142,7 @@ export default function TrustedCompaniesPage() {
                             {(selectedIndustries.length > 0 || selectedRegions.length > 0) && (
                                 <button 
                                     onClick={() => { setSelectedIndustries([]); setSelectedRegions([]); }}
-                                    className="text-sm text-gray-500 hover:text-blue-600 whitespace-nowrap"
+                                    className="text-sm text-slate-500 hover:text-blue-600 whitespace-nowrap"
                                 >
                                     重置
                                 </button>
@@ -159,7 +159,7 @@ export default function TrustedCompaniesPage() {
                         <LoadingSpinner />
                     </div>
                 ) : filteredCompanies.length === 0 ? (
-                    <div className="text-center py-20 text-gray-500">
+                    <div className="text-center py-20 text-slate-500">
                         No companies found matching your search.
                     </div>
                 ) : (
@@ -168,10 +168,10 @@ export default function TrustedCompaniesPage() {
                             <div
                                 key={company.id}
                                 onClick={() => navigate(`/company/${company.id}`)}
-                                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-100 group overflow-hidden flex flex-col h-full"
+                                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border border-slate-100 group overflow-hidden flex flex-col h-full"
                             >
                                 {/* Large Preview Image Area */}
-                                <div className="w-full h-40 bg-gray-50 relative border-b border-gray-100 overflow-hidden">
+                                <div className="w-full h-40 bg-slate-50 relative border-b border-slate-100 overflow-hidden">
                                     {company.coverImage ? (
                                         <img
                                             src={company.coverImage}
@@ -185,7 +185,7 @@ export default function TrustedCompaniesPage() {
                                     ) : null}
 
                                     {/* Fallback: Logo as Cover */}
-                                    <div className={`w-full h-full bg-gray-50 relative ${company.coverImage ? 'hidden' : ''}`}>
+                                    <div className={`w-full h-full bg-slate-50 relative ${company.coverImage ? 'hidden' : ''}`}>
                                         {company.logo ? (
                                             <img
                                                 src={company.logo}
@@ -199,12 +199,12 @@ export default function TrustedCompaniesPage() {
                                         ) : null}
 
                                         <div className={`w-full h-full flex items-center justify-center ${company.logo ? 'hidden' : ''}`}>
-                                            <Building className="w-12 h-12 text-gray-300" />
+                                            <Building className="w-12 h-12 text-slate-300" />
                                         </div>
                                     </div>
 
                                     {/* Verified Badge Overlay */}
-                                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-[#1A365D] shadow-sm border border-gray-100 z-20">
+                                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-slate-900 shadow-sm border border-slate-100 z-20">
                                         <div className="w-3 h-3 bg-[#3182CE] rounded-full flex items-center justify-center">
                                             <svg viewBox="0 0 24 24" fill="none" className="w-2 h-2 text-white" stroke="currentColor" strokeWidth="3">
                                                 <polyline points="20 6 9 17 4 12" />
@@ -216,31 +216,31 @@ export default function TrustedCompaniesPage() {
 
                                 <div className="p-6 flex flex-col flex-1">
 
-                                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#3182CE] transition-colors">
+                                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[#3182CE] transition-colors">
                                         {company.name}
                                     </h3>
 
-                                    <p className="text-gray-500 text-sm mb-4 line-clamp-2 h-10">
+                                    <p className="text-slate-500 text-sm mb-4 line-clamp-2 h-10">
                                         {company.description || 'No description available.'}
                                     </p>
 
                                     <div className="flex flex-wrap gap-2 mb-6">
                                         {company.tags && company.tags.length > 0 ? (
                                             company.tags.slice(0, 3).map((tag, idx) => (
-                                                <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
+                                                <span key={idx} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">
                                                     {tag}
                                                 </span>
                                             ))
                                         ) : (
-                                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">Remote First</span>
+                                            <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Remote First</span>
                                         )}
                                     </div>
 
-                                    <div className="pt-4 border-t border-gray-50">
-                                        <div className="text-sm font-medium text-gray-900">
+                                    <div className="pt-4 border-t border-slate-50">
+                                        <div className="text-sm font-medium text-slate-900">
                                             Open Positions:
                                         </div>
-                                        <div className="text-sm text-gray-500 mt-1">
+                                        <div className="text-sm text-slate-500 mt-1">
                                             {jobCounts[company.id] > 0 ? (
                                                 <span className="text-[#3182CE]">{jobCounts[company.id]} active jobs</span>
                                             ) : (

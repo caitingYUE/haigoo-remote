@@ -6,7 +6,7 @@ import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import HomeHero from '../components/HomeHero'
 import HomeJobCard from '../components/HomeJobCard'
 import HomeCompanyCard from '../components/HomeCompanyCard'
-import { ArrowRight, TrendingUp, Building2, Sparkles, Star, Zap } from 'lucide-react'
+import { ArrowRight, TrendingUp, Building2, Zap } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { Job } from '../types'
@@ -105,7 +105,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-slate-50/50">
       {/* New Hero Section */}
       <HomeHero stats={stats} />
 
@@ -115,14 +115,14 @@ export default function LandingPage() {
         <div id="featured-jobs" className="mt-20">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight">
+              <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">
                 精选机会
               </h2>
-              <p className="text-gray-500 text-base">为你精心挑选的优质远程机会</p>
+              <p className="text-slate-500 text-base">为你精心挑选的优质远程机会</p>
             </div>
             <button
               onClick={() => navigate('/jobs?region=domestic')}
-              className="group flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 transition-all duration-200 text-sm font-medium shadow-sm"
+              className="group flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 transition-all duration-200 text-sm font-medium shadow-sm"
             >
               <span>查看全部 {stats.totalJobs}+ 个岗位</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -132,14 +132,14 @@ export default function LandingPage() {
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-100"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
                 <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-600 border-t-transparent absolute top-0 left-0"></div>
               </div>
             </div>
           ) : featuredJobs.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">暂无精选岗位</p>
+            <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
+              <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500">暂无精选岗位</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -156,7 +156,7 @@ export default function LandingPage() {
           <div className="mt-12 text-center">
             <button
               onClick={() => navigate('/jobs?region=domestic')}
-              className="px-8 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 transition-all duration-200 inline-flex items-center gap-2 shadow-sm hover:shadow-md"
+              className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all duration-200 inline-flex items-center gap-2 shadow-sm hover:shadow-md"
             >
               查看更多职位
               <ArrowRight className="w-4 h-4" />
@@ -168,14 +168,14 @@ export default function LandingPage() {
         <div className="mt-24">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight">
+              <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">
                 可信企业
               </h2>
-              <p className="text-gray-500 text-base">经过验证的优质远程企业</p>
+              <p className="text-slate-500 text-base">经过验证的优质远程企业</p>
             </div>
             <button
               onClick={() => navigate('/companies')}
-              className="text-gray-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1 transition-colors"
+              className="text-slate-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1 transition-colors"
             >
               查看全部 <ArrowRight className="w-4 h-4" />
             </button>
@@ -184,14 +184,14 @@ export default function LandingPage() {
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-100"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
                 <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-600 border-t-transparent absolute top-0 left-0"></div>
               </div>
             </div>
           ) : trustedCompanies.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">暂无企业数据</p>
+            <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
+              <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500">暂无企业数据</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -215,11 +215,11 @@ export default function LandingPage() {
             <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-100/40 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
 
             <div className="relative z-10 max-w-2xl mx-auto">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight text-gray-900 flex items-center justify-center gap-3">
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight text-slate-900 flex items-center justify-center gap-3">
                 <Zap className="w-8 h-8 text-blue-600 fill-current" />
                 不错过任何机会
               </h2>
-              <p className="text-gray-600 mb-10 text-lg leading-relaxed">
+              <p className="text-slate-600 mb-10 text-lg leading-relaxed">
                 订阅岗位提醒，第一时间获取最新的远程工作机会。<br />
                 支持 <span className="font-semibold text-blue-600">Email</span> 和 <span className="font-semibold text-blue-600">飞书</span> 推送，不错过每一个好机会。
               </p>

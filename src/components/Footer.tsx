@@ -31,7 +31,7 @@ export default function Footer() {
 
   return (
     <footer 
-      className="bg-white border-t border-gray-200"
+      className="bg-white border-t border-slate-200"
       role="contentinfo"
       aria-label="网站页脚"
     >
@@ -39,7 +39,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           {/* 版权信息 */}
           <div 
-            className="text-sm text-gray-500 text-center sm:text-left"
+            className="text-sm text-slate-500 text-center sm:text-left"
             role="region"
             aria-label="版权信息"
           >
@@ -60,7 +60,7 @@ export default function Footer() {
               <a
                 key={link.id}
                 href={link.href}
-                className="text-sm text-gray-500 hover:text-haigoo-primary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-md px-1 py-1"
+                className="text-sm text-slate-500 hover:text-haigoo-primary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-md px-1 py-1"
                 aria-label={link.ariaLabel}
                 onKeyDown={(e) => handleKeyDown(e, () => {
                   // 这里可以添加自定义导航逻辑
@@ -74,8 +74,8 @@ export default function Footer() {
         </div>
 
         {/* 可选：添加额外的页脚信息 */}
-        <div className="mt-6 pt-6 border-t border-gray-100">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-600">
+        <div className="mt-6 pt-6 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-600">
             <div 
               className="flex items-center gap-4"
               role="region"

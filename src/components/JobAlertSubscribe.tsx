@@ -46,16 +46,16 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
             onClick={() => setChannel('email')}
             className={`text-sm font-medium transition-colors ${channel === 'email'
               ? (isLight ? 'text-blue-600' : 'text-white')
-              : (isLight ? 'text-gray-400 hover:text-gray-600' : 'text-white/60 hover:text-white')}`}
+              : (isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/60 hover:text-white')}`}
           >
             Email 订阅
           </button>
-          <div className={`w-px h-4 ${isLight ? 'bg-gray-300' : 'bg-white/20'}`}></div>
+          <div className={`w-px h-4 ${isLight ? 'bg-slate-300' : 'bg-white/20'}`}></div>
           <button
             onClick={() => setChannel('feishu')}
             className={`text-sm font-medium transition-colors ${channel === 'feishu'
               ? (isLight ? 'text-blue-600' : 'text-white')
-              : (isLight ? 'text-gray-400 hover:text-gray-600' : 'text-white/60 hover:text-white')}`}
+              : (isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/60 hover:text-white')}`}
           >
             飞书订阅
           </button>
@@ -65,7 +65,7 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
           <input
             className={`flex-1 px-4 py-3 rounded-xl border focus:outline-none transition-colors backdrop-blur-sm
                 ${isLight
-                ? 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-300 focus:ring-2 focus:ring-blue-100'
+                ? 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-blue-300 focus:ring-2 focus:ring-blue-100'
                 : 'bg-white/10 border-white/20 text-white placeholder-blue-200 focus:bg-white/20'}`}
             placeholder={channel === 'email' ? "输入您的邮箱地址" : "输入您的飞书 ID"}
             value={identifier}

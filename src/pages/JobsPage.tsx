@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Search, SortAsc, LayoutGrid, List as ListIcon } from 'lucide-react'
+import { Search, SortAsc, Sparkles } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
@@ -16,26 +16,26 @@ import { trustedCompaniesService, TrustedCompany } from '../services/trusted-com
 import { JobPreferenceModal, JobPreferences } from '../components/JobPreferenceModal'
 
 // Industry Options
-const INDUSTRY_OPTIONS = [
-  '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
-  '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
-  '硬件/物联网', '消费生活', '其他'
-].map(v => ({ label: v, value: v }));
+// const INDUSTRY_OPTIONS = [
+//   '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
+//   '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
+//   '硬件/物联网', '消费生活', '其他'
+// ].map(v => ({ label: v, value: v }));
 
 // Job Type Options
-const JOB_TYPE_OPTIONS = [
-  { label: '全职', value: 'full-time' },
-  { label: '兼职', value: 'part-time' },
-  { label: '合同', value: 'contract' },
-  { label: '自由职业', value: 'freelance' },
-  { label: '实习', value: 'internship' }
-];
+// const JOB_TYPE_OPTIONS = [
+//   { label: '全职', value: 'full-time' },
+//   { label: '兼职', value: 'part-time' },
+//   { label: '合同', value: 'contract' },
+//   { label: '自由职业', value: 'freelance' },
+//   { label: '实习', value: 'internship' }
+// ];
 
 // Location Options
-const LOCATION_OPTIONS = [
-  { label: '远程', value: 'Remote' },
-  { label: '全球', value: 'Worldwide' }
-];
+// const LOCATION_OPTIONS = [
+//   { label: '远程', value: 'Remote' },
+//   { label: '全球', value: 'Worldwide' }
+// ];
 
 export default function JobsPage() {
   const navigate = useNavigate()
@@ -507,7 +507,7 @@ export default function JobsPage() {
             探索优质远程工作机会 (Explore Quality Remote Work)
           </h1>
           <p className="text-slate-500 text-lg max-w-3xl">
-            所有职位均由海鸽俱乐部筛选审核，助你高效求职。(All positions are screened by Haigoo Club.)
+            所有职位均由海狗远程俱乐部筛选审核。(All positions are screened by Haigoo Remote Club.)
           </p>
         </div>
       </div>
@@ -517,6 +517,66 @@ export default function JobsPage() {
 
           {/* Left Sidebar: Filters */}
           <div className="w-full lg:w-72 flex-shrink-0">
+            {/* Preference Settings Entry */}
+            <div className="mb-6 bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                  岗位偏好
+                </h3>
+                <button
+                  onClick={() => setIsPreferenceModalOpen(true)}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  {userPreferences ? '修改设置' : '添加偏好'}
+                </button>
+              </div>
+
+              {userPreferences && (userPreferences.jobTypes.length > 0 || userPreferences.industries.length > 0 || userPreferences.locations.length > 0) ? (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      ...(userPreferences.jobTypes || []),
+                      ...(userPreferences.industries || []),
+                      ...(userPreferences.locations || [])
+                    ].slice(0, 3).map((tag, i) => (
+                      <span key={i} className="text-xs px-2.5 py-1 bg-slate-50 text-slate-600 rounded-lg border border-slate-200 truncate max-w-[120px]">
+                        {tag}
+                      </span>
+                    ))}
+                    {[
+                      ...(userPreferences.jobTypes || []),
+                      ...(userPreferences.industries || []),
+                      ...(userPreferences.locations || [])
+                    ].length > 3 && (
+                        <span className="text-xs px-1.5 py-1 text-slate-400">
+                          +{[
+                            ...(userPreferences.jobTypes || []),
+                            ...(userPreferences.industries || []),
+                            ...(userPreferences.locations || [])
+                          ].length - 3}
+                        </span>
+                      )}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    已根据您的偏好优化推荐排序
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-500 leading-relaxed">
+                    设置求职偏好，获取更精准的岗位推荐
+                  </p>
+                  <button
+                    onClick={() => setIsPreferenceModalOpen(true)}
+                    className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-lg border border-slate-200 transition-colors"
+                  >
+                    立即设置
+                  </button>
+                </div>
+              )}
+            </div>
+
             <JobFilterSidebar
               filters={filters}
               onFilterChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))}

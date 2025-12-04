@@ -20,7 +20,7 @@ export default function HomeJobCard({ job, onClick }: HomeJobCardProps) {
     return (
         <div
             onClick={onClick}
-            className="group bg-white rounded-xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50/50 transition-all duration-300 cursor-pointer flex flex-col h-full relative overflow-hidden"
+            className="group bg-white rounded-xl p-6 border border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50/50 transition-all duration-300 cursor-pointer flex flex-col h-full relative overflow-hidden"
         >
             {/* Hover Gradient Background */}
             <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
@@ -28,23 +28,23 @@ export default function HomeJobCard({ job, onClick }: HomeJobCardProps) {
             <div className="relative z-10 flex flex-col h-full">
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:border-blue-100 transition-colors flex-shrink-0">
+                        <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center overflow-hidden border border-slate-100 group-hover:border-blue-100 transition-colors flex-shrink-0">
                             {job.logo ? (
                                 <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
                             ) : (
-                                <Building2 className="w-6 h-6 text-gray-300" />
+                                <Building2 className="w-6 h-6 text-slate-300" />
                             )}
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-900 text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
+                            <h3 className="font-bold text-slate-900 text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
                                 {job.title}
                             </h3>
                             <div className="flex items-center gap-2 mt-1">
-                                <span className="text-sm text-gray-500 font-medium">{job.company}</span>
+                                <span className="text-sm text-slate-500 font-medium">{job.company}</span>
                                 {job.companyIndustry && (
                                     <>
-                                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                        <span className="text-xs text-gray-400">{job.companyIndustry}</span>
+                                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                        <span className="text-xs text-slate-400">{job.companyIndustry}</span>
                                     </>
                                 )}
                             </div>
@@ -58,7 +58,7 @@ export default function HomeJobCard({ job, onClick }: HomeJobCardProps) {
                             {job.location}
                         </span>
                     )}
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 text-xs font-medium">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-50 text-slate-600 text-xs font-medium">
                         {job.experienceLevel || '经验不限'}
                     </span>
                     <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-green-50 text-green-600 text-xs font-medium">
@@ -66,7 +66,7 @@ export default function HomeJobCard({ job, onClick }: HomeJobCardProps) {
                     </span>
                 </div>
 
-                <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between text-xs text-gray-400">
+                <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400">
                     <span>刚刚发布</span>
                     <span className="group-hover:translate-x-1 transition-transform text-blue-500 font-medium opacity-0 group-hover:opacity-100">
                         立即申请 &rarr;
