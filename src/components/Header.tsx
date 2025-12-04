@@ -121,30 +121,20 @@ export default function Header() {
           <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
             <div className="flex items-center gap-6">
               <Link
-                to="/jobs?region=domestic"
-                className={`text-base font-semibold transition-colors ${location.pathname === '/jobs' && !location.search.includes('region=overseas')
-                    ? 'text-[#3182CE]'
-                    : 'text-gray-700 hover:text-gray-900'
+                to="/jobs"
+                className={`text-base font-semibold transition-colors ${location.pathname === '/jobs'
+                  ? 'text-[#3182CE]'
+                  : 'text-gray-700 hover:text-gray-900'
                   }`}
               >
-                国内可申
-              </Link>
-
-              <Link
-                to="/jobs?region=overseas"
-                className={`text-sm font-medium transition-colors ${location.pathname === '/jobs' && location.search.includes('region=overseas')
-                    ? 'text-[#3182CE]'
-                    : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                海外可申
+                远程岗位
               </Link>
 
               <Link
                 to="/trusted-companies"
                 className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
-                    ? 'text-[#3182CE]'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-[#3182CE]'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 可信企业列表
