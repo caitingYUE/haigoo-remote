@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { MapPin, Award, Bookmark } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { processJobDescription } from '../utils/text-formatter';
 // 移除语义标签行：不再使用 JobTags/tagUtils，仅保留描述下的处理后技能标签
 import { SingleLineTags } from './SingleLineTags';
-import { trustedCompaniesService } from '../services/trusted-companies-service';
+import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
 
 interface JobCardProps {
   job: Job;
@@ -113,6 +113,8 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
     const idx = Math.max(0, companyInitial.charCodeAt(0) % colors.length);
     return colors[idx];
   }, [companyInitial]);
+
+  const [_company, setCompany] = useState<TrustedCompany | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(job.logo);
 
   useEffect(() => {

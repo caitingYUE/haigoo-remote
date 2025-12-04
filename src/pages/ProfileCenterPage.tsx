@@ -11,7 +11,6 @@ import JobCard from '../components/JobCard'
 import JobDetailModal from '../components/JobDetailModal'
 import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
-import '../styles/landing-upgrade.css'
 
 type TabKey = 'resume' | 'favorites' | 'feedback' | 'recommend'
 
@@ -218,55 +217,62 @@ export default function ProfileCenterPage() {
   const ResumeTab = () => (
     <div className="space-y-6">
       {/* 顶部标题与下载 */}
-      <div className="profile-topbar">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="profile-title">Resume Optimization</div>
-          <div className="profile-subtitle">Enhance your resume with AI-powered suggestions.</div>
+          <h2 className="text-2xl font-bold text-slate-900">Resume Optimization</h2>
+          <p className="text-slate-500 mt-1">Enhance your resume with AI-powered suggestions.</p>
         </div>
-        <button className="profile-download-btn"><Download className="w-4 h-4" />Download Optimized Resume</button>
+        <button className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
+          <Download className="w-4 h-4" />Download Optimized Resume
+        </button>
       </div>
 
       {/* 分数条 */}
-      <div className="profile-card p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-base font-medium">Overall Resume Score</p>
-          <p className="text-base font-bold text-[var(--profile-primary)]">{Math.max(0, Math.min(100, resumeScore))}%</p>
+          <p className="text-base font-medium text-slate-900">Overall Resume Score</p>
+          <p className="text-base font-bold text-[#3182CE]">{Math.max(0, Math.min(100, resumeScore))}%</p>
         </div>
-        <div className="profile-progress"><div className="fill" style={{ width: `${Math.max(0, Math.min(100, resumeScore))}%` }} /></div>
+        <div className="w-full bg-slate-100 rounded-full h-2.5">
+          <div className="bg-[#3182CE] h-2.5 rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, resumeScore))}%` }} />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 profile-fixed-row">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* 左列：上传区 */}
-        <div className="lg:col-span-2 space-y-4 profile-col-left">
-          <h3 className="text-xl font-bold px-4">Your Resume</h3>
-          <div className="profile-card p-6 profile-fill-card">
+        <div className="lg:col-span-2 space-y-4">
+          <h3 className="text-lg font-bold text-slate-900 px-1">Your Resume</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[400px] flex flex-col">
             {!latestResume ? (
-              <div className="profile-upload-area">
-                <div className="flex flex-col items-center gap-2 text-center max-w-[520px] mx-auto">
-                  <FileText className="w-12 h-12 text-slate-400" />
-                  <p className="text-lg font-bold">No resume uploaded yet</p>
-                  <p className="text-sm text-slate-500">Drag and drop your file here or click to upload.</p>
-                  <button onClick={() => fileInputRef.current?.click()} className="profile-apply-btn" style={{ width: '240px', height: '40px' }}>
+              <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                <div className="flex flex-col items-center gap-2 text-center max-w-[520px] mx-auto p-8">
+                  <FileText className="w-12 h-12 text-slate-400 mb-2" />
+                  <p className="text-lg font-bold text-slate-900">No resume uploaded yet</p>
+                  <p className="text-sm text-slate-500 mb-6">Drag and drop your file here or click to upload.</p>
+                  <button 
+                    onClick={() => fileInputRef.current?.click()} 
+                    className="px-6 py-2.5 bg-[#3182CE] text-white rounded-lg hover:bg-[#2b70b5] transition-colors font-medium flex items-center justify-center w-full max-w-[240px]"
+                  >
                     <Upload className="w-4 h-4 mr-2" />Upload Resume
                   </button>
-                  <p className="text-xs text-slate-500">支持 PDF、DOC、DOCX、TXT</p>
+                  <p className="text-xs text-slate-400 mt-4">支持 PDF、DOC、DOCX、TXT</p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="p-4 bg-slate-50 rounded-xl border">
+              <div className="space-y-4 h-full flex flex-col">
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-[var(--profile-primary)]" />
+                      <FileText className="w-5 h-5 text-[#3182CE]" />
                       <span className="font-medium text-slate-900">{latestResume.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 text-sm font-medium text-[var(--profile-primary)] hover:bg-blue-50 rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-sm font-medium text-[#3182CE] hover:bg-blue-50 rounded-lg transition-colors flex items-center"
                         title="重新上传简历"
                       >
-                        <Upload className="w-4 h-4 inline mr-1" />
+                        <Upload className="w-4 h-4 mr-1" />
                         重新上传
                       </button>
                       <button
@@ -280,62 +286,68 @@ export default function ProfileCenterPage() {
                   </div>
                 </div>
                 {resumeText && (
-                  <div className="rounded-xl border p-4 h-[360px] overflow-auto bg-white">
-                    <pre className="whitespace-pre-wrap text-sm text-slate-800">{resumeText}</pre>
+                  <div className="rounded-xl border border-slate-200 p-4 flex-1 overflow-auto bg-white shadow-inner">
+                    <pre className="whitespace-pre-wrap text-sm text-slate-700 font-sans leading-relaxed">{resumeText}</pre>
                   </div>
                 )}
               </div>
             )}
             <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleUpload} className="hidden" />
             {isUploading && (
-              <div className="mt-4 text-sm text-slate-500">正在上传并分析...</div>
+              <div className="mt-4 text-sm text-slate-500 text-center">正在上传并分析...</div>
             )}
           </div>
         </div>
 
         {/* 右列：建议与CTA */}
-        <div className="lg:col-span-1 space-y-4 profile-col-right">
-          <h3 className="text-xl font-bold px-4">AI-Powered Suggestions</h3>
-          <div className="profile-suggestions-list">
+        <div className="lg:col-span-1 space-y-4">
+          <h3 className="text-lg font-bold text-slate-900 px-1">AI-Powered Suggestions</h3>
+          <div className="space-y-3">
             {!resumeText && (
-              <div className="profile-notice">These are example suggestions. Upload your resume to generate personalized recommendations.</div>
+              <div className="p-4 bg-blue-50 text-blue-700 rounded-lg text-sm border border-blue-100">
+                These are example suggestions. Upload your resume to generate personalized recommendations.
+              </div>
             )}
             {/* 三张建议卡 */}
-            <div className="profile-suggestion-card">
-              <div className="flex items-start gap-4">
-                <CheckCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-[#3182CE] mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <h4 className="font-bold text-base">Strengthen Your Action Verbs</h4>
-                  <p className="text-sm text-slate-600 mt-1">Use powerful verbs to describe your accomplishments.</p>
-                  <button className="text-sm font-medium text-[var(--profile-primary)] mt-2">Learn More</button>
+                  <h4 className="font-bold text-sm text-slate-900">Strengthen Your Action Verbs</h4>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">Use powerful verbs to describe your accomplishments.</p>
+                  <button className="text-xs font-medium text-[#3182CE] mt-2 hover:underline">Learn More</button>
                 </div>
               </div>
             </div>
-            <div className="profile-suggestion-card">
-              <div className="flex items-start gap-4">
-                <AlertCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-[#3182CE] mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <h4 className="font-bold text-base">Add Quantifiable Results</h4>
-                  <p className="text-sm text-slate-600 mt-1">Include numbers and data to demonstrate your impact.</p>
-                  <button className="text-sm font-medium text-[var(--profile-primary)] mt-2">Show Example</button>
+                  <h4 className="font-bold text-sm text-slate-900">Add Quantifiable Results</h4>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">Include numbers and data to demonstrate your impact.</p>
+                  <button className="text-xs font-medium text-[#3182CE] mt-2 hover:underline">Show Example</button>
                 </div>
               </div>
             </div>
-            <div className="profile-suggestion-card">
-              <div className="flex items-start gap-4">
-                <AlertCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-[#3182CE] mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <h4 className="font-bold text-base">ATS Compatibility Check</h4>
-                  <p className="text-sm text-slate-600 mt-1">Ensure your resume is formatted to pass ATS.</p>
-                  <button className="text-sm font-medium text-[var(--profile-primary)] mt-2">Learn More</button>
+                  <h4 className="font-bold text-sm text-slate-900">ATS Compatibility Check</h4>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">Ensure your resume is formatted to pass ATS.</p>
+                  <button className="text-xs font-medium text-[#3182CE] mt-2 hover:underline">Learn More</button>
                 </div>
               </div>
             </div>
 
           </div>
-          <div className="profile-actions">
-            <button className="profile-apply-btn">Apply Suggestions</button>
-            <button className="profile-reset-btn">Reset Suggestions</button>
+          <div className="flex flex-col gap-3 pt-2">
+            <button className="w-full py-2.5 bg-[#3182CE] text-white rounded-lg hover:bg-[#2b70b5] transition-colors font-medium shadow-sm">
+              Apply Suggestions
+            </button>
+            <button className="w-full py-2.5 bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium">
+              Reset Suggestions
+            </button>
           </div>
         </div>
       </div>
@@ -343,14 +355,14 @@ export default function ProfileCenterPage() {
   )
 
   const FavoritesTab = () => (
-    <div className="space-y-4">
-      <div className="profile-topbar">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="profile-title">My Favorites</div>
-          <div className="profile-subtitle">Your bookmarked job postings.</div>
+          <h2 className="text-2xl font-bold text-slate-900">My Favorites</h2>
+          <p className="text-slate-500 mt-1">Your bookmarked job postings.</p>
         </div>
       </div>
-      <div className="profile-card p-6 profile-fill-card">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[300px]">
         {loadingFavorites ? (
           <div className="space-y-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -360,12 +372,13 @@ export default function ProfileCenterPage() {
             ))}
           </div>
         ) : favoritesWithStatus.length === 0 ? (
-          <div className="profile-upload-area">
-            <p className="text-lg font-bold">还没有收藏职位</p>
-            <p className="text-sm text-slate-600">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
+          <div className="flex flex-col items-center justify-center h-[200px] text-center">
+            <Heart className="w-12 h-12 text-slate-300 mb-3" />
+            <p className="text-lg font-bold text-slate-900">还没有收藏职位</p>
+            <p className="text-sm text-slate-500 mt-1">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
             {favoritesWithStatus.map((f: any) => (
               <div key={f.id || f.jobId}>
                 <JobCard
@@ -404,33 +417,74 @@ export default function ProfileCenterPage() {
       } finally { setSubmitting(false) }
     }
     return (
-      <div className="space-y-4">
-        <div className="profile-topbar">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <div className="profile-title">我要反馈</div>
-            <div className="profile-subtitle">反馈岗位或平台信息问题与建议。</div>
+            <h2 className="text-2xl font-bold text-slate-900">我要反馈</h2>
+            <p className="text-slate-500 mt-1">反馈岗位或平台信息问题与建议。</p>
           </div>
         </div>
-        <div className="profile-card p-6">
-          <div className="space-y-4">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl">
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2">信息准确度</label>
-              <div className="flex items-center gap-4 text-sm">
-                <label className="inline-flex items-center gap-2"><input type="radio" checked={accuracy==='accurate'} onChange={()=>setAccuracy('accurate')} />准确</label>
-                <label className="inline-flex items-center gap-2"><input type="radio" checked={accuracy==='inaccurate'} onChange={()=>setAccuracy('inaccurate')} />不准确</label>
-                <label className="inline-flex items-center gap-2"><input type="radio" checked={accuracy==='unknown'} onChange={()=>setAccuracy('unknown')} />不确定</label>
+              <label className="block text-sm font-medium text-slate-900 mb-3">信息准确度</label>
+              <div className="flex items-center gap-6">
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    checked={accuracy==='accurate'} 
+                    onChange={()=>setAccuracy('accurate')}
+                    className="text-[#3182CE] focus:ring-[#3182CE]" 
+                  />
+                  <span className="text-sm text-slate-700">准确</span>
+                </label>
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    checked={accuracy==='inaccurate'} 
+                    onChange={()=>setAccuracy('inaccurate')}
+                    className="text-[#3182CE] focus:ring-[#3182CE]" 
+                  />
+                  <span className="text-sm text-slate-700">不准确</span>
+                </label>
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    checked={accuracy==='unknown'} 
+                    onChange={()=>setAccuracy('unknown')}
+                    className="text-[#3182CE] focus:ring-[#3182CE]" 
+                  />
+                  <span className="text-sm text-slate-700">不确定</span>
+                </label>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">反馈内容</label>
-              <textarea rows={5} value={content} onChange={e=>setContent(e.target.value)} className="w-full rounded-lg border p-3" placeholder="请描述问题或建议" />
+              <label className="block text-sm font-medium text-slate-900 mb-2">反馈内容</label>
+              <textarea 
+                rows={5} 
+                value={content} 
+                onChange={e=>setContent(e.target.value)} 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                placeholder="请描述问题或建议" 
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">联系方式（可选）</label>
-              <input value={contact} onChange={e=>setContact(e.target.value)} className="w-full rounded-lg border p-3" placeholder="邮箱或微信" />
+              <label className="block text-sm font-medium text-slate-900 mb-2">联系方式（可选）</label>
+              <input 
+                value={contact} 
+                onChange={e=>setContact(e.target.value)} 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                placeholder="邮箱或微信" 
+              />
             </div>
-            <div className="flex justify-end">
-              <button onClick={submit} disabled={submitting} className="profile-apply-btn">{submitting?'提交中…':'提交反馈'}</button>
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={submit} 
+                disabled={submitting} 
+                className="px-6 py-2.5 bg-[#3182CE] text-white rounded-lg hover:bg-[#2b70b5] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting?'提交中…':'提交反馈'}
+              </button>
             </div>
           </div>
         </div>
@@ -456,40 +510,68 @@ export default function ProfileCenterPage() {
         const j = await r.json().catch(() => ({ success: false }))
         if (r.ok && j.success) { showSuccess('推荐已提交'); setName(''); setLink(''); setDescription('') }
         else { showError('提交失败', j.error || '请稍后重试') }
-      } catch (e) { showError('提交失败', '网络错误') } finally { setSubmitting(false) }
+      } catch (e) {
+        showError('提交失败', '网络错误')
+      } finally { setSubmitting(false) }
     }
     return (
-      <div className="space-y-4">
-        <div className="profile-topbar">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <div className="profile-title">我要推荐</div>
-            <div className="profile-subtitle">推荐企业、岗位或优秀用户。</div>
+            <h2 className="text-2xl font-bold text-slate-900">我要推荐</h2>
+            <p className="text-slate-500 mt-1">推荐企业、岗位或优秀用户。</p>
           </div>
         </div>
-        <div className="profile-card p-6">
-          <div className="space-y-4">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl">
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2">推荐类型</label>
-              <select value={type} onChange={e=>setType(e.target.value as any)} className="w-full rounded-lg border p-2">
+              <label className="block text-sm font-medium text-slate-900 mb-2">推荐类型</label>
+              <select 
+                value={type} 
+                onChange={e=>setType(e.target.value as any)} 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all bg-white"
+              >
                 <option value="enterprise">企业</option>
                 <option value="job">岗位</option>
                 <option value="user">用户</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">名称</label>
-              <input value={name} onChange={e=>setName(e.target.value)} className="w-full rounded-lg border p-3" placeholder="例如：GitLab" />
+              <label className="block text-sm font-medium text-slate-900 mb-2">名称</label>
+              <input 
+                value={name} 
+                onChange={e=>setName(e.target.value)} 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                placeholder="例如：GitLab" 
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">链接（可选）</label>
-              <input value={link} onChange={e=>setLink(e.target.value)} className="w-full rounded-lg border p-3" placeholder="https://..." />
+              <label className="block text-sm font-medium text-slate-900 mb-2">链接（可选）</label>
+              <input 
+                value={link} 
+                onChange={e=>setLink(e.target.value)} 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                placeholder="https://..." 
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">推荐理由（可选）</label>
-              <textarea rows={4} value={description} onChange={e=>setDescription(e.target.value)} className="w-full rounded-lg border p-3" placeholder="简述推荐原因" />
+              <label className="block text-sm font-medium text-slate-900 mb-2">推荐理由（可选）</label>
+              <textarea 
+                rows={4} 
+                value={description} 
+                onChange={e=>setDescription(e.target.value)} 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                placeholder="简述推荐原因" 
+              />
             </div>
-            <div className="flex justify-end">
-              <button onClick={submit} disabled={submitting} className="profile-apply-btn">{submitting?'提交中…':'提交推荐'}</button>
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={submit} 
+                disabled={submitting} 
+                className="px-6 py-2.5 bg-[#3182CE] text-white rounded-lg hover:bg-[#2b70b5] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting?'提交中…':'提交推荐'}
+              </button>
             </div>
           </div>
         </div>
@@ -498,71 +580,110 @@ export default function ProfileCenterPage() {
   }
 
   return (
-    <div className="profile-page profile-theme">
-      <div className="mesh-background"></div>
-      <div className="max-w-7xl mx-auto px-8 py-10 profile-container">
-        <div className="mb-4">
-          <button className="profile-back-btn" onClick={() => navigate(-1)} aria-label="返回上一页">
-            <ArrowLeft className="w-4 h-4" />
-            返回
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <button 
+            className="flex items-center text-slate-500 hover:text-slate-900 transition-colors" 
+            onClick={() => navigate(-1)} 
+            aria-label="返回上一页"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            <span className="text-sm font-medium">返回</span>
           </button>
         </div>
-        <div className="profile-dashboard-wrapper">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
-          <aside className="profile-sidebar">
-            <div className="profile-nav-title">Personal Center</div>
-            <div className="profile-nav" role="tablist" aria-label="个人中心切换">
-              <button className={`profile-nav-item ${tab === 'resume' ? 'active' : ''}`} role="tab" aria-selected={tab === 'resume'} onClick={() => switchTab('resume')}>
-                <FileText className={`w-5 h-5 ${tab === 'resume' ? 'text-white' : 'text-slate-400'}`} />
-                <span className="text-sm font-medium">我的简历</span>
-              </button>
-              <button className={`profile-nav-item ${tab === 'favorites' ? 'active' : ''}`} role="tab" aria-selected={tab === 'favorites'} onClick={() => switchTab('favorites')}>
-                <Heart className={`w-5 h-5 ${tab === 'favorites' ? 'text-white' : 'text-slate-400'}`} />
-                <span className="text-sm font-medium">我的收藏</span>
-              </button>
-              <button className={`profile-nav-item ${tab === 'feedback' ? 'active' : ''}`} role="tab" aria-selected={tab === 'feedback'} onClick={() => switchTab('feedback')}>
-                <MessageSquare className={`w-5 h-5 ${tab === 'feedback' ? 'text-white' : 'text-slate-400'}`} />
-                <span className="text-sm font-medium">我要反馈</span>
-              </button>
-              <button className={`profile-nav-item ${tab === 'recommend' ? 'active' : ''}`} role="tab" aria-selected={tab === 'recommend'} onClick={() => switchTab('recommend')}>
-                <ThumbsUp className={`w-5 h-5 ${tab === 'recommend' ? 'text-white' : 'text-slate-400'}`} />
-                <span className="text-sm font-medium">我要推荐</span>
-              </button>
+          <aside className="w-full lg:w-64 flex-shrink-0 space-y-6">
+            <div>
+              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-2">Personal Center</div>
+              <div className="space-y-1" role="tablist" aria-label="个人中心切换">
+                <button 
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    tab === 'resume' ? 'bg-[#3182CE] text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                  }`}
+                  role="tab" 
+                  aria-selected={tab === 'resume'} 
+                  onClick={() => switchTab('resume')}
+                >
+                  <FileText className={`w-4 h-4 ${tab === 'resume' ? 'text-white' : 'text-slate-400'}`} />
+                  我的简历
+                </button>
+                <button 
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    tab === 'favorites' ? 'bg-[#3182CE] text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                  }`}
+                  role="tab" 
+                  aria-selected={tab === 'favorites'} 
+                  onClick={() => switchTab('favorites')}
+                >
+                  <Heart className={`w-4 h-4 ${tab === 'favorites' ? 'text-white' : 'text-slate-400'}`} />
+                  我的收藏
+                </button>
+                <button 
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    tab === 'feedback' ? 'bg-[#3182CE] text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                  }`}
+                  role="tab" 
+                  aria-selected={tab === 'feedback'} 
+                  onClick={() => switchTab('feedback')}
+                >
+                  <MessageSquare className={`w-4 h-4 ${tab === 'feedback' ? 'text-white' : 'text-slate-400'}`} />
+                  我要反馈
+                </button>
+                <button 
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    tab === 'recommend' ? 'bg-[#3182CE] text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                  }`}
+                  role="tab" 
+                  aria-selected={tab === 'recommend'} 
+                  onClick={() => switchTab('recommend')}
+                >
+                  <ThumbsUp className={`w-4 h-4 ${tab === 'recommend' ? 'text-white' : 'text-slate-400'}`} />
+                  我要推荐
+                </button>
+              </div>
             </div>
 
             {/* Membership Card */}
-            <div className="mt-6 mx-2 p-4 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl text-white shadow-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <Crown className="w-5 h-5 text-yellow-300" />
-                <h3 className="font-bold text-sm">会员权益</h3>
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 text-white shadow-lg relative overflow-hidden">
+              {/* Decoration */}
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl"></div>
+              
+              <div className="flex items-center gap-2 mb-4 relative z-10">
+                <Crown className="w-5 h-5 text-yellow-400" />
+                <h3 className="font-bold text-sm text-white">会员权益</h3>
               </div>
-              {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
-                  <div>
-                    <p className="text-xs opacity-90 mb-2">您当前是 <span className="font-bold text-yellow-200">{authUser.membershipLevel === 'club_go' ? '俱乐部Go会员' : 'Goo+会员'}</span></p>
-                    <p className="text-xs opacity-75">有效期至 {new Date(authUser.membershipExpireAt).toLocaleDateString()}</p>
-                    <button 
-                        onClick={() => navigate('/membership')}
-                        className="mt-3 w-full py-1.5 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white/20 transition-colors"
-                    >
-                        续费/升级
-                    </button>
-                  </div>
-              ) : (
-                  <div>
-                    <p className="text-xs opacity-90 mb-3 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
-                    <button 
-                        onClick={() => navigate('/membership')}
-                        className="w-full py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
-                    >
-                        立即开通
-                    </button>
-                  </div>
-              )}
+              
+              <div className="relative z-10">
+                {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
+                    <div>
+                      <p className="text-xs text-slate-300 mb-2">您当前是 <span className="font-bold text-yellow-300">{authUser.membershipLevel === 'club_go' ? '俱乐部Go会员' : 'Goo+会员'}</span></p>
+                      <p className="text-xs text-slate-400 mb-4">有效期至 {new Date(authUser.membershipExpireAt).toLocaleDateString()}</p>
+                      <button 
+                          onClick={() => navigate('/membership')}
+                          className="w-full py-2 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white/20 transition-colors"
+                      >
+                          续费/升级
+                      </button>
+                    </div>
+                ) : (
+                    <div>
+                      <p className="text-xs text-slate-300 mb-4 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
+                      <button 
+                          onClick={() => navigate('/membership')}
+                          className="w-full py-2 bg-[#3182CE] text-white text-xs font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
+                      >
+                          立即开通
+                      </button>
+                    </div>
+                )}
+              </div>
             </div>
           </aside>
 
           {/* Main Content */}
-          <main className="profile-content-area w-full">
+          <main className="flex-1 min-w-0">
             {tab === 'resume' ? <ResumeTab /> : tab === 'favorites' ? <FavoritesTab /> : tab === 'feedback' ? <FeedbackTab /> : <RecommendTab />}
             {isJobDetailOpen && selectedJob && (
               <JobDetailModal

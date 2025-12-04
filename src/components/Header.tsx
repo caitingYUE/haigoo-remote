@@ -148,6 +148,26 @@ export default function Header() {
             >
               精选企业
             </Link>
+
+            <Link
+              to="/trusted-companies"
+              className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
+                ? 'text-[#3182CE] font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
+            >
+              精选企业
+            </Link>
+
+            <Link
+              to="/profile"
+              className={`text-base font-medium transition-colors ${location.pathname.startsWith('/profile')
+                ? 'text-[#3182CE] font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
+            >
+              个人中心
+            </Link>
           </div>
 
           {/* Right side actions */}
