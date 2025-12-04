@@ -46,7 +46,7 @@ export default function AdminLocationPage() {
         {renderEditor('Global 关键词', 'globalKeywords')}
       </div>
       <div className="flex justify-end">
-        <button onClick={save} className="px-4 py-2 rounded-lg bg-[#3182CE] text-white shadow-sm" disabled={saving}>{saving ? '保存中...' : '保存'}</button>
+        <button onClick={save} className="px-4 py-2 rounded-lg bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 transition-colors disabled:opacity-50" disabled={saving}>{saving ? '保存中...' : '保存'}</button>
       </div>
     </div>
   )

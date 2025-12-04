@@ -132,8 +132,8 @@ export default function LandingPage() {
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-600 border-t-transparent absolute top-0 left-0"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent absolute top-0 left-0"></div>
               </div>
             </div>
           ) : featuredJobs.length === 0 ? (
@@ -175,7 +175,7 @@ export default function LandingPage() {
             </div>
             <button
               onClick={() => navigate('/companies')}
-              className="text-slate-500 hover:text-blue-600 text-sm font-medium flex items-center gap-1 transition-colors"
+              className="text-slate-500 hover:text-indigo-600 text-sm font-medium flex items-center gap-1 transition-colors"
             >
               查看全部 <ArrowRight className="w-4 h-4" />
             </button>
@@ -184,8 +184,8 @@ export default function LandingPage() {
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-600 border-t-transparent absolute top-0 left-0"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent absolute top-0 left-0"></div>
               </div>
             </div>
           ) : trustedCompanies.length === 0 ? (
@@ -209,19 +209,19 @@ export default function LandingPage() {
 
         {/* Job Alert Subscription */}
         <div className="mt-32">
-          <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-10 md:p-20 text-center overflow-hidden border border-blue-100 shadow-lg shadow-blue-50">
+          <div className="relative bg-gradient-to-br from-indigo-50 to-indigo-50 rounded-3xl p-10 md:p-20 text-center overflow-hidden border border-indigo-100 shadow-lg shadow-indigo-50">
             {/* Subtle Background Pattern */}
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/60 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-100/40 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-100/40 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
 
             <div className="relative z-10 max-w-2xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight text-slate-900 flex items-center justify-center gap-3">
-                <Zap className="w-8 h-8 text-blue-600 fill-current" />
+                <Zap className="w-8 h-8 text-indigo-600 fill-current" />
                 不错过任何机会
               </h2>
               <p className="text-slate-600 mb-10 text-lg leading-relaxed">
                 订阅岗位提醒，第一时间获取最新的远程工作机会。<br />
-                支持 <span className="font-semibold text-blue-600">Email</span> 和 <span className="font-semibold text-blue-600">飞书</span> 推送，不错过每一个好机会。
+                支持 <span className="font-semibold text-indigo-600">Email</span> 和 <span className="font-semibold text-indigo-600">飞书</span> 推送，不错过每一个好机会。
               </p>
               <div className="bg-white/50 backdrop-blur-md p-2 rounded-2xl inline-block w-full max-w-md border border-white/50 shadow-sm">
                 <JobAlertSubscribe variant="minimal" theme="light" />

@@ -530,8 +530,8 @@ const AdminTeamPage: React.FC = () => {
                       <tr key={resume.id}>
                         <td>
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                              <Users className="w-5 h-5 text-blue-600" />
+                            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                              <Users className="w-5 h-5 text-indigo-600" />
                             </div>
                             <div>
                               <div className="font-medium text-slate-900">

@@ -511,7 +511,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       key={tabKey}
       onClick={() => setActiveTab(tabKey as any)}
       className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === tabKey
-        ? 'bg-blue-600 text-white shadow-lg'
+        ? 'bg-indigo-600 text-white shadow-lg'
         : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
         }`}
     >
@@ -545,7 +545,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <select
               value={rawDataFilters.source || ''}
               onChange={(e) => setRawDataFilters({ ...rawDataFilters, source: e.target.value || undefined })}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg textsm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有来源</option>
               <option value="WeWorkRemotely">WeWorkRemotely</option>
@@ -557,7 +557,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <select
               value={rawDataFilters.status || ''}
               onChange={(e) => setRawDataFilters({ ...rawDataFilters, status: e.target.value as any || undefined })}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有状态</option>
               <option value="raw">原始</option>
@@ -688,7 +688,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleViewDetail(item)}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded transition-colors"
                         >
                           <Eye className="w-3 h-3" />
                           详情
@@ -768,7 +768,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <select
               value={processedDataFilters.category || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, category: e.target.value as JobCategory || undefined })}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有分类</option>
               <option value="前端开发">前端开发</option>
@@ -817,7 +817,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <select
               value={processedDataFilters.industry || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, industry: e.target.value || undefined })}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有行业</option>
               <option value="互联网/软件">互联网/软件</option>
@@ -837,7 +837,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <select
               value={processedDataFilters.source || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, source: e.target.value || undefined })}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有来源</option>
               <option value="WeWorkRemotely">WeWorkRemotely</option>
@@ -852,7 +852,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               placeholder="搜索岗位名称或公司..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
 
             <button
@@ -866,7 +866,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleAddJob()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
             >
               <Plus className="w-4 h-4" />
               新增职位
@@ -948,7 +948,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 {/* 岗位分类 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.category || '未分类'} maxLines={1} clampChildren={false}>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.category === '前端开发' ? 'bg-blue-100 text-blue-800' :
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.category === '前端开发' ? 'bg-indigo-100 text-indigo-800' :
                       job.category === '后端开发' ? 'bg-green-100 text-green-800' :
                         job.category === '全栈开发' ? 'bg-purple-100 text-purple-800' :
                           job.category === 'UI/UX设计' ? 'bg-pink-100 text-pink-800' :
@@ -973,7 +973,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                             job.experienceLevel === 'Executive' ? '管理层' : '未定义'
                   } maxLines={1} clampChildren={false}>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.experienceLevel === 'Entry' ? 'bg-green-100 text-green-800' :
-                      job.experienceLevel === 'Mid' ? 'bg-blue-100 text-blue-800' :
+                      job.experienceLevel === 'Mid' ? 'bg-indigo-100 text-indigo-800' :
                         job.experienceLevel === 'Senior' ? 'bg-orange-100 text-orange-800' :
                           job.experienceLevel === 'Lead' ? 'bg-red-100 text-red-800' :
                             job.experienceLevel === 'Executive' ? 'bg-purple-100 text-purple-800' :
@@ -1001,7 +1001,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       href={job.companyWebsite}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs mt-1"
+                      className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs mt-1"
                     >
                       <ExternalLink className="w-2 h-2" />
                       企业官网
@@ -1023,7 +1023,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   <Tooltip content={job.companyTags?.join(', ') || '无标签'} maxLines={2} clampChildren={false}>
                     <div className="flex flex-wrap gap-1">
                       {job.companyTags?.slice(0, 2).map((tag: string, index: number) => (
-                        <span key={index} className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-blue-50 text-blue-700 border border-blue-100">
+                        <span key={index} className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-indigo-50 text-indigo-700 border border-indigo-100">
                           {tag}
                         </span>
                       ))}
@@ -1054,7 +1054,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     return (
                       <Tooltip content={normalizedType} maxLines={1} clampChildren={false}>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${normalizedType === '全职' ? 'bg-green-100 text-green-800' :
-                          normalizedType === '兼职' ? 'bg-blue-100 text-blue-800' :
+                          normalizedType === '兼职' ? 'bg-indigo-100 text-indigo-800' :
                             normalizedType === '合同工' ? 'bg-orange-100 text-orange-800' :
                               normalizedType === '自由职业' ? 'bg-purple-100 text-purple-800' :
                                 normalizedType === '实习' ? 'bg-yellow-100 text-yellow-800' :
@@ -1084,7 +1084,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     const r = computeRegion(job);
                     const label = r === 'domestic' ? '国内' : r === 'overseas' ? '海外' : '未分类';
                     const cls = r === 'domestic'
-                      ? 'bg-blue-100 text-blue-800'
+                      ? 'bg-indigo-100 text-indigo-800'
                       : r === 'overseas'
                         ? 'bg-indigo-100 text-indigo-800'
                         : 'bg-slate-100 text-slate-800';
@@ -1148,7 +1148,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                         href={job.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs"
                       >
                         <LinkIcon className="w-2 h-2" />
                         链接
@@ -1176,7 +1176,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleEditJob(job)}
-                      className="text-blue-600 hover:text-blue-800 text-xs p-1 hover:bg-blue-50 rounded transition-colors"
+                      className="text-indigo-600 hover:text-indigo-800 text-xs p-1 hover:bg-indigo-50 rounded transition-colors"
                       title="编辑"
                     >
                       <Edit3 className="w-3 h-3" />
@@ -1254,7 +1254,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   key={p}
                   onClick={() => setProcessedDataPage(p)}
                   className={`px-3 py-1 text-sm border rounded-lg transition-colors ${processedDataPage === p
-                    ? 'bg-blue-600 text-white border-blue-600'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
                     : 'border-slate-300 hover:bg-slate-50 text-slate-700'
                     }`}
                 >
@@ -1282,8 +1282,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         <>
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Database className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-indigo-100 rounded-lg">
+                <Database className="w-6 h-6 text-indigo-600" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-slate-900">{storageStats.totalRawData}</div>
@@ -1340,14 +1340,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   type="checkbox"
                   checked={autoProcess}
                   onChange={(e) => setAutoProcess(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                 />
                 自动处理为岗位
               </label>
               <button
                 onClick={handleSyncData}
                 disabled={syncing}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-blue-300 text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? '同步中...' : '同步数据'}
@@ -1407,7 +1407,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       {/* 内容区域 */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader className="w-8 h-8 animate-spin text-blue-600" />
+          <Loader className="w-8 h-8 animate-spin text-indigo-600" />
           <span className="ml-2 text-slate-600">加载中...</span>
         </div>
       ) : (
@@ -1572,7 +1572,7 @@ const EditJobModal: React.FC<{
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
@@ -1583,7 +1583,7 @@ const EditJobModal: React.FC<{
                 type="text"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
@@ -1594,7 +1594,7 @@ const EditJobModal: React.FC<{
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
 
@@ -1604,7 +1604,7 @@ const EditJobModal: React.FC<{
                 type="text"
                 value={formData.salary}
                 onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="例如: $80,000 - $120,000"
               />
             </div>
@@ -1614,7 +1614,7 @@ const EditJobModal: React.FC<{
               <select
                 value={formData.jobType}
                 onChange={(e) => setFormData({ ...formData, jobType: e.target.value as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship' })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="full-time">全职</option>
                 <option value="part-time">兼职</option>
@@ -1629,7 +1629,7 @@ const EditJobModal: React.FC<{
               <select
                 value={formData.region || ''}
                 onChange={(e) => setFormData({ ...formData, region: (e.target.value || undefined) as 'domestic' | 'overseas' | undefined })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">未设置</option>
                 <option value="domestic">国内</option>
@@ -1642,7 +1642,7 @@ const EditJobModal: React.FC<{
               <select
                 value={formData.experienceLevel}
                 onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="Entry">初级</option>
                 <option value="Mid">中级</option>
@@ -1657,7 +1657,7 @@ const EditJobModal: React.FC<{
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value as JobCategory })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="全栈开发">全栈开发</option>
                 <option value="前端开发">前端开发</option>
@@ -1676,7 +1676,7 @@ const EditJobModal: React.FC<{
                   type="checkbox"
                   checked={formData.isFeatured}
                   onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                 />
                 <span className="text-sm font-medium text-slate-700">设为精选岗位 (Featured)</span>
                 <Star className={`w-4 h-4 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-slate-400'}`} />
@@ -1689,16 +1689,16 @@ const EditJobModal: React.FC<{
                 type="text"
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="例如: React, TypeScript, Node.js"
               />
             </div>
 
             <div className="md:col-span-2">
               {(job as any).translations?.description && (
-                <div className="mb-4 bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2 text-blue-800 font-medium">
-                    <span className="text-xs bg-blue-200 px-2 py-0.5 rounded text-blue-800">中文翻译 (参考)</span>
+                <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2 text-indigo-800 font-medium">
+                    <span className="text-xs bg-indigo-200 px-2 py-0.5 rounded text-indigo-800">中文翻译 (参考)</span>
                   </div>
                   <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
                     {(job as any).translations.description}
@@ -1710,7 +1710,7 @@ const EditJobModal: React.FC<{
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
 
@@ -1720,7 +1720,7 @@ const EditJobModal: React.FC<{
                 value={formData.requirements}
                 onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="例如:&#10;3+ years React experience&#10;TypeScript proficiency"
               />
             </div>
@@ -1731,7 +1731,7 @@ const EditJobModal: React.FC<{
                 value={formData.benefits}
                 onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="例如:&#10;Remote work&#10;Health insurance"
               />
             </div>
@@ -1740,7 +1740,7 @@ const EditJobModal: React.FC<{
           <div className="flex gap-3 pt-6 border-t border-slate-200">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors"
             >
               保存更改
             </button>
@@ -2024,7 +2024,7 @@ const DetailModal: React.FC<{
                   <h3 className="font-medium text-slate-900 mb-2">技能标签</h3>
                   <div className="flex flex-wrap gap-2">
                     {item.tags.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                      <span key={index} className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
                         {tag}
                       </span>
                     ))}
@@ -2038,9 +2038,9 @@ const DetailModal: React.FC<{
 
                   {/* 翻译内容展示 */}
                   {(item as any).translations?.description && (
-                    <div className="mb-4 bg-blue-50 border border-blue-100 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2 text-blue-800 font-medium">
-                        <span className="text-xs bg-blue-200 px-2 py-0.5 rounded text-blue-800">中文翻译</span>
+                    <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2 text-indigo-800 font-medium">
+                        <span className="text-xs bg-indigo-200 px-2 py-0.5 rounded text-indigo-800">中文翻译</span>
                       </div>
                       <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
                         {(item as any).translations.description}
@@ -2060,7 +2060,7 @@ const DetailModal: React.FC<{
                   <ul className="text-sm text-slate-700 space-y-1">
                     {item.requirements.map((req, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <span className="text-blue-600 mt-1">•</span>
+                        <span className="text-indigo-600 mt-1">•</span>
                         {req}
                       </li>
                     ))}
@@ -2101,13 +2101,13 @@ const DetailModal: React.FC<{
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="font-medium">原文链接:</span>
-                      <a href={item.link} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:text-blue-800">
+                      <a href={item.link} target="_blank" rel="noopener noreferrer" className="ml-2 text-indigo-600 hover:text-indigo-800">
                         查看原文
                       </a>
                     </div>
                     <div>
                       <span className="font-medium">RSS URL:</span>
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:text-blue-800 break-all">
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-indigo-600 hover:text-indigo-800 break-all">
                         {item.url}
                       </a>
                     </div>

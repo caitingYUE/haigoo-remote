@@ -58,7 +58,7 @@ export default function CompanyProfilePage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
             </div>
         )
     }
@@ -67,7 +67,7 @@ export default function CompanyProfilePage() {
         return (
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
                 <h1 className="text-2xl font-bold text-slate-900 mb-4">未找到该企业</h1>
-                <Link to="/jobs" className="text-blue-600 hover:underline">返回职位列表</Link>
+                <Link to="/jobs" className="text-indigo-600 hover:underline">返回职位列表</Link>
             </div>
         )
     }
@@ -91,7 +91,7 @@ export default function CompanyProfilePage() {
                             {company.logo ? (
                                 <img src={company.logo} alt={company.name} className="w-full h-full object-contain rounded-xl" />
                             ) : (
-                                <div className="w-full h-full bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-bold text-4xl">
+                                <div className="w-full h-full bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-4xl">
                                     {company.name.charAt(0)}
                                 </div>
                             )}
@@ -145,7 +145,7 @@ export default function CompanyProfilePage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="mb-6 flex flex-col lg:flex-row lg:items-end gap-4 lg:justify-between">
                     <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                        <Briefcase className="w-5 h-5 text-blue-600" />
+                        <Briefcase className="w-5 h-5 text-indigo-600" />
                         在招职位 ({jobs.length})
                     </h2>
 

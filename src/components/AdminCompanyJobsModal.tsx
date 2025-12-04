@@ -99,13 +99,13 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                             placeholder="搜索职位..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg border-slate-300 text-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
                     </div>
                     <button
                         onClick={handleCrawl}
                         disabled={crawling}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
                     >
                         {crawling ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                         {crawling ? '抓取中...' : '立即抓取'}
@@ -123,7 +123,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                 <div className="flex-1 overflow-y-auto p-0">
                     {loading ? (
                         <div className="flex justify-center py-20">
-                            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
@@ -162,7 +162,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                                                             href={job.sourceUrl}
                                                             target="_blank"
                                                             rel="noreferrer"
-                                                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50 transition-colors"
+                                                            className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-indigo-50 transition-colors"
                                                             title="查看原网页"
                                                         >
                                                             <ExternalLink className="w-4 h-4" />

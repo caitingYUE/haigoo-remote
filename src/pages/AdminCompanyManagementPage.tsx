@@ -399,7 +399,7 @@ export default function AdminCompanyManagementPage() {
                         <>
                             <button
                                 onClick={() => setPage(1)}
-                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${page === 1 ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${page === 1 ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : ''}`}
                             >
                                 1
                             </button>
@@ -412,7 +412,7 @@ export default function AdminCompanyManagementPage() {
                             key={p}
                             onClick={() => setPage(p)}
                             className={`px-3 py-1 text-sm border rounded-lg hover:bg-slate-50 ${page === p
-                                ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                                ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
                                 : 'border-slate-300 text-slate-700'
                                 }`}
                         >
@@ -425,7 +425,7 @@ export default function AdminCompanyManagementPage() {
                             {endPage < totalPages - 1 && <span className="px-2 text-slate-400">...</span>}
                             <button
                                 onClick={() => setPage(totalPages)}
-                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${page === totalPages ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${page === totalPages ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : ''}`}
                             >
                                 {totalPages}
                             </button>
@@ -486,7 +486,7 @@ export default function AdminCompanyManagementPage() {
                                 <h2 className="text-xl font-bold text-slate-900">{selectedCompany.name}</h2>
                                 <div className="flex items-center gap-2 mt-1">
                                     {selectedCompany.url && (
-                                        <a href={selectedCompany.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                                        <a href={selectedCompany.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
                                             <Globe className="w-3 h-3" />
                                             官网
                                         </a>
@@ -532,7 +532,7 @@ export default function AdminCompanyManagementPage() {
                             {selectedCompany.tags && selectedCompany.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-4">
                                     {selectedCompany.tags.map(tag => (
-                                        <span key={tag} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                                        <span key={tag} className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs">
                                             {tag}
                                         </span>
                                     ))}
@@ -549,7 +549,7 @@ export default function AdminCompanyManagementPage() {
                                         placeholder="搜索职位..."
                                         value={jobSearchTerm}
                                         onChange={(e) => setJobSearchTerm(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2 rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full pl-9 pr-4 py-2 rounded-lg border-slate-300 text-sm focus:ring-indigo-500 focus:border-indigo-500"
                                     />
                                 </div>
                                 <div className="text-sm text-slate-500">共 {companyJobs.length} 个职位</div>
@@ -583,7 +583,7 @@ export default function AdminCompanyManagementPage() {
                                                         <td className="px-6 py-4 text-sm text-slate-500">{new Date(job.postedAt).toLocaleDateString()}</td>
                                                         <td className="px-6 py-4 text-right">
                                                             {job.sourceUrl && (
-                                                                <a href={job.sourceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm">查看原文</a>
+                                                                <a href={job.sourceUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:text-indigo-800 text-sm">查看原文</a>
                                                             )}
                                                         </td>
                                                     </tr>
@@ -614,7 +614,7 @@ export default function AdminCompanyManagementPage() {
                                 setSearchQuery(e.target.value);
                                 setPage(1);
                             }}
-                            className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         />
                     </div>
 
@@ -624,7 +624,7 @@ export default function AdminCompanyManagementPage() {
                             setIndustryFilter(e.target.value);
                             setPage(1);
                         }}
-                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     >
                         <option value="">所有行业</option>
                         <option value="互联网/软件">互联网/软件</option>
@@ -729,7 +729,7 @@ export default function AdminCompanyManagementPage() {
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center">
                                         <div className="flex items-center justify-center gap-2 text-slate-500">
-                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
                                             <span>加载中...</span>
                                         </div>
                                     </td>
@@ -767,7 +767,7 @@ export default function AdminCompanyManagementPage() {
                                                             href={company.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                                            className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
                                                         >
                                                             <Globe className="w-3 h-3" />
                                                             {new URL(company.url).hostname}
@@ -830,7 +830,7 @@ export default function AdminCompanyManagementPage() {
                                                         href={company.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="text-blue-600 hover:text-blue-800"
+                                                        className="text-indigo-600 hover:text-indigo-800"
                                                         title="访问网站"
                                                     >
                                                         <ExternalLink className="w-4 h-4" />
@@ -868,7 +868,7 @@ export default function AdminCompanyManagementPage() {
                         <button
                             onClick={() => setActiveTab('all')}
                             className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'all'
-                                ? 'bg-blue-600 text-white shadow-lg'
+                                ? 'bg-indigo-600 text-white shadow-lg'
                                 : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                                 }`}
                         >
@@ -880,7 +880,7 @@ export default function AdminCompanyManagementPage() {
                         <button
                             onClick={() => setActiveTab('trusted')}
                             className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'trusted'
-                                ? 'bg-blue-600 text-white shadow-lg'
+                                ? 'bg-indigo-600 text-white shadow-lg'
                                 : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                                 }`}
                         >

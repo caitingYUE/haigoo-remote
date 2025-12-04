@@ -199,11 +199,11 @@ export default function AdminTagManagementPage() {
                         onChange={(e) => setNewValue({ ...newValue, [type]: e.target.value })}
                         onKeyPress={(e) => e.key === 'Enter' && handleAdd(type)}
                         placeholder="输入新标签..."
-                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                     <button
                         onClick={() => handleAdd(type)}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 whitespace-nowrap"
+                        className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 whitespace-nowrap"
                     >
                         <Plus className="w-4 h-4" />
                         添加
@@ -225,7 +225,7 @@ export default function AdminTagManagementPage() {
                                     value={editValue}
                                     onChange={(e) => setEditValue(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                                    className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                     autoFocus
                                 />
                                 <button
@@ -251,7 +251,7 @@ export default function AdminTagManagementPage() {
                                 <span className="flex-1 text-sm text-slate-900">{tag}</span>
                                 <button
                                     onClick={() => handleEdit(type, index, tag)}
-                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors opacity-0 group-hover:opacity-100"
                                     title="编辑"
                                 >
                                     <Edit2 className="w-4 h-4" />
@@ -280,7 +280,7 @@ export default function AdminTagManagementPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
             </div>
         );
     }
@@ -317,7 +317,7 @@ export default function AdminTagManagementPage() {
                     'jobCategory',
                     config.jobCategories,
                     '用于岗位自动分类',
-                    'bg-gradient-to-r from-blue-500 to-blue-600'
+                    'bg-gradient-to-r from-indigo-500 to-indigo-600'
                 )}
 
                 {renderTagSection(

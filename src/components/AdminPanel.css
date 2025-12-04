@@ -3,11 +3,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
 :root {
-  /* 品牌蓝色主题 (基于 Color-Specification.md) */
-  --primary: #3182CE;
-  --primary-light: #60A5FA;
-  --primary-dark: #256bb0;
-  --primary-hover: #256bb0;
+  /* 品牌主色 */
+  --primary: #4F46E5;
+  --primary-light: #A5B4FC;
+  --primary-dark: #4338CA;
+  --primary-hover: #4338CA;
   --primary-10: #EAF3FF;
 
   /* 背景色 */
@@ -29,7 +29,7 @@
   --success: #10B981;
   --error: #EF4444;
   --warning: #F59E0B;
-  --info: #3182CE;
+  --info: #4F46E5;
 
   /* 中性色 */
   --gray-50: #F9FAFB;
@@ -666,7 +666,7 @@
 .search-input input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .filter-btn {
@@ -760,7 +760,7 @@
 }
 
 .status-badge.medium {
-  background: rgba(49, 130, 206, 0.1);
+  background: rgba(79, 70, 229, 0.12);
   color: var(--primary);
 }
 

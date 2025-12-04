@@ -120,7 +120,7 @@ export default function AdminTrustedCompaniesPage() {
                         <>
                             <button
                                 onClick={() => setCurrentPage(1)}
-                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${currentPage === 1 ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${currentPage === 1 ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : ''}`}
                             >
                                 1
                             </button>
@@ -133,7 +133,7 @@ export default function AdminTrustedCompaniesPage() {
                             key={p}
                             onClick={() => setCurrentPage(p)}
                             className={`px-3 py-1 text-sm border rounded-lg hover:bg-slate-50 ${currentPage === p
-                                ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                                ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
                                 : 'border-slate-300 text-slate-700'
                                 }`}
                         >
@@ -146,7 +146,7 @@ export default function AdminTrustedCompaniesPage() {
                             {endPage < totalPages - 1 && <span className="px-2 text-slate-400">...</span>}
                             <button
                                 onClick={() => setCurrentPage(totalPages)}
-                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${currentPage === totalPages ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${currentPage === totalPages ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : ''}`}
                             >
                                 {totalPages}
                             </button>
@@ -497,7 +497,7 @@ export default function AdminTrustedCompaniesPage() {
                                 type="checkbox"
                                 checked={fetchDetailsEnabled}
                                 onChange={(e) => setFetchDetailsEnabled(e.target.checked)}
-                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                             />
                             抓取详细描述
                         </label>
@@ -519,7 +519,7 @@ export default function AdminTrustedCompaniesPage() {
                         </button>
                         <button
                             onClick={handleAdd}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
                         >
                             <Plus className="w-4 h-4" />
                             新增企业
@@ -530,7 +530,7 @@ export default function AdminTrustedCompaniesPage() {
                 {/* List */}
                 {loading ? (
                     <div className="flex justify-center py-20">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -560,12 +560,12 @@ export default function AdminTrustedCompaniesPage() {
                                         </button>
                                         <button
                                             onClick={() => setManagingJobsCompany(company)}
-                                            className="p-1.5 bg-white text-slate-600 hover:text-blue-600 rounded-lg shadow-sm border border-slate-200 transition-colors"
+                                            className="p-1.5 bg-white text-slate-600 hover:text-indigo-600 rounded-lg shadow-sm border border-slate-200 transition-colors"
                                             title="管理岗位"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
-                                        <button onClick={() => handleEdit(company)} className="p-1.5 bg-white text-slate-600 hover:text-blue-600 rounded-lg shadow-sm border border-slate-200 transition-colors">
+                                        <button onClick={() => handleEdit(company)} className="p-1.5 bg-white text-slate-600 hover:text-indigo-600 rounded-lg shadow-sm border border-slate-200 transition-colors">
                                             <Edit2 className="w-4 h-4" />
                                         </button>
                                         <button onClick={() => handleDelete(company.id)} className="p-1.5 bg-white text-slate-600 hover:text-red-600 rounded-lg shadow-sm border border-slate-200 transition-colors">
@@ -591,7 +591,7 @@ export default function AdminTrustedCompaniesPage() {
                                             <div className="flex items-center gap-2">
                                                 <h3 className="font-bold text-slate-900 line-clamp-1 text-lg">{company.name}</h3>
                                                 {company.industry && (
-                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-100 whitespace-nowrap">
+                                                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-xs rounded-full border border-indigo-100 whitespace-nowrap">
                                                         {company.industry}
                                                     </span>
                                                 )}
@@ -616,17 +616,17 @@ export default function AdminTrustedCompaniesPage() {
 
                                     <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
                                         {company.website && (
-                                            <a href={company.website} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600" title="官网">
+                                            <a href={company.website} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-indigo-600" title="官网">
                                                 <Globe className="w-4 h-4" />
                                             </a>
                                         )}
                                         {company.careersPage && (
-                                            <a href={company.careersPage} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600" title="招聘页">
+                                            <a href={company.careersPage} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-indigo-600" title="招聘页">
                                                 <Briefcase className="w-4 h-4" />
                                             </a>
                                         )}
                                         {company.linkedin && (
-                                            <a href={company.linkedin} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600" title="LinkedIn">
+                                            <a href={company.linkedin} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-indigo-600" title="LinkedIn">
                                                 <Linkedin className="w-4 h-4" />
                                             </a>
                                         )}
@@ -663,7 +663,7 @@ export default function AdminTrustedCompaniesPage() {
                                                 required
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                                className="flex-1 rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                className="flex-1 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                 placeholder="例如：GitLab"
                                             />
                                             <button
@@ -685,7 +685,7 @@ export default function AdminTrustedCompaniesPage() {
                                             type="url"
                                             value={formData.website}
                                             onChange={e => setFormData({ ...formData, website: e.target.value })}
-                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                             placeholder="https://..."
                                         />
                                     </div>
@@ -696,7 +696,7 @@ export default function AdminTrustedCompaniesPage() {
                                             type="url"
                                             value={formData.careersPage}
                                             onChange={e => setFormData({ ...formData, careersPage: e.target.value })}
-                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                             placeholder="https://.../careers"
                                         />
                                     </div>
@@ -707,7 +707,7 @@ export default function AdminTrustedCompaniesPage() {
                                             type="url"
                                             value={formData.linkedin}
                                             onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
-                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                             placeholder="https://linkedin.com/company/..."
                                         />
                                     </div>
@@ -718,7 +718,7 @@ export default function AdminTrustedCompaniesPage() {
                                             type="text"
                                             value={formData.address}
                                             onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                             placeholder="例如：美国, 旧金山"
                                         />
                                     </div>
@@ -729,7 +729,7 @@ export default function AdminTrustedCompaniesPage() {
                                             type="text"
                                             value={formData.logo}
                                             onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                             placeholder="https://..."
                                         />
                                     </div>
@@ -745,7 +745,7 @@ export default function AdminTrustedCompaniesPage() {
                                                     type="text"
                                                     value={formData.coverImage}
                                                     onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                                     placeholder="输入 URL 或粘贴图片 (Ctrl+V)"
                                                 />
                                                 <label className={`px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${processingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -790,7 +790,7 @@ export default function AdminTrustedCompaniesPage() {
                                             rows={4}
                                             value={formData.description}
                                             onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                             placeholder="简要介绍企业业务、文化及远程办公政策..."
                                         />
                                     </div>
@@ -800,7 +800,7 @@ export default function AdminTrustedCompaniesPage() {
                                         <select
                                             value={formData.industry}
                                             onChange={e => setFormData({ ...formData, industry: e.target.value as CompanyIndustry })}
-                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
                                             <option value="其他">其他</option>
                                             <option value="互联网/软件">互联网/软件</option>
@@ -824,7 +824,7 @@ export default function AdminTrustedCompaniesPage() {
                                             type="text"
                                             value={formData.tags}
                                             onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                             placeholder="SaaS, DevOps, 全球远程, 异步协作"
                                         />
                                     </div>
@@ -834,7 +834,7 @@ export default function AdminTrustedCompaniesPage() {
                                                 type="checkbox"
                                                 checked={formData.canRefer}
                                                 onChange={e => setFormData({ ...formData, canRefer: e.target.checked })}
-                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                             />
                                             可内推
                                         </label>
@@ -852,7 +852,7 @@ export default function AdminTrustedCompaniesPage() {
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
                                     >
                                         保存
                                     </button>
@@ -918,7 +918,7 @@ export default function AdminTrustedCompaniesPage() {
                                     <button
                                         onClick={handleCropSave}
                                         disabled={processingImage}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
                                     >
                                         {processingImage && <Loader2 className="w-4 h-4 animate-spin" />}
                                         确认裁剪并上传

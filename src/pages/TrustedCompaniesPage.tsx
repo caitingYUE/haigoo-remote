@@ -142,7 +142,7 @@ export default function TrustedCompaniesPage() {
                             {(selectedIndustries.length > 0 || selectedRegions.length > 0) && (
                                 <button 
                                     onClick={() => { setSelectedIndustries([]); setSelectedRegions([]); }}
-                                    className="text-sm text-slate-500 hover:text-blue-600 whitespace-nowrap"
+                                    className="text-sm text-slate-500 hover:text-indigo-600 whitespace-nowrap"
                                 >
                                     重置
                                 </button>
@@ -167,7 +167,7 @@ export default function TrustedCompaniesPage() {
                         {filteredCompanies.map(company => (
                             <div
                                 key={company.id}
-                                onClick={() => navigate(`/company/${company.id}`)}
+                                onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
                                 className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border border-slate-100 group overflow-hidden flex flex-col h-full"
                             >
                                 {/* Large Preview Image Area */}
@@ -205,7 +205,7 @@ export default function TrustedCompaniesPage() {
 
                                     {/* Verified Badge Overlay */}
                                     <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-slate-900 shadow-sm border border-slate-100 z-20">
-                                        <div className="w-3 h-3 bg-[#3182CE] rounded-full flex items-center justify-center">
+                                        <div className="w-3 h-3 bg-indigo-600 rounded-full flex items-center justify-center">
                                             <svg viewBox="0 0 24 24" fill="none" className="w-2 h-2 text-white" stroke="currentColor" strokeWidth="3">
                                                 <polyline points="20 6 9 17 4 12" />
                                             </svg>
@@ -216,7 +216,7 @@ export default function TrustedCompaniesPage() {
 
                                 <div className="p-6 flex flex-col flex-1">
 
-                                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[#3182CE] transition-colors">
+                                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors">
                                         {company.name}
                                     </h3>
 
@@ -242,13 +242,13 @@ export default function TrustedCompaniesPage() {
                                         </div>
                                         <div className="text-sm text-slate-500 mt-1">
                                             {jobCounts[company.id] > 0 ? (
-                                                <span className="text-[#3182CE]">{jobCounts[company.id]} active jobs</span>
+                                                <span className="text-indigo-600">{jobCounts[company.id]} active jobs</span>
                                             ) : (
                                                 'No active jobs currently'
                                             )}
                                         </div>
-                                    </div>
                                 </div>
+                            </div>
                             </div>
                         ))}
                     </div>

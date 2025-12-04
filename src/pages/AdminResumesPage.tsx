@@ -126,7 +126,7 @@ const AdminResumesPage: React.FC = () => {
                             </Link>
                             <button
                                 onClick={fetchResumes}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                             >
                                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                                 刷新列表
@@ -185,8 +185,8 @@ const AdminResumesPage: React.FC = () => {
                                         <tr key={resume.id} className="hover:bg-slate-50">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
-                                                    <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                                        <User className="w-5 h-5 text-blue-600" />
+                                                    <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                                        <User className="w-5 h-5 text-indigo-600" />
                                                     </div>
                                                     <div className="ml-4">
                                                         <div className="text-sm font-medium text-slate-900">
@@ -234,7 +234,7 @@ const AdminResumesPage: React.FC = () => {
                                                         onClick={() => {
                                                             alert(JSON.stringify(resume.parsedData, null, 2))
                                                         }}
-                                                        className="text-blue-600 hover:text-blue-900"
+                                                        className="text-indigo-600 hover:text-indigo-900"
                                                         title="查看详情"
                                                     >
                                                         <FileText className="w-5 h-5" />

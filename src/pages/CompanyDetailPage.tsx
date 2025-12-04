@@ -28,7 +28,9 @@ export default function CompanyDetailPage() {
         try {
             // Try to get trusted company info first
             const companies = await trustedCompaniesService.getAllCompanies()
-            const trusted = companies.find(c => c.name === decodedCompanyName)
+            const norm = decodedCompanyName.trim().toLowerCase()
+            const trusted = companies.find(c => c.name?.trim().toLowerCase() === norm) ||
+                companies.find(c => c.name && c.name.toLowerCase().includes(norm))
             if (trusted) {
                 setCompanyInfo(trusted)
             }
@@ -100,14 +102,14 @@ export default function CompanyDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-orange-50/20 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-orange-50/20 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-orange-50/20">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-orange-50/20">
             {/* Header */}
             <div className="bg-white border-b border-slate-200 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -121,7 +123,7 @@ export default function CompanyDetailPage() {
 
                     <div className="flex items-start gap-6">
                         {/* Company Logo */}
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                        <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
                             <span className="text-white font-bold text-2xl">
                                 {decodedCompanyName.charAt(0)}
                             </span>
@@ -143,7 +145,7 @@ export default function CompanyDetailPage() {
                                         href={companyInfo.website}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700"
+                                        className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700"
                                     >
                                         <Globe className="w-4 h-4" />
                                         <span>官网</span>

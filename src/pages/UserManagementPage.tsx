@@ -238,7 +238,7 @@ export default function UserManagementPage() {
                 <p className="text-sm text-slate-600 mb-1">总用户数</p>
                 <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
               </div>
-              <Users className="w-10 h-10 text-blue-500 opacity-20" />
+              <Users className="w-10 h-10 text-indigo-500 opacity-20" />
             </div>
           </div>
 
@@ -520,7 +520,7 @@ export default function UserManagementPage() {
                         <span className="text-slate-500 block mb-1">职位类型</span>
                         <div className="flex flex-wrap gap-1">
                           {editingUser.jobPreferences.jobTypes.map(t => (
-                            <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">{t}</span>
+                            <span key={t} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">{t}</span>
                           ))}
                         </div>
                       </div>

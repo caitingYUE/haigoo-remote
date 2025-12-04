@@ -452,7 +452,7 @@ export default function ProfileCenterPage() {
                     type="radio" 
                     checked={accuracy==='unknown'} 
                     onChange={()=>setAccuracy('unknown')}
-                    className="text-[#3182CE] focus:ring-[#3182CE]" 
+                  className="text-indigo-600 focus:ring-indigo-600" 
                   />
                   <span className="text-sm text-slate-700">不确定</span>
                 </label>
@@ -464,7 +464,7 @@ export default function ProfileCenterPage() {
                 rows={5} 
                 value={content} 
                 onChange={e=>setContent(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
                 placeholder="请描述问题或建议" 
               />
             </div>
@@ -473,7 +473,7 @@ export default function ProfileCenterPage() {
               <input 
                 value={contact} 
                 onChange={e=>setContact(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
                 placeholder="邮箱或微信" 
               />
             </div>
@@ -481,7 +481,7 @@ export default function ProfileCenterPage() {
               <button 
                 onClick={submit} 
                 disabled={submitting} 
-                className="px-6 py-2.5 bg-[#3182CE] text-white rounded-lg hover:bg-[#2b70b5] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting?'提交中…':'提交反馈'}
               </button>
@@ -529,7 +529,7 @@ export default function ProfileCenterPage() {
               <select 
                 value={type} 
                 onChange={e=>setType(e.target.value as any)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all bg-white"
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white"
               >
                 <option value="enterprise">企业</option>
                 <option value="job">岗位</option>
@@ -541,7 +541,7 @@ export default function ProfileCenterPage() {
               <input 
                 value={name} 
                 onChange={e=>setName(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
                 placeholder="例如：GitLab" 
               />
             </div>
@@ -550,7 +550,7 @@ export default function ProfileCenterPage() {
               <input 
                 value={link} 
                 onChange={e=>setLink(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
                 placeholder="https://..." 
               />
             </div>
@@ -560,7 +560,7 @@ export default function ProfileCenterPage() {
                 rows={4} 
                 value={description} 
                 onChange={e=>setDescription(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-[#3182CE] focus:border-transparent outline-none transition-all" 
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
                 placeholder="简述推荐原因" 
               />
             </div>
@@ -568,7 +568,7 @@ export default function ProfileCenterPage() {
               <button 
                 onClick={submit} 
                 disabled={submitting} 
-                className="px-6 py-2.5 bg-[#3182CE] text-white rounded-lg hover:bg-[#2b70b5] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting?'提交中…':'提交推荐'}
               </button>
@@ -600,7 +600,7 @@ export default function ProfileCenterPage() {
               <div className="space-y-1" role="tablist" aria-label="个人中心切换">
                 <button 
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    tab === 'resume' ? 'bg-[#3182CE] text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                    tab === 'resume' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
                   }`}
                   role="tab" 
                   aria-selected={tab === 'resume'} 
@@ -611,7 +611,7 @@ export default function ProfileCenterPage() {
                 </button>
                 <button 
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    tab === 'favorites' ? 'bg-[#3182CE] text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                    tab === 'favorites' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
                   }`}
                   role="tab" 
                   aria-selected={tab === 'favorites'} 
@@ -622,7 +622,7 @@ export default function ProfileCenterPage() {
                 </button>
                 <button 
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    tab === 'feedback' ? 'bg-[#3182CE] text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                    tab === 'feedback' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
                   }`}
                   role="tab" 
                   aria-selected={tab === 'feedback'} 
@@ -633,7 +633,7 @@ export default function ProfileCenterPage() {
                 </button>
                 <button 
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    tab === 'recommend' ? 'bg-[#3182CE] text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                    tab === 'recommend' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
                   }`}
                   role="tab" 
                   aria-selected={tab === 'recommend'} 

@@ -104,7 +104,7 @@ export default function AdminFeedbackList() {
                                                         <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Job ID: {feedback.jobId}</span>
                                                         {feedback.source && <span className="text-xs text-slate-500">来源: {feedback.source}</span>}
                                                         {feedback.sourceUrl && (
-                                                            <a href={feedback.sourceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs">
+                                                            <a href={feedback.sourceUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline text-xs">
                                                                 查看原始链接
                                                             </a>
                                                         )}
