@@ -31,7 +31,6 @@ import {
 import { Job, JobFilter, JobStats, SyncStatus, JobCategory, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
-import JobDetailModal from '../components/JobDetailModal';
 import CronTestControl from '../components/CronTestControl';
 
 const AdminDashboardPage: React.FC = () => {
@@ -628,7 +627,7 @@ const AdminDashboardPage: React.FC = () => {
       case 'active': return 'text-green-600 bg-green-100';
       case 'inactive': return 'text-yellow-600 bg-yellow-100';
       case 'archived': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      default: return 'text-slate-600 bg-slate-100';
     }
   };
 
@@ -687,50 +686,50 @@ const AdminDashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">加载中...</p>
+          <p className="text-slate-600">加载中...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* 头部 */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">岗位管理后台</h1>
-              <p className="text-gray-600">RSS岗位数据聚合与管理</p>
+              <h1 className="text-2xl font-bold text-slate-900">岗位管理后台</h1>
+              <p className="text-slate-600">RSS岗位数据聚合与管理</p>
             </div>
             <div className="flex space-x-3">
               <Link
                 to="/admin/users"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
               >
                 <Users className="w-4 h-4 mr-2" />
                 用户管理
               </Link>
               <Link
                 to="/admin/resumes"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 简历管理
               </Link>
               <button
                 onClick={() => setShowLocationConfig(true)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
               >
                 <MapPin className="w-4 h-4 mr-2" />
                 地址分类
               </button>
               <button
                 onClick={() => setShowRSSConfig(!showRSSConfig)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
               >
                 <Settings className="w-4 h-4 mr-2" />
                 RSS配置
@@ -818,11 +817,11 @@ const AdminDashboardPage: React.FC = () => {
         {/* RSS配置模块 */}
         {showRSSConfig && (
           <div className="bg-white rounded-lg shadow mb-6">
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-6 py-4 border-b border-slate-200">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">RSS数据源配置</h3>
-                  <p className="text-sm text-gray-600">管理RSS数据源，共 {rssSources.length} 个源</p>
+                  <h3 className="text-lg font-medium text-slate-900">RSS数据源配置</h3>
+                  <p className="text-sm text-slate-600">管理RSS数据源，共 {rssSources.length} 个源</p>
                 </div>
                 <button
                   onClick={handleAddRSSSource}
@@ -841,9 +840,9 @@ const AdminDashboardPage: React.FC = () => {
                     type="checkbox"
                     checked={selectedSources.length === rssSources.length && rssSources.length > 0}
                     onChange={handleSelectAllSources}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-slate-600">
                     {selectedSources.length > 0 ? `已选择 ${selectedSources.length} 个` : '全选'}
                   </span>
                 </div>
@@ -860,19 +859,19 @@ const AdminDashboardPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                 {rssSources.map((source, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                  <div key={index} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-2">
                         <input
                           type="checkbox"
                           checked={selectedSources.includes(index)}
                           onChange={() => handleSelectSource(index)}
-                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         />
                         <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">{source.name}</h4>
-                          <p className="text-xs text-gray-600 mt-1">{source.category}</p>
-                          <p className="text-xs text-gray-500 mt-2 break-all">{source.url}</p>
+                          <h4 className="text-sm font-medium text-slate-900">{source.name}</h4>
+                          <p className="text-xs text-slate-600 mt-1">{source.category}</p>
+                          <p className="text-xs text-slate-500 mt-2 break-all">{source.url}</p>
                         </div>
                       </div>
                       <div className="ml-2 flex flex-col space-y-2">
@@ -882,14 +881,14 @@ const AdminDashboardPage: React.FC = () => {
                         <div className="flex space-x-1">
                           <button
                             onClick={() => handleEditRSSSource(source)}
-                            className="p-1 text-gray-400 hover:text-blue-600"
+                            className="p-1 text-slate-400 hover:text-blue-600"
                             title="编辑"
                           >
                             <Edit3 className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => handleDeleteRSSSource(source)}
-                            className="p-1 text-gray-400 hover:text-red-600"
+                            className="p-1 text-slate-400 hover:text-red-600"
                             title="删除"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -906,16 +905,16 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* RSS源添加/编辑表单 */}
         {showRSSForm && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="fixed inset-0 bg-slate-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white max-h-[80vh] overflow-y-auto">
               <div className="mt-3">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-slate-900">
                     {editingRSSSource ? '编辑RSS源' : '批量添加RSS源'}
                   </h3>
                   <button
                     onClick={handleCancelRSSForm}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-slate-400 hover:text-slate-600"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -925,9 +924,9 @@ const AdminDashboardPage: React.FC = () => {
                 {!editingRSSSource && (
                   <div className="space-y-4">
                     {batchRSSForms.map((form, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div key={index} className="border border-slate-200 rounded-lg p-4">
                         <div className="flex justify-between items-center mb-3">
-                          <h4 className="text-sm font-medium text-gray-700">RSS源 {index + 1}</h4>
+                          <h4 className="text-sm font-medium text-slate-700">RSS源 {index + 1}</h4>
                           <div className="flex space-x-2">
                             {index === batchRSSForms.length - 1 && (
                               <button
@@ -952,40 +951,40 @@ const AdminDashboardPage: React.FC = () => {
 
                         <div className="space-y-3">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
                               源名称
                             </label>
                             <input
                               type="text"
                               value={form.name}
                               onChange={(e) => updateBatchRSSForm(index, 'name', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="例如: WeWorkRemotely"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
                               分类
                             </label>
                             <input
                               type="text"
                               value={form.category}
                               onChange={(e) => updateBatchRSSForm(index, 'category', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="例如: 全栈开发"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
                               RSS URL
                             </label>
                             <input
                               type="url"
                               value={form.url}
                               onChange={(e) => updateBatchRSSForm(index, 'url', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="https://example.com/feed.rss"
                             />
                           </div>
@@ -999,40 +998,40 @@ const AdminDashboardPage: React.FC = () => {
                 {editingRSSSource && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
                         源名称
                       </label>
                       <input
                         type="text"
                         value={rssFormData.name}
                         onChange={(e) => setRssFormData(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="例如: WeWorkRemotely"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
                         分类
                       </label>
                       <input
                         type="text"
                         value={rssFormData.category}
                         onChange={(e) => setRssFormData(prev => ({ ...prev, category: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="例如: 全栈开发"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
                         RSS URL
                       </label>
                       <input
                         type="url"
                         value={rssFormData.url}
                         onChange={(e) => setRssFormData(prev => ({ ...prev, url: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="https://example.com/feed.rss"
                       />
                     </div>
@@ -1042,7 +1041,7 @@ const AdminDashboardPage: React.FC = () => {
                 <div className="flex justify-end space-x-3 mt-6">
                   <button
                     onClick={handleCancelRSSForm}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                    className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-md hover:bg-slate-200"
                   >
                     取消
                   </button>
@@ -1068,8 +1067,8 @@ const AdminDashboardPage: React.FC = () => {
                   <Briefcase className="h-8 w-8 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">总岗位数</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
+                  <p className="text-sm font-medium text-slate-500">总岗位数</p>
+                  <p className="text-2xl font-semibold text-slate-900">{stats.total}</p>
                 </div>
               </div>
             </div>
@@ -1080,8 +1079,8 @@ const AdminDashboardPage: React.FC = () => {
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">活跃岗位</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.activeJobs}</p>
+                  <p className="text-sm font-medium text-slate-500">活跃岗位</p>
+                  <p className="text-2xl font-semibold text-slate-900">{stats.activeJobs}</p>
                 </div>
               </div>
             </div>
@@ -1092,8 +1091,8 @@ const AdminDashboardPage: React.FC = () => {
                   <TrendingUp className="h-8 w-8 text-purple-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">24小时新增</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stats.recentlyAdded}</p>
+                  <p className="text-sm font-medium text-slate-500">24小时新增</p>
+                  <p className="text-2xl font-semibold text-slate-900">{stats.recentlyAdded}</p>
                 </div>
               </div>
             </div>
@@ -1104,8 +1103,8 @@ const AdminDashboardPage: React.FC = () => {
                   <Globe className="h-8 w-8 text-indigo-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">RSS数据源</p>
-                  <p className="text-2xl font-semibold text-gray-900">{rssSources.length}</p>
+                  <p className="text-sm font-medium text-slate-500">RSS数据源</p>
+                  <p className="text-2xl font-semibold text-slate-900">{rssSources.length}</p>
                 </div>
               </div>
             </div>
@@ -1117,15 +1116,15 @@ const AdminDashboardPage: React.FC = () => {
                   <Database className="h-8 w-8 text-orange-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">存储容量</p>
+                  <p className="text-sm font-medium text-slate-500">存储容量</p>
                   <div className="flex items-baseline space-x-2">
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-lg font-semibold text-slate-900">
                       {Math.round((stats.total * 2) / 1024 * 100) / 100}MB
                     </p>
-                    <p className="text-xs text-gray-500">/ 20MB</p>
+                    <p className="text-xs text-slate-500">/ 20MB</p>
                   </div>
                   <div className="mt-2">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-slate-200 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${(stats.total * 2) / 1024 / 20 > 0.8 ? 'bg-red-500' :
                           (stats.total * 2) / 1024 / 20 > 0.6 ? 'bg-yellow-500' : 'bg-green-500'
@@ -1133,7 +1132,7 @@ const AdminDashboardPage: React.FC = () => {
                         style={{ width: `${Math.min(((stats.total * 2) / 1024 / 20) * 100, 100)}%` }}
                       ></div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       预计可存储 {Math.floor(20 * 1024 / 2)} 个职位
                     </p>
                   </div>
@@ -1146,22 +1145,22 @@ const AdminDashboardPage: React.FC = () => {
         {/* 同步状态 */}
         {syncStatus && (
           <div className="bg-white rounded-lg shadow mb-6 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">同步状态</h3>
+            <h3 className="text-lg font-medium text-slate-900 mb-4">同步状态</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-gray-500">上次同步</p>
+                <p className="text-sm text-slate-500">上次同步</p>
                 <p className="text-sm font-medium">
                   {syncStatus.lastSync ? formatDate(syncStatus.lastSync) : '从未同步'}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">成功/总数</p>
+                <p className="text-sm text-slate-500">成功/总数</p>
                 <p className="text-sm font-medium">
                   {syncStatus.successfulSources}/{syncStatus.totalSources}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">处理岗位数</p>
+                <p className="text-sm text-slate-500">处理岗位数</p>
                 <p className="text-sm font-medium">{syncStatus.totalJobsProcessed}</p>
               </div>
             </div>
@@ -1185,19 +1184,19 @@ const AdminDashboardPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
                 <input
                   type="text"
                   placeholder="搜索岗位标题、公司或描述..."
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
             >
               <Filter className="w-4 h-4 mr-2" />
               筛选
@@ -1205,17 +1204,17 @@ const AdminDashboardPage: React.FC = () => {
           </div>
 
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t border-slate-200">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">岗位状态</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">岗位状态</label>
                   <select
                     value={filter.status?.[0] || ''}
                     onChange={(e) => setFilter(prev => ({
                       ...prev,
                       status: e.target.value ? [e.target.value as Job['status']] : undefined
                     }))}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">全部状态</option>
                     <option value="active">活跃</option>
@@ -1224,14 +1223,14 @@ const AdminDashboardPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">工作类型</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">工作类型</label>
                   <select
                     value={filter.jobType?.[0] || ''}
                     onChange={(e) => setFilter(prev => ({
                       ...prev,
                       jobType: e.target.value ? [e.target.value as Job['jobType']] : undefined
                     }))}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">全部类型</option>
                     <option value="Full-time">全职</option>
@@ -1242,14 +1241,14 @@ const AdminDashboardPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">数据源</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">数据源</label>
                   <select
                     value={filter.source?.[0] || ''}
                     onChange={(e) => setFilter(prev => ({
                       ...prev,
                       source: e.target.value ? [e.target.value] : undefined
                     }))}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">全部来源</option>
                     <option value="WeWorkRemotely">WeWorkRemotely</option>
@@ -1287,7 +1286,7 @@ const AdminDashboardPage: React.FC = () => {
                       e.target.value = '';
                     }
                   }}
-                  className="text-xs border border-gray-300 rounded px-2 py-1"
+                  className="text-xs border border-slate-300 rounded px-2 py-1"
                 >
                   <option value="">批量分类</option>
                   <option value="软件开发">软件开发</option>
@@ -1307,9 +1306,9 @@ const AdminDashboardPage: React.FC = () => {
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     <input
                       type="checkbox"
                       checked={selectedJobs.length === currentJobs.length && currentJobs.length > 0}
@@ -1320,13 +1319,13 @@ const AdminDashboardPage: React.FC = () => {
                           setSelectedJobs([]);
                         }
                       }}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort('title')}
-                      className="flex items-center space-x-1 hover:text-gray-700"
+                      className="flex items-center space-x-1 hover:text-slate-700"
                     >
                       <span>岗位信息</span>
                       {sortBy === 'title' && (
@@ -1334,22 +1333,22 @@ const AdminDashboardPage: React.FC = () => {
                       )}
                     </button>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider relative">
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => setShowCategoryFilter(!showCategoryFilter)}
-                        className="flex items-center space-x-1 hover:text-gray-700"
+                        className="flex items-center space-x-1 hover:text-slate-700"
                       >
                         <span>分类</span>
                         <Filter className="w-3 h-3" />
                       </button>
                     </div>
                     {showCategoryFilter && (
-                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-md shadow-lg z-10">
                         <div className="py-1">
                           <button
                             onClick={() => handleCategoryFilter('all')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${!filter.category ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${!filter.category ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                               }`}
                           >
                             全部分类
@@ -1358,7 +1357,7 @@ const AdminDashboardPage: React.FC = () => {
                             <button
                               key={category}
                               onClick={() => handleCategoryFilter(category)}
-                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.category?.[0] === category ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${filter.category?.[0] === category ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                                 }`}
                             >
                               {category}
@@ -1368,22 +1367,22 @@ const AdminDashboardPage: React.FC = () => {
                       </div>
                     )}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider relative">
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => setShowSourceFilter(!showSourceFilter)}
-                        className="flex items-center space-x-1 hover:text-gray-700"
+                        className="flex items-center space-x-1 hover:text-slate-700"
                       >
                         <span>来源</span>
                         <Filter className="w-3 h-3" />
                       </button>
                     </div>
                     {showSourceFilter && (
-                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-md shadow-lg z-10">
                         <div className="py-1">
                           <button
                             onClick={() => handleSourceFilter('all')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${!filter.source ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${!filter.source ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                               }`}
                           >
                             全部来源
@@ -1392,7 +1391,7 @@ const AdminDashboardPage: React.FC = () => {
                             <button
                               key={source}
                               onClick={() => handleSourceFilter(source)}
-                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.source?.[0] === source ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${filter.source?.[0] === source ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                                 }`}
                             >
                               {source}
@@ -1402,43 +1401,43 @@ const AdminDashboardPage: React.FC = () => {
                       </div>
                     )}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider relative">
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => setShowStatusFilter(!showStatusFilter)}
-                        className="flex items-center space-x-1 hover:text-gray-700"
+                        className="flex items-center space-x-1 hover:text-slate-700"
                       >
                         <span>状态</span>
                         <Filter className="w-3 h-3" />
                       </button>
                     </div>
                     {showStatusFilter && (
-                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-md shadow-lg z-10">
                         <div className="py-1">
                           <button
                             onClick={() => handleStatusFilter('all')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${!filter.status ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${!filter.status ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                               }`}
                           >
                             全部状态
                           </button>
                           <button
                             onClick={() => handleStatusFilter('active')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.status?.[0] === 'active' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${filter.status?.[0] === 'active' ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                               }`}
                           >
                             活跃
                           </button>
                           <button
                             onClick={() => handleStatusFilter('inactive')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.status?.[0] === 'inactive' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${filter.status?.[0] === 'inactive' ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                               }`}
                           >
                             非活跃
                           </button>
                           <button
                             onClick={() => handleStatusFilter('archived')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.status?.[0] === 'archived' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${filter.status?.[0] === 'archived' ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                               }`}
                           >
                             已删除
@@ -1447,11 +1446,11 @@ const AdminDashboardPage: React.FC = () => {
                       </div>
                     )}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider relative">
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => handleSort('remoteLocationRestriction')}
-                        className="flex items-center space-x-1 hover:text-gray-700"
+                        className="flex items-center space-x-1 hover:text-slate-700"
                       >
                         <span>远程地点限制</span>
                         {sortBy === 'remoteLocationRestriction' && (
@@ -1460,17 +1459,17 @@ const AdminDashboardPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => setShowRemoteLocationFilter(!showRemoteLocationFilter)}
-                        className="ml-1 hover:text-gray-700"
+                        className="ml-1 hover:text-slate-700"
                       >
                         <Filter className="w-3 h-3" />
                       </button>
                     </div>
                     {showRemoteLocationFilter && (
-                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-md shadow-lg z-10">
                         <div className="py-1">
                           <button
                             onClick={() => handleRemoteLocationFilter('all')}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${!filter.remoteLocationRestriction ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${!filter.remoteLocationRestriction ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                               }`}
                           >
                             全部地点
@@ -1479,7 +1478,7 @@ const AdminDashboardPage: React.FC = () => {
                             <button
                               key={restriction}
                               onClick={() => handleRemoteLocationFilter(restriction)}
-                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${filter.remoteLocationRestriction?.includes(restriction) ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              className={`block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 ${filter.remoteLocationRestriction?.includes(restriction) ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
                                 }`}
                             >
                               {restriction}
@@ -1489,10 +1488,10 @@ const AdminDashboardPage: React.FC = () => {
                       </div>
                     )}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     <button
                       onClick={() => handleSort('publishedAt')}
-                      className="flex items-center space-x-1 hover:text-gray-700"
+                      className="flex items-center space-x-1 hover:text-slate-700"
                     >
                       <span>发布时间</span>
                       {sortBy === 'publishedAt' && (
@@ -1500,14 +1499,14 @@ const AdminDashboardPage: React.FC = () => {
                       )}
                     </button>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     操作
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentJobs.map((job) => (
-                  <tr key={job.id} className="hover:bg-gray-50">
+                  <tr key={job.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
@@ -1519,12 +1518,12 @@ const AdminDashboardPage: React.FC = () => {
                             setSelectedJobs(selectedJobs.filter(id => id !== job.id));
                           }
                         }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                       />
                     </td>
                     <td className="px-6 py-4">
                       <div className="max-w-xs">
-                        <div className="text-sm font-medium text-gray-900 truncate">
+                        <div className="text-sm font-medium text-slate-900 truncate">
                           {job.url ? (
                             <a
                               href={job.url}
@@ -1539,7 +1538,7 @@ const AdminDashboardPage: React.FC = () => {
                             <span>{job.title}</span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-500 truncate">
+                        <div className="text-sm text-slate-500 truncate">
                           {job.company} • {job.location}
                         </div>
                         <div className="flex flex-wrap gap-1 mt-1">
@@ -1571,7 +1570,7 @@ const AdminDashboardPage: React.FC = () => {
                         {job.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {job.source}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -1585,10 +1584,10 @@ const AdminDashboardPage: React.FC = () => {
                           {job.remoteLocationRestriction}
                         </span>
                       ) : (
-                        <span className="text-gray-400 text-xs">无限制</span>
+                        <span className="text-slate-400 text-xs">无限制</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {formatDate(job.publishedAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -1602,7 +1601,7 @@ const AdminDashboardPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleToggleFeatured(job.id, !job.isFeatured)}
-                          className={`${job.isFeatured ? 'text-yellow-500' : 'text-gray-400'} hover:text-yellow-600`}
+                          className={`${job.isFeatured ? 'text-yellow-500' : 'text-slate-400'} hover:text-yellow-600`}
                           title={job.isFeatured ? '取消精选' : '标记为精选'}
                         >
                           <Star className={`w-4 h-4 ${job.isFeatured ? 'fill-current' : ''}`} />
@@ -1631,26 +1630,26 @@ const AdminDashboardPage: React.FC = () => {
 
           {/* 分页 */}
           {totalPages > 1 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-slate-200 sm:px-6">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50"
                 >
                   上一页
                 </button>
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50"
                 >
                   下一页
                 </button>
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-slate-700">
                     显示第 <span className="font-medium">{startIndex + 1}</span> 到{' '}
                     <span className="font-medium">{Math.min(endIndex, jobs.length)}</span> 条，
                     共 <span className="font-medium">{jobs.length}</span> 条结果
@@ -1661,7 +1660,7 @@ const AdminDashboardPage: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
                     >
                       上一页
                     </button>
@@ -1673,7 +1672,7 @@ const AdminDashboardPage: React.FC = () => {
                           onClick={() => setCurrentPage(page)}
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
                             ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            : 'bg-white border-slate-300 text-slate-500 hover:bg-slate-50'
                             }`}
                         >
                           {page}
@@ -1683,7 +1682,7 @@ const AdminDashboardPage: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
                     >
                       下一页
                     </button>
@@ -1696,23 +1695,23 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* 删除确认弹窗 */}
         {showDeleteConfirm && sourceToDelete && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="fixed inset-0 bg-slate-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
               <div className="mt-3 text-center">
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
                   <AlertCircle className="h-6 w-6 text-red-600" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mt-4">确认删除RSS源</h3>
+                <h3 className="text-lg font-medium text-slate-900 mt-4">确认删除RSS源</h3>
                 <div className="mt-2 px-7 py-3">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-slate-500">
                     确定要删除RSS源 "<span className="font-medium">{sourceToDelete.name}</span>" 吗？
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">此操作无法撤销</p>
+                  <p className="text-xs text-slate-400 mt-1">此操作无法撤销</p>
                 </div>
                 <div className="flex justify-center space-x-3 mt-4">
                   <button
                     onClick={cancelDeleteRSSSource}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                    className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-md hover:bg-slate-200"
                   >
                     取消
                   </button>
@@ -1730,23 +1729,23 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* 批量删除确认弹窗 */}
         {showBatchDeleteConfirm && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="fixed inset-0 bg-slate-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
               <div className="mt-3 text-center">
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
                   <AlertCircle className="h-6 w-6 text-red-600" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mt-4">确认批量删除</h3>
+                <h3 className="text-lg font-medium text-slate-900 mt-4">确认批量删除</h3>
                 <div className="mt-2 px-7 py-3">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-slate-500">
                     确定要删除选中的 <span className="font-medium">{selectedSources.length}</span> 个RSS源吗？
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">此操作无法撤销</p>
+                  <p className="text-xs text-slate-400 mt-1">此操作无法撤销</p>
                 </div>
                 <div className="flex justify-center space-x-3 mt-4">
                   <button
                     onClick={cancelBatchDelete}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                    className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-md hover:bg-slate-200"
                   >
                     取消
                   </button>
@@ -1764,11 +1763,11 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* 地址分类管理模态框 */}
         {showLocationConfig && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-slate-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
             <div className="relative p-8 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">地址分类管理</h3>
-                <button onClick={() => setShowLocationConfig(false)} className="text-gray-500 hover:text-gray-700">
+                <h3 className="text-2xl font-bold text-slate-900">地址分类管理</h3>
+                <button onClick={() => setShowLocationConfig(false)} className="text-slate-500 hover:text-slate-700">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -1787,13 +1786,13 @@ const AdminDashboardPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
                       人在国内 (Domestic) - 关键词
                     </label>
-                    <p className="text-xs text-gray-500 mb-2">匹配到这些关键词的岗位将出现在"人在国内"标签页</p>
+                    <p className="text-xs text-slate-500 mb-2">匹配到这些关键词的岗位将出现在"人在国内"标签页</p>
                     <textarea
                       rows={4}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       value={locationCategories.domesticKeywords.join(', ')}
                       onChange={(e) => setLocationCategories(prev => ({
                         ...prev,
@@ -1804,13 +1803,13 @@ const AdminDashboardPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
                       人在海外 (Overseas) - 关键词
                     </label>
-                    <p className="text-xs text-gray-500 mb-2">匹配到这些关键词的岗位将出现在"人在海外"标签页</p>
+                    <p className="text-xs text-slate-500 mb-2">匹配到这些关键词的岗位将出现在"人在海外"标签页</p>
                     <textarea
                       rows={4}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       value={locationCategories.overseasKeywords.join(', ')}
                       onChange={(e) => setLocationCategories(prev => ({
                         ...prev,
@@ -1821,13 +1820,13 @@ const AdminDashboardPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
                       全球通用 (Global) - 关键词
                     </label>
-                    <p className="text-xs text-gray-500 mb-2">匹配到这些关键词的岗位将同时出现在两个标签页</p>
+                    <p className="text-xs text-slate-500 mb-2">匹配到这些关键词的岗位将同时出现在两个标签页</p>
                     <textarea
                       rows={4}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       value={locationCategories.globalKeywords.join(', ')}
                       onChange={(e) => setLocationCategories(prev => ({
                         ...prev,
@@ -1839,12 +1838,12 @@ const AdminDashboardPage: React.FC = () => {
 
                   {/* 现有地址分析与快速分类 */}
                   <div className="mt-8 border-t pt-6">
-                    <h4 className="text-lg font-medium text-gray-900 mb-4">现有岗位地址分析</h4>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <h4 className="text-lg font-medium text-slate-900 mb-4">现有岗位地址分析</h4>
+                    <p className="text-sm text-slate-500 mb-4">
                       以下列表展示了当前数据库中出现的所有唯一地址及其匹配状态。点击按钮可将其快速添加到对应分类。
                     </p>
 
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 max-h-96 overflow-y-auto p-4">
+                    <div className="bg-slate-50 rounded-lg border border-slate-200 max-h-96 overflow-y-auto p-4">
                       <div className="grid grid-cols-1 gap-2">
                         {(() => {
                           // 计算唯一地址及其出现次数
@@ -1869,19 +1868,19 @@ const AdminDashboardPage: React.FC = () => {
                             if (isDomestic && isOverseas) return { label: '混合', color: 'bg-yellow-100 text-yellow-800' };
                             if (isDomestic) return { label: '国内', color: 'bg-blue-100 text-blue-800' };
                             if (isOverseas) return { label: '海外', color: 'bg-green-100 text-green-800' };
-                            return { label: '未分类', color: 'bg-gray-100 text-gray-600' };
+                            return { label: '未分类', color: 'bg-slate-100 text-slate-600' };
                           };
 
                           return sortedLocations.map(([loc, count]) => {
                             const status = checkStatus(loc);
                             return (
-                              <div key={loc} className="flex items-center justify-between bg-white p-3 rounded border border-gray-100 hover:shadow-sm">
+                              <div key={loc} className="flex items-center justify-between bg-white p-3 rounded border border-slate-100 hover:shadow-sm">
                                 <div className="flex items-center gap-3 overflow-hidden">
                                   <span className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${status.color}`}>
                                     {status.label}
                                   </span>
-                                  <span className="text-sm font-medium text-gray-700 truncate" title={loc}>{loc}</span>
-                                  <span className="text-xs text-gray-400 whitespace-nowrap">({count}个岗位)</span>
+                                  <span className="text-sm font-medium text-slate-700 truncate" title={loc}>{loc}</span>
+                                  <span className="text-xs text-slate-400 whitespace-nowrap">({count}个岗位)</span>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   {status.label === '未分类' && (
@@ -1916,7 +1915,7 @@ const AdminDashboardPage: React.FC = () => {
                                     </>
                                   )}
                                   {status.label !== '未分类' && (
-                                    <span className="text-xs text-gray-400 italic">已匹配规则</span>
+                                    <span className="text-xs text-slate-400 italic">已匹配规则</span>
                                   )}
                                 </div>
                               </div>
@@ -1925,7 +1924,7 @@ const AdminDashboardPage: React.FC = () => {
                         })()}
 
                         {jobs.length === 0 && (
-                          <div className="text-center py-8 text-gray-500">
+                          <div className="text-center py-8 text-slate-500">
                             暂无岗位数据，无法分析地址
                           </div>
                         )}
@@ -1936,7 +1935,7 @@ const AdminDashboardPage: React.FC = () => {
                   <div className="flex justify-end gap-4 mt-8 pt-4 border-t">
                     <button
                       onClick={() => setShowLocationConfig(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                      className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50"
                     >
                       取消
                     </button>
@@ -1959,23 +1958,23 @@ const AdminDashboardPage: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
               {/* Modal Header with Navigation */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between p-6 border-b border-slate-200">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleNavigateJob('prev')}
                     disabled={currentJobIndex === 0}
-                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
                     title="上一个岗位"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-slate-600">
                     {currentJobIndex + 1} / {currentJobs.length}
                   </span>
                   <button
                     onClick={() => handleNavigateJob('next')}
                     disabled={currentJobIndex === currentJobs.length - 1}
-                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
                     title="下一个岗位"
                   >
                     <ChevronRight className="w-5 h-5" />
@@ -1987,7 +1986,7 @@ const AdminDashboardPage: React.FC = () => {
                     onClick={() => handleToggleFeatured(selectedJob.id, !selectedJob.isFeatured)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${selectedJob.isFeatured
                       ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                   >
                     <Star className={`w-4 h-4 ${selectedJob.isFeatured ? 'fill-current' : ''}`} />
@@ -1995,7 +1994,7 @@ const AdminDashboardPage: React.FC = () => {
                   </button>
                   <button
                     onClick={handleCloseJobDetail}
-                    className="p-2 rounded-lg hover:bg-gray-100"
+                    className="p-2 rounded-lg hover:bg-slate-100"
                     title="关闭"
                   >
                     <X className="w-5 h-5" />
@@ -2008,8 +2007,8 @@ const AdminDashboardPage: React.FC = () => {
                 <div className="space-y-6">
                   {/* Job Title and Company */}
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedJob.title}</h2>
-                    <div className="flex items-center gap-2 text-gray-600">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedJob.title}</h2>
+                    <div className="flex items-center gap-2 text-slate-600">
                       <span className="font-medium">{selectedJob.company}</span>
                       <span>•</span>
                       <span>{selectedJob.location}</span>
@@ -2044,8 +2043,8 @@ const AdminDashboardPage: React.FC = () => {
                   {/* Job Description */}
                   {selectedJob.description && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">岗位描述</h3>
-                      <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-3">岗位描述</h3>
+                      <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">
                         {selectedJob.description}
                       </div>
                     </div>
@@ -2054,8 +2053,8 @@ const AdminDashboardPage: React.FC = () => {
                   {/* Requirements */}
                   {selectedJob.requirements && selectedJob.requirements.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">任职要求</h3>
-                      <ul className="list-disc list-inside space-y-2 text-gray-700">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-3">任职要求</h3>
+                      <ul className="list-disc list-inside space-y-2 text-slate-700">
                         {selectedJob.requirements.map((req, index) => (
                           <li key={index}>{req}</li>
                         ))}
@@ -2066,8 +2065,8 @@ const AdminDashboardPage: React.FC = () => {
                   {/* Benefits */}
                   {selectedJob.benefits && selectedJob.benefits.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">福利待遇</h3>
-                      <ul className="list-disc list-inside space-y-2 text-gray-700">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-3">福利待遇</h3>
+                      <ul className="list-disc list-inside space-y-2 text-slate-700">
                         {selectedJob.benefits.map((benefit, index) => (
                           <li key={index}>{benefit}</li>
                         ))}
@@ -2079,19 +2078,19 @@ const AdminDashboardPage: React.FC = () => {
                   <div className="border-t pt-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-500">来源:</span>
-                        <span className="ml-2 text-gray-900">{selectedJob.source}</span>
+                        <span className="text-slate-500">来源:</span>
+                        <span className="ml-2 text-slate-900">{selectedJob.source}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">分类:</span>
-                        <span className="ml-2 text-gray-900">{selectedJob.category}</span>
+                        <span className="text-slate-500">分类:</span>
+                        <span className="ml-2 text-slate-900">{selectedJob.category}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">发布时间:</span>
-                        <span className="ml-2 text-gray-900">{formatDate(selectedJob.publishedAt)}</span>
+                        <span className="text-slate-500">发布时间:</span>
+                        <span className="ml-2 text-slate-900">{formatDate(selectedJob.publishedAt)}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">状态:</span>
+                        <span className="text-slate-500">状态:</span>
                         <span className={`ml-2 px-2 py-0.5 rounded text-xs ${getStatusColor(selectedJob.status)}`}>
                           {selectedJob.status === 'active' ? '活跃' : selectedJob.status === 'inactive' ? '非活跃' : '已删除'}
                         </span>

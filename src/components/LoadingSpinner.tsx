@@ -28,7 +28,7 @@ export default function LoadingSpinner({
       <div className="flex flex-col items-center space-y-2">
         <Loader2 className={`${sizeClasses[size]} animate-spin text-blue-600`} />
         {text && (
-          <p className={`${textSizeClasses[size]} text-gray-600 font-medium`}>
+          <p className={`${textSizeClasses[size]} text-slate-600 font-medium`}>
             {text}
           </p>
         )}
@@ -66,7 +66,7 @@ export function LoadingSkeleton({
       {Array.from({ length: lines }).map((_, index) => (
         <div
           key={index}
-          className={`bg-gray-200 rounded h-4 mb-3 ${
+          className={`bg-slate-200 rounded h-4 mb-3 ${
             index === lines - 1 ? 'w-3/4' : 'w-full'
           }`}
         />
@@ -80,16 +80,16 @@ export function CardSkeleton({ className = '' }: { className?: string }) {
   return (
     <div className={`card p-6 animate-pulse ${className}`}>
       <div className="flex items-center space-x-4 mb-4">
-        <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+        <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
         <div className="flex-1">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+          <div className="h-3 bg-slate-200 rounded w-1/2"></div>
         </div>
       </div>
       <div className="space-y-3">
-        <div className="h-3 bg-gray-200 rounded"></div>
-        <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-        <div className="h-3 bg-gray-200 rounded w-4/6"></div>
+        <div className="h-3 bg-slate-200 rounded"></div>
+        <div className="h-3 bg-slate-200 rounded w-5/6"></div>
+        <div className="h-3 bg-slate-200 rounded w-4/6"></div>
       </div>
     </div>
   )

@@ -380,9 +380,9 @@ export default function AdminCompanyManagementPage() {
         }
 
         return (
-            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-slate-500">
                         显示 {((page - 1) * pageSize) + 1} 到 {Math.min(page * pageSize, total)} 条，共 {total} 条
                     </div>
                 </div>
@@ -390,7 +390,7 @@ export default function AdminCompanyManagementPage() {
                     <button
                         onClick={() => setPage(Math.max(1, page - 1))}
                         disabled={page === 1}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
                     >
                         上一页
                     </button>
@@ -399,11 +399,11 @@ export default function AdminCompanyManagementPage() {
                         <>
                             <button
                                 onClick={() => setPage(1)}
-                                className={`px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 ${page === 1 ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${page === 1 ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
                             >
                                 1
                             </button>
-                            {startPage > 2 && <span className="px-2 text-gray-400">...</span>}
+                            {startPage > 2 && <span className="px-2 text-slate-400">...</span>}
                         </>
                     )}
 
@@ -411,9 +411,9 @@ export default function AdminCompanyManagementPage() {
                         <button
                             key={p}
                             onClick={() => setPage(p)}
-                            className={`px-3 py-1 text-sm border rounded-lg hover:bg-gray-50 ${page === p
+                            className={`px-3 py-1 text-sm border rounded-lg hover:bg-slate-50 ${page === p
                                 ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                                : 'border-gray-300 text-gray-700'
+                                : 'border-slate-300 text-slate-700'
                                 }`}
                         >
                             {p}
@@ -422,10 +422,10 @@ export default function AdminCompanyManagementPage() {
 
                     {endPage < totalPages && (
                         <>
-                            {endPage < totalPages - 1 && <span className="px-2 text-gray-400">...</span>}
+                            {endPage < totalPages - 1 && <span className="px-2 text-slate-400">...</span>}
                             <button
                                 onClick={() => setPage(totalPages)}
-                                className={`px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 ${page === totalPages ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${page === totalPages ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
                             >
                                 {totalPages}
                             </button>
@@ -435,7 +435,7 @@ export default function AdminCompanyManagementPage() {
                     <button
                         onClick={() => setPage(Math.min(totalPages, page + 1))}
                         disabled={page === totalPages}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
                     >
                         下一页
                     </button>
@@ -473,17 +473,17 @@ export default function AdminCompanyManagementPage() {
         return (
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                 <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+                    <div className="p-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
                         <div className="flex items-center gap-4">
                             {selectedCompany.logo ? (
-                                <img src={selectedCompany.logo} alt={selectedCompany.name} className="w-12 h-12 rounded-lg object-contain bg-gray-50" />
+                                <img src={selectedCompany.logo} alt={selectedCompany.name} className="w-12 h-12 rounded-lg object-contain bg-slate-50" />
                             ) : (
-                                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                                    <Building2 className="w-6 h-6 text-gray-400" />
+                                <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center">
+                                    <Building2 className="w-6 h-6 text-slate-400" />
                                 </div>
                             )}
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900">{selectedCompany.name}</h2>
+                                <h2 className="text-xl font-bold text-slate-900">{selectedCompany.name}</h2>
                                 <div className="flex items-center gap-2 mt-1">
                                     {selectedCompany.url && (
                                         <a href={selectedCompany.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
@@ -491,8 +491,8 @@ export default function AdminCompanyManagementPage() {
                                             官网
                                         </a>
                                     )}
-                                    <span className="text-sm text-gray-500">•</span>
-                                    <span className="text-sm text-gray-500">{selectedCompany.industry || '未分类'}</span>
+                                    <span className="text-sm text-slate-500">•</span>
+                                    <span className="text-sm text-slate-500">{selectedCompany.industry || '未分类'}</span>
                                 </div>
                             </div>
                         </div>
@@ -502,7 +502,7 @@ export default function AdminCompanyManagementPage() {
                                     const idx = companies.findIndex(c => c.id === selectedCompany.id);
                                     if (idx > 0) setSelectedCompany(companies[idx - 1]);
                                 }}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-slate-500 hover:text-slate-700"
                                 aria-label="上一条"
                             >
                                 <ChevronLeft className="w-6 h-6" />
@@ -512,12 +512,12 @@ export default function AdminCompanyManagementPage() {
                                     const idx = companies.findIndex(c => c.id === selectedCompany.id);
                                     if (idx >= 0 && idx < companies.length - 1) setSelectedCompany(companies[idx + 1]);
                                 }}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-slate-500 hover:text-slate-700"
                                 aria-label="下一条"
                             >
                                 <ChevronRight className="w-6 h-6" />
                             </button>
-                            <button onClick={() => setSelectedCompany(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                            <button onClick={() => setSelectedCompany(null)} className="text-slate-400 hover:text-slate-600 transition-colors">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
@@ -526,7 +526,7 @@ export default function AdminCompanyManagementPage() {
                     <div className="flex-1 overflow-y-auto">
                         <div className="p-6">
                             <h3 className="text-lg font-semibold mb-3">企业简介</h3>
-                            <p className="text-gray-600 leading-relaxed">
+                            <p className="text-slate-600 leading-relaxed">
                                 {selectedCompany.description || '暂无简介'}
                             </p>
                             {selectedCompany.tags && selectedCompany.tags.length > 0 && (
@@ -540,47 +540,47 @@ export default function AdminCompanyManagementPage() {
                             )}
                         </div>
 
-                        <div className="border-t border-gray-100">
-                            <div className="p-4 bg-gray-50 flex items-center gap-4">
+                        <div className="border-t border-slate-100">
+                            <div className="p-4 bg-slate-50 flex items-center gap-4">
                                 <div className="flex-1 relative">
-                                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <input
                                         type="text"
                                         placeholder="搜索职位..."
                                         value={jobSearchTerm}
                                         onChange={(e) => setJobSearchTerm(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2 rounded-lg border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full pl-9 pr-4 py-2 rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
-                                <div className="text-sm text-gray-500">共 {companyJobs.length} 个职位</div>
+                                <div className="text-sm text-slate-500">共 {companyJobs.length} 个职位</div>
                             </div>
 
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="bg-gray-50 sticky top-0 z-10">
+                                    <thead className="bg-slate-50 sticky top-0 z-10">
                                         <tr>
-                                            <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">职位名称</th>
-                                            <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">地点</th>
-                                            <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">发布时间</th>
-                                            <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">来源</th>
+                                            <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">职位名称</th>
+                                            <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">地点</th>
+                                            <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">发布时间</th>
+                                            <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">来源</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {companyJobs.filter(j => j.title.toLowerCase().includes(jobSearchTerm.toLowerCase())).length === 0 ? (
                                             <tr>
-                                                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">暂无职位数据</td>
+                                                <td colSpan={4} className="px-6 py-12 text-center text-slate-500">暂无职位数据</td>
                                             </tr>
                                         ) : (
                                             companyJobs
                                                 .filter(j => j.title.toLowerCase().includes(jobSearchTerm.toLowerCase()))
                                                 .map(job => (
-                                                    <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                                                    <tr key={job.id} className="hover:bg-slate-50 transition-colors">
                                                         <td className="px-6 py-4">
-                                                            <div className="font-medium text-gray-900">{job.title}</div>
-                                                            <div className="text-xs text-gray-500 mt-0.5">{job.type}</div>
+                                                            <div className="font-medium text-slate-900">{job.title}</div>
+                                                            <div className="text-xs text-slate-500 mt-0.5">{job.type}</div>
                                                         </td>
-                                                        <td className="px-6 py-4 text-sm text-gray-600">{job.location}</td>
-                                                        <td className="px-6 py-4 text-sm text-gray-500">{new Date(job.postedAt).toLocaleDateString()}</td>
+                                                        <td className="px-6 py-4 text-sm text-slate-600">{job.location}</td>
+                                                        <td className="px-6 py-4 text-sm text-slate-500">{new Date(job.postedAt).toLocaleDateString()}</td>
                                                         <td className="px-6 py-4 text-right">
                                                             {job.sourceUrl && (
                                                                 <a href={job.sourceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm">查看原文</a>
@@ -602,10 +602,10 @@ export default function AdminCompanyManagementPage() {
     const renderAllCompaniesTab = () => (
         <div className="space-y-6">
             {/* Header Actions */}
-            <div className="flex items-center justify-between sticky top-0 z-20 bg-gray-50/80 backdrop-blur supports-[backdrop-filter]:bg-gray-50/60 border-b py-2">
+            <div className="flex items-center justify-between sticky top-0 z-20 bg-slate-50/80 backdrop-blur supports-[backdrop-filter]:bg-slate-50/60 border-b py-2">
                 <div className="flex items-center gap-4">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                             type="text"
                             placeholder="搜索企业名称..."
@@ -614,7 +614,7 @@ export default function AdminCompanyManagementPage() {
                                 setSearchQuery(e.target.value);
                                 setPage(1);
                             }}
-                            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
@@ -624,7 +624,7 @@ export default function AdminCompanyManagementPage() {
                             setIndustryFilter(e.target.value);
                             setPage(1);
                         }}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                         <option value="">所有行业</option>
                         <option value="互联网/软件">互联网/软件</option>
@@ -648,7 +648,7 @@ export default function AdminCompanyManagementPage() {
                             setIndustryFilter('');
                             setPage(1);
                         }}
-                        className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50"
                     >
                         清除筛选
                     </button>
@@ -658,7 +658,7 @@ export default function AdminCompanyManagementPage() {
                     <button
                         onClick={handleRefresh}
                         disabled={extracting}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 disabled:opacity-50"
                         title="从岗位数据重新提取企业信息，更新统计数据"
                     >
                         <RefreshCw className={`w-4 h-4 ${extracting ? 'animate-spin' : ''}`} />
@@ -696,30 +696,30 @@ export default function AdminCompanyManagementPage() {
             </div>
 
             {/* Company List */}
-            <div className="bg-white rounded-xl border border-gray-200">
+            <div className="bg-white rounded-xl border border-slate-200">
                 <div className="overflow-x-auto group">
                     <table className="w-full">
-                        <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                        <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                                     企业名称
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                                     简介
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                                     行业
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                                     标签
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                                     岗位数
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                                     来源
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                                     操作
                                 </th>
                             </tr>
@@ -728,7 +728,7 @@ export default function AdminCompanyManagementPage() {
                             {loading ? (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center">
-                                        <div className="flex items-center justify-center gap-2 text-gray-500">
+                                        <div className="flex items-center justify-center gap-2 text-slate-500">
                                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                                             <span>加载中...</span>
                                         </div>
@@ -736,9 +736,9 @@ export default function AdminCompanyManagementPage() {
                                 </tr>
                             ) : companies.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                                         <div className="flex flex-col items-center gap-2">
-                                            <Building2 className="w-12 h-12 text-gray-300" />
+                                            <Building2 className="w-12 h-12 text-slate-300" />
                                             <p>暂无企业数据</p>
                                             <p className="text-sm">点击"从岗位提取企业"按钮开始</p>
                                         </div>
@@ -746,7 +746,7 @@ export default function AdminCompanyManagementPage() {
                                 </tr>
                             ) : (
                                 companies.map((company) => (
-                                    <tr key={company.id} className="hover:bg-gray-50">
+                                    <tr key={company.id} className="hover:bg-slate-50">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 {company.logo ? (
@@ -756,12 +756,12 @@ export default function AdminCompanyManagementPage() {
                                                         className="w-10 h-10 rounded-lg object-cover"
                                                     />
                                                 ) : (
-                                                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                        <Building2 className="w-5 h-5 text-gray-400" />
+                                                    <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                                                        <Building2 className="w-5 h-5 text-slate-400" />
                                                     </div>
                                                 )}
                                                 <div>
-                                                    <div className="font-medium text-gray-900">{company.name}</div>
+                                                    <div className="font-medium text-slate-900">{company.name}</div>
                                                     {company.url && (
                                                         <a
                                                             href={company.url}
@@ -777,8 +777,8 @@ export default function AdminCompanyManagementPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-600 max-w-xs truncate" title={company.description}>
-                                                {company.description || <span className="text-gray-400">-</span>}
+                                            <div className="text-sm text-slate-600 max-w-xs truncate" title={company.description}>
+                                                {company.description || <span className="text-slate-400">-</span>}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -792,22 +792,22 @@ export default function AdminCompanyManagementPage() {
                                                     company.tags.slice(0, 3).map((tag, index) => (
                                                         <span
                                                             key={index}
-                                                            className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
+                                                            className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700"
                                                         >
                                                             {tag}
                                                         </span>
                                                     ))
                                                 ) : (
-                                                    <span className="text-sm text-gray-400">-</span>
+                                                    <span className="text-sm text-slate-400">-</span>
                                                 )}
                                                 {company.tags && company.tags.length > 3 && (
-                                                    <span className="text-xs text-gray-500">+{company.tags.length - 3}</span>
+                                                    <span className="text-xs text-slate-500">+{company.tags.length - 3}</span>
                                                 )}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-1 text-sm text-gray-900">
-                                                <Briefcase className="w-4 h-4 text-gray-400" />
+                                            <div className="flex items-center gap-1 text-sm text-slate-900">
+                                                <Briefcase className="w-4 h-4 text-slate-400" />
                                                 {company.jobCount || 0}
                                             </div>
                                         </td>
@@ -820,7 +820,7 @@ export default function AdminCompanyManagementPage() {
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={() => handleViewDetail(company)}
-                                                    className="text-gray-600 hover:text-gray-800"
+                                                    className="text-slate-600 hover:text-slate-800"
                                                     title="查看企业详情"
                                                 >
                                                     <Eye className="w-4 h-4" />
@@ -860,16 +860,16 @@ export default function AdminCompanyManagementPage() {
     );
 
     return (
-        <div className="h-full flex flex-col bg-gray-50">
+        <div className="h-full flex flex-col bg-slate-50">
             {/* Tabs */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+            <div className="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setActiveTab('all')}
                             className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'all'
                                 ? 'bg-blue-600 text-white shadow-lg'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                                 }`}
                         >
                             <div className="flex items-center gap-2">
@@ -881,7 +881,7 @@ export default function AdminCompanyManagementPage() {
                             onClick={() => setActiveTab('trusted')}
                             className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'trusted'
                                 ? 'bg-blue-600 text-white shadow-lg'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
                                 }`}
                         >
                             <div className="flex items-center gap-2">

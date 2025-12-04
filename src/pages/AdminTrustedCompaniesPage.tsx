@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
 import getCroppedImg from '../utils/cropImage'
 
-import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload, ZoomIn, ZoomOut, RefreshCw, Database } from 'lucide-react'
+import { Plus, Search, Globe, Linkedin, Briefcase, Trash2, Edit2, ExternalLink, Loader2, CheckCircle, XCircle, Upload, ZoomIn, ZoomOut, Database } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { ClassificationService } from '../services/classification-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -103,15 +103,15 @@ export default function AdminTrustedCompaniesPage() {
         }
 
         return (
-            <div className="py-8 flex items-center justify-between border-t border-gray-200 mt-8">
-                <div className="text-sm text-gray-500">
+            <div className="py-8 flex items-center justify-between border-t border-slate-200 mt-8">
+                <div className="text-sm text-slate-500">
                     显示 {((currentPage - 1) * pageSize) + 1} 到 {Math.min(currentPage * pageSize, companies.length)} 条，共 {companies.length} 条
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
                     >
                         上一页
                     </button>
@@ -120,11 +120,11 @@ export default function AdminTrustedCompaniesPage() {
                         <>
                             <button
                                 onClick={() => setCurrentPage(1)}
-                                className={`px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 ${currentPage === 1 ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${currentPage === 1 ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
                             >
                                 1
                             </button>
-                            {startPage > 2 && <span className="px-2 text-gray-400">...</span>}
+                            {startPage > 2 && <span className="px-2 text-slate-400">...</span>}
                         </>
                     )}
 
@@ -132,9 +132,9 @@ export default function AdminTrustedCompaniesPage() {
                         <button
                             key={p}
                             onClick={() => setCurrentPage(p)}
-                            className={`px-3 py-1 text-sm border rounded-lg hover:bg-gray-50 ${currentPage === p
+                            className={`px-3 py-1 text-sm border rounded-lg hover:bg-slate-50 ${currentPage === p
                                 ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                                : 'border-gray-300 text-gray-700'
+                                : 'border-slate-300 text-slate-700'
                                 }`}
                         >
                             {p}
@@ -143,10 +143,10 @@ export default function AdminTrustedCompaniesPage() {
 
                     {endPage < totalPages && (
                         <>
-                            {endPage < totalPages - 1 && <span className="px-2 text-gray-400">...</span>}
+                            {endPage < totalPages - 1 && <span className="px-2 text-slate-400">...</span>}
                             <button
                                 onClick={() => setCurrentPage(totalPages)}
-                                className={`px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 ${currentPage === totalPages ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+                                className={`px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 ${currentPage === totalPages ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
                             >
                                 {totalPages}
                             </button>
@@ -156,7 +156,7 @@ export default function AdminTrustedCompaniesPage() {
                     <button
                         onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
                     >
                         下一页
                     </button>
@@ -364,7 +364,7 @@ export default function AdminTrustedCompaniesPage() {
     }
 
     const handleBatchImport = async (file?: File) => {
-        let selectedFile = file
+        const selectedFile = file
 
         // If no file provided, prompt user to select one
         if (!selectedFile) {
@@ -488,16 +488,16 @@ export default function AdminTrustedCompaniesPage() {
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">企业库</h1>
-                        <p className="text-gray-500 mt-1">管理经过认证的优质远程企业名单，支持行业分类和标签</p>
+                        <h1 className="text-2xl font-bold text-slate-900">企业库</h1>
+                        <p className="text-slate-500 mt-1">管理经过认证的优质远程企业名单，支持行业分类和标签</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <label className="flex items-center gap-2 text-sm text-gray-600">
+                        <label className="flex items-center gap-2 text-sm text-slate-600">
                             <input
                                 type="checkbox"
                                 checked={fetchDetailsEnabled}
                                 onChange={(e) => setFetchDetailsEnabled(e.target.checked)}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                             />
                             抓取详细描述
                         </label>
@@ -535,15 +535,15 @@ export default function AdminTrustedCompaniesPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {paginatedCompanies.map(company => (
-                                <div key={company.id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
+                                <div key={company.id} className="bg-white rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
                                 {/* Image Preview Area */}
-                                <div className="w-full h-32 bg-gray-50 relative border-b border-gray-100 group">
+                                <div className="w-full h-32 bg-slate-50 relative border-b border-slate-100 group">
                                     {company.coverImage ? (
                                         <img src={company.coverImage} alt={company.name} className="w-full h-full object-cover" />
                                     ) : company.logo ? (
                                         <img src={company.logo} alt={company.name} className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                        <div className="w-full h-full flex items-center justify-center text-slate-300">
                                             <span className="text-4xl font-bold opacity-20">{company.name.charAt(0)}</span>
                                         </div>
                                     )}
@@ -553,28 +553,28 @@ export default function AdminTrustedCompaniesPage() {
                                         <button
                                             onClick={() => handleCrawlJobs(company)}
                                             disabled={crawling}
-                                            className="p-1.5 bg-white text-gray-600 hover:text-green-600 rounded-lg shadow-sm border border-gray-200 transition-colors"
+                                            className="p-1.5 bg-white text-slate-600 hover:text-green-600 rounded-lg shadow-sm border border-slate-200 transition-colors"
                                             title="抓取岗位"
                                         >
                                             <Briefcase className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => setManagingJobsCompany(company)}
-                                            className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded-lg shadow-sm border border-gray-200 transition-colors"
+                                            className="p-1.5 bg-white text-slate-600 hover:text-blue-600 rounded-lg shadow-sm border border-slate-200 transition-colors"
                                             title="管理岗位"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
-                                        <button onClick={() => handleEdit(company)} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded-lg shadow-sm border border-gray-200 transition-colors">
+                                        <button onClick={() => handleEdit(company)} className="p-1.5 bg-white text-slate-600 hover:text-blue-600 rounded-lg shadow-sm border border-slate-200 transition-colors">
                                             <Edit2 className="w-4 h-4" />
                                         </button>
-                                        <button onClick={() => handleDelete(company.id)} className="p-1.5 bg-white text-gray-600 hover:text-red-600 rounded-lg shadow-sm border border-gray-200 transition-colors">
+                                        <button onClick={() => handleDelete(company.id)} className="p-1.5 bg-white text-slate-600 hover:text-red-600 rounded-lg shadow-sm border border-slate-200 transition-colors">
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
 
                                     {company.isTrusted && (
-                                        <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs font-medium text-green-600 shadow-sm border border-gray-100">
+                                        <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs font-medium text-green-600 shadow-sm border border-slate-100">
                                             <CheckCircle className="w-3 h-3" /> 已审核
                                         </div>
                                     )}
@@ -589,44 +589,44 @@ export default function AdminTrustedCompaniesPage() {
                                     <div className="flex items-start justify-between mb-2">
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <h3 className="font-bold text-gray-900 line-clamp-1 text-lg">{company.name}</h3>
+                                                <h3 className="font-bold text-slate-900 line-clamp-1 text-lg">{company.name}</h3>
                                                 {company.industry && (
                                                     <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-100 whitespace-nowrap">
                                                         {company.industry}
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                                                 <span>更新于 {new Date(company.updatedAt).toLocaleDateString()}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
+                                    <p className="text-slate-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
                                         {company.description || '暂无描述'}
                                     </p>
 
                                     <div className="flex flex-wrap gap-2 mb-4">
                                         {company.tags?.slice(0, 3).map((tag, i) => (
-                                            <span key={i} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
+                                            <span key={i} className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-md">
                                                 {tag}
                                             </span>
                                         ))}
                                     </div>
 
-                                    <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                                    <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
                                         {company.website && (
-                                            <a href={company.website} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-blue-600" title="官网">
+                                            <a href={company.website} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600" title="官网">
                                                 <Globe className="w-4 h-4" />
                                             </a>
                                         )}
                                         {company.careersPage && (
-                                            <a href={company.careersPage} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-blue-600" title="招聘页">
+                                            <a href={company.careersPage} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600" title="招聘页">
                                                 <Briefcase className="w-4 h-4" />
                                             </a>
                                         )}
                                         {company.linkedin && (
-                                            <a href={company.linkedin} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-blue-600" title="LinkedIn">
+                                            <a href={company.linkedin} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600" title="LinkedIn">
                                                 <Linkedin className="w-4 h-4" />
                                             </a>
                                         )}
@@ -644,11 +644,11 @@ export default function AdminTrustedCompaniesPage() {
                 {isModalOpen && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                         <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
-                                <h2 className="text-xl font-bold text-gray-900">
+                            <div className="p-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                                <h2 className="text-xl font-bold text-slate-900">
                                     {editingCompany ? '编辑企业' : '新增企业'}
                                 </h2>
-                                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                                     <XCircle className="w-6 h-6" />
                                 </button>
                             </div>
@@ -656,14 +656,14 @@ export default function AdminTrustedCompaniesPage() {
                             <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="col-span-full">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">企业名称 *</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">企业名称 *</label>
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
                                                 required
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                                className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                className="flex-1 rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                                 placeholder="例如：GitLab"
                                             />
                                             <button
@@ -676,66 +676,66 @@ export default function AdminTrustedCompaniesPage() {
                                                 自动抓取
                                             </button>
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-1">输入官网链接后点击自动抓取可快速填充信息</p>
+                                        <p className="text-xs text-slate-500 mt-1">输入官网链接后点击自动抓取可快速填充信息</p>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">官网链接</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">官网链接</label>
                                         <input
                                             type="url"
                                             value={formData.website}
                                             onChange={e => setFormData({ ...formData, website: e.target.value })}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="https://..."
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">招聘页链接</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">招聘页链接</label>
                                         <input
                                             type="url"
                                             value={formData.careersPage}
                                             onChange={e => setFormData({ ...formData, careersPage: e.target.value })}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="https://.../careers"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn 链接</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">LinkedIn 链接</label>
                                         <input
                                             type="url"
                                             value={formData.linkedin}
                                             onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="https://linkedin.com/company/..."
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">企业地址 (国家/城市)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">企业地址 (国家/城市)</label>
                                         <input
                                             type="text"
                                             value={formData.address}
                                             onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="例如：美国, 旧金山"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Logo URL</label>
                                         <input
                                             type="text"
                                             value={formData.logo}
                                             onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             placeholder="https://..."
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">封面图 (Cover Image)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">封面图 (Cover Image)</label>
                                         <div
                                             className="space-y-2"
                                             onPaste={handlePaste}
@@ -745,10 +745,10 @@ export default function AdminTrustedCompaniesPage() {
                                                     type="text"
                                                     value={formData.coverImage}
                                                     onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     placeholder="输入 URL 或粘贴图片 (Ctrl+V)"
                                                 />
-                                                <label className={`px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${processingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                <label className={`px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 cursor-pointer flex items-center gap-2 whitespace-nowrap ${processingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                                     {processingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                                     上传
                                                     <input
@@ -766,7 +766,7 @@ export default function AdminTrustedCompaniesPage() {
 
                                             {/* Preview */}
                                             {formData.coverImage && (
-                                                <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group">
+                                                <div className="relative w-full aspect-video bg-slate-100 rounded-lg overflow-hidden border border-slate-200 group">
                                                     <img src={formData.coverImage} alt="Preview" className="w-full h-full object-cover" />
                                                     <button
                                                         type="button"
@@ -778,29 +778,29 @@ export default function AdminTrustedCompaniesPage() {
                                                 </div>
                                             )}
 
-                                            <p className="text-xs text-gray-500">
+                                            <p className="text-xs text-slate-500">
                                                 支持粘贴图片、上传文件或输入 URL。系统会自动裁剪为 16:9 (1200x675)。
                                             </p>
                                         </div>
                                     </div>
 
                                     <div className="col-span-full">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">企业简介</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">企业简介</label>
                                         <textarea
                                             rows={4}
                                             value={formData.description}
                                             onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="简要介绍企业业务、文化及远程办公政策..."
                                         />
                                     </div>
 
                                     <div className="col-span-full">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">行业分类</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">行业分类</label>
                                         <select
                                             value={formData.industry}
                                             onChange={e => setFormData({ ...formData, industry: e.target.value as CompanyIndustry })}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         >
                                             <option value="其他">其他</option>
                                             <option value="互联网/软件">互联网/软件</option>
@@ -819,34 +819,34 @@ export default function AdminTrustedCompaniesPage() {
                                     </div>
 
                                     <div className="col-span-full">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">标签 (逗号分隔)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">标签 (逗号分隔)</label>
                                         <input
                                             type="text"
                                             value={formData.tags}
                                             onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            className="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="SaaS, DevOps, 全球远程, 异步协作"
                                         />
                                     </div>
                                     <div>
-                                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
                                             <input
                                                 type="checkbox"
                                                 checked={formData.canRefer}
                                                 onChange={e => setFormData({ ...formData, canRefer: e.target.checked })}
-                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                                             />
                                             可内推
                                         </label>
-                                        <p className="text-xs text-gray-500">勾选后，该企业职位将展示“可内推”标识</p>
+                                        <p className="text-xs text-slate-500">勾选后，该企业职位将展示“可内推”标识</p>
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end gap-4 pt-4 border-t border-gray-100">
+                                <div className="flex justify-end gap-4 pt-4 border-t border-slate-100">
                                     <button
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}
-                                        className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                        className="px-6 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
                                     >
                                         取消
                                     </button>
@@ -873,14 +873,14 @@ export default function AdminTrustedCompaniesPage() {
                 {cropModalOpen && tempImgSrc && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                         <div className="bg-white rounded-2xl w-full max-w-2xl flex flex-col shadow-xl overflow-hidden h-[80vh]">
-                            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
-                                <h2 className="text-lg font-bold text-gray-900">裁剪封面图 (16:9)</h2>
-                                <button onClick={() => setCropModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white z-10">
+                                <h2 className="text-lg font-bold text-slate-900">裁剪封面图 (16:9)</h2>
+                                <button onClick={() => setCropModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                                     <XCircle className="w-6 h-6" />
                                 </button>
                             </div>
 
-                            <div className="relative flex-1 bg-gray-900 w-full">
+                            <div className="relative flex-1 bg-slate-900 w-full">
                                 <Cropper
                                     image={tempImgSrc}
                                     crop={crop}
@@ -893,9 +893,9 @@ export default function AdminTrustedCompaniesPage() {
                                 />
                             </div>
 
-                            <div className="p-4 bg-white border-t border-gray-100">
+                            <div className="p-4 bg-white border-t border-slate-100">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <ZoomOut className="w-5 h-5 text-gray-500" />
+                                    <ZoomOut className="w-5 h-5 text-slate-500" />
                                     <input
                                         type="range"
                                         value={zoom}
@@ -904,14 +904,14 @@ export default function AdminTrustedCompaniesPage() {
                                         step={0.1}
                                         aria-labelledby="Zoom"
                                         onChange={(e) => setZoom(Number(e.target.value))}
-                                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                        className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
                                     />
-                                    <ZoomIn className="w-5 h-5 text-gray-500" />
+                                    <ZoomIn className="w-5 h-5 text-slate-500" />
                                 </div>
                                 <div className="flex justify-end gap-3">
                                     <button
                                         onClick={() => setCropModalOpen(false)}
-                                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                        className="px-4 py-2 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
                                     >
                                         取消
                                     </button>

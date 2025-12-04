@@ -131,7 +131,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <Search 
-            className="h-5 w-5 text-gray-400" 
+            className="h-5 w-5 text-slate-400" 
             aria-hidden="true"
           />
         </div>
@@ -161,7 +161,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute inset-y-0 right-12 flex items-center pr-2 text-gray-400 hover:text-gray-600 focus-ring rounded-full p-1"
+            className="absolute inset-y-0 right-12 flex items-center pr-2 text-slate-400 hover:text-slate-600 focus-ring rounded-full p-1"
             aria-label="清除搜索内容"
           >
             <X className="h-5 w-5" aria-hidden="true" />
@@ -189,7 +189,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       {isExpanded && (
         <div
           ref={suggestionsRef}
-          className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-slideUp"
+          className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 z-50 animate-slideUp"
           role="region"
           aria-label="搜索建议"
         >
@@ -203,7 +203,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             {/* 搜索建议 */}
             {suggestions.length > 0 && (
               <>
-                <li role="presentation" className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <li role="presentation" className="px-4 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                   搜索建议
                 </li>
                 {suggestions.map((suggestion, index) => (
@@ -213,11 +213,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       role="option"
                       aria-selected={selectedIndex === index}
                       onClick={() => handleSuggestionClick(suggestion)}
-                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors ${
-                        selectedIndex === index ? 'bg-haigoo-primary/10 text-haigoo-primary' : 'text-gray-700 dark:text-gray-300'
+                      className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors ${
+                        selectedIndex === index ? 'bg-haigoo-primary/10 text-haigoo-primary' : 'text-slate-700 dark:text-slate-300'
                       }`}
                     >
-                      <Search className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                      <Search className="h-4 w-4 text-slate-400" aria-hidden="true" />
                       <span>{suggestion}</span>
                     </button>
                   </li>
@@ -231,7 +231,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 {/* 最近搜索 */}
                 {recentSearches.length > 0 && (
                   <>
-                    <li role="presentation" className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide border-t border-gray-100 dark:border-gray-700 mt-2">
+                    <li role="presentation" className="px-4 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide border-t border-slate-100 dark:border-slate-700 mt-2">
                       最近搜索
                     </li>
                     {recentSearches.map((search, index) => {
@@ -243,11 +243,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
                             role="option"
                             aria-selected={selectedIndex === globalIndex}
                             onClick={() => handleSuggestionClick(search)}
-                            className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors ${
-                              selectedIndex === globalIndex ? 'bg-haigoo-primary/10 text-haigoo-primary' : 'text-gray-700 dark:text-gray-300'
+                            className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors ${
+                              selectedIndex === globalIndex ? 'bg-haigoo-primary/10 text-haigoo-primary' : 'text-slate-700 dark:text-slate-300'
                             }`}
                           >
-                            <Clock className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                            <Clock className="h-4 w-4 text-slate-400" aria-hidden="true" />
                             <span>{search}</span>
                           </button>
                         </li>
@@ -259,7 +259,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 {/* 热门搜索 */}
                 {hotSearches.length > 0 && (
                   <>
-                    <li role="presentation" className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide border-t border-gray-100 dark:border-gray-700 mt-2">
+                    <li role="presentation" className="px-4 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide border-t border-slate-100 dark:border-slate-700 mt-2">
                       热门搜索
                     </li>
                     {hotSearches.map((search, index) => {
@@ -271,11 +271,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
                             role="option"
                             aria-selected={selectedIndex === globalIndex}
                             onClick={() => handleSuggestionClick(search)}
-                            className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors ${
-                              selectedIndex === globalIndex ? 'bg-haigoo-primary/10 text-haigoo-primary' : 'text-gray-700 dark:text-gray-300'
+                            className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors ${
+                              selectedIndex === globalIndex ? 'bg-haigoo-primary/10 text-haigoo-primary' : 'text-slate-700 dark:text-slate-300'
                             }`}
                           >
-                            <TrendingUp className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                            <TrendingUp className="h-4 w-4 text-slate-400" aria-hidden="true" />
                             <span>{search}</span>
                           </button>
                         </li>
@@ -288,9 +288,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
             {/* 无结果提示 */}
             {value.trim() && suggestions.length === 0 && (
-              <li role="presentation" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+              <li role="presentation" className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
                 <div className="flex flex-col items-center gap-2">
-                  <Search className="h-8 w-8 text-gray-300" aria-hidden="true" />
+                  <Search className="h-8 w-8 text-slate-300" aria-hidden="true" />
                   <p>未找到相关搜索建议</p>
                   <p className="text-sm">按回车键搜索 "{value}"</p>
                 </div>

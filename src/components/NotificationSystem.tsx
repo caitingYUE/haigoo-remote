@@ -139,11 +139,11 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-gray-900 text-sm">
+          <h4 className="font-semibold text-slate-900 text-sm">
             {title}
           </h4>
           {message && (
-            <p className="text-gray-700 text-sm mt-1">
+            <p className="text-slate-700 text-sm mt-1">
               {message}
             </p>
           )}
@@ -159,7 +159,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
 
         <button
           onClick={onClose}
-          className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+          className="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>

@@ -163,7 +163,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
           inline-flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium rounded-lg border transition-all duration-200 focus-ring min-w-[140px]
           ${selectedValues.length > 0 
             ? 'bg-haigoo-primary/10 text-haigoo-primary border-haigoo-primary/30 hover:bg-haigoo-primary/20' 
-            : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700'
           }
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
@@ -200,7 +200,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
 
       {/* 下拉选项列表 */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-slideUp">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 animate-slideUp">
           <ul
             ref={listRef}
             id={listboxId}
@@ -223,9 +223,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                     onMouseEnter={() => setFocusedIndex(index)}
                     className={`
                       w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors duration-200
-                      ${isFocused ? 'bg-gray-50 dark:bg-gray-700' : ''}
-                      ${isSelected ? 'text-haigoo-primary bg-haigoo-primary/5' : 'text-gray-700 dark:text-gray-300'}
-                      hover:bg-gray-50 dark:hover:bg-gray-700
+                      ${isFocused ? 'bg-slate-50 dark:bg-slate-700' : ''}
+                      ${isSelected ? 'text-haigoo-primary bg-haigoo-primary/5' : 'text-slate-700 dark:text-slate-300'}
+                      hover:bg-slate-50 dark:hover:bg-slate-700
                     `}
                   >
                     <div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                           w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all duration-200
                           ${isSelected 
                             ? 'bg-haigoo-primary border-haigoo-primary' 
-                            : 'border-gray-300 dark:border-gray-600'
+                            : 'border-slate-300 dark:border-slate-600'
                           }
                         `}
                         aria-hidden="true"
@@ -251,7 +251,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                     {/* 数量显示 */}
                     {option.count !== undefined && (
                       <span 
-                        className="text-sm text-gray-500 dark:text-gray-400 font-medium"
+                        className="text-sm text-slate-500 dark:text-slate-400 font-medium"
                         aria-label={`${option.count} 个结果`}
                       >
                         {option.count}
@@ -264,7 +264,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
             
             {/* 无选项提示 */}
             {options.length === 0 && (
-              <li role="presentation" className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+              <li role="presentation" className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
                 <p>暂无可选项</p>
               </li>
             )}
@@ -272,11 +272,11 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
           
           {/* 多选模式下的操作按钮 */}
           {multiple && options.length > 0 && (
-            <div className="border-t border-gray-100 dark:border-gray-700 p-3 flex gap-2">
+            <div className="border-t border-slate-100 dark:border-slate-700 p-3 flex gap-2">
               <button
                 type="button"
                 onClick={() => onChange([])}
-                className="flex-1 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors focus-ring"
+                className="flex-1 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors focus-ring"
                 aria-label="清除所有选择"
               >
                 清除全部

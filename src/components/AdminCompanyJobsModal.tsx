@@ -77,29 +77,29 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-2xl">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white rounded-t-2xl">
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                             {company.logo && <img src={company.logo} className="w-6 h-6 object-contain rounded" alt="" />}
                             {company.name} - 职位管理
                         </h2>
-                        <p className="text-sm text-gray-500 mt-1">共 {jobs.length} 个职位</p>
+                        <p className="text-sm text-slate-500 mt-1">共 {jobs.length} 个职位</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
 
                 {/* Toolbar */}
-                <div className="p-4 border-b border-gray-100 flex gap-4 items-center bg-gray-50">
+                <div className="p-4 border-b border-slate-100 flex gap-4 items-center bg-slate-50">
                     <div className="flex-1 relative">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
                             placeholder="搜索职位..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg border-slate-300 text-sm focus:ring-blue-500 focus:border-blue-500"
                         />
                     </div>
                     <button
@@ -111,7 +111,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                         {crawling ? '抓取中...' : '立即抓取'}
                     </button>
                     <button
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm font-medium"
+                        className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 flex items-center gap-2 text-sm font-medium"
                         onClick={() => alert('手动录入功能开发中...')}
                     >
                         <Plus className="w-4 h-4" />
@@ -127,32 +127,32 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-gray-50 sticky top-0 z-10">
+                            <thead className="bg-slate-50 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">职位名称</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">地点</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">发布时间</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">操作</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">职位名称</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">地点</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">发布时间</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">操作</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {filteredJobs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
                                             暂无职位数据，请尝试抓取
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredJobs.map(job => (
-                                        <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                                        <tr key={job.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4">
-                                                <div className="font-medium text-gray-900">{job.title}</div>
-                                                <div className="text-xs text-gray-500 mt-0.5">{job.type}</div>
+                                                <div className="font-medium text-slate-900">{job.title}</div>
+                                                <div className="text-xs text-slate-500 mt-0.5">{job.type}</div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                            <td className="px-6 py-4 text-sm text-slate-600">
                                                 {job.location}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500">
+                                            <td className="px-6 py-4 text-sm text-slate-500">
                                                 {DateFormatter.formatPublishTime(job.postedAt)}
                                             </td>
                                             <td className="px-6 py-4 text-right">
@@ -162,7 +162,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                                                             href={job.sourceUrl}
                                                             target="_blank"
                                                             rel="noreferrer"
-                                                            className="p-1.5 text-gray-400 hover:text-blue-600 rounded hover:bg-blue-50 transition-colors"
+                                                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50 transition-colors"
                                                             title="查看原网页"
                                                         >
                                                             <ExternalLink className="w-4 h-4" />
@@ -170,7 +170,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                                                     )}
                                                     <button
                                                         onClick={() => handleDeleteJob(job.id)}
-                                                        className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors"
+                                                        className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors"
                                                         title="删除"
                                                     >
                                                         <Trash2 className="w-4 h-4" />

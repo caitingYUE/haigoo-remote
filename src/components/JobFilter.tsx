@@ -77,7 +77,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
   ]
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 sticky top-24 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-lg border border-slate-100 sticky top-24 overflow-hidden">
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -86,13 +86,13 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
               <Filter className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">智能筛选</h3>
-              <p className="text-xs text-gray-500">精准匹配理想职位</p>
+              <h3 className="text-lg font-semibold text-slate-900">智能筛选</h3>
+              <p className="text-xs text-slate-500">精准匹配理想职位</p>
             </div>
           </div>
           <button
             onClick={clearFilters}
-            className="px-3 py-1.5 text-xs text-gray-500 hover:text-white hover:bg-red-500 rounded-lg transition-all duration-200 border border-gray-200 hover:border-red-500"
+            className="px-3 py-1.5 text-xs text-slate-500 hover:text-white hover:bg-red-500 rounded-lg transition-all duration-200 border border-slate-200 hover:border-red-500"
           >
             清除全部
           </button>
@@ -100,7 +100,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
 
         {/* Search */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-slate-700 mb-3">
             <Search className="w-4 h-4 inline mr-2 text-blue-500" />
             搜索关键词
           </label>
@@ -110,13 +110,13 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
               value={filters.search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="职位、公司、技能..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
+              className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 hover:bg-white"
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             {filters.search && (
               <button
                 onClick={() => handleSearchChange('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-red-500 transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 hover:text-red-500 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -126,7 +126,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
 
         {/* Job Types */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-slate-700 mb-3">
             <Briefcase className="w-4 h-4 inline mr-2 text-blue-500" />
             工作类型
           </label>
@@ -140,7 +140,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
                   className={`p-3 rounded-xl text-sm font-medium transition-all duration-200 border-2 ${
                     isSelected
                       ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white border-transparent shadow-lg transform scale-105'
-                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600'
                   }`}
                 >
                   <span className="mr-2">{type.label}</span>
@@ -152,7 +152,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
 
         {/* Salary Range */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-slate-700 mb-3">
             <DollarSign className="w-4 h-4 inline mr-2 text-blue-500" />
             薪资范围 (USD)
           </label>
@@ -163,11 +163,11 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
                 value={filters.salaryMin || ''}
                 onChange={(e) => handleSalaryChange('salaryMin', e.target.value)}
                 placeholder="最低薪资"
-                className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white text-sm"
+                className="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 hover:bg-white text-sm"
                 min="0"
                 step="1000"
               />
-              <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+              <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-slate-400" />
             </div>
             <div className="relative">
               <input
@@ -175,14 +175,14 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
                 value={filters.salaryMax || ''}
                 onChange={(e) => handleSalaryChange('salaryMax', e.target.value)}
                 placeholder="最高薪资"
-                className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white text-sm"
+                className="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 hover:bg-white text-sm"
                 min="0"
                 step="1000"
               />
-              <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+              <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-slate-400" />
             </div>
           </div>
-          <div className="mt-3 flex items-center text-xs text-gray-500">
+          <div className="mt-3 flex items-center text-xs text-slate-500">
             <Sparkles className="w-3 h-3 mr-1" />
             年薪范围，留空表示不限制
           </div>
@@ -190,7 +190,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
 
         {/* Skills */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-slate-700 mb-3">
             <span className="inline-flex items-center">
               <span className="w-4 h-4 bg-gradient-to-br from-green-400 to-blue-500 rounded mr-2 flex items-center justify-center">
                 <Sparkles className="w-2 h-2 text-white" />
@@ -212,7 +212,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
                 }
               }}
               placeholder="输入技能并按回车添加"
-              className="w-full pl-4 pr-12 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white text-sm"
+              className="w-full pl-4 pr-12 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 hover:bg-white text-sm"
             />
             {skillInput && (
               <button
@@ -228,7 +228,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
 
           {/* Popular Skills */}
           <div className="mb-4">
-            <div className="flex items-center text-xs text-gray-500 mb-3">
+            <div className="flex items-center text-xs text-slate-500 mb-3">
               <Sparkles className="w-3 h-3 mr-1" />
               热门技能推荐:
             </div>
@@ -242,7 +242,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
                     disabled={isSelected}
                     className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
                       isSelected
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                         : 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border border-blue-200 hover:border-blue-300'
                     }`}
                   >
@@ -256,7 +256,7 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
           {/* Selected Skills */}
           {filters.skills.length > 0 && (
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
-              <div className="flex items-center text-xs text-gray-600 mb-3">
+              <div className="flex items-center text-xs text-slate-600 mb-3">
                 <Sparkles className="w-3 h-3 mr-1" />
                 已选择的技能 ({filters.skills.length}):
               </div>

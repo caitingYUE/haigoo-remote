@@ -34,7 +34,6 @@ import {
 import { Job, JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
-import { trustedCompaniesService } from '../services/trusted-companies-service';
 import DataManagementTabs from '../components/DataManagementTabs';
 import UserManagementPage from './UserManagementPage';
 import AdminCompanyManagementPage from './AdminCompanyManagementPage';
@@ -341,7 +340,7 @@ const AdminTeamPage: React.FC = () => {
                 {rssSources.map((source) => (
                   <tr key={source.id}>
                     <td>{source.name}</td>
-                    <td className="text-sm text-gray-500">{source.url}</td>
+                    <td className="text-sm text-slate-500">{source.url}</td>
                     <td>
                       <span className="status-badge medium">{source.category}</span>
                     </td>
@@ -464,7 +463,7 @@ const AdminTeamPage: React.FC = () => {
             <div className="flex space-x-2">
               <button
                 onClick={handleClearResumes}
-                className="px-4 py-2 bg-white border border-gray-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center text-sm font-medium"
+                className="px-4 py-2 bg-white border border-slate-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center text-sm font-medium"
                 disabled={resumeLoading || resumes.length === 0}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
@@ -483,8 +482,8 @@ const AdminTeamPage: React.FC = () => {
           <div className="card-content">
             {/* 搜索栏和统计 */}
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2 flex-1 max-w-md">
-                <Search className="w-5 h-5 text-gray-400 mr-2" />
+              <div className="flex items-center bg-slate-100 rounded-lg px-3 py-2 flex-1 max-w-md">
+                <Search className="w-5 h-5 text-slate-400 mr-2" />
                 <input
                   type="text"
                   placeholder="搜索姓名、邮箱或文件名..."
@@ -493,10 +492,10 @@ const AdminTeamPage: React.FC = () => {
                   onChange={(e) => setResumeSearchTerm(e.target.value)}
                 />
               </div>
-              <div className="text-sm text-gray-500">
-                存储提供者: <span className="font-medium text-gray-900">{storageProvider}</span>
+              <div className="text-sm text-slate-500">
+                存储提供者: <span className="font-medium text-slate-900">{storageProvider}</span>
                 <span className="mx-2">|</span>
-                总计: <span className="font-medium text-gray-900">{resumes.length}</span>
+                总计: <span className="font-medium text-slate-900">{resumes.length}</span>
               </div>
             </div>
 
@@ -517,13 +516,13 @@ const AdminTeamPage: React.FC = () => {
                     <tr>
                       <td colSpan={5} className="text-center py-12">
                         <Loader className="w-6 h-6 animate-spin mx-auto mb-2" />
-                        <p className="text-gray-500">加载中...</p>
+                        <p className="text-slate-500">加载中...</p>
                       </td>
                     </tr>
                   ) : filteredResumes.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="text-center py-12">
-                        <p className="text-gray-500">暂无简历数据</p>
+                        <p className="text-slate-500">暂无简历数据</p>
                       </td>
                     </tr>
                   ) : (
@@ -535,18 +534,18 @@ const AdminTeamPage: React.FC = () => {
                               <Users className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                              <div className="font-medium text-gray-900">
+                              <div className="font-medium text-slate-900">
                                 {resume.parsedData?.name || '未知姓名'}
                               </div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-slate-500">
                                 {resume.parsedData?.email || '无邮箱'}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td>
-                          <div className="text-sm text-gray-900">{resume.fileName}</div>
-                          <div className="text-sm text-gray-500">{formatSize(resume.size)}</div>
+                          <div className="text-sm text-slate-900">{resume.fileName}</div>
+                          <div className="text-sm text-slate-500">{formatSize(resume.size)}</div>
                         </td>
                         <td>
                           {resume.parseStatus === 'success' ? (
@@ -563,7 +562,7 @@ const AdminTeamPage: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className="text-sm text-gray-500">
+                        <td className="text-sm text-slate-500">
                           {formatDate(resume.uploadedAt)}
                         </td>
                         <td>
@@ -626,11 +625,11 @@ const AdminTeamPage: React.FC = () => {
           </div>
         </div>
         <div className="card-content">
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg">
             <div className="text-center">
-              <PieChart className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-              <p className="text-gray-500">图表功能开发中...</p>
-              <p className="text-sm text-gray-400 mt-1">将显示过去30天的职位发布趋势</p>
+              <PieChart className="w-12 h-12 mx-auto text-slate-400 mb-2" />
+              <p className="text-slate-500">图表功能开发中...</p>
+              <p className="text-sm text-slate-400 mt-1">将显示过去30天的职位发布趋势</p>
             </div>
           </div>
         </div>
@@ -648,13 +647,13 @@ const AdminTeamPage: React.FC = () => {
                 <div key={category} className="flex items-center justify-between">
                   <span className="text-sm font-medium">{category}</span>
                   <div className="flex items-center space-x-2">
-                    <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="w-20 h-2 bg-slate-200 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary"
                         style={{ width: `${Math.random() * 80 + 20}%` }}
                       />
                     </div>
-                    <span className="text-sm text-gray-500 w-8">{Math.floor(Math.random() * 50 + 10)}</span>
+                    <span className="text-sm text-slate-500 w-8">{Math.floor(Math.random() * 50 + 10)}</span>
                   </div>
                 </div>
               ))}
@@ -672,8 +671,8 @@ const AdminTeamPage: React.FC = () => {
                 <div key={source.id} className="flex items-center justify-between">
                   <span className="text-sm font-medium truncate">{source.name}</span>
                   <div className="flex items-center space-x-2">
-                    <span className={`w-2 h-2 rounded-full ${source.isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    <span className="text-sm text-gray-500">{source.isActive ? '活跃' : '停用'}</span>
+                    <span className={`w-2 h-2 rounded-full ${source.isActive ? 'bg-green-500' : 'bg-slate-300'}`} />
+                    <span className="text-sm text-slate-500">{source.isActive ? '活跃' : '停用'}</span>
                   </div>
                 </div>
               ))}
@@ -814,7 +813,7 @@ const AdminTeamPage: React.FC = () => {
             <h1>{activeTab === 'overview' ? '数据概览' : activeTab === 'data' ? '数据管理' : activeTab === 'rss' ? 'RSS源管理' : activeTab === 'companies' ? '企业管理' : activeTab === 'team' ? '团队管理' : activeTab === 'users' ? '用户管理' : activeTab === 'tags' ? '标签管理' : activeTab === 'feedback' ? '用户反馈' : activeTab === 'analytics' ? '数据分析' : activeTab === 'settings' ? '系统设置' : '海狗招聘团队管理后台'}</h1>
             <div className="flex items-center gap-4">
               {user && (
-                <div className="flex items-center gap-2 text-sm text-gray-700">
+                <div className="flex items-center gap-2 text-sm text-slate-700">
                   {user.avatar ? (
                     <img src={user.avatar} alt={user.username || ''} className="w-8 h-8 rounded-full" />
                   ) : (
@@ -823,11 +822,11 @@ const AdminTeamPage: React.FC = () => {
                     </div>
                   )}
                   <span>{user.username}</span>
-                  <span className="text-gray-400">|</span>
+                  <span className="text-slate-400">|</span>
                   <span>{user.email}</span>
                 </div>
               )}
-              <button onClick={logout} className="px-3 py-1.5 border rounded-lg hover:bg-gray-50">退出登录</button>
+              <button onClick={logout} className="px-3 py-1.5 border rounded-lg hover:bg-slate-50">退出登录</button>
             </div>
           </header>
 

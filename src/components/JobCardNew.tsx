@@ -1,9 +1,9 @@
 
 import React, { useMemo } from 'react';
-import { CheckCircle, Briefcase, Clock, Globe, ChevronRight, Sparkles } from 'lucide-react';
+import { Briefcase, Globe, ChevronRight, Sparkles } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 interface JobCardNewProps {
   job: Job;
@@ -11,7 +11,7 @@ interface JobCardNewProps {
 }
 
 export default function JobCardNew({ job, onClick }: JobCardNewProps) {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   
   const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
   
@@ -47,7 +47,7 @@ export default function JobCardNew({ job, onClick }: JobCardNewProps) {
         {/* Header Section */}
         <div className="flex items-start gap-4 mb-5">
           {/* Company Logo */}
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 flex items-center justify-center text-gray-400 font-bold text-2xl shadow-inner flex-shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-2xl shadow-inner flex-shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
              {job.logo ? (
                 <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
              ) : (
@@ -57,7 +57,7 @@ export default function JobCardNew({ job, onClick }: JobCardNewProps) {
           
           <div className="flex-1 min-w-0 pt-0.5">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors truncate tracking-tight">
+              <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate tracking-tight">
                 {job.translations?.title || job.title}
               </h3>
             </div>

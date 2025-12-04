@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Globe, Linkedin, Briefcase, CheckCircle, ArrowLeft, ExternalLink } from 'lucide-react'
+import { Briefcase, CheckCircle, ArrowLeft } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { Job } from '../types'
@@ -57,7 +57,7 @@ export default function CompanyProfilePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
         )
@@ -65,8 +65,8 @@ export default function CompanyProfilePage() {
 
     if (!company) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">未找到该企业</h1>
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+                <h1 className="text-2xl font-bold text-slate-900 mb-4">未找到该企业</h1>
                 <Link to="/jobs" className="text-blue-600 hover:underline">返回职位列表</Link>
             </div>
         )
@@ -75,11 +75,11 @@ export default function CompanyProfilePage() {
     return (
         <div className="min-h-screen bg-[#F0F4F8]">
             {/* Header / Banner */}
-            <div className="bg-white border-b border-gray-200">
+            <div className="bg-white border-b border-slate-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <button
                         onClick={() => navigate(-1)}
-                        className="inline-flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"
+                        className="inline-flex items-center text-slate-500 hover:text-slate-900 mb-6 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4 mr-1" />
                         返回
@@ -87,7 +87,7 @@ export default function CompanyProfilePage() {
 
                     <div className="flex flex-col md:flex-row gap-8 items-start">
                         {/* Logo */}
-                        <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-2xl shadow-sm border border-gray-100 p-2 flex-shrink-0">
+                        <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-2xl shadow-sm border border-slate-100 p-2 flex-shrink-0">
                             {company.logo ? (
                                 <img src={company.logo} alt={company.name} className="w-full h-full object-contain rounded-xl" />
                             ) : (
@@ -100,7 +100,7 @@ export default function CompanyProfilePage() {
                         {/* Info */}
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                                <h1 className="text-3xl font-bold text-gray-900">{company.name}</h1>
+                                <h1 className="text-3xl font-bold text-slate-900">{company.name}</h1>
                                 {company.isTrusted && (
                                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-medium border border-green-100">
                                         <CheckCircle className="w-4 h-4" />
@@ -114,18 +114,18 @@ export default function CompanyProfilePage() {
                                 )}
                             </div>
 
-                            <div className="flex flex-wrap gap-4 text-gray-600 mb-6">
+                            <div className="flex flex-wrap gap-4 text-slate-600 mb-6">
                                 {/* Links hidden as per request */}
                             </div>
 
-                            <p className="text-gray-600 leading-relaxed max-w-3xl">
+                            <p className="text-slate-600 leading-relaxed max-w-3xl">
                                 {company.description || '暂无详细介绍'}
                             </p>
 
                             {company.tags && company.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-4">
                                     {company.tags.map((tag, i) => (
-                                        <span key={i} className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
+                                        <span key={i} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm">
                                             {tag}
                                         </span>
                                     ))}
@@ -144,7 +144,7 @@ export default function CompanyProfilePage() {
             {/* Jobs Section */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="mb-6 flex flex-col lg:flex-row lg:items-end gap-4 lg:justify-between">
-                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                         <Briefcase className="w-5 h-5 text-blue-600" />
                         在招职位 ({jobs.length})
                     </h2>
@@ -153,13 +153,13 @@ export default function CompanyProfilePage() {
                     <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                         {/* Search */}
                         <div className="flex-1 sm:flex-none">
-                            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm min-w-[260px]">
+                            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm min-w-[260px]">
                                 <input
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="搜索职位名称、地点、类型..."
-                                    className="w-full bg-transparent border-none focus:ring-0 text-sm text-gray-700"
+                                    className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-700"
                                 />
                             </div>
                         </div>
@@ -168,7 +168,7 @@ export default function CompanyProfilePage() {
                         <select
                             value={typeFilter}
                             onChange={e => setTypeFilter(e.target.value as any)}
-                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 shadow-sm"
+                            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 shadow-sm"
                         >
                             <option value="all">全部类型</option>
                             <option value="full-time">全职</option>
@@ -181,7 +181,7 @@ export default function CompanyProfilePage() {
                         <select
                             value={remoteFilter}
                             onChange={e => setRemoteFilter(e.target.value as any)}
-                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 shadow-sm"
+                            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 shadow-sm"
                         >
                             <option value="all">全部地点</option>
                             <option value="remote">仅远程</option>
@@ -218,12 +218,12 @@ export default function CompanyProfilePage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-gray-200">
-                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                            <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-slate-200">
+                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
                                     <Briefcase className="w-8 h-8" />
                                 </div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">未找到匹配的职位</h3>
-                                <p className="text-gray-500">试试调整搜索关键词或筛选条件。</p>
+                                <h3 className="text-lg font-medium text-slate-900 mb-1">未找到匹配的职位</h3>
+                                <p className="text-slate-500">试试调整搜索关键词或筛选条件。</p>
                             </div>
                         )
                     )

@@ -70,10 +70,10 @@ export default function RSSStatusIndicator({ className = '' }: RSSStatusIndicato
 
   return (
     <div className={`fixed bottom-4 right-4 z-40 ${className}`}>
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-lg border border-slate-200 overflow-hidden">
         {/* 主状态指示器 */}
         <div 
-          className="flex items-center p-3 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+          className="flex items-center p-3 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center space-x-2">
@@ -87,7 +87,7 @@ export default function RSSStatusIndicator({ className = '' }: RSSStatusIndicato
             
             <div className="text-sm">
               {status.isLoading ? (
-                <span className="text-gray-600">正在获取职位数据...</span>
+                <span className="text-slate-600">正在获取职位数据...</span>
               ) : status.failedSources.length > 0 ? (
                 <span className="text-orange-600">
                   {status.failedSources.length} 个数据源连接失败
@@ -98,7 +98,7 @@ export default function RSSStatusIndicator({ className = '' }: RSSStatusIndicato
             </div>
           </div>
           
-          <button className="ml-2 text-gray-400 hover:text-gray-600">
+          <button className="ml-2 text-slate-400 hover:text-slate-600">
             <svg 
               className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
               fill="none" 
@@ -112,10 +112,10 @@ export default function RSSStatusIndicator({ className = '' }: RSSStatusIndicato
 
         {/* 展开的详细信息 */}
         {isExpanded && (
-          <div className="border-t border-gray-100 p-3 bg-gray-50">
+          <div className="border-t border-slate-100 p-3 bg-slate-50">
             {status.failedSources.length > 0 && (
               <div className="mb-3">
-                <div className="text-xs font-medium text-gray-700 mb-2">连接失败的数据源：</div>
+                <div className="text-xs font-medium text-slate-700 mb-2">连接失败的数据源：</div>
                 <div className="space-y-1">
                   {status.failedSources.map((source, index) => (
                     <div key={index} className="flex items-center text-xs text-orange-600">
@@ -129,7 +129,7 @@ export default function RSSStatusIndicator({ className = '' }: RSSStatusIndicato
 
             {status.successfulSources.length > 0 && (
               <div className="mb-3">
-                <div className="text-xs font-medium text-gray-700 mb-2">连接成功的数据源：</div>
+                <div className="text-xs font-medium text-slate-700 mb-2">连接成功的数据源：</div>
                 <div className="space-y-1">
                   {status.successfulSources.map((source, index) => (
                     <div key={index} className="flex items-center text-xs text-green-600">
@@ -141,14 +141,14 @@ export default function RSSStatusIndicator({ className = '' }: RSSStatusIndicato
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-              <div className="text-xs text-gray-500">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+              <div className="text-xs text-slate-500">
                 数据源状态监控
               </div>
               <button
                 onClick={handleRetryRSS}
                 disabled={status.isLoading}
-                className="text-xs text-haigoo-primary hover:text-haigoo-primary/80 disabled:text-gray-400 transition-colors duration-200"
+                className="text-xs text-haigoo-primary hover:text-haigoo-primary/80 disabled:text-slate-400 transition-colors duration-200"
               >
                 {status.isLoading ? '重试中...' : '重试连接'}
               </button>

@@ -107,19 +107,19 @@ const CronTestControl: React.FC = () => {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
             
             {/* Header */}
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                   <Terminal className="text-indigo-600" />
                   Cron Pipeline Simulator
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-slate-500 mt-1">
                   Manually trigger the scheduled task pipeline for testing.
                 </p>
               </div>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <XCircle size={24} />
               </button>
@@ -134,14 +134,14 @@ const CronTestControl: React.FC = () => {
                     result.status === 'running' ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100' :
                     result.status === 'success' ? 'border-green-200 bg-green-50' :
                     result.status === 'error' ? 'border-red-200 bg-red-50' :
-                    'border-gray-200 bg-white'
+                    'border-slate-200 bg-white'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                         <div className={`
                             w-8 h-8 rounded-full flex items-center justify-center
-                            ${result.status === 'pending' ? 'bg-gray-100 text-gray-400' : ''}
+                            ${result.status === 'pending' ? 'bg-slate-100 text-slate-400' : ''}
                             ${result.status === 'running' ? 'bg-indigo-100 text-indigo-600' : ''}
                             ${result.status === 'success' ? 'bg-green-100 text-green-600' : ''}
                             ${result.status === 'error' ? 'bg-red-100 text-red-600' : ''}
@@ -153,18 +153,18 @@ const CronTestControl: React.FC = () => {
                         </div>
                         <div>
                             <h4 className={`font-medium ${
-                                result.status === 'pending' ? 'text-gray-500' : 'text-gray-900'
+                                result.status === 'pending' ? 'text-slate-500' : 'text-slate-900'
                             }`}>
                                 {result.step}
                             </h4>
                             {result.timestamp && (
-                                <span className="text-xs text-gray-400">{result.timestamp}</span>
+                                <span className="text-xs text-slate-400">{result.timestamp}</span>
                             )}
                         </div>
                     </div>
                     
                     <div className="text-sm">
-                        {result.status === 'pending' && <span className="text-gray-400">Waiting...</span>}
+                        {result.status === 'pending' && <span className="text-slate-400">Waiting...</span>}
                         {result.status === 'running' && <span className="text-indigo-600 font-medium">Executing...</span>}
                         {result.status === 'success' && <span className="text-green-600 font-medium">Completed</span>}
                         {result.status === 'error' && <span className="text-red-600 font-medium">Failed</span>}
@@ -175,11 +175,11 @@ const CronTestControl: React.FC = () => {
                   {(result.message || result.details) && (result.status === 'success' || result.status === 'error') && (
                     <div className="mt-2 pl-11">
                         <div className={`text-sm p-3 rounded ${
-                            result.status === 'error' ? 'bg-red-100 text-red-800' : 'bg-white/50 text-gray-600 border border-gray-200'
+                            result.status === 'error' ? 'bg-red-100 text-red-800' : 'bg-white/50 text-slate-600 border border-slate-200'
                         }`}>
                             {result.message}
                             {result.details && (
-                                <pre className="mt-2 text-xs overflow-x-auto p-2 bg-black/5 rounded text-gray-800">
+                                <pre className="mt-2 text-xs overflow-x-auto p-2 bg-black/5 rounded text-slate-800">
                                     {JSON.stringify(result.details, null, 2)}
                                 </pre>
                             )}
@@ -191,10 +191,10 @@ const CronTestControl: React.FC = () => {
             </div>
 
             {/* Footer / Actions */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
               <button
                 onClick={() => setIsOpen(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
                 disabled={isRunning}
               >
                 Close

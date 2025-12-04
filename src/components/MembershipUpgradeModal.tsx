@@ -52,7 +52,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors z-10"
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
@@ -71,32 +71,32 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
             Premium Feature
           </div>
           
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">
+          <h3 className="text-2xl font-bold text-slate-900 mb-3">
             {content.title}
           </h3>
           
-          <p className="text-gray-600 mb-6 leading-relaxed">
+          <p className="text-slate-600 mb-6 leading-relaxed">
             {content.description}
           </p>
 
-          <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left space-y-3 border border-gray-100">
+          <div className="bg-slate-50 rounded-xl p-4 mb-8 text-left space-y-3 border border-slate-100">
             <div className="flex items-center gap-3">
                <div className="bg-green-100 p-1 rounded-full">
                   <Check className="w-3 h-3 text-green-600" />
                </div>
-               <span className="text-sm font-medium text-gray-700">{content.highlight}</span>
+               <span className="text-sm font-medium text-slate-700">{content.highlight}</span>
             </div>
             <div className="flex items-center gap-3">
                <div className="bg-green-100 p-1 rounded-full">
                   <Check className="w-3 h-3 text-green-600" />
                </div>
-               <span className="text-sm font-medium text-gray-700">解锁全部会员专属权益</span>
+               <span className="text-sm font-medium text-slate-700">解锁全部会员专属权益</span>
             </div>
              <div className="flex items-center gap-3">
                <div className="bg-green-100 p-1 rounded-full">
                   <Check className="w-3 h-3 text-green-600" />
                </div>
-               <span className="text-sm font-medium text-gray-700">7天无理由退款保障</span>
+               <span className="text-sm font-medium text-slate-700">7天无理由退款保障</span>
             </div>
           </div>
 
@@ -113,7 +113,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
             
             <button
               onClick={onClose}
-              className="w-full py-3 px-6 text-gray-500 font-medium hover:text-gray-800 transition-colors text-sm"
+              className="w-full py-3 px-6 text-slate-500 font-medium hover:text-slate-800 transition-colors text-sm"
             >
               暂不需要，谢谢
             </button>

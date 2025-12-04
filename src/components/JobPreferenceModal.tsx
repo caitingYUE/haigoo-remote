@@ -161,21 +161,21 @@ function AutocompleteField({
                         }
                     }}
                     placeholder={placeholder}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
 
                 {/* Dropdown Suggestions */}
                 {showDropdown && suggestions.length > 0 && (
                     <div
                         ref={dropdownRef}
-                        className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                        className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
                     >
                         {suggestions.map((suggestion, index) => (
                             <button
                                 key={index}
                                 type="button"
                                 onClick={() => handleSelectSuggestion(suggestion)}
-                                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm transition-colors"
+                                className="w-full text-left px-4 py-2 hover:bg-slate-100 text-sm transition-colors"
                             >
                                 {suggestion}
                             </button>
@@ -184,7 +184,7 @@ function AutocompleteField({
                 )}
             </div>
 
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
                 输入关键词搜索或直接输入自定义内容，按 Enter 添加
             </p>
         </div>
@@ -220,19 +220,19 @@ export function JobPreferenceModal({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1050] p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between p-6 border-b border-slate-200">
                     <h2 className="text-xl font-bold text-slate-900">编辑职位偏好</h2>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                     >
-                        <X className="w-5 h-5 text-gray-500" />
+                        <X className="w-5 h-5 text-slate-500" />
                     </button>
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    <p className="text-sm text-gray-600 mb-6">
+                    <p className="text-sm text-slate-600 mb-6">
                         <span className="text-red-500">*</span> 必填
                     </p>
 
@@ -299,10 +299,10 @@ export function JobPreferenceModal({
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-gray-200 flex justify-between items-center">
+                <div className="p-6 border-t border-slate-200 flex justify-between items-center">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+                        className="px-6 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors"
                     >
                         取消
                     </button>

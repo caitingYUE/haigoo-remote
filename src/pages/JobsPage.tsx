@@ -62,6 +62,7 @@ export default function JobsPage() {
   // Load user preferences
   useEffect(() => {
     loadUserPreferences()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated])
 
   const loadUserPreferences = async () => {
@@ -497,7 +498,7 @@ export default function JobsPage() {
       aria-label="职位搜索页面"
     >
       {/* Hero / Header Section */}
-      <div className="bg-white border-b border-gray-100 py-10 px-4 sm:px-6 lg:px-8 shadow-sm relative overflow-hidden">
+      <div className="bg-white border-b border-slate-100 py-10 px-4 sm:px-6 lg:px-8 shadow-sm relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-blue-50 rounded-full opacity-50 blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-orange-50 rounded-full opacity-50 blur-2xl pointer-events-none"></div>

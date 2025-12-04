@@ -1,5 +1,5 @@
 import React from 'react'
-import { MapPin, Building2, DollarSign } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 import { Job } from '../types'
 
 interface HomeJobCardProps {

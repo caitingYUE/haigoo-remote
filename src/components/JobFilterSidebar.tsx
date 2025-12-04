@@ -11,16 +11,16 @@ interface FilterSectionProps {
 }
 
 const FilterSection: React.FC<FilterSectionProps> = ({ title, isOpen, onToggle, children }) => (
-  <div className="border-b border-gray-200 py-4">
+  <div className="border-b border-slate-200 py-4">
     <button
       className="flex items-center justify-between w-full text-left mb-2 group"
       onClick={onToggle}
     >
-      <span className="font-bold text-gray-900 text-sm">{title}</span>
+      <span className="font-bold text-slate-900 text-sm">{title}</span>
       {isOpen ? (
-        <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+        <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
       ) : (
-        <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+        <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
       )}
     </button>
     {isOpen && (
@@ -40,8 +40,8 @@ interface CheckboxItemProps {
 }
 
 const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, count, emphasized }) => (
-  <label className="flex items-center gap-2 cursor-pointer py-1 hover:bg-gray-50 rounded px-1 -mx-1 transition-colors">
-    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${checked ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white'
+  <label className="flex items-center gap-2 cursor-pointer py-1 hover:bg-slate-50 rounded px-1 -mx-1 transition-colors">
+    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${checked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'
       }`}>
       {checked && <Check className="w-3 h-3 text-white" />}
     </div>
@@ -51,11 +51,11 @@ const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, c
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
     />
-    <span className={`text-sm ${checked ? 'text-gray-900 font-medium' : 'text-gray-600'} ${emphasized ? 'font-bold' : ''}`}>
+    <span className={`text-sm ${checked ? 'text-slate-900 font-medium' : 'text-slate-600'} ${emphasized ? 'font-bold' : ''}`}>
       {label}
     </span>
     {count !== undefined && (
-      <span className="ml-auto text-xs text-gray-400">{count}</span>
+      <span className="ml-auto text-xs text-slate-400">{count}</span>
     )}
   </label>
 );
@@ -368,9 +368,9 @@ export default function JobFilterSidebar({
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <Zap className="w-5 h-5 text-orange-500 fill-orange-500" />
-            <h3 className="font-bold text-gray-900 text-sm">简历还在被动等待?</h3>
+            <h3 className="font-bold text-slate-900 text-sm">简历还在被动等待?</h3>
           </div>
-          <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+          <p className="text-xs text-slate-600 mb-4 leading-relaxed">
             试试我们的 AI 简历优化建议 (Try our AI optimization suggestions).
           </p>
           <button

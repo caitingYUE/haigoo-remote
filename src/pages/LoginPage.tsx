@@ -133,8 +133,8 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <img src={logoSvg} alt="Haigoo" className="h-12 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900">欢迎回来</h1>
-          <p className="text-gray-600 mt-2">登录您的 Haigoo 账户</p>
+          <h1 className="text-2xl font-bold text-slate-900">欢迎回来</h1>
+          <p className="text-slate-600 mt-2">登录您的 Haigoo 账户</p>
         </div>
 
         {/* 登录表单 */}
@@ -149,7 +149,7 @@ export default function LoginPage() {
 
             {/* 邮箱 */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
                 邮箱地址
               </label>
               <input
@@ -158,14 +158,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                 placeholder="your@email.com"
               />
             </div>
 
             {/* 密码 */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
                 密码
               </label>
               <input
@@ -174,7 +174,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -192,10 +192,10 @@ export default function LoginPage() {
           {/* 分隔线 */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-slate-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">或</span>
+              <span className="px-2 bg-white text-slate-500">或</span>
             </div>
           </div>
 
@@ -204,7 +204,7 @@ export default function LoginPage() {
           </div>
 
           {/* 注册链接 */}
-          <p className="text-center mt-6 text-sm text-gray-600">
+          <p className="text-center mt-6 text-sm text-slate-600">
             还没有账户？{' '}
             <Link to="/register" className="text-violet-600 font-medium hover:text-violet-700">
               立即注册
@@ -214,7 +214,7 @@ export default function LoginPage() {
 
         {/* 返回首页 */}
         <div className="text-center mt-6">
-          <Link to="/" className="text-sm text-gray-600 hover:text-gray-900">
+          <Link to="/" className="text-sm text-slate-600 hover:text-slate-900">
             ← 返回首页
           </Link>
         </div>

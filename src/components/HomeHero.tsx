@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Search, Zap, Shield, TrendingUp, CheckCircle, Code, Palette, Database, LineChart, Building, Settings, MoreHorizontal } from 'lucide-react'
+import { ChevronRight, Search, Code, Palette, Database, LineChart, Building, Settings, MoreHorizontal } from 'lucide-react'
 
 // Real job categories mapped from JobCategory type
 const CATEGORIES = [

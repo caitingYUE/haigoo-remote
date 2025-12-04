@@ -173,7 +173,7 @@ export default function AdminTagManagementPage() {
         description: string,
         color: string
     ) => (
-        <div className="bg-white rounded-lg border border-gray-200 flex flex-col">
+        <div className="bg-white rounded-lg border border-slate-200 flex flex-col">
             {/* Header */}
             <div className={`${color} p-4`}>
                 <div className="flex items-center gap-3">
@@ -191,7 +191,7 @@ export default function AdminTagManagementPage() {
             </div>
 
             {/* Add new tag */}
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
+            <div className="p-4 border-b border-slate-200 bg-slate-50">
                 <div className="flex gap-2">
                     <input
                         type="text"
@@ -199,7 +199,7 @@ export default function AdminTagManagementPage() {
                         onChange={(e) => setNewValue({ ...newValue, [type]: e.target.value })}
                         onKeyPress={(e) => e.key === 'Enter' && handleAdd(type)}
                         placeholder="输入新标签..."
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     <button
                         onClick={() => handleAdd(type)}
@@ -216,7 +216,7 @@ export default function AdminTagManagementPage() {
                 {tags.map((tag, index) => (
                     <div
                         key={index}
-                        className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
+                        className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors group"
                     >
                         {editingIndex?.type === type && editingIndex?.index === index ? (
                             <>
@@ -225,7 +225,7 @@ export default function AdminTagManagementPage() {
                                     value={editValue}
                                     onChange={(e) => setEditValue(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     autoFocus
                                 />
                                 <button
@@ -240,7 +240,7 @@ export default function AdminTagManagementPage() {
                                         setEditingIndex(null);
                                         setEditValue('');
                                     }}
-                                    className="p-1.5 text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                                    className="p-1.5 text-slate-600 hover:bg-slate-200 rounded transition-colors"
                                     title="取消"
                                 >
                                     <X className="w-4 h-4" />
@@ -248,7 +248,7 @@ export default function AdminTagManagementPage() {
                             </>
                         ) : (
                             <>
-                                <span className="flex-1 text-sm text-gray-900">{tag}</span>
+                                <span className="flex-1 text-sm text-slate-900">{tag}</span>
                                 <button
                                     onClick={() => handleEdit(type, index, tag)}
                                     className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors opacity-0 group-hover:opacity-100"
@@ -268,7 +268,7 @@ export default function AdminTagManagementPage() {
                     </div>
                 ))}
                 {tags.length === 0 && (
-                    <div className="text-center py-12 text-gray-400">
+                    <div className="text-center py-12 text-slate-400">
                         <div className="text-4xl mb-2">📝</div>
                         <p className="text-sm">暂无标签</p>
                     </div>
@@ -279,19 +279,19 @@ export default function AdminTagManagementPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
         );
     }
 
     return (
-        <div className="w-full bg-gray-50 p-6">
+        <div className="w-full bg-slate-50 p-6">
             {/* Top Actions */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-xl font-bold text-gray-900">标签配置</h2>
-                    <p className="text-sm text-gray-600 mt-1">管理岗位分类、企业行业和企业标签</p>
+                    <h2 className="text-xl font-bold text-slate-900">标签配置</h2>
+                    <p className="text-sm text-slate-600 mt-1">管理岗位分类、企业行业和企业标签</p>
                 </div>
                 <button
                     onClick={handleReclassify}

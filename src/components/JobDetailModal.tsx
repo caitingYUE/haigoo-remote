@@ -118,7 +118,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           <button
             onClick={() => handleNavigate('prev')}
             onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('prev'))}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             title="上一个职位 (Ctrl+←)"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -129,7 +129,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           <button
             onClick={() => handleNavigate('next')}
             onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('next'))}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             title="下一个职位 (Ctrl+→)"
           >
             <ChevronRight className="h-6 w-6" />

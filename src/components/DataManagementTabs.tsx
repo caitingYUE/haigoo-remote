@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Database, RefreshCw, Trash2, CheckCircle, AlertCircle,
-  Search, Filter, Download, Upload, FileText,
+  Database, RefreshCw, Trash2, CheckCircle,
+  Filter, FileText,
   Briefcase, BarChart3, Loader, Edit3, Eye, Link as LinkIcon,
   MapPin, Calendar, Server, Star, ExternalLink, Info, Plus, Building, X,
   ChevronLeft, ChevronRight, ChevronDown
@@ -512,7 +512,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       onClick={() => setActiveTab(tabKey as any)}
       className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === tabKey
         ? 'bg-blue-600 text-white shadow-lg'
-        : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+        : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
         }`}
     >
       {icon}
@@ -533,19 +533,19 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     };
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
         {/* 过滤器 */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-slate-200">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">过滤条件：</span>
+              <Filter className="w-4 h-4 text-slate-500" />
+              <span className="text-sm font-medium text-slate-700">过滤条件：</span>
             </div>
 
             <select
               value={rawDataFilters.source || ''}
               onChange={(e) => setRawDataFilters({ ...rawDataFilters, source: e.target.value || undefined })}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">所有来源</option>
               <option value="WeWorkRemotely">WeWorkRemotely</option>
@@ -557,7 +557,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <select
               value={rawDataFilters.status || ''}
               onChange={(e) => setRawDataFilters({ ...rawDataFilters, status: e.target.value as any || undefined })}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">所有状态</option>
               <option value="raw">原始</option>
@@ -567,7 +567,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
             <button
               onClick={() => setRawDataFilters({})}
-              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50"
             >
               清除过滤
             </button>
@@ -577,16 +577,16 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         {/* 表格 */}
         <div className="overflow-x-auto">
           <table className="w-full table-fixed">
-            <thead className="bg-gray-50">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="w-56 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位标题</th>
-                <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">公司名称</th>
-                <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">工作类型</th>
-                <th className="w-48 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">地点</th>
-                <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">来源</th>
-                <th className="w-16 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">精选</th>
-                <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">发布时间</th>
-                <th className="w-20 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-56 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位标题</th>
+                <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">公司名称</th>
+                <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">工作类型</th>
+                <th className="w-48 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">地点</th>
+                <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">来源</th>
+                <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">精选</th>
+                <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">发布时间</th>
+                <th className="w-20 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   <span className="inline-flex items-center gap-1">
                     状态
                     <Tooltip
@@ -596,23 +596,23 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       trigger="click"
                       forceShow
                     >
-                      <Info className="w-3 h-3 text-gray-400 cursor-pointer" />
+                      <Info className="w-3 h-3 text-slate-400 cursor-pointer" />
                     </Tooltip>
                   </span>
                 </th>
-                <th className="w-20 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">薪资</th>
+                <th className="w-20 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
+                <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">薪资</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {rawData.map((item) => {
                 const parsed = parseRawContent(item.rawContent || '{}');
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50">
+                  <tr key={item.id} className="hover:bg-slate-50">
                     <td className="px-3 py-2">
                       <div className="max-w-xs">
                         <Tooltip content={item.title} maxLines={3}>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-slate-900">
                             {item.title}
                           </div>
                         </Tooltip>
@@ -622,12 +622,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       <div className="max-w-xs">
                         {parsed.company ? (
                           <Tooltip content={parsed.company} maxLines={3}>
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-slate-900">
                               {parsed.company}
                             </div>
                           </Tooltip>
                         ) : (
-                          <span className="text-gray-400 text-sm">-</span>
+                          <span className="text-slate-400 text-sm">-</span>
                         )}
                       </div>
                     </td>
@@ -640,19 +640,19 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                           </span>
                         </Tooltip>
                       ) : (
-                        <span className="text-gray-400 text-sm">-</span>
+                        <span className="text-slate-400 text-sm">-</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
                       <div className="max-w-xs">
                         {parsed.location || parsed.region ? (
                           <Tooltip content={parsed.location || parsed.region} maxLines={3}>
-                            <div className="text-sm text-gray-900">
+                            <div className="text-sm text-slate-900">
                               {parsed.location || parsed.region}
                             </div>
                           </Tooltip>
                         ) : (
-                          <span className="text-gray-400 text-sm">-</span>
+                          <span className="text-slate-400 text-sm">-</span>
                         )}
                       </div>
                     </td>
@@ -663,7 +663,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                         </span>
                       </Tooltip>
                     </td>
-                    <td className="px-3 py-2 text-sm text-gray-500">
+                    <td className="px-3 py-2 text-sm text-slate-500">
                       <Tooltip content={item.pubDate ? new Date(item.pubDate).toLocaleDateString() : '-'} maxLines={1}>
                         <span>
                           {item.pubDate ? new Date(item.pubDate).toLocaleDateString() : '-'}
@@ -714,7 +714,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                             </div>
                           </Tooltip>
                         ) : (
-                          <span className="text-gray-400 text-sm">-</span>
+                          <span className="text-slate-400 text-sm">-</span>
                         )}
                       </div>
                     </td>
@@ -726,15 +726,15 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         </div>
 
         {/* 分页 */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-500">
+        <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+          <div className="text-sm text-slate-500">
             显示 {((rawDataPage - 1) * rawDataPageSize) + 1} 到 {Math.min(rawDataPage * rawDataPageSize, rawDataTotal)} 条，共 {rawDataTotal} 条
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setRawDataPage(Math.max(1, rawDataPage - 1))}
               disabled={rawDataPage === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
             >
               上一页
             </button>
@@ -744,7 +744,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <button
               onClick={() => setRawDataPage(rawDataPage + 1)}
               disabled={rawDataPage >= Math.ceil(rawDataTotal / rawDataPageSize)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
             >
               下一页
             </button>
@@ -755,20 +755,20 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   };
 
   const renderProcessedDataTable = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200">
       {/* 过滤器 */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-slate-200">
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">过滤条件：</span>
+              <Filter className="w-4 h-4 text-slate-500" />
+              <span className="text-sm font-medium text-slate-700">过滤条件：</span>
             </div>
 
             <select
               value={processedDataFilters.category || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, category: e.target.value as JobCategory || undefined })}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">所有分类</option>
               <option value="前端开发">前端开发</option>
@@ -817,7 +817,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <select
               value={processedDataFilters.industry || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, industry: e.target.value || undefined })}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">所有行业</option>
               <option value="互联网/软件">互联网/软件</option>
@@ -837,7 +837,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <select
               value={processedDataFilters.source || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, source: e.target.value || undefined })}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">所有来源</option>
               <option value="WeWorkRemotely">WeWorkRemotely</option>
@@ -852,12 +852,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               placeholder="搜索岗位名称或公司..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
 
             <button
               onClick={() => setProcessedDataFilters({})}
-              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50"
             >
               清除过滤
             </button>
@@ -899,40 +899,40 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       {/* 表格 */}
       <div className="overflow-x-auto">
         <table className="w-full table-fixed">
-          <thead className="bg-gray-50">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="w-56 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位名称</th>
-              <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位分类</th>
-              <th className="w-20 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位级别</th>
-              <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
-              <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业行业</th>
-              <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业标签</th>
-              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位类型</th>
-              <th className="w-32 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">区域限制</th>
-              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">区域分类</th>
-              <th className="w-40 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">技能标签</th>
-              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">语言要求</th>
-              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">发布日期</th>
-              <th className="w-28 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位来源</th>
-              <th className="w-16 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">精选</th>
-              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+              <th className="w-56 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位名称</th>
+              <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位分类</th>
+              <th className="w-20 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位级别</th>
+              <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业名称</th>
+              <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业行业</th>
+              <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业标签</th>
+              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位类型</th>
+              <th className="w-32 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域限制</th>
+              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域分类</th>
+              <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">技能标签</th>
+              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">语言要求</th>
+              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">发布日期</th>
+              <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位来源</th>
+              <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">精选</th>
+              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {processedData.map((job) => (
-              <tr key={job.id} className="hover:bg-gray-50">
+              <tr key={job.id} className="hover:bg-slate-50">
                 {/* 岗位名称 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.title} maxLines={3}>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-1">
-                        <span className="font-medium text-gray-900 text-sm">{job.title}</span>
+                        <span className="font-medium text-slate-900 text-sm">{job.title}</span>
                         {job.isFeatured && (
                           <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0" />
                         )}
                       </div>
                       {(job as any).translations?.title && (
-                        <span className="text-xs text-gray-600 italic">
+                        <span className="text-xs text-slate-600 italic">
                           {(job as any).translations.title}
                         </span>
                       )}
@@ -956,7 +956,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                               job.category === '运维/SRE' ? 'bg-indigo-100 text-indigo-800' :
                                 job.category === '产品经理' ? 'bg-orange-100 text-orange-800' :
                                   job.category === '市场营销' ? 'bg-red-100 text-red-800' :
-                                    'bg-gray-100 text-gray-800'
+                                    'bg-slate-100 text-slate-800'
                       }`}>
                       {job.category || '未分类'}
                     </span>
@@ -977,7 +977,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                         job.experienceLevel === 'Senior' ? 'bg-orange-100 text-orange-800' :
                           job.experienceLevel === 'Lead' ? 'bg-red-100 text-red-800' :
                             job.experienceLevel === 'Executive' ? 'bg-purple-100 text-purple-800' :
-                              'bg-gray-100 text-gray-800'
+                              'bg-slate-100 text-slate-800'
                       }`}>
                       {job.experienceLevel === 'Entry' ? '初级' :
                         job.experienceLevel === 'Mid' ? '中级' :
@@ -992,8 +992,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <td className="px-3 py-2">
                   <Tooltip content={job.company} maxLines={3}>
                     <div className="flex items-center gap-1">
-                      <Building className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                      <span className="font-medium text-gray-900 text-sm">{job.company}</span>
+                      <Building className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                      <span className="font-medium text-slate-900 text-sm">{job.company}</span>
                     </div>
                   </Tooltip>
                   {job.companyWebsite && (
@@ -1012,7 +1012,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 {/* 企业行业 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.companyIndustry || '未分类'} maxLines={1} clampChildren={false}>
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800">
                       {job.companyIndustry || '未分类'}
                     </span>
                   </Tooltip>
@@ -1028,7 +1028,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                         </span>
                       ))}
                       {job.companyTags && job.companyTags.length > 2 && (
-                        <span className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-gray-50 text-gray-600 border border-gray-100">
+                        <span className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-slate-50 text-slate-600 border border-slate-100">
                           +{job.companyTags.length - 2}
                         </span>
                       )}
@@ -1058,7 +1058,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                             normalizedType === '合同工' ? 'bg-orange-100 text-orange-800' :
                               normalizedType === '自由职业' ? 'bg-purple-100 text-purple-800' :
                                 normalizedType === '实习' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-gray-100 text-gray-800'
+                                  'bg-slate-100 text-slate-800'
                           }`}>
                           {normalizedType}
                         </span>
@@ -1071,8 +1071,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <td className="px-3 py-2">
                   <Tooltip content={job.remoteLocationRestriction || job.location || '不限地点'} maxLines={3} clampChildren={false}>
                     <div className="flex items-center gap-1">
-                      <MapPin className="w-2 h-2 text-gray-400 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">
+                      <MapPin className="w-2 h-2 text-slate-400 flex-shrink-0" />
+                      <span className="text-xs text-slate-600">
                         {job.remoteLocationRestriction || job.location || '不限地点'}
                       </span>
                     </div>
@@ -1087,7 +1087,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       ? 'bg-blue-100 text-blue-800'
                       : r === 'overseas'
                         ? 'bg-indigo-100 text-indigo-800'
-                        : 'bg-gray-100 text-gray-800';
+                        : 'bg-slate-100 text-slate-800';
                     return (
                       <Tooltip content={label} maxLines={1} clampChildren={false}>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${cls}`}>
@@ -1103,12 +1103,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   <Tooltip content={job.tags?.join(', ') || '无标签'} maxLines={2} clampChildren={false}>
                     <div className="flex flex-wrap gap-1">
                       {job.tags?.slice(0, 2).map((tag, index) => (
-                        <span key={index} className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-gray-100 text-gray-700">
+                        <span key={index} className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
                           {tag}
                         </span>
                       ))}
                       {job.tags && job.tags.length > 2 && (
-                        <span className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-gray-100 text-gray-700">
+                        <span className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
                           +{job.tags.length - 2}
                         </span>
                       )}
@@ -1119,14 +1119,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 {/* 语言要求 */}
                 <td className="px-3 py-2">
                   <Tooltip content="英语" maxLines={1}>
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs text-slate-600">
                       英语
                     </span>
                   </Tooltip>
                 </td>
 
                 {/* 发布日期 */}
-                <td className="px-3 py-2 text-xs text-gray-500">
+                <td className="px-3 py-2 text-xs text-slate-500">
                   <Tooltip content={new Date(job.publishedAt).toLocaleDateString()} maxLines={1} clampChildren={false}>
                     <div className="flex items-center gap-1">
                       <Calendar className="w-2 h-2 flex-shrink-0" />
@@ -1163,7 +1163,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     onClick={() => handleToggleFeatured(job.id, !!job.isFeatured)}
                     className={`p-1 rounded-full transition-colors ${job.isFeatured
                       ? 'text-yellow-500 hover:bg-yellow-50'
-                      : 'text-gray-300 hover:text-yellow-500 hover:bg-gray-50'
+                      : 'text-slate-300 hover:text-yellow-500 hover:bg-slate-50'
                       }`}
                     title={job.isFeatured ? '取消精选' : '设为精选'}
                   >
@@ -1183,7 +1183,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </button>
                     <button
                       onClick={() => handleViewDetail(job)}
-                      className="text-gray-600 hover:text-gray-800 text-xs p-1 hover:bg-gray-50 rounded transition-colors"
+                      className="text-slate-600 hover:text-slate-800 text-xs p-1 hover:bg-slate-50 rounded transition-colors"
                       title="详情"
                     >
                       <Eye className="w-3 h-3" />
@@ -1204,15 +1204,15 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       </div>
 
       {/* 分页 */}
-      <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-        <div className="text-sm text-gray-500">
+      <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+        <div className="text-sm text-slate-500">
           显示 {((processedDataPage - 1) * processedDataPageSize) + 1} 到 {Math.min(processedDataPage * processedDataPageSize, processedDataTotal)} 条，共 {processedDataTotal} 条
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setProcessedDataPage(Math.max(1, processedDataPage - 1))}
             disabled={processedDataPage === 1}
-            className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
           >
             上一页
           </button>
@@ -1248,14 +1248,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
             return pages.map((p, i) => (
               p === -1 ? (
-                <span key={`ellipsis-${i}`} className="px-2 text-gray-400">...</span>
+                <span key={`ellipsis-${i}`} className="px-2 text-slate-400">...</span>
               ) : (
                 <button
                   key={p}
                   onClick={() => setProcessedDataPage(p)}
                   className={`px-3 py-1 text-sm border rounded-lg transition-colors ${processedDataPage === p
                     ? 'bg-blue-600 text-white border-blue-600'
-                    : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                    : 'border-slate-300 hover:bg-slate-50 text-slate-700'
                     }`}
                 >
                   {p}
@@ -1267,7 +1267,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           <button
             onClick={() => setProcessedDataPage(processedDataPage + 1)}
             disabled={processedDataPage >= Math.ceil(processedDataTotal / processedDataPageSize)}
-            className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
           >
             下一页
           </button>
@@ -1280,40 +1280,40 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {storageStats && (
         <>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Database className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{storageStats.totalRawData}</div>
-                <div className="text-sm text-gray-500">原始数据条数</div>
+                <div className="text-2xl font-bold text-slate-900">{storageStats.totalRawData}</div>
+                <div className="text-sm text-slate-500">原始数据条数</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-green-100 rounded-lg">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{storageStats.totalProcessedJobs}</div>
-                <div className="text-sm text-gray-500">处理后职位</div>
+                <div className="text-2xl font-bold text-slate-900">{storageStats.totalProcessedJobs}</div>
+                <div className="text-sm text-slate-500">处理后职位</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-purple-100 rounded-lg">
                 <Server className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-slate-900">
                   {(storageStats.storageSize / 1024 / 1024).toFixed(2)} MB
                 </div>
-                <div className="text-sm text-gray-500">存储大小</div>
+                <div className="text-sm text-slate-500">存储大小</div>
               </div>
             </div>
           </div>
@@ -1335,12 +1335,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         <div className="flex gap-2">
           {activeTab === 'raw' && (
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={autoProcess}
                   onChange={(e) => setAutoProcess(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                 />
                 自动处理为岗位
               </label>
@@ -1380,17 +1380,17 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
                 {/* 翻译选项菜单 */}
                 {showTranslateMenu && !translating && (
-                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
                     <button
                       onClick={() => handleTriggerTranslation('current')}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-700 flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-green-700 flex items-center gap-2"
                     >
                       <FileText className="w-4 h-4" />
                       仅翻译当前页
                     </button>
                     <button
                       onClick={() => handleTriggerTranslation('all')}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-700 flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-green-700 flex items-center gap-2"
                     >
                       <Database className="w-4 h-4" />
                       翻译所有数据
@@ -1408,7 +1408,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader className="w-8 h-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">加载中...</span>
+          <span className="ml-2 text-slate-600">加载中...</span>
         </div>
       ) : (
         <>
@@ -1526,13 +1526,13 @@ const EditJobModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h2 className="text-xl font-semibold text-gray-900">编辑职位信息</h2>
+              <h2 className="text-xl font-semibold text-slate-900">编辑职位信息</h2>
               {/* 导航按钮 */}
               {onNavigate && (
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                   <button
                     type="button"
                     onClick={() => onNavigate('prev')}
@@ -1540,9 +1540,9 @@ const EditJobModal: React.FC<{
                     className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
                     title="上一条 (←)"
                   >
-                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    <ChevronLeft className="w-5 h-5 text-slate-600" />
                   </button>
-                  <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                  <div className="w-px h-4 bg-slate-300 mx-1"></div>
                   <button
                     type="button"
                     onClick={() => onNavigate('next')}
@@ -1550,14 +1550,14 @@ const EditJobModal: React.FC<{
                     className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
                     title="下一条 (→)"
                   >
-                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                    <ChevronRight className="w-5 h-5 text-slate-600" />
                   </button>
                 </div>
               )}
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1567,54 +1567,54 @@ const EditJobModal: React.FC<{
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">岗位名称</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">岗位名称</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">企业名称</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">企业名称</label>
               <input
                 type="text"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">工作地点</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">工作地点</label>
               <input
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">薪资</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">薪资</label>
               <input
                 type="text"
                 value={formData.salary}
                 onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="例如: $80,000 - $120,000"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">岗位类型</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">岗位类型</label>
               <select
                 value={formData.jobType}
                 onChange={(e) => setFormData({ ...formData, jobType: e.target.value as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="full-time">全职</option>
                 <option value="part-time">兼职</option>
@@ -1625,11 +1625,11 @@ const EditJobModal: React.FC<{
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">区域分类</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">区域分类</label>
               <select
                 value={formData.region || ''}
                 onChange={(e) => setFormData({ ...formData, region: (e.target.value || undefined) as 'domestic' | 'overseas' | undefined })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">未设置</option>
                 <option value="domestic">国内</option>
@@ -1638,11 +1638,11 @@ const EditJobModal: React.FC<{
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">岗位级别</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">岗位级别</label>
               <select
                 value={formData.experienceLevel}
                 onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="Entry">初级</option>
                 <option value="Mid">中级</option>
@@ -1653,11 +1653,11 @@ const EditJobModal: React.FC<{
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">岗位分类</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">岗位分类</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value as JobCategory })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="全栈开发">全栈开发</option>
                 <option value="前端开发">前端开发</option>
@@ -1676,20 +1676,20 @@ const EditJobModal: React.FC<{
                   type="checkbox"
                   checked={formData.isFeatured}
                   onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                 />
-                <span className="text-sm font-medium text-gray-700">设为精选岗位 (Featured)</span>
-                <Star className={`w-4 h-4 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-gray-400'}`} />
+                <span className="text-sm font-medium text-slate-700">设为精选岗位 (Featured)</span>
+                <Star className={`w-4 h-4 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-slate-400'}`} />
               </label>
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">技能标签（用逗号分隔）</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">技能标签（用逗号分隔）</label>
               <input
                 type="text"
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="例如: React, TypeScript, Node.js"
               />
             </div>
@@ -1700,44 +1700,44 @@ const EditJobModal: React.FC<{
                   <div className="flex items-center gap-2 mb-2 text-blue-800 font-medium">
                     <span className="text-xs bg-blue-200 px-2 py-0.5 rounded text-blue-800">中文翻译 (参考)</span>
                   </div>
-                  <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                  <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
                     {(job as any).translations.description}
                   </div>
                 </div>
               )}
-              <label className="block text-sm font-medium text-gray-700 mb-2">岗位描述</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">岗位描述</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">岗位要求（每行一个）</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">岗位要求（每行一个）</label>
               <textarea
                 value={formData.requirements}
                 onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="例如:&#10;3+ years React experience&#10;TypeScript proficiency"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">福利待遇（每行一个）</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">福利待遇（每行一个）</label>
               <textarea
                 value={formData.benefits}
                 onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="例如:&#10;Remote work&#10;Health insurance"
               />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-6 border-t border-gray-200">
+          <div className="flex gap-3 pt-6 border-t border-slate-200">
             <button
               type="submit"
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
@@ -1747,7 +1747,7 @@ const EditJobModal: React.FC<{
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+              className="flex-1 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg hover:bg-slate-300 transition-colors"
             >
               取消
             </button>
@@ -1881,7 +1881,7 @@ const Tooltip: React.FC<{
           ? createPortal(
             <div
               style={{ position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000 }}
-              className={`p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg max-w-sm ${coords.placement === 'top' ? '' : ''}`}
+              className={`p-3 bg-slate-900 text-white text-sm rounded-lg shadow-lg max-w-sm ${coords.placement === 'top' ? '' : ''}`}
             >
               <div className="whitespace-pre-wrap break-words">{content}</div>
               {coords.placement === 'top' ? (
@@ -1897,7 +1897,7 @@ const Tooltip: React.FC<{
             document.body
           )
           : (
-            <div className="absolute z-50 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg max-w-sm -top-2 left-0 transform -translate-y-full">
+            <div className="absolute z-50 p-3 bg-slate-900 text-white text-sm rounded-lg shadow-lg max-w-sm -top-2 left-0 transform -translate-y-full">
               <div className="whitespace-pre-wrap break-words">{content}</div>
               <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
             </div>
@@ -1935,31 +1935,31 @@ const DetailModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
-        <div className="p-6 border-b border-gray-200 flex-shrink-0">
+        <div className="p-6 border-b border-slate-200 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-slate-900">
                 {isProcessedJob ? '处理后数据详情' : '原始数据详情'}
               </h2>
               {/* 导航按钮 */}
               {onNavigate && (
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                   <button
                     onClick={() => onNavigate('prev')}
                     disabled={!hasPrev}
                     className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
                     title="上一条 (←)"
                   >
-                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    <ChevronLeft className="w-5 h-5 text-slate-600" />
                   </button>
-                  <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                  <div className="w-px h-4 bg-slate-300 mx-1"></div>
                   <button
                     onClick={() => onNavigate('next')}
                     disabled={!hasNext}
                     className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
                     title="下一条 (→)"
                   >
-                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                    <ChevronRight className="w-5 h-5 text-slate-600" />
                   </button>
                 </div>
               )}
@@ -1972,7 +1972,7 @@ const DetailModal: React.FC<{
                   onClick={() => onToggleFeatured(item.id, !!processedJob?.isFeatured)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors ${processedJob?.isFeatured
                     ? 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100'
-                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                     }`}
                 >
                   <Star className={`w-4 h-4 ${processedJob?.isFeatured ? 'fill-current' : ''}`} />
@@ -1982,7 +1982,7 @@ const DetailModal: React.FC<{
 
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1995,7 +1995,7 @@ const DetailModal: React.FC<{
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">基本信息</h3>
+                  <h3 className="font-medium text-slate-900 mb-2">基本信息</h3>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">岗位名称:</span> {item.title}</div>
                     <div><span className="font-medium">企业名称:</span> {item.company}</div>
@@ -2008,7 +2008,7 @@ const DetailModal: React.FC<{
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">其他信息</h3>
+                  <h3 className="font-medium text-slate-900 mb-2">其他信息</h3>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">来源:</span> {item.source}</div>
                     <div><span className="font-medium">发布时间:</span> {new Date(item.publishedAt).toLocaleString()}</div>
@@ -2021,7 +2021,7 @@ const DetailModal: React.FC<{
 
               {item.tags && item.tags.length > 0 && (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">技能标签</h3>
+                  <h3 className="font-medium text-slate-900 mb-2">技能标签</h3>
                   <div className="flex flex-wrap gap-2">
                     {item.tags.map((tag, index) => (
                       <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
@@ -2034,7 +2034,7 @@ const DetailModal: React.FC<{
 
               {item.description && (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">岗位描述</h3>
+                  <h3 className="font-medium text-slate-900 mb-2">岗位描述</h3>
 
                   {/* 翻译内容展示 */}
                   {(item as any).translations?.description && (
@@ -2042,13 +2042,13 @@ const DetailModal: React.FC<{
                       <div className="flex items-center gap-2 mb-2 text-blue-800 font-medium">
                         <span className="text-xs bg-blue-200 px-2 py-0.5 rounded text-blue-800">中文翻译</span>
                       </div>
-                      <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                      <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
                         {(item as any).translations.description}
                       </div>
                     </div>
                   )}
 
-                  <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
+                  <div className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-4 rounded-lg">
                     {item.description}
                   </div>
                 </div>
@@ -2056,8 +2056,8 @@ const DetailModal: React.FC<{
 
               {item.requirements && item.requirements.length > 0 && (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">岗位要求</h3>
-                  <ul className="text-sm text-gray-700 space-y-1">
+                  <h3 className="font-medium text-slate-900 mb-2">岗位要求</h3>
+                  <ul className="text-sm text-slate-700 space-y-1">
                     {item.requirements.map((req, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="text-blue-600 mt-1">•</span>
@@ -2070,8 +2070,8 @@ const DetailModal: React.FC<{
 
               {item.benefits && item.benefits.length > 0 && (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">福利待遇</h3>
-                  <ul className="text-sm text-gray-700 space-y-1">
+                  <h3 className="font-medium text-slate-900 mb-2">福利待遇</h3>
+                  <ul className="text-sm text-slate-700 space-y-1">
                     {item.benefits.map((benefit, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="text-green-600 mt-1">•</span>
@@ -2086,7 +2086,7 @@ const DetailModal: React.FC<{
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">基本信息</h3>
+                  <h3 className="font-medium text-slate-900 mb-2">基本信息</h3>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">标题:</span> {item.title}</div>
                     <div><span className="font-medium">来源:</span> {item.source}</div>
@@ -2097,7 +2097,7 @@ const DetailModal: React.FC<{
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">链接</h3>
+                  <h3 className="font-medium text-slate-900 mb-2">链接</h3>
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="font-medium">原文链接:</span>
@@ -2117,8 +2117,8 @@ const DetailModal: React.FC<{
 
               {item.description && (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">描述内容</h3>
-                  <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg max-h-60 overflow-y-auto">
+                  <h3 className="font-medium text-slate-900 mb-2">描述内容</h3>
+                  <div className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-4 rounded-lg max-h-60 overflow-y-auto">
                     {item.description}
                   </div>
                 </div>
@@ -2126,8 +2126,8 @@ const DetailModal: React.FC<{
 
               {item.rawContent && (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">原始内容</h3>
-                  <div className="text-xs text-gray-600 bg-gray-50 p-4 rounded-lg max-h-60 overflow-y-auto font-mono">
+                  <h3 className="font-medium text-slate-900 mb-2">原始内容</h3>
+                  <div className="text-xs text-slate-600 bg-slate-50 p-4 rounded-lg max-h-60 overflow-y-auto font-mono">
                     {item.rawContent}
                   </div>
                 </div>

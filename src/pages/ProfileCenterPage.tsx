@@ -243,22 +243,22 @@ export default function ProfileCenterPage() {
             {!latestResume ? (
               <div className="profile-upload-area">
                 <div className="flex flex-col items-center gap-2 text-center max-w-[520px] mx-auto">
-                  <FileText className="w-12 h-12 text-gray-400" />
+                  <FileText className="w-12 h-12 text-slate-400" />
                   <p className="text-lg font-bold">No resume uploaded yet</p>
-                  <p className="text-sm text-gray-500">Drag and drop your file here or click to upload.</p>
+                  <p className="text-sm text-slate-500">Drag and drop your file here or click to upload.</p>
                   <button onClick={() => fileInputRef.current?.click()} className="profile-apply-btn" style={{ width: '240px', height: '40px' }}>
                     <Upload className="w-4 h-4 mr-2" />Upload Resume
                   </button>
-                  <p className="text-xs text-gray-500">支持 PDF、DOC、DOCX、TXT</p>
+                  <p className="text-xs text-slate-500">支持 PDF、DOC、DOCX、TXT</p>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-xl border">
+                <div className="p-4 bg-slate-50 rounded-xl border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <FileText className="w-5 h-5 text-[var(--profile-primary)]" />
-                      <span className="font-medium text-gray-900">{latestResume.name}</span>
+                      <span className="font-medium text-slate-900">{latestResume.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -281,14 +281,14 @@ export default function ProfileCenterPage() {
                 </div>
                 {resumeText && (
                   <div className="rounded-xl border p-4 h-[360px] overflow-auto bg-white">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-800">{resumeText}</pre>
+                    <pre className="whitespace-pre-wrap text-sm text-slate-800">{resumeText}</pre>
                   </div>
                 )}
               </div>
             )}
             <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleUpload} className="hidden" />
             {isUploading && (
-              <div className="mt-4 text-sm text-gray-500">正在上传并分析...</div>
+              <div className="mt-4 text-sm text-slate-500">正在上传并分析...</div>
             )}
           </div>
         </div>
@@ -306,7 +306,7 @@ export default function ProfileCenterPage() {
                 <CheckCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
                 <div className="flex-1">
                   <h4 className="font-bold text-base">Strengthen Your Action Verbs</h4>
-                  <p className="text-sm text-gray-600 mt-1">Use powerful verbs to describe your accomplishments.</p>
+                  <p className="text-sm text-slate-600 mt-1">Use powerful verbs to describe your accomplishments.</p>
                   <button className="text-sm font-medium text-[var(--profile-primary)] mt-2">Learn More</button>
                 </div>
               </div>
@@ -316,7 +316,7 @@ export default function ProfileCenterPage() {
                 <AlertCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
                 <div className="flex-1">
                   <h4 className="font-bold text-base">Add Quantifiable Results</h4>
-                  <p className="text-sm text-gray-600 mt-1">Include numbers and data to demonstrate your impact.</p>
+                  <p className="text-sm text-slate-600 mt-1">Include numbers and data to demonstrate your impact.</p>
                   <button className="text-sm font-medium text-[var(--profile-primary)] mt-2">Show Example</button>
                 </div>
               </div>
@@ -326,7 +326,7 @@ export default function ProfileCenterPage() {
                 <AlertCircle className="w-5 h-5 text-[var(--profile-primary)] mt-1" />
                 <div className="flex-1">
                   <h4 className="font-bold text-base">ATS Compatibility Check</h4>
-                  <p className="text-sm text-gray-600 mt-1">Ensure your resume is formatted to pass ATS.</p>
+                  <p className="text-sm text-slate-600 mt-1">Ensure your resume is formatted to pass ATS.</p>
                   <button className="text-sm font-medium text-[var(--profile-primary)] mt-2">Learn More</button>
                 </div>
               </div>
@@ -355,14 +355,14 @@ export default function ProfileCenterPage() {
           <div className="space-y-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-24 rounded-xl bg-gray-100" />
+                <div className="h-24 rounded-xl bg-slate-100" />
               </div>
             ))}
           </div>
         ) : favoritesWithStatus.length === 0 ? (
           <div className="profile-upload-area">
             <p className="text-lg font-bold">还没有收藏职位</p>
-            <p className="text-sm text-gray-600">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
+            <p className="text-sm text-slate-600">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -513,19 +513,19 @@ export default function ProfileCenterPage() {
             <div className="profile-nav-title">Personal Center</div>
             <div className="profile-nav" role="tablist" aria-label="个人中心切换">
               <button className={`profile-nav-item ${tab === 'resume' ? 'active' : ''}`} role="tab" aria-selected={tab === 'resume'} onClick={() => switchTab('resume')}>
-                <FileText className={`w-5 h-5 ${tab === 'resume' ? 'text-white' : 'text-gray-400'}`} />
+                <FileText className={`w-5 h-5 ${tab === 'resume' ? 'text-white' : 'text-slate-400'}`} />
                 <span className="text-sm font-medium">我的简历</span>
               </button>
               <button className={`profile-nav-item ${tab === 'favorites' ? 'active' : ''}`} role="tab" aria-selected={tab === 'favorites'} onClick={() => switchTab('favorites')}>
-                <Heart className={`w-5 h-5 ${tab === 'favorites' ? 'text-white' : 'text-gray-400'}`} />
+                <Heart className={`w-5 h-5 ${tab === 'favorites' ? 'text-white' : 'text-slate-400'}`} />
                 <span className="text-sm font-medium">我的收藏</span>
               </button>
               <button className={`profile-nav-item ${tab === 'feedback' ? 'active' : ''}`} role="tab" aria-selected={tab === 'feedback'} onClick={() => switchTab('feedback')}>
-                <MessageSquare className={`w-5 h-5 ${tab === 'feedback' ? 'text-white' : 'text-gray-400'}`} />
+                <MessageSquare className={`w-5 h-5 ${tab === 'feedback' ? 'text-white' : 'text-slate-400'}`} />
                 <span className="text-sm font-medium">我要反馈</span>
               </button>
               <button className={`profile-nav-item ${tab === 'recommend' ? 'active' : ''}`} role="tab" aria-selected={tab === 'recommend'} onClick={() => switchTab('recommend')}>
-                <ThumbsUp className={`w-5 h-5 ${tab === 'recommend' ? 'text-white' : 'text-gray-400'}`} />
+                <ThumbsUp className={`w-5 h-5 ${tab === 'recommend' ? 'text-white' : 'text-slate-400'}`} />
                 <span className="text-sm font-medium">我要推荐</span>
               </button>
             </div>
@@ -552,7 +552,7 @@ export default function ProfileCenterPage() {
                     <p className="text-xs opacity-90 mb-3 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
                     <button 
                         onClick={() => navigate('/membership')}
-                        className="w-full py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                        className="w-full py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
                     >
                         立即开通
                     </button>

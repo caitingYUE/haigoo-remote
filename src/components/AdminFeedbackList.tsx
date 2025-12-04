@@ -53,7 +53,7 @@ export default function AdminFeedbackList() {
             <div className="card">
                 <div className="card-header">
                     <h2>用户反馈列表</h2>
-                    <span className="text-sm text-gray-500">共 {feedbacks.length} 条</span>
+                    <span className="text-sm text-slate-500">共 {feedbacks.length} 条</span>
                 </div>
                 <div className="card-content">
                     <div className="table-wrapper">
@@ -70,12 +70,12 @@ export default function AdminFeedbackList() {
                             <tbody>
                                 {feedbacks.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="text-center py-8 text-gray-500">暂无反馈数据</td>
+                                        <td colSpan={5} className="text-center py-8 text-slate-500">暂无反馈数据</td>
                                     </tr>
                                 ) : (
                                     feedbacks.map(feedback => (
                                         <tr key={feedback.id}>
-                                            <td className="text-sm text-gray-500">
+                                            <td className="text-sm text-slate-500">
                                                 {new Date(feedback.createdAt).toLocaleString()}
                                             </td>
                                             <td>
@@ -93,16 +93,16 @@ export default function AdminFeedbackList() {
                                                 )}
                                             </td>
                                             <td className="max-w-md">
-                                                <div className="text-sm text-gray-900 break-words">{feedback.content}</div>
+                                                <div className="text-sm text-slate-900 break-words">{feedback.content}</div>
                                             </td>
-                                            <td className="text-sm text-gray-500">
+                                            <td className="text-sm text-slate-500">
                                                 {feedback.contact || '-'}
                                             </td>
                                             <td className="text-sm">
                                                 {feedback.jobId ? (
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">Job ID: {feedback.jobId}</span>
-                                                        {feedback.source && <span className="text-xs text-gray-500">来源: {feedback.source}</span>}
+                                                        <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Job ID: {feedback.jobId}</span>
+                                                        {feedback.source && <span className="text-xs text-slate-500">来源: {feedback.source}</span>}
                                                         {feedback.sourceUrl && (
                                                             <a href={feedback.sourceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs">
                                                                 查看原始链接
@@ -110,7 +110,7 @@ export default function AdminFeedbackList() {
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-gray-400">-</span>
+                                                    <span className="text-slate-400">-</span>
                                                 )}
                                             </td>
                                         </tr>

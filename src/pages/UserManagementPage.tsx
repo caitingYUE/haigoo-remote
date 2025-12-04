@@ -222,60 +222,60 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* 页面标题 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">用户管理</h1>
-          <p className="text-gray-600">管理和监控平台所有注册用户</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">用户管理</h1>
+          <p className="text-slate-600">管理和监控平台所有注册用户</p>
         </div>
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">总用户数</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-sm text-slate-600 mb-1">总用户数</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
               </div>
               <Users className="w-10 h-10 text-blue-500 opacity-20" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">活跃用户</p>
+                <p className="text-sm text-slate-600 mb-1">活跃用户</p>
                 <p className="text-2xl font-bold text-green-600">{stats.active}</p>
               </div>
               <CheckCircle className="w-10 h-10 text-green-500 opacity-20" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">已停用</p>
+                <p className="text-sm text-slate-600 mb-1">已停用</p>
                 <p className="text-2xl font-bold text-red-600">{stats.suspended}</p>
               </div>
               <Ban className="w-10 h-10 text-red-500 opacity-20" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">今日新增</p>
+                <p className="text-sm text-slate-600 mb-1">今日新增</p>
                 <p className="text-2xl font-bold text-purple-600">{stats.newToday}</p>
               </div>
               <TrendingUp className="w-10 h-10 text-purple-500 opacity-20" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">本周新增</p>
+                <p className="text-sm text-slate-600 mb-1">本周新增</p>
                 <p className="text-2xl font-bold text-orange-600">{stats.newThisWeek}</p>
               </div>
               <Activity className="w-10 h-10 text-orange-500 opacity-20" />
@@ -284,18 +284,18 @@ export default function UserManagementPage() {
         </div>
 
         {/* 筛选和操作栏 */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border border-gray-200">
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border border-slate-200">
           <div className="flex flex-col md:flex-row gap-4">
             {/* 搜索框 */}
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
                 <input
                   type="text"
                   placeholder="搜索用户（邮箱、用户名、UUID）"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -304,7 +304,7 @@ export default function UserManagementPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
             >
               <option value="all">全部状态</option>
               <option value="active">活跃</option>
@@ -315,7 +315,7 @@ export default function UserManagementPage() {
             <select
               value={providerFilter}
               onChange={(e) => setProviderFilter(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
             >
               <option value="all">全部方式</option>
               <option value="email">邮箱登录</option>
@@ -325,7 +325,7 @@ export default function UserManagementPage() {
             {/* 操作按钮 */}
             <button
               onClick={fetchUsers}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
               刷新
@@ -342,35 +342,35 @@ export default function UserManagementPage() {
         </div>
 
         {/* 用户列表 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           {loading ? (
             <div className="p-12 text-center">
-              <RefreshCw className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">加载中...</p>
+              <RefreshCw className="w-8 h-8 text-slate-400 animate-spin mx-auto mb-4" />
+              <p className="text-slate-600">加载中...</p>
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="p-12 text-center">
-              <UserIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">暂无用户数据</p>
+              <UserIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-600">暂无用户数据</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户信息</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UUID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">认证方式</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">注册时间</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最后登录</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">收藏岗位</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">用户信息</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">UUID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">认证方式</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">注册时间</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">最后登录</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">收藏岗位</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {user.avatar ? (
@@ -381,24 +381,24 @@ export default function UserManagementPage() {
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-gray-900">{user.username}</p>
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <p className="font-medium text-slate-900">{user.username}</p>
+                            <div className="flex items-center gap-1 text-sm text-slate-600">
                               <Mail className="w-3 h-3" />
                               {user.email}
                             </div>
                             {user.profile?.title && (
-                              <p className="text-xs text-gray-500">{user.profile.title}</p>
+                              <p className="text-xs text-slate-500">{user.profile.title}</p>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono text-gray-700">
+                        <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono text-slate-700">
                           {user.id}
                         </code>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${user.authProvider === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${user.authProvider === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
                           }`}>
                           {user.authProvider === 'google' ? 'Google' : '邮箱'}
                         </span>
@@ -406,26 +406,26 @@ export default function UserManagementPage() {
                           <CheckCircle className="inline-block w-4 h-4 text-green-500 ml-2" />
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-slate-600">
                         <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <Calendar className="w-4 h-4 text-slate-400" />
                           {formatDate(user.createdAt)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-slate-600">
                         <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4 text-gray-400" />
+                          <Clock className="w-4 h-4 text-slate-400" />
                           {user.lastLoginAt ? formatDate(user.lastLoginAt) : '-'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-slate-600">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1">
-                            <Bookmark className="w-4 h-4 text-gray-400" />
+                            <Bookmark className="w-4 h-4 text-slate-400" />
                             <span className="font-medium">{(user as any).favoritesCount || 0}</span>
                           </div>
                           {(user as any).favorites && (user as any).favorites.length > 0 && (
-                            <div className="text-xs text-gray-400 max-w-[150px] truncate" title={(user as any).favorites.join(', ')}>
+                            <div className="text-xs text-slate-400 max-w-[150px] truncate" title={(user as any).favorites.join(', ')}>
                               {(user as any).favorites.join(', ')}
                             </div>
                           )}
@@ -434,7 +434,7 @@ export default function UserManagementPage() {
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-700' :
                           user.status === 'suspended' ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100 text-gray-700'
+                            'bg-slate-100 text-slate-700'
                           }`}>
                           {user.status === 'active' ? '活跃' : user.status === 'suspended' ? '已停用' : user.status}
                         </span>
@@ -445,7 +445,7 @@ export default function UserManagementPage() {
                             <button
                               disabled={updatingId === user.id}
                               onClick={() => updateUserStatus(user.id, 'suspended')}
-                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.id ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.id ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'
                                 }`}
                             >
                               <Ban className="w-4 h-4" /> 停用
@@ -454,7 +454,7 @@ export default function UserManagementPage() {
                             <button
                               disabled={updatingId === user.id}
                               onClick={() => updateUserStatus(user.id, 'active')}
-                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.id ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-green-50 border-green-200 text-green-600'
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.id ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-green-50 border-green-200 text-green-600'
                                 }`}
                             >
                               <CheckCircle className="w-4 h-4" /> 启用
@@ -463,7 +463,7 @@ export default function UserManagementPage() {
                           <button
                             disabled={updatingId === user.id}
                             onClick={() => openEdit(user)}
-                            className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-gray-50"
+                            className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-slate-50"
                           >
                             <Eye className="w-4 h-4" /> 编辑
                           </button>
@@ -487,7 +487,7 @@ export default function UserManagementPage() {
         </div>
 
         {/* 分页信息 */}
-        <div className="mt-4 text-center text-sm text-gray-600">
+        <div className="mt-4 text-center text-sm text-slate-600">
           显示 {filteredUsers.length} / {users.length} 个用户
         </div>
       </div>
@@ -498,11 +498,11 @@ export default function UserManagementPage() {
             <h3 className="text-lg font-semibold mb-4">编辑用户</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-700 mb-2">用户名</label>
+                <label className="block text-sm text-slate-700 mb-2">用户名</label>
                 <input
                   value={editUsername}
                   onChange={(e) => setEditUsername(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg"
                 />
               </div>
               <label className="inline-flex items-center gap-2">
@@ -511,13 +511,13 @@ export default function UserManagementPage() {
               </label>
 
               {/* 求职期望展示 */}
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <h4 className="font-semibold text-sm mb-3 text-gray-900">求职期望</h4>
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <h4 className="font-semibold text-sm mb-3 text-slate-900">求职期望</h4>
                 {editingUser?.jobPreferences ? (
                   <div className="space-y-3 text-sm">
                     {editingUser.jobPreferences.jobTypes?.length > 0 && (
                       <div>
-                        <span className="text-gray-500 block mb-1">职位类型</span>
+                        <span className="text-slate-500 block mb-1">职位类型</span>
                         <div className="flex flex-wrap gap-1">
                           {editingUser.jobPreferences.jobTypes.map(t => (
                             <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">{t}</span>
@@ -527,7 +527,7 @@ export default function UserManagementPage() {
                     )}
                     {editingUser.jobPreferences.industries?.length > 0 && (
                       <div>
-                        <span className="text-gray-500 block mb-1">行业类型</span>
+                        <span className="text-slate-500 block mb-1">行业类型</span>
                         <div className="flex flex-wrap gap-1">
                           {editingUser.jobPreferences.industries.map(t => (
                             <span key={t} className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs">{t}</span>
@@ -537,7 +537,7 @@ export default function UserManagementPage() {
                     )}
                     {editingUser.jobPreferences.locations?.length > 0 && (
                       <div>
-                        <span className="text-gray-500 block mb-1">地点偏好</span>
+                        <span className="text-slate-500 block mb-1">地点偏好</span>
                         <div className="flex flex-wrap gap-1">
                           {editingUser.jobPreferences.locations.map(t => (
                             <span key={t} className="px-2 py-0.5 bg-green-50 text-green-700 rounded text-xs">{t}</span>
@@ -547,7 +547,7 @@ export default function UserManagementPage() {
                     )}
                     {editingUser.jobPreferences.levels?.length > 0 && (
                       <div>
-                        <span className="text-gray-500 block mb-1">级别偏好</span>
+                        <span className="text-slate-500 block mb-1">级别偏好</span>
                         <div className="flex flex-wrap gap-1">
                           {editingUser.jobPreferences.levels.map(t => (
                             <span key={t} className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded text-xs">{t}</span>
@@ -556,13 +556,13 @@ export default function UserManagementPage() {
                       </div>
                     )}
                     {editingUser.preferencesUpdatedAt && (
-                      <div className="text-xs text-gray-400 mt-2">
+                      <div className="text-xs text-slate-400 mt-2">
                         更新于：{new Date(editingUser.preferencesUpdatedAt).toLocaleString('zh-CN')}
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400 italic">未设置求职期望</p>
+                  <p className="text-sm text-slate-400 italic">未设置求职期望</p>
                 )}
               </div>
             </div>

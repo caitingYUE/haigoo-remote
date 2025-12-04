@@ -123,7 +123,7 @@ export default function Header() {
               to="/"
               className={`text-base font-medium transition-colors ${location.pathname === '/'
                 ? 'text-[#3182CE] font-semibold'
-                : 'text-gray-600 hover:text-gray-900'
+                : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
               首页
@@ -133,7 +133,7 @@ export default function Header() {
               to="/jobs"
               className={`text-base font-medium transition-colors ${location.pathname === '/jobs'
                 ? 'text-[#3182CE] font-semibold'
-                : 'text-gray-600 hover:text-gray-900'
+                : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
               远程岗位
@@ -143,7 +143,7 @@ export default function Header() {
               to="/trusted-companies"
               className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
                 ? 'text-[#3182CE] font-semibold'
-                : 'text-gray-600 hover:text-gray-900'
+                : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
               精选企业
@@ -175,7 +175,7 @@ export default function Header() {
               <>
                 {/* Notifications */}
                 <button
-                  className="p-3 text-gray-400 hover:text-gray-600 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="p-3 text-slate-400 hover:text-slate-600 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label="通知，有 1 条新消息"
                   title="通知"
                 >
@@ -196,7 +196,7 @@ export default function Header() {
                 >
                   <button
                     ref={userMenuButtonRef}
-                    className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2"
+                    className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2"
                     onKeyDown={handleUserMenuKeyDown}
                     aria-expanded={isUserMenuOpen}
                     aria-haspopup="menu"
@@ -228,13 +228,13 @@ export default function Header() {
                   {/* 优化下拉菜单设计 */}
                   {isUserMenuOpen && (
                     <div
-                      className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
+                      className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
                       role="menu"
                       aria-labelledby="user-menu-button"
                       aria-orientation="vertical"
                     >
                       {/* 用户信息 */}
-                      <div className="px-4 py-3 border-b border-gray-100" role="presentation">
+                      <div className="px-4 py-3 border-b border-slate-100" role="presentation">
                         <div className="flex items-center space-x-3">
                           {user?.avatar ? (
                             <img
@@ -252,8 +252,8 @@ export default function Header() {
                             </div>
                           )}
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{user?.username || '用户'}</p>
-                            <p className="text-xs text-gray-500">{user?.profile?.title || user?.email}</p>
+                            <p className="text-sm font-medium text-slate-900">{user?.username || '用户'}</p>
+                            <p className="text-xs text-slate-500">{user?.profile?.title || user?.email}</p>
                           </div>
                         </div>
                       </div>
@@ -267,7 +267,7 @@ export default function Header() {
                               to={item.href}
                               className={`block px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none rounded-lg ${location.pathname === item.href || location.search.includes(item.href.split('?')[1])
                                 ? 'bg-[#FF6B35]/10 text-[#FF6B35] font-medium'
-                                : 'text-gray-700 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35]'
+                                : 'text-slate-700 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35]'
                                 }`}
                               role="menuitem"
                               tabIndex={isUserMenuOpen ? 0 : -1}
@@ -279,7 +279,7 @@ export default function Header() {
                       </div>
 
                       {/* 退出登录 - 只保留文字 */}
-                      <div className="border-t border-gray-100 pt-1" role="group" aria-label="账户操作">
+                      <div className="border-t border-slate-100 pt-1" role="group" aria-label="账户操作">
                         <button
                           onClick={handleLogout}
                           className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 focus:outline-none focus:bg-red-50"
@@ -301,7 +301,7 @@ export default function Header() {
               ref={mobileMenuButtonRef}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               onKeyDown={(e) => handleKeyDown(e, () => setIsMenuOpen(!isMenuOpen))}
-              className="md:hidden p-3 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-haigoo-primary min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="md:hidden p-3 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-haigoo-primary min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
               aria-label={isMenuOpen ? '关闭移动菜单' : '打开移动菜单'}
@@ -319,12 +319,12 @@ export default function Header() {
             role="navigation"
             aria-label="移动端导航"
           >
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-slate-200">
               {/* 顶部三个 Tab 已移除 */}
 
               {/* 移动端用户菜单 */}
               {isAuthenticated && (
-                <div className="border-t border-gray-200 pt-2 mt-2" role="region" aria-label="用户信息和操作">
+                <div className="border-t border-slate-200 pt-2 mt-2" role="region" aria-label="用户信息和操作">
                   <div className="px-3 py-2">
                     <div className="flex items-center space-x-3 mb-3">
                       {user?.avatar ? (
@@ -343,8 +343,8 @@ export default function Header() {
                         </div>
                       )}
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{user?.username || '用户'}</p>
-                        <p className="text-xs text-gray-500">{user?.profile?.title || user?.email}</p>
+                        <p className="text-sm font-medium text-slate-900">{user?.username || '用户'}</p>
+                        <p className="text-xs text-slate-500">{user?.profile?.title || user?.email}</p>
                       </div>
                     </div>
 
@@ -353,7 +353,7 @@ export default function Header() {
                         <Link
                           key={item.id}
                           to={item.href}
-                          className="block px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg"
+                          className="block px-3 py-2 text-base font-medium text-slate-500 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg"
                           onClick={() => setIsMenuOpen(false)}
                         >
                           {item.label}
@@ -377,10 +377,10 @@ export default function Header() {
 
               {/* 移动端登录/注册按钮 */}
               {!isAuthenticated && (
-                <div className="border-t border-gray-200 pt-2 mt-2 space-y-2 px-3">
+                <div className="border-t border-slate-200 pt-2 mt-2 space-y-2 px-3">
                   <Link
                     to="/login"
-                    className="block w-full text-center px-4 py-3 text-base font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+                    className="block w-full text-center px-4 py-3 text-base font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-all"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     登录

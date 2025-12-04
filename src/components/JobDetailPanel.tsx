@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { segmentJobDescription } from '../utils/translation'
 import { SingleLineTags } from './SingleLineTags'
 import { MembershipUpgradeModal } from './MembershipUpgradeModal'
-import { processedJobsService } from '../services/processed-jobs-service'
+// import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 
 interface JobDetailPanelProps {
@@ -166,7 +166,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Header */}
-            <header className="flex-shrink-0 border-b border-gray-100 px-6 py-4">
+            <header className="flex-shrink-0 border-b border-slate-100 px-6 py-4">
                 <div className="flex items-start justify-between mb-2">
                     <h1 className="text-xl font-bold text-slate-900 flex-1 pr-4">
                         {displayText(job.title, job.translations?.title)}
@@ -209,7 +209,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 <div className="px-6">
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
-                        <section key={index} className="py-4 border-b border-gray-100">
+                        <section key={index} className="py-4 border-b border-slate-100">
                             <div className="flex items-center justify-between mb-3">
                                 <h3 className="text-base font-semibold text-slate-900">
                                     {displayText(section.title)}
@@ -267,7 +267,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Skills/Tags */}
                     {(((job as any).tags && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0)) && (
-                        <section className="py-4 border-b border-gray-100">
+                        <section className="py-4 border-b border-slate-100">
                             <h3 className="text-base font-semibold text-slate-900 mb-3">
                                 技能要求
                             </h3>
@@ -371,7 +371,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             </div>
                             {feedbackMessage && <div className="text-sm text-blue-600">{feedbackMessage}</div>}
                             <div className="flex justify-end gap-2">
-                                <button onClick={() => setIsFeedbackOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+                                <button onClick={() => setIsFeedbackOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                                 <button onClick={submitFeedback} disabled={feedbackSubmitting} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">提交</button>
                             </div>
                         </div>

@@ -50,26 +50,26 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
           <div className="max-w-md w-full">
             <div className="card p-8 text-center">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertTriangle className="w-8 h-8 text-red-600" />
               </div>
               
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              <h1 className="text-2xl font-bold text-slate-900 mb-4">
                 出现了一些问题
               </h1>
               
-              <p className="text-gray-600 mb-6">
+              <p className="text-slate-600 mb-6">
                 抱歉，页面遇到了意外错误。请尝试刷新页面或返回首页。
               </p>
 
               {/* Development mode error details */}
               {this.state.error && (
-                <div className="mb-6 p-4 bg-gray-100 rounded-lg text-left">
-                  <h3 className="font-semibold text-gray-900 mb-2">错误详情：</h3>
-                  <pre className="text-xs text-gray-700 overflow-auto max-h-32">
+                <div className="mb-6 p-4 bg-slate-100 rounded-lg text-left">
+                  <h3 className="font-semibold text-slate-900 mb-2">错误详情：</h3>
+                  <pre className="text-xs text-slate-700 overflow-auto max-h-32">
                     {this.state.error.toString()}
                     {this.state.errorInfo?.componentStack && 
                       this.state.errorInfo.componentStack.length > 0 && 
