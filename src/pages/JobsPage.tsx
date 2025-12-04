@@ -14,6 +14,7 @@ import { usePageCache } from '../hooks/usePageCache'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { JobPreferenceModal, JobPreferences } from '../components/JobPreferenceModal'
+import { batchCalculateMatches, JobMatchResult } from '../services/job-matching-service'
 
 // Industry Options
 // const INDUSTRY_OPTIONS = [
@@ -119,6 +120,10 @@ export default function JobsPage() {
   const [isPreferenceModalOpen, setIsPreferenceModalOpen] = useState(false)
   const [userPreferences, setUserPreferences] = useState<JobPreferences | null>(null)
 
+  // 匹配分数缓存
+  const [matchScores, setMatchScores] = useState<Record<string, number>>({})
+  const [matchScoresLoading, setMatchScoresLoading] = useState(false)
+
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
@@ -127,7 +132,6 @@ export default function JobsPage() {
   const {
     data: jobs,
     loading,
-    refresh,
     isFromCache
   } = usePageCache<Job[]>('jobs-all-list-full-v1', {
     fetcher: async () => {
@@ -152,6 +156,45 @@ export default function JobsPage() {
     }
   })
 
+  const canonicalJobs = useMemo(() => {
+    const best: Record<string, Job> = {}
+    const regions: Record<string, Set<string>> = {}
+    const normalizeUrl = (u: string) => {
+      if (!u) return ''
+      try {
+        const url = new URL(u)
+        return (url.hostname + url.pathname).toLowerCase().replace(/\/+$/, '')
+      } catch {
+        const s = u.split('?')[0]
+        return s.toLowerCase().replace(/\/+$/, '')
+      }
+    }
+    const keyOf = (j: Job) => {
+      const k = normalizeUrl((j as any).sourceUrl || (j as any).url || '')
+      return k || j.id
+    }
+    const score = (j: Job) => {
+      const t = j.translations?.title ? 1 : 0
+      const d = (j.description || '').length
+      const p = new Date(j.postedAt).getTime() || 0
+      return t * 1_000_000 + d * 1_000 + p
+    }
+      ; (jobs || []).forEach(j => {
+        const k = keyOf(j)
+        if (!best[k] || score(j) >= score(best[k])) best[k] = j
+        const set = regions[k] || new Set<string>()
+        if (j.region) set.add(j.region)
+        regions[k] = set
+      })
+    return Object.entries(best).map(([k, j]) => {
+      const set = regions[k] || new Set<string>()
+      const hasDom = set.has('domestic')
+      const hasOver = set.has('overseas')
+      const merged = hasDom && hasOver ? 'both' : hasDom ? 'domestic' : hasOver ? 'overseas' : j.region
+      return { ...j, region: merged }
+    })
+  }, [jobs])
+
   // 从URL参数中获取初始搜索词
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -161,28 +204,7 @@ export default function JobsPage() {
     }
   }, [location.search])
 
-  // 监听处理后岗位数据的更新事件
-  useEffect(() => {
-    const handleUpdated = () => {
-      console.log('收到岗位数据更新事件，重新加载收藏和岗位...')
-      refresh()
-        ; (async () => {
-          if (!token) return
-          try {
-            const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
-            if (resp.ok) {
-              const data = await resp.json()
-              const ids: string[] = (data?.favorites || []).map((f: any) => f.id)
-              setSavedJobs(new Set(ids))
-            }
-          } catch { }
-        })()
-    }
-    window.addEventListener('processed-jobs-updated', handleUpdated)
-    return () => {
-      window.removeEventListener('processed-jobs-updated', handleUpdated)
-    }
-  }, [refresh, token])
+
 
   const toggleSaveJob = async (jobId: string) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
@@ -231,7 +253,7 @@ export default function JobsPage() {
   const [companyMap, setCompanyMap] = useState<Record<string, TrustedCompany>>({})
   useEffect(() => {
     const loadCompanies = async () => {
-      const ids = Array.from(new Set((jobs || []).map(j => j.companyId).filter(Boolean))) as string[]
+      const ids = Array.from(new Set(canonicalJobs.map(j => j.companyId).filter(Boolean))) as string[]
       if (ids.length === 0) { setCompanyMap({}); return }
       const results = await Promise.all(ids.map(id => trustedCompaniesService.getCompanyById(id)))
       const map: Record<string, TrustedCompany> = {}
@@ -239,24 +261,53 @@ export default function JobsPage() {
       setCompanyMap(map)
     }
     loadCompanies()
-  }, [jobs])
+  }, [canonicalJobs])
+
+  // 加载个性化匹配分数
+  useEffect(() => {
+    const loadMatchScores = async () => {
+      if (!isAuthenticated || !token || canonicalJobs.length === 0) return
+
+      setMatchScoresLoading(true)
+      try {
+        // 取前100个岗位计算匹配分数
+        const jobIds = canonicalJobs.slice(0, 100).map(j => j.id)
+        const results = await batchCalculateMatches(token, jobIds)
+
+        const scores: Record<string, number> = {}
+        results.forEach(r => {
+          if (r.jobId && typeof r.matchScore === 'number') {
+            scores[r.jobId] = r.matchScore
+          }
+        })
+        setMatchScores(scores)
+        console.log(`✅ 加载了 ${Object.keys(scores).length} 个岗位的匹配分数`)
+      } catch (error) {
+        console.error('加载匹配分数失败:', error)
+      } finally {
+        setMatchScoresLoading(false)
+      }
+    }
+
+    loadMatchScores()
+  }, [isAuthenticated, token, canonicalJobs])
 
   // Derived Data for Dynamic Filters - now using all jobs instead of regionJobs
 
   const locationOptions = useMemo(() => {
     const locs = new Set<string>()
-    jobs?.forEach(j => {
+    canonicalJobs.forEach(j => {
       if (j.location) {
         const extracted = extractLocations(j.location)
         extracted.forEach(loc => locs.add(loc))
       }
     })
     return Array.from(locs).sort().map(l => ({ label: l, value: l }))
-  }, [jobs])
+  }, [canonicalJobs])
 
   const industryOptions = useMemo(() => {
     const inds = new Set<string>()
-    jobs?.forEach(j => {
+    canonicalJobs.forEach(j => {
       let ind = ''
       if (j.companyId) {
         const company = companyMap[j.companyId]
@@ -279,19 +330,19 @@ export default function JobsPage() {
       if (ind) inds.add(ind)
     })
     return Array.from(inds).sort().map(i => ({ label: i, value: i }))
-  }, [jobs, companyMap])
+  }, [canonicalJobs, companyMap])
 
   const typeOptions = useMemo(() => {
     const types = new Set<string>()
-    jobs?.forEach(j => {
+    canonicalJobs.forEach(j => {
       if (j.type) types.add(j.type)
     })
     return Array.from(types).sort().map(t => ({ label: t, value: t }))
-  }, [jobs])
+  }, [canonicalJobs])
 
   const topCategories = useMemo(() => {
     const counts: Record<string, number> = {}
-    jobs?.forEach(j => {
+    canonicalJobs.forEach(j => {
       if (j.category) {
         counts[j.category] = (counts[j.category] || 0) + 1
       }
@@ -300,10 +351,10 @@ export default function JobsPage() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 20)
       .map(e => e[0])
-  }, [jobs])
+  }, [canonicalJobs])
 
   const filteredJobs = useMemo(() => {
-    return (jobs || []).filter(job => {
+    return canonicalJobs.filter(job => {
       const matchesSearch = searchTerm === '' ||
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (job.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -329,7 +380,7 @@ export default function JobsPage() {
 
       // 区域限制筛选
       const matchesRegion = filters.regionType.length === 0 ||
-        (job.region && filters.regionType.includes(job.region))
+        (job.region && (filters.regionType.includes(job.region) || (job.region === 'both' && filters.regionType.length > 0)))
 
       // 岗位来源筛选
       let matchesSource = filters.sourceType.length === 0
@@ -372,13 +423,21 @@ export default function JobsPage() {
 
       return matchesSearch && matchesType && matchesJobType && matchesCategory && matchesLevel && matchesLocation && matchesIndustry && matchesRegion && matchesSource && matchesTrusted && matchesNew && matchesSalary
     }).sort((a, b) => {
+      // 优先级: 内推 > 人工精选 > 匹配分数 > 发布时间
+      // 1. 内推岗位优先
       if (a.canRefer && !b.canRefer) return -1
       if (!a.canRefer && b.canRefer) return 1
+      // 2. 人工精选次之
       if (a.isTrusted && !b.isTrusted) return -1
       if (!a.isTrusted && b.isTrusted) return 1
+      // 3. 如果有匹配分数,按匹配度排序
+      const scoreA = matchScores[a.id] || 0
+      const scoreB = matchScores[b.id] || 0
+      if (scoreA !== scoreB) return scoreB - scoreA
+      // 4. 按发布时间排序
       return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
     })
-  }, [jobs, searchTerm, filters, companyMap])
+  }, [canonicalJobs, searchTerm, filters, companyMap, matchScores])
 
   // Job Distribution Logic: Limit consecutive jobs from same company to max 2
   const distributedJobs = useMemo(() => {

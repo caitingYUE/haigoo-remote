@@ -4,7 +4,7 @@ export interface Job {
   company?: string  // 可选，避免显示"未知公司"
   location: string
   type: 'full-time' | 'part-time' | 'contract' | 'remote' | 'freelance' | 'internship'
-  region?: 'domestic' | 'overseas'
+  region?: 'domestic' | 'overseas' | 'both'
   salary?: {
     min: number
     max: number

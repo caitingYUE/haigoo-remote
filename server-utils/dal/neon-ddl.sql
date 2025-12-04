@@ -262,3 +262,16 @@ CREATE TABLE payment_records (
 -- ALTER TABLE users ADD COLUMN membership_start_at TIMESTAMP;
 -- ALTER TABLE users ADD COLUMN membership_expire_at TIMESTAMP;
 
+-- 2025-12-05: Add user_job_matches table for caching match results
+CREATE TABLE user_job_matches (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  job_id VARCHAR(255) NOT NULL,
+  match_score INTEGER NOT NULL,  -- 0-100
+  match_details JSONB,           -- 详细分数breakdown
+  calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expires_at TIMESTAMP,          -- 缓存过期时间
+  UNIQUE(user_id, job_id)
+);
+CREATE INDEX idx_matches_user_score ON user_job_matches(user_id, match_score DESC);
+

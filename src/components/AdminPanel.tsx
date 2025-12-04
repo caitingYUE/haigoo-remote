@@ -565,7 +565,7 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
     jobId: string
     title: string
     company: string
-    region?: 'domestic' | 'overseas'
+    region?: 'domestic' | 'overseas' | 'both'
     location: string
     tags: string[]
     hits: { type: 'domestic' | 'overseas' | 'global'; keywords: string[] }

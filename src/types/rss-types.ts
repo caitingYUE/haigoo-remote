@@ -26,7 +26,7 @@ export interface Job {
   status: 'active' | 'inactive' | 'archived';
   createdAt: string;
   updatedAt: string;
-  region?: 'domestic' | 'overseas';
+  region?: 'domestic' | 'overseas' | 'both';
 
   // New Company Sync Fields
   companyIndustry?: string;
