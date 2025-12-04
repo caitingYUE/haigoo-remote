@@ -8,40 +8,35 @@
 
 ### 预发版颜色系统（与首页一致）
 ```css
-/* 来自 src/styles/landing.css */
---brand-blue: #3182CE;     /* 主按钮/高亮 */
---brand-blue-hover: #256bb0;
---brand-navy: #1A365D;     /* 标题/正文主色 */
---brand-teal: #0EA5A3;     /* 辅助强调 */
---brand-orange: #F59F0B;   /* 强调/提示 */
---brand-sand: #F5F5DC;     /* 页面延展底色 */
---brand-blue-10: #EAF3FF;  /* 浅底色 */
---brand-teal-10: #D9F6F3;
---brand-orange-10: #FFEAD1;
---brand-border: #E2E8F0;   /* 边框统一 */
+/* 统一靛青/石板配色 */
+--brand-indigo: #4F46E5;     /* 主按钮/高亮 */
+--brand-indigo-hover: #4338CA;
+--brand-indigo-50: #EEF2FF;   /* 浅底色 */
+--brand-slate-900: #0F172A;   /* 标题/正文主色 */
+--brand-border: #E2E8F0;      /* 边框统一 */
 --landing-bg-start:#A6E3FF;
 --landing-bg-end:#FDE5C7;
 ```
 
-### 1.1 主品牌色
+### 1.1 主品牌色（靛青）
 ```css
---haigoo-primary: #803af2;           /* 主品牌紫色 */
---haigoo-primary-light: #9470ff;     /* 浅色变体 */
---haigoo-primary-dark: #6d28d9;      /* 深色变体 */
+--brand-indigo: #4F46E5;
+--brand-indigo-light: #6366F1;
+--brand-indigo-dark: #4338CA;
 ```
 
-### 1.2 紫色色阶
+### 1.2 靛青色阶
 ```css
---haigoo-purple-50: #f9f7ff;
---haigoo-purple-100: #f3f0ff;
---haigoo-purple-200: #e9e2ff;
---haigoo-purple-300: #d6c9ff;
---haigoo-purple-400: #b8a3ff;
---haigoo-purple-500: #9470ff;
---haigoo-purple-600: #803af2;
---haigoo-purple-700: #7c3aed;
---haigoo-purple-800: #6d28d9;
---haigoo-purple-900: #5b21b6;
+--indigo-50: #EEF2FF;
+--indigo-100: #E0E7FF;
+--indigo-200: #C7D2FE;
+--indigo-300: #A5B4FC;
+--indigo-400: #818CF8;
+--indigo-500: #6366F1;
+--indigo-600: #4F46E5;
+--indigo-700: #4338CA;
+--indigo-800: #3730A3;
+--indigo-900: #312E81;
 ```
 
 ### 1.3 中性色系
@@ -104,8 +99,8 @@
 **样式规范（预发版示例）**:
 ```css
 .card-neutral { background:#FFFFFF; border:1px solid var(--brand-border); border-radius:12px; }
-.badge-primary { background: var(--brand-blue-10); color: var(--brand-blue); }
-.salary-primary { color: var(--brand-orange); font-weight:700; }
+.badge-primary { background: var(--brand-indigo-50); color: var(--brand-indigo); }
+.salary-primary { color: var(--brand-indigo); font-weight:700; }
 ```
 
 #### 2.2.2 普通推荐卡片（4-6位）
@@ -127,7 +122,7 @@
 - **容器**: 白色背景，简洁边框
 - **尺寸**: 标准内边距 `p-6`
 - **公司Logo**: 标准尺寸 `w-12 h-12`
-- **薪资**: 品牌色显示 `text-violet-600`
+- **薪资**: 品牌色显示 `text-indigo-600`
 - **按钮**: 标准样式，无渐变效果
 
 ### 2.3 全部岗位页卡片设计
@@ -199,7 +194,7 @@
 #### 2.7.2 推荐页普通卡片文字层级
 - **职位标题**: `font-bold text-gray-900 dark:text-white text-lg`
 - **公司名称**: `font-medium text-gray-600 dark:text-gray-400`
-- **薪资**: `font-bold text-xl text-violet-600 dark:text-violet-400`
+- **薪资**: `font-bold text-xl text-indigo-600 dark:text-indigo-400`
 - **描述文字**: `text-gray-700 dark:text-gray-300 text-sm`
 - **技能标签**: `text-sm font-medium`
 
@@ -222,8 +217,8 @@
 
 #### 2.8.2 不同卡片类型的薪资样式
 - **推荐页TOP卡片**: 渐变文字效果 + `text-xl` + `font-bold`
-- **推荐页普通卡片**: `text-violet-600 dark:text-violet-400` + `text-xl` + `font-bold`
-- **全部岗位页卡片**: `text-haigoo-primary font-semibold` + `text-sm`
+- **推荐页普通卡片**: `text-indigo-600 dark:text-indigo-400` + `text-xl` + `font-bold`
+- **全部岗位页卡片**: `text-indigo-600 font-semibold` + `text-sm`
 
 ### 2.9 工作类型标签
 
@@ -243,7 +238,7 @@
 ### 2.10 技能标签
 
 #### 2.10.1 标签颜色和样式
-- **主要技能**: `bg-haigoo-primary/10 text-haigoo-primary`
+- **主要技能**: `bg-indigo-50 text-indigo-600`
 - **更多提示**: `bg-gray-100 text-gray-500`
 
 #### 2.10.2 不同卡片类型的技能标签样式
@@ -281,7 +276,7 @@
 .job-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  border-color: #8b5cf6;
+  border-color: #4f46e5;
   transition: all 0.2s ease;
 }
 ```
@@ -291,7 +286,7 @@
 #### 3.2.1 键盘导航支持
 - **Tab键导航**: 所有卡片支持Tab键导航
 - **Enter键激活**: 按Enter键打开职位详情
-- **焦点样式**: `focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2`
+- **焦点样式**: `focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`
 
 #### 3.2.2 不同卡片类型的焦点处理
 - **推荐页TOP卡片**: 更明显的焦点环，`ring-4`
@@ -370,7 +365,7 @@ transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)
 ### 5.2 悬停动画
 - **缩放效果**: `hover:scale-102`
 - **阴影过渡**: `hover:shadow-lg`
-- **颜色过渡**: `hover:text-haigoo-primary`
+- **颜色过渡**: `hover:text-indigo-600`
 
 ## 6. 组件状态管理
 
@@ -435,6 +430,6 @@ transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)
 
 ---
 
-**版本**: v1.0  
-**更新日期**: 2025年11月  
+**版本**: v1.1  
+**更新日期**: 2025年12月  
 **维护者**: Haigoo 开发团队

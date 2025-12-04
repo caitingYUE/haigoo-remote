@@ -13,8 +13,8 @@
 - 主文本：`text-gray-900`（暗色模式 `text-white`）。
 - 次级文本：`text-gray-600`（暗色模式 `text-gray-300`）。
 - 辅助文本：`text-gray-500`（暗色模式 `text-gray-400`）。
-- Tab 选中：文本 `text-gray-900`，底部边线 `border-gray-900`（暗色模式用 `text-white`/`border-white`）。
-- 链接/交互悬停：从 `text-gray-600` 过渡到 `text-gray-900`，`transition-colors duration-200`。
+- Tab 选中：文本 `text-indigo-600`，底部边线 `border-indigo-600`（暗色模式 `text-white`/`border-white`）。
+- 链接/交互悬停：从 `text-slate-600` 过渡到 `text-indigo-600`，`transition-colors duration-200`。
 
 ## 间距与布局
 - 页面容器：`container mx-auto px-4 pt-16 pb-8`。
@@ -24,8 +24,8 @@
 
 ## Tab 规范（无边框文本样式）
 - 结构：按钮元素（`<button>`），无背景与边框，文本为主。
-- 选中态：`text-gray-900 dark:text-white border-b-2 border-gray-900 dark:border-white`。
-- 未选中态：`text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white`。
+- 选中态：`text-indigo-600 dark:text-white border-b-2 border-indigo-600 dark:border-white`。
+- 未选中态：`text-slate-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400`。
 - 动效：`transition-colors duration-200`；切换保持平滑。
 - 统计：在文案后追加中文圆括号计数，如 `客户支持（33）`。
 

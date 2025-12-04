@@ -1,18 +1,14 @@
-# Haigoo 颜色规范文档 v3.0（预发新版）
+# Haigoo 颜色规范文档 v4.0（统一靛青/石板配色）
 
-## 核心品牌色彩系统（与 `src/styles/landing.css` 对齐）
+## 核心品牌色彩系统（与页面现有实现对齐）
 
 ### 主品牌与页面变量
 ```css
---brand-blue: #3182CE;
---brand-blue-hover: #256bb0;
---brand-navy: #1A365D;
---brand-teal: #0EA5A3;
---brand-orange: #F59F0B;
---brand-sand: #F5F5DC;
---brand-blue-10: #EAF3FF;
---brand-teal-10: #D9F6F3;
---brand-orange-10: #FFEAD1;
+--brand-indigo: #4F46E5;
+--brand-indigo-hover: #4338CA;
+--brand-indigo-50: #EEF2FF;
+--brand-slate-900: #0F172A;
+--brand-slate-50: #F8FAFC;
 --brand-border: #E2E8F0;
 --landing-bg-start:#A6E3FF;
 --landing-bg-end:#FDE5C7;
@@ -48,21 +44,21 @@
 .header-grad { background: linear-gradient(180deg, var(--landing-bg-start) 0%, var(--landing-bg-end) 60%, #FFFFFF 100%); }
 ```
 
-### Tab 状态示例（蓝系）
+### Tab 状态示例（靛青系）
 ```css
-.tab-default { background-color: var(--brand-blue-10); color: var(--brand-blue); border: 1px solid var(--brand-border); transition: var(--transition-standard); }
-.tab-hover { background-color: var(--brand-blue); color: #fff; border: 1px solid var(--brand-blue); box-shadow: 0 4px 12px rgba(49,130,206,0.25); transform: translateY(-1px); transition: var(--transition-standard); }
-.tab-active { background-color: var(--brand-blue-hover); color: #fff; border: 1px solid var(--brand-blue-hover); box-shadow: 0 6px 16px rgba(37,107,176,0.35); transform: translateY(-2px) scale(1.02); transition: var(--transition-standard); }
-.tab-focus { outline: 2px solid var(--brand-blue); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(49,130,206,0.1); }
+.tab-default { background-color: var(--brand-indigo-50); color: var(--brand-indigo); border: 1px solid var(--brand-border); transition: var(--transition-standard); }
+.tab-hover { background-color: var(--brand-indigo); color: #fff; border: 1px solid var(--brand-indigo); box-shadow: 0 4px 12px rgba(79,70,229,0.25); transform: translateY(-1px); transition: var(--transition-standard); }
+.tab-active { background-color: var(--brand-indigo-hover); color: #fff; border: 1px solid var(--brand-indigo-hover); box-shadow: 0 6px 16px rgba(67,56,202,0.35); transform: translateY(-2px) scale(1.02); transition: var(--transition-standard); }
+.tab-focus { outline: 2px solid var(--brand-indigo); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(79,70,229,0.1); }
 ```
 
 ### Active状态 (Active State)
 ```css
 .tab-active {
-  background-color: var(--haigoo-primary-active);
+  background-color: var(--brand-indigo-hover);
   color: #FFFFFF;
-  border: 1px solid var(--haigoo-primary-active);
-  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.35);
+  border: 1px solid var(--brand-indigo-hover);
+  box-shadow: 0 6px 16px rgba(67,56,202,0.35);
   transform: translateY(-2px) scale(1.02);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -71,9 +67,9 @@
 ### Focus状态 (Focus State)
 ```css
 .tab-focus {
-  outline: 2px solid var(--haigoo-primary);
+  outline: 2px solid var(--brand-indigo);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
 }
 ```
 
@@ -91,7 +87,7 @@
 
 ### 技能标签统一样式
 ```css
-.tag-skill { background: var(--brand-blue-10); color: var(--brand-blue); }
+.tag-skill { background: var(--brand-indigo-50); color: var(--brand-indigo); }
 .tag-more { background: var(--haigoo-gray-100); color: var(--haigoo-gray-500); }
 ```
 
@@ -118,18 +114,19 @@
 
 ```css
 :root {
-  /* 主品牌色（新版） */
-  --brand-blue: #3182CE;
-  --brand-blue-hover: #256bb0;
-  --brand-navy: #1A365D;
-  --brand-orange: #F59F0B;
-  
+  /* 主品牌色（v4） */
+  --brand-indigo: #4F46E5;
+  --brand-indigo-hover: #4338CA;
+  --brand-indigo-50: #EEF2FF;
+  --brand-slate-900: #0F172A;
+  --brand-slate-50: #F8FAFC;
+
   /* 中性色 */
   --haigoo-gray-50: #F9FAFB;
   --haigoo-gray-100: #F3F4F6;
   --haigoo-gray-200: #E5E7EB;
   --haigoo-gray-700: #374151;
-  
+
   /* 过渡动画 */
   --transition-standard: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-fast: all 0.15s ease-out;
@@ -148,7 +145,7 @@
 
 ---
 
-**版本**: 3.0  
-**更新日期**: 2025年11月  
+**版本**: 4.0  
+**更新日期**: 2025年12月  
 **负责人**: Haigoo 设计与前端团队  
-**审核状态**: 已对齐预发新版
+**审核状态**: 已对齐靛青/石板配色方案
