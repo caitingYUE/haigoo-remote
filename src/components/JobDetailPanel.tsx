@@ -196,8 +196,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                 {typeof job.salary === 'object' && job.salary.min > 0 && (
                     <div className="flex items-center gap-2 mb-3">
-                        <DollarSign className="w-4 h-4 text-orange-600" />
-                        <span className="font-semibold text-orange-600">
+                        <DollarSign className="w-4 h-4 text-indigo-600" />
+                        <span className="font-semibold text-indigo-600">
                             {job.salary.currency}{job.salary.min.toLocaleString()} - {job.salary.currency}{job.salary.max.toLocaleString()}
                         </span>
                     </div>
@@ -228,7 +228,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <button
                                             onClick={handleSave}
                                             className={`p-1.5 rounded transition-all ${isSaved
-                                                ? 'bg-blue-50 text-blue-600'
+                                                ? 'bg-indigo-50 text-indigo-600'
                                                 : 'hover:bg-slate-100 text-slate-500'
                                                 }`}
                                             title={isSaved ? '已收藏' : '收藏'}
@@ -240,7 +240,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             <button
                                                 onClick={() => setShowTranslation(!showTranslation)}
                                                 className={`px-2 py-1 rounded text-xs font-medium transition-all ${showTranslation
-                                                    ? 'bg-blue-50 text-blue-700'
+                                                    ? 'bg-indigo-50 text-indigo-700'
                                                     : 'hover:bg-slate-100 text-slate-600'
                                                     }`}
                                                 title={showTranslation ? '切换到原文' : '切换到翻译'}
@@ -282,12 +282,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Company Card at Bottom */}
                     <section className="py-6">
-                        <div
-                            onClick={handleCompanyClick}
-                            className="border border-slate-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer"
-                        >
+                            <div
+                                onClick={handleCompanyClick}
+                                className="border border-slate-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
+                            >
                             <div className="flex items-start gap-4 mb-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
                                     <span className="text-white font-bold text-lg">
                                         {(job.company || '未知公司').charAt(0)}
                                     </span>
@@ -305,7 +305,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     href={job.sourceUrl}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                                    className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     <ExternalLink className="w-3 h-3" />
@@ -330,7 +330,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             <footer className="border-t border-slate-100 bg-white p-4 flex-shrink-0">
                 <button
                     onClick={handleApply}
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 px-6 rounded-lg font-medium transition-all hover:shadow-md flex items-center justify-center gap-2"
+                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium transition-all hover:shadow-md flex items-center justify-center gap-2"
                 >
                     <Zap className="w-4 h-4" />
                     前往申请，Go！
@@ -369,10 +369,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <label className="block text-sm font-medium mb-2">反馈内容</label>
                                 <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
                             </div>
-                            {feedbackMessage && <div className="text-sm text-blue-600">{feedbackMessage}</div>}
+                            {feedbackMessage && <div className="text-sm text-indigo-600">{feedbackMessage}</div>}
                             <div className="flex justify-end gap-2">
                                 <button onClick={() => setIsFeedbackOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-                                <button onClick={submitFeedback} disabled={feedbackSubmitting} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">提交</button>
+                                <button onClick={submitFeedback} disabled={feedbackSubmitting} className="px-4 py-2 text-sm bg-slate-900 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50">提交</button>
                             </div>
                         </div>
                     </div>

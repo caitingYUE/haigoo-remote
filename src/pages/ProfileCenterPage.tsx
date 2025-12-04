@@ -231,10 +231,10 @@ export default function ProfileCenterPage() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-3">
           <p className="text-base font-medium text-slate-900">Overall Resume Score</p>
-          <p className="text-base font-bold text-[#3182CE]">{Math.max(0, Math.min(100, resumeScore))}%</p>
+          <p className="text-base font-bold text-indigo-600">{Math.max(0, Math.min(100, resumeScore))}%</p>
         </div>
-        <div className="w-full bg-slate-100 rounded-full h-2.5">
-          <div className="bg-[#3182CE] h-2.5 rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, resumeScore))}%` }} />
+          <div className="w-full bg-slate-100 rounded-full h-2.5">
+          <div className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, resumeScore))}%` }} />
         </div>
       </div>
 
@@ -251,7 +251,7 @@ export default function ProfileCenterPage() {
                   <p className="text-sm text-slate-500 mb-6">Drag and drop your file here or click to upload.</p>
                   <button 
                     onClick={() => fileInputRef.current?.click()} 
-                    className="px-6 py-2.5 bg-[#3182CE] text-white rounded-lg hover:bg-[#2b70b5] transition-colors font-medium flex items-center justify-center w-full max-w-[240px]"
+                    className="px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center w-full max-w-[240px]"
                   >
                     <Upload className="w-4 h-4 mr-2" />Upload Resume
                   </button>
@@ -263,13 +263,13 @@ export default function ProfileCenterPage() {
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-[#3182CE]" />
+                      <FileText className="w-5 h-5 text-indigo-600" />
                       <span className="font-medium text-slate-900">{latestResume.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 text-sm font-medium text-[#3182CE] hover:bg-blue-50 rounded-lg transition-colors flex items-center"
+                        className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center"
                         title="重新上传简历"
                       >
                         <Upload className="w-4 h-4 mr-1" />
@@ -304,45 +304,45 @@ export default function ProfileCenterPage() {
           <h3 className="text-lg font-bold text-slate-900 px-1">AI-Powered Suggestions</h3>
           <div className="space-y-3">
             {!resumeText && (
-              <div className="p-4 bg-blue-50 text-blue-700 rounded-lg text-sm border border-blue-100">
+              <div className="p-4 bg-indigo-50 text-indigo-700 rounded-lg text-sm border border-indigo-100">
                 These are example suggestions. Upload your resume to generate personalized recommendations.
               </div>
             )}
             {/* 三张建议卡 */}
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
               <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-[#3182CE] mt-0.5 flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <h4 className="font-bold text-sm text-slate-900">Strengthen Your Action Verbs</h4>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">Use powerful verbs to describe your accomplishments.</p>
-                  <button className="text-xs font-medium text-[#3182CE] mt-2 hover:underline">Learn More</button>
+                  <button className="text-xs font-medium text-indigo-600 mt-2 hover:underline">Learn More</button>
                 </div>
               </div>
             </div>
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#3182CE] mt-0.5 flex-shrink-0" />
+                <AlertCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <h4 className="font-bold text-sm text-slate-900">Add Quantifiable Results</h4>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">Include numbers and data to demonstrate your impact.</p>
-                  <button className="text-xs font-medium text-[#3182CE] mt-2 hover:underline">Show Example</button>
+                  <button className="text-xs font-medium text-indigo-600 mt-2 hover:underline">Show Example</button>
                 </div>
               </div>
             </div>
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#3182CE] mt-0.5 flex-shrink-0" />
+                <AlertCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <h4 className="font-bold text-sm text-slate-900">ATS Compatibility Check</h4>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">Ensure your resume is formatted to pass ATS.</p>
-                  <button className="text-xs font-medium text-[#3182CE] mt-2 hover:underline">Learn More</button>
+                  <button className="text-xs font-medium text-indigo-600 mt-2 hover:underline">Learn More</button>
                 </div>
               </div>
             </div>
 
           </div>
           <div className="flex flex-col gap-3 pt-2">
-            <button className="w-full py-2.5 bg-[#3182CE] text-white rounded-lg hover:bg-[#2b70b5] transition-colors font-medium shadow-sm">
+            <button className="w-full py-2.5 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium shadow-sm">
               Apply Suggestions
             </button>
             <button className="w-full py-2.5 bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium">
@@ -434,7 +434,7 @@ export default function ProfileCenterPage() {
                     type="radio" 
                     checked={accuracy==='accurate'} 
                     onChange={()=>setAccuracy('accurate')}
-                    className="text-[#3182CE] focus:ring-[#3182CE]" 
+                    className="text-indigo-600 focus:ring-indigo-600" 
                   />
                   <span className="text-sm text-slate-700">准确</span>
                 </label>
@@ -443,7 +443,7 @@ export default function ProfileCenterPage() {
                     type="radio" 
                     checked={accuracy==='inaccurate'} 
                     onChange={()=>setAccuracy('inaccurate')}
-                    className="text-[#3182CE] focus:ring-[#3182CE]" 
+                    className="text-indigo-600 focus:ring-indigo-600" 
                   />
                   <span className="text-sm text-slate-700">不准确</span>
                 </label>
@@ -672,7 +672,7 @@ export default function ProfileCenterPage() {
                       <p className="text-xs text-slate-300 mb-4 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
                       <button 
                           onClick={() => navigate('/membership')}
-                          className="w-full py-2 bg-[#3182CE] text-white text-xs font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
+                          className="w-full py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-colors shadow-sm"
                       >
                           立即开通
                       </button>

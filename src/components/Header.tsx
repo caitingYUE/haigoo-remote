@@ -117,12 +117,12 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Center Navigation - Moved to Right as per request */}
+          {/* Center Navigation - Right aligned */}
           <div className="hidden md:flex items-center gap-6 ml-auto mr-8">
             <Link
               to="/"
               className={`text-base font-medium transition-colors ${location.pathname === '/'
-                ? 'text-[#3182CE] font-semibold'
+                ? 'text-indigo-600 font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
@@ -132,7 +132,7 @@ export default function Header() {
             <Link
               to="/jobs"
               className={`text-base font-medium transition-colors ${location.pathname === '/jobs'
-                ? 'text-[#3182CE] font-semibold'
+                ? 'text-indigo-600 font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
@@ -142,17 +142,7 @@ export default function Header() {
             <Link
               to="/trusted-companies"
               className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
-                ? 'text-[#3182CE] font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-                }`}
-            >
-              精选企业
-            </Link>
-
-            <Link
-              to="/trusted-companies"
-              className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
-                ? 'text-[#3182CE] font-semibold'
+                ? 'text-indigo-600 font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
@@ -162,7 +152,7 @@ export default function Header() {
             <Link
               to="/profile"
               className={`text-base font-medium transition-colors ${location.pathname.startsWith('/profile')
-                ? 'text-[#3182CE] font-semibold'
+                ? 'text-indigo-600 font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
@@ -177,13 +167,13 @@ export default function Header() {
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-[#1A365D] hover:text-[#3182CE] transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-[#1A365D] hover:text-indigo-600 transition-colors"
                 >
                   登录
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#3182CE] rounded-lg hover:bg-[#256bb0] transition-all"
+                  className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-indigo-600 transition-all"
                 >
                   注册
                 </Link>
@@ -286,8 +276,8 @@ export default function Header() {
                               key={item.id}
                               to={item.href}
                               className={`block px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none rounded-lg ${location.pathname === item.href || location.search.includes(item.href.split('?')[1])
-                                ? 'bg-[#FF6B35]/10 text-[#FF6B35] font-medium'
-                                : 'text-slate-700 hover:bg-[#FF6B35]/5 hover:text-[#FF6B35]'
+                                ? 'bg-indigo-50 text-indigo-700 font-medium'
+                                : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700'
                                 }`}
                               role="menuitem"
                               tabIndex={isUserMenuOpen ? 0 : -1}
@@ -407,7 +397,7 @@ export default function Header() {
                   </Link>
                   <Link
                     to="/register"
-                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-[#3182CE] rounded-lg hover:bg-[#256bb0] transition-all"
+                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-slate-900 rounded-lg hover:bg-indigo-600 transition-all"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     注册

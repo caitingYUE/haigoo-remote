@@ -500,8 +500,8 @@ export default function JobsPage() {
       {/* Hero / Header Section */}
       <div className="bg-white border-b border-slate-100 py-10 px-4 sm:px-6 lg:px-8 shadow-sm relative overflow-hidden">
         {/* Background decoration */}
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-blue-50 rounded-full opacity-50 blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-orange-50 rounded-full opacity-50 blur-2xl pointer-events-none"></div>
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-indigo-50 rounded-full opacity-50 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-indigo-50 rounded-full opacity-50 blur-2xl pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto relative z-10">
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl mb-3">
@@ -527,7 +527,7 @@ export default function JobsPage() {
                 </h3>
                 <button
                   onClick={() => setIsPreferenceModalOpen(true)}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                  className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
                 >
                   {userPreferences ? '修改设置' : '添加偏好'}
                 </button>

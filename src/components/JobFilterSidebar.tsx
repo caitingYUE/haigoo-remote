@@ -363,11 +363,11 @@ export default function JobFilterSidebar({
       </div>
 
       {/* AI Resume Optimization Promo Card */}
-      <div className="bg-orange-50 rounded-xl border border-orange-100 p-5 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-orange-200 rounded-full opacity-20 blur-xl"></div>
+      <div className="bg-indigo-50 rounded-xl border border-indigo-100 p-5 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-indigo-200 rounded-full opacity-20 blur-xl"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
-            <Zap className="w-5 h-5 text-orange-500 fill-orange-500" />
+            <Zap className="w-5 h-5 text-indigo-500 fill-indigo-500" />
             <h3 className="font-bold text-slate-900 text-sm">简历还在被动等待?</h3>
           </div>
           <p className="text-xs text-slate-600 mb-4 leading-relaxed">
@@ -375,7 +375,7 @@ export default function JobFilterSidebar({
           </p>
           <button
             onClick={() => navigate('/profile?tab=resume')}
-            className="w-full py-2 bg-white border border-orange-200 text-orange-600 font-medium text-sm rounded-lg hover:bg-orange-50 transition-colors"
+            className="w-full py-2 bg-white border border-indigo-200 text-indigo-600 font-medium text-sm rounded-lg hover:bg-indigo-50 transition-colors"
           >
             优化简历 (Optimize Resume)
           </button>
