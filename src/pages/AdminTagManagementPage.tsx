@@ -46,14 +46,9 @@ export default function AdminTagManagementPage() {
 
     const handleAdd = async (type: TagType) => {
         const value = newValue[type]?.trim();
-        if (!value) {
-            alert('请输入标签内容');
-            return;
-        }
+        if (!value) return;
 
         try {
-            console.log('[Tag Management] Adding tag:', { type, value });
-
             const response = await fetch('/api/data/trusted-companies?target=tags', {
                 method: 'POST',
                 headers: {
@@ -63,20 +58,13 @@ export default function AdminTagManagementPage() {
                 body: JSON.stringify({ action: 'add', type, value })
             });
 
-            console.log('[Tag Management] Response status:', response.status);
             const data = await response.json();
-            console.log('[Tag Management] Response data:', data);
-
             if (data.success) {
                 setConfig(data.config);
                 setNewValue({ ...newValue, [type]: '' });
-                alert('添加成功！');
-            } else {
-                alert('添加失败：' + (data.error || '未知错误'));
             }
         } catch (error) {
             console.error('Failed to add tag:', error);
-            alert('添加失败，请检查网络连接');
         }
     };
 

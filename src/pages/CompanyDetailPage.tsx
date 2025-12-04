@@ -137,9 +137,9 @@ export default function CompanyDetailPage() {
                                         <span>{companyInfo.industry}</span>
                                     </div>
                                 )}
-                                {companyInfo?.url && (
+                                {companyInfo?.website && (
                                     <a
-                                        href={companyInfo.url}
+                                        href={companyInfo.website}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700"

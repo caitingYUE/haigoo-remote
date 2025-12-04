@@ -68,7 +68,7 @@ export default function AdminCompanyManagementPage() {
                         if (!tc) return c;
                         return {
                             ...c,
-                            url: c.url || tc.url || tc.careersPage || c.url,
+                            url: c.url || tc.website || tc.careersPage || c.url,
                             logo: c.logo || tc.logo || c.logo,
                             description: c.description || tc.description || c.description,
                             tags: Array.from(new Set([...(c.tags || []), ...(tc.tags || [])]))
@@ -96,11 +96,11 @@ export default function AdminCompanyManagementPage() {
 
     const handleSyncToJobs = async () => {
         if (!confirm('确定要将企业库中的数据（简介、行业、标签等）同步到职位数据库中吗？')) return;
-
+        
         try {
             setSyncing(true);
             const result = await trustedCompaniesService.syncJobsToProduction();
-
+            
             if (result.success) {
                 alert(`同步成功: 已更新 ${result.count} 个岗位的企业信息`);
             } else {
@@ -117,16 +117,16 @@ export default function AdminCompanyManagementPage() {
         try {
             const token = localStorage.getItem('haigoo_auth_token');
             if (!token) return;
-
+            
             console.log('Syncing company data to jobs...');
-
+            
             const response = await fetch('/api/data/trusted-companies?action=sync-jobs', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
+            
             const data = await response.json();
             if (data.success) {
                 console.log(`Synced jobs: ${data.message}`);

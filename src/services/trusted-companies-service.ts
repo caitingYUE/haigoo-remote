@@ -11,7 +11,7 @@ import { CompanyIndustry, CompanyTag } from '../types/rss-types';
 export interface TrustedCompany {
     id: string;
     name: string;
-    url: string;  // 统一使用 url 字段名，与 API 返回保持一致
+    website: string;
     careersPage: string;
     linkedin?: string;
     description?: string;

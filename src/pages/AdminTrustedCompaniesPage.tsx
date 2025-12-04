@@ -24,7 +24,7 @@ export default function AdminTrustedCompaniesPage() {
     const [processingImage, setProcessingImage] = useState(false)
     const [batchImporting, setBatchImporting] = useState(false)
     const [batchExporting, setBatchExporting] = useState(false)
-
+    
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize] = useState(12)
@@ -43,7 +43,7 @@ export default function AdminTrustedCompaniesPage() {
     // Form State
     const [formData, setFormData] = useState({
         name: '',
-        url: '',
+        website: '',
         careersPage: '',
         linkedin: '',
         description: '',
@@ -171,7 +171,7 @@ export default function AdminTrustedCompaniesPage() {
         setEditingCompany(company)
         setFormData({
             name: company.name,
-            url: company.url,
+            website: company.website,
             careersPage: company.careersPage,
             linkedin: company.linkedin || '',
             description: company.description || '',
@@ -189,7 +189,7 @@ export default function AdminTrustedCompaniesPage() {
         setEditingCompany(null)
         setFormData({
             name: '',
-            url: '',
+            website: '',
             careersPage: '',
             linkedin: '',
             description: '',
@@ -232,15 +232,15 @@ export default function AdminTrustedCompaniesPage() {
     }
 
     const handleAutoFill = async () => {
-        const urlToFetch = formData.url || formData.careersPage
-        if (!urlToFetch) {
+        const url = formData.website || formData.careersPage
+        if (!url) {
             showError('请输入官网或招聘页地址', '需要URL来抓取信息')
             return
         }
 
         try {
             setCrawling(true)
-            const metadata = await trustedCompaniesService.fetchMetadata(urlToFetch)
+            const metadata = await trustedCompaniesService.fetchMetadata(url)
 
             if (!metadata) {
                 showError('抓取失败', '无法获取网页信息，请手动输入')
@@ -451,7 +451,7 @@ export default function AdminTrustedCompaniesPage() {
             })
 
             const data = await response.json()
-
+            
             if (data.success) {
                 // Convert base64 to blob and download
                 const binaryString = window.atob(data.fileData)
@@ -460,7 +460,7 @@ export default function AdminTrustedCompaniesPage() {
                     bytes[i] = binaryString.charCodeAt(i)
                 }
                 const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-
+                
                 // Create download link
                 const url = window.URL.createObjectURL(blob)
                 const a = document.createElement('a')
@@ -470,7 +470,7 @@ export default function AdminTrustedCompaniesPage() {
                 a.click()
                 document.body.removeChild(a)
                 window.URL.revokeObjectURL(url)
-
+                
                 showSuccess('导出成功', `成功导出 ${data.count} 个企业数据`)
             } else {
                 showError('导出失败', data.error || '未知错误')
@@ -535,7 +535,7 @@ export default function AdminTrustedCompaniesPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {paginatedCompanies.map(company => (
-                            <div key={company.id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
+                                <div key={company.id} className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
                                 {/* Image Preview Area */}
                                 <div className="w-full h-32 bg-gray-50 relative border-b border-gray-100 group">
                                     {company.coverImage ? (
@@ -615,8 +615,8 @@ export default function AdminTrustedCompaniesPage() {
                                     </div>
 
                                     <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-                                        {company.url && (
-                                            <a href={company.url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-blue-600" title="官网">
+                                        {company.website && (
+                                            <a href={company.website} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-blue-600" title="官网">
                                                 <Globe className="w-4 h-4" />
                                             </a>
                                         )}
@@ -669,7 +669,7 @@ export default function AdminTrustedCompaniesPage() {
                                             <button
                                                 type="button"
                                                 onClick={handleAutoFill}
-                                                disabled={crawling || (!formData.url && !formData.careersPage)}
+                                                disabled={crawling || (!formData.website && !formData.careersPage)}
                                                 className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
                                             >
                                                 {crawling ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
@@ -683,8 +683,8 @@ export default function AdminTrustedCompaniesPage() {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">官网链接</label>
                                         <input
                                             type="url"
-                                            value={formData.url}
-                                            onChange={e => setFormData({ ...formData, url: e.target.value })}
+                                            value={formData.website}
+                                            onChange={e => setFormData({ ...formData, website: e.target.value })}
                                             className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                             placeholder="https://..."
                                         />
