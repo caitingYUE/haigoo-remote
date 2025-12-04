@@ -8,7 +8,7 @@ import path from 'path';
 dotenv.config({ path: '.env.local' });
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 // Ensure SITE_URL is set for services that rely on it (like translation-service)
 if (!process.env.SITE_URL) {
