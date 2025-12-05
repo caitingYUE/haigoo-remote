@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, Languages } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
 import { segmentJobDescription } from '../utils/translation'
 import { SingleLineTags } from './SingleLineTags'
 import { MembershipUpgradeModal } from './MembershipUpgradeModal'
+import { LocationTooltip } from './LocationTooltip'
 // import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 
@@ -16,6 +17,9 @@ interface JobDetailPanelProps {
     onApply?: (jobId: string) => void
     onClose?: () => void
     showCloseButton?: boolean
+    onNavigateJob?: (direction: 'prev' | 'next') => void
+    canNavigatePrev?: boolean
+    canNavigateNext?: boolean
 }
 
 export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
@@ -24,7 +28,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     isSaved = false,
     onApply,
     onClose,
-    showCloseButton = false
+    showCloseButton = false,
+    onNavigateJob,
+    canNavigatePrev = false,
+    canNavigateNext = false
 }) => {
     const navigate = useNavigate()
     const { user } = useAuth()
@@ -37,6 +44,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const hasTranslation = !!(job?.translations?.title || job?.translations?.description)
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+    const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
     useEffect(() => {
         if (job?.companyId) {
@@ -185,22 +193,53 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col bg-white">
             {/* Header */}
             <header className="flex-shrink-0 border-b border-slate-200 px-6 py-4">
                 <div className="flex items-start justify-between mb-3">
                     <h1 className="text-2xl font-bold text-slate-900 flex-1 pr-4">
                         {displayText(job.title, job.translations?.title)}
                     </h1>
-                    {showCloseButton && onClose && (
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-all flex items-center gap-2"
-                        >
-                            <X className="h-4 w-4" />
-                            <span>关闭</span>
-                        </button>
-                    )}
+
+                    <div className="flex items-center gap-2">
+                        {onNavigateJob && (
+                            <>
+                                <button
+                                    onClick={() => onNavigateJob('prev')}
+                                    disabled={!canNavigatePrev}
+                                    className={`p-2 rounded-lg transition-all flex items-center justify-center border ${canNavigatePrev
+                                            ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                                            : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                                        }`}
+                                    title="上一个职位"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </button>
+                                <button
+                                    onClick={() => onNavigateJob('next')}
+                                    disabled={!canNavigateNext}
+                                    className={`p-2 rounded-lg transition-all flex items-center justify-center border ${canNavigateNext
+                                            ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                                            : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                                        }`}
+                                    title="下一个职位"
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </button>
+                                {showCloseButton && <div className="w-px h-6 bg-slate-200 mx-1"></div>}
+                            </>
+                        )}
+
+                        {showCloseButton && onClose && (
+                            <button
+                                onClick={onClose}
+                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-all flex items-center gap-2"
+                            >
+                                <X className="h-4 w-4" />
+                                <span>关闭</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3 text-sm text-slate-600 mb-4">
@@ -209,9 +248,25 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         <span className="font-medium">{displayText(job.company || '')}</span>
                     </div>
                     <span className="text-slate-300">|</span>
-                    <div className="flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4" />
-                        <span>{displayText(job.location || '', job.translations?.location)}</span>
+                    <div className="flex items-center gap-1.5 relative group">
+                        <MapPin className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setShowLocationTooltip(!showLocationTooltip)
+                            }}
+                            className="hover:text-indigo-600 hover:underline decoration-dashed underline-offset-4 transition-colors text-left"
+                        >
+                            {displayText(job.location || '', job.translations?.location)}
+                        </button>
+                        {showLocationTooltip && (
+                            <div className="absolute top-full left-0 mt-2 z-50">
+                                <LocationTooltip
+                                    location={job.location || ''}
+                                    onClose={() => setShowLocationTooltip(false)}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -274,7 +329,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             </header>
 
             {/* Content - Scrollable to prevent truncation */}
-            <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+            <main className="flex-1">
                 <div className="px-6 py-6">
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
