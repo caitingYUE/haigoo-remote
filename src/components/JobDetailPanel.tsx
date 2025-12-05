@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, Languages } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -57,11 +57,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const handleApply = () => {
         // 检查会员权限
         if (job.canRefer) {
-             const isMember = user?.membershipLevel && user.membershipLevel !== 'none' && user.membershipExpireAt && new Date(user.membershipExpireAt) > new Date();
-             if (!isMember) {
-                 setShowUpgradeModal(true)
-                 return;
-             }
+            const isMember = user?.membershipLevel && user.membershipLevel !== 'none' && user.membershipExpireAt && new Date(user.membershipExpireAt) > new Date();
+            if (!isMember) {
+                setShowUpgradeModal(true)
+                return;
+            }
         }
 
         if (job.sourceUrl) {
@@ -166,7 +166,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Header */}
-            <header className="flex-shrink-0 border-b border-slate-100 px-6 py-4">
+            <header className="flex-shrink-0 border-b border-slate-100 px-6 py-3">
                 <div className="flex items-start justify-between mb-2">
                     <h1 className="text-xl font-bold text-slate-900 flex-1 pr-4">
                         {displayText(job.title, job.translations?.title)}
@@ -202,14 +202,39 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </span>
                     </div>
                 )}
+
+                {/* Translation Toggle - Prominent Position */}
+                {hasTranslation && (
+                    <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-100 mt-3">
+                        <div className="flex items-center gap-2 flex-1">
+                            <Languages className="w-4 h-4 text-indigo-600" />
+                            <span className="text-sm font-medium text-slate-700">
+                                {showTranslation ? '正在显示翻译版本' : '正在显示原文版本'}
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => setShowTranslation(!showTranslation)}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${showTranslation
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                : 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50'
+                                }`}
+                            title={showTranslation ? '切换到原文' : '切换到翻译'}
+                        >
+                            <div className="flex items-center gap-1.5">
+                                <Languages className="w-4 h-4" />
+                                <span>{showTranslation ? '查看原文' : '查看翻译'}</span>
+                            </div>
+                        </button>
+                    </div>
+                )}
             </header>
 
             {/* Content */}
             <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-                <div className="px-6">
+                <div className="px-6 py-4">
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
-                        <section key={index} className="py-4 border-b border-slate-100">
+                        <section key={index} className="py-3 border-b border-slate-100">
                             <div className="flex items-center justify-between mb-3">
                                 <h3 className="text-base font-semibold text-slate-900">
                                     {displayText(section.title)}
@@ -235,19 +260,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         >
                                             <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
                                         </button>
-
-                                        {hasTranslation && (
-                                            <button
-                                                onClick={() => setShowTranslation(!showTranslation)}
-                                                className={`px-2 py-1 rounded text-xs font-medium transition-all ${showTranslation
-                                                    ? 'bg-indigo-50 text-indigo-700'
-                                                    : 'hover:bg-slate-100 text-slate-600'
-                                                    }`}
-                                                title={showTranslation ? '切换到原文' : '切换到翻译'}
-                                            >
-                                                {showTranslation ? '译' : '原'}
-                                            </button>
-                                        )}
 
                                         <button
                                             onClick={() => setIsFeedbackOpen(true)}
@@ -282,10 +294,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Company Card at Bottom */}
                     <section className="py-6">
-                            <div
-                                onClick={handleCompanyClick}
-                                className="border border-slate-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
-                            >
+                        <div
+                            onClick={handleCompanyClick}
+                            className="border border-slate-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
+                        >
                             <div className="flex items-start gap-4 mb-3">
                                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
                                     <span className="text-white font-bold text-lg">
@@ -305,7 +317,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     href={job.sourceUrl}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                    className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                                    className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     <ExternalLink className="w-3 h-3" />

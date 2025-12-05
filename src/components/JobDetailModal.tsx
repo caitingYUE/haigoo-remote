@@ -46,7 +46,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     onNavigateJob?.(direction)
   }, [onNavigateJob])
 
-  // 键盘事件处理
+  // 键盘事件处理 - 增强版
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return
@@ -56,17 +56,17 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           e.preventDefault()
           onClose()
           break
+        case 'ArrowUp':
         case 'ArrowLeft':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault()
-            handleNavigate('prev')
-          }
+          // 直接支持箭头键导航,无需Ctrl
+          e.preventDefault()
+          handleNavigate('prev')
           break
+        case 'ArrowDown':
         case 'ArrowRight':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault()
-            handleNavigate('next')
-          }
+          // 直接支持箭头键导航,无需Ctrl
+          e.preventDefault()
+          handleNavigate('next')
           break
       }
     }
@@ -108,20 +108,21 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={`bg-white dark:bg-zinc-900 shadow-xl h-full w-full max-w-[95vw] md:max-w-[60vw] lg:max-w-[50vw] xl:max-w-[45vw] flex flex-col relative transform transition-all duration-300 ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
+        className={`bg-white dark:bg-zinc-900 shadow-xl h-full w-full max-w-[95vw] md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw] flex flex-col relative transform transition-all duration-300 ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
           }`}
         onClick={(e) => e.stopPropagation()}
       >
 
-        {/* Navigation Buttons */}
+        {/* Navigation Buttons - Enhanced */}
         {jobs.length > 1 && canNavigatePrev && (
           <button
             onClick={() => handleNavigate('prev')}
             onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('prev'))}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-            title="上一个职位 (Ctrl+←)"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-14 h-14 bg-white/95 backdrop-blur-sm border-2 border-indigo-200 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 group"
+            title="上一个职位 (← 或 ↑)"
+            aria-label="上一个职位"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-7 w-7 group-hover:-translate-x-0.5 transition-transform" />
           </button>
         )}
 
@@ -129,10 +130,11 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           <button
             onClick={() => handleNavigate('next')}
             onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('next'))}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-            title="下一个职位 (Ctrl+→)"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-14 h-14 bg-white/95 backdrop-blur-sm border-2 border-indigo-200 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 group"
+            title="下一个职位 (→ 或 ↓)"
+            aria-label="下一个职位"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-7 w-7 group-hover:translate-x-0.5 transition-transform" />
           </button>
         )}
 
