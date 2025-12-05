@@ -68,6 +68,42 @@ export default function JobCardNew({ job, onClick, matchScore }: JobCardNewProps
                </div>
             </div>
 
+            {/* Job Description Summary - NEW */}
+            {(() => {
+               // Generate job summary
+               const getJobSummary = (): string => {
+                  // Try description first
+                  if (job.description) {
+                     const cleanText = job.description
+                        .replace(/<[^>]*>/g, '') // Remove HTML tags
+                        .replace(/\s+/g, ' ') // Merge whitespace
+                        .trim()
+
+                     if (cleanText.length > 200) {
+                        return cleanText.substring(0, 200) + '...'
+                     }
+                     return cleanText
+                  }
+
+                  // Fallback to summary
+                  if (job.summary) {
+                     return job.summary.length > 200
+                        ? job.summary.substring(0, 200) + '...'
+                        : job.summary
+                  }
+
+                  return ''
+               }
+
+               const summary = getJobSummary()
+
+               return summary ? (
+                  <p className="text-sm text-slate-600 leading-relaxed mb-5 line-clamp-2">
+                     {summary}
+                  </p>
+               ) : null
+            })()}
+
             {/* Tags Section - Pill Shape */}
             <div className="flex flex-wrap gap-2 mb-6">
                <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100">
