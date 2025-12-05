@@ -47,6 +47,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job?.companyId])
 
     const jobDescriptionData = useMemo(() => {
+        // Debug logging - show complete job data
+        console.log('[JobDetailPanel] Full job object:', {
+            id: job?.id,
+            title: job?.title,
+            translations: job?.translations,
+            isTranslated: job?.isTranslated,
+            translatedAt: job?.translatedAt
+        })
+
         const descToUse = showTranslation && job?.translations?.description
             ? job.translations.description
             : job?.description
@@ -57,9 +66,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             showTranslation,
             hasTranslations: !!job?.translations,
             translatedTitle: job?.translations?.title,
-            translatedDesc: job?.translations?.description?.substring(0, 100),
-            originalDesc: job?.description?.substring(0, 100),
-            usingDesc: desc.substring(0, 100)
+            translatedDescLength: job?.translations?.description?.length,
+            originalDescLength: job?.description?.length,
+            usingDescLength: desc.length,
+            descPreview: desc.substring(0, 200)
         })
 
         return segmentJobDescription(desc)
