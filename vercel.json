@@ -27,6 +27,22 @@
       "destination": "/api/users"
     },
     {
+      "source": "/api/check-user-data",
+      "destination": "/api/admin-ops?action=check-user"
+    },
+    {
+      "source": "/api/diagnose-db",
+      "destination": "/api/admin-ops?action=diagnose"
+    },
+    {
+      "source": "/api/run-migration",
+      "destination": "/api/admin-ops?action=migrate"
+    },
+    {
+      "source": "/api/parse-resume-new",
+      "destination": "/api/resumes"
+    },
+    {
       "source": "/api/:match*",
       "destination": "/api/:match*"
     },

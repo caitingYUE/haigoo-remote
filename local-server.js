@@ -45,10 +45,21 @@ async function startServer() {
         app.all(/^\/api\/data/, async (req, res) => { await dataHandler(req, res); });
         console.log('Data handler imported.');
 
+        console.log('Importing admin-ops handler...');
+        const adminOpsHandler = (await import('./api/admin-ops.js')).default;
+        app.all('/api/admin-ops', async (req, res) => { await adminOpsHandler(req, res); });
+        // Map legacy admin routes
+        app.all('/api/check-user-data', async (req, res) => { req.query.action = 'check-user'; await adminOpsHandler(req, res); });
+        app.all('/api/diagnose-db', async (req, res) => { req.query.action = 'diagnose'; await adminOpsHandler(req, res); });
+        app.all('/api/run-migration', async (req, res) => { req.query.action = 'migrate'; await adminOpsHandler(req, res); });
+
         console.log('Importing parse-resume handler...');
-        const parseResumeHandler = (await import('./api/parse-resume-new.js')).default;
-        app.all('/api/parse-resume-new', async (req, res) => { await parseResumeHandler(req, res); });
-        console.log('Parse-resume handler imported.');
+        const resumesHandler = (await import('./api/resumes.js')).default;
+        // Map legacy route to new handler
+        app.all('/api/parse-resume-new', async (req, res) => { await resumesHandler(req, res); });
+        // Also map standard resumes route if not already done (it wasn't in the original file?)
+        app.all('/api/resumes', async (req, res) => { await resumesHandler(req, res); });
+        console.log('Resumes handler imported.');
 
         console.log('Importing process-image handler...');
         const processImageHandler = (await import('./api/process-image.js')).default;
@@ -61,7 +72,7 @@ async function startServer() {
         // But translate-jobs is the one user cares about
         // I'll map sync-jobs to translate-jobs.js as it seems most relevant
         const syncJobsHandler = (await import('./lib/cron-handlers/translate-jobs.js')).default;
-        
+
         app.all('/api/cron/crawl-trusted-jobs', async (req, res) => { await crawlTrustedJobsHandler(req, res); });
         app.all('/api/cron/sync-jobs', async (req, res) => { await syncJobsHandler(req, res); });
         console.log('Cron handlers imported.');
@@ -70,17 +81,17 @@ async function startServer() {
         // Mock /api/translate using google-translate-api for local dev
         // Note: In production this is handled by api/translate.js Edge Function
         const { translate } = await import('@vitalets/google-translate-api');
-        
+
         app.post('/api/translate', async (req, res) => {
             try {
                 const { texts, targetLanguage = 'zh-CN', sourceLanguage = 'auto' } = req.body;
                 if (!texts || !Array.isArray(texts)) {
                     return res.status(400).json({ success: false, error: 'Missing texts array' });
                 }
-                
+
                 console.log(`[LocalTranslate] Translating ${texts.length} texts to ${targetLanguage}...`);
                 const results = [];
-                
+
                 // Simple sequential translation to avoid rate limits locally
                 for (const text of texts) {
                     if (!text || !text.trim()) {
@@ -89,9 +100,9 @@ async function startServer() {
                     }
                     try {
                         // Map language codes if necessary (zh-CN -> zh-CN works for google)
-                        const { text: translated } = await translate(text, { 
-                            to: targetLanguage, 
-                            from: sourceLanguage === 'auto' ? undefined : sourceLanguage 
+                        const { text: translated } = await translate(text, {
+                            to: targetLanguage,
+                            from: sourceLanguage === 'auto' ? undefined : sourceLanguage
                         });
                         results.push(translated);
                     } catch (e) {
@@ -101,7 +112,7 @@ async function startServer() {
                     // Small delay
                     await new Promise(r => setTimeout(r, 100));
                 }
-                
+
                 res.json({ success: true, data: results });
             } catch (error) {
                 console.error('[LocalTranslate] Global error:', error);
@@ -112,11 +123,11 @@ async function startServer() {
         // /api/translate-jobs -> lib/cron-handlers/translate-jobs.js
         // Note: In production this is routed via vercel.json rewrites
         const translateJobsHandler = (await import('./lib/cron-handlers/translate-jobs.js')).default;
-        app.all('/api/translate-jobs', async (req, res) => { 
+        app.all('/api/translate-jobs', async (req, res) => {
             console.log('[LocalServer] Route /api/translate-jobs hit');
-            await translateJobsHandler(req, res); 
+            await translateJobsHandler(req, res);
         });
-        
+
         console.log('Translation handlers imported.');
 
         app.get('/api/health', (req, res) => {
