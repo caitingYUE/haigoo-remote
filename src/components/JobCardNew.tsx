@@ -75,10 +75,10 @@ export default function JobCardNew({ job, onClick, matchScore }: JobCardNewProps
                const getJobSummary = (): string => {
                   // Try translated description first
                   const descToUse = job.translations?.description || job.description
-                  
+
                   if (descToUse) {
                      const cleanText = stripMarkdown(descToUse)
-                     
+
                      if (cleanText.length > 200) {
                         return cleanText.substring(0, 200) + '...'
                      }

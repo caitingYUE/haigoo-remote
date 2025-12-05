@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { MapPin, Award, Bookmark } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
-import { processJobDescription } from '../utils/text-formatter';
+import { stripMarkdown } from '../utils/text-formatter';
 // 移除语义标签行：不再使用 JobTags/tagUtils，仅保留描述下的处理后技能标签
 import { SingleLineTags } from './SingleLineTags';
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
@@ -311,11 +311,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
           </div>
         ) : (
           <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">
-            {processJobDescription(job.translations?.description || job.description || '', {
-              formatMarkdown: false,
-              maxLength: 100,
-              preserveHtml: false
-            })}
+            {stripMarkdown(job.translations?.description || job.description || '').substring(0, 100)}
           </p>
         )}
       </div>
