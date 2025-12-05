@@ -60,40 +60,52 @@ export default function JobsPage() {
     isNew: false
   })
 
-  // Load user preferences on mount and when auth state changes
+  // Load user preferences - CRITICAL FIX: Function defined inside useEffect
   useEffect(() => {
-    loadUserPreferences()
-  }, [isAuthenticated, token]) // Re-run when auth state or token changes
-
-  const loadUserPreferences = async () => {
-    if (!isAuthenticated || !token) {
-      console.log('[Preferences] Skipping load: not authenticated or no token')
-      return
-    }
-
-    console.log('[Preferences] Loading user preferences...')
-    try {
-      const resp = await fetch('/api/user-profile?action=get_preferences', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      console.log('[Preferences] Response status:', resp.status)
-
-      if (resp.ok) {
-        const data = await resp.json()
-        console.log('[Preferences] Loaded data:', data)
-        if (data.preferences) {
-          setUserPreferences(data.preferences)
-          console.log('[Preferences] ✅ Set preferences:', data.preferences)
-        } else {
-          console.log('[Preferences] ⚠️ No preferences in response')
-        }
-      } else {
-        console.error('[Preferences] ❌ Failed to load:', resp.status, resp.statusText)
+    const loadUserPreferences = async () => {
+      if (!isAuthenticated || !token) {
+        console.log(`[Preferences ${new Date().toISOString()}] ⏭️  Skipping load: not authenticated or no token`)
+        return
       }
-    } catch (error) {
-      console.error('[Preferences] ❌ Load error:', error)
+
+      console.log(`[Preferences ${new Date().toISOString()}] 🔄 Loading user preferences...`)
+      console.log(`[Preferences] Auth state: isAuthenticated=${isAuthenticated}, hasToken=${!!token}`)
+
+      try {
+        const resp = await fetch('/api/user-profile?action=get_preferences', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        console.log(`[Preferences ${new Date().toISOString()}] 📡 Response status:`, resp.status)
+
+        if (resp.ok) {
+          const data = await resp.json()
+          console.log(`[Preferences ${new Date().toISOString()}] 📦 Loaded data:`, data)
+
+          if (data.success && data.preferences) {
+            setUserPreferences(data.preferences)
+            console.log(`[Preferences ${new Date().toISOString()}] ✅ Preferences set successfully:`, data.preferences)
+          } else if (data.preferences) {
+            // Backward compatibility: some responses might not have success field
+            setUserPreferences(data.preferences)
+            console.log(`[Preferences ${new Date().toISOString()}] ✅ Preferences set (legacy format):`, data.preferences)
+          } else {
+            console.log(`[Preferences ${new Date().toISOString()}] ⚠️  No preferences in response`)
+            setUserPreferences(null)
+          }
+        } else {
+          const errorText = await resp.text()
+          console.error(`[Preferences ${new Date().toISOString()}] ❌ Failed to load:`, resp.status, resp.statusText)
+          console.error(`[Preferences] Error details:`, errorText)
+        }
+      } catch (error) {
+        console.error(`[Preferences ${new Date().toISOString()}] ❌ Load error:`, error)
+      }
     }
-  }
+
+    // Execute the load function
+    loadUserPreferences()
+  }, [isAuthenticated, token]) // ✅ Clean dependencies, no function reference issues
+
 
   const saveUserPreferences = async (preferences: JobPreferences) => {
     if (!isAuthenticated || !token) {
@@ -284,13 +296,20 @@ export default function JobsPage() {
   // 加载个性化匹配分数
   useEffect(() => {
     const loadMatchScores = async () => {
-      if (!isAuthenticated || !token || canonicalJobs.length === 0) return
+      if (!isAuthenticated || !token || canonicalJobs.length === 0) {
+        console.log(`[MatchScores] Skipping: isAuth=${isAuthenticated}, hasToken=${!!token}, jobsCount=${canonicalJobs.length}`)
+        return
+      }
 
+      console.log(`[MatchScores ${new Date().toISOString()}] 🎯 Loading match scores for ${canonicalJobs.length} jobs...`)
       setMatchScoresLoading(true)
       try {
         // 取前100个岗位计算匹配分数
         const jobIds = canonicalJobs.slice(0, 100).map(j => j.id)
+        console.log(`[MatchScores] Calculating for ${jobIds.length} job IDs`)
+
         const results = await batchCalculateMatches(token, jobIds)
+        console.log(`[MatchScores] Received ${results.length} results`)
 
         const scores: Record<string, number> = {}
         results.forEach(r => {
@@ -298,10 +317,17 @@ export default function JobsPage() {
             scores[r.jobId] = r.matchScore
           }
         })
+
         setMatchScores(scores)
-        console.log(`✅ 加载了 ${Object.keys(scores).length} 个岗位的匹配分数`)
+        console.log(`[MatchScores ${new Date().toISOString()}] ✅ Loaded ${Object.keys(scores).length} match scores`)
+
+        // Log top 5 scores for debugging
+        const topScores = Object.entries(scores)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 5)
+        console.log(`[MatchScores] Top 5 scores:`, topScores.map(([id, score]) => `${id.substring(0, 8)}: ${score}%`))
       } catch (error) {
-        console.error('加载匹配分数失败:', error)
+        console.error(`[MatchScores ${new Date().toISOString()}] ❌ Failed to load:`, error)
       } finally {
         setMatchScoresLoading(false)
       }
@@ -451,6 +477,15 @@ export default function JobsPage() {
       // 3. 如果有匹配分数,按匹配度排序
       const scoreA = matchScores[a.id] || 0
       const scoreB = matchScores[b.id] || 0
+
+      // Debug: Log first few comparisons to verify sorting
+      if (scoreA > 0 || scoreB > 0) {
+        const debugIndex = Math.random()
+        if (debugIndex < 0.01) { // Log ~1% of comparisons to avoid spam
+          console.log(`[Sorting] Comparing: "${a.title.substring(0, 30)}" (score: ${scoreA}) vs "${b.title.substring(0, 30)}" (score: ${scoreB})`)
+        }
+      }
+
       if (scoreA !== scoreB) return scoreB - scoreA
       // 4. 按发布时间排序
       return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
