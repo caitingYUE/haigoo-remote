@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, MapPin, Clock } from 'lucide-react'
 import { findLocation } from '../data/locations'
 import { WorldMap } from './WorldMap'
@@ -10,6 +10,33 @@ interface LocationTooltipProps {
 
 export function LocationTooltip({ location, onClose }: LocationTooltipProps) {
     const data = findLocation(location)
+    const [time, setTime] = useState<string>('')
+
+    useEffect(() => {
+        if (!data?.ianaTimezone) return
+
+        const updateTime = () => {
+            try {
+                const now = new Date()
+                const timeString = now.toLocaleTimeString('en-US', {
+                    timeZone: data.ianaTimezone,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                })
+                setTime(timeString)
+            } catch (e) {
+                console.error('Error formatting time:', e)
+                setTime('')
+            }
+        }
+
+        updateTime()
+        const interval = setInterval(updateTime, 1000)
+
+        return () => clearInterval(interval)
+    }, [data?.ianaTimezone])
 
     if (!data) {
         return (
@@ -50,10 +77,17 @@ export function LocationTooltip({ location, onClose }: LocationTooltipProps) {
 
             {/* Info */}
             <div className="p-4 space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-indigo-500" />
-                    <span className="text-slate-500">时区:</span>
-                    <span className="font-medium text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded text-xs">{data.timezone}</span>
+                <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-indigo-500" />
+                        <span className="text-slate-500">时区:</span>
+                        <span className="font-medium text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded text-xs">{data.timezone}</span>
+                    </div>
+                    {time && (
+                        <div className="font-mono text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded text-xs">
+                            {time}
+                        </div>
+                    )}
                 </div>
 
                 {/* Description */}
@@ -64,3 +98,4 @@ export function LocationTooltip({ location, onClose }: LocationTooltipProps) {
         </div>
     )
 }
+```
