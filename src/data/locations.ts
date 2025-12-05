@@ -274,6 +274,78 @@ export const LOCATION_DATABASE: Record<string, LocationData> = {
         lng: 34.7818,
         description: '以色列科技之都,创业国度核心。创新创业氛围浓厚,网络安全和人工智能产业领先。',
         aliases: ['tlv']
+    },
+    // South America
+    'argentina': {
+        name: 'Argentina',
+        country: 'Argentina',
+        timezone: 'UTC-3 (ART)',
+        lat: -34.6037,
+        lng: -58.3816,
+        description: '南美洲第二大国，拥有高素质的科技人才库。时区与美国接近，英语普及率较高，是远程工作的热门选择。',
+        aliases: ['ar', 'arg']
+    },
+
+    'colombia': {
+        name: 'Colombia',
+        country: 'Colombia',
+        timezone: 'UTC-5 (COT)',
+        lat: 4.7110,
+        lng: -74.0721,
+        description: '南美洲西北部国家，科技产业发展迅速。麦德林和波哥大是主要的科技中心，与美国东部时区相同。',
+        aliases: ['co', 'col']
+    },
+
+    'brazil': {
+        name: 'Brazil',
+        country: 'Brazil',
+        timezone: 'UTC-3 (BRT)',
+        lat: -14.2350,
+        lng: -51.9253,
+        description: '南美洲最大国家，拥有庞大的开发者社区。科技生态系统成熟，众多独角兽企业诞生于此。',
+        aliases: ['br', 'brasil']
+    },
+
+    // Asia
+    'philippines': {
+        name: 'Philippines',
+        country: 'Philippines',
+        timezone: 'UTC+8 (PHT)',
+        lat: 12.8797,
+        lng: 121.7740,
+        description: '东南亚群岛国家，英语为官方语言之一。BPO产业极度发达，拥有大量优秀的虚拟助理和远程支持人才。',
+        aliases: ['ph', 'phil']
+    },
+
+    'india': {
+        name: 'India',
+        country: 'India',
+        timezone: 'UTC+5:30 (IST)',
+        lat: 20.5937,
+        lng: 78.9629,
+        description: '全球最大的IT外包和软件开发中心之一。拥有庞大的工程人才库，班加罗尔被誉为"亚洲硅谷"。',
+        aliases: ['in', 'ind']
+    },
+
+    // Europe
+    'germany': {
+        name: 'Germany',
+        country: 'Germany',
+        timezone: 'UTC+1 (CET)',
+        lat: 51.1657,
+        lng: 10.4515,
+        description: '欧洲最大经济体，工程和制造业强国。柏林是欧洲主要的初创企业中心，吸引了全球科技人才。',
+        aliases: ['de', 'deu', 'deutschland']
+    },
+
+    'united kingdom': {
+        name: 'United Kingdom',
+        country: 'United Kingdom',
+        timezone: 'UTC+0 (GMT)',
+        lat: 55.3781,
+        lng: -3.4360,
+        description: '全球金融和科技中心之一。伦敦拥有世界级的科技生态系统，金融科技(FinTech)尤为发达。',
+        aliases: ['uk', 'gb', 'britain']
     }
 }
 

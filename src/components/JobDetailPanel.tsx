@@ -188,8 +188,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     onClick={() => onNavigateJob('prev')}
                                     disabled={!canNavigatePrev}
                                     className={`p-2 rounded-lg transition-all flex items-center justify-center border ${canNavigatePrev
-                                            ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-                                            : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                                        ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                                        : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
                                         }`}
                                     title="上一个职位"
                                 >
@@ -199,8 +199,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     onClick={() => onNavigateJob('next')}
                                     disabled={!canNavigateNext}
                                     className={`p-2 rounded-lg transition-all flex items-center justify-center border ${canNavigateNext
-                                            ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-                                            : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                                        ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                                        : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
                                         }`}
                                     title="下一个职位"
                                 >
@@ -308,9 +308,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
             </header>
 
-            {/* Content - Scrollable to prevent truncation */}
-            <main className="flex-1">
-                <div className="px-6 py-6">
+            {/* Content - Flat layout, no internal scroll */}
+            <main className="flex-1 px-6 py-6">
+                <div>
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
                         <section key={index} className="mb-6">
