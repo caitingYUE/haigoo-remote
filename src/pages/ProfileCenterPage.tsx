@@ -22,13 +22,13 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['resume','favorites','feedback','recommend'].includes(t) ? t : 'resume'
+    return t && ['resume', 'favorites', 'feedback', 'recommend'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
   const [isUploading, setIsUploading] = useState(false)
   const [resumeScore, setResumeScore] = useState<number>(0)
-  
+
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
   const [favorites, setFavorites] = useState<any[]>([])
@@ -64,7 +64,7 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
     const t = sp.get('tab') as TabKey | null
-    if (t && ['resume','favorites','feedback','recommend'].includes(t)) setTab(t as TabKey)
+    if (t && ['resume', 'favorites', 'feedback', 'recommend'].includes(t)) setTab(t as TabKey)
   }, [location.search])
 
   const switchTab = (t: TabKey) => {
@@ -118,6 +118,41 @@ export default function ProfileCenterPage() {
     })()
   }, [authUser, token])
 
+  // Fetch user profile and resume on page load
+  useEffect(() => {
+    ; (async () => {
+      try {
+        if (!authUser || !token) return
+
+        console.log('[ProfileCenter] Fetching user profile...')
+        const r = await fetch('/api/user-profile', {
+          headers: { Authorization: `Bearer ${token as string}` }
+        })
+        const profile = await r.json()
+        console.log('[ProfileCenter] Profile response:', profile)
+
+        // Check if user has uploaded resume
+        if (profile?.resumeFiles && Array.isArray(profile.resumeFiles) && profile.resumeFiles.length > 0) {
+          const latestResumeData = profile.resumeFiles[0]
+          console.log('[ProfileCenter] Found resume:', latestResumeData)
+
+          setLatestResume({
+            id: latestResumeData.id,
+            name: latestResumeData.fileName || 'Resume'
+          })
+
+          // Set resume text if available
+          if (latestResumeData.contentText) {
+            setResumeText(latestResumeData.contentText)
+          } else if (latestResumeData.parseResult?.text) {
+            setResumeText(latestResumeData.parseResult.text)
+          }
+        }
+      } catch (e) {
+        console.error('[ProfileCenter] Failed to fetch profile:', e)
+      }
+    })()
+  }, [authUser, token])
 
 
   const favoritesWithStatus = useMemo(() => favorites, [favorites])
@@ -150,22 +185,22 @@ export default function ProfileCenterPage() {
 
           // 4. 获取 AI 建议 (需会员)
           const isMember = authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date();
-          
+
           if (!isMember) {
-             showSuccess('简历上传成功', '开通会员可解锁AI深度优化建议');
-             setUpgradeSource('ai_resume');
-             setShowUpgradeModal(true);
+            showSuccess('简历上传成功', '开通会员可解锁AI深度优化建议');
+            setUpgradeSource('ai_resume');
+            setShowUpgradeModal(true);
           } else {
-              try {
-                const analysis = await resumeService.analyzeResume(parsed.textContent)
-                if (analysis.success && analysis.data) {
-                  setResumeScore(analysis.data.score || 0)
-                  showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
-                }
-              } catch (aiError) {
-                console.warn('AI analysis failed:', aiError)
-                // AI 分析失败不影响简历上传状态
+            try {
+              const analysis = await resumeService.analyzeResume(parsed.textContent)
+              if (analysis.success && analysis.data) {
+                setResumeScore(analysis.data.score || 0)
+                showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
               }
+            } catch (aiError) {
+              console.warn('AI analysis failed:', aiError)
+              // AI 分析失败不影响简历上传状态
+            }
           }
         } else {
           // 解析内容太少，可能解析不完全
@@ -233,7 +268,7 @@ export default function ProfileCenterPage() {
           <p className="text-base font-medium text-slate-900">Overall Resume Score</p>
           <p className="text-base font-bold text-indigo-600">{Math.max(0, Math.min(100, resumeScore))}%</p>
         </div>
-          <div className="w-full bg-slate-100 rounded-full h-2.5">
+        <div className="w-full bg-slate-100 rounded-full h-2.5">
           <div className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, resumeScore))}%` }} />
         </div>
       </div>
@@ -249,8 +284,8 @@ export default function ProfileCenterPage() {
                   <FileText className="w-12 h-12 text-slate-400 mb-2" />
                   <p className="text-lg font-bold text-slate-900">No resume uploaded yet</p>
                   <p className="text-sm text-slate-500 mb-6">Drag and drop your file here or click to upload.</p>
-                  <button 
-                    onClick={() => fileInputRef.current?.click()} 
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
                     className="px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center w-full max-w-[240px]"
                   >
                     <Upload className="w-4 h-4 mr-2" />Upload Resume
@@ -396,7 +431,7 @@ export default function ProfileCenterPage() {
   )
 
   const FeedbackTab = () => {
-    const [accuracy, setAccuracy] = useState<'accurate'|'inaccurate'|'unknown'>('unknown')
+    const [accuracy, setAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
     const [content, setContent] = useState('')
     const [contact, setContact] = useState('')
     const [submitting, setSubmitting] = useState(false)
@@ -430,29 +465,29 @@ export default function ProfileCenterPage() {
               <label className="block text-sm font-medium text-slate-900 mb-3">信息准确度</label>
               <div className="flex items-center gap-6">
                 <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    checked={accuracy==='accurate'} 
-                    onChange={()=>setAccuracy('accurate')}
-                    className="text-indigo-600 focus:ring-indigo-600" 
+                  <input
+                    type="radio"
+                    checked={accuracy === 'accurate'}
+                    onChange={() => setAccuracy('accurate')}
+                    className="text-indigo-600 focus:ring-indigo-600"
                   />
                   <span className="text-sm text-slate-700">准确</span>
                 </label>
                 <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    checked={accuracy==='inaccurate'} 
-                    onChange={()=>setAccuracy('inaccurate')}
-                    className="text-indigo-600 focus:ring-indigo-600" 
+                  <input
+                    type="radio"
+                    checked={accuracy === 'inaccurate'}
+                    onChange={() => setAccuracy('inaccurate')}
+                    className="text-indigo-600 focus:ring-indigo-600"
                   />
                   <span className="text-sm text-slate-700">不准确</span>
                 </label>
                 <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    checked={accuracy==='unknown'} 
-                    onChange={()=>setAccuracy('unknown')}
-                  className="text-indigo-600 focus:ring-indigo-600" 
+                  <input
+                    type="radio"
+                    checked={accuracy === 'unknown'}
+                    onChange={() => setAccuracy('unknown')}
+                    className="text-indigo-600 focus:ring-indigo-600"
                   />
                   <span className="text-sm text-slate-700">不确定</span>
                 </label>
@@ -460,30 +495,30 @@ export default function ProfileCenterPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">反馈内容</label>
-              <textarea 
-                rows={5} 
-                value={content} 
-                onChange={e=>setContent(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
-                placeholder="请描述问题或建议" 
+              <textarea
+                rows={5}
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                placeholder="请描述问题或建议"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">联系方式（可选）</label>
-              <input 
-                value={contact} 
-                onChange={e=>setContact(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
-                placeholder="邮箱或微信" 
+              <input
+                value={contact}
+                onChange={e => setContact(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                placeholder="邮箱或微信"
               />
             </div>
             <div className="flex justify-end pt-2">
-              <button 
-                onClick={submit} 
-                disabled={submitting} 
+              <button
+                onClick={submit}
+                disabled={submitting}
                 className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting?'提交中…':'提交反馈'}
+                {submitting ? '提交中…' : '提交反馈'}
               </button>
             </div>
           </div>
@@ -493,7 +528,7 @@ export default function ProfileCenterPage() {
   }
 
   const RecommendTab = () => {
-    const [type, setType] = useState<'enterprise'|'job'|'user'>('enterprise')
+    const [type, setType] = useState<'enterprise' | 'job' | 'user'>('enterprise')
     const [name, setName] = useState('')
     const [link, setLink] = useState('')
     const [description, setDescription] = useState('')
@@ -526,9 +561,9 @@ export default function ProfileCenterPage() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">推荐类型</label>
-              <select 
-                value={type} 
-                onChange={e=>setType(e.target.value as any)} 
+              <select
+                value={type}
+                onChange={e => setType(e.target.value as any)}
                 className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white"
               >
                 <option value="enterprise">企业</option>
@@ -538,39 +573,39 @@ export default function ProfileCenterPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">名称</label>
-              <input 
-                value={name} 
-                onChange={e=>setName(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
-                placeholder="例如：GitLab" 
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                placeholder="例如：GitLab"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">链接（可选）</label>
-              <input 
-                value={link} 
-                onChange={e=>setLink(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
-                placeholder="https://..." 
+              <input
+                value={link}
+                onChange={e => setLink(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                placeholder="https://..."
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">推荐理由（可选）</label>
-              <textarea 
-                rows={4} 
-                value={description} 
-                onChange={e=>setDescription(e.target.value)} 
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" 
-                placeholder="简述推荐原因" 
+              <textarea
+                rows={4}
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                placeholder="简述推荐原因"
               />
             </div>
             <div className="flex justify-end pt-2">
-              <button 
-                onClick={submit} 
-                disabled={submitting} 
+              <button
+                onClick={submit}
+                disabled={submitting}
                 className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting?'提交中…':'提交推荐'}
+                {submitting ? '提交中…' : '提交推荐'}
               </button>
             </div>
           </div>
@@ -583,9 +618,9 @@ export default function ProfileCenterPage() {
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <button 
-            className="flex items-center text-slate-500 hover:text-slate-900 transition-colors" 
-            onClick={() => navigate(-1)} 
+          <button
+            className="flex items-center text-slate-500 hover:text-slate-900 transition-colors"
+            onClick={() => navigate(-1)}
             aria-label="返回上一页"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
@@ -598,45 +633,41 @@ export default function ProfileCenterPage() {
             <div>
               <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-2">Personal Center</div>
               <div className="space-y-1" role="tablist" aria-label="个人中心切换">
-                <button 
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    tab === 'resume' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
-                  }`}
-                  role="tab" 
-                  aria-selected={tab === 'resume'} 
+                <button
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'resume' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                    }`}
+                  role="tab"
+                  aria-selected={tab === 'resume'}
                   onClick={() => switchTab('resume')}
                 >
                   <FileText className={`w-4 h-4 ${tab === 'resume' ? 'text-white' : 'text-slate-400'}`} />
                   我的简历
                 </button>
-                <button 
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    tab === 'favorites' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
-                  }`}
-                  role="tab" 
-                  aria-selected={tab === 'favorites'} 
+                <button
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'favorites' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                    }`}
+                  role="tab"
+                  aria-selected={tab === 'favorites'}
                   onClick={() => switchTab('favorites')}
                 >
                   <Heart className={`w-4 h-4 ${tab === 'favorites' ? 'text-white' : 'text-slate-400'}`} />
                   我的收藏
                 </button>
-                <button 
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    tab === 'feedback' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
-                  }`}
-                  role="tab" 
-                  aria-selected={tab === 'feedback'} 
+                <button
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'feedback' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                    }`}
+                  role="tab"
+                  aria-selected={tab === 'feedback'}
                   onClick={() => switchTab('feedback')}
                 >
                   <MessageSquare className={`w-4 h-4 ${tab === 'feedback' ? 'text-white' : 'text-slate-400'}`} />
                   我要反馈
                 </button>
-                <button 
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    tab === 'recommend' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
-                  }`}
-                  role="tab" 
-                  aria-selected={tab === 'recommend'} 
+                <button
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'recommend' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                    }`}
+                  role="tab"
+                  aria-selected={tab === 'recommend'}
                   onClick={() => switchTab('recommend')}
                 >
                   <ThumbsUp className={`w-4 h-4 ${tab === 'recommend' ? 'text-white' : 'text-slate-400'}`} />
@@ -649,34 +680,34 @@ export default function ProfileCenterPage() {
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 text-white shadow-lg relative overflow-hidden">
               {/* Decoration */}
               <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl"></div>
-              
+
               <div className="flex items-center gap-2 mb-4 relative z-10">
                 <Crown className="w-5 h-5 text-yellow-400" />
                 <h3 className="font-bold text-sm text-white">会员权益</h3>
               </div>
-              
+
               <div className="relative z-10">
                 {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
-                    <div>
-                      <p className="text-xs text-slate-300 mb-2">您当前是 <span className="font-bold text-yellow-300">{authUser.membershipLevel === 'club_go' ? '俱乐部Go会员' : 'Goo+会员'}</span></p>
-                      <p className="text-xs text-slate-400 mb-4">有效期至 {new Date(authUser.membershipExpireAt).toLocaleDateString()}</p>
-                      <button 
-                          onClick={() => navigate('/membership')}
-                          className="w-full py-2 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white/20 transition-colors"
-                      >
-                          续费/升级
-                      </button>
-                    </div>
+                  <div>
+                    <p className="text-xs text-slate-300 mb-2">您当前是 <span className="font-bold text-yellow-300">{authUser.membershipLevel === 'club_go' ? '俱乐部Go会员' : 'Goo+会员'}</span></p>
+                    <p className="text-xs text-slate-400 mb-4">有效期至 {new Date(authUser.membershipExpireAt).toLocaleDateString()}</p>
+                    <button
+                      onClick={() => navigate('/membership')}
+                      className="w-full py-2 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white/20 transition-colors"
+                    >
+                      续费/升级
+                    </button>
+                  </div>
                 ) : (
-                    <div>
-                      <p className="text-xs text-slate-300 mb-4 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
-                      <button 
-                          onClick={() => navigate('/membership')}
-                          className="w-full py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-colors shadow-sm"
-                      >
-                          立即开通
-                      </button>
-                    </div>
+                  <div>
+                    <p className="text-xs text-slate-300 mb-4 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
+                    <button
+                      onClick={() => navigate('/membership')}
+                      className="w-full py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-colors shadow-sm"
+                    >
+                      立即开通
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
