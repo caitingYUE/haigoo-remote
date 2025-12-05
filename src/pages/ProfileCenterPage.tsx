@@ -118,38 +118,60 @@ export default function ProfileCenterPage() {
     })()
   }, [authUser, token])
 
-  // Fetch user profile and resume on page load
+  // Fetch user resume on page load - FIXED: Read directly from resumes API
   useEffect(() => {
-    ; (async () => {
+    (async () => {
       try {
-        if (!authUser || !token) return
+        if (!authUser || !token) {
+          console.log('[ProfileCenter] No auth user or token')
+          return
+        }
 
-        console.log('[ProfileCenter] Fetching user profile...')
-        const r = await fetch('/api/user-profile', {
-          headers: { Authorization: `Bearer ${token as string}` }
+        console.log('[ProfileCenter] Fetching resumes from /api/resumes...')
+
+        // ✅ Read directly from resumes table instead of profile.resumeFiles
+        const resumesResp = await fetch('/api/resumes', {
+          headers: { Authorization: `Bearer ${token}` }
         })
-        const profile = await r.json()
-        console.log('[ProfileCenter] Profile response:', profile)
 
-        // Check if user has uploaded resume
-        if (profile?.resumeFiles && Array.isArray(profile.resumeFiles) && profile.resumeFiles.length > 0) {
-          const latestResumeData = profile.resumeFiles[0]
-          console.log('[ProfileCenter] Found resume:', latestResumeData)
+        if (!resumesResp.ok) {
+          console.error('[ProfileCenter] Failed to fetch resumes:', resumesResp.status)
+          return
+        }
+
+        const resumesData = await resumesResp.json()
+        console.log('[ProfileCenter] Resumes response:', resumesData)
+
+        // Handle the response format from /api/resumes
+        if (resumesData.data && Array.isArray(resumesData.data) && resumesData.data.length > 0) {
+          const latestResumeData = resumesData.data[0]
+          console.log('[ProfileCenter] ✅ Found resume:', latestResumeData)
 
           setLatestResume({
-            id: latestResumeData.id,
-            name: latestResumeData.fileName || 'Resume'
+            id: latestResumeData.id || latestResumeData.resume_id,
+            name: latestResumeData.fileName || latestResumeData.file_name || 'Resume'
           })
 
           // Set resume text if available
           if (latestResumeData.contentText) {
             setResumeText(latestResumeData.contentText)
+          } else if (latestResumeData.content_text) {
+            setResumeText(latestResumeData.content_text)
           } else if (latestResumeData.parseResult?.text) {
             setResumeText(latestResumeData.parseResult.text)
+          } else if (latestResumeData.parse_result?.text) {
+            const parseResult = typeof latestResumeData.parse_result === 'string'
+              ? JSON.parse(latestResumeData.parse_result)
+              : latestResumeData.parse_result
+            setResumeText(parseResult.text || parseResult.content || '')
           }
+
+          console.log('[ProfileCenter] ✅ Resume loaded successfully')
+        } else {
+          console.log('[ProfileCenter] No resumes found in database')
         }
       } catch (e) {
-        console.error('[ProfileCenter] Failed to fetch profile:', e)
+        console.error('[ProfileCenter] ❌ Failed to fetch resumes:', e)
       }
     })()
   }, [authUser, token])
