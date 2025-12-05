@@ -68,15 +68,17 @@ export default function JobCardNew({ job, onClick, matchScore }: JobCardNewProps
                </div>
             </div>
 
-            {/* Job Description Summary - NEW */}
+            {/* Job Description Summary - Prioritize translation */}
             {(() => {
                // Generate job summary
                const getJobSummary = (): string => {
-                  // Try description first
-                  if (job.description) {
-                     const cleanText = job.description
-                        .replace(/<[^>]*>/g, '') // Remove HTML tags
-                        .replace(/\s+/g, ' ') // Merge whitespace
+                  // Try translated description first
+                  const descToUse = job.translations?.description || job.description
+
+                  if (descToUse) {
+                     const cleanText = descToUse
+                        .replace(/\u003c[^\u003e]*\u003e/g, '') // Remove HTML tags
+                        .replace(/\\s+/g, ' ') // Merge whitespace
                         .trim()
 
                      if (cleanText.length > 200) {

@@ -273,10 +273,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
             </header>
 
-            {/* Content - No scroll, flat layout */}
-            <main className="flex-1 px-6 py-6">
-                <div>
-                    {/* Job Description Sections */}
+            {/* Content - Scrollable to prevent truncation */}
+            <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+                <div className="px-6 py-6">
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
                         <section key={index} className="mb-6">
