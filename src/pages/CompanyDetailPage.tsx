@@ -4,7 +4,7 @@ import { ArrowLeft, Globe, Building2, Briefcase } from 'lucide-react'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
-import JobCard from '../components/JobCard'
+import JobCardNew from '../components/JobCardNew'
 import { SingleLineTags } from '../components/SingleLineTags'
 
 export default function CompanyDetailPage() {
@@ -185,15 +185,13 @@ export default function CompanyDetailPage() {
                         <p className="text-slate-500">该公司目前没有开放的职位</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {jobs.map((job) => (
-                            <div key={job.id} onClick={() => handleJobClick(job)}>
-                                <JobCard
-                                    job={job}
-                                    onSave={() => toggleSaveJob(job.id)}
-                                    isSaved={savedJobs.has(job.id)}
-                                />
-                            </div>
+                            <JobCardNew
+                                key={job.id}
+                                job={job}
+                                onClick={handleJobClick}
+                            />
                         ))}
                     </div>
                 )}
