@@ -240,7 +240,8 @@ export default async function handler(req, res) {
       fileName: filename,
       size: buffer.length,
       parseStatus: finalParseStatus,
-      parsedData: finalParsedData,
+      parseResult: finalParsedData,  // Changed from parsedData to parseResult
+      contentText: finalParsedData.text || finalParsedData.content || '',  // Extract text for easier querying
       localFilePath, // 保存本地文件路径（仅本地模式有值）
       uploadedAt: new Date().toISOString()
     }
