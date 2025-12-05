@@ -98,4 +98,3 @@ export function LocationTooltip({ location, onClose }: LocationTooltipProps) {
         </div>
     )
 }
-```
