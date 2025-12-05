@@ -85,7 +85,7 @@ export default function UserManagementPage() {
       filtered = filtered.filter(user =>
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.id.toLowerCase().includes(searchTerm.toLowerCase())
+        user.user_id.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
@@ -135,7 +135,7 @@ export default function UserManagementPage() {
       }
       // 局部更新并重算统计
       setUsers(prev => {
-        const next = prev.map(u => (u.id === userId ? { ...u, status: nextStatus, updatedAt: new Date().toISOString() } : u))
+        const next = prev.map(u => (u.user_id === userId ? { ...u, status: nextStatus, updatedAt: new Date().toISOString() } : u))
         calculateStats(next)
         return next
       })
@@ -155,15 +155,15 @@ export default function UserManagementPage() {
   const saveEdit = async () => {
     if (!editingUser) return
     try {
-      setUpdatingId(editingUser.id)
+      setUpdatingId(editingUser.user_id)
       const resp = await fetch('/api/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ id: editingUser.id, username: editUsername, roles: { admin: editAdmin } })
+        body: JSON.stringify({ id: editingUser.user_id, username: editUsername, roles: { admin: editAdmin } })
       })
       const data = await resp.json()
       if (data.success && data.user) {
-        setUsers(prev => prev.map(u => (u.id === editingUser.id ? { ...u, ...data.user } as User : u)))
+        setUsers(prev => prev.map(u => (u.user_id === editingUser.user_id ? { ...u, ...data.user } as User : u)))
       }
     } finally {
       setUpdatingId(null)
@@ -181,8 +181,8 @@ export default function UserManagementPage() {
       })
       const data = await resp.json()
       if (data.success) {
-        setUsers(prev => prev.filter(u => u.id !== userId))
-        calculateStats(users.filter(u => u.id !== userId))
+        setUsers(prev => prev.filter(u => u.user_id !== userId))
+        calculateStats(users.filter(u => u.user_id !== userId))
       }
     } finally {
       setUpdatingId(null)
@@ -203,7 +203,7 @@ export default function UserManagementPage() {
     const csv = [
       ['UUID', '用户名', '邮箱', '认证方式', '邮箱验证', '注册时间', '最后登录', '状态'].join(','),
       ...filteredUsers.map(user => [
-        user.id,
+        user.user_id,
         user.username,
         user.email,
         user.authProvider,
@@ -370,7 +370,7 @@ export default function UserManagementPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={user.user_id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {user.avatar ? (
@@ -394,7 +394,7 @@ export default function UserManagementPage() {
                       </td>
                       <td className="px-6 py-4">
                         <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono text-slate-700">
-                          {user.id}
+                          {user.user_id}
                         </code>
                       </td>
                       <td className="px-6 py-4">
@@ -443,25 +443,25 @@ export default function UserManagementPage() {
                         <div className="flex items-center gap-2">
                           {user.status === 'active' ? (
                             <button
-                              disabled={updatingId === user.id}
-                              onClick={() => updateUserStatus(user.id, 'suspended')}
-                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.id ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'
+                              disabled={updatingId === user.user_id}
+                              onClick={() => updateUserStatus(user.user_id, 'suspended')}
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.user_id ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'
                                 }`}
                             >
                               <Ban className="w-4 h-4" /> 停用
                             </button>
                           ) : (
                             <button
-                              disabled={updatingId === user.id}
-                              onClick={() => updateUserStatus(user.id, 'active')}
-                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.id ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-green-50 border-green-200 text-green-600'
+                              disabled={updatingId === user.user_id}
+                              onClick={() => updateUserStatus(user.user_id, 'active')}
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.user_id ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-green-50 border-green-200 text-green-600'
                                 }`}
                             >
                               <CheckCircle className="w-4 h-4" /> 启用
                             </button>
                           )}
                           <button
-                            disabled={updatingId === user.id}
+                            disabled={updatingId === user.user_id}
                             onClick={() => openEdit(user)}
                             className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-slate-50"
                           >
@@ -469,8 +469,8 @@ export default function UserManagementPage() {
                           </button>
                           {user.email !== SUPER_ADMIN_EMAIL && (
                             <button
-                              disabled={updatingId === user.id}
-                              onClick={() => deleteUser(user.id)}
+                              disabled={updatingId === user.user_id}
+                              onClick={() => deleteUser(user.user_id)}
                               className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-red-50 border-red-200 text-red-600"
                             >
                               <XCircle className="w-4 h-4" /> 删除

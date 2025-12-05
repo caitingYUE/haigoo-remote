@@ -5,7 +5,7 @@
 
 // 用户基本信息
 export interface User {
-  id: string // 唯一用户ID
+  user_id: string // 唯一用户ID
   email: string // 邮箱（唯一标识）
   username: string // 用户名（随机生成或从简历提取）
   avatar: string // 头像URL（随机生成或Gravatar）
