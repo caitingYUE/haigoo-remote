@@ -467,14 +467,9 @@ export default function JobsPage() {
 
       return matchesSearch && matchesType && matchesJobType && matchesCategory && matchesLevel && matchesLocation && matchesIndustry && matchesRegion && matchesSource && matchesTrusted && matchesNew && matchesSalary
     }).sort((a, b) => {
-      // 优先级: 内推 > 人工精选 > 匹配分数 > 发布时间
-      // 1. 内推岗位优先
-      if (a.canRefer && !b.canRefer) return -1
-      if (!a.canRefer && b.canRefer) return 1
-      // 2. 人工精选次之
-      if (a.isTrusted && !b.isTrusted) return -1
-      if (!a.isTrusted && b.isTrusted) return 1
-      // 3. 如果有匹配分数,按匹配度排序
+      // 优先级: 匹配分数 > 内推 > 人工精选 > 发布时间
+
+      // 1. 如果有匹配分数,按匹配度排序 (优先)
       const scoreA = matchScores[a.id] || 0
       const scoreB = matchScores[b.id] || 0
 
@@ -487,6 +482,14 @@ export default function JobsPage() {
       }
 
       if (scoreA !== scoreB) return scoreB - scoreA
+
+      // 2. 内推岗位优先
+      if (a.canRefer && !b.canRefer) return -1
+      if (!a.canRefer && b.canRefer) return 1
+      // 3. 人工精选次之
+      if (a.isTrusted && !b.isTrusted) return -1
+      if (!a.isTrusted && b.isTrusted) return 1
+      
       // 4. 按发布时间排序
       return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
     })

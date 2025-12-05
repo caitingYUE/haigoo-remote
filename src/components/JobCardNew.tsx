@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { Briefcase, Globe, ChevronRight, Sparkles } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
+import { stripMarkdown } from '../utils/text-formatter';
 // import { useNavigate } from 'react-router-dom';
 
 interface JobCardNewProps {
@@ -74,13 +75,10 @@ export default function JobCardNew({ job, onClick, matchScore }: JobCardNewProps
                const getJobSummary = (): string => {
                   // Try translated description first
                   const descToUse = job.translations?.description || job.description
-
+                  
                   if (descToUse) {
-                     const cleanText = descToUse
-                        .replace(/\u003c[^\u003e]*\u003e/g, '') // Remove HTML tags
-                        .replace(/\\s+/g, ' ') // Merge whitespace
-                        .trim()
-
+                     const cleanText = stripMarkdown(descToUse)
+                     
                      if (cleanText.length > 200) {
                         return cleanText.substring(0, 200) + '...'
                      }

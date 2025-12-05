@@ -108,35 +108,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={`bg-white dark:bg-zinc-900 shadow-xl h-full w-full max-w-[95vw] md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw] flex flex-col relative transform transition-all duration-300 ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
+        className={`bg-white dark:bg-zinc-900 shadow-xl h-full w-full max-w-[95vw] md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw] flex flex-col relative transform transition-all duration-300 overflow-y-auto ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
           }`}
         onClick={(e) => e.stopPropagation()}
       >
-
-        {/* Navigation Buttons - Enhanced */}
-        {jobs.length > 1 && canNavigatePrev && (
-          <button
-            onClick={() => handleNavigate('prev')}
-            onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('prev'))}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-14 h-14 bg-white/95 backdrop-blur-sm border-2 border-indigo-200 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 group"
-            title="上一个职位 (← 或 ↑)"
-            aria-label="上一个职位"
-          >
-            <ChevronLeft className="h-7 w-7 group-hover:-translate-x-0.5 transition-transform" />
-          </button>
-        )}
-
-        {jobs.length > 1 && canNavigateNext && (
-          <button
-            onClick={() => handleNavigate('next')}
-            onKeyDown={(e) => handleKeyDown(e, () => handleNavigate('next'))}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-14 h-14 bg-white/95 backdrop-blur-sm border-2 border-indigo-200 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 group"
-            title="下一个职位 (→ 或 ↓)"
-            aria-label="下一个职位"
-          >
-            <ChevronRight className="h-7 w-7 group-hover:translate-x-0.5 transition-transform" />
-          </button>
-        )}
 
         <JobDetailPanel
           job={job}
@@ -145,6 +120,9 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           onApply={onApply}
           onClose={onClose}
           showCloseButton={true}
+          onNavigateJob={onNavigateJob}
+          canNavigatePrev={canNavigatePrev}
+          canNavigateNext={canNavigateNext}
         />
       </div>
     </div>,
