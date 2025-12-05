@@ -223,8 +223,13 @@ async function handleUpload(req, res) {
     }
 
     try {
-      await saveUserResume(userId, resumeRecord)
-      console.log(`[resumes] Saved resume for user ${userId} (Status: ${finalParseStatus})`)
+      const saveResult = await saveUserResume(userId, resumeRecord)
+      const provider = saveResult.provider || 'unknown'
+      console.log(`[resumes] Saved resume for user ${userId} (Status: ${finalParseStatus}, Provider: ${provider})`)
+
+      if (provider === 'memory') {
+        console.warn('[resumes] WARNING: Resume saved to memory. Data will be lost on server restart. Check DATABASE_URL.')
+      }
     } catch (saveError) {
       console.error(`[resumes] Failed to save resume record: ${saveError.message}`)
       return sendJson(res, { success: false, error: 'Failed to save resume' }, 500)

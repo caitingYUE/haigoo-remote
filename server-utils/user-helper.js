@@ -43,6 +43,13 @@ const userHelper = {
                 if (user.last_login_at) user.lastLoginAt = user.last_login_at
                 if (user.created_at) user.createdAt = user.created_at
                 if (user.updated_at) user.updatedAt = user.updated_at
+                if (user.roles && typeof user.roles === 'string') {
+                    try { user.roles = JSON.parse(user.roles) } catch (e) { console.warn('[user-helper] Failed to parse roles JSON', e); user.roles = {} }
+                }
+                if (user.profile && typeof user.profile === 'string') {
+                    try { user.profile = JSON.parse(user.profile) } catch (e) { console.warn('[user-helper] Failed to parse profile JSON', e); user.profile = {} }
+                }
+
                 if (user.membership_level) user.membershipLevel = user.membership_level
                 if (user.membership_start_at) user.membershipStartAt = user.membership_start_at
                 if (user.membership_expire_at) user.membershipExpireAt = user.membership_expire_at
@@ -121,9 +128,9 @@ const userHelper = {
                 verification_expires: user.verificationExpires || user.verification_expires,
                 email_verified: user.emailVerified || user.email_verified || false,
                 status: user.status || 'active',
-                roles: user.roles || {},
+                roles: JSON.stringify(user.roles || {}),
                 last_login_at: user.lastLoginAt || user.last_login_at,
-                profile: user.profile || {},
+                profile: JSON.stringify(user.profile || {}),
                 // 时间戳
                 updated_at: new Date().toISOString()
             }
@@ -312,10 +319,10 @@ const userHelper = {
                 return { success: false, error: 'Neon/PostgreSQL not configured' }
             }
 
-            const { 
-                status, 
-                username, 
-                roles, 
+            const {
+                status,
+                username,
+                roles,
                 avatar,
                 profile,
                 fullName,
@@ -349,37 +356,37 @@ const userHelper = {
 
             // 处理个人资料字段
             let profileData = user.profile || {}
-            
+
             if (typeof fullName === 'string') {
                 profileData.fullName = fullName.trim()
             } else if (fullName === null || fullName === undefined) {
                 profileData.fullName = undefined
             }
-            
+
             if (typeof title === 'string') {
                 profileData.title = title.trim()
             } else if (title === null || title === undefined) {
                 profileData.title = undefined
             }
-            
+
             if (typeof location === 'string') {
                 profileData.location = location.trim()
             } else if (location === null || location === undefined) {
                 profileData.location = undefined
             }
-            
+
             if (typeof targetRole === 'string') {
                 profileData.targetRole = targetRole.trim()
             } else if (targetRole === null || targetRole === undefined) {
                 profileData.targetRole = undefined
             }
-            
+
             if (typeof phone === 'string') {
                 profileData.phone = phone.trim()
             } else if (phone === null || phone === undefined) {
                 profileData.phone = undefined
             }
-            
+
             if (typeof bio === 'string') {
                 profileData.bio = bio.trim()
             } else if (bio === null || bio === undefined) {
@@ -391,7 +398,7 @@ const userHelper = {
                 profileData = { ...profileData, ...profile }
             }
 
-            updateFields.profile = profileData
+            updateFields.profile = JSON.stringify(profileData)
 
             // 管理员专用字段
             if (isAdmin) {
@@ -402,9 +409,9 @@ const userHelper = {
                 if (roles && typeof roles === 'object') {
                     // 超级管理员不可更改权限
                     if (user.email === SUPER_ADMIN_EMAIL) {
-                        updateFields.roles = { ...(user.roles || {}), admin: true }
+                        updateFields.roles = JSON.stringify({ ...(user.roles || {}), admin: true })
                     } else {
-                        updateFields.roles = { ...(user.roles || {}), ...roles }
+                        updateFields.roles = JSON.stringify({ ...(user.roles || {}), ...roles })
                     }
                 }
             }
@@ -425,8 +432,8 @@ const userHelper = {
 
             // 获取更新后的用户信息
             const updatedUser = await this.getUserById(userId)
-            return { 
-                success: true, 
+            return {
+                success: true,
                 user: this.sanitizeUser(updatedUser),
                 message: '更新成功'
             }
