@@ -51,6 +51,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             ? job.translations.description
             : job?.description
         const desc = typeof descToUse === 'string' ? descToUse as string : (descToUse ? String(descToUse) : '')
+
+        // Debug logging
+        console.log('[JobDetailPanel] Translation debug:', {
+            showTranslation,
+            hasTranslations: !!job?.translations,
+            translatedTitle: job?.translations?.title,
+            translatedDesc: job?.translations?.description?.substring(0, 100),
+            originalDesc: job?.description?.substring(0, 100),
+            usingDesc: desc.substring(0, 100)
+        })
+
         return segmentJobDescription(desc)
     }, [job, showTranslation])
 
@@ -171,15 +182,30 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <h1 className="text-xl font-bold text-slate-900 flex-1 pr-4">
                         {displayText(job.title, job.translations?.title)}
                     </h1>
-                    {showCloseButton && onClose && (
-                        <button
-                            onClick={onClose}
-                            className="p-1.5 hover:bg-slate-100 rounded-lg transition-all"
-                            aria-label="关闭"
-                        >
-                            <X className="h-4 w-4 text-slate-500" />
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {/* Compact Translation Toggle */}
+                        {hasTranslation && (
+                            <button
+                                onClick={() => setShowTranslation(!showTranslation)}
+                                className={`px-2 py-1 rounded text-xs font-medium transition-all ${showTranslation
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
+                                title={showTranslation ? '切换到原文' : '切换到翻译'}
+                            >
+                                译
+                            </button>
+                        )}
+                        {showCloseButton && onClose && (
+                            <button
+                                onClick={onClose}
+                                className="p-1.5 hover:bg-slate-100 rounded-lg transition-all"
+                                aria-label="关闭"
+                            >
+                                <X className="h-4 w-4 text-slate-500" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3 text-sm text-slate-600 mb-3">
@@ -200,31 +226,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         <span className="font-semibold text-indigo-600">
                             {job.salary.currency}{job.salary.min.toLocaleString()} - {job.salary.currency}{job.salary.max.toLocaleString()}
                         </span>
-                    </div>
-                )}
-
-                {/* Translation Toggle - Prominent Position */}
-                {hasTranslation && (
-                    <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-100 mt-3">
-                        <div className="flex items-center gap-2 flex-1">
-                            <Languages className="w-4 h-4 text-indigo-600" />
-                            <span className="text-sm font-medium text-slate-700">
-                                {showTranslation ? '正在显示翻译版本' : '正在显示原文版本'}
-                            </span>
-                        </div>
-                        <button
-                            onClick={() => setShowTranslation(!showTranslation)}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${showTranslation
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                                : 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50'
-                                }`}
-                            title={showTranslation ? '切换到原文' : '切换到翻译'}
-                        >
-                            <div className="flex items-center gap-1.5">
-                                <Languages className="w-4 h-4" />
-                                <span>{showTranslation ? '查看原文' : '查看翻译'}</span>
-                            </div>
-                        </button>
                     </div>
                 )}
             </header>
