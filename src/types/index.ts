@@ -41,6 +41,8 @@ export interface Job {
     requirements?: string[]
     responsibilities?: string[]
   }
+  isTranslated?: boolean
+  translatedAt?: string
   // Trusted Company Fields
   companyId?: string
   sourceType?: 'trusted' | 'rss'
