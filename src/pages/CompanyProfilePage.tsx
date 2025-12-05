@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Briefcase, CheckCircle, ArrowLeft } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { Job } from '../types'
-import JobCard from '../components/JobCard'
+import JobCardNew from '../components/JobCardNew'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import JobDetailModal from '../components/JobDetailModal'
 
@@ -54,6 +54,23 @@ export default function CompanyProfilePage() {
             loadData(id)
         }
     }, [id, loadData])
+
+    const filteredJobs = useMemo(() => {
+        const keyword = searchTerm.trim().toLowerCase()
+        return jobs.filter(job => {
+            const matchKeyword = keyword.length === 0 || (
+                (job.title || '').toLowerCase().includes(keyword) ||
+                (job.location || '').toLowerCase().includes(keyword) ||
+                (job.type || '').toLowerCase().includes(keyword)
+            )
+            const matchType = typeFilter === 'all' || ((job.type || '').toLowerCase() === typeFilter)
+            const isRemote = job.isRemote === true || /remote/i.test(job.location || '')
+            const matchRemote = remoteFilter === 'all' || (remoteFilter === 'remote' ? isRemote : !isRemote)
+            return matchKeyword && matchType && matchRemote
+        })
+    }, [jobs, searchTerm, typeFilter, remoteFilter])
+
+    const currentJobIndex = selectedJob ? filteredJobs.findIndex(j => j.id === selectedJob.id) : -1
 
     if (loading) {
         return (
@@ -191,55 +208,43 @@ export default function CompanyProfilePage() {
                 </div>
 
                 {/* Filtered Jobs */}
-                {(() => {
-                    const keyword = searchTerm.trim().toLowerCase()
-                    const filtered = jobs.filter(job => {
-                        const matchKeyword = keyword.length === 0 || (
-                            (job.title || '').toLowerCase().includes(keyword) ||
-                            (job.location || '').toLowerCase().includes(keyword) ||
-                            (job.type || '').toLowerCase().includes(keyword)
-                        )
-                        const matchType = typeFilter === 'all' || ((job.type || '').toLowerCase() === typeFilter)
-                        const isRemote = job.isRemote === true || /remote/i.test(job.location || '')
-                        const matchRemote = remoteFilter === 'all' || (remoteFilter === 'remote' ? isRemote : !isRemote)
-                        return matchKeyword && matchType && matchRemote
-                    })
-                    return (
-                        filtered.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filtered.map((job) => (
-                                    <JobCard
-                                        key={job.id}
-                                        job={job}
-                                        isSaved={false}
-                                        onSave={() => { }}
-                                        onClick={(job) => setSelectedJob(job)}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-slate-200">
-                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                                    <Briefcase className="w-8 h-8" />
-                                </div>
-                                <h3 className="text-lg font-medium text-slate-900 mb-1">未找到匹配的职位</h3>
-                                <p className="text-slate-500">试试调整搜索关键词或筛选条件。</p>
-                            </div>
-                        )
-                    )
-                })()}
+                {filteredJobs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredJobs.map((job) => (
+                            <JobCardNew
+                                key={job.id}
+                                job={job}
+                                onClick={(job) => setSelectedJob(job)}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-slate-200">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                            <Briefcase className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-lg font-medium text-slate-900 mb-1">未找到匹配的职位</h3>
+                        <p className="text-slate-500">试试调整搜索关键词或筛选条件。</p>
+                    </div>
+                )}
             </div>
 
             {/* Job Detail Modal */}
-            {
-                selectedJob && (
-                    <JobDetailModal
-                        job={selectedJob}
-                        isOpen={!!selectedJob}
-                        onClose={() => setSelectedJob(null)}
-                    />
-                )
-            }
+            {selectedJob && (
+                <JobDetailModal
+                    job={selectedJob}
+                    isOpen={!!selectedJob}
+                    onClose={() => setSelectedJob(null)}
+                    jobs={filteredJobs}
+                    currentJobIndex={currentJobIndex}
+                    onNavigateJob={(direction) => {
+                        const nextIndex = direction === 'prev'
+                            ? Math.max(0, currentJobIndex - 1)
+                            : Math.min(filteredJobs.length - 1, currentJobIndex + 1)
+                        setSelectedJob(filteredJobs[nextIndex])
+                    }}
+                />
+            )}
         </div >
     )
 }
