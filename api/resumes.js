@@ -213,8 +213,10 @@ async function handleUpload(req, res) {
     const finalParseStatus = parsedData ? parseStatus : 'failed'
 
     const resumeRecord = {
+      userId: userId, // ✅ Associate resume with user
       fileName: filename,
       size: buffer.length,
+      fileType: path.extname(filename).toLowerCase().replace('.', ''),
       parseStatus: finalParseStatus,
       parseResult: finalParsedData,
       contentText: finalParsedData.text || finalParsedData.content || '',

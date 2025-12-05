@@ -60,36 +60,49 @@ export default function JobsPage() {
     isNew: false
   })
 
-  // Load user preferences
+  // Load user preferences on mount and when auth state changes
   useEffect(() => {
     loadUserPreferences()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated])
+  }, [isAuthenticated, token]) // Re-run when auth state or token changes
 
   const loadUserPreferences = async () => {
-    if (!isAuthenticated || !token) return
+    if (!isAuthenticated || !token) {
+      console.log('[Preferences] Skipping load: not authenticated or no token')
+      return
+    }
 
+    console.log('[Preferences] Loading user preferences...')
     try {
       const resp = await fetch('/api/user-profile?action=get_preferences', {
         headers: { Authorization: `Bearer ${token}` }
       })
+      console.log('[Preferences] Response status:', resp.status)
+
       if (resp.ok) {
         const data = await resp.json()
+        console.log('[Preferences] Loaded data:', data)
         if (data.preferences) {
           setUserPreferences(data.preferences)
+          console.log('[Preferences] ✅ Set preferences:', data.preferences)
+        } else {
+          console.log('[Preferences] ⚠️ No preferences in response')
         }
+      } else {
+        console.error('[Preferences] ❌ Failed to load:', resp.status, resp.statusText)
       }
     } catch (error) {
-      console.error('Failed to load preferences:', error)
+      console.error('[Preferences] ❌ Load error:', error)
     }
   }
 
   const saveUserPreferences = async (preferences: JobPreferences) => {
     if (!isAuthenticated || !token) {
+      console.log('[Preferences] Cannot save: not authenticated')
       navigate('/login')
       return
     }
 
+    console.log('[Preferences] Saving preferences:', preferences)
     try {
       const resp = await fetch('/api/user-profile?action=save_preferences', {
         method: 'POST',
@@ -100,14 +113,19 @@ export default function JobsPage() {
         body: JSON.stringify({ preferences })
       })
 
+      console.log('[Preferences] Save response status:', resp.status)
       if (resp.ok) {
+        const data = await resp.json()
+        console.log('[Preferences] ✅ Save successful:', data)
         setUserPreferences(preferences)
         showSuccess('求职期望已保存')
       } else {
+        const errorText = await resp.text()
+        console.error('[Preferences] ❌ Save failed:', resp.status, errorText)
         showError('保存失败，请稍后重试')
       }
     } catch (error) {
-      console.error('Failed to save preferences:', error)
+      console.error('[Preferences] ❌ Save error:', error)
       showError('保存失败，请检查网络连接')
     }
   }
@@ -731,6 +749,7 @@ export default function JobsPage() {
                         key={job.id}
                         job={job}
                         onClick={() => handleJobSelect(job, index)}
+                        matchScore={matchScores[job.id]}
                       />
                     ))}
                   </div>

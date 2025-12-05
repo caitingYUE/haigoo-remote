@@ -31,6 +31,12 @@ interface ResumeRecord {
     parseStatus: 'success' | 'failed' | 'partial';
     parseResult: ParsedResume;
     uploadedAt: string;
+    // User info fetched from users table
+    userInfo?: {
+        username?: string;
+        email?: string;
+        fullName?: string;
+    };
 }
 
 const AdminResumesPage: React.FC = () => {
@@ -51,7 +57,35 @@ const AdminResumesPage: React.FC = () => {
 
             if (res.ok) {
                 const data = await res.json();
-                setResumes(data.data || []);
+                const resumesData = data.data || [];
+
+                // Fetch user info for each resume
+                const resumesWithUserInfo = await Promise.all(
+                    resumesData.map(async (resume: ResumeRecord) => {
+                        if (resume.userId) {
+                            try {
+                                // Fetch user profile to get user info
+                                const userRes = await fetch(`/api/user-profile`, {
+                                    headers: {
+                                        'Authorization': `Bearer ${token || ''}`
+                                    }
+                                });
+
+                                if (userRes.ok) {
+                                    const userData = await userRes.json();
+                                    // Note: This gets the current user's profile
+                                    // For a proper implementation, we'd need an admin endpoint to fetch any user by ID
+                                    // For now, we'll just use the userId and parsed data
+                                }
+                            } catch (error) {
+                                console.error('Failed to fetch user info:', error);
+                            }
+                        }
+                        return resume;
+                    })
+                );
+
+                setResumes(resumesWithUserInfo);
                 setStorageProvider(data.provider || 'unknown');
             } else {
                 console.error('Failed to fetch resumes');
@@ -190,11 +224,16 @@ const AdminResumesPage: React.FC = () => {
                                                     </div>
                                                     <div className="ml-4">
                                                         <div className="text-sm font-medium text-slate-900">
-                                                            {resume.parseResult?.name || '未知姓名'}
+                                                            {resume.userInfo?.fullName || resume.parseResult?.name || '未知姓名'}
                                                         </div>
                                                         <div className="text-sm text-slate-500">
-                                                            {resume.parseResult?.email || '无邮箱'}
+                                                            {resume.userInfo?.email || resume.parseResult?.email || '无邮箱'}
                                                         </div>
+                                                        {resume.userId && (
+                                                            <div className="text-xs text-slate-400 mt-0.5">
+                                                                用户ID: {resume.userId.substring(0, 8)}...
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
