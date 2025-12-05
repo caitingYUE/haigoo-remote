@@ -706,7 +706,7 @@ export default function JobsPage() {
           {/* Main Content: Search + Job List OR Job Detail */}
           <div className="flex-1">
             {showInlineDetail && selectedJob ? (
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 h-[calc(100vh-180px)] overflow-hidden flex flex-col animate-in fade-in duration-300">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col animate-in fade-in duration-300">
                 <JobDetailPanel
                   job={selectedJob}
                   onSave={() => toggleSaveJob(selectedJob.id)}
@@ -714,6 +714,12 @@ export default function JobsPage() {
                   onApply={() => { /* apply logic if needed */ }}
                   onClose={handleBackToList}
                   showCloseButton={true}
+                  onNavigateJob={(direction: 'prev' | 'next') => {
+                    const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(distributedJobs.length - 1, currentJobIndex + 1)
+                    handleJobSelect(distributedJobs[nextIndex], nextIndex)
+                  }}
+                  canNavigatePrev={currentJobIndex > 0}
+                  canNavigateNext={currentJobIndex < distributedJobs.length - 1}
                 />
               </div>
             ) : (
