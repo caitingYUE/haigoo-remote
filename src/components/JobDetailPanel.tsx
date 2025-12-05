@@ -187,38 +187,23 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Header */}
-            <header className="flex-shrink-0 border-b border-slate-100 px-6 py-3">
-                <div className="flex items-start justify-between mb-2">
-                    <h1 className="text-xl font-bold text-slate-900 flex-1 pr-4">
+            <header className="flex-shrink-0 border-b border-slate-200 px-6 py-4">
+                <div className="flex items-start justify-between mb-3">
+                    <h1 className="text-2xl font-bold text-slate-900 flex-1 pr-4">
                         {displayText(job.title, job.translations?.title)}
                     </h1>
-                    <div className="flex items-center gap-2">
-                        {/* Compact Translation Toggle */}
-                        {hasTranslation && (
-                            <button
-                                onClick={() => setShowTranslation(!showTranslation)}
-                                className={`px-2 py-1 rounded text-xs font-medium transition-all ${showTranslation
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                    }`}
-                                title={showTranslation ? '切换到原文' : '切换到翻译'}
-                            >
-                                译
-                            </button>
-                        )}
-                        {showCloseButton && onClose && (
-                            <button
-                                onClick={onClose}
-                                className="p-1.5 hover:bg-slate-100 rounded-lg transition-all"
-                                aria-label="关闭"
-                            >
-                                <X className="h-4 w-4 text-slate-500" />
-                            </button>
-                        )}
-                    </div>
+                    {showCloseButton && onClose && (
+                        <button
+                            onClick={onClose}
+                            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-all flex items-center gap-2"
+                        >
+                            <X className="h-4 w-4" />
+                            <span>关闭</span>
+                        </button>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-3 text-sm text-slate-600 mb-3">
+                <div className="flex items-center gap-3 text-sm text-slate-600 mb-4">
                     <div className="flex items-center gap-1.5">
                         <Building2 className="w-4 h-4" />
                         <span className="font-medium">{displayText(job.company || '')}</span>
@@ -231,57 +216,73 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
 
                 {typeof job.salary === 'object' && job.salary.min > 0 && (
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-2 mb-4">
                         <DollarSign className="w-4 h-4 text-indigo-600" />
                         <span className="font-semibold text-indigo-600">
                             {job.salary.currency}{job.salary.min.toLocaleString()} - {job.salary.currency}{job.salary.max.toLocaleString()}
                         </span>
                     </div>
                 )}
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                    <button
+                        onClick={handleShare}
+                        className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-all flex items-center gap-1.5"
+                        title="分享"
+                    >
+                        <Share2 className="w-4 h-4" />
+                        <span className="text-sm">分享</span>
+                    </button>
+
+                    <button
+                        onClick={handleSave}
+                        className={`p-2 rounded-lg transition-all flex items-center gap-1.5 ${isSaved
+                            ? 'bg-indigo-50 text-indigo-600'
+                            : 'hover:bg-slate-100 text-slate-600'
+                            }`}
+                        title={isSaved ? '已收藏' : '收藏'}
+                    >
+                        <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+                        <span className="text-sm">{isSaved ? '已收藏' : '收藏'}</span>
+                    </button>
+
+                    {/* Translation Toggle - Inline with actions */}
+                    {hasTranslation && (
+                        <button
+                            onClick={() => setShowTranslation(!showTranslation)}
+                            className={`p-2 rounded-lg transition-all flex items-center gap-1.5 ${showTranslation
+                                ? 'text-indigo-600 font-medium'
+                                : 'text-slate-600 hover:bg-slate-100'
+                                }`}
+                            title={showTranslation ? '切换到原文' : '切换到翻译'}
+                        >
+                            <Languages className="w-4 h-4" />
+                            <span className="text-sm">{showTranslation ? '译' : '原'}</span>
+                        </button>
+                    )}
+
+                    <button
+                        onClick={() => setIsFeedbackOpen(true)}
+                        className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-all flex items-center gap-1.5"
+                        title="反馈"
+                    >
+                        <MessageSquare className="w-4 h-4" />
+                        <span className="text-sm">反馈</span>
+                    </button>
+                </div>
             </header>
 
-            {/* Content */}
-            <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-                <div className="px-6 py-4">
+            {/* Content - No scroll, flat layout */}
+            <main className="flex-1 px-6 py-6">
+                <div>
+                    {/* Job Description Sections */}
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
-                        <section key={index} className="py-3 border-b border-slate-100">
-                            <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-base font-semibold text-slate-900">
-                                    {displayText(section.title)}
-                                </h3>
-                                {/* Action buttons on first section */}
-                                {index === 0 && (
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={handleShare}
-                                            className="p-1.5 hover:bg-slate-100 text-slate-500 rounded transition-all"
-                                            title="分享"
-                                        >
-                                            <Share2 className="w-4 h-4" />
-                                        </button>
-
-                                        <button
-                                            onClick={handleSave}
-                                            className={`p-1.5 rounded transition-all ${isSaved
-                                                ? 'bg-indigo-50 text-indigo-600'
-                                                : 'hover:bg-slate-100 text-slate-500'
-                                                }`}
-                                            title={isSaved ? '已收藏' : '收藏'}
-                                        >
-                                            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
-                                        </button>
-
-                                        <button
-                                            onClick={() => setIsFeedbackOpen(true)}
-                                            className="p-1.5 hover:bg-slate-100 text-slate-500 rounded transition-all"
-                                            title="反馈"
-                                        >
-                                            <MessageSquare className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                        <section key={index} className="mb-6">
+                            <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                                {displayText(section.title)}
+                            </h3>
                             <div className="text-slate-600 text-sm leading-relaxed">
                                 {renderFormattedText(displayText(section.content))}
                             </div>
@@ -347,10 +348,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </div>
                     </section>
                 </div>
-            </main>
+            </main >
 
             {/* Footer */}
-            <footer className="border-t border-slate-100 bg-white p-4 flex-shrink-0">
+            < footer className="border-t border-slate-100 bg-white p-4 flex-shrink-0" >
                 <button
                     onClick={handleApply}
                     className="w-full bg-slate-900 hover:bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium transition-all hover:shadow-md flex items-center justify-center gap-2"
@@ -358,54 +359,56 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <Zap className="w-4 h-4" />
                     前往申请，Go！
                 </button>
-            </footer>
+            </footer >
 
             {/* Feedback Modal */}
-            {isFeedbackOpen && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30">
-                    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md mx-4">
-                        <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-                            <h3 className="text-base font-semibold">岗位信息反馈</h3>
-                            <button onClick={() => setIsFeedbackOpen(false)} className="p-2 rounded-lg hover:bg-slate-100">
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                        <div className="p-5 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">该岗位信息是否准确？</label>
-                                <div className="flex items-center gap-3">
-                                    <label className="inline-flex items-center gap-1 text-sm">
-                                        <input type="radio" name="accuracy" value="accurate" checked={feedbackAccuracy === 'accurate'} onChange={() => setFeedbackAccuracy('accurate')} />
-                                        准确
-                                    </label>
-                                    <label className="inline-flex items-center gap-1 text-sm">
-                                        <input type="radio" name="accuracy" value="inaccurate" checked={feedbackAccuracy === 'inaccurate'} onChange={() => setFeedbackAccuracy('inaccurate')} />
-                                        不准确
-                                    </label>
-                                    <label className="inline-flex items-center gap-1 text-sm">
-                                        <input type="radio" name="accuracy" value="unknown" checked={feedbackAccuracy === 'unknown'} onChange={() => setFeedbackAccuracy('unknown')} />
-                                        不确定
-                                    </label>
+            {
+                isFeedbackOpen && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30">
+                        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md mx-4">
+                            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+                                <h3 className="text-base font-semibold">岗位信息反馈</h3>
+                                <button onClick={() => setIsFeedbackOpen(false)} className="p-2 rounded-lg hover:bg-slate-100">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="p-5 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">该岗位信息是否准确？</label>
+                                    <div className="flex items-center gap-3">
+                                        <label className="inline-flex items-center gap-1 text-sm">
+                                            <input type="radio" name="accuracy" value="accurate" checked={feedbackAccuracy === 'accurate'} onChange={() => setFeedbackAccuracy('accurate')} />
+                                            准确
+                                        </label>
+                                        <label className="inline-flex items-center gap-1 text-sm">
+                                            <input type="radio" name="accuracy" value="inaccurate" checked={feedbackAccuracy === 'inaccurate'} onChange={() => setFeedbackAccuracy('inaccurate')} />
+                                            不准确
+                                        </label>
+                                        <label className="inline-flex items-center gap-1 text-sm">
+                                            <input type="radio" name="accuracy" value="unknown" checked={feedbackAccuracy === 'unknown'} onChange={() => setFeedbackAccuracy('unknown')} />
+                                            不确定
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-2">反馈内容</label>
-                                <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
-                            </div>
-                            {feedbackMessage && <div className="text-sm text-indigo-600">{feedbackMessage}</div>}
-                            <div className="flex justify-end gap-2">
-                                <button onClick={() => setIsFeedbackOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-                                <button onClick={submitFeedback} disabled={feedbackSubmitting} className="px-4 py-2 text-sm bg-slate-900 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50">提交</button>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">反馈内容</label>
+                                    <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
+                                </div>
+                                {feedbackMessage && <div className="text-sm text-indigo-600">{feedbackMessage}</div>}
+                                <div className="flex justify-end gap-2">
+                                    <button onClick={() => setIsFeedbackOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                                    <button onClick={submitFeedback} disabled={feedbackSubmitting} className="px-4 py-2 text-sm bg-slate-900 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50">提交</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
             <MembershipUpgradeModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 triggerSource="referral"
             />
-        </div>
+        </div >
     )
 }
