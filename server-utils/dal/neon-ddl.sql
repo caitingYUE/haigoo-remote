@@ -144,8 +144,6 @@ CREATE TABLE trusted_companies (
   company_id VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(500) NOT NULL,
   website VARCHAR(2000),
-  careers_page VARCHAR(2000),
-  linkedin VARCHAR(2000),
   description TEXT,
   logo VARCHAR(2000),
   cover_image TEXT,
@@ -277,5 +275,10 @@ CREATE TABLE user_job_matches (
 );
 CREATE INDEX idx_matches_user_score ON user_job_matches(user_id, match_score DESC);
 
+
 -- 2025-12-06: Add file_content column to resumes table for persistent preview
 ALTER TABLE resumes ADD COLUMN file_content TEXT;
+
+-- 2025-12-06: Add careers_page and linkedin columns to trusted_companies table
+ALTER TABLE trusted_companies ADD COLUMN careers_page VARCHAR(2000);
+ALTER TABLE trusted_companies ADD COLUMN linkedin VARCHAR(2000);
