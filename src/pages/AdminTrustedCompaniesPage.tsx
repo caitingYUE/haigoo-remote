@@ -24,7 +24,6 @@ export default function AdminTrustedCompaniesPage() {
     const [autoFilling, setAutoFilling] = useState(false)
     const [analyzingId, setAnalyzingId] = useState<string | null>(null)
     const [filterCanRefer, setFilterCanRefer] = useState<'all' | 'yes' | 'no'>('all')
-    const [filterShowCulture, setFilterShowCulture] = useState<'all' | 'yes' | 'no'>('all')
 
     // Cover image upload & crop
     const [coverSource, setCoverSource] = useState<string>('')
@@ -35,8 +34,6 @@ export default function AdminTrustedCompaniesPage() {
     const [processingImage, setProcessingImage] = useState(false)
     const [coverUrlInput, setCoverUrlInput] = useState('')
     const fileInputRef = useRef<HTMLInputElement | null>(null)
-    const cultureFileInputRef = useRef<HTMLInputElement | null>(null)
-    const [cultureUrlInput, setCultureUrlInput] = useState('')
 
     useEffect(() => {
         loadCompanies()
@@ -58,7 +55,6 @@ export default function AdminTrustedCompaniesPage() {
         setEditingCompany(company)
         setFormData({ ...company })
         setCoverUrlInput(company.coverImage || '')
-        setCultureUrlInput(company.cultureImage || '')
         resetCropperState()
         setIsModalOpen(true)
     }
@@ -68,11 +64,9 @@ export default function AdminTrustedCompaniesPage() {
         setFormData({
             isTrusted: true,
             canRefer: false,
-            showCultureOnHome: false,
             tags: []
         })
         setCoverUrlInput('')
-        setCultureUrlInput('')
         resetCropperState()
         setIsModalOpen(true)
     }
@@ -130,14 +124,8 @@ export default function AdminTrustedCompaniesPage() {
                     ...prev,
                     description: metadata.description || prev.description,
                     logo: metadata.icon || metadata.image || prev.logo,
-                    coverImage: metadata.image || prev.coverImage,
-                    culture: metadata.culture || prev.culture,
-                    founderIntro: metadata.founder || prev.founderIntro,
-                    cultureImage: metadata.cultureImage || prev.cultureImage
+                    coverImage: metadata.image || prev.coverImage
                 }))
-                if (metadata.cultureImage) {
-                    setCultureUrlInput(metadata.cultureImage)
-                }
                 // If name is empty, try to use title
                 if (!formData.name && metadata.title) {
                     setFormData(prev => ({ ...prev, name: metadata.title }))
@@ -299,11 +287,7 @@ export default function AdminTrustedCompaniesPage() {
         const matchRefer =
             filterCanRefer === 'all' ||
             (filterCanRefer === 'yes' ? !!company.canRefer : !company.canRefer)
-        const showCultureFlag = company.showCultureOnHome ?? false
-        const matchShowCulture =
-            filterShowCulture === 'all' ||
-            (filterShowCulture === 'yes' ? showCultureFlag : !showCultureFlag)
-        return matchSearch && matchRefer && matchShowCulture
+        return matchSearch && matchRefer
     })
 
     const industries: CompanyIndustry[] = [
@@ -349,15 +333,6 @@ export default function AdminTrustedCompaniesPage() {
                     <option value="all">全部内推状态</option>
                     <option value="yes">可内推</option>
                     <option value="no">不可内推</option>
-                </select>
-                <select
-                    value={filterShowCulture}
-                    onChange={(e) => setFilterShowCulture(e.target.value as 'all' | 'yes' | 'no')}
-                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
-                >
-                    <option value="all">全部首页展示状态</option>
-                    <option value="yes">首页展示文化</option>
-                    <option value="no">不展示</option>
                 </select>
             </div>
 
@@ -610,105 +585,6 @@ export default function AdminTrustedCompaniesPage() {
                                             className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                         />
                                         <p className="text-xs text-gray-500">在此区域粘贴图片或链接即可触发上传，裁剪完成后自动更新配图</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">企业文化</label>
-                                    <textarea
-                                        value={formData.culture || ''}
-                                        onChange={e => setFormData({...formData, culture: e.target.value})}
-                                        rows={3}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="使命、愿景、价值观等"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">创始人介绍</label>
-                                    <textarea
-                                        value={formData.founderIntro || ''}
-                                        onChange={e => setFormData({...formData, founderIntro: e.target.value})}
-                                        rows={3}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="创始人或管理团队简介"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="space-y-1">
-                                        <label className="block text-sm font-medium text-gray-700">企业文化配图</label>
-                                        <p className="text-xs text-gray-500">支持上传文件或粘贴图片链接，用于首页文化展示</p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => cultureFileInputRef.current?.click()}
-                                            className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center gap-1 text-sm"
-                                        >
-                                            <Upload className="w-4 h-4" />
-                                            上传文件
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (!cultureUrlInput) return
-                                                setFormData(prev => ({ ...prev, cultureImage: cultureUrlInput.trim() }))
-                                            }}
-                                            disabled={!cultureUrlInput}
-                                            className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 flex items-center gap-1 text-sm"
-                                        >
-                                            <ExternalLink className="w-4 h-4" />
-                                            使用URL
-                                        </button>
-                                    </div>
-                                </div>
-                                <input
-                                    ref={cultureFileInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0]
-                                        if (!file) return
-                                        const reader = new FileReader()
-                                        reader.onload = () => {
-                                            setFormData(prev => ({ ...prev, cultureImage: reader.result as string }))
-                                        }
-                                        reader.readAsDataURL(file)
-                                    }}
-                                    className="hidden"
-                                />
-                                <div className="mt-3 flex items-center gap-4">
-                                    <div className="w-48 h-28 rounded-lg bg-white border border-gray-200 overflow-hidden flex items-center justify-center">
-                                        {formData.cultureImage ? (
-                                            <img src={formData.cultureImage} alt="文化配图" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="text-gray-400 flex flex-col items-center text-sm">
-                                                <ImageIcon className="w-6 h-6 mb-1" />
-                                                预览
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 space-y-2">
-                                        <input
-                                            type="url"
-                                            value={cultureUrlInput}
-                                            onChange={e => setCultureUrlInput(e.target.value)}
-                                            placeholder="https://...（粘贴图片链接后点击使用URL）"
-                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                        />
-                                        <label className="flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.showCultureOnHome ?? false}
-                                                onChange={e => setFormData(prev => ({ ...prev, showCultureOnHome: e.target.checked }))}
-                                                className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                                            />
-                                            <span className="text-sm text-gray-700">在首页展示本企业文化</span>
-                                        </label>
                                     </div>
                                 </div>
                             </div>
