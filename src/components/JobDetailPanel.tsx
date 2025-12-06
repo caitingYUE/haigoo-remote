@@ -55,12 +55,27 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job?.companyId])
 
     const jobDescriptionData = useMemo(() => {
-        const descToUse = showTranslation && job?.translations?.description
-            ? job.translations.description
-            : job?.description
-        const desc = typeof descToUse === 'string' ? descToUse as string : (descToUse ? String(descToUse) : '')
+        const originalDesc = typeof job?.description === 'string' ? job.description : (job?.description ? String(job.description) : '')
+        const translatedDesc = typeof job?.translations?.description === 'string' ? job.translations.description : (job?.translations?.description ? String(job.translations.description) : '')
 
-        return segmentJobDescription(desc)
+        let descToUse = originalDesc
+
+        if (showTranslation && translatedDesc) {
+            // 智能回退逻辑：如果翻译内容过短且原文较长，可能翻译不完整，回退到原文
+            // 比如：原文超过500字，但翻译少于200字
+            const isTranslationTooShort = originalDesc.length > 500 && translatedDesc.length < 200
+            
+            // 或者：原文有很多段落（>10行），但翻译只有寥寥几行（<3行）
+            const originalLines = originalDesc.split('\n').length
+            const translatedLines = translatedDesc.split('\n').length
+            const isTranslationStructureLost = originalLines > 10 && translatedLines < 3
+
+            if (!isTranslationTooShort && !isTranslationStructureLost) {
+                descToUse = translatedDesc
+            }
+        }
+
+        return segmentJobDescription(descToUse)
     }, [job, showTranslation])
 
     const handleApply = () => {
