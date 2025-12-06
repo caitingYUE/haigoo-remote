@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Users, Zap, Award, Target, Briefcase, Building2, User } from 'lucide-react'
-import HomeJobCard from '../components/HomeJobCard'
+import JobCardNew from '../components/JobCardNew'
 import HomeCompanyCard from '../components/HomeCompanyCard'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -234,7 +234,7 @@ export default function AboutPage() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {featuredJobs.map(job => (
-                                <HomeJobCard 
+                                <JobCardNew 
                                     key={job.id} 
                                     job={job}
                                     onClick={() => navigate(`/jobs?region=domestic`)}

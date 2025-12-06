@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import '../styles/landing-upgrade.css'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import HomeHero from '../components/HomeHero'
-import HomeJobCard from '../components/HomeJobCard'
+import JobCardNew from '../components/JobCardNew'
 import HomeCompanyCard from '../components/HomeCompanyCard'
 import { ArrowRight, TrendingUp, Building2, Zap } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -161,7 +161,7 @@ export default function LandingPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredJobs.map((job) => (
-                <HomeJobCard
+                <JobCardNew
                   key={job.id}
                   job={job}
                   onClick={() => navigate(`/jobs?region=domestic`)}
