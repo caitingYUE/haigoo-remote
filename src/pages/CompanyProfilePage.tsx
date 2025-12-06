@@ -209,13 +209,13 @@ export default function CompanyProfilePage() {
 
                 {/* Filtered Jobs */}
                 {filteredJobs.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 min-[900px]:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredJobs.map((job) => (
                             <JobCardNew
                                 key={job.id}
                                 job={job}
                                 onClick={(job) => setSelectedJob(job)}
-                                className="h-[380px] w-full max-w-[450px] mx-auto"
+                                className="h-[380px] w-full"
                             />
                         ))}
                     </div>
