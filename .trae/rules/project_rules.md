@@ -1,4 +1,12 @@
+# 整体功能开发规则
+- 尽量重后端，轻前端
+- 前端只负责传递过滤参数、展示数据、处理用户交互等
+- 后端通过数据库sql语句，实现联表、筛选、分页等逻辑
+
 # 后端代码修改规范
+## 代码位置
+- Next.js结构
+- 主要在/api目录下，进一步的会有 /lib/api-handlers、/lib/cron-handlers、/lib/services、/server-utils目录
 ## 数据库操作
 - 表结构定义在 /server-utils/dal/neon-ddl.sql 中
     - 不要直接修改已有内容，比如要修改表结构，需要在该文件中继续新增对应的语句（比如，ALTER TABLE ...）

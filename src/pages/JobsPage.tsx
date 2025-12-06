@@ -7,14 +7,12 @@ import JobDetailModal from '../components/JobDetailModal'
 import { JobDetailPanel } from '../components/JobDetailPanel'
 import JobFilterSidebar from '../components/JobFilterSidebar'
 import { Job } from '../types'
-import { processedJobsService } from '../services/processed-jobs-service'
-import { extractLocations, matchesLocationFilter } from '../utils/locationHelper'
+import { extractLocations } from '../utils/locationHelper'
 
-import { usePageCache } from '../hooks/usePageCache'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { JobPreferenceModal, JobPreferences } from '../components/JobPreferenceModal'
-import { batchCalculateMatches, JobMatchResult } from '../services/job-matching-service'
+import { batchCalculateMatches } from '../services/job-matching-service'
 
 // Industry Options
 // const INDUSTRY_OPTIONS = [
@@ -150,7 +148,14 @@ export default function JobsPage() {
   const [isPreferenceModalOpen, setIsPreferenceModalOpen] = useState(false)
   const [userPreferences, setUserPreferences] = useState<JobPreferences | null>(null)
 
-  // 匹配分数缓存
+  // 岗位数据状态（替代页面缓存）
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [jobsLoading, setJobsLoading] = useState(false)
+  const [totalJobs, setTotalJobs] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+
+  // 匹配分数缓存（不再需要单独管理，因为后端已经返回匹配分数）
   const [matchScores, setMatchScores] = useState<Record<string, number>>({})
   const [matchScoresLoading, setMatchScoresLoading] = useState(false)
   // Track if initial match scores have been loaded
@@ -160,71 +165,81 @@ export default function JobsPage() {
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
-  // 使用页面缓存 Hook
-  const {
-    data: jobs,
-    loading: jobsLoading,
-    isFromCache
-  } = usePageCache<Job[]>('jobs-all-list-full-v1', {
-    fetcher: async () => {
-      try {
-        setLoadingStage('fetching')
-        // Fetch up to 2000 jobs (20 pages * 100) to ensure we get most recent translated jobs
-        const response = await processedJobsService.getAllProcessedJobsFull(100, 20)
-        setLoadingStage('idle')
-        console.log(`✅ 获取到 ${response.length} 个岗位（后端已翻译）`)
-        return response
-      } catch (error) {
-        setLoadingStage('idle')
-        throw error
-      }
-    },
-    ttl: 5 * 60 * 1000,
-    persist: true,
-    namespace: 'jobs',
-    onSuccess: (jobs) => {
-      setLoadingStage('idle')
-      console.log(`✅ 岗位列表加载完成，共 ${jobs.length} 个${isFromCache ? '（来自缓存）' : '（新数据）'}`)
-    }
-  })
+  // 加载岗位数据（使用新的后端API，支持筛选和分页）
+  const loadJobsWithFilters = async (page = 1, pageSize = 100) => {
+    try {
+      setJobsLoading(true)
+      setLoadingStage('fetching')
 
-  const canonicalJobs = useMemo(() => {
-    const best: Record<string, Job> = {}
-    const regions: Record<string, Set<string>> = {}
-    const normalizeUrl = (u: string) => {
-      if (!u) return ''
-      try {
-        const url = new URL(u)
-        return (url.hostname + url.pathname).toLowerCase().replace(/\/+$/, '')
-      } catch {
-        const s = u.split('?')[0]
-        return s.toLowerCase().replace(/\/+$/, '')
+      // 构建查询参数
+      const queryParams = new URLSearchParams()
+      queryParams.append('action', 'jobs_with_match_score')
+      queryParams.append('page', page.toString())
+      queryParams.append('pageSize', pageSize.toString())
+
+      // 添加筛选条件
+      if (searchTerm) queryParams.append('searchQuery', searchTerm)
+      if (filters.category.length > 0) queryParams.append('category', filters.category.join(','))
+      if (filters.experienceLevel.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
+      if (filters.location.length > 0) queryParams.append('location', filters.location.join(','))
+      if (filters.industry.length > 0) queryParams.append('industry', filters.industry.join(','))
+      if (filters.regionType.length > 0) queryParams.append('regionType', filters.regionType.join(','))
+      if (filters.sourceType.length > 0) queryParams.append('sourceType', filters.sourceType.join(','))
+      if (filters.type.length > 0) queryParams.append('type', filters.type.join(','))
+      if (filters.jobType.length > 0) queryParams.append('jobType', filters.jobType.join(','))
+      if (filters.salary.length > 0) queryParams.append('salary', filters.salary.join(','))
+      if (filters.isTrusted) queryParams.append('isTrusted', 'true')
+      if (filters.isNew) queryParams.append('isNew', 'true')
+
+      // 添加用户ID用于匹配分数计算
+      if (isAuthenticated && token) {
+        queryParams.append('userId', 'current') // 后端会从token中获取实际用户ID
       }
+
+      const response = await fetch(`/api/processed-jobs?${queryParams.toString()}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      // 设置岗位数据和分页信息
+      setJobs(data.jobs || [])
+      setTotalJobs(data.total || 0)
+      setCurrentPage(page)
+      setPageSize(pageSize)
+
+      // 从响应中提取匹配分数
+      if (data.jobs && data.jobs.length > 0) {
+        const scores: Record<string, number> = {}
+        data.jobs.forEach((job: any) => {
+          if (job.matchScore !== undefined) {
+            scores[job.id] = job.matchScore
+          }
+        })
+        setMatchScores(scores)
+        setInitialMatchScoresLoaded(true)
+      }
+
+      setLoadingStage('idle')
+      console.log(`✅ 获取到 ${data.jobs?.length || 0} 个岗位（后端筛选和排序）`)
+    } catch (error) {
+      setLoadingStage('idle')
+      console.error('❌ 加载岗位数据失败:', error)
+      showError('加载岗位数据失败，请稍后重试')
+    } finally {
+      setJobsLoading(false)
     }
-    const keyOf = (j: Job) => {
-      const k = normalizeUrl((j as any).sourceUrl || (j as any).url || '')
-      return k || j.id
-    }
-    const score = (j: Job) => {
-      const t = j.translations?.title ? 1 : 0
-      const d = (j.description || '').length
-      const p = new Date(j.postedAt).getTime() || 0
-      return t * 1_000_000 + d * 1_000 + p
-    }
-      ; (jobs || []).forEach(j => {
-        const k = keyOf(j)
-        if (!best[k] || score(j) >= score(best[k])) best[k] = j
-        const set = regions[k] || new Set<string>()
-        if (j.region) set.add(j.region)
-        regions[k] = set
-      })
-    return Object.entries(best).map(([k, j]) => {
-      const set = regions[k] || new Set<string>()
-      const hasDom = set.has('domestic')
-      const hasOver = set.has('overseas')
-      const merged = hasDom && hasOver ? 'both' : hasDom ? 'domestic' : hasOver ? 'overseas' : j.region
-      return { ...j, region: merged }
-    })
+  }
+
+  // 初始加载和筛选条件变化时重新加载数据
+  useEffect(() => {
+    loadJobsWithFilters(1, 100)
+  }, [searchTerm, filters, isAuthenticated, token])
+
+  // 后端API已经处理了去重和区域合并，直接使用返回的数据
+  const canonicalJobs = useMemo(() => {
+    return jobs
   }, [jobs])
 
   // 从URL参数中获取初始搜索词
@@ -235,8 +250,6 @@ export default function JobsPage() {
       setSearchTerm(search)
     }
   }, [location.search])
-
-
 
   const toggleSaveJob = async (jobId: string) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
@@ -405,105 +418,12 @@ export default function JobsPage() {
       .map(e => e[0])
   }, [canonicalJobs])
 
+  // 筛选逻辑已经移到后端，直接使用后端返回的排序结果
   const filteredJobs = useMemo(() => {
-    return canonicalJobs.filter(job => {
-      const matchesSearch = searchTerm === '' ||
-        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (job.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (job.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (job.skills && job.skills.some((skill: string) => skill.toLowerCase().includes(searchTerm.toLowerCase())))
+    return jobs
+  }, [jobs])
 
-      const matchesType = filters.type.length === 0 || filters.type.includes(job.type)
-      const matchesJobType = filters.jobType.length === 0 || filters.jobType.includes(job.type)
-
-      // 岗位分类筛选
-      const matchesCategory = filters.category.length === 0 ||
-        (job.category && filters.category.includes(job.category))
-
-      // 岗位级别筛选
-      const matchesLevel = filters.experienceLevel.length === 0 ||
-        (job.experienceLevel && filters.experienceLevel.includes(job.experienceLevel))
-
-      const matchesLocation = matchesLocationFilter(job.location, filters.location)
-
-      // 行业类型筛选（基于企业）
-      const companyIndustry = job.companyId ? companyMap[job.companyId]?.industry || '' : ''
-      const matchesIndustry = filters.industry.length === 0 || filters.industry.includes(companyIndustry)
-
-      // 区域限制筛选
-      const matchesRegion = filters.regionType.length === 0 ||
-        (job.region && (filters.regionType.includes(job.region) || (job.region === 'both' && filters.regionType.length > 0)))
-
-      // 岗位来源筛选
-      let matchesSource = filters.sourceType.length === 0
-      if (!matchesSource && filters.sourceType.length > 0) {
-        const sources: string[] = []
-
-        // 第三方：RSS源
-        if (job.sourceType === 'rss' || job.source?.toLowerCase().includes('rss')) {
-          sources.push('third-party')
-        }
-
-        // 俱乐部内推：企业标记can_refer
-        if (job.canRefer || (job.companyId && companyMap[job.companyId]?.canRefer)) {
-          sources.push('club-referral')
-        }
-
-        // 人工精选：Explicitly featured jobs
-        if (job.isFeatured) {
-          sources.push('curated')
-        }
-
-        matchesSource = filters.sourceType.some(s => sources.includes(s))
-      }
-
-      const matchesTrusted = !filters.isTrusted || job.isTrusted
-
-      // New Postings: posted within last 7 days
-      const matchesNew = !filters.isNew || (new Date().getTime() - new Date(job.postedAt).getTime() < 7 * 24 * 60 * 60 * 1000)
-
-      const matchesSalary = filters.salary.length === 0 || filters.salary.some(range => {
-        if (!job.salary) return false
-        const [minStr, maxStr] = range.split('-')
-        const min = parseInt(minStr)
-        const max = parseInt(maxStr)
-        const jobMin = job.salary.min || 0
-        const jobMax = job.salary.max || jobMin
-        // Check for overlap: startA <= endB && endA >= startB
-        return jobMin <= max && jobMax >= min
-      })
-
-      return matchesSearch && matchesType && matchesJobType && matchesCategory && matchesLevel && matchesLocation && matchesIndustry && matchesRegion && matchesSource && matchesTrusted && matchesNew && matchesSalary
-    }).sort((a, b) => {
-      // 优先级: 匹配分数 > 内推 > 人工精选 > 发布时间
-
-      // 1. 如果有匹配分数,按匹配度排序 (优先)
-      const scoreA = matchScores[a.id] || 0
-      const scoreB = matchScores[b.id] || 0
-
-      // Debug: Log first few comparisons to verify sorting
-      if (scoreA > 0 || scoreB > 0) {
-        const debugIndex = Math.random()
-        if (debugIndex < 0.01) { // Log ~1% of comparisons to avoid spam
-          console.log(`[Sorting] Comparing: "${a.title.substring(0, 30)}" (score: ${scoreA}) vs "${b.title.substring(0, 30)}" (score: ${scoreB})`)
-        }
-      }
-
-      if (scoreA !== scoreB) return scoreB - scoreA
-
-      // 2. 内推岗位优先
-      if (a.canRefer && !b.canRefer) return -1
-      if (!a.canRefer && b.canRefer) return 1
-      // 3. 人工精选次之
-      if (a.isTrusted && !b.isTrusted) return -1
-      if (!a.isTrusted && b.isTrusted) return 1
-
-      // 4. 按发布时间排序
-      return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
-    })
-  }, [canonicalJobs, searchTerm, filters, companyMap, matchScores])
-
-  // Job Distribution Logic: Limit consecutive jobs from same company to max 2
+  // 公司分布逻辑：限制同一公司连续出现不超过2个岗位
   const distributedJobs = useMemo(() => {
     if (filteredJobs.length === 0) return []
 
@@ -518,7 +438,7 @@ export default function JobsPage() {
     while (remaining.length > 0) {
       let added = false
 
-      // Try to find a job that doesn't create 3 consecutive from same company
+      // 尝试找到一个不会导致同一公司连续出现3个的岗位
       for (let i = 0; i < remaining.length; i++) {
         const job = remaining[i]
         const company = job.company || 'Unknown'
@@ -532,7 +452,7 @@ export default function JobsPage() {
         }
       }
 
-      // If no job can be added without creating 3 consecutive, add the first one anyway
+      // 如果无法避免连续出现3个，则添加第一个岗位
       if (!added && remaining.length > 0) {
         result.push(remaining.shift()!)
       }
