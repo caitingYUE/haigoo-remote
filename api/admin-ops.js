@@ -69,12 +69,13 @@ async function runMigration(req, res) {
     const results = {
         success: false,
         message: '',
+        logs: [],
         error: null
     };
 
     try {
-        // Define the schema SQL
-        const createTableSQL = `
+        // Migration 1: user_job_matches table (Keep existing)
+        const createMatchesTableSQL = `
       CREATE TABLE IF NOT EXISTS user_job_matches (
         id SERIAL PRIMARY KEY,
         user_id TEXT NOT NULL,
@@ -86,26 +87,28 @@ async function runMigration(req, res) {
         UNIQUE(user_id, job_id)
       );
     `;
+        await neonHelper.query(createMatchesTableSQL);
+        results.logs.push('Checked/Created user_job_matches table');
 
-        const createIndexSQL = `
-      CREATE INDEX IF NOT EXISTS idx_user_job_matches_user_id ON user_job_matches(user_id);
-      CREATE INDEX IF NOT EXISTS idx_user_job_matches_expires_at ON user_job_matches(expires_at);
-    `;
+        // Migration 2: jobs table - Add featured, trusted, company_id columns
+        // Use separate ALTER TABLE statements to handle potential failures cleanly
+        const jobsColumns = [
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false',
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS is_trusted BOOLEAN DEFAULT false',
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS can_refer BOOLEAN DEFAULT false',
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS company_id VARCHAR(255)',
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS company_logo VARCHAR(2000)',
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS company_website VARCHAR(2000)',
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS company_description TEXT'
+        ];
 
-        const alterTableSQL = `
-      ALTER TABLE user_job_matches ADD COLUMN IF NOT EXISTS calculated_at TIMESTAMP WITH TIME ZONE;
-    `;
+        for (const sql of jobsColumns) {
+            await neonHelper.query(sql);
+            results.logs.push(`Executed: ${sql}`);
+        }
 
-        // Execute SQL
-        await neonHelper.query(createTableSQL);
-        await neonHelper.query(alterTableSQL);
-        await neonHelper.query(createIndexSQL);
-
-        // Verify
-        const exists = await neonHelper.tableExists('user_job_matches');
-
-        results.success = exists;
-        results.message = exists ? 'Table user_job_matches created successfully' : 'Failed to create table';
+        results.success = true;
+        results.message = 'Migration completed successfully';
 
     } catch (error) {
         results.error = error.message;
