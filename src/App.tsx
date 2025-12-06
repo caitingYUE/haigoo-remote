@@ -18,7 +18,6 @@ const AdminPanel = lazy(() => import('./components/AdminPanel'))
 const ProfileCenterPage = lazy(() => import('./pages/ProfileCenterPage'))
 const AdminTeamPage = lazy(() => import('./pages/AdminTeamPage'))
 const UserManagementPage = lazy(() => import('./pages/UserManagementPage'))
-const AdminTrustedCompaniesPage = lazy(() => import('./pages/AdminTrustedCompaniesPage'))
 const AdminTagManagementPage = lazy(() => import('./pages/AdminTagManagementPage'))
 const AdminCompanyManagementPage = lazy(() => import('./pages/AdminCompanyManagementPage'))
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'))
@@ -89,11 +88,11 @@ function App() {
                             <AdminLocationPage />
                           </ProtectedRoute>
                         } />
-                        <Route path="/admin/trusted-companies" element={
+                        {/* <Route path="/admin/trusted-companies" element={
                           <ProtectedRoute>
                             <AdminTrustedCompaniesPage />
                           </ProtectedRoute>
-                        } />
+                        } /> */}
                         <Route path="/remote-experience" element={<RemoteExperiencePage />} />
                         <Route path="/membership" element={<MembershipPage />} />
 
