@@ -191,7 +191,7 @@ export default function JobsPage() {
       if (filters.isTrusted) queryParams.append('isTrusted', 'true')
       if (filters.isNew) queryParams.append('isNew', 'true')
 
-      const response = await fetch(`/api/processed-jobs?${queryParams.toString()}`)
+      const response = await fetch(`/api/processed-jobs?${queryParams.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
