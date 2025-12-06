@@ -2,6 +2,7 @@
 import processedJobsHandler from '../lib/api-handlers/processed-jobs.js';
 import rawRssHandler from '../lib/api-handlers/raw-rss.js';
 import trustedCompaniesHandler from '../lib/api-handlers/trusted-companies.js';
+import publicMembersHandler from '../lib/api-handlers/public-members.js';
 
 export default async function handler(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -24,6 +25,11 @@ export default async function handler(req, res) {
     // /api/data/trusted-companies
     if (path.includes('trusted-companies')) {
         return await trustedCompaniesHandler(req, res);
+    }
+
+    // /api/data/public-members
+    if (path.includes('public-members')) {
+        return await publicMembersHandler(req, res);
     }
 
     // Fallback: check resource query param

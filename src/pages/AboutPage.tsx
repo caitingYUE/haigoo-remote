@@ -29,7 +29,7 @@ export default function AboutPage() {
                 const [jobsResp, companies, membersResp] = await Promise.all([
                     processedJobsService.getProcessedJobs(1, 6, { isFeatured: true }),
                     trustedCompaniesService.getAllCompanies(),
-                    fetch('/api/public-members').then(res => res.json())
+                    fetch('/api/data/public-members').then(res => res.json())
                 ])
 
                 // Set Featured Jobs
