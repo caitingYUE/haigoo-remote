@@ -250,7 +250,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </div>
                 </div>
 
-                {typeof job.salary === 'object' && job.salary.min > 0 && (
+                {job.salary && typeof job.salary === 'object' && job.salary.min > 0 && (
                     <div className="flex items-center gap-2 mb-4">
                         <DollarSign className="w-4 h-4 text-indigo-600" />
                         <span className="font-semibold text-indigo-600">
