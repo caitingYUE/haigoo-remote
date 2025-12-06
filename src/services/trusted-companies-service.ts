@@ -26,6 +26,7 @@ export interface TrustedCompany {
     industry?: CompanyIndustry;
     isTrusted: boolean;
     canRefer: boolean;
+    jobCount?: number;
     createdAt: string;
     updatedAt: string;
 }
