@@ -39,6 +39,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [processedDataPage, setProcessedDataPage] = useState(1);
   const [processedDataPageSize] = useState(20);
   const [locationCategories, setLocationCategories] = useState<{ domesticKeywords: string[]; overseasKeywords: string[]; globalKeywords: string[] }>({ domesticKeywords: [], overseasKeywords: [], globalKeywords: [] });
+  // Dynamic categories from backend
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
 
   // 存储统计状态
   const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
@@ -60,6 +62,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     tags?: string[];
     industry?: string;
     source?: string;
+    isFeatured?: boolean;
   }>({});
 
   // Search debounce state
@@ -131,6 +134,20 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     if (activeTab === 'processed') {
       processedJobsService.getLocationCategories().then((c) => setLocationCategories(c)).catch(() => { });
     }
+
+    // Load dynamic categories
+    const loadCategories = async () => {
+      try {
+        const response = await fetch('/api/data/trusted-companies?target=tags');
+        const data = await response.json();
+        if (data.success && data.config?.jobCategories) {
+          setAvailableCategories(data.config.jobCategories);
+        }
+      } catch (error) {
+        console.error('Failed to load job categories:', error);
+      }
+    };
+    loadCategories();
 
     // 点击外部关闭翻译菜单
     const handleClickOutside = (event: MouseEvent) => {
@@ -771,47 +788,31 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有分类</option>
-              <option value="前端开发">前端开发</option>
-              <option value="后端开发">后端开发</option>
-              <option value="全栈开发">全栈开发</option>
-              <option value="移动开发">移动开发</option>
-              <option value="算法工程师">算法工程师</option>
-              <option value="数据开发">数据开发</option>
-              <option value="服务器开发">服务器开发</option>
-              <option value="运维/SRE">运维/SRE</option>
-              <option value="测试/QA">测试/QA</option>
-              <option value="网络安全">网络安全</option>
-              <option value="操作系统/内核">操作系统/内核</option>
-              <option value="技术支持">技术支持</option>
-              <option value="硬件开发">硬件开发</option>
-              <option value="架构师">架构师</option>
-              <option value="CTO/技术管理">CTO/技术管理</option>
-              <option value="产品经理">产品经理</option>
-              <option value="产品设计">产品设计</option>
-              <option value="用户研究">用户研究</option>
-              <option value="UI/UX设计">UI/UX设计</option>
-              <option value="视觉设计">视觉设计</option>
-              <option value="平面设计">平面设计</option>
-              <option value="数据分析">数据分析</option>
-              <option value="商业分析">商业分析</option>
-              <option value="数据科学">数据科学</option>
-              <option value="市场营销">市场营销</option>
-              <option value="内容创作">内容创作</option>
-              <option value="销售">销售</option>
-              <option value="客户经理">客户经理</option>
-              <option value="客户服务">客户服务</option>
-              <option value="增长黑客">增长黑客</option>
-              <option value="运营">运营</option>
-              <option value="人力资源">人力资源</option>
-              <option value="招聘">招聘</option>
-              <option value="财务">财务</option>
-              <option value="法务">法务</option>
-              <option value="行政">行政</option>
-              <option value="管理">管理</option>
-              <option value="教育培训">教育培训</option>
-              <option value="咨询">咨询</option>
-              <option value="投资">投资</option>
-              <option value="其他">其他</option>
+              {availableCategories.length > 0 ? availableCategories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              )) : (
+                <>
+                  <option value="前端开发">前端开发</option>
+                  <option value="后端开发">后端开发</option>
+                  <option value="全栈开发">全栈开发</option>
+                  <option value="产品经理">产品经理</option>
+                  <option value="UI/UX设计">UI/UX设计</option>
+                  <option value="数据分析">数据分析</option>
+                  <option value="运营">运营</option>
+                  <option value="市场营销">市场营销</option>
+                  <option value="其他">其他</option>
+                </>
+              )}
+            </select>
+
+            <select
+              value={processedDataFilters.isFeatured === undefined ? '' : processedDataFilters.isFeatured.toString()}
+              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, isFeatured: e.target.value === '' ? undefined : e.target.value === 'true' })}
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">所有岗位</option>
+              <option value="true">精选岗位</option>
+              <option value="false">非精选</option>
             </select>
 
             <select
@@ -1422,6 +1423,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       {showEditModal && editingJob && (
         <EditJobModal
           job={editingJob}
+          availableCategories={availableCategories}
           onSave={handleSaveEdit}
           onClose={() => {
             setShowEditModal(false);
@@ -1461,7 +1463,8 @@ const EditJobModal: React.FC<{
   onNavigate?: (direction: 'prev' | 'next') => void;
   hasPrev?: boolean;
   hasNext?: boolean;
-}> = ({ job, onSave, onClose, onNavigate, hasPrev, hasNext }) => {
+  availableCategories?: string[];
+}> = ({ job, onSave, onClose, onNavigate, hasPrev, hasNext, availableCategories = [] }) => {
   const [formData, setFormData] = useState({
     title: job.title,
     company: job.company,
@@ -1659,14 +1662,23 @@ const EditJobModal: React.FC<{
                 onChange={(e) => setFormData({ ...formData, category: e.target.value as JobCategory })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
-                <option value="全栈开发">全栈开发</option>
-                <option value="前端开发">前端开发</option>
-                <option value="后端开发">后端开发</option>
-                <option value="UI/UX设计">UI/UX设计</option>
-                <option value="数据分析">数据分析</option>
-                <option value="DevOps">DevOps</option>
-                <option value="产品管理">产品管理</option>
-                <option value="市场营销">市场营销</option>
+                {/* Dynamically populated categories or fallback */}
+                {availableCategories.length > 0 ? (
+                  availableCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="全栈开发">全栈开发</option>
+                    <option value="前端开发">前端开发</option>
+                    <option value="后端开发">后端开发</option>
+                    <option value="UI/UX设计">UI/UX设计</option>
+                    <option value="数据分析">数据分析</option>
+                    <option value="DevOps">DevOps</option>
+                    <option value="产品管理">产品管理</option>
+                    <option value="市场营销">市场营销</option>
+                  </>
+                )}
               </select>
             </div>
 

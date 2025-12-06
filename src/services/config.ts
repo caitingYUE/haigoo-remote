@@ -8,6 +8,8 @@ declare global {
   interface ImportMetaEnv {
     readonly VITE_ALIBABA_BAILIAN_API_KEY: string
     readonly VITE_ALIBABA_BAILIAN_BASE_URL: string
+    readonly VITE_DEEPSEEK_API_KEY: string
+    readonly VITE_DEEPSEEK_BASE_URL: string
     readonly VITE_APP_NAME: string
     readonly VITE_APP_VERSION: string
   }
@@ -33,6 +35,18 @@ export const ALIBABA_BAILIAN_CONFIG = {
   }
 } as const
 
+// DeepSeek API配置
+export const DEEPSEEK_CONFIG = {
+  apiKey: import.meta.env.VITE_DEEPSEEK_API_KEY,
+  baseUrl: import.meta.env.VITE_DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
+  models: {
+    // DeepSeek V3 (通用对话)
+    chat: 'deepseek-chat',
+    // DeepSeek R1 (推理模型)
+    reasoner: 'deepseek-reasoner'
+  }
+} as const
+
 // API请求配置
 export const API_CONFIG = {
   timeout: 30000, // 30秒超时
@@ -44,13 +58,11 @@ export const API_CONFIG = {
 
 // 验证API配置
 export const validateConfig = (): boolean => {
-  if (!ALIBABA_BAILIAN_CONFIG.apiKey) {
-    console.error('阿里百炼API密钥未配置，请检查环境变量 VITE_ALIBABA_BAILIAN_API_KEY')
-    return false
-  }
-  
-  if (!ALIBABA_BAILIAN_CONFIG.baseUrl) {
-    console.error('阿里百炼API基础URL未配置')
+  const hasBailian = !!ALIBABA_BAILIAN_CONFIG.apiKey && !!ALIBABA_BAILIAN_CONFIG.baseUrl
+  const hasDeepSeek = !!DEEPSEEK_CONFIG.apiKey && !!DEEPSEEK_CONFIG.baseUrl
+
+  if (!hasBailian && !hasDeepSeek) {
+    console.error('未配置任何AI服务API密钥，请检查环境变量 VITE_ALIBABA_BAILIAN_API_KEY 或 VITE_DEEPSEEK_API_KEY')
     return false
   }
   

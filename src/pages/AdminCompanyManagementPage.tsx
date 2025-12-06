@@ -9,18 +9,19 @@ import { ClassificationService } from '../services/classification-service';
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
 import { Job } from '../types';
 
-interface Company {
-    id: string;
-    name: string;
-    url?: string;
-    description?: string;
-    logo?: string;
-    industry?: string;
-    tags?: string[];
-    source: string;
-    jobCount: number;
-    createdAt: string;
-    updatedAt: string;
+id: string;
+name: string;
+url ?: string;
+careersPage ?: string;
+linkedin ?: string;
+description ?: string;
+logo ?: string;
+industry ?: string;
+tags ?: string[];
+source: string;
+jobCount: number;
+createdAt: string;
+updatedAt: string;
 }
 
 export default function AdminCompanyManagementPage() {
@@ -37,7 +38,13 @@ export default function AdminCompanyManagementPage() {
     const [pageSize] = useState(20);
     const [searchQuery, setSearchQuery] = useState('');
     const [industryFilter, setIndustryFilter] = useState('');
+    // New Sort State
+    const [sortField, setSortField] = useState<'createdAt' | 'name' | 'jobCount'>('createdAt');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState<any>({});
     const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
     const [jobSearchTerm, setJobSearchTerm] = useState('');
 
@@ -78,6 +85,20 @@ export default function AdminCompanyManagementPage() {
                     console.warn('合并可信企业信息失败:', e);
                 }
 
+                // Client-side sorting (since API might return mixed data or we want consistent sort)
+                list.sort((a, b) => {
+                    let result = 0;
+                    if (sortField === 'name') {
+                        result = a.name.localeCompare(b.name, 'zh-CN');
+                    } else if (sortField === 'jobCount') {
+                        result = a.jobCount - b.jobCount;
+                    } else {
+                        // createdAt
+                        result = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                    }
+                    return sortOrder === 'asc' ? result : -result;
+                });
+
                 setCompanies(list);
                 setTotal(data.total || 0);
             }
@@ -86,7 +107,7 @@ export default function AdminCompanyManagementPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, searchQuery, industryFilter]);
+    }, [page, pageSize, searchQuery, industryFilter, sortField, sortOrder]);
 
     useEffect(() => {
         if (activeTab === 'all') {
@@ -96,11 +117,11 @@ export default function AdminCompanyManagementPage() {
 
     const handleSyncToJobs = async () => {
         if (!confirm('确定要将企业库中的数据（简介、行业、标签等）同步到职位数据库中吗？')) return;
-        
+
         try {
             setSyncing(true);
             const result = await trustedCompaniesService.syncJobsToProduction();
-            
+
             if (result.success) {
                 alert(`同步成功: 已更新 ${result.count} 个岗位的企业信息`);
             } else {
@@ -117,16 +138,16 @@ export default function AdminCompanyManagementPage() {
         try {
             const token = localStorage.getItem('haigoo_auth_token');
             if (!token) return;
-            
+
             console.log('Syncing company data to jobs...');
-            
+
             const response = await fetch('/api/data/trusted-companies?action=sync-jobs', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            
+
             const data = await response.json();
             if (data.success) {
                 console.log(`Synced jobs: ${data.message}`);
@@ -362,6 +383,45 @@ export default function AdminCompanyManagementPage() {
         }
     };
 
+    const handleSaveCompany = async () => {
+        if (!selectedCompany) return;
+
+        try {
+            const updatedCompany = {
+                ...selectedCompany,
+                ...editForm,
+                // Ensure tags are array
+                tags: typeof editForm.tags === 'string' ? (editForm.tags as string).split(',').map(t => t.trim()).filter(Boolean) : (editForm.tags || selectedCompany.tags)
+            };
+
+            const token = localStorage.getItem('haigoo_auth_token');
+            if (!token) throw new Error('Not logged in');
+
+            const response = await fetch('/api/data/trusted-companies?target=companies', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(updatedCompany)
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setCompanies(prev => prev.map(c => c.id === updatedCompany.id ? updatedCompany : c));
+                setSelectedCompany(updatedCompany);
+                setIsEditing(false);
+                alert('保存成功！');
+            } else {
+                alert('保存失败: ' + (data.error || '未知错误'));
+            }
+        } catch (error) {
+            console.error('Failed to save company:', error);
+            alert('保存出错');
+        }
+    };
+
     const renderPagination = () => {
         const totalPages = Math.ceil(total / pageSize);
         if (totalPages <= 1) return null;
@@ -447,6 +507,8 @@ export default function AdminCompanyManagementPage() {
     useEffect(() => {
         if (selectedCompany) {
             document.body.style.overflow = 'hidden';
+            setIsEditing(false);
+            setEditForm({});
         } else {
             document.body.style.overflow = 'unset';
         }
@@ -482,21 +544,127 @@ export default function AdminCompanyManagementPage() {
                                     <Building2 className="w-6 h-6 text-slate-400" />
                                 </div>
                             )}
-                            <div>
-                                <h2 className="text-xl font-bold text-slate-900">{selectedCompany.name}</h2>
-                                <div className="flex items-center gap-2 mt-1">
-                                    {selectedCompany.url && (
-                                        <a href={selectedCompany.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
-                                            <Globe className="w-3 h-3" />
-                                            官网
-                                        </a>
+                            <div className="flex-1">
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={editForm.name || selectedCompany.name}
+                                        onChange={e => setEditForm((prev: any) => ({ ...prev, name: e.target.value }))}
+                                        className="text-xl font-bold text-slate-900 border-b border-slate-300 focus:border-indigo-500 outline-none w-full"
+                                        placeholder="企业名称"
+                                    />
+                                ) : (
+                                    <h2 className="text-xl font-bold text-slate-900">{selectedCompany.name}</h2>
+                                )}
+                                <div className="flex flex-col gap-2 mt-1 w-full">
+                                    {isEditing ? (
+                                        <>
+                                            <div className="flex items-center gap-2 w-full">
+                                                <Globe className="w-3 h-3 text-slate-400" />
+                                                <input
+                                                    type="text"
+                                                    value={editForm.url || selectedCompany.url || ''}
+                                                    onChange={e => setEditForm((prev: any) => ({ ...prev, url: e.target.value }))}
+                                                    className="text-sm border rounded px-2 py-0.5 flex-1"
+                                                    placeholder="官网链接"
+                                                />
+                                                <Briefcase className="w-3 h-3 text-slate-400 ml-2" />
+                                                <input
+                                                    type="text"
+                                                    value={editForm.industry || selectedCompany.industry || ''}
+                                                    onChange={e => setEditForm((prev: any) => ({ ...prev, industry: e.target.value }))}
+                                                    className="text-sm border rounded px-2 py-0.5 w-32"
+                                                    placeholder="行业"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2 w-full">
+                                                <ExternalLink className="w-3 h-3 text-slate-400" />
+                                                <input
+                                                    type="text"
+                                                    value={editForm.careersPage || selectedCompany.careersPage || ''}
+                                                    onChange={e => setEditForm((prev: any) => ({ ...prev, careersPage: e.target.value }))}
+                                                    className="text-sm border rounded px-2 py-0.5 flex-1"
+                                                    placeholder="招聘页面链接"
+                                                />
+                                                <ExternalLink className="w-3 h-3 text-slate-400 ml-2" />
+                                                <input
+                                                    type="text"
+                                                    value={editForm.linkedin || selectedCompany.linkedin || ''}
+                                                    onChange={e => setEditForm((prev: any) => ({ ...prev, linkedin: e.target.value }))}
+                                                    className="text-sm border rounded px-2 py-0.5 flex-1"
+                                                    placeholder="LinkedIn链接"
+                                                />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                            {selectedCompany.url && (
+                                                <a href={selectedCompany.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
+                                                    <Globe className="w-3 h-3" />
+                                                    官网
+                                                </a>
+                                            )}
+                                            {selectedCompany.careersPage && (
+                                                <a href={selectedCompany.careersPage} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
+                                                    <ExternalLink className="w-3 h-3" />
+                                                    招聘主页
+                                                </a>
+                                            )}
+                                            {selectedCompany.linkedin && (
+                                                <a href={selectedCompany.linkedin} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
+                                                    <ExternalLink className="w-3 h-3" />
+                                                    LinkedIn
+                                                </a>
+                                            )}
+                                            <span className="text-sm text-slate-500 flex items-center gap-1">
+                                                <Briefcase className="w-3 h-3" />
+                                                {selectedCompany.industry || '未分类'}
+                                            </span>
+                                        </div>
                                     )}
-                                    <span className="text-sm text-slate-500">•</span>
-                                    <span className="text-sm text-slate-500">{selectedCompany.industry || '未分类'}</span>
                                 </div>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
+                            {isEditing ? (
+                                <>
+                                    <button
+                                        onClick={handleSaveCompany}
+                                        className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700"
+                                    >
+                                        保存
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setIsEditing(false);
+                                            setEditForm({});
+                                        }}
+                                        className="px-3 py-1.5 border border-slate-300 text-slate-600 text-sm rounded-lg hover:bg-slate-50"
+                                    >
+                                        取消
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        setIsEditing(true);
+                                        setEditForm({
+                                            name: selectedCompany.name,
+                                            url: selectedCompany.url,
+                                            careersPage: selectedCompany.careersPage,
+                                            linkedin: selectedCompany.linkedin,
+                                            description: selectedCompany.description,
+                                            industry: selectedCompany.industry,
+                                            tags: selectedCompany.tags
+                                        });
+                                    }}
+                                    className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                    title="编辑"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                </button>
+                            )}
+                            <div className="w-px h-6 bg-slate-200 mx-2"></div>
                             <button
                                 onClick={() => {
                                     const idx = companies.findIndex(c => c.id === selectedCompany.id);
@@ -526,18 +694,41 @@ export default function AdminCompanyManagementPage() {
                     <div className="flex-1 overflow-y-auto">
                         <div className="p-6">
                             <h3 className="text-lg font-semibold mb-3">企业简介</h3>
-                            <p className="text-slate-600 leading-relaxed">
-                                {selectedCompany.description || '暂无简介'}
-                            </p>
-                            {selectedCompany.tags && selectedCompany.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-4">
-                                    {selectedCompany.tags.map(tag => (
-                                        <span key={tag} className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs">
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
+                            {isEditing ? (
+                                <textarea
+                                    value={editForm.description || selectedCompany.description || ''}
+                                    onChange={e => setEditForm((prev: any) => ({ ...prev, description: e.target.value }))}
+                                    className="w-full h-32 p-3 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm leading-relaxed"
+                                    placeholder="请输入企业简介..."
+                                />
+                            ) : (
+                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                    {selectedCompany.description || '暂无简介'}
+                                </p>
                             )}
+
+                            <div className="mt-4">
+                                <h4 className="text-sm font-medium text-slate-700 mb-2">标签</h4>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={Array.isArray(editForm.tags) ? editForm.tags.join(', ') : (editForm.tags || '')}
+                                        onChange={e => setEditForm((prev: any) => ({ ...prev, tags: e.target.value }))}
+                                        className="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                                        placeholder="输入标签，用逗号分隔 (例如: 互联网, 人工智能, B轮)"
+                                    />
+                                ) : (
+                                    selectedCompany.tags && selectedCompany.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedCompany.tags.map(tag => (
+                                                <span key={tag} className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )
+                                )}
+                            </div>
                         </div>
 
                         <div className="border-t border-slate-100">
@@ -640,6 +831,24 @@ export default function AdminCompanyManagementPage() {
                         <option value="硬件/物联网">硬件/物联网</option>
                         <option value="消费生活">消费生活</option>
                         <option value="其他">其他</option>
+                    </select>
+
+                    <select
+                        value={`${sortField}-${sortOrder}`}
+                        onChange={(e) => {
+                            const [field, order] = e.target.value.split('-');
+                            setSortField(field as any);
+                            setSortOrder(order as any);
+                            setPage(1);
+                        }}
+                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                        <option value="createdAt-desc">最近添加</option>
+                        <option value="createdAt-asc">添加时间 (最早)</option>
+                        <option value="jobCount-desc">岗位数量 (多到少)</option>
+                        <option value="jobCount-asc">岗位数量 (少到多)</option>
+                        <option value="name-asc">企业名称 (A-Z)</option>
+                        <option value="name-desc">企业名称 (Z-A)</option>
                     </select>
 
                     <button

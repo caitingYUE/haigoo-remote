@@ -449,8 +449,8 @@ export default function JobsPage() {
           sources.push('club-referral')
         }
 
-        // 人工精选：企业在trusted_companies表中
-        if (job.isTrusted || job.sourceType === 'trusted') {
+        // 人工精选：Explicitly featured jobs
+        if (job.isFeatured) {
           sources.push('curated')
         }
 
@@ -497,7 +497,7 @@ export default function JobsPage() {
       // 3. 人工精选次之
       if (a.isTrusted && !b.isTrusted) return -1
       if (!a.isTrusted && b.isTrusted) return 1
-      
+
       // 4. 按发布时间排序
       return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
     })

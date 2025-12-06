@@ -4,7 +4,7 @@
  */
 
 import { aiService } from './ai-service'
-import { ALIBABA_BAILIAN_CONFIG } from './config'
+import { ALIBABA_BAILIAN_CONFIG, DEEPSEEK_CONFIG } from './config'
 import type {
   ResumeOptimizationRequest,
   ResumeOptimizationResponse,
@@ -13,6 +13,22 @@ import type {
 } from './types'
 
 export class ResumeService {
+  /**
+   * 获取AI提供商配置
+   */
+  private getAIProviderConfig() {
+    if (DEEPSEEK_CONFIG.apiKey) {
+      return {
+        provider: 'deepseek' as const,
+        model: DEEPSEEK_CONFIG.models.chat
+      }
+    }
+    return {
+      provider: 'bailian' as const,
+      model: ALIBABA_BAILIAN_CONFIG.models.qwen
+    }
+  }
+
   /**
    * 优化简历内容
    */
@@ -26,12 +42,15 @@ export class ResumeService {
         aiService.createUserMessage(userPrompt)
       ]
 
+      const config = this.getAIProviderConfig()
+
       const response = await aiService.sendMessage(
         messages,
-        ALIBABA_BAILIAN_CONFIG.models.qwen,
+        config.model,
         {
           maxTokens: 3000,
-          temperature: 0.7
+          temperature: 0.7,
+          provider: config.provider
         }
       )
 
@@ -89,7 +108,15 @@ export class ResumeService {
         aiService.createUserMessage(`请分析以下简历内容：\n\n${resumeContent}`)
       ]
 
-      const response = await aiService.sendMessage(messages)
+      const config = this.getAIProviderConfig()
+
+      const response = await aiService.sendMessage(
+        messages,
+        config.model,
+        {
+          provider: config.provider
+        }
+      )
 
       if (!response.success || !response.data) {
         return {
@@ -138,7 +165,15 @@ export class ResumeService {
         aiService.createUserMessage(userPrompt)
       ]
 
-      const response = await aiService.sendMessage(messages)
+      const config = this.getAIProviderConfig()
+
+      const response = await aiService.sendMessage(
+        messages,
+        config.model,
+        {
+          provider: config.provider
+        }
+      )
 
       if (!response.success || !response.data) {
         return {

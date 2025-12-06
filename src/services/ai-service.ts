@@ -4,26 +4,53 @@
  */
 
 import { HttpClient } from './http-client'
-import { ALIBABA_BAILIAN_CONFIG, API_CONFIG } from './config'
+import { ALIBABA_BAILIAN_CONFIG, DEEPSEEK_CONFIG, API_CONFIG } from './config'
 import type {
   BailianRequest,
   BailianResponse,
   BailianMessage,
+  DeepSeekRequest,
+  DeepSeekResponse,
   ApiResponse
 } from './types'
 
 // AI服务类
 export class AIService {
-  private httpClient: HttpClient
+  private bailianClient: HttpClient
+  private deepSeekClient: HttpClient
 
   constructor() {
-    this.httpClient = new HttpClient(ALIBABA_BAILIAN_CONFIG.baseUrl)
+    this.bailianClient = new HttpClient(ALIBABA_BAILIAN_CONFIG.baseUrl)
+    this.deepSeekClient = new HttpClient(DEEPSEEK_CONFIG.baseUrl)
+  }
+
+  /**
+   * 发送消息到AI服务
+   */
+  async sendMessage(
+    messages: BailianMessage[],
+    model?: string,
+    options?: {
+      maxTokens?: number
+      temperature?: number
+      topP?: number
+      provider?: 'bailian' | 'deepseek'
+    }
+  ): Promise<ApiResponse<BailianResponse>> {
+    // 默认使用 DeepSeek，如果未配置则回退到 Bailian
+    const provider = options?.provider || (DEEPSEEK_CONFIG.apiKey ? 'deepseek' : 'bailian')
+    
+    if (provider === 'deepseek') {
+      return this.sendDeepSeekMessage(messages, model, options)
+    }
+
+    return this.sendBailianMessage(messages, model, options)
   }
 
   /**
    * 发送消息到阿里百炼API
    */
-  async sendMessage(
+  private async sendBailianMessage(
     messages: BailianMessage[],
     model: string = ALIBABA_BAILIAN_CONFIG.models.qwen,
     options?: {
@@ -45,14 +72,87 @@ export class AIService {
     }
 
     try {
-      const response = await this.httpClient.post<BailianResponse>(
+      const response = await this.bailianClient.post<BailianResponse>(
         '/services/aigc/text-generation/generation',
         request
       )
 
       return response
     } catch (error) {
-      console.error('AI服务请求失败:', error)
+      console.error('阿里百炼API请求失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误',
+        message: 'AI服务调用失败'
+      }
+    }
+  }
+
+  /**
+   * 发送消息到 DeepSeek API
+   */
+  private async sendDeepSeekMessage(
+    messages: BailianMessage[],
+    model: string = DEEPSEEK_CONFIG.models.chat,
+    options?: {
+      maxTokens?: number
+      temperature?: number
+      topP?: number
+    }
+  ): Promise<ApiResponse<BailianResponse>> {
+    const request: DeepSeekRequest = {
+      model,
+      messages,
+      max_tokens: options?.maxTokens || API_CONFIG.maxTokens,
+      temperature: options?.temperature || API_CONFIG.temperature,
+      top_p: options?.topP || 1.0,
+      stream: false
+    }
+
+    try {
+      const headers = {
+        'Authorization': `Bearer ${DEEPSEEK_CONFIG.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+
+      const response = await this.deepSeekClient.request<DeepSeekResponse>(
+        '/chat/completions',
+        {
+          method: 'POST',
+          body: request,
+          headers
+        }
+      )
+
+      if (!response.success || !response.data) {
+        return {
+          success: false,
+          error: response.error,
+          message: response.message
+        }
+      }
+
+      // 转换为 BailianResponse 格式以保持兼容性
+      const deepSeekData = response.data
+      const mappedResponse: BailianResponse = {
+        output: {
+          text: deepSeekData.choices[0]?.message?.content || '',
+          finish_reason: deepSeekData.choices[0]?.finish_reason || 'stop'
+        },
+        usage: {
+          input_tokens: deepSeekData.usage?.prompt_tokens || 0,
+          output_tokens: deepSeekData.usage?.completion_tokens || 0,
+          total_tokens: deepSeekData.usage?.total_tokens || 0
+        },
+        request_id: deepSeekData.id
+      }
+
+      return {
+        success: true,
+        data: mappedResponse
+      }
+    } catch (error) {
+      console.error('DeepSeek API请求失败:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : '未知错误',

@@ -275,3 +275,5 @@ CREATE TABLE user_job_matches (
 );
 CREATE INDEX idx_matches_user_score ON user_job_matches(user_id, match_score DESC);
 
+-- 2025-12-06: Add file_content column to resumes table for persistent preview
+ALTER TABLE resumes ADD COLUMN file_content TEXT;

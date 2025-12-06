@@ -23,6 +23,22 @@ export default function LandingPage() {
     const loadData = async () => {
       try {
         setLoading(true)
+
+        // 1. Fetch real stats from backend
+        try {
+            const statsResp = await fetch('/api/stats')
+            const statsData = await statsResp.json()
+            if (statsData.success && statsData.stats) {
+                setStats({
+                    totalJobs: statsData.stats.domesticJobs || statsData.stats.totalJobs,
+                    companiesCount: statsData.stats.companiesCount,
+                    activeUsers: statsData.stats.activeUsers
+                })
+            }
+        } catch (e) {
+            console.error('Failed to fetch stats:', e)
+        }
+
         const [jobs, companies] = await Promise.all([
           processedJobsService.getAllProcessedJobsFull(100, 1), // Fetch more jobs for better stats
           trustedCompaniesService.getAllCompanies()
@@ -74,8 +90,8 @@ export default function LandingPage() {
 
         // Filter for featured jobs
         const featured = domesticJobs.filter(job => job.isFeatured === true)
-        const displayJobs = featured.length > 0 ? featured : domesticJobs
-        setFeaturedJobs(displayJobs.slice(0, 12)) // Show 12 cards
+        // const displayJobs = featured.length > 0 ? featured : domesticJobs
+        setFeaturedJobs(featured.slice(0, 12)) // Show 12 cards
 
         // Sort companies by total active jobs
         const sortedCompanies = [...companies].sort((a, b) => {
@@ -87,13 +103,10 @@ export default function LandingPage() {
         // Set trusted companies (top 9)
         setTrustedCompanies(sortedCompanies.slice(0, 9))
 
-        // Set stats
-        const uniqueCompanies = new Set(jobs.map(j => j.company).filter(Boolean))
-        setStats({
-          totalJobs: domesticJobs.length,
-          companiesCount: uniqueCompanies.size,
-          activeUsers: 1200
-        })
+        // Set stats (Use backend stats if available, otherwise fallback)
+        // const uniqueCompanies = new Set(jobs.map(j => j.company).filter(Boolean))
+        // Stats are now fetched from /api/stats at the beginning
+        
       } catch (error) {
         console.error('Failed to load data:', error)
       } finally {
@@ -132,7 +145,7 @@ export default function LandingPage() {
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="relative">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
                 <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent absolute top-0 left-0"></div>
               </div>
             </div>
@@ -184,7 +197,7 @@ export default function LandingPage() {
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="relative">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
                 <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent absolute top-0 left-0"></div>
               </div>
             </div>

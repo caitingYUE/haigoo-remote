@@ -3,7 +3,7 @@
  * bit.ly/resume-consolidation
  */
 
-import { getResumes, saveResumes, saveUserResume } from '../server-utils/resume-storage.js'
+import { getResumes, saveResumes, saveUserResume, getResumeContent, deleteResume } from '../server-utils/resume-storage.js'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
@@ -221,7 +221,8 @@ async function handleUpload(req, res) {
       parseResult: finalParsedData,
       contentText: finalParsedData.text || finalParsedData.content || '',
       localFilePath,
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date().toISOString(),
+      fileContent: buffer.toString('base64') // Save file content for persistent preview
     }
 
     try {
@@ -303,6 +304,32 @@ export default async function handler(req, res) {
         }
       }
 
+      // 获取简历内容（用于预览）
+      if (action === 'content' && id) {
+        const token = extractToken(req)
+        if (!token) return sendJson(res, { success: false, error: 'Authentication required' }, 401)
+
+        const decoded = await verifyToken(token)
+        if (!decoded) return sendJson(res, { success: false, error: 'Invalid token' }, 401)
+
+        const { resumes } = await getResumes()
+        const resume = resumes.find(r => r.id === id)
+        if (!resume) return sendJson(res, { success: false, error: 'Resume not found' }, 404)
+
+        // 权限检查
+        const isOwner = resume.userId === decoded.userId
+        const isAdmin = decoded.admin === true
+        if (!isOwner && !isAdmin) return sendJson(res, { success: false, error: 'Permission denied' }, 403)
+
+        // 尝试从数据库获取内容
+        const content = await getResumeContent(id)
+        if (content) {
+          return sendJson(res, { success: true, content })
+        }
+        
+        return sendJson(res, { success: false, error: 'Content not available' }, 404)
+      }
+
       // 获取列表
       const { resumes, provider } = await getResumes()
       res.setHeader('X-Storage-Provider', provider)
@@ -363,9 +390,8 @@ export default async function handler(req, res) {
     if (req.method === 'DELETE') {
       const { id } = req.query
       if (id) {
-        const { resumes } = await getResumes()
-        const filtered = resumes.filter(r => r.id !== id)
-        const result = await saveResumes(filtered)
+        // Use deleteResume for cleaner removal including content
+        const result = await deleteResume(id)
         return sendJson(res, {
           success: result.success,
           deletedId: id,

@@ -17,7 +17,15 @@ export async function getResumes() {
     // 优先尝试 Neon 数据库
     if (neonHelper.isConfigured) {
         try {
-            const result = await neonHelper.query('SELECT * FROM resumes ORDER BY created_at DESC')
+            // Exclude file_content to avoid large payload
+            const result = await neonHelper.query(`
+                SELECT 
+                    resume_id, user_id, file_name, file_size, file_type,
+                    parse_status, parse_result, parse_error, content_text, 
+                    metadata, created_at, updated_at
+                FROM resumes 
+                ORDER BY created_at DESC
+            `)
             if (result && result.length > 0) {
                 resumes = result.map(row => ({
                     id: row.resume_id,
@@ -32,6 +40,7 @@ export async function getResumes() {
                     metadata: row.metadata,
                     createdAt: row.created_at,
                     updatedAt: row.updated_at
+                    // fileContent is intentionally omitted
                 }))
                 provider = 'neon'
                 // 同步到内存
@@ -49,6 +58,47 @@ export async function getResumes() {
     }
 
     return { resumes, provider }
+}
+
+// 获取简历文件内容
+export async function getResumeContent(resumeId) {
+    if (!neonHelper.isConfigured) return null
+    try {
+        const result = await neonHelper.query(
+            'SELECT file_content FROM resumes WHERE resume_id = $1',
+            [resumeId]
+        )
+        if (result && result.length > 0) {
+            return result[0].file_content
+        }
+    } catch (error) {
+        console.error('[Resume Storage] Failed to get content:', error.message)
+    }
+    return null
+}
+
+// 删除简历
+export async function deleteResume(resumeId) {
+    if (neonHelper.isConfigured) {
+        try {
+            await neonHelper.query('DELETE FROM resumes WHERE resume_id = $1', [resumeId])
+            
+            // Update memory cache
+            const { resumes } = await getResumes() // Fetch fresh list (without content)
+            memoryResumes = resumes
+            
+            await updateStats(memoryResumes, 'neon')
+            return { success: true, count: memoryResumes.length }
+        } catch (error) {
+            console.error('[Resume Storage] Delete failed:', error.message)
+            return { success: false, error: error.message }
+        }
+    }
+    
+    // Fallback for memory mode
+    const { resumes } = await getResumes()
+    const filtered = resumes.filter(r => r.id !== resumeId)
+    return await saveResumes(filtered)
 }
 
 // 保存简历列表
@@ -130,11 +180,14 @@ export async function saveUserResume(userId, resumeData) {
                 id: resumeData.id || `resume_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
             }
             
+            const fileContent = resumeData.fileContent || null
+
             const result = await neonHelper.query(`
                 INSERT INTO resumes (
                     resume_id, user_id, file_name, file_size, file_type,
-                    parse_status, parse_result, parse_error, content_text, metadata
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    parse_status, parse_result, parse_error, content_text, metadata,
+                    file_content
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             `, [
                 newResume.id,
                 newResume.userId,
@@ -145,13 +198,15 @@ export async function saveUserResume(userId, resumeData) {
                 newResume.parseResult || null,
                 newResume.parseError || null,
                 newResume.contentText || null,
-                newResume.metadata || {}
+                newResume.metadata || {},
+                fileContent
             ])
             
-            // 更新内存缓存
+            // 更新内存缓存 (不包含 fileContent 以节省内存)
             const { resumes } = await getResumes()
-            const otherResumes = resumes.filter(r => r.userId !== userId)
-            memoryResumes = [newResume, ...otherResumes]
+            // In memory cache, we might not want to store fileContent to save memory
+            // The getResumes() call above already excludes it.
+            memoryResumes = resumes
             
             // 更新统计信息
             await updateStats(memoryResumes, 'neon')
@@ -175,6 +230,44 @@ export async function saveUserResume(userId, resumeData) {
     
     const newResumes = [newResume, ...otherResumes]
     return await saveResumes(newResumes)
+}
+
+// 获取简历文件内容
+export async function getResumeContent(resumeId) {
+    if (!neonHelper.isConfigured) return null
+    try {
+        const result = await neonHelper.query(
+            'SELECT file_content FROM resumes WHERE resume_id = $1',
+            [resumeId]
+        )
+        if (result && result.length > 0) {
+            return result[0].file_content
+        }
+    } catch (error) {
+        console.error('[Resume Storage] Failed to get content:', error.message)
+    }
+    return null
+}
+
+// 删除单个简历
+export async function deleteResume(resumeId) {
+    if (neonHelper.isConfigured) {
+        try {
+            await neonHelper.query('DELETE FROM resumes WHERE resume_id = $1', [resumeId])
+            
+            // 更新内存
+            memoryResumes = memoryResumes.filter(r => r.id !== resumeId)
+            await updateStats(memoryResumes, 'neon')
+            
+            return { success: true, count: memoryResumes.length }
+        } catch (error) {
+            console.error('[Resume Storage] Failed to delete resume:', error.message)
+        }
+    }
+    
+    // 内存回退
+    memoryResumes = memoryResumes.filter(r => r.id !== resumeId)
+    return { success: true, count: memoryResumes.length }
 }
 
 // 去重

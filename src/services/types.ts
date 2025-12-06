@@ -49,6 +49,40 @@ export interface BailianResponse {
   request_id: string
 }
 
+// DeepSeek/OpenAI 消息类型
+export interface DeepSeekMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
+// DeepSeek/OpenAI API请求类型
+export interface DeepSeekRequest {
+  model: string
+  messages: DeepSeekMessage[]
+  max_tokens?: number
+  temperature?: number
+  top_p?: number
+  stream?: boolean
+}
+
+// DeepSeek/OpenAI API响应类型
+export interface DeepSeekResponse {
+  id: string
+  object: string
+  created: number
+  model: string
+  choices: {
+    index: number
+    message: DeepSeekMessage
+    finish_reason: string
+  }[]
+  usage: {
+    prompt_tokens: number
+    completion_tokens: number
+    total_tokens: number
+  }
+}
+
 // 简历优化相关类型
 export interface ResumeOptimizationRequest {
   resumeContent: string

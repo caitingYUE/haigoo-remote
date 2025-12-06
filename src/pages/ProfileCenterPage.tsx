@@ -28,7 +28,8 @@ export default function ProfileCenterPage() {
   const [tab, setTab] = useState<TabKey>(initialTab)
   const [isUploading, setIsUploading] = useState(false)
   const [resumeScore, setResumeScore] = useState<number>(0)
-
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]) // Store AI suggestions
+  
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -178,6 +179,61 @@ export default function ProfileCenterPage() {
             setResumeText(parseResult.text || parseResult.content || '')
           }
 
+          // Fetch and set preview content
+          const rId = latestResumeData.id || latestResumeData.resume_id
+          
+          // Robust file type detection
+          let fType = (latestResumeData.fileType || latestResumeData.file_type || '').toLowerCase()
+          if (!fType) {
+             const fName = latestResumeData.fileName || latestResumeData.file_name || ''
+             const parts = fName.split('.')
+             if (parts.length > 1) fType = parts[parts.length - 1].toLowerCase()
+          }
+
+          let mimeType = 'text/plain'
+          if (fType === 'pdf') mimeType = 'application/pdf'
+          else if (fType === 'doc') mimeType = 'application/msword'
+          else if (fType === 'docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          else if (fType === 'png' || fType === 'jpg' || fType === 'jpeg') mimeType = `image/${fType}`
+          
+          console.log(`[ProfileCenter] Resolved file type: ${fType}, MIME: ${mimeType}`)
+          setFileType(mimeType)
+
+          if (rId) {
+             try {
+                 console.log('[ProfileCenter] Fetching preview content for', rId)
+                 const contentResp = await fetch(`/api/resumes?action=content&id=${rId}`, {
+                     headers: { Authorization: `Bearer ${token}` }
+                 })
+                 if (contentResp.ok) {
+                     const contentData = await contentResp.json()
+                     if (contentData.success && contentData.content) {
+                         try {
+                            // Convert base64 to Blob
+                            const byteCharacters = atob(contentData.content)
+                            const byteNumbers = new Array(byteCharacters.length)
+                            for (let i = 0; i < byteCharacters.length; i++) {
+                                byteNumbers[i] = byteCharacters.charCodeAt(i)
+                            }
+                            const byteArray = new Uint8Array(byteNumbers)
+                            const blob = new Blob([byteArray], { type: mimeType })
+                            const url = URL.createObjectURL(blob)
+                            setPreviewUrl(url)
+                            console.log('[ProfileCenter] Preview loaded successfully with MIME', mimeType)
+                         } catch (conversionErr) {
+                             console.error('[ProfileCenter] Failed to convert content to blob:', conversionErr)
+                         }
+                     } else {
+                         console.warn('[ProfileCenter] No content in response:', contentData)
+                     }
+                 } else {
+                     console.warn('[ProfileCenter] Content fetch failed status:', contentResp.status)
+                 }
+             } catch (err) {
+                 console.error('[ProfileCenter] Failed to load preview content:', err)
+             }
+          }
+
           console.log('[ProfileCenter] ✅ Resume loaded successfully')
         } else {
           console.log('[ProfileCenter] No resumes found in database')
@@ -196,6 +252,8 @@ export default function ProfileCenterPage() {
     if (!file) return
 
     setIsUploading(true)
+    setResumeScore(0)
+    setAiSuggestions([])
 
     // 1. 乐观更新：立即展示文件
     const tempId = Date.now().toString()
@@ -221,27 +279,9 @@ export default function ProfileCenterPage() {
           // 更新本地状态以包含更多详情（如果有）
           // 注意：这里不需要再调用 ResumeStorageService.addResume，因为 API 已经保存了
 
-          showSuccess('简历上传成功！', '正在分析简历内容...')
+          showSuccess('简历上传成功！', '您可以点击右侧按钮进行AI深度分析')
 
-          // 4. 获取 AI 建议 (需会员)
-          const isMember = authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date();
-
-          if (!isMember) {
-            showSuccess('简历上传成功', '开通会员可解锁AI深度优化建议');
-            setUpgradeSource('ai_resume');
-            setShowUpgradeModal(true);
-          } else {
-            try {
-              const analysis = await resumeService.analyzeResume(parsed.textContent)
-              if (analysis.success && analysis.data) {
-                setResumeScore(analysis.data.score || 0)
-                showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
-              }
-            } catch (aiError) {
-              console.warn('AI analysis failed:', aiError)
-              // AI 分析失败不影响简历上传状态
-            }
-          }
+          // 4. AI 分析不再自动触发，由用户手动触发
         } else {
           // 解析内容太少，可能解析不完全
           showSuccess('简历上传成功', '但解析到的内容较少')
@@ -258,6 +298,36 @@ export default function ProfileCenterPage() {
       setLatestResume(null) // 回滚
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const handleAnalyzeResume = async () => {
+    if (!resumeText) {
+      showError('无法分析', '简历内容为空，请重新上传')
+      return
+    }
+
+    const isMember = authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date();
+
+    if (!isMember) {
+      setUpgradeSource('ai_resume');
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    try {
+      showSuccess('正在分析简历...', 'AI 正在深度读取您的简历内容')
+      const analysis = await resumeService.analyzeResume(resumeText)
+      if (analysis.success && analysis.data) {
+        setResumeScore(analysis.data.score || 0)
+        setAiSuggestions(analysis.data.suggestions || [])
+        showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
+      } else {
+        throw new Error(analysis.error || '分析未返回结果')
+      }
+    } catch (aiError) {
+      console.warn('AI analysis failed:', aiError)
+      showError('分析失败', 'AI 服务暂时繁忙，请稍后重试')
     }
   }
 
@@ -280,6 +350,7 @@ export default function ProfileCenterPage() {
         setLatestResume(null)
         setResumeText('')
         setResumeScore(0)
+        setAiSuggestions([])
         showSuccess('简历已删除')
       } else {
         throw new Error('删除失败')
@@ -394,52 +465,70 @@ export default function ProfileCenterPage() {
         <div className="lg:col-span-1 space-y-4">
           <h3 className="text-lg font-bold text-slate-900 px-1">AI-Powered Suggestions</h3>
           <div className="space-y-3">
-            {!resumeText && (
-              <div className="p-4 bg-indigo-50 text-indigo-700 rounded-lg text-sm border border-indigo-100">
-                These are example suggestions. Upload your resume to generate personalized recommendations.
+            {!resumeText ? (
+              <div className="p-4 bg-slate-50 text-slate-600 rounded-lg text-sm border border-slate-200">
+                Upload your resume to unlock AI-powered optimization suggestions.
+              </div>
+            ) : aiSuggestions.length === 0 && (
+              <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
+                <p className="text-sm text-indigo-900 font-medium mb-3">Ready to optimize your resume?</p>
+                <button
+                  onClick={handleAnalyzeResume}
+                  className="w-full py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-sm flex items-center justify-center gap-2"
+                >
+                  <Crown className="w-4 h-4 text-yellow-300" />
+                  Generate AI Suggestions
+                </button>
+                <p className="text-xs text-indigo-600/70 mt-2">Premium Feature</p>
               </div>
             )}
-            {/* 三张建议卡 */}
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h4 className="font-bold text-sm text-slate-900">Strengthen Your Action Verbs</h4>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">Use powerful verbs to describe your accomplishments.</p>
-                  <button className="text-xs font-medium text-indigo-600 mt-2 hover:underline">Learn More</button>
+
+            {aiSuggestions.length > 0 ? (
+              aiSuggestions.map((suggestion, idx) => (
+                <div key={idx} className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm text-slate-900">Optimization Suggestion</h4>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">{suggestion}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h4 className="font-bold text-sm text-slate-900">Add Quantifiable Results</h4>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">Include numbers and data to demonstrate your impact.</p>
-                  <button className="text-xs font-medium text-indigo-600 mt-2 hover:underline">Show Example</button>
+              ))
+            ) : (
+              <>
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 opacity-60">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm text-slate-900">Strengthen Your Action Verbs</h4>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">Use powerful verbs to describe your accomplishments.</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h4 className="font-bold text-sm text-slate-900">ATS Compatibility Check</h4>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">Ensure your resume is formatted to pass ATS.</p>
-                  <button className="text-xs font-medium text-indigo-600 mt-2 hover:underline">Learn More</button>
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 opacity-60">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm text-slate-900">Add Quantifiable Results</h4>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">Include numbers and data to demonstrate your impact.</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
 
           </div>
-          <div className="flex flex-col gap-3 pt-2">
-            <button className="w-full py-2.5 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium shadow-sm">
-              Apply Suggestions
-            </button>
-            <button className="w-full py-2.5 bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium">
-              Reset Suggestions
-            </button>
-          </div>
+          {aiSuggestions.length > 0 && (
+            <div className="flex flex-col gap-3 pt-2">
+              <button 
+                onClick={() => setAiSuggestions([])}
+                className="w-full py-2.5 bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+              >
+                Reset Suggestions
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
