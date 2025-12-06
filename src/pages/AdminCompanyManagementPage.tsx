@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
     Building2, Search, RefreshCw,
-    ExternalLink, Globe, Tag, Briefcase, Eye, X, ChevronLeft, ChevronRight
+    ExternalLink, Globe, Tag, Briefcase, Eye, X, ChevronLeft, ChevronRight,
+    Edit2, Wand2, Loader2, Save
 } from 'lucide-react';
 import { CompanyService } from '../services/company-service';
 import { ClassificationService } from '../services/classification-service';
@@ -37,8 +38,11 @@ export default function AdminCompanyManagementPage() {
     const [pageSize] = useState(20);
     const [searchQuery, setSearchQuery] = useState('');
     const [industryFilter, setIndustryFilter] = useState('');
+    
+    // Selection & Modals
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isJobsModalOpen, setIsJobsModalOpen] = useState(false);
     const [editForm, setEditForm] = useState<Partial<Company>>({});
     const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
     const [jobSearchTerm, setJobSearchTerm] = useState('');
@@ -163,7 +167,8 @@ export default function AdminCompanyManagementPage() {
 
     const handleUpdateInfo = async (company: Company) => {
         if (!company.url) {
-            throw new Error('该企业没有官网链接，无法更新信息');
+            alert('该企业没有官网链接，无法更新信息');
+            return;
         }
 
         try {
@@ -196,10 +201,14 @@ export default function AdminCompanyManagementPage() {
 
             if (response.ok) {
                 setCompanies((prev: Company[]) => prev.map((c: Company) => c.id === company.id ? { ...c, ...updatedCompany } : c));
+                if (selectedCompany?.id === company.id) {
+                    setSelectedCompany(updatedCompany);
+                    setEditForm(updatedCompany);
+                }
             }
         } catch (error) {
             console.error(`Failed to update ${company.name}:`, error);
-            throw error;
+            alert('更新失败，请检查网络或稍后重试');
         } finally {
             setUpdatingMap((prev: Record<string, boolean>) => ({ ...prev, [company.id]: false }));
         }
@@ -292,8 +301,10 @@ export default function AdminCompanyManagementPage() {
         }
     };
 
-    const handleViewDetail = async (company: Company) => {
+    const handleViewJobs = async (company: Company) => {
         setSelectedCompany(company);
+        setCompanyJobs([]); // Clear previous jobs
+        setIsJobsModalOpen(true);
         try {
             const response = await fetch(`/api/data/processed-jobs?company=${encodeURIComponent(company.name)}&limit=200`);
             const data = await response.json();
@@ -302,6 +313,12 @@ export default function AdminCompanyManagementPage() {
             console.error('Failed to load company jobs:', error);
             setCompanyJobs([]);
         }
+    };
+
+    const handleEditClick = (company: Company) => {
+        setSelectedCompany(company);
+        setEditForm({ ...company });
+        setIsEditModalOpen(true);
     };
 
     const handleSaveCompany = async () => {
@@ -330,8 +347,7 @@ export default function AdminCompanyManagementPage() {
 
             if (response.ok && data.success) {
                 setCompanies((prev: Company[]) => prev.map((c: Company) => c.id === updatedCompany.id ? updatedCompany : c));
-                setSelectedCompany(updatedCompany);
-                setIsEditing(false);
+                setIsEditModalOpen(false);
                 alert('保存成功！');
             } else {
                 alert('保存失败: ' + (data.error || '未知错误'));
@@ -367,265 +383,311 @@ export default function AdminCompanyManagementPage() {
                 </div>
             </div>
 
-            <div className="mb-6 text-gray-500 text-sm">
+            <div className="mb-6 flex flex-wrap gap-3 items-center">
+                <div className="relative flex-1 min-w-[260px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="搜索企业名称、行业..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+                <select
+                    value={industryFilter}
+                    onChange={(e) => setIndustryFilter(e.target.value)}
+                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                >
+                    <option value="">所有行业</option>
+                    <option value="互联网">互联网</option>
+                    <option value="金融">金融</option>
+                    <option value="医疗健康">医疗健康</option>
+                    <option value="教育">教育</option>
+                    <option value="制造业">制造业</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+
+            <div className="mb-4 text-gray-500 text-sm">
                 共 {total} 家企业
             </div>
 
-            <div className="flex gap-6 h-[calc(100vh-200px)]">
-                <div className="w-1/3 flex flex-col bg-white rounded-lg shadow overflow-hidden">
-                    <div className="p-4 border-b space-y-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <input
-                                type="text"
-                                placeholder="搜索企业..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                            />
-                        </div>
-                        <select
-                            value={industryFilter}
-                            onChange={(e) => setIndustryFilter(e.target.value)}
-                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        >
-                            <option value="">所有行业</option>
-                            <option value="互联网">互联网</option>
-                            <option value="金融">金融</option>
-                            <option value="医疗健康">医疗健康</option>
-                            <option value="教育">教育</option>
-                            <option value="制造业">制造业</option>
-                            <option value="其他">其他</option>
-                        </select>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                        {loading ? (
-                            <div className="p-8 text-center text-gray-500">加载中...</div>
-                        ) : (
-                            companies.map((company: Company) => (
-                                <div
-                                    key={company.id}
-                                    onClick={() => handleViewDetail(company)}
-                                    className={`p-3 rounded-lg cursor-pointer border transition-colors ${selectedCompany?.id === company.id ? 'bg-indigo-50 border-indigo-500' : 'hover:bg-gray-50 border-transparent'}`}
-                                >
-                                    <div className="flex justify-between items-start">
-                                        <h3 className="font-medium text-gray-900">{company.name}</h3>
-                                        <span className="text-xs text-gray-500">{company.jobCount} 岗位</span>
-                                    </div>
-                                    <div className="mt-1 flex flex-wrap gap-1">
-                                        {company.industry && <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{company.industry}</span>}
-                                        {company.source && <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-xs rounded">{company.source}</span>}
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-
-                    <div className="p-4 border-t flex justify-between items-center text-sm text-gray-500">
-                        <button disabled={page === 1} onClick={() => setPage((p: number) => p - 1)} className="disabled:opacity-50"><ChevronLeft className="w-4 h-4" /></button>
-                        <span>第 {page} 页 / 共 {Math.ceil(total / pageSize)} 页</span>
-                        <button disabled={page * pageSize >= total} onClick={() => setPage((p: number) => p + 1)} className="disabled:opacity-50"><ChevronRight className="w-4 h-4" /></button>
-                    </div>
+            {loading ? (
+                <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                 </div>
-
-                <div className="flex-1 bg-white rounded-lg shadow overflow-hidden flex flex-col">
-                    {selectedCompany ? (
-                        <>
-                            <div className="p-6 border-b flex justify-between items-start">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-4 mb-2">
-                                        {isEditing ? (
-                                            <input
-                                                type="text"
-                                                value={editForm.name || selectedCompany.name}
-                                                onChange={e => setEditForm((prev: any) => ({ ...prev, name: e.target.value }))}
-                                                className="text-xl font-bold text-slate-900 border-b border-slate-300 focus:border-indigo-500 outline-none w-full"
-                                                placeholder="企业名称"
-                                            />
-                                        ) : (
-                                            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                                                {selectedCompany.name}
-                                                {selectedCompany.url && (
-                                                    <a href={selectedCompany.url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-indigo-600">
-                                                        <ExternalLink className="w-4 h-4" />
-                                                    </a>
-                                                )}
-                                            </h2>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <Globe className="w-4 h-4" />
-                                            {isEditing ? (
-                                                <input
-                                                    type="text"
-                                                    value={editForm.url || selectedCompany.url || ''}
-                                                    onChange={e => setEditForm((prev: any) => ({ ...prev, url: e.target.value }))}
-                                                    className="border-b border-slate-300 focus:border-indigo-500 outline-none flex-1"
-                                                    placeholder="官网链接"
-                                                />
+            ) : (
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业/简介</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标签</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">在招岗位</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">链接</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {companies.map(company => (
+                                <tr key={company.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center">
+                                            {company.logo ? (
+                                                <img src={company.logo} alt="" className="h-8 w-8 rounded object-contain mr-3" />
                                             ) : (
-                                                <a href={selectedCompany.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                                                    {selectedCompany.url || '暂无官网'}
+                                                <div className="h-8 w-8 rounded bg-gray-100 flex items-center justify-center mr-3">
+                                                    <Building2 className="w-4 h-4 text-gray-400" />
+                                                </div>
+                                            )}
+                                            <div className="font-medium text-gray-900">{company.name}</div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="space-y-1">
+                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {company.industry || '未分类'}
+                                            </span>
+                                            <div className="text-xs text-gray-500 truncate max-w-xs" title={company.description}>
+                                                {company.description || '暂无简介'}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-wrap gap-1 max-w-xs">
+                                            {company.tags?.slice(0, 3).map((tag: string) => (
+                                                <span key={tag} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                            {(company.tags?.length || 0) > 3 && (
+                                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                                                    +{company.tags!.length - 3}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <div className="flex items-center gap-2">
+                                            <span>{company.jobCount}</span>
+                                            <button 
+                                                onClick={() => handleViewJobs(company)}
+                                                className="text-indigo-600 hover:text-indigo-800"
+                                                title="查看岗位"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div className="flex gap-2">
+                                            {company.url && (
+                                                <a href={company.url} target="_blank" rel="noreferrer" title="官网" className="text-gray-400 hover:text-indigo-600">
+                                                    <Globe className="w-4 h-4" />
                                                 </a>
                                             )}
                                         </div>
-
-                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <Building2 className="w-4 h-4" />
-                                            {isEditing ? (
-                                                <select
-                                                    value={editForm.industry || selectedCompany.industry || ''}
-                                                    onChange={e => setEditForm((prev: any) => ({ ...prev, industry: e.target.value }))}
-                                                    className="border-b border-slate-300 focus:border-indigo-500 outline-none flex-1"
-                                                >
-                                                    <option value="">选择行业</option>
-                                                    <option value="互联网">互联网</option>
-                                                    <option value="金融">金融</option>
-                                                    <option value="医疗健康">医疗健康</option>
-                                                    <option value="教育">教育</option>
-                                                    <option value="制造业">制造业</option>
-                                                    <option value="其他">其他</option>
-                                                </select>
-                                            ) : (
-                                                <span>{selectedCompany.industry || '未知行业'}</span>
-                                            )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div className="flex justify-end gap-2">
+                                            <button 
+                                                onClick={() => handleUpdateInfo(company)}
+                                                disabled={updatingMap[company.id]}
+                                                className="text-gray-600 hover:text-green-600 disabled:opacity-50"
+                                                title="更新信息"
+                                            >
+                                                <RefreshCw className={`w-4 h-4 ${updatingMap[company.id] ? 'animate-spin' : ''}`} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleEditClick(company)} 
+                                                className="text-gray-600 hover:text-indigo-600"
+                                                title="编辑"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
                                         </div>
-
-                                        <div className="flex items-start gap-2 text-sm text-gray-600">
-                                            <Briefcase className="w-4 h-4 mt-0.5" />
-                                            {isEditing ? (
-                                                <textarea
-                                                    value={editForm.description || selectedCompany.description || ''}
-                                                    onChange={e => setEditForm((prev: any) => ({ ...prev, description: e.target.value }))}
-                                                    className="border border-slate-300 rounded p-2 focus:border-indigo-500 outline-none flex-1 h-24"
-                                                    placeholder="企业简介"
-                                                />
-                                            ) : (
-                                                <p className="flex-1 line-clamp-3">{selectedCompany.description || '暂无简介'}</p>
-                                            )}
-                                        </div>
-
-                                        <div className="flex items-start gap-2 text-sm text-gray-600">
-                                            <Tag className="w-4 h-4 mt-1" />
-                                            <div className="flex-1 flex flex-wrap gap-2">
-                                                {isEditing ? (
-                                                    <input
-                                                        type="text"
-                                                        value={typeof editForm.tags === 'string' ? editForm.tags : (editForm.tags || selectedCompany.tags || []).join(', ')}
-                                                        onChange={e => setEditForm((prev: any) => ({ ...prev, tags: e.target.value }))}
-                                                        className="border-b border-slate-300 focus:border-indigo-500 outline-none w-full"
-                                                        placeholder="标签 (用逗号分隔)"
-                                                    />
-                                                ) : (
-                                                    selectedCompany.tags?.map((tag: string) => (
-                                                        <span key={tag} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-xs">
-                                                            {tag}
-                                                        </span>
-                                                    ))
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col gap-2 ml-4">
-                                    {!isEditing ? (
-                                        <>
-                                            <button
-                                                onClick={() => {
-                                                    setEditForm({});
-                                                    setIsEditing(true);
-                                                }}
-                                                className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
-                                            >
-                                                编辑企业
-                                            </button>
-                                            <button
-                                                onClick={() => handleUpdateInfo(selectedCompany)}
-                                                disabled={updatingMap[selectedCompany.id]}
-                                                className="px-3 py-1.5 text-sm border border-indigo-600 text-indigo-600 rounded hover:bg-indigo-50 transition-colors flex items-center justify-center gap-1"
-                                            >
-                                                <RefreshCw className={`w-3 h-3 ${updatingMap[selectedCompany.id] ? 'animate-spin' : ''}`} />
-                                                {updatingMap[selectedCompany.id] ? '更新中' : '更新信息'}
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button
-                                                onClick={handleSaveCompany}
-                                                className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                                            >
-                                                保存
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setIsEditing(false);
-                                                    setEditForm({});
-                                                }}
-                                                className="px-3 py-1.5 text-sm border border-gray-300 text-gray-600 rounded hover:bg-gray-50 transition-colors"
-                                            >
-                                                取消
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex-1 overflow-hidden flex flex-col">
-                                <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-                                    <h3 className="font-bold text-gray-700">相关招聘岗位 ({companyJobs.length})</h3>
-                                    <div className="relative w-64">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                        <input
-                                            type="text"
-                                            placeholder="搜索岗位..."
-                                            value={jobSearchTerm}
-                                            onChange={(e) => setJobSearchTerm(e.target.value)}
-                                            className="w-full pl-9 pr-4 py-1.5 text-sm border rounded-full focus:ring-2 focus:ring-indigo-500"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex-1 overflow-y-auto p-4">
-                                    <div className="space-y-2">
-                                        {companyJobs.map((job: Job) => (
-                                            <div key={job.id} className="p-3 bg-white border rounded hover:shadow-sm flex justify-between items-center">
-                                                <div>
-                                                    <div className="font-medium text-indigo-600">{job.title}</div>
-                                                    <div className="text-sm text-gray-500 mt-1 flex gap-3">
-                                                        <span>{job.location}</span>
-                                                        {job.salary && (
-                                                            <span>{job.salary.min}-{job.salary.max} {job.salary.currency}</span>
-                                                        )}
-                                                        <span>{new Date(job.postedAt).toLocaleDateString()}</span>
-                                                    </div>
-                                                </div>
-                                                {job.sourceUrl && (
-                                                    <a href={job.sourceUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-indigo-600">
-                                                        <ExternalLink className="w-4 h-4" />
-                                                    </a>
-                                                )}
-                                            </div>
-                                        ))}
-                                        {companyJobs.length === 0 && (
-                                            <div className="text-center py-8 text-gray-500">
-                                                暂无相关岗位数据
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                            <Building2 className="w-16 h-16 mb-4 opacity-20" />
-                            <p>请选择左侧企业查看详情</p>
-                        </div>
-                    )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
+            )}
+
+            <div className="p-4 flex justify-between items-center text-sm text-gray-500">
+                <button disabled={page === 1} onClick={() => setPage((p: number) => p - 1)} className="disabled:opacity-50 flex items-center gap-1 hover:text-gray-900">
+                    <ChevronLeft className="w-4 h-4" /> 上一页
+                </button>
+                <span>第 {page} 页 / 共 {Math.ceil(total / pageSize)} 页</span>
+                <button disabled={page * pageSize >= total} onClick={() => setPage((p: number) => p + 1)} className="disabled:opacity-50 flex items-center gap-1 hover:text-gray-900">
+                    下一页 <ChevronRight className="w-4 h-4" />
+                </button>
             </div>
+
+            {/* Edit Modal */}
+            {isEditModalOpen && selectedCompany && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center p-6 border-b">
+                            <h2 className="text-xl font-bold">编辑企业信息</h2>
+                            <button onClick={() => setIsEditModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">企业名称</label>
+                                <input
+                                    type="text"
+                                    value={editForm.name || ''}
+                                    onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">行业</label>
+                                    <select
+                                        value={editForm.industry || ''}
+                                        onChange={e => setEditForm({ ...editForm, industry: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">选择行业</option>
+                                        <option value="互联网">互联网</option>
+                                        <option value="金融">金融</option>
+                                        <option value="医疗健康">医疗健康</option>
+                                        <option value="教育">教育</option>
+                                        <option value="制造业">制造业</option>
+                                        <option value="其他">其他</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">官网链接</label>
+                                    <input
+                                        type="url"
+                                        value={editForm.url || ''}
+                                        onChange={e => setEditForm({ ...editForm, url: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
+                                <div className="flex gap-2 items-center">
+                                    <input
+                                        type="url"
+                                        value={editForm.logo || ''}
+                                        onChange={e => setEditForm({ ...editForm, logo: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                    {editForm.logo && <img src={editForm.logo} alt="Logo" className="w-10 h-10 object-contain border rounded" />}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">简介</label>
+                                <textarea
+                                    value={editForm.description || ''}
+                                    onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                                    rows={4}
+                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">标签 (逗号分隔)</label>
+                                <input
+                                        type="text"
+                                        value={typeof editForm.tags === 'string' ? editForm.tags : (editForm.tags || []).join(', ')}
+                                        onChange={e => setEditForm({ ...editForm, tags: e.target.value as any })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 p-6 border-t bg-gray-50 rounded-b-lg">
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-50"
+                            >
+                                取消
+                            </button>
+                            <button
+                                onClick={handleSaveCompany}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2"
+                            >
+                                <Save className="w-4 h-4" />
+                                保存
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Jobs Modal */}
+            {isJobsModalOpen && selectedCompany && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col">
+                        <div className="flex justify-between items-center p-6 border-b">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                {selectedCompany.name} - 在招岗位 ({companyJobs.length})
+                            </h2>
+                            <button onClick={() => setIsJobsModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-4 border-b bg-gray-50">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <input
+                                    type="text"
+                                    placeholder="搜索岗位..."
+                                    value={jobSearchTerm}
+                                    onChange={(e) => setJobSearchTerm(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <div className="space-y-2">
+                                {companyJobs
+                                    .filter(job => !jobSearchTerm || job.title.toLowerCase().includes(jobSearchTerm.toLowerCase()))
+                                    .map(job => (
+                                        <div key={job.id} className="p-3 bg-white border rounded hover:shadow-sm flex justify-between items-center">
+                                            <div>
+                                                <div className="font-medium text-indigo-600">{job.title}</div>
+                                                <div className="text-sm text-gray-500 mt-1 flex gap-3">
+                                                    <span>{job.location}</span>
+                                                    {job.salary && (
+                                                        <span>{job.salary.min}-{job.salary.max} {job.salary.currency}</span>
+                                                    )}
+                                                    <span>{new Date(job.postedAt).toLocaleDateString()}</span>
+                                                </div>
+                                            </div>
+                                            {job.sourceUrl && (
+                                                <a href={job.sourceUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-indigo-600">
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </a>
+                                            )}
+                                        </div>
+                                    ))}
+                                {companyJobs.length === 0 && (
+                                    <div className="text-center py-12 text-gray-500">
+                                        暂无岗位数据
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
