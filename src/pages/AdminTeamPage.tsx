@@ -37,6 +37,7 @@ import { rssService } from '../services/rss-service';
 import DataManagementTabs from '../components/DataManagementTabs';
 import UserManagementPage from './UserManagementPage';
 import AdminCompanyManagementPage from './AdminCompanyManagementPage';
+import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
 import AdminTagManagementPage from './AdminTagManagementPage';
 import AdminFeedbackList from '../components/AdminFeedbackList';
 import CronTestControl from '../components/CronTestControl';
@@ -740,7 +741,8 @@ const AdminTeamPage: React.FC = () => {
     { id: 'dashboard', label: '数据概览', icon: BarChart3 },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
-    { id: 'companies', label: '企业管理', icon: Building },
+    { id: 'companies', label: '全部企业', icon: Building },
+    { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
     { id: 'tag-management', label: '标签管理', icon: Tag },
     { id: 'resumes', label: '简历数据', icon: FileText },
     { id: 'users', label: '用户管理', icon: Users },
@@ -810,7 +812,7 @@ const AdminTeamPage: React.FC = () => {
         <div className="admin-container">
           {/* 页面头部 */}
           <header className="admin-header">
-            <h1>{activeTab === 'overview' ? '数据概览' : activeTab === 'data' ? '数据管理' : activeTab === 'rss' ? 'RSS源管理' : activeTab === 'companies' ? '企业管理' : activeTab === 'team' ? '团队管理' : activeTab === 'users' ? '用户管理' : activeTab === 'tags' ? '标签管理' : activeTab === 'feedback' ? '用户反馈' : activeTab === 'analytics' ? '数据分析' : activeTab === 'settings' ? '系统设置' : '海狗招聘团队管理后台'}</h1>
+            <h1>{activeTab === 'overview' ? '数据概览' : activeTab === 'data' ? '数据管理' : activeTab === 'rss' ? 'RSS源管理' : activeTab === 'companies' ? '全部企业管理' : activeTab === 'trusted-companies' ? '可信企业管理' : activeTab === 'team' ? '团队管理' : activeTab === 'users' ? '用户管理' : activeTab === 'tags' ? '标签管理' : activeTab === 'feedback' ? '用户反馈' : activeTab === 'analytics' ? '数据分析' : activeTab === 'settings' ? '系统设置' : '海狗招聘团队管理后台'}</h1>
             <div className="flex items-center gap-4">
               {user && (
                 <div className="flex items-center gap-2 text-sm text-slate-700">
@@ -844,6 +846,7 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'users' && <UserManagementPage />}
               {activeTab === 'companies' && <AdminCompanyManagementPage />}
+              {activeTab === 'trusted-companies' && <AdminTrustedCompaniesPage />}
               {activeTab === 'tag-management' && <AdminTagManagementPage />}
               {activeTab === 'analytics' && renderAnalytics()}
               {activeTab === 'feedback' && renderFeedbackList()}

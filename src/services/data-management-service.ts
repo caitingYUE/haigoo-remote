@@ -391,6 +391,7 @@ export class DataManagementService {
     source?: string;
     experienceLevel?: string;
     isManuallyEdited?: boolean;
+    isFeatured?: boolean;
     company?: string;
     // 新增：关键词搜索（岗位名称/公司/描述/地点/标签）
     search?: string;
@@ -422,6 +423,10 @@ export class DataManagementService {
 
       if (filters?.isManuallyEdited !== undefined) {
         filteredJobs = filteredJobs.filter(job => job.isManuallyEdited === filters.isManuallyEdited);
+      }
+
+      if (filters?.isFeatured !== undefined) {
+        filteredJobs = filteredJobs.filter(job => job.isFeatured === filters.isFeatured);
       }
 
       if (filters?.company) {

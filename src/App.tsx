@@ -20,6 +20,7 @@ const AdminTeamPage = lazy(() => import('./pages/AdminTeamPage'))
 const UserManagementPage = lazy(() => import('./pages/UserManagementPage'))
 const AdminTagManagementPage = lazy(() => import('./pages/AdminTagManagementPage'))
 const AdminCompanyManagementPage = lazy(() => import('./pages/AdminCompanyManagementPage'))
+const AdminTrustedCompaniesPage = lazy(() => import('./pages/AdminTrustedCompaniesPage'))
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'))
 const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
@@ -58,6 +59,13 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                {/* Trusted Company Management - No Layout wrapper */}
+                <Route path="/admin/trusted-companies" element={
+                  <ProtectedRoute>
+                    <AdminTrustedCompaniesPage />
+                  </ProtectedRoute>
+                } />
+
                 {/* AdminTeamPage 统一后台管理页面（需要登录） */}
                 <Route path="/admin_team" element={
                   <AdminRoute>
@@ -88,11 +96,6 @@ function App() {
                             <AdminLocationPage />
                           </ProtectedRoute>
                         } />
-                        {/* <Route path="/admin/trusted-companies" element={
-                          <ProtectedRoute>
-                            <AdminTrustedCompaniesPage />
-                          </ProtectedRoute>
-                        } /> */}
                         <Route path="/remote-experience" element={<RemoteExperiencePage />} />
                         <Route path="/membership" element={<MembershipPage />} />
 

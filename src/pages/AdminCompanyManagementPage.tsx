@@ -23,7 +23,6 @@ interface Company {
 }
 
 export default function AdminCompanyManagementPage() {
-    const [activeTab, setActiveTab] = useState<'all' | 'trusted'>('all');
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(false);
     const [extracting, setExtracting] = useState(false);
@@ -90,10 +89,8 @@ export default function AdminCompanyManagementPage() {
     }, [page, pageSize, searchQuery, industryFilter]);
 
     useEffect(() => {
-        if (activeTab === 'all') {
-            loadCompanies();
-        }
-    }, [activeTab, loadCompanies]);
+        loadCompanies();
+    }, [loadCompanies]);
 
     const handleSyncToJobs = async () => {
         if (!confirm('确定要将企业库中的数据（简介、行业、标签等）同步到职位数据库中吗？')) return;
@@ -368,27 +365,11 @@ export default function AdminCompanyManagementPage() {
                 </div>
             </div>
 
-            <div className="flex gap-4 mb-6 border-b">
-                <button
-                    className={`px-4 py-2 border-b-2 ${activeTab === 'all' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
-                    onClick={() => setActiveTab('all')}
-                >
-                    全部企业 ({total})
-                </button>
-                <button
-                    className={`px-4 py-2 border-b-2 ${activeTab === 'trusted' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
-                    onClick={() => setActiveTab('trusted')}
-                >
-                    可信企业库 (管理)
-                </button>
+            <div className="mb-6 text-gray-500 text-sm">
+                共 {total} 家企业
             </div>
 
-            {activeTab === 'trusted' ? (
-                <div className="p-8 text-center text-slate-500">
-                    该功能已合并至"全部企业"列表中。
-                </div>
-            ) : (
-                <div className="flex gap-6 h-[calc(100vh-200px)]">
+            <div className="flex gap-6 h-[calc(100vh-200px)]">
                     <div className="w-1/3 flex flex-col bg-white rounded-lg shadow overflow-hidden">
                         <div className="p-4 border-b space-y-4">
                             <div className="relative">
@@ -643,7 +624,6 @@ export default function AdminCompanyManagementPage() {
                         )}
                     </div>
                 </div>
-            )}
         </div>
     );
 }
