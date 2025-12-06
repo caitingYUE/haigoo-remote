@@ -19,8 +19,13 @@ export default async function handler(req, res) {
       neonHelper.count('users')
     ])
 
-    const domesticJobsCount = domesticJobsResult && domesticJobsResult[0] 
-      ? parseInt(domesticJobsResult[0].count, 10) 
+    console.log('[api/stats] jobsCount:', jobsCount)
+    console.log('[api/stats] domesticJobsResult:', domesticJobsResult)
+    console.log('[api/stats] companiesCount:', companiesCount)
+    console.log('[api/stats] usersCount:', usersCount)
+
+    const domesticJobsCount = domesticJobsResult && domesticJobsResult[0]
+      ? parseInt(domesticJobsResult[0].count, 10)
       : 0
 
     return res.status(200).json({
@@ -34,9 +39,9 @@ export default async function handler(req, res) {
     })
   } catch (error) {
     console.error('[Stats] Error fetching stats:', error)
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch statistics' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch statistics'
     })
   }
 }
