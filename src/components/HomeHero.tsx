@@ -157,15 +157,15 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             {/* Stats */}
                             <div className="flex items-center gap-12 mt-12">
                                 <div className="flex flex-col">
-                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats?.totalJobs || 500}+</span>
-                                    <span className="text-sm text-slate-500 mt-1">精选岗位数量</span>
+                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{Math.max(stats?.totalJobs || 0, 500)}+</span>
+                                    <span className="text-sm text-slate-500 mt-1">精选&内推岗位数量</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats?.companiesCount || 100}+</span>
-                                    <span className="text-sm text-slate-500 mt-1">精选企业数量</span>
+                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{Math.max(stats?.companiesCount || 0, 300)}+</span>
+                                    <span className="text-sm text-slate-500 mt-1">精选&内推企业数量</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats?.dailyJobs || 50}+</span>
+                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{Math.max(stats?.dailyJobs || 0, 1000)}+</span>
                                     <span className="text-sm text-slate-500 mt-1">日更岗位数量</span>
                                 </div>
                             </div>
