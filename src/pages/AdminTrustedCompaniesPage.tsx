@@ -160,7 +160,12 @@ export default function AdminTrustedCompaniesPage() {
     }
 
     const openCropperWithSource = (source: string) => {
-        setCoverSource(source)
+        // Fix CORS issues by proxying remote images
+        if (source.startsWith('http') && !source.includes('/api/proxy-image')) {
+            setCoverSource(`/api/proxy-image?url=${encodeURIComponent(source)}`)
+        } else {
+            setCoverSource(source)
+        }
         setShowCropper(true)
     }
 
