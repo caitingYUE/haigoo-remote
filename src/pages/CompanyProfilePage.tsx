@@ -215,6 +215,7 @@ export default function CompanyProfilePage() {
                                 key={job.id}
                                 job={job}
                                 onClick={(job) => setSelectedJob(job)}
+                                className="h-[380px] w-full max-w-[450px] mx-auto"
                             />
                         ))}
                     </div>

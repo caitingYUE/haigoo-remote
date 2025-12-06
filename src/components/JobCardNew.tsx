@@ -10,9 +10,10 @@ interface JobCardNewProps {
    job: Job;
    onClick?: (job: Job) => void;
    matchScore?: number; // Personalized match score (0-100)
+   className?: string;
 }
 
-export default function JobCardNew({ job, onClick, matchScore }: JobCardNewProps) {
+export default function JobCardNew({ job, onClick, matchScore, className }: JobCardNewProps) {
    // const navigate = useNavigate();
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
@@ -33,7 +34,7 @@ export default function JobCardNew({ job, onClick, matchScore }: JobCardNewProps
    return (
       <div
          onClick={() => onClick?.(job)}
-         className="group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer overflow-hidden"
+         className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer overflow-hidden ${className || ''}`}
       >
          {/* Top Decoration for Verified Jobs */}
          {isVerified && (
