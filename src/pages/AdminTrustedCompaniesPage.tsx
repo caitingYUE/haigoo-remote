@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { 
     Building2, Search, Plus, Edit2, Trash2, 
     ExternalLink, Check, X, Save, Loader2,
-    Wand2, DownloadCloud, Database, RefreshCw
+    Wand2, DownloadCloud, Database, RefreshCw, Upload, Image as ImageIcon
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
+import Cropper, { Area } from 'react-easy-crop'
+import getCroppedImg from '../utils/cropImage'
+import { ClassificationService } from '../services/classification-service'
 
 export default function AdminTrustedCompaniesPage() {
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
@@ -20,6 +23,17 @@ export default function AdminTrustedCompaniesPage() {
     const [crawlingId, setCrawlingId] = useState<string | null>(null)
     const [aggregating, setAggregating] = useState(false)
     const [autoFilling, setAutoFilling] = useState(false)
+    const [analyzingId, setAnalyzingId] = useState<string | null>(null)
+
+    // Cover image upload & crop
+    const [coverSource, setCoverSource] = useState<string>('')
+    const [showCropper, setShowCropper] = useState(false)
+    const [crop, setCrop] = useState({ x: 0, y: 0 })
+    const [zoom, setZoom] = useState(1)
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
+    const [processingImage, setProcessingImage] = useState(false)
+    const [coverUrlInput, setCoverUrlInput] = useState('')
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
 
     useEffect(() => {
         loadCompanies()
@@ -40,6 +54,8 @@ export default function AdminTrustedCompaniesPage() {
     const handleEdit = (company: TrustedCompany) => {
         setEditingCompany(company)
         setFormData({ ...company })
+        setCoverUrlInput(company.coverImage || '')
+        resetCropperState()
         setIsModalOpen(true)
     }
 
@@ -50,6 +66,8 @@ export default function AdminTrustedCompaniesPage() {
             canRefer: false,
             tags: []
         })
+        setCoverUrlInput('')
+        resetCropperState()
         setIsModalOpen(true)
     }
 
@@ -79,6 +97,7 @@ export default function AdminTrustedCompaniesPage() {
             
             if (success) {
                 setIsModalOpen(false)
+                setCoverUrlInput('')
                 loadCompanies()
             } else {
                 alert('保存失败')
@@ -156,6 +175,127 @@ export default function AdminTrustedCompaniesPage() {
             alert('提取请求失败')
         } finally {
             setAggregating(false)
+        }
+    }
+
+    const openCropperWithSource = (source: string) => {
+        setCoverSource(source)
+        setShowCropper(true)
+    }
+
+    const resetCropperState = () => {
+        setCoverSource('')
+        setShowCropper(false)
+        setCrop({ x: 0, y: 0 })
+        setZoom(1)
+        setCroppedAreaPixels(null)
+        setProcessingImage(false)
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !file.type.startsWith('image/')) return
+        const reader = new FileReader()
+        reader.onload = () => {
+            const result = reader.result as string
+            openCropperWithSource(result)
+        }
+        reader.readAsDataURL(file)
+    }
+
+    const handlePasteImage = (e: React.ClipboardEvent<HTMLDivElement>) => {
+        const pastedFile = e.clipboardData.files?.[0]
+        if (pastedFile && pastedFile.type.startsWith('image/')) {
+            const reader = new FileReader()
+            reader.onload = () => {
+                openCropperWithSource(reader.result as string)
+            }
+            reader.readAsDataURL(pastedFile)
+            return
+        }
+        const text = e.clipboardData.getData('text')
+        if (text && text.startsWith('http')) {
+            openCropperWithSource(text.trim())
+        }
+    }
+
+    const handleLoadCoverFromUrl = () => {
+        if (!coverUrlInput) return
+        openCropperWithSource(coverUrlInput.trim())
+    }
+
+    const onCropComplete = useCallback((_croppedArea: Area, croppedPixels: Area) => {
+        setCroppedAreaPixels(croppedPixels)
+    }, [])
+
+    const handleApplyCrop = async () => {
+        if (!coverSource || !croppedAreaPixels) return
+        try {
+            setProcessingImage(true)
+            const croppedImage = await getCroppedImg(coverSource, croppedAreaPixels)
+
+            let finalImage = croppedImage
+            try {
+                const resp = await fetch('/api/process-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: croppedImage })
+                })
+                const data = await resp.json()
+                if (data?.success && data.image) {
+                    finalImage = data.image
+                }
+            } catch (error) {
+                console.warn('图片压缩失败，使用裁剪结果', error)
+            }
+
+            setFormData(prev => ({ ...prev, coverImage: finalImage }))
+            resetCropperState()
+        } catch (error) {
+            console.error('裁剪失败', error)
+            alert('裁剪失败，请重试')
+        } finally {
+            setProcessingImage(false)
+        }
+    }
+
+    const handleAnalyzeCurrent = () => {
+        if (!formData.name && !formData.description) {
+            alert('请先填写企业名称或简介后再分析')
+            return
+        }
+        const { industry, tags } = ClassificationService.classifyCompany(formData.name || '', formData.description || '')
+        setFormData(prev => ({
+            ...prev,
+            industry,
+            tags: Array.from(new Set([...(Array.isArray(prev.tags) ? prev.tags : (prev.tags ? [prev.tags as any] : [])), ...tags]))
+        }))
+    }
+
+    const handleQuickAnalyze = async (company: TrustedCompany) => {
+        if (!company.description && !company.website) {
+            alert('该企业暂无简介，无法分析')
+            return
+        }
+        try {
+            setAnalyzingId(company.id)
+            const result = ClassificationService.classifyCompany(company.name, company.description || '')
+            const payload = {
+                ...company,
+                industry: result.industry,
+                tags: Array.from(new Set([...(company.tags || []), ...result.tags]))
+            }
+            const success = await trustedCompaniesService.saveCompany(payload)
+            if (success) {
+                setCompanies(prev => prev.map(c => c.id === company.id ? { ...c, ...payload } : c))
+            } else {
+                alert('分析后保存失败')
+            }
+        } catch (error) {
+            console.error('分析失败', error)
+            alert('分析失败，请重试')
+        } finally {
+            setAnalyzingId(null)
         }
     }
 
@@ -293,6 +433,18 @@ export default function AdminTrustedCompaniesPage() {
                                                 <DownloadCloud className="w-4 h-4" />
                                             )}
                                         </button>
+                                        <button
+                                            onClick={() => handleQuickAnalyze(company)}
+                                            disabled={analyzingId === company.id}
+                                            className="text-gray-600 hover:text-purple-600 mr-4 disabled:opacity-50"
+                                            title="AI分析行业与标签"
+                                        >
+                                            {analyzingId === company.id ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <Wand2 className="w-4 h-4" />
+                                            )}
+                                        </button>
                                         <button onClick={() => handleEdit(company)} className="text-indigo-600 hover:text-indigo-900 mr-4">
                                             <Edit2 className="w-4 h-4" />
                                         </button>
@@ -332,7 +484,18 @@ export default function AdminTrustedCompaniesPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">行业</label>
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <label className="block text-sm font-medium text-gray-700">行业</label>
+                                        <button
+                                            type="button"
+                                            onClick={handleAnalyzeCurrent}
+                                            className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                                            title="根据简介自动生成行业与标签"
+                                        >
+                                            <Wand2 className="w-3 h-3" />
+                                            AI分析
+                                        </button>
+                                    </div>
                                     <select
                                         value={formData.industry || ''}
                                         onChange={e => setFormData({...formData, industry: e.target.value as CompanyIndustry})}
@@ -386,6 +549,66 @@ export default function AdminTrustedCompaniesPage() {
                                         onChange={e => setFormData({...formData, logo: e.target.value})}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     />
+                                </div>
+                            </div>
+
+                            <div
+                                onPaste={handlePasteImage}
+                                className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50"
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <label className="block text-sm font-medium text-gray-700">企业配图</label>
+                                        <p className="text-xs text-gray-500">支持上传文件/URL/直接粘贴，建议裁剪为 16:9 以适配前台卡片</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center gap-1 text-sm"
+                                        >
+                                            <Upload className="w-4 h-4" />
+                                            上传文件
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleLoadCoverFromUrl}
+                                            disabled={!coverUrlInput}
+                                            className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 flex items-center gap-1 text-sm"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                            使用URL
+                                        </button>
+                                    </div>
+                                </div>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                                <div className="mt-3 flex items-center gap-4">
+                                    <div className="w-48 h-28 rounded-lg bg-white border border-gray-200 overflow-hidden flex items-center justify-center">
+                                        {formData.coverImage ? (
+                                            <img src={formData.coverImage} alt="配图" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="text-gray-400 flex flex-col items-center text-sm">
+                                                <ImageIcon className="w-6 h-6 mb-1" />
+                                                预览
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                        <input
+                                            type="url"
+                                            value={coverUrlInput}
+                                            onChange={e => setCoverUrlInput(e.target.value)}
+                                            placeholder="https://...（粘贴图片链接后点击使用URL）"
+                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                        <p className="text-xs text-gray-500">在此区域粘贴图片或链接即可触发上传，裁剪完成后自动更新配图</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -465,6 +688,63 @@ export default function AdminTrustedCompaniesPage() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {showCropper && coverSource && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg w-full max-w-3xl shadow-2xl overflow-hidden">
+                        <div className="flex justify-between items-center p-4 border-b">
+                            <h3 className="text-lg font-semibold">裁剪企业配图</h3>
+                            <button onClick={resetCropperState} className="text-gray-500 hover:text-gray-700">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-4 space-y-4">
+                            <div className="relative w-full h-[320px] bg-slate-100 rounded-lg overflow-hidden">
+                                <Cropper
+                                    image={coverSource}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={16 / 9}
+                                    onCropChange={setCrop}
+                                    onZoomChange={setZoom}
+                                    onCropComplete={onCropComplete}
+                                />
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm text-gray-600">缩放</span>
+                                <input
+                                    type="range"
+                                    min={1}
+                                    max={3}
+                                    step={0.1}
+                                    value={zoom}
+                                    onChange={(e) => setZoom(Number(e.target.value))}
+                                    className="flex-1"
+                                />
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={resetCropperState}
+                                        className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-50"
+                                        type="button"
+                                    >
+                                        取消
+                                    </button>
+                                    <button
+                                        onClick={handleApplyCrop}
+                                        disabled={processingImage || !croppedAreaPixels}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+                                        type="button"
+                                    >
+                                        {processingImage && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        {processingImage ? '处理中...' : '应用裁剪'}
+                                    </button>
+                                </div>
+                            </div>
+                            <p className="text-xs text-gray-500">固定16:9比例，裁剪后会自动压缩保存</p>
+                        </div>
                     </div>
                 </div>
             )}
