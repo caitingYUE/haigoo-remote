@@ -17,6 +17,10 @@ export interface TrustedCompany {
     description?: string;
     logo?: string;
     coverImage?: string;
+    culture?: string;
+    founderIntro?: string;
+    cultureImage?: string;
+    showCultureOnHome?: boolean;
     address?: string;
     tags?: CompanyTag[];
     industry?: CompanyIndustry;
@@ -31,6 +35,9 @@ export interface CompanyMetadata {
     description: string;
     image: string;
     icon: string;
+    culture?: string;
+    founder?: string;
+    cultureImage?: string;
     address?: string;
     _source?: string;
     _fallbackUrl?: string;

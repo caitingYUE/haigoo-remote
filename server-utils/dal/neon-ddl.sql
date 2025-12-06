@@ -282,3 +282,9 @@ ALTER TABLE resumes ADD COLUMN file_content TEXT;
 -- 2025-12-06: Add careers_page and linkedin columns to trusted_companies table
 ALTER TABLE trusted_companies ADD COLUMN careers_page VARCHAR(2000);
 ALTER TABLE trusted_companies ADD COLUMN linkedin VARCHAR(2000);
+
+-- 2025-12-06: Add culture fields for trusted companies
+ALTER TABLE trusted_companies ADD COLUMN culture TEXT;
+ALTER TABLE trusted_companies ADD COLUMN founder_intro TEXT;
+ALTER TABLE trusted_companies ADD COLUMN culture_image TEXT;
+ALTER TABLE trusted_companies ADD COLUMN show_culture_on_home BOOLEAN DEFAULT false;

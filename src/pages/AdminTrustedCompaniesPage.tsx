@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { 
     Building2, Search, Plus, Edit2, Trash2, 
-    ExternalLink, Check, X, Save, Loader2,
-    Wand2, DownloadCloud, Database, RefreshCw, Upload, Image as ImageIcon
+    ExternalLink, X, Loader2,
+    Wand2, DownloadCloud, Upload, Image as ImageIcon
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -21,9 +21,10 @@ export default function AdminTrustedCompaniesPage() {
     
     // New states for automation features
     const [crawlingId, setCrawlingId] = useState<string | null>(null)
-    const [aggregating, setAggregating] = useState(false)
     const [autoFilling, setAutoFilling] = useState(false)
     const [analyzingId, setAnalyzingId] = useState<string | null>(null)
+    const [filterCanRefer, setFilterCanRefer] = useState<'all' | 'yes' | 'no'>('all')
+    const [filterShowCulture, setFilterShowCulture] = useState<'all' | 'yes' | 'no'>('all')
 
     // Cover image upload & crop
     const [coverSource, setCoverSource] = useState<string>('')
@@ -34,6 +35,8 @@ export default function AdminTrustedCompaniesPage() {
     const [processingImage, setProcessingImage] = useState(false)
     const [coverUrlInput, setCoverUrlInput] = useState('')
     const fileInputRef = useRef<HTMLInputElement | null>(null)
+    const cultureFileInputRef = useRef<HTMLInputElement | null>(null)
+    const [cultureUrlInput, setCultureUrlInput] = useState('')
 
     useEffect(() => {
         loadCompanies()
@@ -55,6 +58,7 @@ export default function AdminTrustedCompaniesPage() {
         setEditingCompany(company)
         setFormData({ ...company })
         setCoverUrlInput(company.coverImage || '')
+        setCultureUrlInput(company.cultureImage || '')
         resetCropperState()
         setIsModalOpen(true)
     }
@@ -64,9 +68,11 @@ export default function AdminTrustedCompaniesPage() {
         setFormData({
             isTrusted: true,
             canRefer: false,
+            showCultureOnHome: false,
             tags: []
         })
         setCoverUrlInput('')
+        setCultureUrlInput('')
         resetCropperState()
         setIsModalOpen(true)
     }
@@ -124,8 +130,14 @@ export default function AdminTrustedCompaniesPage() {
                     ...prev,
                     description: metadata.description || prev.description,
                     logo: metadata.icon || metadata.image || prev.logo,
-                    coverImage: metadata.image || prev.coverImage
+                    coverImage: metadata.image || prev.coverImage,
+                    culture: metadata.culture || prev.culture,
+                    founderIntro: metadata.founder || prev.founderIntro,
+                    cultureImage: metadata.cultureImage || prev.cultureImage
                 }))
+                if (metadata.cultureImage) {
+                    setCultureUrlInput(metadata.cultureImage)
+                }
                 // If name is empty, try to use title
                 if (!formData.name && metadata.title) {
                     setFormData(prev => ({ ...prev, name: metadata.title }))
@@ -156,25 +168,6 @@ export default function AdminTrustedCompaniesPage() {
             alert('抓取请求失败')
         } finally {
             setCrawlingId(null)
-        }
-    }
-
-    const handleAggregate = async () => {
-        if (!confirm('确定要从现有的岗位数据中提取企业信息吗？这可能会覆盖现有的企业数据。')) return
-        try {
-            setAggregating(true)
-            const result = await trustedCompaniesService.aggregateCompanies()
-            if (result.success) {
-                alert(`提取成功！${result.message}`)
-                loadCompanies()
-            } else {
-                alert('提取失败: ' + (result.error || '未知错误'))
-            }
-        } catch (error) {
-            console.error('Aggregate failed:', error)
-            alert('提取请求失败')
-        } finally {
-            setAggregating(false)
         }
     }
 
@@ -299,10 +292,19 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
-    const filteredCompanies = companies.filter(company => 
-        company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.industry?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filteredCompanies = companies.filter(company => {
+        const matchSearch =
+            company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            company.industry?.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchRefer =
+            filterCanRefer === 'all' ||
+            (filterCanRefer === 'yes' ? !!company.canRefer : !company.canRefer)
+        const showCultureFlag = company.showCultureOnHome ?? false
+        const matchShowCulture =
+            filterShowCulture === 'all' ||
+            (filterShowCulture === 'yes' ? showCultureFlag : !showCultureFlag)
+        return matchSearch && matchRefer && matchShowCulture
+    })
 
     const industries: CompanyIndustry[] = [
         '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech', 
@@ -319,15 +321,6 @@ export default function AdminTrustedCompaniesPage() {
                 </h1>
                 <div className="flex gap-3">
                     <button 
-                        onClick={handleAggregate}
-                        disabled={aggregating}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 flex items-center gap-2"
-                        title="从现有岗位数据中自动提取企业信息"
-                    >
-                        {aggregating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
-                        从岗位提取
-                    </button>
-                    <button 
                         onClick={handleAdd}
                         className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2"
                     >
@@ -337,15 +330,35 @@ export default function AdminTrustedCompaniesPage() {
                 </div>
             </div>
 
-            <div className="mb-6 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                    type="text"
-                    placeholder="搜索企业名称、行业..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                />
+            <div className="mb-6 flex flex-wrap gap-3 items-center">
+                <div className="relative flex-1 min-w-[260px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="搜索企业名称、行业..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+                <select
+                    value={filterCanRefer}
+                    onChange={(e) => setFilterCanRefer(e.target.value as 'all' | 'yes' | 'no')}
+                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                >
+                    <option value="all">全部内推状态</option>
+                    <option value="yes">可内推</option>
+                    <option value="no">不可内推</option>
+                </select>
+                <select
+                    value={filterShowCulture}
+                    onChange={(e) => setFilterShowCulture(e.target.value as 'all' | 'yes' | 'no')}
+                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                >
+                    <option value="all">全部首页展示状态</option>
+                    <option value="yes">首页展示文化</option>
+                    <option value="no">不展示</option>
+                </select>
             </div>
 
             {loading ? (
@@ -359,8 +372,8 @@ export default function AdminTrustedCompaniesPage() {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">在招岗位数量</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">链接</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                             </tr>
                         </thead>
@@ -387,6 +400,9 @@ export default function AdminTrustedCompaniesPage() {
                                             {company.industry || '未分类'}
                                         </span>
                                     </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {company.jobCount ?? 0}
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <div className="flex gap-2">
                                             {company.website && (
@@ -403,20 +419,6 @@ export default function AdminTrustedCompaniesPage() {
                                                 <a href={company.linkedin} target="_blank" rel="noreferrer" title="LinkedIn" className="text-gray-400 hover:text-indigo-600">
                                                     <LinkedinIcon />
                                                 </a>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex flex-col gap-1">
-                                            {company.isTrusted && (
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 w-fit">
-                                                    可信
-                                                </span>
-                                            )}
-                                            {company.canRefer && (
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800 w-fit">
-                                                    可内推
-                                                </span>
                                             )}
                                         </div>
                                     </td>
@@ -608,6 +610,105 @@ export default function AdminTrustedCompaniesPage() {
                                             className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                         />
                                         <p className="text-xs text-gray-500">在此区域粘贴图片或链接即可触发上传，裁剪完成后自动更新配图</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">企业文化</label>
+                                    <textarea
+                                        value={formData.culture || ''}
+                                        onChange={e => setFormData({...formData, culture: e.target.value})}
+                                        rows={3}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="使命、愿景、价值观等"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">创始人介绍</label>
+                                    <textarea
+                                        value={formData.founderIntro || ''}
+                                        onChange={e => setFormData({...formData, founderIntro: e.target.value})}
+                                        rows={3}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="创始人或管理团队简介"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <label className="block text-sm font-medium text-gray-700">企业文化配图</label>
+                                        <p className="text-xs text-gray-500">支持上传文件或粘贴图片链接，用于首页文化展示</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => cultureFileInputRef.current?.click()}
+                                            className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center gap-1 text-sm"
+                                        >
+                                            <Upload className="w-4 h-4" />
+                                            上传文件
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (!cultureUrlInput) return
+                                                setFormData(prev => ({ ...prev, cultureImage: cultureUrlInput.trim() }))
+                                            }}
+                                            disabled={!cultureUrlInput}
+                                            className="px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 flex items-center gap-1 text-sm"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                            使用URL
+                                        </button>
+                                    </div>
+                                </div>
+                                <input
+                                    ref={cultureFileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (!file) return
+                                        const reader = new FileReader()
+                                        reader.onload = () => {
+                                            setFormData(prev => ({ ...prev, cultureImage: reader.result as string }))
+                                        }
+                                        reader.readAsDataURL(file)
+                                    }}
+                                    className="hidden"
+                                />
+                                <div className="mt-3 flex items-center gap-4">
+                                    <div className="w-48 h-28 rounded-lg bg-white border border-gray-200 overflow-hidden flex items-center justify-center">
+                                        {formData.cultureImage ? (
+                                            <img src={formData.cultureImage} alt="文化配图" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="text-gray-400 flex flex-col items-center text-sm">
+                                                <ImageIcon className="w-6 h-6 mb-1" />
+                                                预览
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                        <input
+                                            type="url"
+                                            value={cultureUrlInput}
+                                            onChange={e => setCultureUrlInput(e.target.value)}
+                                            placeholder="https://...（粘贴图片链接后点击使用URL）"
+                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                        <label className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.showCultureOnHome ?? false}
+                                                onChange={e => setFormData(prev => ({ ...prev, showCultureOnHome: e.target.checked }))}
+                                                className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                                            />
+                                            <span className="text-sm text-gray-700">在首页展示本企业文化</span>
+                                        </label>
                                     </div>
                                 </div>
                             </div>
