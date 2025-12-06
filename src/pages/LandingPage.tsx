@@ -137,13 +137,6 @@ export default function LandingPage() {
               </h2>
               <p className="text-slate-500 text-base">为你精心挑选的优质远程机会</p>
             </div>
-            <button
-              onClick={() => navigate('/jobs?region=domestic')}
-              className="group flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 transition-all duration-200 text-sm font-medium shadow-sm"
-            >
-              <span>查看全部 {stats.totalJobs}+ 个岗位</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
           </div>
 
           {loading ? (
@@ -190,12 +183,6 @@ export default function LandingPage() {
               </h2>
               <p className="text-slate-500 text-base">经过验证的优质远程企业</p>
             </div>
-            <button
-              onClick={() => navigate('/trusted-companies')}
-              className="text-slate-500 hover:text-indigo-600 text-sm font-medium flex items-center gap-1 transition-colors"
-            >
-              查看全部 <ArrowRight className="w-4 h-4" />
-            </button>
           </div>
 
           {loading ? (
@@ -222,6 +209,16 @@ export default function LandingPage() {
               ))}
             </div>
           )}
+
+          <div className="mt-12 text-center">
+            <button
+              onClick={() => navigate('/trusted-companies')}
+              className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all duration-200 inline-flex items-center gap-2 shadow-sm hover:shadow-md"
+            >
+              查看更多企业
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Job Alert Subscription */}
