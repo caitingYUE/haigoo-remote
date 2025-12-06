@@ -120,11 +120,11 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                     <div className="flex items-center gap-2 text-slate-600">
                         <Briefcase className="w-4 h-4 text-indigo-500" />
                         {topCategories.length > 0 ? (
-                            <span className="font-medium">
-                                {topCategories.map(([cat, count]) => `${cat} ${count}`).join(' · ')}
+                            <span className="font-medium text-xs">
+                                {topCategories.map(([cat, count]) => `${cat} ${count}`).join('   ')}
                             </span>
                         ) : (
-                            <span className="text-slate-400">暂无在招岗位</span>
+                            <span className="text-slate-400 text-xs">暂无在招岗位</span>
                         )}
                     </div>
                     <span className="text-xs text-indigo-600 font-medium group-hover:translate-x-1 transition-transform">

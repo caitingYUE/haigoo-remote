@@ -17,7 +17,7 @@ export default function LandingPage() {
   const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>([])
   const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({ totalJobs: 0, companiesCount: 0, activeUsers: 0 })
+  const [stats, setStats] = useState({ totalJobs: 0, companiesCount: 0, dailyJobs: 0 })
 
   useEffect(() => {
     const loadData = async () => {
@@ -32,7 +32,7 @@ export default function LandingPage() {
                 setStats({
                     totalJobs: statsData.stats.domesticJobs || statsData.stats.totalJobs,
                     companiesCount: statsData.stats.companiesCount,
-                    activeUsers: statsData.stats.activeUsers
+                    dailyJobs: statsData.stats.dailyJobs || 0
                 })
             }
         } catch (e) {

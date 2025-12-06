@@ -6,13 +6,14 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import SearchBar from '../components/SearchBar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
+import HomeCompanyCard from '../components/HomeCompanyCard'
 
 export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
-    const [jobCounts, setJobCounts] = useState<Record<string, number>>({})
+    const [jobCounts, setJobCounts] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
     
     // Filters
     const [selectedIndustries, setSelectedIndustries] = useState<string[]>([])
@@ -36,13 +37,28 @@ export default function TrustedCompaniesPage() {
             setAllJobs(jobsData)
 
             // Calculate job counts per company
-            const counts: Record<string, number> = {}
+            const counts: Record<string, { total: number, categories: Record<string, number> }> = {}
+            const normalize = (name: string) => name?.toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ').trim() || ''
+
             companiesData.forEach((company: TrustedCompany) => {
-                const count = jobsData.filter((job: any) =>
-                    job.company && company.name &&
-                    job.company.toLowerCase().includes(company.name.toLowerCase())
-                ).length
-                counts[company.id] = count
+                const companyNameNorm = normalize(company.name)
+                
+                const companyJobs = jobsData.filter((job: any) => {
+                    if (!job.company) return false
+                    const jobCompanyNorm = normalize(job.company)
+                    return jobCompanyNorm === companyNameNorm || jobCompanyNorm.includes(companyNameNorm) || companyNameNorm.includes(jobCompanyNorm)
+                })
+
+                const categories: Record<string, number> = {}
+                companyJobs.forEach((job: any) => {
+                    const cat = job.category || '其他'
+                    categories[cat] = (categories[cat] || 0) + 1
+                })
+
+                counts[company.id] = {
+                    total: companyJobs.length,
+                    categories
+                }
             })
             setJobCounts(counts)
 
@@ -165,91 +181,12 @@ export default function TrustedCompaniesPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredCompanies.map(company => (
-                            <div
+                            <HomeCompanyCard
                                 key={company.id}
+                                company={company}
+                                jobStats={jobCounts[company.id]}
                                 onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
-                                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border border-slate-100 group overflow-hidden flex flex-col h-full"
-                            >
-                                {/* Large Preview Image Area */}
-                                <div className="w-full h-40 bg-slate-50 relative border-b border-slate-100 overflow-hidden">
-                                    {company.coverImage ? (
-                                        <img
-                                            src={company.coverImage}
-                                            alt={`${company.name} cover`}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).style.display = 'none';
-                                                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                                            }}
-                                        />
-                                    ) : null}
-
-                                    {/* Fallback: Logo as Cover */}
-                                    <div className={`w-full h-full bg-slate-50 relative ${company.coverImage ? 'hidden' : ''}`}>
-                                        {company.logo ? (
-                                            <img
-                                                src={company.logo}
-                                                alt={company.name}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).style.display = 'none';
-                                                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                                                }}
-                                            />
-                                        ) : null}
-
-                                        <div className={`w-full h-full flex items-center justify-center ${company.logo ? 'hidden' : ''}`}>
-                                            <Building className="w-12 h-12 text-slate-300" />
-                                        </div>
-                                    </div>
-
-                                    {/* Verified Badge Overlay */}
-                                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-slate-900 shadow-sm border border-slate-100 z-20">
-                                        <div className="w-3 h-3 bg-indigo-600 rounded-full flex items-center justify-center">
-                                            <svg viewBox="0 0 24 24" fill="none" className="w-2 h-2 text-white" stroke="currentColor" strokeWidth="3">
-                                                <polyline points="20 6 9 17 4 12" />
-                                            </svg>
-                                        </div>
-                                        Verified
-                                    </div>
-                                </div>
-
-                                <div className="p-6 flex flex-col flex-1">
-
-                                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors">
-                                        {company.name}
-                                    </h3>
-
-                                    <p className="text-slate-500 text-sm mb-4 line-clamp-2 h-10">
-                                        {company.description || 'No description available.'}
-                                    </p>
-
-                                    <div className="flex flex-wrap gap-2 mb-6">
-                                        {company.tags && company.tags.length > 0 ? (
-                                            company.tags.slice(0, 3).map((tag, idx) => (
-                                                <span key={idx} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">
-                                                    {tag}
-                                                </span>
-                                            ))
-                                        ) : (
-                                            <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Remote First</span>
-                                        )}
-                                    </div>
-
-                                    <div className="pt-4 border-t border-slate-50">
-                                        <div className="text-sm font-medium text-slate-900">
-                                            Open Positions:
-                                        </div>
-                                        <div className="text-sm text-slate-500 mt-1">
-                                            {jobCounts[company.id] > 0 ? (
-                                                <span className="text-indigo-600">{jobCounts[company.id]} active jobs</span>
-                                            ) : (
-                                                'No active jobs currently'
-                                            )}
-                                        </div>
-                                </div>
-                            </div>
-                            </div>
+                            />
                         ))}
                     </div>
                 )}

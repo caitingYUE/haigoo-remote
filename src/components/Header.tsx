@@ -105,7 +105,7 @@ export default function Header() {
           <div className="flex items-center">
             <Link
               to="/"
-              className="flex-shrink-0 flex items-center focus:outline-none focus:ring-2 focus:ring-[#3182CE] focus:ring-offset-2 rounded-lg transition-all duration-200 hover:scale-110 no-underline hover:no-underline"
+              className="flex-shrink-0 flex items-center focus:outline-none rounded-lg transition-all duration-200 hover:scale-110 no-underline hover:no-underline"
               aria-label="Haigoo 首页"
             >
               <img
@@ -113,7 +113,7 @@ export default function Header() {
                 alt="Haigoo - 海外远程工作助手"
                 className="h-12 w-auto"
               />
-              <span className="ml-3 text-[#1A365D] font-semibold text-lg">Haigoo Remote Club</span>
+              <span className="ml-3 text-[#1A365D] font-semibold text-lg">海狗远程俱乐部</span>
             </Link>
           </div>
 

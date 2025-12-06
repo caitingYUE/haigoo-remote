@@ -45,7 +45,7 @@ interface HomeHeroProps {
     stats?: {
         totalJobs: number
         companiesCount: number
-        activeUsers: number
+        dailyJobs: number
     }
 }
 
@@ -158,15 +158,15 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             <div className="flex items-center gap-12 mt-12">
                                 <div className="flex flex-col">
                                     <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats?.totalJobs || 500}+</span>
-                                    <span className="text-sm text-slate-500 mt-1">精选岗位</span>
+                                    <span className="text-sm text-slate-500 mt-1">精选岗位数量</span>
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats?.companiesCount || 100}+</span>
-                                    <span className="text-sm text-slate-500 mt-1">可信企业</span>
+                                    <span className="text-sm text-slate-500 mt-1">精选企业数量</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats?.activeUsers || 1200}+</span>
-                                    <span className="text-sm text-slate-500 mt-1">成功求职</span>
+                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{stats?.dailyJobs || 50}+</span>
+                                    <span className="text-sm text-slate-500 mt-1">日更岗位数量</span>
                                 </div>
                             </div>
                         </div>
