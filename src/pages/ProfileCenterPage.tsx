@@ -31,6 +31,18 @@ export default function ProfileCenterPage() {
 
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [fileType, setFileType] = useState<string>('')
+
+  // Cleanup object URL
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
+
   const [favorites, setFavorites] = useState<any[]>([])
   const [loadingFavorites, setLoadingFavorites] = useState<boolean>(false)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
@@ -188,6 +200,12 @@ export default function ProfileCenterPage() {
     // 1. 乐观更新：立即展示文件
     const tempId = Date.now().toString()
     setLatestResume({ id: tempId, name: file.name })
+    
+    // Create preview URL
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    setFileType(file.type)
+    
     showSuccess('开始上传简历...', '正在后台解析文件')
 
     try {
@@ -342,9 +360,25 @@ export default function ProfileCenterPage() {
                     </div>
                   </div>
                 </div>
-                {resumeText && (
-                  <div className="rounded-xl border border-slate-200 p-4 flex-1 overflow-auto bg-white shadow-inner">
-                    <pre className="whitespace-pre-wrap text-sm text-slate-700 font-sans leading-relaxed">{resumeText}</pre>
+                {(previewUrl || resumeText) && (
+                  <div className="rounded-xl border border-slate-200 flex-1 overflow-hidden bg-slate-50/50 flex flex-col min-h-[500px]">
+                    {previewUrl && fileType === 'application/pdf' ? (
+                      <iframe
+                        src={previewUrl}
+                        className="w-full h-full min-h-[500px] bg-white"
+                        title="Resume Preview"
+                      />
+                    ) : previewUrl && fileType.startsWith('image/') ? (
+                      <div className="w-full h-full overflow-auto flex justify-center bg-slate-100 p-4">
+                        <img src={previewUrl} alt="Resume" className="max-w-full h-auto shadow-md" />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full overflow-auto p-4 md:p-8 bg-slate-100 shadow-inner">
+                        <div className="max-w-[210mm] mx-auto bg-white shadow-md min-h-[297mm] p-8 md:p-12">
+                          <pre className="whitespace-pre-wrap text-sm text-slate-700 font-sans leading-relaxed max-w-none">{resumeText || 'Preview not available. Content extracted below.'}</pre>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

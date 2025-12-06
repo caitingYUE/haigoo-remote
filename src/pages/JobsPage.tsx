@@ -153,6 +153,8 @@ export default function JobsPage() {
   // 匹配分数缓存
   const [matchScores, setMatchScores] = useState<Record<string, number>>({})
   const [matchScoresLoading, setMatchScoresLoading] = useState(false)
+  // Track if initial match scores have been loaded
+  const [initialMatchScoresLoaded, setInitialMatchScoresLoaded] = useState(false)
 
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
@@ -161,7 +163,7 @@ export default function JobsPage() {
   // 使用页面缓存 Hook
   const {
     data: jobs,
-    loading,
+    loading: jobsLoading,
     isFromCache
   } = usePageCache<Job[]>('jobs-all-list-full-v1', {
     fetcher: async () => {
@@ -330,11 +332,17 @@ export default function JobsPage() {
         console.error(`[MatchScores ${new Date().toISOString()}] ❌ Failed to load:`, error)
       } finally {
         setMatchScoresLoading(false)
+        setInitialMatchScoresLoaded(true)
       }
     }
 
     loadMatchScores()
   }, [isAuthenticated, token, canonicalJobs])
+
+  // Combined loading state logic
+  // If authenticated, we wait for initial match scores to load before showing the list
+  // This prevents the "flash" of unsorted/unscored jobs
+  const showLoading = jobsLoading || (isAuthenticated && !initialMatchScoresLoaded && canonicalJobs.length > 0)
 
   // Derived Data for Dynamic Filters - now using all jobs instead of regionJobs
 
@@ -748,7 +756,7 @@ export default function JobsPage() {
                 </div>
 
                 {/* Job List Grid */}
-                {loading ? (
+                {showLoading ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[1, 2, 3, 4, 5, 6].map(i => (
                       <div key={i} className="bg-white h-64 rounded-2xl shadow-sm border border-slate-100 p-6 animate-pulse">
