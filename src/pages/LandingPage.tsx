@@ -40,7 +40,7 @@ export default function LandingPage() {
         }
 
         const [jobs, companies, featuredResp] = await Promise.all([
-          processedJobsService.getAllProcessedJobsFull(100, 1), // Fetch more jobs for better stats
+          processedJobsService.getAllProcessedJobs(1000), // Fetch more jobs (up to 1000) for better company stats sorting
           trustedCompaniesService.getAllCompanies(),
           processedJobsService.getProcessedJobs(1, 6, { isFeatured: true })
         ])
