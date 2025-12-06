@@ -144,6 +144,8 @@ CREATE TABLE trusted_companies (
   company_id VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(500) NOT NULL,
   website VARCHAR(2000),
+  careers_page VARCHAR(2000),
+  linkedin VARCHAR(2000),
   description TEXT,
   logo VARCHAR(2000),
   cover_image TEXT,

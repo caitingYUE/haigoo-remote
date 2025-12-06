@@ -223,6 +223,7 @@ export interface JobFilter {
   isRemote?: boolean;
   status?: Job['status'][];
   remoteLocationRestriction?: string[];
+  isFeatured?: boolean;
 }
 
 export interface JobStats {

@@ -1036,6 +1036,10 @@ class JobAggregator {
       if (filter.status && filter.status.length > 0) {
         filteredJobs = filteredJobs.filter(job => filter.status!.includes(job.status));
       }
+
+      if (filter.isFeatured !== undefined) {
+        filteredJobs = filteredJobs.filter(job => !!job.isFeatured === filter.isFeatured);
+      }
     }
 
     return filteredJobs;
@@ -1099,11 +1103,16 @@ class JobAggregator {
   /**
    * 更新岗位状态
    */
-  updateJobStatus(jobId: string, status: Job['status']): boolean {
+  async updateJobStatus(jobId: string, status: Job['status']): Promise<boolean> {
     const jobIndex = this.jobs.findIndex(job => job.id === jobId);
     if (jobIndex !== -1) {
       this.jobs[jobIndex].status = status;
       this.jobs[jobIndex].updatedAt = new Date().toISOString();
+      await this.saveJobsToStorage(); // Save to local/cloud adapter
+
+      // Also persist to API for server consistency
+      this.syncJobToAPI(this.jobs[jobIndex]).catch(err => console.error('Failed to sync job status to API:', err));
+
       return true;
     }
     return false;
@@ -1117,6 +1126,11 @@ class JobAggregator {
     if (index !== -1) {
       this.jobs.splice(index, 1);
       this.saveJobsToStorage();
+
+      // Also delete from API
+      fetch(`/api/data/processed-jobs?id=${jobId}`, { method: 'DELETE' })
+        .catch(err => console.error('Failed to delete job from API:', err));
+
       return true;
     }
     return false;
@@ -1125,14 +1139,40 @@ class JobAggregator {
   /**
    * 更新岗位精选状态
    */
-  updateJobFeaturedStatus(jobId: string, isFeatured: boolean): boolean {
+  async updateJobFeaturedStatus(jobId: string, isFeatured: boolean): Promise<boolean> {
     const job = this.jobs.find(j => j.id === jobId);
     if (job) {
       job.isFeatured = isFeatured;
-      this.saveJobsToStorage();
+      await this.saveJobsToStorage();
+
+      // Persist to API
+      this.syncJobToAPI(job).catch(err => console.error('Failed to sync featured status to API:', err));
+
       return true;
     }
     return false;
+  }
+
+  /**
+   * Helper to sync a single job to the backend API
+   */
+  private async syncJobToAPI(job: Job): Promise<void> {
+    try {
+      const resp = await fetch('/api/data/processed-jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobs: [job],
+          mode: 'upsert' // Use upsert mode to avoid deleting other jobs
+        })
+      });
+      if (!resp.ok) {
+        throw new Error(`Failed to sync job: ${resp.status}`);
+      }
+    } catch (error) {
+      console.error('syncJobToAPI error:', error);
+      throw error;
+    }
   }
 
   /**

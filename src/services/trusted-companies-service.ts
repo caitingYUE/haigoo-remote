@@ -134,7 +134,7 @@ class TrustedCompaniesService {
     async syncJobsToProduction(): Promise<{ success: boolean; count?: number; error?: string }> {
         try {
             const response = await fetch(`${this.API_BASE}?action=sync-jobs`, {
-                method: 'GET', // The handler checks req.query.action, usually GET for simple triggers or POST. The handler code uses req.query.action inside GET block? Let's check handler.
+                method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 }
@@ -144,6 +144,23 @@ class TrustedCompaniesService {
             return { success: true, count: data.updatedCount };
         } catch (error) {
             console.error('Error syncing jobs:', error);
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        }
+    }
+
+    async aggregateCompanies(): Promise<{ success: boolean; count?: number; message?: string; error?: string }> {
+        try {
+            const response = await fetch(`${this.API_BASE}?action=aggregate-companies`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
+                }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to aggregate companies');
+            return { success: true, count: data.count, message: data.message };
+        } catch (error) {
+            console.error('Error aggregating companies:', error);
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     }

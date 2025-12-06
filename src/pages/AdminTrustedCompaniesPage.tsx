@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { 
     Building2, Search, Plus, Edit2, Trash2, 
-    ExternalLink, Check, X, Save, Loader2 
+    ExternalLink, Check, X, Save, Loader2,
+    Wand2, DownloadCloud, Database, RefreshCw
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -14,6 +15,11 @@ export default function AdminTrustedCompaniesPage() {
     const [editingCompany, setEditingCompany] = useState<TrustedCompany | null>(null)
     const [formData, setFormData] = useState<Partial<TrustedCompany>>({})
     const [saving, setSaving] = useState(false)
+    
+    // New states for automation features
+    const [crawlingId, setCrawlingId] = useState<string | null>(null)
+    const [aggregating, setAggregating] = useState(false)
+    const [autoFilling, setAutoFilling] = useState(false)
 
     useEffect(() => {
         loadCompanies()
@@ -48,7 +54,7 @@ export default function AdminTrustedCompaniesPage() {
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm('确定要删除这个可信企业吗？')) return
+        if (!confirm('确定要删除这个可信企业吗？删除后相关的岗位也会被删除。')) return
 
         try {
             const success = await trustedCompaniesService.deleteCompany(id)
@@ -85,6 +91,74 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
+    // New Automation Handlers
+    const handleAutoFill = async () => {
+        if (!formData.website) {
+            alert('请先输入官网链接')
+            return
+        }
+        try {
+            setAutoFilling(true)
+            const metadata = await trustedCompaniesService.fetchMetadata(formData.website)
+            if (metadata) {
+                setFormData(prev => ({
+                    ...prev,
+                    description: metadata.description || prev.description,
+                    logo: metadata.icon || metadata.image || prev.logo,
+                    coverImage: metadata.image || prev.coverImage
+                }))
+                // If name is empty, try to use title
+                if (!formData.name && metadata.title) {
+                    setFormData(prev => ({ ...prev, name: metadata.title }))
+                }
+            } else {
+                alert('无法抓取到信息，请手动填写')
+            }
+        } catch (error) {
+            console.error('Auto fill failed:', error)
+            alert('抓取失败')
+        } finally {
+            setAutoFilling(false)
+        }
+    }
+
+    const handleCrawlJobs = async (id: string) => {
+        try {
+            setCrawlingId(id)
+            const result = await trustedCompaniesService.crawlJobs(id, true, 10) // default options
+            if (result.success) {
+                alert(`抓取成功！新增/更新了 ${result.count || 0} 个岗位`)
+                loadCompanies() // reload to update job counts
+            } else {
+                alert('抓取失败: ' + (result.error || '未知错误'))
+            }
+        } catch (error) {
+            console.error('Crawl jobs failed:', error)
+            alert('抓取请求失败')
+        } finally {
+            setCrawlingId(null)
+        }
+    }
+
+    const handleAggregate = async () => {
+        if (!confirm('确定要从现有的岗位数据中提取企业信息吗？这可能会覆盖现有的企业数据。')) return
+        try {
+            setAggregating(true)
+            const result = await trustedCompaniesService.aggregateCompanies()
+            if (result.success) {
+                alert(`提取成功！${result.message}`)
+                loadCompanies()
+            } else {
+                alert('提取失败: ' + (result.error || '未知错误'))
+            }
+        } catch (error) {
+            console.error('Aggregate failed:', error)
+            alert('提取请求失败')
+        } finally {
+            setAggregating(false)
+        }
+    }
+
     const filteredCompanies = companies.filter(company => 
         company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         company.industry?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -103,13 +177,24 @@ export default function AdminTrustedCompaniesPage() {
                     <Building2 className="w-6 h-6" />
                     可信企业管理
                 </h1>
-                <button 
-                    onClick={handleAdd}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2"
-                >
-                    <Plus className="w-4 h-4" />
-                    添加企业
-                </button>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={handleAggregate}
+                        disabled={aggregating}
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 flex items-center gap-2"
+                        title="从现有岗位数据中自动提取企业信息"
+                    >
+                        {aggregating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+                        从岗位提取
+                    </button>
+                    <button 
+                        onClick={handleAdd}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2"
+                    >
+                        <Plus className="w-4 h-4" />
+                        添加企业
+                    </button>
+                </div>
             </div>
 
             <div className="mb-6 relative">
@@ -196,6 +281,18 @@ export default function AdminTrustedCompaniesPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button 
+                                            onClick={() => handleCrawlJobs(company.id)} 
+                                            disabled={crawlingId === company.id}
+                                            className="text-gray-600 hover:text-indigo-600 mr-4 disabled:opacity-50"
+                                            title="抓取岗位数据"
+                                        >
+                                            {crawlingId === company.id ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <DownloadCloud className="w-4 h-4" />
+                                            )}
+                                        </button>
                                         <button onClick={() => handleEdit(company)} className="text-indigo-600 hover:text-indigo-900 mr-4">
                                             <Edit2 className="w-4 h-4" />
                                         </button>
@@ -262,12 +359,24 @@ export default function AdminTrustedCompaniesPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">官网链接</label>
-                                    <input
-                                        type="url"
-                                        value={formData.website || ''}
-                                        onChange={e => setFormData({...formData, website: e.target.value})}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="url"
+                                            value={formData.website || ''}
+                                            onChange={e => setFormData({...formData, website: e.target.value})}
+                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                            placeholder="https://..."
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAutoFill}
+                                            disabled={autoFilling || !formData.website}
+                                            className="px-3 py-2 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 disabled:opacity-50"
+                                            title="自动抓取信息"
+                                        >
+                                            {autoFilling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                                        </button>
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
@@ -365,18 +474,29 @@ export default function AdminTrustedCompaniesPage() {
 
 function GlobeIcon() {
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
     )
 }
 
 function BriefcaseIcon() {
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+        </svg>
     )
 }
 
 function LinkedinIcon() {
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+            <rect x="2" y="9" width="4" height="12"></rect>
+            <circle cx="4" cy="4" r="2"></circle>
+        </svg>
     )
 }
