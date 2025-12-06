@@ -1,8 +1,0 @@
-<svg width="120" height="80" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="120" height="80" rx="12" fill="#10B981"/>
-  <polygon points="30,25 45,40 30,55" fill="white" opacity="0.3"/>
-  <polygon points="45,25 60,40 45,55" fill="white" opacity="0.5"/>
-  <polygon points="60,25 75,40 60,55" fill="white" opacity="0.3"/>
-  <polygon points="75,25 90,40 75,55" fill="white" opacity="0.2"/>
-  <text x="60" y="68" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">Innovate Inc.</text>
-</svg>

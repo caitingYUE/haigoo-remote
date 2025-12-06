@@ -1,7 +1,0 @@
-<svg width="120" height="80" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="120" height="80" rx="12" fill="#6366F1"/>
-  <circle cx="30" cy="40" r="15" fill="white" opacity="0.2"/>
-  <circle cx="60" cy="40" r="15" fill="white" opacity="0.3"/>
-  <circle cx="90" cy="40" r="15" fill="white" opacity="0.2"/>
-  <text x="60" y="50" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">TechCorp</text>
-</svg>

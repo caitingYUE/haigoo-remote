@@ -122,13 +122,13 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                         <div className="relative z-10 h-full flex flex-col justify-center px-10 md:px-16 py-12">
                             <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 leading-[1.15] tracking-tight">
-                                国内求职者专属的<br />
-                                <span className="text-indigo-600">海外远程工作库</span>
+                                为中国人才打开<br />
+                                <span className="text-indigo-600">全球远程工作入口</span>
                             </h1>
 
                             <p className="text-slate-500 text-lg mb-10 max-w-xl leading-relaxed">
-                                连接全球机会，让职业发展不受地域限制。<br />
-                                我们只筛选<span className="text-slate-900 font-medium">国内可申</span>的高质量远程岗位。
+                                从全球海量岗位中筛选出适合中国求职者的远程工作，<br />
+                                不论你身在国内还是在海外，这里都有无限可能。
                             </p>
 
                             {/* Search Bar */}
