@@ -25,6 +25,7 @@ const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'))
 const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
 
 function App() {
   return (
@@ -98,6 +99,7 @@ function App() {
                         } />
                         <Route path="/remote-experience" element={<RemoteExperiencePage />} />
                         <Route path="/membership" element={<MembershipPage />} />
+                        <Route path="/about" element={<AboutPage />} />
 
                         {/* 需要登录的页面 */}
                         <Route path="/profile" element={

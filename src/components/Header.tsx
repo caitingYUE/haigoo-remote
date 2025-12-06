@@ -150,6 +150,16 @@ export default function Header() {
             </Link>
 
             <Link
+              to="/about"
+              className={`text-base font-medium transition-colors ${location.pathname === '/about'
+                ? 'text-indigo-600 font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
+            >
+              关于我们
+            </Link>
+
+            <Link
               to="/profile"
               className={`text-base font-medium transition-colors ${location.pathname.startsWith('/profile')
                 ? 'text-indigo-600 font-semibold'

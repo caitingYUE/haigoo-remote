@@ -22,6 +22,11 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 async function startServer() {
     try {
+        console.log('Importing public-members handler...');
+        const publicMembersHandler = (await import('./api/public-members.js')).default;
+        app.all('/api/public-members', async (req, res) => { await publicMembersHandler(req, res); });
+        console.log('Public-members handler imported.');
+
         console.log('Importing auth handler...');
         const authHandler = (await import('./api/auth.js')).default;
         app.all('/api/auth', async (req, res) => { await authHandler(req, res); });
