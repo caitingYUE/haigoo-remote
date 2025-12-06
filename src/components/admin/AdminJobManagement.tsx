@@ -168,13 +168,13 @@ const AdminJobManagement: React.FC<AdminJobManagementProps> = ({
     };
 
     const handleJobStatusUpdate = async (jobId: string, status: Job['status']) => {
-        jobAggregator.updateJobStatus(jobId, status);
+        await jobAggregator.updateJobStatus(jobId, status);
         await onRefresh();
     };
 
     const handleToggleFeatured = async (jobId: string, isFeatured: boolean) => {
         try {
-            const success = jobAggregator.updateJobFeaturedStatus(jobId, isFeatured);
+            const success = await jobAggregator.updateJobFeaturedStatus(jobId, isFeatured);
             if (success) {
                 await onRefresh();
                 if (selectedJob?.id === jobId) {
