@@ -191,11 +191,6 @@ export default function JobsPage() {
       if (filters.isTrusted) queryParams.append('isTrusted', 'true')
       if (filters.isNew) queryParams.append('isNew', 'true')
 
-      // 添加用户ID用于匹配分数计算
-      if (isAuthenticated && token) {
-        queryParams.append('userId', 'current') // 后端会从token中获取实际用户ID
-      }
-
       const response = await fetch(`/api/processed-jobs?${queryParams.toString()}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
