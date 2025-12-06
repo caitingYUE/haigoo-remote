@@ -27,7 +27,7 @@ export default function AboutPage() {
                 
                 // Fetch Data in Parallel
                 const [jobsResp, companies, membersResp] = await Promise.all([
-                    processedJobsService.getProcessedJobs(1, 6, { isFeatured: true }),
+                    processedJobsService.getProcessedJobs(1, 6, { canRefer: true }),
                     trustedCompaniesService.getAllCompanies(),
                     fetch('/api/data/public-members').then(res => res.json())
                 ])
@@ -69,13 +69,20 @@ export default function AboutPage() {
                 })
                 setCompanyJobStats(statsMap)
 
-                // Sort companies by job count and take top 6
+                // Sort companies by job count and canRefer
                 const sortedCompanies = [...companies].sort((a, b) => {
+                    // Prioritize companies that can refer
+                    if (a.canRefer !== b.canRefer) {
+                        return a.canRefer ? -1 : 1;
+                    }
                     const countA = statsMap[a.name]?.total || 0
                     const countB = statsMap[b.name]?.total || 0
                     return countB - countA
                 })
-                setFeaturedCompanies(sortedCompanies.slice(0, 6))
+                // Filter only companies that can refer if you want "内推企业" to be strictly referable
+                // Or just prioritize them. Let's strictly filter for "内推企业" section
+                const referableCompanies = sortedCompanies.filter(c => c.canRefer);
+                setFeaturedCompanies(referableCompanies.slice(0, 6))
 
                 // Set Members
                 if (membersResp.success && membersResp.members) {
@@ -196,8 +203,8 @@ export default function AboutPage() {
             <div id="featured-companies" className="py-24 bg-slate-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-slate-900">精选合作企业</h2>
-                        <p className="mt-4 text-lg text-slate-500">我们甄选崇尚优秀文化、重视人才发展的远程企业深度合作。</p>
+                        <h2 className="text-3xl font-bold text-slate-900">内推合作企业</h2>
+                        <p className="mt-4 text-lg text-slate-500">我们甄选崇尚优秀文化、重视人才发展的远程企业深度合作，提供独家内推通道。</p>
                     </div>
                     
                     {loading ? (
@@ -223,8 +230,8 @@ export default function AboutPage() {
             <div className="py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-slate-900">精选远程岗位</h2>
-                        <p className="mt-4 text-lg text-slate-500">挖掘各个细分领域的顶尖远程工作机会。</p>
+                        <h2 className="text-3xl font-bold text-slate-900">精选内推岗位</h2>
+                        <p className="mt-4 text-lg text-slate-500">挖掘各个细分领域的顶尖远程工作机会，会员享直达内推。</p>
                     </div>
 
                     {loading ? (
@@ -327,7 +334,7 @@ export default function AboutPage() {
                             onClick={() => navigate('/register')}
                             className="px-10 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-2xl hover:-translate-y-1"
                         >
-                            免费注册，发现机会
+                            加入我们，获得无限可能
                         </button>
                     </div>
                 </div>

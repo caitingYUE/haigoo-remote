@@ -24,6 +24,7 @@ export interface ProcessedJobsFilters {
   id?: string
   region?: 'domestic' | 'overseas'
   isFeatured?: boolean
+  canRefer?: boolean
 }
 
 class ProcessedJobsService {
@@ -56,6 +57,7 @@ class ProcessedJobsService {
       if (filters.id) params.append('id', filters.id)
       if (filters.region) params.append('region', filters.region)
       if (filters.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString())
+      if (filters.canRefer !== undefined) params.append('canRefer', filters.canRefer.toString())
 
       if (filters.tags && filters.tags.length > 0) {
         filters.tags.forEach(tag => params.append('tags', tag))
