@@ -39,9 +39,10 @@ export default function LandingPage() {
             console.error('Failed to fetch stats:', e)
         }
 
-        const [jobs, companies] = await Promise.all([
+        const [jobs, companies, featuredResp] = await Promise.all([
           processedJobsService.getAllProcessedJobsFull(100, 1), // Fetch more jobs for better stats
-          trustedCompaniesService.getAllCompanies()
+          trustedCompaniesService.getAllCompanies(),
+          processedJobsService.getProcessedJobs(1, 6, { isFeatured: true })
         ])
 
         // Filter for domestic jobs (reuse logic)
@@ -89,9 +90,12 @@ export default function LandingPage() {
         setCompanyJobStats(statsMap)
 
         // Filter for featured jobs
-        const featured = domesticJobs.filter(job => job.isFeatured === true)
-        // const displayJobs = featured.length > 0 ? featured : domesticJobs
-        setFeaturedJobs(featured.slice(0, 12)) // Show 12 cards
+        if (featuredResp && featuredResp.jobs && featuredResp.jobs.length > 0) {
+            setFeaturedJobs(featuredResp.jobs)
+        } else {
+            const featured = domesticJobs.filter(job => job.isFeatured === true)
+            setFeaturedJobs(featured.slice(0, 6))
+        }
 
         // Sort companies by total active jobs
         const sortedCompanies = [...companies].sort((a, b) => {
@@ -100,8 +104,8 @@ export default function LandingPage() {
           return countB - countA
         })
 
-        // Set trusted companies (top 9)
-        setTrustedCompanies(sortedCompanies.slice(0, 9))
+        // Set trusted companies (top 6)
+        setTrustedCompanies(sortedCompanies.slice(0, 6))
 
         // Set stats (Use backend stats if available, otherwise fallback)
         // const uniqueCompanies = new Set(jobs.map(j => j.company).filter(Boolean))
@@ -182,7 +186,7 @@ export default function LandingPage() {
           <div className="flex items-end justify-between mb-10">
             <div>
               <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">
-                可信企业
+                精选企业
               </h2>
               <p className="text-slate-500 text-base">经过验证的优质远程企业</p>
             </div>
