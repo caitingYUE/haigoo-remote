@@ -151,9 +151,10 @@ export default function JobsPage() {
   // 岗位数据状态（替代页面缓存）
   const [jobs, setJobs] = useState<Job[]>([])
   const [jobsLoading, setJobsLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [totalJobs, setTotalJobs] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(50)
+  const [pageSize] = useState(20) // 每页20个
 
   // 匹配分数缓存（不再需要单独管理，因为后端已经返回匹配分数）
   const [matchScores, setMatchScores] = useState<Record<string, number>>({})
@@ -166,10 +167,14 @@ export default function JobsPage() {
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
   // 加载岗位数据（使用新的后端API，支持筛选和分页）
-  const loadJobsWithFilters = async (page = 1, pageSize = 100) => {
+  const loadJobsWithFilters = async (page = 1, loadMore = false) => {
     try {
-      setJobsLoading(true)
-      setLoadingStage('fetching')
+      if (loadMore) {
+        setLoadingMore(true)
+      } else {
+        setJobsLoading(true)
+        setLoadingStage('fetching')
+      }
 
       // 构建查询参数
       const queryParams = new URLSearchParams()
@@ -199,10 +204,15 @@ export default function JobsPage() {
       const data = await response.json()
 
       // 设置岗位数据和分页信息
-      setJobs(data.jobs || [])
+      if (loadMore) {
+        // 加载更多时，追加数据
+        setJobs(prevJobs => [...prevJobs, ...(data.jobs || [])])
+      } else {
+        // 首次加载或筛选条件变化时，替换数据
+        setJobs(data.jobs || [])
+      }
       setTotalJobs(data.total || 0)
       setCurrentPage(page)
-      setPageSize(pageSize)
 
       // 从响应中提取匹配分数
       if (data.jobs && data.jobs.length > 0) {
@@ -212,25 +222,66 @@ export default function JobsPage() {
             scores[job.id] = job.matchScore
           }
         })
-        setMatchScores(scores)
+        setMatchScores(prevScores => ({
+          ...prevScores,
+          ...scores
+        }))
         setInitialMatchScoresLoaded(true)
       }
 
       setLoadingStage('idle')
-      console.log(`✅ 获取到 ${data.jobs?.length || 0} 个岗位（后端筛选和排序）`)
+      console.log(`✅ 获取到 ${data.jobs?.length || 0} 个岗位（第${page}页，后端筛选和排序）`)
     } catch (error) {
       setLoadingStage('idle')
       console.error('❌ 加载岗位数据失败:', error)
       showError('加载岗位数据失败，请稍后重试')
     } finally {
-      setJobsLoading(false)
+      if (loadMore) {
+        setLoadingMore(false)
+      } else {
+        setJobsLoading(false)
+      }
+    }
+  }
+
+  // 加载更多数据
+  const loadMoreJobs = async () => {
+    if (loadingMore || jobsLoading) return
+    
+    const nextPage = currentPage + 1
+    const hasMore = jobs.length < totalJobs
+    
+    if (hasMore) {
+      await loadJobsWithFilters(nextPage, true)
     }
   }
 
   // 初始加载和筛选条件变化时重新加载数据
   useEffect(() => {
-    loadJobsWithFilters(1, 100)
+    loadJobsWithFilters(1, false)
   }, [searchTerm, filters, isAuthenticated, token])
+
+  // 滚动监听 - 自动加载更多
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingMore || jobsLoading) return
+      
+      const scrollTop = window.scrollY || document.documentElement.scrollTop
+      const scrollHeight = document.documentElement.scrollHeight
+      const clientHeight = window.innerHeight
+      
+      // 当滚动到页面底部100px以内时触发加载更多
+      if (scrollTop + clientHeight >= scrollHeight - 100) {
+        const hasMore = jobs.length < totalJobs
+        if (hasMore) {
+          loadMoreJobs()
+        }
+      }
+    }
+    
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [loadingMore, jobsLoading, jobs.length, totalJobs])
 
   // 后端API已经处理了去重和区域合并，直接使用返回的数据
   const canonicalJobs = useMemo(() => {
@@ -710,16 +761,39 @@ export default function JobsPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {distributedJobs.map((job, index) => (
-                      <JobCardNew
-                        key={job.id}
-                        job={job}
-                        onClick={() => handleJobSelect(job, index)}
-                        matchScore={matchScores[job.id]}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {distributedJobs.map((job, index) => (
+                        <JobCardNew
+                          key={job.id}
+                          job={job}
+                          onClick={() => handleJobSelect(job, index)}
+                          matchScore={matchScores[job.id]}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* 加载更多按钮和状态 */}
+                    <div className="mt-8 text-center">
+                      {loadingMore ? (
+                        <div className="flex items-center justify-center gap-3 py-4">
+                          <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                          <span className="text-slate-600 font-medium">正在加载更多职位...</span>
+                        </div>
+                      ) : jobs.length < totalJobs ? (
+                        <button
+                          onClick={loadMoreJobs}
+                          className="px-8 py-3 bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-50 text-slate-700 font-medium transition-all hover:border-slate-300"
+                        >
+                          加载更多 ({jobs.length}/{totalJobs})
+                        </button>
+                      ) : jobs.length > 0 ? (
+                        <div className="py-4 text-slate-500 font-medium">
+                          已加载全部 {totalJobs} 个职位
+                        </div>
+                      ) : null}
+                    </div>
+                  </>
                 )}
               </>
             )}
