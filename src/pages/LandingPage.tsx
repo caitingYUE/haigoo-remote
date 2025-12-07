@@ -97,11 +97,9 @@ export default function LandingPage() {
             setFeaturedJobs(featured.slice(0, 6))
         }
 
-        // Sort companies by total active jobs
+        // Sort companies by total active jobs (using database count)
         const sortedCompanies = [...companies].sort((a, b) => {
-          const countA = statsMap[a.name]?.total || 0
-          const countB = statsMap[b.name]?.total || 0
-          return countB - countA
+          return (b.jobCount || 0) - (a.jobCount || 0)
         })
 
         // Set trusted companies (top 6)
