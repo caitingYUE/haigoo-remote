@@ -334,7 +334,7 @@ export default function JobsPage() {
   // Combined loading state logic
   // If authenticated, we wait for initial match scores to load before showing the list
   // This prevents the "flash" of unsorted/unscored jobs
-  const showLoading = jobsLoading || (isAuthenticated && canonicalJobs.length > 0)
+  const showLoading = jobsLoading || !(isAuthenticated && canonicalJobs.length > 0)
 
   // Derived Data for Dynamic Filters - now using all jobs instead of regionJobs
 
@@ -439,7 +439,6 @@ export default function JobsPage() {
 
     return result
   }, [filteredJobs])
-  console.log('distributedJobs', distributedJobs)
 
   // Deep Linking: Sync URL with selectedJob
   useEffect(() => {
@@ -657,26 +656,11 @@ export default function JobsPage() {
 
                 {/* Job List Grid */}
                 {showLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                      <div key={i} className="bg-white h-64 rounded-2xl shadow-sm border border-slate-100 p-6 animate-pulse">
-                        <div className="flex gap-4 mb-6">
-                          <div className="w-14 h-14 bg-slate-100 rounded-xl"></div>
-                          <div className="flex-1 py-1">
-                            <div className="h-5 bg-slate-100 rounded w-3/4 mb-3"></div>
-                            <div className="h-4 bg-slate-100 rounded w-1/2"></div>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mb-6">
-                          <div className="w-16 h-6 bg-slate-100 rounded-full"></div>
-                          <div className="w-16 h-6 bg-slate-100 rounded-full"></div>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="h-4 bg-slate-100 rounded w-full"></div>
-                          <div className="h-4 bg-slate-100 rounded w-2/3"></div>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex items-center justify-center py-24">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-slate-600 font-medium">加载中...</span>
+                    </div>
                   </div>
                 ) : distributedJobs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl shadow-sm border border-dashed border-slate-200">
