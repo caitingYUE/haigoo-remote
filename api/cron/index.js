@@ -15,43 +15,43 @@ export default async function handler(req, res) {
 
   try {
     switch (taskName) {
-      case 'fetch-rss': {
-        const { default: fetchRssHandler } = await import('../../lib/cron-handlers/fetch-rss.js');
-        return await fetchRssHandler(req, res);
+      case 'stream-fetch-rss': {
+        const { default: streamFetchRssHandler } = await import('../../lib/cron-handlers/stream-fetch-rss.js');
+        return await streamFetchRssHandler(req, res);
       }
-      case 'process-rss': {
-        const { default: processRssHandler } = await import('../../lib/cron-handlers/process-rss.js');
-        return await processRssHandler(req, res);
+      case 'stream-process-rss': {
+        const { default: streamProcessRssHandler } = await import('../../lib/cron-handlers/stream-process-rss.js');
+        return await streamProcessRssHandler(req, res);
       }
-      case 'translate-jobs': {
-        const { default: translateJobsHandler } = await import('../../lib/cron-handlers/translate-jobs.js');
-        return await translateJobsHandler(req, res);
+      case 'stream-translate-jobs': {
+        const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
+        return await streamTranslateJobsHandler(req, res);
       }
-      case 'enrich-companies': {
-        const { default: enrichCompaniesHandler } = await import('../../lib/cron-handlers/enrich-companies.js');
-        return await enrichCompaniesHandler(req, res);
+      case 'stream-enrich-companies': {
+        const { default: streamEnrichCompaniesHandler } = await import('../../lib/cron-handlers/stream-enrich-companies.js');
+        return await streamEnrichCompaniesHandler(req, res);
       }
-      case 'crawl-trusted-jobs': {
-        const { default: crawlTrustedJobsHandler } = await import('../../lib/cron-handlers/crawl-trusted-jobs.js');
-        return await crawlTrustedJobsHandler(req, res);
+      case 'stream-crawl-trusted-jobs': {
+        const { default: streamCrawlTrustedJobsHandler } = await import('../../lib/cron-handlers/stream-crawl-trusted-jobs.js');
+        return await streamCrawlTrustedJobsHandler(req, res);
       }
       case 'daily-ingest': {
-        const { default: fetchRssHandler } = await import('../../lib/cron-handlers/fetch-rss.js');
-        const { default: processRssHandler } = await import('../../lib/cron-handlers/process-rss.js');
+        const { default: streamFetchRssHandler } = await import('../../lib/cron-handlers/stream-fetch-rss.js');
+        const { default: streamProcessRssHandler } = await import('../../lib/cron-handlers/stream-process-rss.js');
         return await runSequence(req, res, [
-          { name: 'fetch-rss', handler: fetchRssHandler },
-          { name: 'process-rss', handler: processRssHandler }
+          { name: 'stream-fetch-rss', handler: streamFetchRssHandler },
+          { name: 'stream-process-rss', handler: streamProcessRssHandler }
         ]);
       }
 
       case 'daily-enrich': {
-        const { default: translateJobsHandler } = await import('../../lib/cron-handlers/translate-jobs.js');
-        const { default: enrichCompaniesHandler } = await import('../../lib/cron-handlers/enrich-companies.js');
-        const { default: crawlTrustedJobsHandler } = await import('../../lib/cron-handlers/crawl-trusted-jobs.js');
+        const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
+        const { default: streamEnrichCompaniesHandler } = await import('../../lib/cron-handlers/stream-enrich-companies.js');
+        const { default: streamCrawlTrustedJobsHandler } = await import('../../lib/cron-handlers/stream-crawl-trusted-jobs.js');
         return await runSequence(req, res, [
-          { name: 'translate-jobs', handler: translateJobsHandler },
-          { name: 'enrich-companies', handler: enrichCompaniesHandler },
-          { name: 'crawl-trusted-jobs', handler: crawlTrustedJobsHandler }
+          { name: 'stream-translate-jobs', handler: streamTranslateJobsHandler },
+          { name: 'stream-enrich-companies', handler: streamEnrichCompaniesHandler },
+          { name: 'stream-crawl-trusted-jobs', handler: streamCrawlTrustedJobsHandler }
         ]);
       }
 
@@ -59,11 +59,11 @@ export default async function handler(req, res) {
         return res.status(400).json({
           error: `Unknown task: ${taskName}`,
           availableTasks: [
-            'fetch-rss',
-            'process-rss',
-            'translate-jobs',
-            'enrich-companies',
-            'crawl-trusted-jobs',
+            'stream-fetch-rss',
+            'stream-process-rss',
+            'stream-translate-jobs',
+            'stream-enrich-companies',
+            'stream-crawl-trusted-jobs',
             'daily-ingest',
             'daily-enrich'
           ]

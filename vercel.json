@@ -20,8 +20,8 @@
       "destination": "/api/cron/index?task=:task"
     },
     {
-      "source": "/api/translate-jobs",
-      "destination": "/api/cron/index?task=translate-jobs"
+      "source": "/api/stream-translate-jobs",
+      "destination": "/api/cron/index?task=stream-translate-jobs"
     },
     {
       "source": "/api/data/:path*",

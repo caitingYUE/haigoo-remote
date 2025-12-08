@@ -66,9 +66,9 @@ const CronTestControl: React.FC = () => {
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
-    dragStartRef.current = { 
-      x: e.clientX - position.x, 
-      y: e.clientY - position.y 
+    dragStartRef.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
     };
     hasMovedRef.current = false;
   };
@@ -80,11 +80,11 @@ const CronTestControl: React.FC = () => {
   };
 
   const PIPELINE_STEPS = [
-    { name: 'Fetch RSS', endpoint: '/api/cron/fetch-rss' },
-    { name: 'Process RSS', endpoint: '/api/cron/process-rss' },
-    { name: 'Translate Jobs', endpoint: '/api/cron/translate-jobs' },
-    { name: 'Enrich Companies', endpoint: '/api/cron/enrich-companies' },
-    { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/crawl-trusted-jobs' },
+    { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss' },
+    { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss' },
+    { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
+    { name: 'Enrich Companies', endpoint: '/api/cron/stream-enrich-companies' },
+    { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
   ];
 
   // 根据流数据生成用户友好的消息
@@ -109,7 +109,7 @@ const CronTestControl: React.FC = () => {
         return `第 ${data.page} 页处理完成`;
       case 'complete':
         return `任务完成：翻译 ${data.stats?.translatedJobs || 0}，跳过 ${data.stats?.skippedJobs || 0}，失败 ${data.stats?.failedJobs || 0}`;
-      
+
       // Fetch RSS 消息类型
       case 'fetch_start':
         return '开始抓取RSS源';
@@ -119,7 +119,7 @@ const CronTestControl: React.FC = () => {
         return '开始保存项目到数据库';
       case 'save_complete':
         return `保存完成，共保存 ${data.savedCount} 个唯一项目`;
-      
+
       // Process RSS 消息类型
       case 'batch_start':
         return `开始处理第 ${data.batchNumber} 批次`;
@@ -143,7 +143,7 @@ const CronTestControl: React.FC = () => {
         return `状态更新完成: ${data.updatedCount} 个项目`;
       case 'batch_complete':
         return `第 ${data.batchNumber} 批次完成: 处理 ${data.processedCount} 个，丰富化 ${data.enrichedCount} 个`;
-      
+
       // Enrich Companies 消息类型
       case 'scan_complete':
         return `扫描完成：${data.totalJobs} 个岗位，${data.totalCompanies} 个可信公司`;
@@ -159,7 +159,7 @@ const CronTestControl: React.FC = () => {
         return '开始保存更新后的岗位数据';
       case 'save_complete':
         return `保存完成：共保存 ${data.savedCount} 个岗位数据`;
-      
+
       // Crawl Trusted Jobs 消息类型
       case 'no_companies':
         return '没有找到需要爬取的公司';
@@ -187,7 +187,7 @@ const CronTestControl: React.FC = () => {
         return '开始保存更新的公司信息';
       case 'save_companies_complete':
         return `${data.message}`;
-      
+
       case 'error':
         return `任务失败：${data.error}`;
       default:
@@ -211,7 +211,7 @@ const CronTestControl: React.FC = () => {
           skipped: data.stats?.skippedJobs,
           failed: data.stats?.failedJobs
         };
-      
+
       // Process RSS 进度信息
       case 'batch_start':
         return { batch: data.batchNumber };
@@ -230,7 +230,7 @@ const CronTestControl: React.FC = () => {
           batches: data.stats?.totalBatches,
           enrichedPercentage: data.stats?.enrichedPercentage
         };
-      
+
       // Enrich Companies 进度信息
       case 'scan_complete':
         return { totalJobs: data.totalJobs, totalCompanies: data.totalCompanies };
@@ -254,7 +254,7 @@ const CronTestControl: React.FC = () => {
           aiClassifications: data.stats?.aiClassifications,
           noUpdates: data.stats?.noUpdates
         };
-      
+
       // Crawl Trusted Jobs 进度信息
       case 'scan_complete':
         return { totalCompanies: data.totalCompanies };
@@ -283,7 +283,7 @@ const CronTestControl: React.FC = () => {
           newJobsFound: data.stats?.newJobsFound,
           totalCompanies: data.stats?.totalCompanies
         };
-      
+
       default:
         return undefined;
     }
@@ -298,35 +298,35 @@ const CronTestControl: React.FC = () => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-    const streamMessages: Array<{type: string, message: string, timestamp: string}> = [];
+    const streamMessages: Array<{ type: string, message: string, timestamp: string }> = [];
 
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        
+
         // 保留最后一行（可能不完整）
         buffer = lines.pop() || '';
-        
+
         for (const line of lines) {
           if (line.trim()) {
             try {
               const data = JSON.parse(line);
-              
+
               // 根据消息类型更新进度
               const message = {
                 type: data.type,
                 message: getStreamMessage(data),
                 timestamp: new Date().toLocaleTimeString()
               };
-              
+
               streamMessages.push(message);
-              
+
               // 更新UI进度
-              setResults(prev => prev.map((r, idx) => 
+              setResults(prev => prev.map((r, idx) =>
                 idx === stepIndex ? {
                   ...r,
                   message: message.message,
@@ -334,14 +334,14 @@ const CronTestControl: React.FC = () => {
                   streamMessages: [...streamMessages]
                 } : r
               ));
-              
+
             } catch (parseError) {
               console.warn('Failed to parse stream data:', parseError, line);
             }
           }
         }
       }
-      
+
       // 处理剩余数据
       if (buffer.trim()) {
         try {
@@ -356,7 +356,7 @@ const CronTestControl: React.FC = () => {
           console.warn('Failed to parse final stream data:', parseError, buffer);
         }
       }
-      
+
       // 检查最终结果
       const lastMessage = streamMessages[streamMessages.length - 1];
       if (lastMessage?.type === 'error') {
@@ -365,24 +365,24 @@ const CronTestControl: React.FC = () => {
 
       // 根据任务类型设置成功消息
       const stepName = PIPELINE_STEPS[stepIndex].name;
-      const successMessage = stepName === 'Translate Jobs' ? '翻译任务完成' : 
-                           stepName === 'Fetch RSS' ? 'RSS抓取任务完成' : 
-                           stepName === 'Process RSS' ? 'RSS数据处理完成' : 
-                           stepName === 'Enrich Companies' ? '公司信息丰富化完成' : 
-                           stepName === 'Crawl Trusted Jobs' ? '可信公司爬取完成' : 
-                           '任务完成';
+      const successMessage = stepName === 'Translate Jobs' ? '翻译任务完成' :
+        stepName === 'Fetch RSS' ? 'RSS抓取任务完成' :
+          stepName === 'Process RSS' ? 'RSS数据处理完成' :
+            stepName === 'Enrich Companies' ? '公司信息丰富化完成' :
+              stepName === 'Crawl Trusted Jobs' ? '可信公司爬取完成' :
+                '任务完成';
 
       // 更新成功状态
-      setResults(prev => prev.map((r, idx) => 
-        idx === stepIndex ? { 
-          ...r, 
-          status: 'success', 
+      setResults(prev => prev.map((r, idx) =>
+        idx === stepIndex ? {
+          ...r,
+          status: 'success',
           message: successMessage,
           details: { streamMessages },
           streamMessages
         } : r
       ));
-      
+
     } finally {
       reader.releaseLock();
     }
@@ -390,19 +390,19 @@ const CronTestControl: React.FC = () => {
 
   const runPipeline = async () => {
     if (isRunning) return;
-    
+
     setIsRunning(true);
     // Reset results
     setResults(PIPELINE_STEPS.map(s => ({ step: s.name, status: 'pending' })));
 
     for (let i = 0; i < PIPELINE_STEPS.length; i++) {
       const step = PIPELINE_STEPS[i];
-      
+
       // Update current step to running
-      setResults(prev => prev.map((r, idx) => 
-        idx === i ? { 
-          ...r, 
-          status: 'running', 
+      setResults(prev => prev.map((r, idx) =>
+        idx === i ? {
+          ...r,
+          status: 'running',
           timestamp: new Date().toLocaleTimeString(),
           streamMessages: [],
           progress: undefined
@@ -424,8 +424,8 @@ const CronTestControl: React.FC = () => {
 
         // 检查是否为流式响应（通过Content-Type判断）
         const contentType = response.headers.get('content-type');
-        const isStreaming = contentType && contentType.includes('application/json') && 
-                           response.headers.get('transfer-encoding') === 'chunked';
+        const isStreaming = contentType && contentType.includes('application/json') &&
+          response.headers.get('transfer-encoding') === 'chunked';
 
         if (isStreaming) {
           // 处理流式响应
@@ -439,12 +439,12 @@ const CronTestControl: React.FC = () => {
           }
 
           // 更新成功状态
-          setResults(prev => prev.map((r, idx) => 
-            idx === i ? { 
-              ...r, 
-              status: 'success', 
+          setResults(prev => prev.map((r, idx) =>
+            idx === i ? {
+              ...r,
+              status: 'success',
               message: 'Task completed successfully',
-              details: data 
+              details: data
             } : r
           ));
         }
@@ -452,17 +452,17 @@ const CronTestControl: React.FC = () => {
       } catch (error: any) {
         console.error(`Error in step ${step.name}:`, error);
         // Update error
-        setResults(prev => prev.map((r, idx) => 
-          idx === i ? { 
-            ...r, 
-            status: 'error', 
+        setResults(prev => prev.map((r, idx) =>
+          idx === i ? {
+            ...r,
+            status: 'error',
             message: error.message || 'Request failed',
             details: error
           } : r
         ));
         // Stop pipeline on error
         setIsRunning(false);
-        return; 
+        return;
       }
     }
 
@@ -472,9 +472,9 @@ const CronTestControl: React.FC = () => {
   return (
     <>
       {/* Floating Trigger Button */}
-      <div 
+      <div
         className="fixed bottom-8 right-8 z-[9999]"
-        style={{ 
+        style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           cursor: isDragging ? 'grabbing' : 'grab',
           touchAction: 'none'
@@ -495,7 +495,7 @@ const CronTestControl: React.FC = () => {
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            
+
             {/* Header */}
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div>
@@ -507,7 +507,7 @@ const CronTestControl: React.FC = () => {
                   Manually trigger the scheduled task pipeline for testing.
                 </p>
               </div>
-              <button 
+              <button
                 onClick={() => setIsOpen(false)}
                 className="text-slate-400 hover:text-slate-600 transition-colors"
               >
@@ -518,46 +518,44 @@ const CronTestControl: React.FC = () => {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {results.map((result, index) => (
-                <div 
+                <div
                   key={index}
-                  className={`border rounded-lg p-4 transition-all duration-200 ${
-                    result.status === 'running' ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100' :
-                    result.status === 'success' ? 'border-green-200 bg-green-50' :
-                    result.status === 'error' ? 'border-red-200 bg-red-50' :
-                    'border-slate-200 bg-white'
-                  }`}
+                  className={`border rounded-lg p-4 transition-all duration-200 ${result.status === 'running' ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100' :
+                      result.status === 'success' ? 'border-green-200 bg-green-50' :
+                        result.status === 'error' ? 'border-red-200 bg-red-50' :
+                          'border-slate-200 bg-white'
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                        <div className={`
+                      <div className={`
                             w-8 h-8 rounded-full flex items-center justify-center
                             ${result.status === 'pending' ? 'bg-slate-100 text-slate-400' : ''}
                             ${result.status === 'running' ? 'bg-indigo-100 text-indigo-600' : ''}
                             ${result.status === 'success' ? 'bg-green-100 text-green-600' : ''}
                             ${result.status === 'error' ? 'bg-red-100 text-red-600' : ''}
                         `}>
-                            {result.status === 'pending' && <span className="text-sm font-mono">{index + 1}</span>}
-                            {result.status === 'running' && <Loader className="animate-spin" size={16} />}
-                            {result.status === 'success' && <CheckCircle size={16} />}
-                            {result.status === 'error' && <AlertCircle size={16} />}
-                        </div>
-                        <div>
-                            <h4 className={`font-medium ${
-                                result.status === 'pending' ? 'text-slate-500' : 'text-slate-900'
-                            }`}>
-                                {result.step}
-                            </h4>
-                            {result.timestamp && (
-                                <span className="text-xs text-slate-400">{result.timestamp}</span>
-                            )}
-                        </div>
+                        {result.status === 'pending' && <span className="text-sm font-mono">{index + 1}</span>}
+                        {result.status === 'running' && <Loader className="animate-spin" size={16} />}
+                        {result.status === 'success' && <CheckCircle size={16} />}
+                        {result.status === 'error' && <AlertCircle size={16} />}
+                      </div>
+                      <div>
+                        <h4 className={`font-medium ${result.status === 'pending' ? 'text-slate-500' : 'text-slate-900'
+                          }`}>
+                          {result.step}
+                        </h4>
+                        {result.timestamp && (
+                          <span className="text-xs text-slate-400">{result.timestamp}</span>
+                        )}
+                      </div>
                     </div>
-                    
+
                     <div className="text-sm">
-                        {result.status === 'pending' && <span className="text-slate-400">Waiting...</span>}
-                        {result.status === 'running' && <span className="text-indigo-600 font-medium">Executing...</span>}
-                        {result.status === 'success' && <span className="text-green-600 font-medium">Completed</span>}
-                        {result.status === 'error' && <span className="text-red-600 font-medium">Failed</span>}
+                      {result.status === 'pending' && <span className="text-slate-400">Waiting...</span>}
+                      {result.status === 'running' && <span className="text-indigo-600 font-medium">Executing...</span>}
+                      {result.status === 'success' && <span className="text-green-600 font-medium">Completed</span>}
+                      {result.status === 'error' && <span className="text-red-600 font-medium">Failed</span>}
                     </div>
                   </div>
 
@@ -586,11 +584,10 @@ const CronTestControl: React.FC = () => {
                     <div className="mt-2 pl-11">
                       <div className="text-xs space-y-1 max-h-20 overflow-y-auto">
                         {result.streamMessages.slice(-5).map((msg, idx) => (
-                          <div key={idx} className={`px-2 py-1 rounded ${
-                            msg.type === 'error' ? 'bg-red-100 text-red-800' : 
-                            msg.type === 'complete' ? 'bg-green-100 text-green-800' : 
-                            'bg-slate-100 text-slate-600'
-                          }`}>
+                          <div key={idx} className={`px-2 py-1 rounded ${msg.type === 'error' ? 'bg-red-100 text-red-800' :
+                              msg.type === 'complete' ? 'bg-green-100 text-green-800' :
+                                'bg-slate-100 text-slate-600'
+                            }`}>
                             <span className="font-mono text-[10px] opacity-70">{msg.timestamp}</span>
                             <span className="ml-2">{msg.message}</span>
                           </div>
@@ -602,16 +599,15 @@ const CronTestControl: React.FC = () => {
                   {/* Details/Error Message */}
                   {(result.message || result.details) && (result.status === 'success' || result.status === 'error') && !result.streamMessages && (
                     <div className="mt-2 pl-11">
-                        <div className={`text-sm p-3 rounded ${
-                            result.status === 'error' ? 'bg-red-100 text-red-800' : 'bg-white/50 text-slate-600 border border-slate-200'
+                      <div className={`text-sm p-3 rounded ${result.status === 'error' ? 'bg-red-100 text-red-800' : 'bg-white/50 text-slate-600 border border-slate-200'
                         }`}>
-                            {result.message}
-                            {result.details && (
-                                <pre className="mt-2 text-xs overflow-x-auto p-2 bg-black/5 rounded text-slate-800">
-                                    {JSON.stringify(result.details, null, 2)}
-                                </pre>
-                            )}
-                        </div>
+                        {result.message}
+                        {result.details && (
+                          <pre className="mt-2 text-xs overflow-x-auto p-2 bg-black/5 rounded text-slate-800">
+                            {JSON.stringify(result.details, null, 2)}
+                          </pre>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -632,22 +628,22 @@ const CronTestControl: React.FC = () => {
                 disabled={isRunning}
                 className={`
                     px-6 py-2 rounded-lg font-medium text-white flex items-center gap-2 transition-all
-                    ${isRunning 
-                        ? 'bg-indigo-400 cursor-not-allowed' 
-                        : 'bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg'
-                    }
+                    ${isRunning
+                    ? 'bg-indigo-400 cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg'
+                  }
                 `}
               >
                 {isRunning ? (
-                    <>
-                        <Loader className="animate-spin" size={18} />
-                        Running Pipeline...
-                    </>
+                  <>
+                    <Loader className="animate-spin" size={18} />
+                    Running Pipeline...
+                  </>
                 ) : (
-                    <>
-                        <Play size={18} />
-                        Start Pipeline Test
-                    </>
+                  <>
+                    <Play size={18} />
+                    Start Pipeline Test
+                  </>
                 )}
               </button>
             </div>
