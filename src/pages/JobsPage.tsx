@@ -156,12 +156,6 @@ export default function JobsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(20) // 每页20个
 
-  // 匹配分数缓存（不再需要单独管理，因为后端已经返回匹配分数）
-  const [matchScores, setMatchScores] = useState<Record<string, number>>({})
-  const [matchScoresLoading, setMatchScoresLoading] = useState(false)
-  // Track if initial match scores have been loaded
-  const [initialMatchScoresLoaded, setInitialMatchScoresLoaded] = useState(false)
-
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
@@ -213,22 +207,6 @@ export default function JobsPage() {
       }
       setTotalJobs(data.total || 0)
       setCurrentPage(page)
-
-      // 从响应中提取匹配分数
-      if (data.jobs && data.jobs.length > 0) {
-        const scores: Record<string, number> = {}
-        data.jobs.forEach((job: any) => {
-          if (job.matchScore !== undefined) {
-            scores[job.id] = job.matchScore
-          }
-        })
-        setMatchScores(prevScores => ({
-          ...prevScores,
-          ...scores
-        }))
-        setInitialMatchScoresLoaded(true)
-      }
-
       setLoadingStage('idle')
       console.log(`✅ 获取到 ${data.jobs?.length || 0} 个岗位（第${page}页，后端筛选和排序）`)
     } catch (error) {
@@ -247,10 +225,10 @@ export default function JobsPage() {
   // 加载更多数据
   const loadMoreJobs = async () => {
     if (loadingMore || jobsLoading) return
-    
+
     const nextPage = currentPage + 1
     const hasMore = jobs.length < totalJobs
-    
+
     if (hasMore) {
       await loadJobsWithFilters(nextPage, true)
     }
@@ -265,11 +243,11 @@ export default function JobsPage() {
   useEffect(() => {
     const handleScroll = () => {
       if (loadingMore || jobsLoading) return
-      
+
       const scrollTop = window.scrollY || document.documentElement.scrollTop
       const scrollHeight = document.documentElement.scrollHeight
       const clientHeight = window.innerHeight
-      
+
       // 当滚动到页面底部100px以内时触发加载更多
       if (scrollTop + clientHeight >= scrollHeight - 100) {
         const hasMore = jobs.length < totalJobs
@@ -278,7 +256,7 @@ export default function JobsPage() {
         }
       }
     }
-    
+
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [loadingMore, jobsLoading, jobs.length, totalJobs])
@@ -354,54 +332,10 @@ export default function JobsPage() {
     loadCompanies()
   }, [canonicalJobs])
 
-  // 加载个性化匹配分数
-  useEffect(() => {
-    const loadMatchScores = async () => {
-      if (!isAuthenticated || !token || canonicalJobs.length === 0) {
-        console.log(`[MatchScores] Skipping: isAuth=${isAuthenticated}, hasToken=${!!token}, jobsCount=${canonicalJobs.length}`)
-        return
-      }
-
-      console.log(`[MatchScores ${new Date().toISOString()}] 🎯 Loading match scores for ${canonicalJobs.length} jobs...`)
-      setMatchScoresLoading(true)
-      try {
-        // 取前100个岗位计算匹配分数
-        const jobIds = canonicalJobs.slice(0, 100).map(j => j.id)
-        console.log(`[MatchScores] Calculating for ${jobIds.length} job IDs`)
-
-        const results = await batchCalculateMatches(token, jobIds)
-        console.log(`[MatchScores] Received ${results.length} results`)
-
-        const scores: Record<string, number> = {}
-        results.forEach(r => {
-          if (r.jobId && typeof r.matchScore === 'number') {
-            scores[r.jobId] = r.matchScore
-          }
-        })
-
-        setMatchScores(scores)
-        console.log(`[MatchScores ${new Date().toISOString()}] ✅ Loaded ${Object.keys(scores).length} match scores`)
-
-        // Log top 5 scores for debugging
-        const topScores = Object.entries(scores)
-          .sort(([, a], [, b]) => b - a)
-          .slice(0, 5)
-        console.log(`[MatchScores] Top 5 scores:`, topScores.map(([id, score]) => `${id.substring(0, 8)}: ${score}%`))
-      } catch (error) {
-        console.error(`[MatchScores ${new Date().toISOString()}] ❌ Failed to load:`, error)
-      } finally {
-        setMatchScoresLoading(false)
-        setInitialMatchScoresLoaded(true)
-      }
-    }
-
-    loadMatchScores()
-  }, [isAuthenticated, token, canonicalJobs])
-
   // Combined loading state logic
   // If authenticated, we wait for initial match scores to load before showing the list
   // This prevents the "flash" of unsorted/unscored jobs
-  const showLoading = jobsLoading || (isAuthenticated && !initialMatchScoresLoaded && canonicalJobs.length > 0)
+  const showLoading = jobsLoading || (isAuthenticated && canonicalJobs.length > 0)
 
   // Derived Data for Dynamic Filters - now using all jobs instead of regionJobs
 
@@ -768,11 +702,11 @@ export default function JobsPage() {
                           key={job.id}
                           job={job}
                           onClick={() => handleJobSelect(job, index)}
-                          matchScore={matchScores[job.id]}
+                          matchScore={job.matchScore}
                         />
                       ))}
                     </div>
-                    
+
                     {/* 加载更多按钮和状态 */}
                     <div className="mt-8 text-center">
                       {loadingMore ? (

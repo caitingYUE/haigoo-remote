@@ -141,7 +141,7 @@ class JobAggregator {
       requirements: rssJob.requirements || [],
       responsibilities: rssJob.benefits || [],
       skills: rssJob.tags || [],
-      postedAt: rssJob.publishedAt || new Date().toISOString().split('T')[0],
+      publishedAt: rssJob.publishedAt || new Date().toISOString().split('T')[0],
       expiresAt: undefined,
       source: rssJob.source || 'RSS',
       sourceUrl: rssJob.url || '#',
@@ -953,7 +953,7 @@ class JobAggregator {
           description: job.description || '',
           url: job.sourceUrl || '#',
           companyWebsite: job.companyWebsite,
-          publishedAt: job.postedAt,
+          publishedAt: job.publishedAt,
           source: job.source,
           category: (job.category as JobCategory) || '其他',
           salary: job.salary ? `${job.salary.min}-${job.salary.max} ${job.salary.currency}` : undefined,
@@ -965,7 +965,7 @@ class JobAggregator {
           benefits: job.benefits || [], // Fix: benefits map correctly
           isRemote: job.isRemote || false,
           status: 'active',
-          createdAt: job.postedAt,
+          createdAt: job.publishedAt,
           updatedAt: new Date().toISOString(),
           region: job.region,
 

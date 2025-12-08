@@ -15,7 +15,7 @@ export interface Job {
   responsibilities: string[]
   benefits?: string[]
   skills: string[]
-  postedAt: string
+  publishedAt: string
   expiresAt?: string  // 可选，避免虚假过期时间
   source: string
   sourceUrl?: string
@@ -60,6 +60,8 @@ export interface Job {
 
   // Featured job flag for homepage display
   isFeatured?: boolean
+
+  matchScore?: number
 }
 
 export interface User {

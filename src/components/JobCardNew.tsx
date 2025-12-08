@@ -136,7 +136,7 @@ export default function JobCardNew({ job, onClick, matchScore, className }: JobC
                </div>
                <div>
                   <p className="text-xs text-slate-400 mb-1">发布日期 (Date)</p>
-                  <p className="font-bold text-slate-900">{DateFormatter.formatPublishTime(job.postedAt)}</p>
+                  <p className="font-bold text-slate-900">{DateFormatter.formatPublishTime(job.publishedAt)}</p>
                </div>
             </div>
 
