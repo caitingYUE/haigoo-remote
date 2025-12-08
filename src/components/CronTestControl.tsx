@@ -160,6 +160,34 @@ const CronTestControl: React.FC = () => {
       case 'save_complete':
         return `保存完成：共保存 ${data.savedCount} 个岗位数据`;
       
+      // Crawl Trusted Jobs 消息类型
+      case 'no_companies':
+        return '没有找到需要爬取的公司';
+      case 'scan_complete':
+        return `扫描完成：找到 ${data.totalCompanies} 个可信公司`;
+      case 'target_selected':
+        return `选择 ${data.targetCount} 个公司进行爬取（共 ${data.totalCompanies} 个）`;
+      case 'crawl_start':
+        return `开始爬取 ${data.targetCount} 个公司的职位信息`;
+      case 'company_crawl_start':
+        return `${data.message}`;
+      case 'company_skipped':
+        return `${data.message}`;
+      case 'company_crawl_complete':
+        return `${data.message}`;
+      case 'company_crawl_failed':
+        return `${data.message}`;
+      case 'crawl_complete':
+        return `${data.message}`;
+      case 'save_jobs_start':
+        return '开始保存爬取的职位数据';
+      case 'save_jobs_complete':
+        return `${data.message}`;
+      case 'save_companies_start':
+        return '开始保存更新的公司信息';
+      case 'save_companies_complete':
+        return `${data.message}`;
+      
       case 'error':
         return `任务失败：${data.error}`;
       default:
@@ -225,6 +253,35 @@ const CronTestControl: React.FC = () => {
           trustedMatches: data.stats?.trustedMatches,
           aiClassifications: data.stats?.aiClassifications,
           noUpdates: data.stats?.noUpdates
+        };
+      
+      // Crawl Trusted Jobs 进度信息
+      case 'scan_complete':
+        return { totalCompanies: data.totalCompanies };
+      case 'target_selected':
+        return { targetCount: data.targetCount, totalCompanies: data.totalCompanies };
+      case 'crawl_start':
+        return { targetCount: data.targetCount };
+      case 'company_crawl_start':
+        return { currentCompany: data.companyIndex, totalCompanies: data.totalCompanies };
+      case 'company_crawl_complete':
+        return { jobsFound: data.jobsFound, companyUpdated: data.companyUpdated };
+      case 'crawl_complete':
+        return {
+          processedCompanies: data.processedCompanies,
+          updatedCompanies: data.updatedCompanies,
+          newJobsFound: data.newJobsFound
+        };
+      case 'save_jobs_complete':
+        return { savedCount: data.savedCount, newJobs: data.newJobs };
+      case 'save_companies_complete':
+        return { savedCount: data.savedCount, updatedCount: data.updatedCount };
+      case 'complete':
+        return {
+          processedCompanies: data.stats?.processedCompanies,
+          updatedCompanies: data.stats?.updatedCompanies,
+          newJobsFound: data.stats?.newJobsFound,
+          totalCompanies: data.stats?.totalCompanies
         };
       
       default:
@@ -312,6 +369,7 @@ const CronTestControl: React.FC = () => {
                            stepName === 'Fetch RSS' ? 'RSS抓取任务完成' : 
                            stepName === 'Process RSS' ? 'RSS数据处理完成' : 
                            stepName === 'Enrich Companies' ? '公司信息丰富化完成' : 
+                           stepName === 'Crawl Trusted Jobs' ? '可信公司爬取完成' : 
                            '任务完成';
 
       // 更新成功状态
