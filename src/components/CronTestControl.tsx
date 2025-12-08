@@ -90,6 +90,7 @@ const CronTestControl: React.FC = () => {
   // 根据流数据生成用户友好的消息
   const getStreamMessage = (data: any): string => {
     switch (data.type) {
+      // Translate Jobs 消息类型
       case 'start':
         return '任务开始执行';
       case 'total':
@@ -108,6 +109,17 @@ const CronTestControl: React.FC = () => {
         return `第 ${data.page} 页处理完成`;
       case 'complete':
         return `任务完成：翻译 ${data.stats?.translatedJobs || 0}，跳过 ${data.stats?.skippedJobs || 0}，失败 ${data.stats?.failedJobs || 0}`;
+      
+      // Fetch RSS 消息类型
+      case 'fetch_start':
+        return '开始抓取RSS源';
+      case 'fetch_complete':
+        return `RSS抓取完成，共获取 ${data.fetchedCount} 个项目`;
+      case 'save_start':
+        return '开始保存项目到数据库';
+      case 'save_complete':
+        return `保存完成，共保存 ${data.savedCount} 个唯一项目`;
+      
       case 'error':
         return `任务失败：${data.error}`;
       default:
@@ -135,6 +147,102 @@ const CronTestControl: React.FC = () => {
     }
   };
 
+  // 通用的流式响应处理函数
+  const handleStreamResponse = async (response: Response, stepIndex: number) => {
+    if (!response.body) {
+      throw new Error('No response body');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    const streamMessages: Array<{type: string, message: string, timestamp: string}> = [];
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        
+        // 保留最后一行（可能不完整）
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const data = JSON.parse(line);
+              
+              // 根据消息类型更新进度
+              const message = {
+                type: data.type,
+                message: getStreamMessage(data),
+                timestamp: new Date().toLocaleTimeString()
+              };
+              
+              streamMessages.push(message);
+              
+              // 更新UI进度
+              setResults(prev => prev.map((r, idx) => 
+                idx === stepIndex ? {
+                  ...r,
+                  message: message.message,
+                  progress: getProgressFromData(data),
+                  streamMessages: [...streamMessages]
+                } : r
+              ));
+              
+            } catch (parseError) {
+              console.warn('Failed to parse stream data:', parseError, line);
+            }
+          }
+        }
+      }
+      
+      // 处理剩余数据
+      if (buffer.trim()) {
+        try {
+          const data = JSON.parse(buffer);
+          const message = {
+            type: data.type,
+            message: getStreamMessage(data),
+            timestamp: new Date().toLocaleTimeString()
+          };
+          streamMessages.push(message);
+        } catch (parseError) {
+          console.warn('Failed to parse final stream data:', parseError, buffer);
+        }
+      }
+      
+      // 检查最终结果
+      const lastMessage = streamMessages[streamMessages.length - 1];
+      if (lastMessage?.type === 'error') {
+        throw new Error(lastMessage.message);
+      }
+
+      // 根据任务类型设置成功消息
+      const stepName = PIPELINE_STEPS[stepIndex].name;
+      const successMessage = stepName === 'Translate Jobs' ? '翻译任务完成' : 
+                           stepName === 'Fetch RSS' ? 'RSS抓取任务完成' : 
+                           '任务完成';
+
+      // 更新成功状态
+      setResults(prev => prev.map((r, idx) => 
+        idx === stepIndex ? { 
+          ...r, 
+          status: 'success', 
+          message: successMessage,
+          details: { streamMessages },
+          streamMessages
+        } : r
+      ));
+      
+    } finally {
+      reader.releaseLock();
+    }
+  };
+
   const runPipeline = async () => {
     if (isRunning) return;
     
@@ -157,121 +265,35 @@ const CronTestControl: React.FC = () => {
       ));
 
       try {
-        // 特殊处理翻译任务（支持流式响应）
-        if (step.name === 'Translate Jobs') {
-          const response = await fetch(step.endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // 发送请求
+        const response = await fetch(step.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
           }
+        });
 
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // 检查是否为流式响应（通过Content-Type判断）
+        const contentType = response.headers.get('content-type');
+        const isStreaming = contentType && contentType.includes('application/json') && 
+                           response.headers.get('transfer-encoding') === 'chunked';
+
+        if (isStreaming) {
           // 处理流式响应
-          if (!response.body) {
-            throw new Error('No response body');
-          }
-
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
-          const streamMessages: Array<{type: string, message: string, timestamp: string}> = [];
-
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              
-              // 保留最后一行（可能不完整）
-              buffer = lines.pop() || '';
-              
-              for (const line of lines) {
-                if (line.trim()) {
-                  try {
-                    const data = JSON.parse(line);
-                    
-                    // 根据消息类型更新进度
-                    const message = {
-                      type: data.type,
-                      message: getStreamMessage(data),
-                      timestamp: new Date().toLocaleTimeString()
-                    };
-                    
-                    streamMessages.push(message);
-                    
-                    // 更新UI进度
-                    setResults(prev => prev.map((r, idx) => 
-                      idx === i ? {
-                        ...r,
-                        message: message.message,
-                        progress: getProgressFromData(data),
-                        streamMessages: [...streamMessages]
-                      } : r
-                    ));
-                    
-                  } catch (parseError) {
-                    console.warn('Failed to parse stream data:', parseError, line);
-                  }
-                }
-              }
-            }
-            
-            // 处理剩余数据
-            if (buffer.trim()) {
-              try {
-                const data = JSON.parse(buffer);
-                const message = {
-                  type: data.type,
-                  message: getStreamMessage(data),
-                  timestamp: new Date().toLocaleTimeString()
-                };
-                streamMessages.push(message);
-              } catch (parseError) {
-                console.warn('Failed to parse final stream data:', parseError, buffer);
-              }
-            }
-            
-            // 检查最终结果
-            const lastMessage = streamMessages[streamMessages.length - 1];
-            if (lastMessage?.type === 'error') {
-              throw new Error(lastMessage.message);
-            }
-
-            // 更新成功状态
-            setResults(prev => prev.map((r, idx) => 
-              idx === i ? { 
-                ...r, 
-                status: 'success', 
-                message: '翻译任务完成',
-                details: { streamMessages },
-                streamMessages
-              } : r
-            ));
-            
-          } finally {
-            reader.releaseLock();
-          }
+          await handleStreamResponse(response, i);
         } else {
-          // 其他任务使用普通请求
-          const response = await fetch(step.endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
+          // 处理普通响应
           const data = await response.json();
 
           if (!response.ok || data.success === false) {
             throw new Error(data.error || data.message || 'Unknown error');
           }
 
-          // Update success
+          // 更新成功状态
           setResults(prev => prev.map((r, idx) => 
             idx === i ? { 
               ...r, 
