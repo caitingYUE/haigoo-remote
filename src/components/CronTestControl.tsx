@@ -7,6 +7,20 @@ interface StepResult {
   message?: string;
   details?: any;
   timestamp?: string;
+  progress?: {
+    current?: number;
+    total?: number;
+    page?: number;
+    totalPages?: number;
+    translated?: number;
+    failed?: number;
+    skipped?: number;
+  };
+  streamMessages?: Array<{
+    type: string;
+    message: string;
+    timestamp: string;
+  }>;
 }
 
 const CronTestControl: React.FC = () => {
@@ -73,6 +87,54 @@ const CronTestControl: React.FC = () => {
     { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/crawl-trusted-jobs' },
   ];
 
+  // 根据流数据生成用户友好的消息
+  const getStreamMessage = (data: any): string => {
+    switch (data.type) {
+      case 'start':
+        return '任务开始执行';
+      case 'total':
+        return `共 ${data.totalJobs} 个岗位，分 ${data.totalPages} 页处理`;
+      case 'page_start':
+        return `开始处理第 ${data.page}/${data.totalPages} 页`;
+      case 'page_stats':
+        return `第 ${data.page} 页：${data.untranslated} 个待翻译，${data.alreadyTranslated} 个已翻译`;
+      case 'page_translated':
+        return `第 ${data.page} 页翻译完成：成功 ${data.successCount}，失败 ${data.failCount}`;
+      case 'page_saved':
+        return `第 ${data.page} 页保存完成：${data.savedCount} 个记录`;
+      case 'page_error':
+        return `第 ${data.page} 页处理失败：${data.error}`;
+      case 'page_complete':
+        return `第 ${data.page} 页处理完成`;
+      case 'complete':
+        return `任务完成：翻译 ${data.stats?.translatedJobs || 0}，跳过 ${data.stats?.skippedJobs || 0}，失败 ${data.stats?.failedJobs || 0}`;
+      case 'error':
+        return `任务失败：${data.error}`;
+      default:
+        return `处理中：${data.type}`;
+    }
+  };
+
+  // 从流数据提取进度信息
+  const getProgressFromData = (data: any) => {
+    switch (data.type) {
+      case 'total':
+        return { total: data.totalJobs, totalPages: data.totalPages };
+      case 'page_start':
+        return { page: data.page, totalPages: data.totalPages };
+      case 'page_translated':
+        return { translated: data.successCount, failed: data.failCount };
+      case 'complete':
+        return {
+          translated: data.stats?.translatedJobs,
+          skipped: data.stats?.skippedJobs,
+          failed: data.stats?.failedJobs
+        };
+      default:
+        return undefined;
+    }
+  };
+
   const runPipeline = async () => {
     if (isRunning) return;
     
@@ -85,43 +147,151 @@ const CronTestControl: React.FC = () => {
       
       // Update current step to running
       setResults(prev => prev.map((r, idx) => 
-        idx === i ? { ...r, status: 'running', timestamp: new Date().toLocaleTimeString() } : r
+        idx === i ? { 
+          ...r, 
+          status: 'running', 
+          timestamp: new Date().toLocaleTimeString(),
+          streamMessages: [],
+          progress: undefined
+        } : r
       ));
 
       try {
-        // Use POST to ensure execution and bypass diagnostic checks (especially for translate-jobs)
-        const response = await fetch(step.endpoint, {
+        // 特殊处理翻译任务（支持流式响应）
+        if (step.name === 'Translate Jobs') {
+          const response = await fetch(step.endpoint, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+              'Content-Type': 'application/json'
             }
-        });
-        const data = await response.json();
+          });
 
-        if (!response.ok || data.success === false) {
-            throw new Error(data.error || data.message || 'Unknown error');
-        }
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
 
-        // Update success
-        setResults(prev => prev.map((r, idx) => 
-            idx === i ? { 
+          // 处理流式响应
+          if (!response.body) {
+            throw new Error('No response body');
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          const streamMessages: Array<{type: string, message: string, timestamp: string}> = [];
+
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              
+              // 保留最后一行（可能不完整）
+              buffer = lines.pop() || '';
+              
+              for (const line of lines) {
+                if (line.trim()) {
+                  try {
+                    const data = JSON.parse(line);
+                    
+                    // 根据消息类型更新进度
+                    const message = {
+                      type: data.type,
+                      message: getStreamMessage(data),
+                      timestamp: new Date().toLocaleTimeString()
+                    };
+                    
+                    streamMessages.push(message);
+                    
+                    // 更新UI进度
+                    setResults(prev => prev.map((r, idx) => 
+                      idx === i ? {
+                        ...r,
+                        message: message.message,
+                        progress: getProgressFromData(data),
+                        streamMessages: [...streamMessages]
+                      } : r
+                    ));
+                    
+                  } catch (parseError) {
+                    console.warn('Failed to parse stream data:', parseError, line);
+                  }
+                }
+              }
+            }
+            
+            // 处理剩余数据
+            if (buffer.trim()) {
+              try {
+                const data = JSON.parse(buffer);
+                const message = {
+                  type: data.type,
+                  message: getStreamMessage(data),
+                  timestamp: new Date().toLocaleTimeString()
+                };
+                streamMessages.push(message);
+              } catch (parseError) {
+                console.warn('Failed to parse final stream data:', parseError, buffer);
+              }
+            }
+            
+            // 检查最终结果
+            const lastMessage = streamMessages[streamMessages.length - 1];
+            if (lastMessage?.type === 'error') {
+              throw new Error(lastMessage.message);
+            }
+
+            // 更新成功状态
+            setResults(prev => prev.map((r, idx) => 
+              idx === i ? { 
                 ...r, 
                 status: 'success', 
-                message: 'Task completed successfully',
-                details: data 
+                message: '翻译任务完成',
+                details: { streamMessages },
+                streamMessages
+              } : r
+            ));
+            
+          } finally {
+            reader.releaseLock();
+          }
+        } else {
+          // 其他任务使用普通请求
+          const response = await fetch(step.endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          const data = await response.json();
+
+          if (!response.ok || data.success === false) {
+            throw new Error(data.error || data.message || 'Unknown error');
+          }
+
+          // Update success
+          setResults(prev => prev.map((r, idx) => 
+            idx === i ? { 
+              ...r, 
+              status: 'success', 
+              message: 'Task completed successfully',
+              details: data 
             } : r
-        ));
+          ));
+        }
 
       } catch (error: any) {
         console.error(`Error in step ${step.name}:`, error);
         // Update error
         setResults(prev => prev.map((r, idx) => 
-            idx === i ? { 
-                ...r, 
-                status: 'error', 
-                message: error.message || 'Request failed',
-                details: error
-            } : r
+          idx === i ? { 
+            ...r, 
+            status: 'error', 
+            message: error.message || 'Request failed',
+            details: error
+          } : r
         ));
         // Stop pipeline on error
         setIsRunning(false);
@@ -224,8 +394,46 @@ const CronTestControl: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Progress Information */}
+                  {result.progress && (
+                    <div className="mt-2 pl-11">
+                      <div className="text-xs text-slate-500 space-y-1">
+                        {result.progress.page && (
+                          <div>当前页面: {result.progress.page}/{result.progress.totalPages}</div>
+                        )}
+                        {result.progress.translated !== undefined && (
+                          <div>已翻译: {result.progress.translated}</div>
+                        )}
+                        {result.progress.failed !== undefined && (
+                          <div>失败: {result.progress.failed}</div>
+                        )}
+                        {result.progress.skipped !== undefined && (
+                          <div>跳过: {result.progress.skipped}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stream Messages */}
+                  {result.streamMessages && result.streamMessages.length > 0 && (
+                    <div className="mt-2 pl-11">
+                      <div className="text-xs space-y-1 max-h-20 overflow-y-auto">
+                        {result.streamMessages.slice(-5).map((msg, idx) => (
+                          <div key={idx} className={`px-2 py-1 rounded ${
+                            msg.type === 'error' ? 'bg-red-100 text-red-800' : 
+                            msg.type === 'complete' ? 'bg-green-100 text-green-800' : 
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            <span className="font-mono text-[10px] opacity-70">{msg.timestamp}</span>
+                            <span className="ml-2">{msg.message}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Details/Error Message */}
-                  {(result.message || result.details) && (result.status === 'success' || result.status === 'error') && (
+                  {(result.message || result.details) && (result.status === 'success' || result.status === 'error') && !result.streamMessages && (
                     <div className="mt-2 pl-11">
                         <div className={`text-sm p-3 rounded ${
                             result.status === 'error' ? 'bg-red-100 text-red-800' : 'bg-white/50 text-slate-600 border border-slate-200'
