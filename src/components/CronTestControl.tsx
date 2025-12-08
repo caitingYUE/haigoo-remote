@@ -448,6 +448,7 @@ const CronTestControl: React.FC = () => {
         const contentType = response.headers.get('content-type');
         const isStreaming = contentType && contentType.includes('application/json') &&
           response.headers.get('transfer-encoding') === 'chunked';
+        console.log('isStreaming', isStreaming);
 
         if (isStreaming) {
           // 处理流式响应
