@@ -12,7 +12,6 @@ import { extractLocations } from '../utils/locationHelper'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { JobPreferenceModal, JobPreferences } from '../components/JobPreferenceModal'
-import { batchCalculateMatches } from '../services/job-matching-service'
 
 // Industry Options
 // const INDUSTRY_OPTIONS = [
