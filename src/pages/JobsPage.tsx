@@ -153,7 +153,14 @@ export default function JobsPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [totalJobs, setTotalJobs] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(20) // 每页20个
+  const [pageSize, setPageSize] = useState(20)
+  const [sortBy, setSortBy] = useState<'relevance' | 'recent'>('relevance')
+
+  // 匹配分数缓存（不再需要单独管理，因为后端已经返回匹配分数）
+  const [matchScores, setMatchScores] = useState<Record<string, number>>({})
+  const [matchScoresLoading, setMatchScoresLoading] = useState(false)
+  // Track if initial match scores have been loaded
+  const [initialMatchScoresLoaded, setInitialMatchScoresLoaded] = useState(false)
 
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
@@ -176,6 +183,7 @@ export default function JobsPage() {
       queryParams.append('pageSize', pageSize.toString())
 
       // 添加筛选条件
+      if (sortBy === 'recent') queryParams.append('sortBy', 'recent')
       if (searchTerm) queryParams.append('searchQuery', searchTerm)
       if (filters.category.length > 0) queryParams.append('category', filters.category.join(','))
       if (filters.experienceLevel.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
@@ -233,10 +241,9 @@ export default function JobsPage() {
     }
   }
 
-  // 初始加载和筛选条件变化时重新加载数据
   useEffect(() => {
     loadJobsWithFilters(1, false)
-  }, [searchTerm, filters, isAuthenticated, token])
+  }, [searchTerm, filters, isAuthenticated, token, sortBy])
 
   // 滚动监听 - 自动加载更多
   useEffect(() => {
@@ -646,7 +653,14 @@ export default function JobsPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0 pr-2">
-                      <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-50 text-sm font-bold text-slate-700 transition-all hover:border-slate-300">
+                      <button
+                        onClick={() => setSortBy(prev => prev === 'recent' ? 'relevance' : 'recent')}
+                        className={`flex items-center gap-2 px-5 py-2.5 border rounded-xl shadow-sm text-sm font-bold transition-all ${
+                          sortBy === 'recent'
+                            ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                        }`}
+                      >
                         <SortAsc className="w-4 h-4" />
                         <span>Most Recent</span>
                       </button>

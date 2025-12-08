@@ -20,6 +20,51 @@ const CronTestControl: React.FC = () => {
     { step: 'Crawl Trusted Jobs', status: 'pending' },
   ]);
 
+  // Dragging state
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = React.useRef({ x: 0, y: 0 });
+  const hasMovedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      setPosition({ x: dx, y: dy });
+      hasMovedRef.current = true;
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStartRef.current = { 
+      x: e.clientX - position.x, 
+      y: e.clientY - position.y 
+    };
+    hasMovedRef.current = false;
+  };
+
+  const handleClick = () => {
+    if (!hasMovedRef.current) {
+      setIsOpen(!isOpen);
+    }
+  };
+
   const PIPELINE_STEPS = [
     { name: 'Fetch RSS', endpoint: '/api/cron/fetch-rss' },
     { name: 'Process RSS', endpoint: '/api/cron/process-rss' },
@@ -90,11 +135,19 @@ const CronTestControl: React.FC = () => {
   return (
     <>
       {/* Floating Trigger Button */}
-      <div className="fixed bottom-8 right-8 z-[9999]">
+      <div 
+        className="fixed bottom-8 right-8 z-[9999]"
+        style={{ 
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none'
+        }}
+      >
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg transition-all duration-200 flex items-center gap-2"
-          title="Cron Pipeline Test"
+          onMouseDown={handleMouseDown}
+          onClick={handleClick}
+          className={`bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg transition-colors duration-200 flex items-center gap-2 ${isDragging ? 'scale-105 shadow-xl' : ''}`}
+          title="Cron Pipeline Test (Drag to move)"
         >
           <Terminal size={24} />
           <span className="font-medium">Cron Test</span>

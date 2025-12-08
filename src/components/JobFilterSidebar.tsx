@@ -156,9 +156,9 @@ export default function JobFilterSidebar({
 
   // 岗位来源选项
   const SOURCE_TYPES = [
-    { label: '第三方', value: 'third-party' },
     { label: '俱乐部内推', value: 'club-referral' },
-    { label: '人工精选', value: 'curated' }
+    { label: '人工精选', value: 'curated' },
+    { label: '第三方', value: 'third-party' }
   ];
 
   // 工作类型选项
@@ -194,6 +194,39 @@ export default function JobFilterSidebar({
           <span>筛选职位</span>
           <span className="text-slate-400 text-sm font-normal">(Filter Jobs)</span>
         </h2>
+
+        {/* 区域限制 */}
+        <FilterSection
+          title="区域限制 (Region)"
+          isOpen={openSections.regionType}
+          onToggle={() => toggleSection('regionType')}
+        >
+          {REGION_TYPES.map(region => (
+            <CheckboxItem
+              key={region.value}
+              label={region.label}
+              checked={filters.regionType.includes(region.value)}
+              onChange={(c) => handleArrayFilterChange('regionType', region.value, c)}
+              emphasized={region.emphasized}
+            />
+          ))}
+        </FilterSection>
+
+        {/* 岗位来源 */}
+        <FilterSection
+          title="岗位来源 (Source)"
+          isOpen={openSections.sourceType}
+          onToggle={() => toggleSection('sourceType')}
+        >
+          {SOURCE_TYPES.map(source => (
+            <CheckboxItem
+              key={source.value}
+              label={source.label}
+              checked={filters.sourceType.includes(source.value)}
+              onChange={(c) => handleArrayFilterChange('sourceType', source.value, c)}
+            />
+          ))}
+        </FilterSection>
 
         {/* 岗位分类 */}
         <FilterSection
@@ -247,39 +280,6 @@ export default function JobFilterSidebar({
           </div>
         </FilterSection>
 
-        {/* 区域限制 */}
-        <FilterSection
-          title="区域限制 (Region)"
-          isOpen={openSections.regionType}
-          onToggle={() => toggleSection('regionType')}
-        >
-          {REGION_TYPES.map(region => (
-            <CheckboxItem
-              key={region.value}
-              label={region.label}
-              checked={filters.regionType.includes(region.value)}
-              onChange={(c) => handleArrayFilterChange('regionType', region.value, c)}
-              emphasized={region.emphasized}
-            />
-          ))}
-        </FilterSection>
-
-        {/* 岗位来源 */}
-        <FilterSection
-          title="岗位来源 (Source)"
-          isOpen={openSections.sourceType}
-          onToggle={() => toggleSection('sourceType')}
-        >
-          {SOURCE_TYPES.map(source => (
-            <CheckboxItem
-              key={source.value}
-              label={source.label}
-              checked={filters.sourceType.includes(source.value)}
-              onChange={(c) => handleArrayFilterChange('sourceType', source.value, c)}
-            />
-          ))}
-        </FilterSection>
-
         {/* 工作类型 */}
         <FilterSection
           title="工作类型 (Job Type)"
@@ -329,19 +329,6 @@ export default function JobFilterSidebar({
             ))}
           </div>
         </FilterSection>
-
-        <div className="border-b border-slate-100 py-6 space-y-4">
-          <CheckboxItem
-            label="俱乐部认证 (Club Verified)"
-            checked={filters.isTrusted}
-            onChange={(c) => onFilterChange({ ...filters, isTrusted: c })}
-          />
-          <CheckboxItem
-            label="最新发布 (New Postings)"
-            checked={filters.isNew}
-            onChange={(c) => onFilterChange({ ...filters, isNew: c })}
-          />
-        </div>
 
         <button
           onClick={() => onFilterChange({
