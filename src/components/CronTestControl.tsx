@@ -445,7 +445,10 @@ const CronTestControl: React.FC = () => {
         }
 
         // 检查是否为流式响应（通过Content-Type判断）
+        console.log('response headers', response.headers);
         const contentType = response.headers.get('content-type');
+        console.log('content-type', contentType);
+        console.log('transfer-encoding', response.headers.get('transfer-encoding'));
         const isStreaming = contentType && contentType.includes('application/json') &&
           response.headers.get('transfer-encoding') === 'chunked';
         console.log('isStreaming', isStreaming);
