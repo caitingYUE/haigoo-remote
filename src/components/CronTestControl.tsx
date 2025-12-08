@@ -351,6 +351,7 @@ const CronTestControl: React.FC = () => {
               setResults(prev => prev.map((r, idx) =>
                 idx === stepIndex ? {
                   ...r,
+                  status: data.type === 'error' ? 'error' : 'running',
                   message: message.message,
                   progress: getProgressFromData(data),
                   streamMessages: [...streamMessages]
