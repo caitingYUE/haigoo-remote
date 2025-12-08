@@ -439,6 +439,7 @@ export default function JobsPage() {
 
     return result
   }, [filteredJobs])
+  console.log('distributedJobs', distributedJobs)
 
   // Deep Linking: Sync URL with selectedJob
   useEffect(() => {
