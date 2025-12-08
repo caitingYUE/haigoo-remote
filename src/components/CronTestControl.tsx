@@ -144,6 +144,22 @@ const CronTestControl: React.FC = () => {
       case 'batch_complete':
         return `第 ${data.batchNumber} 批次完成: 处理 ${data.processedCount} 个，丰富化 ${data.enrichedCount} 个`;
       
+      // Enrich Companies 消息类型
+      case 'scan_complete':
+        return `扫描完成：${data.totalJobs} 个岗位，${data.totalCompanies} 个可信公司`;
+      case 'processing_start':
+        return `开始处理 ${data.totalJobs} 个岗位的公司信息`;
+      case 'job_updated':
+        return `${data.message}`;
+      case 'processing_complete':
+        return `${data.message}`;
+      case 'no_updates':
+        return '没有需要更新的岗位数据';
+      case 'save_start':
+        return '开始保存更新后的岗位数据';
+      case 'save_complete':
+        return `保存完成：共保存 ${data.savedCount} 个岗位数据`;
+      
       case 'error':
         return `任务失败：${data.error}`;
       default:
@@ -185,6 +201,30 @@ const CronTestControl: React.FC = () => {
           enriched: data.stats?.totalEnriched,
           batches: data.stats?.totalBatches,
           enrichedPercentage: data.stats?.enrichedPercentage
+        };
+      
+      // Enrich Companies 进度信息
+      case 'scan_complete':
+        return { totalJobs: data.totalJobs, totalCompanies: data.totalCompanies };
+      case 'processing_start':
+        return { totalJobs: data.totalJobs };
+      case 'job_updated':
+        return { currentJob: data.jobIndex, totalJobs: data.totalJobs };
+      case 'processing_complete':
+        return {
+          updated: data.updatedCount,
+          trusted: data.trustedCount,
+          aiClassified: data.aiClassifiedCount
+        };
+      case 'save_complete':
+        return { saved: data.savedCount };
+      case 'complete':
+        return {
+          totalJobs: data.stats?.totalJobs,
+          updatedJobs: data.stats?.updatedJobs,
+          trustedMatches: data.stats?.trustedMatches,
+          aiClassifications: data.stats?.aiClassifications,
+          noUpdates: data.stats?.noUpdates
         };
       
       default:
@@ -271,6 +311,7 @@ const CronTestControl: React.FC = () => {
       const successMessage = stepName === 'Translate Jobs' ? '翻译任务完成' : 
                            stepName === 'Fetch RSS' ? 'RSS抓取任务完成' : 
                            stepName === 'Process RSS' ? 'RSS数据处理完成' : 
+                           stepName === 'Enrich Companies' ? '公司信息丰富化完成' : 
                            '任务完成';
 
       // 更新成功状态
