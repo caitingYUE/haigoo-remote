@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   // Allow passing task in body as well (for manual POSTs)
   const taskName = task || req.body?.task;
 
-  console.log(`[CronRouter] Received request for task: ${taskName}`);
+  console.log(`[CronRouter] Received request for task: ${taskName}, method: ${req.method}, query: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`);
 
   if (!taskName) {
     return res.status(400).json({
