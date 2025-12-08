@@ -329,7 +329,6 @@ const CronTestControl: React.FC = () => {
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        console.log('lines', lines);
 
         // 保留最后一行（可能不完整）
         buffer = lines.pop() || '';
@@ -444,36 +443,7 @@ const CronTestControl: React.FC = () => {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        // 检查是否为流式响应（通过Content-Type判断）
-        console.log('response headers', response.headers);
-        const contentType = response.headers.get('content-type');
-        console.log('content-type', contentType);
-        console.log('transfer-encoding', response.headers.get('transfer-encoding'));
-        const isStreaming = contentType && contentType.includes('application/json') &&
-          response.headers.get('transfer-encoding') === 'chunked';
-        console.log('isStreaming', isStreaming);
-
-        if (isStreaming) {
-          // 处理流式响应
-          await handleStreamResponse(response, i);
-        } else {
-          // 处理普通响应
-          const data = await response.json();
-
-          if (!response.ok || data.success === false) {
-            throw new Error(data.error || data.message || 'Unknown error');
-          }
-
-          // 更新成功状态
-          setResults(prev => prev.map((r, idx) =>
-            idx === i ? {
-              ...r,
-              status: 'success',
-              message: 'Task completed successfully',
-              details: data
-            } : r
-          ));
-        }
+        await handleStreamResponse(response, i);
 
       } catch (error: any) {
         console.error(`Error in step ${step.name}:`, error);
