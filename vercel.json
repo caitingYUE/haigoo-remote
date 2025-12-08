@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/*": {
+      "maxDuration": 60
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/daily-ingest",
