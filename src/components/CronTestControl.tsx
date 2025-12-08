@@ -120,6 +120,30 @@ const CronTestControl: React.FC = () => {
       case 'save_complete':
         return `保存完成，共保存 ${data.savedCount} 个唯一项目`;
       
+      // Process RSS 消息类型
+      case 'batch_start':
+        return `开始处理第 ${data.batchNumber} 批次`;
+      case 'read_complete':
+        return `读取到 ${data.itemCount} 个待处理项目`;
+      case 'no_data':
+        return '没有更多待处理的数据';
+      case 'item_processing':
+        return `${data.message} (${data.itemIndex}/${data.totalItems})`;
+      case 'item_enriched':
+        return `项目丰富化完成: ${data.descriptionLength} 字符`;
+      case 'item_enrich_failed':
+        return `项目丰富化失败: ${data.error}`;
+      case 'save_start':
+        return '开始保存处理后的岗位数据';
+      case 'save_complete':
+        return `保存完成: ${data.savedCount} 个岗位数据`;
+      case 'status_update_start':
+        return '开始更新原始数据状态';
+      case 'status_update_complete':
+        return `状态更新完成: ${data.updatedCount} 个项目`;
+      case 'batch_complete':
+        return `第 ${data.batchNumber} 批次完成: 处理 ${data.processedCount} 个，丰富化 ${data.enrichedCount} 个`;
+      
       case 'error':
         return `任务失败：${data.error}`;
       default:
@@ -130,6 +154,7 @@ const CronTestControl: React.FC = () => {
   // 从流数据提取进度信息
   const getProgressFromData = (data: any) => {
     switch (data.type) {
+      // Translate Jobs 进度信息
       case 'total':
         return { total: data.totalJobs, totalPages: data.totalPages };
       case 'page_start':
@@ -142,6 +167,26 @@ const CronTestControl: React.FC = () => {
           skipped: data.stats?.skippedJobs,
           failed: data.stats?.failedJobs
         };
+      
+      // Process RSS 进度信息
+      case 'batch_start':
+        return { batch: data.batchNumber };
+      case 'read_complete':
+        return { items: data.itemCount };
+      case 'batch_complete':
+        return {
+          processed: data.totalProcessed,
+          enriched: data.totalEnriched,
+          batches: data.batchNumber
+        };
+      case 'complete':
+        return {
+          processed: data.stats?.totalProcessed,
+          enriched: data.stats?.totalEnriched,
+          batches: data.stats?.totalBatches,
+          enrichedPercentage: data.stats?.enrichedPercentage
+        };
+      
       default:
         return undefined;
     }
@@ -225,6 +270,7 @@ const CronTestControl: React.FC = () => {
       const stepName = PIPELINE_STEPS[stepIndex].name;
       const successMessage = stepName === 'Translate Jobs' ? '翻译任务完成' : 
                            stepName === 'Fetch RSS' ? 'RSS抓取任务完成' : 
+                           stepName === 'Process RSS' ? 'RSS数据处理完成' : 
                            '任务完成';
 
       // 更新成功状态
