@@ -252,71 +252,39 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     try {
       setTranslating(true);
 
-      // 如果是 'current'，只翻译当前页
-      // 如果是 'all'，从第1页开始翻译到最后一页
-      let currentPage = scope === 'current' ? processedDataPage : 1;
-      let endPage = scope === 'current' ? processedDataPage : 1; // 初始值，'all' 模式下会在第一次请求后更新
+      // 显示开始翻译提示
+      showSuccess('开始翻译', scope === 'current' ? '正在翻译当前页...' : '正在全量翻译所有数据...');
 
-      let totalTranslated = 0;
-      let totalSkipped = 0;
-      let totalFailed = 0;
-      let totalPages = 1;
+      // 设置进度显示
+      if (scope === 'all') {
+        setTranslationProgress({ current: 0, total: 1 }); // 全量翻译时显示进度
+      }
 
-      // Initial fetch to get total pages (translate page 1)
-      showSuccess('开始翻译', scope === 'current' ? `正在翻译第 ${currentPage} 页...` : '正在获取数据总量并开始自动翻译...');
+      // 调用翻译接口 - 只调用一次
+      const response = await fetch('/api/translate-jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          page: scope === 'current' ? processedDataPage : 1, // 当前页或第1页
+          pageSize: scope === 'all' ? 10000 : processedDataPageSize // 全量翻译时使用大pageSize
+        })
+      });
 
-      do {
-        console.log(`🌍 正在自动翻译第 ${currentPage}${scope === 'all' ? `/${totalPages === 1 ? '?' : totalPages}` : ''} 页...`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `翻译失败: ${response.status}`);
+      }
 
-        // 更新进度显示
-        if (scope === 'all') {
-          setTranslationProgress({ current: currentPage, total: totalPages });
-        } else {
-          setTranslationProgress({ current: 1, total: 1 });
-        }
-
-        const response = await fetch('/api/translate-jobs', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            page: currentPage,
-            pageSize: processedDataPageSize
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `第 ${currentPage} 页翻译失败: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        // Update totals
-        if (scope === 'all' && currentPage === 1) {
-          totalPages = result.totalPages || 1;
-          endPage = totalPages;
-        }
-
-        totalTranslated += result.translated || 0;
-        totalSkipped += result.skipped || 0;
-        totalFailed += result.failed || 0;
-
-        if (scope === 'all') {
-          setTranslationProgress({ current: currentPage, total: totalPages });
-        }
-
-        currentPage++;
-
-        // 每次翻译完一页，如果正好是当前查看的页面，刷新一下视图
-        if (currentPage - 1 === processedDataPage) {
-          loadProcessedData();
-        }
-
-      } while (currentPage <= endPage);
+      const result = await response.json();
 
       console.log('✅ 翻译任务完成');
+
+      // 更新进度显示
+      if (scope === 'all') {
+        setTranslationProgress({ current: 1, total: 1 });
+      }
 
       // 重新加载当前页数据
       await loadProcessedData();
@@ -335,7 +303,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       // 显示最终结果
       showSuccess(
         scope === 'current' ? '当前页翻译完成' : '全量翻译完成',
-        `共扫描 ${scope === 'current' ? 1 : totalPages} 页: 成功翻译 ${totalTranslated} 条，跳过 ${totalSkipped} 条，失败 ${totalFailed} 条。页面已刷新。`
+        `成功翻译 ${result.translated || 0} 条，跳过 ${result.skipped || 0} 条，失败 ${result.failed || 0} 条。页面已刷新。`
       );
 
       // 广播全局事件
