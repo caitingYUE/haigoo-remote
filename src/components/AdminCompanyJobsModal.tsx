@@ -153,7 +153,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                                                 {job.location}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-500">
-                                                {DateFormatter.formatPublishTime(job.postedAt)}
+                                                {DateFormatter.formatPublishTime(job.publishedAt)}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">

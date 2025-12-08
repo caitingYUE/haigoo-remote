@@ -72,7 +72,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
       `薪资：${formatSalary(job.salary)}`,
       `地点：${job.translations?.location || job.location}`,
       `类型：${getJobTypeLabel(job.type)}`,
-      `发布时间：${DateFormatter.formatPublishTime(job.postedAt)}`
+      `发布时间：${DateFormatter.formatPublishTime(job.publishedAt)}`
     ];
 
     if (job.experienceLevel) {
@@ -194,8 +194,8 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
             <div className="font-medium text-emerald-600 text-sm">
               {formatSalary(job.salary)}
             </div>
-            <time className="text-xs text-slate-400" dateTime={job.postedAt}>
-              {DateFormatter.formatPublishTime(job.postedAt)}
+            <time className="text-xs text-slate-400" dateTime={job.publishedAt}>
+              {DateFormatter.formatPublishTime(job.publishedAt)}
             </time>
           </div>
         </div>
@@ -341,7 +341,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
             <span className="truncate max-w-[100px]">{job.translations?.location || job.location}</span>
           </div>
           <div className="flex items-center gap-1">
-            <time dateTime={job.postedAt}>{DateFormatter.formatPublishTime(job.postedAt)}</time>
+            <time dateTime={job.publishedAt}>{DateFormatter.formatPublishTime(job.publishedAt)}</time>
           </div>
         </div>
 
