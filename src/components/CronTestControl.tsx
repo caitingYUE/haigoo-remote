@@ -198,6 +198,28 @@ const CronTestControl: React.FC = () => {
   // 从流数据提取进度信息
   const getProgressFromData = (data: any) => {
     switch (data.type) {
+      // Fetch RSS 进度信息
+      case 'fetch_start':
+        return { status: 'fetching' };
+      case 'fetch_complete':
+        return { 
+          fetched: data.fetchedCount,
+          status: 'fetch_complete' 
+        };
+      case 'save_start':
+        return { status: 'saving' };
+      case 'save_complete':
+        return { 
+          saved: data.savedCount,
+          status: 'save_complete' 
+        };
+      case 'complete':
+        return {
+          fetched: data.stats?.fetched,
+          saved: data.stats?.saved,
+          status: 'complete'
+        };
+
       // Translate Jobs 进度信息
       case 'total':
         return { total: data.totalJobs, totalPages: data.totalPages };
