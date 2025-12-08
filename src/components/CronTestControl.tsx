@@ -202,16 +202,16 @@ const CronTestControl: React.FC = () => {
       case 'fetch_start':
         return { status: 'fetching' };
       case 'fetch_complete':
-        return { 
+        return {
           fetched: data.fetchedCount,
-          status: 'fetch_complete' 
+          status: 'fetch_complete'
         };
       case 'save_start':
         return { status: 'saving' };
       case 'save_complete':
-        return { 
+        return {
           saved: data.savedCount,
-          status: 'save_complete' 
+          status: 'save_complete'
         };
       case 'complete':
         return {
@@ -329,38 +329,37 @@ const CronTestControl: React.FC = () => {
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
+        console.log('lines', lines);
 
         // 保留最后一行（可能不完整）
         buffer = lines.pop() || '';
-
         for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const data = JSON.parse(line);
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
 
-              // 根据消息类型更新进度
-              const message = {
-                type: data.type,
-                message: getStreamMessage(data),
-                timestamp: new Date().toLocaleTimeString()
-              };
+            // 根据消息类型更新进度
+            const message = {
+              type: data.type,
+              message: getStreamMessage(data),
+              timestamp: new Date().toLocaleTimeString()
+            };
 
-              streamMessages.push(message);
+            streamMessages.push(message);
 
-              // 更新UI进度
-              setResults(prev => prev.map((r, idx) =>
-                idx === stepIndex ? {
-                  ...r,
-                  status: data.type === 'error' ? 'error' : 'running',
-                  message: message.message,
-                  progress: getProgressFromData(data),
-                  streamMessages: [...streamMessages]
-                } : r
-              ));
+            // 更新UI进度
+            setResults(prev => prev.map((r, idx) =>
+              idx === stepIndex ? {
+                ...r,
+                status: data.type === 'error' ? 'error' : 'running',
+                message: message.message,
+                progress: getProgressFromData(data),
+                streamMessages: [...streamMessages]
+              } : r
+            ));
 
-            } catch (parseError) {
-              console.warn('Failed to parse stream data:', parseError, line);
-            }
+          } catch (parseError) {
+            console.warn('Failed to parse stream data:', parseError, line);
           }
         }
       }
@@ -544,9 +543,9 @@ const CronTestControl: React.FC = () => {
                 <div
                   key={index}
                   className={`border rounded-lg p-4 transition-all duration-200 ${result.status === 'running' ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100' :
-                      result.status === 'success' ? 'border-green-200 bg-green-50' :
-                        result.status === 'error' ? 'border-red-200 bg-red-50' :
-                          'border-slate-200 bg-white'
+                    result.status === 'success' ? 'border-green-200 bg-green-50' :
+                      result.status === 'error' ? 'border-red-200 bg-red-50' :
+                        'border-slate-200 bg-white'
                     }`}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -608,8 +607,8 @@ const CronTestControl: React.FC = () => {
                       <div className="text-xs space-y-1 max-h-20 overflow-y-auto">
                         {result.streamMessages.slice(-5).map((msg, idx) => (
                           <div key={idx} className={`px-2 py-1 rounded ${msg.type === 'error' ? 'bg-red-100 text-red-800' :
-                              msg.type === 'complete' ? 'bg-green-100 text-green-800' :
-                                'bg-slate-100 text-slate-600'
+                            msg.type === 'complete' ? 'bg-green-100 text-green-800' :
+                              'bg-slate-100 text-slate-600'
                             }`}>
                             <span className="font-mono text-[10px] opacity-70">{msg.timestamp}</span>
                             <span className="ml-2">{msg.message}</span>
