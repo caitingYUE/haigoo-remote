@@ -668,7 +668,7 @@ export default function AdminCompanyManagementPage() {
                                                     {job.salary && (
                                                         <span>{job.salary.min}-{job.salary.max} {job.salary.currency}</span>
                                                     )}
-                                                    <span>{new Date(job.postedAt).toLocaleDateString()}</span>
+                                                    <span>{new Date(job.publishedAt).toLocaleDateString()}</span>
                                                 </div>
                                             </div>
                                             {job.sourceUrl && (
