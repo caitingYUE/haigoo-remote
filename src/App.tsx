@@ -26,6 +26,7 @@ const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
+const AdminTalentPage = lazy(() => import('./pages/AdminTalentPage'))
 
 function App() {
   return (
@@ -71,6 +72,13 @@ function App() {
                 <Route path="/admin_team" element={
                   <AdminRoute>
                     <AdminTeamPage />
+                  </AdminRoute>
+                } />
+
+                {/* 人才管理页面（需要登录） */}
+                <Route path="/admin/talent" element={
+                  <AdminRoute>
+                    <AdminTalentPage />
                   </AdminRoute>
                 } />
 

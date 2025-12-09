@@ -294,3 +294,26 @@ ALTER TABLE trusted_companies DROP COLUMN IF EXISTS culture;
 ALTER TABLE trusted_companies DROP COLUMN IF EXISTS founder_intro;
 ALTER TABLE trusted_companies DROP COLUMN IF EXISTS culture_image;
 ALTER TABLE trusted_companies DROP COLUMN IF EXISTS show_culture_on_home;
+
+-- 2025-12-09: Add talents table for Talent Management System
+CREATE TABLE talents (
+  id SERIAL PRIMARY KEY,
+  talent_id VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255),
+  title VARCHAR(255),
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  location VARCHAR(255),
+  years_of_experience INTEGER,
+  education JSONB DEFAULT '[]',
+  skills JSONB DEFAULT '[]',
+  tags JSONB DEFAULT '[]',
+  summary TEXT,
+  resume_id VARCHAR(255),
+  resume_url VARCHAR(2000),
+  source VARCHAR(50) DEFAULT 'admin_upload',
+  status VARCHAR(50) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
