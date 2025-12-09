@@ -311,8 +311,8 @@ const CronTestControl: React.FC = () => {
     }
   };
 
-  // 通用的流式响应处理函数
-  const handleStreamResponse = async (response: Response, stepIndex: number) => {
+  // 通用的SSE响应处理函数
+  const handleSSEResponse = async (response: Response, stepIndex: number) => {
     if (!response.body) {
       throw new Error('No response body');
     }
@@ -332,33 +332,50 @@ const CronTestControl: React.FC = () => {
 
         // 保留最后一行（可能不完整）
         buffer = lines.pop() || '';
+        
+        let eventType = 'message'; // 默认事件类型
+        let dataLine = '';
+        
         for (const line of lines) {
           if (!line.trim()) continue;
-          try {
-            const data = JSON.parse(line);
+          
+          // 解析SSE格式：event: xxx\ndata: {...}\n\n
+          if (line.startsWith('event:')) {
+            eventType = line.substring(6).trim();
+          } else if (line.startsWith('data:')) {
+            dataLine = line.substring(5).trim();
+          } else if (line.trim() === '' && dataLine) {
+            // 空行表示一个完整的事件结束
+            try {
+              const data = JSON.parse(dataLine);
+              
+              // 根据消息类型更新进度
+              const message = {
+                type: data.type,
+                message: getStreamMessage(data),
+                timestamp: new Date().toLocaleTimeString()
+              };
 
-            // 根据消息类型更新进度
-            const message = {
-              type: data.type,
-              message: getStreamMessage(data),
-              timestamp: new Date().toLocaleTimeString()
-            };
+              streamMessages.push(message);
 
-            streamMessages.push(message);
+              // 更新UI进度
+              setResults(prev => prev.map((r, idx) =>
+                idx === stepIndex ? {
+                  ...r,
+                  status: data.type === 'error' ? 'error' : 'running',
+                  message: message.message,
+                  progress: getProgressFromData(data),
+                  streamMessages: [...streamMessages]
+                } : r
+              ));
 
-            // 更新UI进度
-            setResults(prev => prev.map((r, idx) =>
-              idx === stepIndex ? {
-                ...r,
-                status: data.type === 'error' ? 'error' : 'running',
-                message: message.message,
-                progress: getProgressFromData(data),
-                streamMessages: [...streamMessages]
-              } : r
-            ));
-
-          } catch (parseError) {
-            console.warn('Failed to parse stream data:', parseError, line);
+              // 重置事件和数据
+              eventType = 'message';
+              dataLine = '';
+              
+            } catch (parseError) {
+              console.warn('Failed to parse SSE data:', parseError, dataLine);
+            }
           }
         }
       }
@@ -374,7 +391,7 @@ const CronTestControl: React.FC = () => {
           };
           streamMessages.push(message);
         } catch (parseError) {
-          console.warn('Failed to parse final stream data:', parseError, buffer);
+          console.warn('Failed to parse final SSE data:', parseError, buffer);
         }
       }
 
@@ -443,7 +460,7 @@ const CronTestControl: React.FC = () => {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        await handleStreamResponse(response, i);
+        await handleSSEResponse(response, i);
 
       } catch (error: any) {
         console.error(`Error in step ${step.name}:`, error);
