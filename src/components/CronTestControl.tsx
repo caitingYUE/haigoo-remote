@@ -80,11 +80,11 @@ const CronTestControl: React.FC = () => {
   };
 
   const PIPELINE_STEPS = [
-    { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss' },
-    { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss' },
-    { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
+    // { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss' },
+    // { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss' },
+    // { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
     { name: 'Enrich Companies', endpoint: '/api/cron/stream-enrich-companies' },
-    { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
+    // { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
   ];
 
   // 根据流数据生成用户友好的消息
@@ -340,11 +340,15 @@ const CronTestControl: React.FC = () => {
           if (!line.trim()) continue;
           
           // 解析SSE格式：event: xxx\ndata: {...}\n\n
+          console.log('line', line);
           if (line.startsWith('event:')) {
+            console.log('event:', line.substring(6).trim());
             eventType = line.substring(6).trim();
           } else if (line.startsWith('data:')) {
+            console.log('data:', line.substring(5).trim());
             dataLine = line.substring(5).trim();
           } else if (line.trim() === '' && dataLine) {
+            console.log('empty line');
             // 空行表示一个完整的事件结束
             try {
               const data = JSON.parse(dataLine);
