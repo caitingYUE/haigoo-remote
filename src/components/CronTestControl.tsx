@@ -26,6 +26,7 @@ interface StepResult {
 const CronTestControl: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [executionMode, setExecutionMode] = useState<'pipeline' | 'single'>('pipeline');
   const [results, setResults] = useState<StepResult[]>([
     { step: 'Fetch RSS', status: 'pending' },
     { step: 'Process RSS', status: 'pending' },
@@ -80,11 +81,11 @@ const CronTestControl: React.FC = () => {
   };
 
   const PIPELINE_STEPS = [
-    // { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss' },
-    // { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss' },
-    // { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
+    { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss' },
+    { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss' },
+    { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
     { name: 'Enrich Companies', endpoint: '/api/cron/stream-enrich-companies' },
-    // { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
+    { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
   ];
 
   // 根据流数据生成用户友好的消息
@@ -205,25 +206,28 @@ const CronTestControl: React.FC = () => {
     }
   };
 
-  // 从流数据提取进度信息
-  const getProgressFromData = (data: any) => {
-    switch (data.type) {
+  // 从流数据提取进度信息（根据步骤类型区分相同的data.type）
+  const getProgressFromData = (data: any, stepName?: string) => {
+    // 根据步骤名称和data.type组合判断
+    const stepType = stepName ? `${stepName}:${data.type}` : data.type;
+    
+    switch (stepType) {
       // Fetch RSS 进度信息
-      case 'fetch_start':
+      case 'Fetch RSS:fetch_start':
         return { status: 'fetching' };
-      case 'fetch_complete':
+      case 'Fetch RSS:fetch_complete':
         return {
           fetched: data.fetchedCount,
           status: 'fetch_complete'
         };
-      case 'save_start':
+      case 'Fetch RSS:save_start':
         return { status: 'saving' };
-      case 'save_complete':
+      case 'Fetch RSS:save_complete':
         return {
           saved: data.savedCount,
           status: 'save_complete'
         };
-      case 'complete':
+      case 'Fetch RSS:complete':
         return {
           fetched: data.stats?.fetched,
           saved: data.stats?.saved,
@@ -231,13 +235,13 @@ const CronTestControl: React.FC = () => {
         };
 
       // Translate Jobs 进度信息
-      case 'total':
+      case 'Translate Jobs:total':
         return { total: data.totalJobs, totalPages: data.totalPages };
-      case 'page_start':
+      case 'Translate Jobs:page_start':
         return { page: data.page, totalPages: data.totalPages };
-      case 'page_translated':
+      case 'Translate Jobs:page_translated':
         return { translated: data.successCount, failed: data.failCount };
-      case 'complete':
+      case 'Translate Jobs:complete':
         return {
           translated: data.stats?.translatedJobs,
           skipped: data.stats?.skippedJobs,
@@ -245,17 +249,17 @@ const CronTestControl: React.FC = () => {
         };
 
       // Process RSS 进度信息
-      case 'batch_start':
+      case 'Process RSS:batch_start':
         return { batch: data.batchNumber };
-      case 'read_complete':
+      case 'Process RSS:read_complete':
         return { items: data.itemCount };
-      case 'batch_complete':
+      case 'Process RSS:batch_complete':
         return {
           processed: data.totalProcessed,
           enriched: data.totalEnriched,
           batches: data.batchNumber
         };
-      case 'complete':
+      case 'Process RSS:complete':
         return {
           processed: data.stats?.totalProcessed,
           enriched: data.stats?.totalEnriched,
@@ -264,27 +268,27 @@ const CronTestControl: React.FC = () => {
         };
 
       // Enrich Companies 进度信息
-      case 'total':
+      case 'Enrich Companies:total':
         return { total: data.totalJobs, totalPages: data.totalPages };
-      case 'scan_complete':
+      case 'Enrich Companies:scan_complete':
         return { totalJobs: data.totalJobs, totalCompanies: data.totalCompanies };
-      case 'page_start':
+      case 'Enrich Companies:page_start':
         return { page: data.page, totalPages: data.totalPages };
-      case 'page_stats':
+      case 'Enrich Companies:page_stats':
         return { updated: data.updatedCount };
-      case 'processing_start':
+      case 'Enrich Companies:processing_start':
         return { totalJobs: data.totalJobs, page: data.page };
-      case 'job_updated':
+      case 'Enrich Companies:job_updated':
         return { currentJob: data.jobIndex, totalJobs: data.totalJobs };
-      case 'processing_complete':
+      case 'Enrich Companies:processing_complete':
         return {
           updated: data.updatedCount,
           trusted: data.trustedCount,
           aiClassified: data.aiClassifiedCount
         };
-      case 'save_complete':
+      case 'Enrich Companies:save_complete':
         return { saved: data.savedCount, page: data.page };
-      case 'complete':
+      case 'Enrich Companies:complete':
         return {
           totalJobs: data.stats?.totalJobs,
           updatedJobs: data.stats?.updatedJobs,
@@ -294,27 +298,27 @@ const CronTestControl: React.FC = () => {
         };
 
       // Crawl Trusted Jobs 进度信息
-      case 'scan_complete':
+      case 'Crawl Trusted Jobs:scan_complete':
         return { totalCompanies: data.totalCompanies };
-      case 'target_selected':
+      case 'Crawl Trusted Jobs:target_selected':
         return { targetCount: data.targetCount, totalCompanies: data.totalCompanies };
-      case 'crawl_start':
+      case 'Crawl Trusted Jobs:crawl_start':
         return { targetCount: data.targetCount };
-      case 'company_crawl_start':
+      case 'Crawl Trusted Jobs:company_crawl_start':
         return { currentCompany: data.companyIndex, totalCompanies: data.totalCompanies };
-      case 'company_crawl_complete':
+      case 'Crawl Trusted Jobs:company_crawl_complete':
         return { jobsFound: data.jobsFound, companyUpdated: data.companyUpdated };
-      case 'crawl_complete':
+      case 'Crawl Trusted Jobs:crawl_complete':
         return {
           processedCompanies: data.processedCompanies,
           updatedCompanies: data.updatedCompanies,
           newJobsFound: data.newJobsFound
         };
-      case 'save_jobs_complete':
+      case 'Crawl Trusted Jobs:save_jobs_complete':
         return { savedCount: data.savedCount, newJobs: data.newJobs };
-      case 'save_companies_complete':
+      case 'Crawl Trusted Jobs:save_companies_complete':
         return { savedCount: data.savedCount, updatedCount: data.updatedCount };
-      case 'complete':
+      case 'Crawl Trusted Jobs:complete':
         return {
           processedCompanies: data.stats?.processedCompanies,
           updatedCompanies: data.stats?.updatedCompanies,
@@ -322,8 +326,73 @@ const CronTestControl: React.FC = () => {
           totalCompanies: data.stats?.totalCompanies
         };
 
+      // 向后兼容：如果没有提供stepName，使用原来的逻辑（可能会有冲突）
       default:
-        return undefined;
+        // 对于没有步骤上下文的调用，使用简单的data.type匹配
+        switch (data.type) {
+          case 'fetch_start':
+            return { status: 'fetching' };
+          case 'fetch_complete':
+            return { fetched: data.fetchedCount, status: 'fetch_complete' };
+          case 'save_start':
+            return { status: 'saving' };
+          case 'save_complete':
+            return { saved: data.savedCount, status: 'save_complete' };
+          case 'batch_start':
+            return { batch: data.batchNumber };
+          case 'read_complete':
+            return { items: data.itemCount };
+          case 'batch_complete':
+            return { processed: data.totalProcessed, enriched: data.totalEnriched, batches: data.batchNumber };
+          case 'scan_complete':
+            return { totalCompanies: data.totalCompanies };
+          case 'target_selected':
+            return { targetCount: data.targetCount, totalCompanies: data.totalCompanies };
+          case 'crawl_start':
+            return { targetCount: data.targetCount };
+          case 'company_crawl_start':
+            return { currentCompany: data.companyIndex, totalCompanies: data.totalCompanies };
+          case 'company_crawl_complete':
+            return { jobsFound: data.jobsFound, companyUpdated: data.companyUpdated };
+          case 'crawl_complete':
+            return { processedCompanies: data.processedCompanies, updatedCompanies: data.updatedCompanies, newJobsFound: data.newJobsFound };
+          case 'save_jobs_complete':
+            return { savedCount: data.savedCount, newJobs: data.newJobs };
+          case 'save_companies_complete':
+            return { savedCount: data.savedCount, updatedCount: data.updatedCount };
+          case 'page_translated':
+            return { translated: data.successCount, failed: data.failCount };
+          case 'page_stats':
+            return { updated: data.updatedCount };
+          case 'processing_start':
+            return { totalJobs: data.totalJobs, page: data.page };
+          case 'job_updated':
+            return { currentJob: data.jobIndex, totalJobs: data.totalJobs };
+          case 'processing_complete':
+            return { updated: data.updatedCount, trusted: data.trustedCount, aiClassified: data.aiClassifiedCount };
+          case 'save_complete':
+            return { saved: data.savedCount, page: data.page };
+          case 'total':
+            return { total: data.totalJobs, totalPages: data.totalPages };
+          case 'page_start':
+            return { page: data.page, totalPages: data.totalPages };
+          case 'complete':
+            // 对于complete类型，尝试根据数据结构推断步骤类型
+            if (data.stats?.translatedJobs !== undefined) {
+              return { translated: data.stats.translatedJobs, skipped: data.stats.skippedJobs, failed: data.stats.failedJobs };
+            } else if (data.stats?.fetched !== undefined) {
+              return { fetched: data.stats.fetched, saved: data.stats.saved, status: 'complete' };
+            } else if (data.stats?.totalProcessed !== undefined) {
+              return { processed: data.stats.totalProcessed, enriched: data.stats.totalEnriched, batches: data.stats.totalBatches, enrichedPercentage: data.stats.enrichedPercentage };
+            } else if (data.stats?.totalJobs !== undefined) {
+              return { totalJobs: data.stats.totalJobs, updatedJobs: data.stats.updatedJobs, trustedMatches: data.stats.trustedMatches, aiClassifications: data.stats.aiClassifications, noUpdates: data.stats.noUpdates };
+            } else if (data.stats?.processedCompanies !== undefined) {
+              return { processedCompanies: data.stats.processedCompanies, updatedCompanies: data.stats.updatedCompanies, newJobsFound: data.stats.newJobsFound, totalCompanies: data.stats.totalCompanies };
+            }
+            return undefined;
+          default:
+            return undefined;
+        }
     }
   };
 
@@ -377,7 +446,7 @@ const CronTestControl: React.FC = () => {
                   ...r,
                   status: data.type === 'error' ? 'error' : 'running',
                   message: message.message,
-                  progress: getProgressFromData(data),
+                  progress: getProgressFromData(data, PIPELINE_STEPS[stepIndex].name),
                   streamMessages: [...streamMessages]
                 } : r
               ));
@@ -436,6 +505,55 @@ const CronTestControl: React.FC = () => {
 
     } finally {
       reader.releaseLock();
+    }
+  };
+
+  // 执行单个步骤
+  const runSingleStep = async (stepIndex: number) => {
+    if (isRunning) return;
+
+    setIsRunning(true);
+    const step = PIPELINE_STEPS[stepIndex];
+
+    // Update current step to running
+    setResults(prev => prev.map((r, idx) =>
+      idx === stepIndex ? {
+        ...r,
+        status: 'running',
+        timestamp: new Date().toLocaleTimeString(),
+        streamMessages: [],
+        progress: undefined
+      } : r
+    ));
+
+    try {
+      // 发送请求
+      const response = await fetch(step.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      await handleSSEResponse(response, stepIndex);
+
+    } catch (error: any) {
+      console.error(`Error in step ${step.name}:`, error);
+      // Update error
+      setResults(prev => prev.map((r, idx) =>
+        idx === stepIndex ? {
+          ...r,
+          status: 'error',
+          message: error.message || 'Request failed',
+          details: error
+        } : r
+      ));
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -533,12 +651,40 @@ const CronTestControl: React.FC = () => {
                   Manually trigger the scheduled task pipeline for testing.
                 </p>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <XCircle size={24} />
-              </button>
+              <div className="flex items-center gap-4">
+                {/* Execution Mode Toggle */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-600">执行模式:</span>
+                  <div className="flex bg-slate-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setExecutionMode('pipeline')}
+                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                        executionMode === 'pipeline'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      按顺序执行
+                    </button>
+                    <button
+                      onClick={() => setExecutionMode('single')}
+                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                        executionMode === 'single'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      单独执行
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <XCircle size={24} />
+                </button>
+              </div>
             </div>
 
             {/* Content */}
@@ -577,11 +723,31 @@ const CronTestControl: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="text-sm">
-                      {result.status === 'pending' && <span className="text-slate-400">Waiting...</span>}
-                      {result.status === 'running' && <span className="text-indigo-600 font-medium">Executing...</span>}
-                      {result.status === 'success' && <span className="text-green-600 font-medium">Completed</span>}
-                      {result.status === 'error' && <span className="text-red-600 font-medium">Failed</span>}
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm">
+                        {result.status === 'pending' && <span className="text-slate-400">Waiting...</span>}
+                        {result.status === 'running' && <span className="text-indigo-600 font-medium">Executing...</span>}
+                        {result.status === 'success' && <span className="text-green-600 font-medium">Completed</span>}
+                        {result.status === 'error' && <span className="text-red-600 font-medium">Failed</span>}
+                      </div>
+                      
+                      {/* 单独执行按钮 */}
+                      {executionMode === 'single' && (
+                        <button
+                          onClick={() => runSingleStep(index)}
+                          disabled={isRunning}
+                          className={`
+                            px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1
+                            ${isRunning || result.status === 'running'
+                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                            }
+                          `}
+                        >
+                          <Play size={14} />
+                          <span>执行</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -641,37 +807,44 @@ const CronTestControl: React.FC = () => {
             </div>
 
             {/* Footer / Actions */}
-            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-                disabled={isRunning}
-              >
-                Close
-              </button>
-              <button
-                onClick={runPipeline}
-                disabled={isRunning}
-                className={`
-                    px-6 py-2 rounded-lg font-medium text-white flex items-center gap-2 transition-all
-                    ${isRunning
-                    ? 'bg-indigo-400 cursor-not-allowed'
-                    : 'bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg'
-                  }
-                `}
-              >
-                {isRunning ? (
-                  <>
-                    <Loader className="animate-spin" size={18} />
-                    Running Pipeline...
-                  </>
-                ) : (
-                  <>
-                    <Play size={18} />
-                    Start Pipeline Test
-                  </>
+            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+              <div className="text-sm text-slate-500">
+                {executionMode === 'pipeline' ? '按顺序执行所有步骤' : '点击每个步骤的"执行"按钮单独运行'}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                  disabled={isRunning}
+                >
+                  Close
+                </button>
+                {executionMode === 'pipeline' && (
+                  <button
+                    onClick={runPipeline}
+                    disabled={isRunning}
+                    className={`
+                        px-6 py-2 rounded-lg font-medium text-white flex items-center gap-2 transition-all
+                        ${isRunning
+                        ? 'bg-indigo-400 cursor-not-allowed'
+                        : 'bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg'
+                      }
+                    `}
+                  >
+                    {isRunning ? (
+                      <>
+                        <Loader className="animate-spin" size={18} />
+                        Running Pipeline...
+                      </>
+                    ) : (
+                      <>
+                        <Play size={18} />
+                        Start Pipeline Test
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
+              </div>
             </div>
           </div>
         </div>
