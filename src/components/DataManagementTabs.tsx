@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Database, RefreshCw, Trash2, CheckCircle,
-  Filter, FileText,
+  Filter,
   Briefcase, BarChart3, Loader, Edit3, Eye, Link as LinkIcon,
   MapPin, Calendar, Server, Star, ExternalLink, Info, Plus, Building, X,
-  ChevronLeft, ChevronRight, ChevronDown
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { JobCategory } from '../types/rss-types';
 import { dataManagementService, RawRSSData, ProcessedJobData, StorageStats } from '../services/data-management-service';
@@ -21,10 +21,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [activeTab, setActiveTab] = useState<'raw' | 'processed' | 'storage'>('processed');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [translating, setTranslating] = useState(false); // 🆕 翻译按钮专用状态
-  const [translationProgress, setTranslationProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 }); // 🆕 翻译进度状态
-  const [showTranslateMenu, setShowTranslateMenu] = useState(false); // 🆕 翻译菜单显示状态
-  const translateMenuRef = useRef<HTMLDivElement>(null); // 🆕 翻译菜单引用
   const { showSuccess, showError } = useNotificationHelpers();
 
   // 原始数据状态
@@ -148,18 +144,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       }
     };
     loadCategories();
-
-    // 点击外部关闭翻译菜单
-    const handleClickOutside = (event: MouseEvent) => {
-      if (translateMenuRef.current && !translateMenuRef.current.contains(event.target as Node)) {
-        setShowTranslateMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
   }, [activeTab]);
 
   const computeRegion = useCallback((job: ProcessedJobData): 'domestic' | 'overseas' | undefined => {
@@ -243,84 +227,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       setSyncing(false);
     }
   };
-
-  // 🆕 手动触发后端翻译任务 - 支持 "current" (当前页) 或 "all" (所有页)
-  const handleTriggerTranslation = async (scope: 'current' | 'all') => {
-    if (translating) return;
-    setShowTranslateMenu(false);
-
-    try {
-      setTranslating(true);
-
-      // 显示开始翻译提示
-      showSuccess('开始翻译', scope === 'current' ? '正在翻译当前页...' : '正在全量翻译所有数据...');
-
-      // 设置进度显示
-      if (scope === 'all') {
-        setTranslationProgress({ current: 0, total: 1 }); // 全量翻译时显示进度
-      }
-
-      // 调用翻译接口 - 只调用一次
-      const response = await fetch('/api/translate-jobs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          page: scope === 'current' ? processedDataPage : 1, // 当前页或第1页
-          pageSize: scope === 'all' ? 10000 : processedDataPageSize // 全量翻译时使用大pageSize
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `翻译失败: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      console.log('✅ 翻译任务完成');
-
-      // 更新进度显示
-      if (scope === 'all') {
-        setTranslationProgress({ current: 1, total: 1 });
-      }
-
-      // 重新加载当前页数据
-      await loadProcessedData();
-
-      // 🆕 清除前端页面缓存
-      try {
-        const cacheKeys = Object.keys(localStorage).filter(key =>
-          key.includes('jobs') || key.includes('cache')
-        );
-        cacheKeys.forEach(key => localStorage.removeItem(key));
-        console.log('🗑️ 已清除前端缓存');
-      } catch (e) {
-        console.warn('清除缓存失败:', e);
-      }
-
-      // 显示最终结果
-      showSuccess(
-        scope === 'current' ? '当前页翻译完成' : '全量翻译完成',
-        `成功翻译 ${result.translated || 0} 条，跳过 ${result.skipped || 0} 条，失败 ${result.failed || 0} 条。页面已刷新。`
-      );
-
-      // 广播全局事件
-      try {
-        window.dispatchEvent(new Event('processed-jobs-updated'));
-      } catch (e) {
-        console.warn('广播事件失败', e);
-      }
-    } catch (error) {
-      console.error('❌ 翻译中断:', error);
-      showError('翻译中断', error instanceof Error ? error.message : '请检查网络连接');
-    } finally {
-      setTranslating(false);
-      setTranslationProgress({ current: 0, total: 0 });
-    }
-  };
-
   // 导出数据
 
 
@@ -1333,40 +1239,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? '刷新中...' : '刷新处理后数据'}
               </button>
-              <div className="relative" ref={translateMenuRef}>
-                <button
-                  onClick={() => setShowTranslateMenu(!showTranslateMenu)}
-                  disabled={translating || syncing}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-green-300 text-green-700 bg-green-50 rounded-md hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title="将岗位数据翻译成中文"
-                >
-                  <svg className={`w-3 h-3 ${translating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                  </svg>
-                  {translating ? (translationProgress.total > 0 ? `翻译中 ${translationProgress.current}/${translationProgress.total}...` : '翻译中...') : '翻译数据'}
-                  <ChevronDown className="w-3 h-3 ml-1" />
-                </button>
-
-                {/* 翻译选项菜单 */}
-                {showTranslateMenu && !translating && (
-                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
-                    <button
-                      onClick={() => handleTriggerTranslation('current')}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-green-700 flex items-center gap-2"
-                    >
-                      <FileText className="w-4 h-4" />
-                      仅翻译当前页
-                    </button>
-                    <button
-                      onClick={() => handleTriggerTranslation('all')}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-green-700 flex items-center gap-2"
-                    >
-                      <Database className="w-4 h-4" />
-                      翻译所有数据
-                    </button>
-                  </div>
-                )}
-              </div>
             </div>
           )}
           {/* 按需：导出数据按钮已移除 */}

@@ -30,9 +30,9 @@ const CronTestControl: React.FC = () => {
   const [results, setResults] = useState<StepResult[]>([
     { step: 'Fetch RSS', status: 'pending' },
     { step: 'Process RSS', status: 'pending' },
+    { step: 'Crawl Trusted Jobs', status: 'pending' },
     { step: 'Translate Jobs', status: 'pending' },
     { step: 'Enrich Companies', status: 'pending' },
-    { step: 'Crawl Trusted Jobs', status: 'pending' },
   ]);
 
   // Dragging state
@@ -83,9 +83,9 @@ const CronTestControl: React.FC = () => {
   const PIPELINE_STEPS = [
     { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss' },
     { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss' },
+    { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
     { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
     { name: 'Enrich Companies', endpoint: '/api/cron/stream-enrich-companies' },
-    { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
   ];
 
   // 根据流数据生成用户友好的消息
@@ -210,7 +210,7 @@ const CronTestControl: React.FC = () => {
   const getProgressFromData = (data: any, stepName?: string) => {
     // 根据步骤名称和data.type组合判断
     const stepType = stepName ? `${stepName}:${data.type}` : data.type;
-    
+
     switch (stepType) {
       // Fetch RSS 进度信息
       case 'Fetch RSS:fetch_start':
@@ -417,13 +417,13 @@ const CronTestControl: React.FC = () => {
 
         // 保留最后一行（可能不完整）
         buffer = lines.pop() || '';
-        
+
         let eventType = 'message'; // 默认事件类型
         let dataLine = '';
-        
+
         for (const line of lines) {
           if (!line.trim()) continue;
-          
+
           // 解析SSE格式：event: xxx\ndata: {...}\n\n
           if (line.startsWith('event:')) {
             eventType = line.substring(6).trim();
@@ -454,7 +454,7 @@ const CronTestControl: React.FC = () => {
               // 重置事件和数据
               eventType = 'message';
               dataLine = '';
-              
+
             } catch (parseError) {
               console.warn('Failed to parse SSE data:', parseError, dataLine);
             }
@@ -658,21 +658,19 @@ const CronTestControl: React.FC = () => {
                   <div className="flex bg-slate-100 rounded-lg p-1">
                     <button
                       onClick={() => setExecutionMode('pipeline')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        executionMode === 'pipeline'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
+                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${executionMode === 'pipeline'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                        }`}
                     >
                       按顺序执行
                     </button>
                     <button
                       onClick={() => setExecutionMode('single')}
-                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        executionMode === 'single'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
+                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${executionMode === 'single'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                        }`}
                     >
                       单独执行
                     </button>
@@ -730,7 +728,7 @@ const CronTestControl: React.FC = () => {
                         {result.status === 'success' && <span className="text-green-600 font-medium">Completed</span>}
                         {result.status === 'error' && <span className="text-red-600 font-medium">Failed</span>}
                       </div>
-                      
+
                       {/* 单独执行按钮 */}
                       {executionMode === 'single' && (
                         <button
