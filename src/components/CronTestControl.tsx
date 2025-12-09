@@ -145,10 +145,20 @@ const CronTestControl: React.FC = () => {
         return `第 ${data.batchNumber} 批次完成: 处理 ${data.processedCount} 个，丰富化 ${data.enrichedCount} 个`;
 
       // Enrich Companies 消息类型
+      case 'total':
+        return `共 ${data.totalJobs} 个岗位，分 ${data.totalPages} 页处理`;
       case 'scan_complete':
         return `扫描完成：${data.totalJobs} 个岗位，${data.totalCompanies} 个可信公司`;
+      case 'page_start':
+        return `开始处理第 ${data.page}/${data.totalPages} 页`;
+      case 'page_stats':
+        return `第 ${data.page} 页：${data.updatedCount} 个岗位需要更新`;
+      case 'page_skip':
+        return `第 ${data.page} 页跳过：${data.reason}`;
+      case 'page_complete':
+        return `第 ${data.page} 页处理完成`;
       case 'processing_start':
-        return `开始处理 ${data.totalJobs} 个岗位的公司信息`;
+        return `开始处理第 ${data.page} 页 ${data.totalJobs} 个岗位的公司信息`;
       case 'job_updated':
         return `${data.message}`;
       case 'processing_complete':
@@ -156,9 +166,9 @@ const CronTestControl: React.FC = () => {
       case 'no_updates':
         return '没有需要更新的岗位数据';
       case 'save_start':
-        return '开始保存更新后的岗位数据';
+        return `开始保存第 ${data.page} 页更新后的岗位数据`;
       case 'save_complete':
-        return `保存完成：共保存 ${data.savedCount} 个岗位数据`;
+        return `第 ${data.page} 页保存完成：共保存 ${data.savedCount} 个岗位数据`;
 
       // Crawl Trusted Jobs 消息类型
       case 'no_companies':
@@ -254,10 +264,16 @@ const CronTestControl: React.FC = () => {
         };
 
       // Enrich Companies 进度信息
+      case 'total':
+        return { total: data.totalJobs, totalPages: data.totalPages };
       case 'scan_complete':
         return { totalJobs: data.totalJobs, totalCompanies: data.totalCompanies };
+      case 'page_start':
+        return { page: data.page, totalPages: data.totalPages };
+      case 'page_stats':
+        return { updated: data.updatedCount };
       case 'processing_start':
-        return { totalJobs: data.totalJobs };
+        return { totalJobs: data.totalJobs, page: data.page };
       case 'job_updated':
         return { currentJob: data.jobIndex, totalJobs: data.totalJobs };
       case 'processing_complete':
@@ -267,7 +283,7 @@ const CronTestControl: React.FC = () => {
           aiClassified: data.aiClassifiedCount
         };
       case 'save_complete':
-        return { saved: data.savedCount };
+        return { saved: data.savedCount, page: data.page };
       case 'complete':
         return {
           totalJobs: data.stats?.totalJobs,
@@ -340,19 +356,12 @@ const CronTestControl: React.FC = () => {
           if (!line.trim()) continue;
           
           // 解析SSE格式：event: xxx\ndata: {...}\n\n
-          console.log('line', line);
           if (line.startsWith('event:')) {
-            console.log('event:', line.substring(6).trim());
             eventType = line.substring(6).trim();
           } else if (line.startsWith('data:')) {
-            console.log('data:', line.substring(5).trim());
             dataLine = line.substring(5).trim();
-          } else if (line.trim() === '' && dataLine) {
-            console.log('empty line');
-            // 空行表示一个完整的事件结束
             try {
               const data = JSON.parse(dataLine);
-              
               // 根据消息类型更新进度
               const message = {
                 type: data.type,
