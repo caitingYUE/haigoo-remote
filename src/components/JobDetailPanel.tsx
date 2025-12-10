@@ -291,6 +291,23 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </div>
                 </div>
 
+                {/* Trusted Company Standards Banner */}
+                {job.isTrusted && (
+                    <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2 text-blue-800 font-bold text-sm">
+                            <Building2 className="w-4 h-4" />
+                            <span>俱乐部可信企业标准</span>
+                        </div>
+                        <ul className="space-y-1 text-xs text-slate-600 list-disc list-inside">
+                            <li>官网、LinkedIn等主页信息正常，近期有持续更新</li>
+                            <li>主营业务/产品运营状态正常，且非灰黑产</li>
+                            <li>企业远程文化悠久或远程友好，支持员工成长</li>
+                            <li>有中国业务/分公司或对中国员工友好</li>
+                            <li>岗位来自官方渠道，有对接人或联系方式</li>
+                        </ul>
+                    </div>
+                )}
+
                 {job.salary && typeof job.salary === 'object' && job.salary.min > 0 && (
                     <div className="flex items-center gap-2 mb-4">
                         <DollarSign className="w-4 h-4 text-indigo-600" />

@@ -126,9 +126,36 @@ export default function TrustedCompaniesPage() {
                     <h1 className="text-3xl font-bold text-slate-900 mb-3">
                         遇见创新者：我们的可信远程企业
                     </h1>
-                    <p className="text-lg text-slate-500 max-w-3xl mx-auto mb-8">
-                        探索我们精选的经过验证的企业，它们以远程文化、使命和提供的机会而闻名。
-                    </p>
+                    
+                    {/* Trusted Company Standards - Hero Banner */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 md:p-5 mb-8 text-left max-w-4xl mx-auto shadow-sm">
+                        <div className="flex items-center gap-2 mb-3 text-blue-800 font-bold text-base">
+                            <Building className="w-5 h-5" />
+                            <span>俱乐部可信企业标准</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs md:text-sm text-slate-600">
+                            <div className="flex items-start gap-2">
+                                <span className="text-blue-400 mt-1">•</span>
+                                <span>官网、LinkedIn等主页信息正常，近期有持续更新</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="text-blue-400 mt-1">•</span>
+                                <span>主营业务/产品运营状态正常，且非灰黑产</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="text-blue-400 mt-1">•</span>
+                                <span>企业远程文化悠久或远程友好，支持员工成长</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="text-blue-400 mt-1">•</span>
+                                <span>有中国业务/分公司或对中国员工友好</span>
+                            </div>
+                            <div className="flex items-start gap-2 md:col-span-2">
+                                <span className="text-blue-400 mt-1">•</span>
+                                <span>岗位来自官方招聘平台发布/内推合作，有可联系的对接人或联系方式</span>
+                            </div>
+                        </div>
+                    </div>
 
                     <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-4 items-center">
                         <div className="flex-1 w-full">
