@@ -9,6 +9,7 @@ export interface JobPreferences {
     levels: string[]
     contactEmail?: string
     contactWechat?: string
+    notes?: string
 }
 
 interface JobTrackingModalProps {
@@ -26,7 +27,8 @@ const DEFAULT_PREFERENCES: JobPreferences = {
     locations: [],
     levels: [],
     contactEmail: '',
-    contactWechat: ''
+    contactWechat: '',
+    notes: ''
 }
 
 const LOCATION_OPTIONS = [
@@ -339,6 +341,19 @@ export function JobTrackingModal({
                         options={LEVEL_OPTIONS}
                         placeholder="例如：高级/Senior、经理/Manager"
                     />
+
+                    {/* Supplementary Notes */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-900 mb-2">
+                            补充说明
+                        </label>
+                        <textarea
+                            value={preferences.notes || ''}
+                            onChange={(e) => setPreferences(prev => ({ ...prev, notes: e.target.value }))}
+                            placeholder="请填写您的其他需求或补充信息，例如：期望薪资范围、签证需求、特定技术栈等..."
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[100px] resize-y"
+                        />
+                    </div>
                 </div>
 
                 {/* Footer */}

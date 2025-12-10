@@ -47,11 +47,11 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       return (
          <div
             onClick={() => onClick?.(job)}
-            className={`group relative p-5 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${isActive ? 'bg-indigo-50/60 ring-inset ring-2 ring-indigo-500/20' : ''} ${className || ''}`}
+            className={`group relative p-6 border-b border-slate-100 hover:bg-slate-50/80 transition-all duration-300 cursor-pointer ${isActive ? 'bg-indigo-50/60' : ''} ${className || ''}`}
          >
             {/* Active Indicator */}
             {isActive && (
-               <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 rounded-r"></div>
+               <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600"></div>
             )}
 
             {/* Corner Tag */}
@@ -59,8 +59,8 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                <div className="absolute top-0 right-0 z-10">
                   <div className={`text-[10px] font-bold px-3 py-1 rounded-bl-xl text-white shadow-sm flex items-center gap-1 ${
                      job.canRefer 
-                        ? 'bg-gradient-to-bl from-amber-400 to-orange-500' 
-                        : 'bg-gradient-to-bl from-emerald-400 to-teal-500'
+                        ? 'bg-gradient-to-bl from-amber-400 to-orange-500 shadow-amber-200' 
+                        : 'bg-gradient-to-bl from-emerald-400 to-teal-500 shadow-emerald-200'
                   }`}>
                      {job.canRefer ? <Sparkles className="w-3 h-3" /> : <Check className="w-3 h-3" />}
                      {job.canRefer ? '内推' : '精选'}
@@ -68,19 +68,19 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                </div>
             )}
 
-            <div className="flex gap-5">
+            <div className="flex gap-5 items-start">
                {/* Company Logo */}
-               <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm relative group/logo">
+               <div className="w-16 h-16 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-105 relative group/logo">
                   {job.logo ? (
                      <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
                   ) : (
-                     <span className="font-serif italic">{companyInitial}</span>
+                     <span className="font-serif italic text-2xl">{companyInitial}</span>
                   )}
                   {/* Hover Overlay for Link */}
                   {job.sourceUrl && (
                      <div 
                         onClick={handleCompanyClick}
-                        className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer"
+                        className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]"
                         title="访问来源"
                      >
                         <ExternalLink className="w-5 h-5 text-white" />
@@ -88,15 +88,15 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   )}
                </div>
 
-               <div className="flex-1 min-w-0 flex flex-col justify-between">
+               <div className="flex-1 min-w-0 flex flex-col justify-between gap-3">
                   <div>
-                     <div className="flex justify-between items-start gap-3 mb-1.5">
+                     <div className="flex justify-between items-start gap-3 mb-1">
                         <div className="flex-1 min-w-0">
-                           <h3 className={`font-bold text-base text-slate-900 truncate group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`}>
+                           <h3 className={`font-bold text-lg text-slate-900 truncate group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`}>
                               {job.translations?.title || job.title}
                            </h3>
-                           <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-sm text-slate-500 truncate max-w-[200px] hover:text-indigo-600 hover:underline cursor-pointer" onClick={handleCompanyClick}>
+                           <div className="flex items-center gap-2 mt-1">
+                              <span className="text-sm font-medium text-slate-600 truncate max-w-[200px] hover:text-indigo-600 hover:underline cursor-pointer transition-colors" onClick={handleCompanyClick}>
                                  {job.translations?.company || job.company}
                               </span>
                            </div>
@@ -105,73 +105,60 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         {/* Match Score */}
                         {matchScore !== undefined && matchScore > 0 && (
                            <div className="flex flex-col items-end">
-                              <div className="flex items-center gap-1">
-                                 <div className="relative w-8 h-8 flex items-center justify-center">
-                                    <svg className="w-full h-full transform -rotate-90">
-                                       <circle
-                                          cx="16"
-                                          cy="16"
-                                          r="14"
-                                          stroke="currentColor"
-                                          strokeWidth="2.5"
-                                          fill="none"
-                                          className="text-slate-100"
-                                       />
-                                       <circle
-                                          cx="16"
-                                          cy="16"
-                                          r="14"
-                                          stroke="currentColor"
-                                          strokeWidth="2.5"
-                                          fill="none"
-                                          strokeDasharray={2 * Math.PI * 14}
-                                          strokeDashoffset={2 * Math.PI * 14 * (1 - matchScore / 100)}
-                                          className={`text-amber-500 transition-all duration-1000 ease-out`}
-                                       />
-                                    </svg>
-                                    <span className="absolute text-[10px] font-bold text-slate-700">{matchScore}</span>
-                                 </div>
+                              <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                                 <span className="text-xs font-bold text-slate-400">匹配度</span>
+                                 <span className={`text-sm font-extrabold ${matchScore >= 80 ? 'text-emerald-500' : matchScore >= 60 ? 'text-indigo-500' : 'text-amber-500'}`}>
+                                    {matchScore}%
+                                 </span>
                               </div>
                            </div>
                         )}
                      </div>
 
-                     {/* Job Tags (Restored) */}
-                     <div className="flex flex-wrap gap-1.5 mt-2 mb-1">
-                        {job.category && (
-                           <span className="px-1.5 py-0.5 bg-slate-50 text-slate-500 text-[10px] rounded border border-slate-100">
-                              {job.category}
-                           </span>
-                        )}
+                     {/* Job Tags */}
+                     <div className="flex flex-wrap gap-2 mt-2">
+                        {/* Job Type Tag */}
                         {job.type && (
-                           <span className="px-1.5 py-0.5 bg-slate-50 text-slate-500 text-[10px] rounded border border-slate-100">
+                           <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-md">
                               {job.type === 'full-time' ? '全职' : job.type}
                            </span>
                         )}
-                        {job.companyTags && job.companyTags.slice(0, 2).map((tag, i) => (
-                           <span key={i} className="px-1.5 py-0.5 bg-slate-50 text-slate-500 text-[10px] rounded border border-slate-100 truncate max-w-[80px]">
+                        
+                        {/* Category Tag */}
+                        {job.category && (
+                           <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-md">
+                              {job.category}
+                           </span>
+                        )}
+
+                        {/* Experience Level Tag */}
+                        {job.experienceLevel && (
+                           <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs font-medium rounded-md">
+                              {job.experienceLevel}
+                           </span>
+                        )}
+
+                        {/* Custom Tags */}
+                        {job.companyTags && job.companyTags.slice(0, 3).map((tag, i) => (
+                           <span key={i} className="px-2 py-0.5 bg-gray-50 text-gray-500 text-xs rounded-md border border-gray-100 truncate max-w-[100px]">
                               {tag}
                            </span>
                         ))}
                      </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2">
-                     <div className="flex flex-wrap items-center gap-3 text-xs">
-                        <span className={`text-sm ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-rose-500'}`}>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-50 mt-1">
+                     <div className="flex flex-wrap items-center gap-4 text-xs">
+                        <span className={`text-sm ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md'}`}>
                            {formatSalary(job.salary)}
                         </span>
                         
-                        <div className="flex items-center gap-3 text-slate-400">
-                           <span className="flex items-center">
-                              <Globe className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-4 text-slate-400 font-medium">
+                           <span className="flex items-center hover:text-indigo-500 transition-colors">
+                              <Globe className="w-3.5 h-3.5 mr-1" />
                               {job.isRemote ? '远程' : (job.translations?.location || job.location)}
                            </span>
                            <span className="flex items-center">
-                              <Briefcase className="w-3 h-3 mr-1" />
-                              {job.experienceLevel || '经验不限'}
-                           </span>
-                           <span>
                               {DateFormatter.formatPublishTime(job.publishedAt)}
                            </span>
                         </div>
