@@ -334,7 +334,7 @@ export default function JobFilterBar({
           icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
         >
           {/* Experience Section */}
-          <FilterSectionHeader title="工作经验" />
+          <FilterSectionHeader title="岗位级别" />
           {EXPERIENCE_OPTIONS.map(opt => (
             <CheckboxItem
               key={opt.value}

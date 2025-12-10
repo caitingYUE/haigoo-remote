@@ -139,6 +139,17 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         )}
 
                         {/* Custom Tags */}
+                        {job.sourceType && (job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                           <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs rounded-md border border-slate-200">
+                              第三方
+                           </span>
+                        )}
+                        {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                           <span className="px-2 py-0.5 bg-slate-50 text-slate-400 text-xs rounded-md border border-slate-100 truncate max-w-[100px]" title={job.source}>
+                              来自: {job.source}
+                           </span>
+                        )}
+
                         {job.companyTags && job.companyTags.slice(0, 3).map((tag, i) => (
                            <span key={i} className="px-2 py-0.5 bg-gray-50 text-gray-500 text-xs rounded-md border border-gray-100 truncate max-w-[100px]">
                               {tag}
@@ -253,6 +264,16 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                {job.category && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100">
                      {job.category}
+                  </span>
+               )}
+               {job.sourceType && (job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-medium border border-slate-200">
+                     第三方
+                  </span>
+               )}
+               {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-400 text-xs font-medium border border-slate-100 truncate max-w-[150px]" title={job.source}>
+                     来自: {job.source}
                   </span>
                )}
                <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100">
