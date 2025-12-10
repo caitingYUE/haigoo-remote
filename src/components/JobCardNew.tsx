@@ -55,18 +55,20 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
             )}
 
             {/* Corner Tag */}
-            {(job.canRefer || job.isTrusted) && (
-               <div className="absolute top-0 right-0 z-10">
-                  <div className={`text-[10px] font-bold px-3 py-1 rounded-bl-xl text-white shadow-sm flex items-center gap-1 ${
-                     job.canRefer 
-                        ? 'bg-gradient-to-bl from-amber-400 to-orange-500 shadow-amber-200' 
-                        : 'bg-gradient-to-bl from-emerald-400 to-teal-500 shadow-emerald-200'
-                  }`}>
-                     {job.canRefer ? <Sparkles className="w-3 h-3" /> : <Check className="w-3 h-3" />}
-                     {job.canRefer ? '内推' : '精选'}
+            <div className="absolute top-0 right-0 z-10 flex flex-col items-end">
+               {job.canRefer && (
+                  <div className="text-[10px] font-bold px-3 py-1 rounded-bl-xl text-white shadow-sm flex items-center gap-1 bg-gradient-to-bl from-amber-400 to-orange-500 shadow-amber-200 mb-1">
+                     <Sparkles className="w-3 h-3" />
+                     内推
                   </div>
-               </div>
-            )}
+               )}
+               {job.isTrusted && (
+                  <div className={`text-[10px] font-bold px-3 py-1 text-white shadow-sm flex items-center gap-1 bg-gradient-to-bl from-emerald-400 to-teal-500 shadow-emerald-200 ${!job.canRefer ? 'rounded-bl-xl' : 'rounded-l-lg'}`}>
+                     <Check className="w-3 h-3" />
+                     精选
+                  </div>
+               )}
+            </div>
 
             <div className="flex gap-5 items-start">
                {/* Company Logo */}
@@ -182,14 +184,20 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer overflow-hidden ${className || ''}`}
       >
          {/* Top Decoration for Verified Jobs */}
-         {isVerified && (
-            <div className="absolute top-0 right-0 p-0">
-               <div className="bg-gradient-to-bl from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
+         <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
+            {job.canRefer && (
+               <div className="bg-gradient-to-bl from-amber-400 to-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 pointer-events-auto mb-1">
                   <Sparkles className="w-3 h-3" />
-                  CLUB VERIFIED
+                  内推
                </div>
-            </div>
-         )}
+            )}
+            {job.isTrusted && (
+               <div className={`bg-gradient-to-bl from-emerald-400 to-teal-500 text-white text-[10px] font-bold px-3 py-1 ${!job.canRefer ? 'rounded-bl-xl' : 'rounded-l-lg'} shadow-sm flex items-center gap-1 pointer-events-auto`}>
+                  <Check className="w-3 h-3" />
+                  精选
+               </div>
+            )}
+         </div>
 
          <div className="flex flex-col h-full">
             {/* Header Section */}
