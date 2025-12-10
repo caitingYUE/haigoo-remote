@@ -775,7 +775,9 @@ export class DataManagementService {
       const CHUNK_SIZE = 200;
       for (let i = 0; i < jobs.length; i += CHUNK_SIZE) {
         const chunk = jobs.slice(i, i + CHUNK_SIZE);
-        const chunkMode = mode;
+        // 如果是 'replace' 模式，只有第一批次使用 'replace'（清空旧数据），后续批次使用 'append'
+        const chunkMode = (mode === 'replace' && i > 0) ? 'append' : mode;
+        
         const resp = await fetch('/api/data/processed-jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
