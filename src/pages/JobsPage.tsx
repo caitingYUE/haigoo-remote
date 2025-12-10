@@ -633,7 +633,7 @@ export default function JobsPage() {
              </div>
 
              {/* List Content */}
-             <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-white">
+             <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-white overscroll-y-contain">
                {showLoading ? (
                  <div className="flex items-center justify-center py-12">
                    <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -682,7 +682,7 @@ export default function JobsPage() {
           {/* Right Column: Detail Panel (Desktop Only) */}
           <div className="hidden lg:flex flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full flex-col relative">
             {selectedJob ? (
-              <div className="h-full overflow-y-auto custom-scrollbar">
+              <div className="h-full overflow-y-auto custom-scrollbar overscroll-y-contain">
                  <JobDetailPanel
                    job={selectedJob}
                    onSave={() => toggleSaveJob(selectedJob.id)}
