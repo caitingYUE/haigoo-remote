@@ -368,9 +368,7 @@ export default function JobsPage() {
   }, [canonicalJobs])
 
   // Combined loading state logic
-  // If authenticated, we wait for initial match scores to load before showing the list
-  // This prevents the "flash" of unsorted/unscored jobs
-  const showLoading = jobsLoading || !(isAuthenticated && canonicalJobs.length > 0)
+  const showLoading = jobsLoading
 
   // Derived Data for Dynamic Filters - now using all jobs instead of regionJobs
 
