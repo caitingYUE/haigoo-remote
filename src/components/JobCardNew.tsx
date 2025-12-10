@@ -276,9 +276,9 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      来自: {job.source}
                   </span>
                )}
-               <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100">
-                  <Globe className="w-3 h-3 mr-1.5 text-indigo-500" />
-                  {job.isRemote ? '远程' : (job.translations?.location || job.location)}
+               <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100 max-w-[200px] truncate" title={job.location}>
+                  <Globe className="w-3 h-3 mr-1.5 text-indigo-500 flex-shrink-0" />
+                  {job.isRemote ? (job.translations?.location || job.location) : (job.translations?.location || job.location)}
                </span>
                {matchScore !== undefined && matchScore > 0 && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-yellow-50 to-amber-50 text-amber-700 text-xs font-bold border border-amber-200">

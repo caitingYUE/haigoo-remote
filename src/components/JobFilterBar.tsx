@@ -51,11 +51,11 @@ interface JobFilterBarProps {
 // --- Constants ---
 
 const EXPERIENCE_OPTIONS = [
-  { label: '在校/应届', value: 'Intern/Junior' },
-  { label: '1-3年', value: '1-3 years' },
-  { label: '3-5年', value: '3-5 years' },
-  { label: '5-10年', value: '5-10 years' },
-  { label: '10年以上', value: '10+ years' }
+  { label: '初级/Entry Level', value: 'Entry' },
+  { label: '中级/Mid Level', value: 'Mid' },
+  { label: '高级/Senior', value: 'Senior' },
+  { label: '专家/Lead', value: 'Lead' },
+  { label: '高管/Executive', value: 'Executive' }
 ];
 
 const SALARY_OPTIONS = [

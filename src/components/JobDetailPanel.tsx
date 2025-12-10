@@ -238,9 +238,18 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3 text-sm text-slate-600 mb-4">
-                    <div className="flex items-center gap-1.5">
+                    <div 
+                        className="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors"
+                        onClick={() => {
+                            const url = job.companyWebsite || job.sourceUrl
+                            if (url) {
+                                window.open(url, '_blank', 'noopener,noreferrer')
+                            }
+                        }}
+                    >
                         <Building2 className="w-4 h-4" />
-                        <span className="font-medium">{displayText(job.company || '')}</span>
+                        <span className="font-medium hover:underline">{displayText(job.company || '')}</span>
+                        {(job.companyWebsite || job.sourceUrl) && <ExternalLink className="w-3 h-3 ml-0.5" />}
                     </div>
                     <span className="text-slate-300">|</span>
                     <div className="flex items-center gap-1.5 relative group">
