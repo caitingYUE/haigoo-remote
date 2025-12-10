@@ -11,9 +11,11 @@ interface JobCardNewProps {
    onClick?: (job: Job) => void;
    matchScore?: number; // Personalized match score (0-100)
    className?: string;
+   variant?: 'grid' | 'list';
+   isActive?: boolean;
 }
 
-export default function JobCardNew({ job, onClick, matchScore, className }: JobCardNewProps) {
+export default function JobCardNew({ job, onClick, matchScore, className, variant = 'grid', isActive = false }: JobCardNewProps) {
    // const navigate = useNavigate();
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
@@ -30,6 +32,70 @@ export default function JobCardNew({ job, onClick, matchScore, className }: JobC
    };
 
    const isVerified = job.isTrusted || job.canRefer;
+
+   if (variant === 'list') {
+      return (
+         <div
+            onClick={() => onClick?.(job)}
+            className={`group relative p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${isActive ? 'bg-indigo-50/60 ring-inset ring-2 ring-indigo-500/20' : ''} ${className || ''}`}
+         >
+            {/* Active Indicator */}
+            {isActive && (
+               <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 rounded-r"></div>
+            )}
+
+            <div className="flex gap-4">
+               {/* Company Logo */}
+               <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden">
+                  {job.logo ? (
+                     <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
+                  ) : (
+                     <span className="font-serif italic">{companyInitial}</span>
+                  )}
+               </div>
+
+               <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start mb-1">
+                     <h3 className={`font-bold text-slate-900 truncate pr-2 ${isActive ? 'text-indigo-700' : ''}`}>
+                        {job.translations?.title || job.title}
+                     </h3>
+                     {matchScore !== undefined && matchScore > 0 && (
+                        <span className="flex-shrink-0 inline-flex items-center text-xs font-bold text-amber-600">
+                           <Sparkles className="w-3 h-3 mr-1 fill-amber-500 text-amber-500" />
+                           {matchScore}%
+                        </span>
+                     )}
+                  </div>
+
+                  <div className="text-sm text-slate-500 mb-2 truncate">
+                     {job.translations?.company || job.company}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                     <span className="font-semibold text-slate-700">
+                        {formatSalary(job.salary)}
+                     </span>
+                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                     <span className="text-slate-500">
+                        {job.isRemote ? '远程' : (job.translations?.location || job.location)}
+                     </span>
+                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                     <span className="text-slate-500">
+                        {DateFormatter.formatPublishTime(job.publishedAt)}
+                     </span>
+                  </div>
+                  
+                  {isVerified && (
+                     <div className="mt-2 flex items-center gap-1 text-[10px] font-medium text-indigo-600">
+                        <Sparkles className="w-3 h-3" />
+                        <span>CLUB VERIFIED</span>
+                     </div>
+                  )}
+               </div>
+            </div>
+         </div>
+      );
+   }
 
    return (
       <div
