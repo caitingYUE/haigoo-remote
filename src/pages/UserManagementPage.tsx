@@ -555,6 +555,26 @@ export default function UserManagementPage() {
                         </div>
                       </div>
                     )}
+                    {editingUser.jobPreferences.contactEmail && (
+                      <div>
+                        <span className="text-slate-500 block mb-1">联系邮箱</span>
+                        <div className="text-slate-900">{editingUser.jobPreferences.contactEmail}</div>
+                      </div>
+                    )}
+                    {editingUser.jobPreferences.contactWechat && (
+                      <div>
+                        <span className="text-slate-500 block mb-1">微信号</span>
+                        <div className="text-slate-900">{editingUser.jobPreferences.contactWechat}</div>
+                      </div>
+                    )}
+                    {editingUser.jobPreferences.notes && (
+                      <div>
+                        <span className="text-slate-500 block mb-1">补充说明</span>
+                        <div className="px-3 py-2 bg-slate-50 text-slate-700 rounded text-xs whitespace-pre-wrap leading-relaxed border border-slate-100">
+                          {editingUser.jobPreferences.notes}
+                        </div>
+                      </div>
+                    )}
                     {editingUser.preferencesUpdatedAt && (
                       <div className="text-xs text-slate-400 mt-2">
                         更新于：{new Date(editingUser.preferencesUpdatedAt).toLocaleString('zh-CN')}

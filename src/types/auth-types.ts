@@ -52,6 +52,9 @@ export interface User {
     industries: string[]
     locations: string[]
     levels: string[]
+    contactEmail?: string
+    contactWechat?: string
+    notes?: string
   }
   preferencesUpdatedAt?: string
 }
