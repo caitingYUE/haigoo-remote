@@ -128,25 +128,37 @@ function classifyRegion(location) {
   const isAPAC = apacKeywords.some(k => loc.includes(k))
   const isGlobal = globalKeywords.some(k => loc.includes(k))
 
-  if (isOverseas) {
-    if (isMainland || isGreaterChina) {
+  // 优先级分类逻辑
+  
+  // 1. 中国/大中华区 - 绝对的国内可申
+  // 如果同时包含海外关键词(如 "US or China")，则视为 'both'，否则 'domestic'
+  if (isMainland || isGreaterChina) {
+    // 如果同时有海外或全球属性，标记为 both 以便在海外列表也能看到
+    if (isOverseas || isGlobal || isAPAC) {
       return 'both'
     }
-    return 'overseas'
-  }
-
-  if (isMainland || isGreaterChina) {
     return 'domestic'
   }
 
+  // 2. APAC/亚太时区 - 用户指定归为"中国可申"
+  // 通常亚太也包含海外属性，所以归为 'both' (既在中国可申列表，也在海外列表)
   if (isAPAC) {
     return 'both'
   }
 
+  // 3. 明确的海外地点 - 归为海外
+  // 必须放在 APAC 之后，因为 APAC 即使包含 Singapore (Overseas) 也要算作可申
+  // 必须放在 Global 之前，因为 "Remote - US" 应该算 Overseas 而不是 Both
+  if (isOverseas) {
+    return 'overseas'
+  }
+
+  // 4. Global/Remote/Anywhere - 归为"中国可申" (Both)
   if (isGlobal) {
     return 'both' 
   }
 
+  // 默认: 如果完全无法判断，归为海外
   return 'overseas'
 }
 
