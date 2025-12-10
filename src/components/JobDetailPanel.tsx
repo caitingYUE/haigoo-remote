@@ -243,7 +243,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         onClick={() => {
                             const url = job.companyWebsite || job.sourceUrl
                             if (url) {
-                                window.open(url, '_blank', 'noopener,noreferrer')
+                                // Add confirmation dialog
+                                if (window.confirm(`即将离开本站跳转到 ${job.company || '企业官网'}，是否继续？`)) {
+                                    window.open(url, '_blank', 'noopener,noreferrer')
+                                }
                             }
                         }}
                     >
@@ -254,23 +257,36 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <span className="text-slate-300">|</span>
                     <div className="flex items-center gap-1.5 relative group">
                         <MapPin className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                setShowLocationTooltip(!showLocationTooltip)
-                            }}
-                            className="hover:text-indigo-600 hover:underline decoration-dashed underline-offset-4 transition-colors text-left"
-                        >
-                            {displayText(job.location || '', job.translations?.location)}
-                        </button>
-                        {showLocationTooltip && (
-                            <div className="absolute top-full left-0 mt-2 z-50">
-                                <LocationTooltip
-                                    location={job.location || ''}
-                                    onClose={() => setShowLocationTooltip(false)}
-                                />
-                            </div>
-                        )}
+                        {(() => {
+                            const locText = displayText(job.location || '', job.translations?.location);
+                            const isGeneric = /(remote|anywhere|everywhere|worldwide|global|远程|全球)/i.test(locText);
+                            
+                            if (isGeneric) {
+                                return <span className="text-slate-600">{locText}</span>;
+                            }
+                            
+                            return (
+                                <>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setShowLocationTooltip(!showLocationTooltip)
+                                        }}
+                                        className="hover:text-indigo-600 hover:underline decoration-dashed underline-offset-4 transition-colors text-left"
+                                    >
+                                        {locText}
+                                    </button>
+                                    {showLocationTooltip && (
+                                        <div className="absolute top-full left-0 mt-2 z-50">
+                                            <LocationTooltip
+                                                location={job.location || ''}
+                                                onClose={() => setShowLocationTooltip(false)}
+                                            />
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
 
@@ -405,6 +421,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             </div>
                         </div>
                     </section>
+
+                    {/* Source Label */}
+                    {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                        <div className="flex justify-end pb-4">
+                            <span className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-400 text-xs rounded-md border border-slate-100">
+                                来自: {job.source}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </main >
 

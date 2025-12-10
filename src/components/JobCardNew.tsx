@@ -144,11 +144,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               第三方
                            </span>
                         )}
-                        {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party') && (
-                           <span className="px-2 py-0.5 bg-slate-50 text-slate-400 text-xs rounded-md border border-slate-100 truncate max-w-[100px]" title={job.source}>
-                              来自: {job.source}
-                           </span>
-                        )}
 
                         {job.companyTags && job.companyTags.slice(0, 3).map((tag, i) => (
                            <span key={i} className="px-2 py-0.5 bg-gray-50 text-gray-500 text-xs rounded-md border border-gray-100 truncate max-w-[100px]">
@@ -167,7 +162,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         <div className="flex items-center gap-4 text-slate-400 font-medium">
                            <span className="flex items-center hover:text-indigo-500 transition-colors">
                               <Globe className="w-3.5 h-3.5 mr-1" />
-                              {job.isRemote ? '远程' : (job.translations?.location || job.location)}
+                              {(job.translations?.location || job.location)}
                            </span>
                            <span className="flex items-center">
                               {DateFormatter.formatPublishTime(job.publishedAt)}
@@ -271,14 +266,9 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      第三方
                   </span>
                )}
-               {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party') && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-400 text-xs font-medium border border-slate-100 truncate max-w-[150px]" title={job.source}>
-                     来自: {job.source}
-                  </span>
-               )}
                <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100 max-w-[200px] truncate" title={job.location}>
                   <Globe className="w-3 h-3 mr-1.5 text-indigo-500 flex-shrink-0" />
-                  {job.isRemote ? (job.translations?.location || job.location) : (job.translations?.location || job.location)}
+                  {(job.translations?.location || job.location)}
                </span>
                {matchScore !== undefined && matchScore > 0 && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-yellow-50 to-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
