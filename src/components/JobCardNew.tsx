@@ -1,10 +1,10 @@
 
 import React, { useMemo } from 'react';
-import { Briefcase, Globe, ChevronRight, Sparkles } from 'lucide-react';
+import { Briefcase, Globe, ChevronRight, Sparkles, Building2, ExternalLink, Check } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { stripMarkdown } from '../utils/text-formatter';
-// import { useNavigate } from 'react-router-dom';
+import { SingleLineTags } from './SingleLineTags';
 
 interface JobCardNewProps {
    job: Job;
@@ -21,7 +21,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
    const formatSalary = (salary: Job['salary']) => {
-      if (!salary || (salary.min === 0 && salary.max === 0)) return '薪资面议';
+      if (!salary || (salary.min === 0 && salary.max === 0)) return '薪资Open';
       const formatAmount = (amount: number) => {
          if (amount >= 1000) return `${(amount / 1000).toFixed(0)}k`;
          return amount.toString();
@@ -32,6 +32,16 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    };
 
    const isVerified = job.isTrusted || job.canRefer;
+   
+   // Handle company website click
+   const handleCompanyClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      // Using sourceUrl as companyUrl if not available directly, or fallback to job detail
+      const url = job.sourceUrl;
+      if (url) {
+         window.open(url, '_blank', 'noopener,noreferrer');
+      }
+   };
 
    if (variant === 'list') {
       return (
@@ -46,11 +56,21 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
             <div className="flex gap-5">
                {/* Company Logo */}
-               <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm">
+               <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm relative group/logo">
                   {job.logo ? (
                      <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
                   ) : (
                      <span className="font-serif italic">{companyInitial}</span>
+                  )}
+                  {/* Hover Overlay for Link */}
+                  {job.sourceUrl && (
+                     <div 
+                        onClick={handleCompanyClick}
+                        className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer"
+                        title="访问来源"
+                     >
+                        <ExternalLink className="w-5 h-5 text-white" />
+                     </div>
                   )}
                </div>
 
@@ -62,20 +82,20 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               {job.translations?.title || job.title}
                            </h3>
                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-sm text-slate-500 truncate max-w-[200px]">
+                              <span className="text-sm text-slate-500 truncate max-w-[200px] hover:text-indigo-600 hover:underline cursor-pointer" onClick={handleCompanyClick}>
                                  {job.translations?.company || job.company}
                               </span>
-                              {isVerified && (
-                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                              {job.canRefer ? (
+                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
                                     <Sparkles className="w-2.5 h-2.5" />
-                                    CLUB
-                                 </span>
-                              )}
-                              {job.canRefer && (
-                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
                                     内推
                                  </span>
-                              )}
+                              ) : job.isTrusted ? (
+                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                    <Check className="w-2.5 h-2.5" />
+                                    精选
+                                 </span>
+                              ) : null}
                            </div>
                         </div>
                         
@@ -112,20 +132,46 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            </div>
                         )}
                      </div>
+
+                     {/* Job Tags (Restored) */}
+                     <div className="flex flex-wrap gap-1.5 mt-2 mb-1">
+                        {job.category && (
+                           <span className="px-1.5 py-0.5 bg-slate-50 text-slate-500 text-[10px] rounded border border-slate-100">
+                              {job.category}
+                           </span>
+                        )}
+                        {job.type && (
+                           <span className="px-1.5 py-0.5 bg-slate-50 text-slate-500 text-[10px] rounded border border-slate-100">
+                              {job.type === 'full-time' ? '全职' : job.type}
+                           </span>
+                        )}
+                        {job.companyTags && job.companyTags.slice(0, 2).map((tag, i) => (
+                           <span key={i} className="px-1.5 py-0.5 bg-slate-50 text-slate-500 text-[10px] rounded border border-slate-100 truncate max-w-[80px]">
+                              {tag}
+                           </span>
+                        ))}
+                     </div>
                   </div>
 
                   <div className="flex items-center justify-between mt-2">
-                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded-md">
+                     <div className="flex flex-wrap items-center gap-3 text-xs">
+                        <span className="font-bold text-rose-500 text-sm">
                            {formatSalary(job.salary)}
                         </span>
-                        <span className="flex items-center text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                           <Globe className="w-3 h-3 mr-1 text-slate-400" />
-                           {job.isRemote ? '远程' : (job.translations?.location || job.location)}
-                        </span>
-                        <span className="text-slate-400 px-1">
-                           {DateFormatter.formatPublishTime(job.publishedAt)}
-                        </span>
+                        
+                        <div className="flex items-center gap-3 text-slate-400">
+                           <span className="flex items-center">
+                              <Globe className="w-3 h-3 mr-1" />
+                              {job.isRemote ? '远程' : (job.translations?.location || job.location)}
+                           </span>
+                           <span className="flex items-center">
+                              <Briefcase className="w-3 h-3 mr-1" />
+                              {job.experienceLevel || '经验不限'}
+                           </span>
+                           <span>
+                              {DateFormatter.formatPublishTime(job.publishedAt)}
+                           </span>
+                        </div>
                      </div>
                   </div>
                </div>
