@@ -223,7 +223,12 @@ async function cleanAndFix() {
       
       // Determine SourceType
       let newSourceType = job.sourceType;
-      if (!newSourceType) {
+      
+      // Strict rule: if source_type is RSS/third-party, it must remain third-party
+      // Do not upgrade based on company trust
+      if (newSourceType === 'rss' || newSourceType === 'third-party') {
+        newSourceType = 'third-party';
+      } else if (!newSourceType) {
         if (job.canRefer) {
           newSourceType = 'club-referral';
         } else if (job.isTrusted) {
@@ -234,12 +239,23 @@ async function cleanAndFix() {
         }
       }
 
+      // Enforce exclusivity for third-party
+      let newIsTrusted = job.is_trusted;
+      let newCanRefer = job.can_refer;
+      
+      if (newSourceType === 'third-party') {
+         newIsTrusted = false;
+         newCanRefer = false;
+      }
+
       // Check if update is needed
-      if (newRegion !== job.region || newSourceType !== job.sourceType) {
+      if (newRegion !== job.region || newSourceType !== job.sourceType || newIsTrusted !== job.is_trusted || newCanRefer !== job.can_refer) {
         updates.push({ 
           id: job.job_id, 
           region: newRegion, 
           sourceType: newSourceType,
+          isTrusted: newIsTrusted,
+          canRefer: newCanRefer,
           oldRegion: job.region,
           oldSourceType: job.sourceType
         });
@@ -253,8 +269,8 @@ async function cleanAndFix() {
       let processed = 0;
       for (const update of updates) {
         await neonHelper.query(
-          'UPDATE jobs SET region = $1, source_type = $2 WHERE job_id = $3', 
-          [update.region, update.sourceType, update.id]
+          'UPDATE jobs SET region = $1, source_type = $2, is_trusted = $3, can_refer = $4 WHERE job_id = $5', 
+          [update.region, update.sourceType, update.isTrusted, update.canRefer, update.id]
         );
         processed++;
         if (processed % 50 === 0) process.stdout.write('.');

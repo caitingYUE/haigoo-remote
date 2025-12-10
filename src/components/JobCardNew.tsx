@@ -56,22 +56,26 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
                {/* Corner Tag */}
                <div className="absolute top-0 right-0 z-10 flex flex-col items-end">
-                  {job.canRefer ? (
-                     <div className="text-[10px] font-bold px-3 py-1 rounded-bl-xl text-white shadow-sm flex items-center gap-1 bg-gradient-to-bl from-amber-400 to-orange-500 shadow-amber-200 mb-1">
-                        <Sparkles className="w-3 h-3" />
-                        内推
-                     </div>
-                  ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
+                  {(job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
                      <div className="text-[10px] font-bold px-3 py-1 rounded-bl-xl text-slate-500 shadow-sm flex items-center gap-1 bg-slate-100 border-l border-b border-slate-200 mb-1">
                         第三方
                      </div>
-                  ) : null}
-                  
-                  {job.isTrusted && (
-                     <div className={`text-[10px] font-bold px-3 py-1 text-white shadow-sm flex items-center gap-1 bg-gradient-to-bl from-blue-500 to-indigo-600 shadow-blue-200 ${!(job.canRefer || (job.sourceType === 'rss' || job.sourceType === 'third-party')) ? 'rounded-bl-xl' : 'rounded-l-lg'}`}>
-                        <Building2 className="w-3 h-3" />
-                        可信企业
-                     </div>
+                  ) : (
+                     <>
+                        {job.canRefer && (
+                           <div className="text-[10px] font-bold px-3 py-1 rounded-bl-xl text-white shadow-sm flex items-center gap-1 bg-gradient-to-bl from-amber-400 to-orange-500 shadow-amber-200 mb-1">
+                              <Sparkles className="w-3 h-3" />
+                              内推
+                           </div>
+                        )}
+                        
+                        {job.isTrusted && (
+                           <div className={`text-[10px] font-bold px-3 py-1 text-white shadow-sm flex items-center gap-1 bg-gradient-to-bl from-blue-500 to-indigo-600 shadow-blue-200 ${!job.canRefer ? 'rounded-bl-xl' : 'rounded-l-lg'}`}>
+                              <Building2 className="w-3 h-3" />
+                              可信企业
+                           </div>
+                        )}
+                     </>
                   )}
                </div>
 
@@ -190,22 +194,25 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       >
          {/* Top Decoration for Verified Jobs */}
          <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
-            {job.canRefer ? (
-               <div className="bg-gradient-to-bl from-amber-400 to-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 pointer-events-auto mb-1">
-                  <Sparkles className="w-3 h-3" />
-                  内推
-               </div>
-            ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
+            {(job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
                <div className="bg-slate-100 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 pointer-events-auto border-l border-b border-slate-200 mb-1">
                   第三方
                </div>
-            ) : null}
-            
-            {job.isTrusted && (
-               <div className={`bg-gradient-to-bl from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-3 py-1 ${!(job.canRefer || (job.sourceType === 'rss' || job.sourceType === 'third-party')) ? 'rounded-bl-xl' : 'rounded-l-lg'} shadow-sm flex items-center gap-1 pointer-events-auto`}>
-                  <Building2 className="w-3 h-3" />
-                  可信企业
-               </div>
+            ) : (
+               <>
+                  {job.canRefer && (
+                     <div className="bg-gradient-to-bl from-amber-400 to-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 pointer-events-auto mb-1">
+                        <Sparkles className="w-3 h-3" />
+                        内推
+                     </div>
+                  )}
+                  {job.isTrusted && (
+                     <div className={`bg-gradient-to-bl from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-3 py-1 ${!job.canRefer ? 'rounded-bl-xl' : 'rounded-l-lg'} shadow-sm flex items-center gap-1 pointer-events-auto`}>
+                        <Building2 className="w-3 h-3" />
+                        可信企业
+                     </div>
+                  )}
+               </>
             )}
          </div>
 
