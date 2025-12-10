@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
+import { X, Mail, MessageCircle } from 'lucide-react'
 
 export interface JobPreferences {
     jobTypes: string[]
     industries: string[]
     locations: string[]
     levels: string[]
+    contactEmail?: string
+    contactWechat?: string
 }
 
-interface JobPreferenceModalProps {
+interface JobTrackingModalProps {
     isOpen: boolean
     onClose: () => void
     onSave: (preferences: JobPreferences) => void
@@ -22,7 +24,9 @@ const DEFAULT_PREFERENCES: JobPreferences = {
     jobTypes: [],
     industries: [],
     locations: [],
-    levels: []
+    levels: [],
+    contactEmail: '',
+    contactWechat: ''
 }
 
 const LOCATION_OPTIONS = [
@@ -191,14 +195,14 @@ function AutocompleteField({
     )
 }
 
-export function JobPreferenceModal({
+export function JobTrackingModal({
     isOpen,
     onClose,
     onSave,
     initialPreferences,
     jobTypeOptions,
     industryOptions
-}: JobPreferenceModalProps) {
+}: JobTrackingModalProps) {
     const [preferences, setPreferences] = useState<JobPreferences>(
         initialPreferences || DEFAULT_PREFERENCES
     )
@@ -218,10 +222,15 @@ export function JobPreferenceModal({
 
     return createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1050] p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-slate-200">
-                    <h2 className="text-xl font-bold text-slate-900">编辑职位偏好</h2>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900">职位追踪</h2>
+                        <p className="text-sm text-slate-500 mt-1">
+                            当找不到满意的岗位时，提交您的需求，系统有合适岗位时将通知您
+                        </p>
+                    </div>
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
@@ -231,10 +240,44 @@ export function JobPreferenceModal({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6">
-                    <p className="text-sm text-slate-600 mb-6">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    <p className="text-sm text-slate-600">
                         <span className="text-red-500">*</span> 必填
                     </p>
+
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+                        <h3 className="font-semibold text-slate-900">联系方式</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-900 mb-2">
+                                    <span className="flex items-center gap-2">
+                                        <Mail className="w-4 h-4" /> 邮箱
+                                    </span>
+                                </label>
+                                <input
+                                    type="email"
+                                    value={preferences.contactEmail || ''}
+                                    onChange={(e) => setPreferences(prev => ({ ...prev, contactEmail: e.target.value }))}
+                                    placeholder="your@email.com"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-900 mb-2">
+                                    <span className="flex items-center gap-2">
+                                        <MessageCircle className="w-4 h-4" /> 微信号
+                                    </span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={preferences.contactWechat || ''}
+                                    onChange={(e) => setPreferences(prev => ({ ...prev, contactWechat: e.target.value }))}
+                                    placeholder="WeChat ID"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
 
                     <AutocompleteField
                         label="职位类型"

@@ -54,6 +54,20 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 rounded-r"></div>
             )}
 
+            {/* Corner Tag */}
+            {(job.canRefer || job.isTrusted) && (
+               <div className="absolute top-0 right-0 z-10">
+                  <div className={`text-[10px] font-bold px-3 py-1 rounded-bl-xl text-white shadow-sm flex items-center gap-1 ${
+                     job.canRefer 
+                        ? 'bg-gradient-to-bl from-amber-400 to-orange-500' 
+                        : 'bg-gradient-to-bl from-emerald-400 to-teal-500'
+                  }`}>
+                     {job.canRefer ? <Sparkles className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+                     {job.canRefer ? '内推' : '精选'}
+                  </div>
+               </div>
+            )}
+
             <div className="flex gap-5">
                {/* Company Logo */}
                <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm relative group/logo">
@@ -85,17 +99,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               <span className="text-sm text-slate-500 truncate max-w-[200px] hover:text-indigo-600 hover:underline cursor-pointer" onClick={handleCompanyClick}>
                                  {job.translations?.company || job.company}
                               </span>
-                              {job.canRefer ? (
-                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
-                                    <Sparkles className="w-2.5 h-2.5" />
-                                    内推
-                                 </span>
-                              ) : job.isTrusted ? (
-                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                                    <Check className="w-2.5 h-2.5" />
-                                    精选
-                                 </span>
-                              ) : null}
                            </div>
                         </div>
                         
@@ -155,7 +158,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
                   <div className="flex items-center justify-between mt-2">
                      <div className="flex flex-wrap items-center gap-3 text-xs">
-                        <span className="font-bold text-rose-500 text-sm">
+                        <span className={`text-sm ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-rose-500'}`}>
                            {formatSalary(job.salary)}
                         </span>
                         

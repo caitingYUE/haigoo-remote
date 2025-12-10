@@ -5,13 +5,13 @@ import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
 import { JobDetailPanel } from '../components/JobDetailPanel'
-import JobFilterSidebar from '../components/JobFilterSidebar'
+import JobFilterBar from '../components/JobFilterBar'
 import { Job } from '../types'
 import { extractLocations } from '../utils/locationHelper'
 
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
-import { JobPreferenceModal, JobPreferences } from '../components/JobPreferenceModal'
+import { JobTrackingModal, JobPreferences } from '../components/JobTrackingModal'
 
 // Industry Options
 // const INDUSTRY_OPTIONS = [
@@ -43,19 +43,31 @@ export default function JobsPage() {
   const [searchTerm, setSearchTerm] = useState('')
 
   // New Filter State Structure
-  const [filters, setFilters] = useState({
-    category: [] as string[],        // 岗位分类
-    experienceLevel: [] as string[], // 岗位级别
-    industry: [] as string[],        // 行业类型
-    regionType: [] as string[],      // 区域限制: 'domestic' | 'overseas'
-    sourceType: [] as string[],      // 岗位来源: 'third-party' | 'club-referral' | 'curated'
-    type: [] as string[],
-    location: [] as string[],
-    jobType: [] as string[],
-    salary: [] as string[],
-    isTrusted: false,
-    isNew: false
+  const [filters, setFilters] = useState(() => {
+    try {
+      const saved = localStorage.getItem('haigoo_job_filters')
+      if (saved) return JSON.parse(saved)
+    } catch (e) {
+      console.error('Failed to load filters', e)
+    }
+    return {
+      category: [] as string[],
+      experienceLevel: [] as string[],
+      industry: [] as string[],
+      regionType: ['domestic'] as string[],
+      sourceType: ['club-referral'] as string[],
+      type: [] as string[],
+      location: [] as string[],
+      jobType: [] as string[],
+      salary: [] as string[],
+      isTrusted: false,
+      isNew: false
+    }
   })
+
+  useEffect(() => {
+    localStorage.setItem('haigoo_job_filters', JSON.stringify(filters))
+  }, [filters])
 
   // Load user preferences - CRITICAL FIX: Function defined inside useEffect
   useEffect(() => {
@@ -522,7 +534,7 @@ export default function JobsPage() {
 
   return (
     <div
-      className="h-[calc(100vh-64px)] bg-slate-50 flex flex-col"
+      className="h-full bg-slate-50 flex flex-col"
       role="main"
       aria-label="职位搜索页面"
     >
@@ -542,46 +554,47 @@ export default function JobsPage() {
 
         {/* Top Section: Search & Filters */}
         <div className="flex-shrink-0 space-y-4 z-20">
-           {/* Search Bar Row */}
-           <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                 <input
-                   type="text"
-                   value={searchTerm}
-                   onChange={(e) => setSearchTerm(e.target.value)}
-                   placeholder="搜索职位、公司、技能..."
-                   className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-base shadow-sm transition-all"
-                 />
-              </div>
-              <div className="flex items-center gap-3">
+           {/* Search & Sort & Tracking Row */}
+           <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1 flex gap-3">
+                 <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="搜索职位、公司、技能..."
+                      className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-base shadow-sm transition-all"
+                    />
+                 </div>
+                 
                  <button
                    onClick={() => setSortBy(prev => prev === 'recent' ? 'relevance' : 'recent')}
-                   className={`flex items-center gap-2 px-6 py-3 border rounded-xl shadow-sm text-sm font-bold transition-all whitespace-nowrap ${
+                   className={`flex items-center gap-2 px-4 py-3 border rounded-xl shadow-sm text-sm font-bold transition-all whitespace-nowrap ${
                      sortBy === 'recent'
                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                    }`}
                  >
                    <SortAsc className="w-4 h-4" />
-                   <span>{sortBy === 'recent' ? '最新发布' : '相关度排序'}</span>
-                 </button>
-                 
-                 <button
-                   onClick={() => setIsPreferenceModalOpen(true)}
-                   className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all whitespace-nowrap"
-                 >
-                   <Sparkles className="w-4 h-4" />
-                   {userPreferences ? '修改偏好' : '添加偏好'}
+                   <span className="hidden sm:inline">{sortBy === 'recent' ? '最新发布' : '相关度排序'}</span>
                  </button>
               </div>
+
+              <button
+                onClick={() => setIsPreferenceModalOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all whitespace-nowrap w-full md:w-auto justify-center"
+              >
+                <Sparkles className="w-4 h-4" />
+                职位追踪
+              </button>
            </div>
 
            {/* Filter Bar */}
            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
-              <JobFilterSidebar
+              <JobFilterBar
                 filters={filters}
-                onFilterChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))}
+                onFilterChange={(newFilters: any) => setFilters((prev: any) => ({ ...prev, ...newFilters }))}
                 categoryOptions={topCategories.map(c => ({ label: c, value: c }))}
                 industryOptions={industryOptions}
                 jobTypeOptions={typeOptions}
@@ -701,7 +714,7 @@ export default function JobsPage() {
       )}
 
       {/* Job Preferences Modal */}
-      <JobPreferenceModal
+      <JobTrackingModal
         isOpen={isPreferenceModalOpen}
         onClose={() => setIsPreferenceModalOpen(false)}
         onSave={saveUserPreferences}
