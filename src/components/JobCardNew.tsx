@@ -36,8 +36,8 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    // Handle company website click
    const handleCompanyClick = (e: React.MouseEvent) => {
       e.stopPropagation();
-      // Using sourceUrl as companyUrl if not available directly, or fallback to job detail
-      const url = job.sourceUrl;
+      // Using companyWebsite from backend if available, fallback to sourceUrl
+      const url = job.companyWebsite || job.sourceUrl;
       if (url) {
          window.open(url, '_blank', 'noopener,noreferrer');
       }

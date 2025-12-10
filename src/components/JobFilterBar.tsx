@@ -235,6 +235,22 @@ export default function JobFilterBar({
     filters.industry.length > 0 || 
     filters.location.length > 0;
 
+  const clearAllFilters = () => {
+    onFilterChange({
+      category: [],
+      experienceLevel: [],
+      industry: [],
+      regionType: [],
+      sourceType: [],
+      jobType: [],
+      salary: [],
+      location: [],
+      isTrusted: false,
+      isNew: false
+    });
+    onSearchChange('');
+  };
+
   return (
     <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col xl:flex-row gap-3">
       {/* Search Input - Compact */}
@@ -253,6 +269,17 @@ export default function JobFilterBar({
 
       {/* Filter Row */}
       <div className="flex flex-wrap items-center gap-2 flex-1">
+        {/* Reset Button */}
+        {(filters.category.length > 0 || filters.experienceLevel.length > 0 || filters.industry.length > 0 || filters.regionType.length > 0 || filters.sourceType.length > 0 || filters.jobType.length > 0 || filters.salary.length > 0 || filters.location.length > 0 || filters.isTrusted || filters.isNew || searchTerm) && (
+          <button
+            onClick={clearAllFilters}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-700 whitespace-nowrap"
+            title="重置所有筛选"
+          >
+            <span className="text-xs font-medium">重置</span>
+          </button>
+        )}
+
         {/* Region Type */}
         <FilterDropdown
           label="区域限制"
