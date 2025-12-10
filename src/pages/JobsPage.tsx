@@ -610,7 +610,22 @@ export default function JobsPage() {
                      <Search className="w-6 h-6 text-slate-300" />
                    </div>
                    <p className="text-slate-900 font-medium mb-1">未找到相关职位</p>
-                   <button onClick={clearAllFilters} className="text-indigo-600 text-sm hover:underline">清除筛选</button>
+                   <button onClick={clearAllFilters} className="text-indigo-600 text-sm hover:underline mb-8">清除筛选</button>
+                   
+                   {/* Job Tracking Promo for Empty State */}
+                   <div className="w-full max-w-sm bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-indigo-600" />
+                        <span className="font-bold text-slate-900 text-sm">没找到心仪的职位？</span>
+                      </div>
+                      <p className="text-xs text-slate-500 text-center">告诉我们您的需求，有合适机会第一时间通知您</p>
+                      <button
+                        onClick={() => setIsPreferenceModalOpen(true)}
+                        className="px-6 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors w-full"
+                      >
+                        开启职位追踪
+                      </button>
+                   </div>
                  </div>
                ) : (
                  <div>
@@ -624,6 +639,27 @@ export default function JobsPage() {
                        matchScore={job.matchScore}
                      />
                    ))}
+                   
+                   {/* Low Result Count Promo */}
+                   {distributedJobs.length < 5 && (
+                     <div className="mx-4 my-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-indigo-600 flex-shrink-0">
+                             <Sparkles className="w-5 h-5" />
+                          </div>
+                          <div className="text-center sm:text-left">
+                            <h3 className="font-bold text-slate-900 text-sm">没找到心仪的职位？</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">告诉我们您的需求，有合适机会第一时间通知您</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setIsPreferenceModalOpen(true)}
+                          className="px-4 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors whitespace-nowrap"
+                        >
+                          开启职位追踪
+                        </button>
+                     </div>
+                   )}
                    
                    {/* Load More Trigger */}
                    <div className="p-4 text-center border-t border-slate-50">

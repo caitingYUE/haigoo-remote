@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Mail, MessageCircle } from 'lucide-react'
+import { X, Mail, MessageCircle, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react'
+import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 
 export interface JobPreferences {
     jobTypes: string[]
@@ -10,6 +11,7 @@ export interface JobPreferences {
     contactEmail?: string
     contactWechat?: string
     notes?: string
+    resumeName?: string
 }
 
 interface JobTrackingModalProps {
@@ -28,7 +30,8 @@ const DEFAULT_PREFERENCES: JobPreferences = {
     levels: [],
     contactEmail: '',
     contactWechat: '',
-    notes: ''
+    notes: '',
+    resumeName: ''
 }
 
 const LOCATION_OPTIONS = [
@@ -208,6 +211,9 @@ export function JobTrackingModal({
     const [preferences, setPreferences] = useState<JobPreferences>(
         initialPreferences || DEFAULT_PREFERENCES
     )
+    const [isUploading, setIsUploading] = useState(false)
+    const [uploadError, setUploadError] = useState<string | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         if (initialPreferences) {
@@ -218,6 +224,30 @@ export function JobTrackingModal({
     const handleSave = () => {
         onSave(preferences)
         onClose()
+    }
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setIsUploading(true)
+        setUploadError(null)
+
+        try {
+            // 调用统一的简历解析/上传服务
+            const result = await parseResumeFileEnhanced(file)
+            
+            // 只要 API 调用没有抛出异常，通常意味着文件已处理
+            // 即使解析失败，我们也认为文件已上传（参考 ProfileCenterPage 逻辑）
+            setPreferences(prev => ({ ...prev, resumeName: file.name }))
+            
+        } catch (error) {
+            console.error('Upload failed', error)
+            setUploadError('上传失败，请稍后重试')
+        } finally {
+            setIsUploading(false)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+        }
     }
 
     if (!isOpen) return null
@@ -341,6 +371,78 @@ export function JobTrackingModal({
                         options={LEVEL_OPTIONS}
                         placeholder="例如：高级/Senior、经理/Manager"
                     />
+
+                    {/* Resume Upload */}
+                    <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <label className="block text-sm font-semibold text-slate-900">
+                                上传简历 <span className="text-xs font-normal text-slate-500 ml-1">(同步至个人中心)</span>
+                            </label>
+                            {preferences.resumeName && (
+                                <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" /> 已上传
+                                </span>
+                            )}
+                        </div>
+                        
+                        {!preferences.resumeName ? (
+                            <div 
+                                onClick={() => !isUploading && fileInputRef.current?.click()}
+                                className={`border-2 border-dashed border-indigo-200 rounded-lg p-4 flex flex-col items-center justify-center transition-colors bg-white ${isUploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-indigo-50'}`}
+                            >
+                                {isUploading ? (
+                                    <div className="flex flex-col items-center gap-2 py-2">
+                                        <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                        <span className="text-xs text-indigo-600 font-medium">正在上传并解析...</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2 py-2">
+                                        <Upload className="w-6 h-6 text-indigo-400" />
+                                        <span className="text-sm text-indigo-600 font-medium">点击上传简历文件</span>
+                                        <span className="text-xs text-slate-400">支持 PDF, DOC, DOCX, TXT</span>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-indigo-100">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <FileText className="w-4 h-4 text-indigo-600" />
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-sm font-medium text-slate-900 truncate">{preferences.resumeName}</span>
+                                        <span className="text-xs text-green-600">上传成功</span>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1"
+                                >
+                                    更换
+                                </button>
+                            </div>
+                        )}
+                        
+                        {uploadError && (
+                            <div className="flex items-center gap-2 text-xs text-red-500">
+                                <AlertCircle className="w-3 h-3" />
+                                {uploadError}
+                            </div>
+                        )}
+                        
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                            <span className="font-medium text-indigo-600">提示：</span> 
+                            简历将同步至个人中心，仅用于有合适岗位时通知您并帮您快速内推，不会对外公开。
+                        </p>
+                        
+                        <input 
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".pdf,.doc,.docx,.txt"
+                            onChange={handleUpload}
+                            className="hidden"
+                        />
+                    </div>
 
                     {/* Supplementary Notes */}
                     <div>
