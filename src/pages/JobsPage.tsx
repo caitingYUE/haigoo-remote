@@ -567,54 +567,20 @@ export default function JobsPage() {
       <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 gap-6 h-full">
 
         {/* Top Section: Search & Filters */}
-        <div className="flex-shrink-0 space-y-4 z-20">
-           {/* Search & Sort & Tracking Row */}
-           <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1 flex gap-3">
-                 <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="搜索职位、公司、技能..."
-                      className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-base shadow-sm transition-all"
-                    />
-                 </div>
-                 
-                 <button
-                   onClick={() => setSortBy(prev => prev === 'recent' ? 'relevance' : 'recent')}
-                   className={`flex items-center gap-2 px-4 py-3 border rounded-xl shadow-sm text-sm font-bold transition-all whitespace-nowrap ${
-                     sortBy === 'recent'
-                       ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                       : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                   }`}
-                 >
-                   <SortAsc className="w-4 h-4" />
-                   <span className="hidden sm:inline">{sortBy === 'recent' ? '最新发布' : '相关度排序'}</span>
-                 </button>
-              </div>
-
-              <button
-                onClick={() => setIsPreferenceModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white border border-transparent rounded-xl shadow-md text-sm font-bold hover:bg-indigo-700 transition-all whitespace-nowrap w-full md:w-auto justify-center"
-              >
-                <Sparkles className="w-4 h-4 text-indigo-100" />
-                职位追踪
-              </button>
-           </div>
-
-           {/* Filter Bar */}
-           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
-              <JobFilterBar
-                filters={filters}
-                onFilterChange={(newFilters: any) => setFilters((prev: any) => ({ ...prev, ...newFilters }))}
-                categoryOptions={topCategories.map(c => ({ label: c, value: c }))}
-                industryOptions={industryOptions}
-                jobTypeOptions={typeOptions}
-                locationOptions={locationOptions}
-              />
-           </div>
+        <div className="flex-shrink-0 z-20">
+           <JobFilterBar
+             filters={filters}
+             onFilterChange={(newFilters: any) => setFilters((prev: any) => ({ ...prev, ...newFilters }))}
+             categoryOptions={topCategories.map(c => ({ label: c, value: c }))}
+             industryOptions={industryOptions}
+             jobTypeOptions={typeOptions}
+             locationOptions={locationOptions}
+             searchTerm={searchTerm}
+             onSearchChange={setSearchTerm}
+             sortBy={sortBy}
+             onSortChange={() => setSortBy(prev => prev === 'recent' ? 'relevance' : 'recent')}
+             onOpenTracking={() => setIsPreferenceModalOpen(true)}
+           />
         </div>
 
         {/* Main Content Area: Split View */}

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChevronDown, Check, X, Filter } from 'lucide-react';
+import { ChevronDown, Check, Search, SortAsc, Sparkles, SlidersHorizontal } from 'lucide-react';
 
 // --- Types ---
 
@@ -12,6 +12,7 @@ interface FilterDropdownProps {
   children: React.ReactNode;
   isActive: boolean; // Whether any value is selected
   variant?: 'default' | 'solid-blue' | 'solid-purple'; // Added variant
+  icon?: React.ReactNode;
 }
 
 interface CheckboxItemProps {
@@ -40,6 +41,11 @@ interface JobFilterBarProps {
   industryOptions: { label: string, value: string }[];
   jobTypeOptions: { label: string, value: string }[];
   locationOptions: { label: string, value: string }[];
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  sortBy: 'recent' | 'relevance';
+  onSortChange: () => void;
+  onOpenTracking: () => void;
 }
 
 // --- Constants ---
@@ -62,7 +68,7 @@ const SALARY_OPTIONS = [
 
 // --- Components ---
 
-const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, variant = 'default' }) => {
+const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, variant = 'default', icon }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,7 +87,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
   }, [isOpen, onClose]);
 
   // Determine button styles based on variant and active state
-  let buttonClass = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all border ";
+  let buttonClass = "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border whitespace-nowrap ";
   
   if (isActive || isOpen) {
     if (variant === 'solid-blue') {
@@ -92,12 +98,12 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
        buttonClass += "bg-indigo-50 text-indigo-600 border-indigo-200 font-medium";
     }
   } else {
-    buttonClass += "bg-white text-slate-700 border-transparent hover:bg-slate-50";
+    buttonClass += "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300";
   }
 
   // Chevron color adjustment for solid variants
-  const chevronClass = `w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''} ${
-    (isActive || isOpen) && (variant === 'solid-blue' || variant === 'solid-purple') ? 'text-white' : ''
+  const chevronClass = `w-3.5 h-3.5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''} ${
+    (isActive || isOpen) && (variant === 'solid-blue' || variant === 'solid-purple') ? 'text-white' : 'text-slate-400'
   }`;
 
   return (
@@ -106,13 +112,14 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
         onClick={onToggle}
         className={buttonClass}
       >
+        {icon && <span className={isActive && (variant === 'solid-blue' || variant === 'solid-purple') ? 'text-white' : 'text-slate-500'}>{icon}</span>}
         <span className="truncate max-w-[100px]">{isActive && activeLabel ? activeLabel : label}</span>
         <ChevronDown className={chevronClass} />
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-2 min-w-[200px] max-w-[300px] bg-white rounded-xl shadow-xl border border-slate-100 z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-          <div className="p-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+        <div className="absolute left-0 top-full mt-2 min-w-[240px] max-w-[300px] bg-white rounded-xl shadow-xl border border-slate-100 z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+          <div className="p-2 max-h-[400px] overflow-y-auto custom-scrollbar">
             {children}
           </div>
         </div>
@@ -122,7 +129,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
 };
 
 const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, count, emphasized }) => (
-  <label className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-slate-50 rounded-lg transition-colors">
+  <label className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full">
     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${
        checked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'
       }`}>
@@ -134,7 +141,7 @@ const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, c
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
     />
-    <span className={`text-sm ${checked ? 'text-indigo-600 font-medium' : 'text-slate-600'} ${emphasized ? 'font-bold' : ''}`}>
+    <span className={`text-sm flex-1 ${checked ? 'text-indigo-600 font-medium' : 'text-slate-600'} ${emphasized ? 'font-bold' : ''}`}>
       {label}
     </span>
     {count !== undefined && (
@@ -143,13 +150,24 @@ const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, c
   </label>
 );
 
+const FilterSectionHeader: React.FC<{ title: string }> = ({ title }) => (
+  <div className="px-2 py-1.5 mt-2 first:mt-0 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50 rounded-md">
+    {title}
+  </div>
+);
+
 export default function JobFilterBar({
   filters,
   onFilterChange,
   categoryOptions,
   industryOptions,
   jobTypeOptions,
-  locationOptions
+  locationOptions,
+  searchTerm,
+  onSearchChange,
+  sortBy,
+  onSortChange,
+  onOpenTracking
 }: JobFilterBarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
@@ -201,22 +219,40 @@ export default function JobFilterBar({
       }
       return `岗位来源 (${filters.sourceType.length})`;
   };
-
-  const removeFilter = (section: keyof typeof filters, value: string) => {
-      const current = filters[section] as string[];
-      onFilterChange({ [section]: current.filter(v => v !== value) });
+  
+  const getMoreFiltersCount = () => {
+    const count = 
+      filters.experienceLevel.length + 
+      filters.salary.length + 
+      filters.industry.length + 
+      filters.location.length;
+    return count > 0 ? `更多筛选 (${count})` : '更多筛选';
   };
-
-  // Helper to map values back to labels for tags
-  const getLabel = (value: string, options: { label: string, value: string }[]) => {
-      const found = options.find(o => o.value === value);
-      return found ? found.label : value;
-  };
+  
+  const hasMoreFilters = 
+    filters.experienceLevel.length > 0 || 
+    filters.salary.length > 0 || 
+    filters.industry.length > 0 || 
+    filters.location.length > 0;
 
   return (
-    <div className="space-y-3">
+    <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col xl:flex-row gap-3">
+      {/* Search Input - Compact */}
+      <div className="relative flex-1 xl:max-w-xs min-w-[240px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="搜索职位、公司、技能..."
+          className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-sm transition-all"
+        />
+      </div>
+
+      <div className="h-px xl:h-auto xl:w-px bg-slate-100 xl:mx-1"></div>
+
       {/* Filter Row */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 flex-1">
         {/* Region Type */}
         <FilterDropdown
           label="区域限制"
@@ -287,15 +323,18 @@ export default function JobFilterBar({
           ))}
         </FilterDropdown>
 
-        {/* Experience */}
+        {/* More Filters */}
         <FilterDropdown
-          label="工作经验"
-          activeLabel={getActiveLabel('experienceLevel', EXPERIENCE_OPTIONS, '工作经验')}
-          isActive={filters.experienceLevel.length > 0}
-          isOpen={openDropdown === 'experienceLevel'}
-          onToggle={() => toggleDropdown('experienceLevel')}
+          label="更多筛选"
+          activeLabel={getMoreFiltersCount()}
+          isActive={hasMoreFilters}
+          isOpen={openDropdown === 'more'}
+          onToggle={() => toggleDropdown('more')}
           onClose={() => setOpenDropdown(null)}
+          icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
         >
+          {/* Experience Section */}
+          <FilterSectionHeader title="工作经验" />
           {EXPERIENCE_OPTIONS.map(opt => (
             <CheckboxItem
               key={opt.value}
@@ -304,18 +343,10 @@ export default function JobFilterBar({
               onChange={(c) => handleCheckboxChange('experienceLevel', opt.value, c)}
             />
           ))}
-        </FilterDropdown>
 
-        {/* Salary */}
-        <FilterDropdown
-          label="薪资范围"
-          activeLabel={getActiveLabel('salary', SALARY_OPTIONS, '薪资范围')}
-          isActive={filters.salary.length > 0}
-          isOpen={openDropdown === 'salary'}
-          onToggle={() => toggleDropdown('salary')}
-          onClose={() => setOpenDropdown(null)}
-        >
-           {SALARY_OPTIONS.map(opt => (
+          {/* Salary Section */}
+          <FilterSectionHeader title="薪资范围" />
+          {SALARY_OPTIONS.map(opt => (
             <CheckboxItem
               key={opt.value}
               label={opt.label}
@@ -323,17 +354,9 @@ export default function JobFilterBar({
               onChange={(c) => handleCheckboxChange('salary', opt.value, c)}
             />
           ))}
-        </FilterDropdown>
 
-        {/* Industry */}
-        <FilterDropdown
-          label="行业领域"
-          activeLabel={getActiveLabel('industry', industryOptions, '行业领域')}
-          isActive={filters.industry.length > 0}
-          isOpen={openDropdown === 'industry'}
-          onToggle={() => toggleDropdown('industry')}
-          onClose={() => setOpenDropdown(null)}
-        >
+          {/* Industry Section */}
+          <FilterSectionHeader title="行业领域" />
           {industryOptions.map(opt => (
             <CheckboxItem
               key={opt.value}
@@ -342,17 +365,9 @@ export default function JobFilterBar({
               onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
             />
           ))}
-        </FilterDropdown>
-        
-        {/* Specific Location (Cities) */}
-        <FilterDropdown
-          label="城市/地点"
-          activeLabel={getActiveLabel('location', locationOptions, '城市/地点')}
-          isActive={filters.location.length > 0}
-          isOpen={openDropdown === 'location'}
-          onToggle={() => toggleDropdown('location')}
-          onClose={() => setOpenDropdown(null)}
-        >
+
+          {/* Location Section */}
+          <FilterSectionHeader title="城市/地点" />
           {locationOptions.map(opt => (
             <CheckboxItem
               key={opt.value}
@@ -364,50 +379,31 @@ export default function JobFilterBar({
         </FilterDropdown>
       </div>
 
-      {/* Selected Tags Row */}
-      {(filters.category.length > 0 || filters.experienceLevel.length > 0 || filters.industry.length > 0 || filters.location.length > 0 || filters.salary.length > 0) && (
-        <div className="flex flex-wrap gap-2 pt-1">
-          {filters.category.map(v => (
-            <div key={v} className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs">
-              {getLabel(v, categoryOptions)}
-              <button onClick={() => removeFilter('category', v)} className="hover:text-indigo-900"><X className="w-3 h-3" /></button>
-            </div>
-          ))}
-          {filters.experienceLevel.map(v => (
-            <div key={v} className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs">
-              {getLabel(v, EXPERIENCE_OPTIONS)}
-              <button onClick={() => removeFilter('experienceLevel', v)} className="hover:text-indigo-900"><X className="w-3 h-3" /></button>
-            </div>
-          ))}
-          {filters.industry.map(v => (
-            <div key={v} className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs">
-              {getLabel(v, industryOptions)}
-              <button onClick={() => removeFilter('industry', v)} className="hover:text-indigo-900"><X className="w-3 h-3" /></button>
-            </div>
-          ))}
-          {filters.location.map(v => (
-            <div key={v} className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs">
-              {getLabel(v, locationOptions)}
-              <button onClick={() => removeFilter('location', v)} className="hover:text-indigo-900"><X className="w-3 h-3" /></button>
-            </div>
-          ))}
-           {filters.salary.map(v => (
-            <div key={v} className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs">
-              {getLabel(v, SALARY_OPTIONS)}
-              <button onClick={() => removeFilter('salary', v)} className="hover:text-indigo-900"><X className="w-3 h-3" /></button>
-            </div>
-          ))}
-          <button 
-             onClick={() => onFilterChange({ 
-                 category: [], experienceLevel: [], industry: [], location: [], salary: [] 
-                 // Don't clear RegionType and SourceType as they are defaults
-             })}
-             className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1"
-          >
-             清除筛选
-          </button>
-        </div>
-      )}
+      <div className="h-px xl:h-auto xl:w-px bg-slate-100 xl:mx-1"></div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 justify-end">
+        <button
+           onClick={onSortChange}
+           className={`flex items-center gap-2 px-3 py-2 border rounded-lg shadow-sm text-sm font-medium transition-all whitespace-nowrap ${
+             sortBy === 'recent'
+               ? 'bg-slate-900 border-slate-900 text-white'
+               : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+           }`}
+           title={sortBy === 'recent' ? '当前：最新发布' : '当前：相关度排序'}
+        >
+           <SortAsc className="w-4 h-4" />
+           <span className="hidden sm:inline">{sortBy === 'recent' ? '最新' : '相关'}</span>
+        </button>
+
+        <button
+          onClick={onOpenTracking}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white border border-indigo-600 rounded-lg shadow-sm text-sm font-bold hover:bg-indigo-700 transition-all whitespace-nowrap"
+        >
+          <Sparkles className="w-4 h-4 text-indigo-100" />
+          <span className="hidden sm:inline">追踪</span>
+        </button>
+      </div>
     </div>
   );
 }
