@@ -19,6 +19,7 @@ export interface Job {
   expiresAt?: string  // 可选，避免虚假过期时间
   source: string
   sourceUrl?: string
+  url?: string // Standard job post URL
   logo?: string
   // RSS数据扩展字段
   experienceLevel?: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive'
@@ -45,7 +46,7 @@ export interface Job {
   translatedAt?: string
   // Trusted Company Fields
   companyId?: string
-  sourceType?: 'trusted' | 'rss' | 'third-party'
+  sourceType?: 'trusted' | 'rss' | 'third-party' | 'club-referral'
   isTrusted?: boolean
   canRefer?: boolean
 

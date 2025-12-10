@@ -190,7 +190,14 @@ export default function JobsPage() {
 
       // 构建查询参数
       const queryParams = new URLSearchParams()
-      queryParams.append('action', 'jobs_with_match_score')
+      
+      // 智能判断：如果已登录且有Token，尝试获取带匹配分数的列表；否则获取普通列表
+      // 如果后端返回 401 (Token失效)，会自动降级为普通列表
+      const shouldUseMatchScore = isAuthenticated && token;
+      if (shouldUseMatchScore) {
+        queryParams.append('action', 'jobs_with_match_score')
+      }
+      
       queryParams.append('page', page.toString())
       queryParams.append('pageSize', pageSize.toString())
 
@@ -209,7 +216,17 @@ export default function JobsPage() {
       if (filters.isTrusted) queryParams.append('isTrusted', 'true')
       if (filters.isNew) queryParams.append('isNew', 'true')
 
-      const response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
+      let response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`, { 
+        headers: token ? { Authorization: `Bearer ${token}` } : {} 
+      })
+
+      // 自动降级处理：如果带分数的接口返回 401 (Unauthorized) 或 500 (Server Error)，尝试降级为普通接口
+      if (!response.ok && shouldUseMatchScore) {
+        console.warn(`[JobsPage] Failed to fetch matched jobs (status ${response.status}), falling back to standard list`)
+        queryParams.delete('action') // 移除 action 参数，回退到默认列表
+        response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`)
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }

@@ -88,8 +88,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             }
         }
 
-        if (job.sourceUrl) {
-            window.open(job.sourceUrl, '_blank', 'noopener,noreferrer')
+        const url = job.url || job.sourceUrl
+        if (url) {
+            window.open(url, '_blank', 'noopener,noreferrer')
         } else {
             onApply?.(job.id)
         }
