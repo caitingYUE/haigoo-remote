@@ -549,7 +549,7 @@ export default function JobsPage() {
       category: [],
       experienceLevel: [],
       industry: [],
-      regionType: [],
+      regionType: ['domestic'], // Default to domestic (China Available)
       sourceType: [],
       type: [],
       location: [],

@@ -90,6 +90,7 @@ function classifyRegion(location) {
     'pakistan', 'karachi',
     'bangladesh', 'dhaka',
     'sri lanka', 'colombo',
+    'kuwait', // 科威特
 
     // 中东
     'uae', 'dubai', 'abu dhabi',
@@ -139,7 +140,7 @@ function classifyRegion(location) {
   }
 
   if (isAPAC) {
-    return 'domestic'
+    return 'both'
   }
 
   if (isGlobal) {
@@ -200,6 +201,12 @@ async function cleanAndFix() {
     const uniqueJobs = Array.from(uniqueMap.values());
 
     for (const job of uniqueJobs) {
+      // Debug logging for specific locations
+      const locLower = (job.location || '').toLowerCase();
+      if (locLower.includes('kuwait') || locLower.includes('india') || locLower.includes('united states')) {
+         console.log(`DEBUG: Job ${job.job_id} Loc: "${job.location}" Region: ${job.region} -> New: ${classifyRegion(job.location)}`);
+      }
+
       const newRegion = classifyRegion(job.location);
       if (newRegion !== job.region) {
         updates.push({ id: job.job_id, region: newRegion, old: job.region, loc: job.location });
