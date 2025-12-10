@@ -597,7 +597,7 @@ export default function JobsPage() {
 
               <button
                 onClick={() => setIsPreferenceModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white border border-transparent rounded-xl shadow-md text-sm font-bold hover:shadow-lg hover:brightness-110 transition-all whitespace-nowrap w-full md:w-auto justify-center"
+                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white border border-transparent rounded-xl shadow-md text-sm font-bold hover:bg-indigo-700 transition-all whitespace-nowrap w-full md:w-auto justify-center"
               >
                 <Sparkles className="w-4 h-4 text-indigo-100" />
                 职位追踪

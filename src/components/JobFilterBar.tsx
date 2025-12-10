@@ -85,9 +85,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
   
   if (isActive || isOpen) {
     if (variant === 'solid-blue') {
-       buttonClass += "bg-blue-600 text-white border-blue-600 font-medium shadow-sm hover:bg-blue-700";
+       buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
     } else if (variant === 'solid-purple') {
-       buttonClass += "bg-purple-600 text-white border-purple-600 font-medium shadow-sm hover:bg-purple-700";
+       buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
     } else {
        buttonClass += "bg-indigo-50 text-indigo-600 border-indigo-200 font-medium";
     }
@@ -228,13 +228,13 @@ export default function JobFilterBar({
           variant="solid-blue"
         >
           <CheckboxItem
-            label="🇨🇳 中国可申"
+            label="中国可申"
             checked={filters.regionType.includes('domestic')}
             onChange={(c) => handleCheckboxChange('regionType', 'domestic', c)}
             emphasized
           />
           <CheckboxItem
-            label="🌏 海外可申"
+            label="海外可申"
             checked={filters.regionType.includes('overseas')}
             onChange={(c) => handleCheckboxChange('regionType', 'overseas', c)}
           />
@@ -251,18 +251,18 @@ export default function JobFilterBar({
           variant="solid-purple"
         >
           <CheckboxItem
-            label="✨ 俱乐部内推"
+            label="俱乐部内推"
             checked={filters.sourceType.includes('club-referral')}
             onChange={(c) => handleCheckboxChange('sourceType', 'club-referral', c)}
             emphasized
           />
           <CheckboxItem
-            label="💎 人工精选"
+            label="人工精选"
             checked={filters.sourceType.includes('curated')}
             onChange={(c) => handleCheckboxChange('sourceType', 'curated', c)}
           />
           <CheckboxItem
-            label="🌐 第三方平台"
+            label="第三方平台"
             checked={filters.sourceType.includes('third-party')}
             onChange={(c) => handleCheckboxChange('sourceType', 'third-party', c)}
           />
