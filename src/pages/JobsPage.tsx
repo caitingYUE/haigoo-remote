@@ -55,7 +55,7 @@ export default function JobsPage() {
       experienceLevel: [] as string[],
       industry: [] as string[],
       regionType: ['domestic'] as string[],
-      sourceType: ['club-referral'] as string[],
+      sourceType: [] as string[],
       type: [] as string[],
       location: [] as string[],
       jobType: [] as string[],
