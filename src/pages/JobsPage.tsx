@@ -480,10 +480,24 @@ export default function JobsPage() {
         }
       }
     } else if (!jobId) {
-      // If no jobId, ensure we show list view
-      setShowInlineDetail(false)
-      setIsJobDetailOpen(false)
-      setSelectedJob(null)
+      // If no jobId, handle default selection logic
+      if (distributedJobs.length > 0 && window.innerWidth >= 1024) {
+        // In desktop split view, always show the first job if none is selected
+        // This avoids the empty state as requested
+        if (!selectedJob) {
+           const firstJob = distributedJobs[0]
+           setSelectedJob(firstJob)
+           setCurrentJobIndex(0)
+           setShowInlineDetail(true)
+           // Optionally update URL to reflect this default selection?
+           // For now, keep URL clean until user interaction
+        }
+      } else {
+        // Mobile or empty list - show list view
+        setShowInlineDetail(false)
+        setIsJobDetailOpen(false)
+        setSelectedJob(null)
+      }
     }
   }, [distributedJobs, location.search, selectedJob])
 
@@ -583,9 +597,9 @@ export default function JobsPage() {
 
               <button
                 onClick={() => setIsPreferenceModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all whitespace-nowrap w-full md:w-auto justify-center"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white border border-transparent rounded-xl shadow-md text-sm font-bold hover:shadow-lg hover:brightness-110 transition-all whitespace-nowrap w-full md:w-auto justify-center"
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4 text-indigo-100" />
                 职位追踪
               </button>
            </div>

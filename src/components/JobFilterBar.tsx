@@ -11,6 +11,7 @@ interface FilterDropdownProps {
   onClose: () => void;
   children: React.ReactNode;
   isActive: boolean; // Whether any value is selected
+  variant?: 'default' | 'solid-blue' | 'solid-purple'; // Added variant
 }
 
 interface CheckboxItemProps {
@@ -30,14 +31,7 @@ interface JobFilterBarProps {
     sourceType: string[];
     jobType: string[];
     salary: string[];
-    location: string[]; // This is actually "Regional Restriction" now based on user request? 
-    // No, user said "Location changed to Region Restriction". 
-    // In code: filters.regionType is 'domestic'/'overseas'. filters.location is city names.
-    // User said: "Region Restriction (Location changed to Region Restriction)".
-    // This probably means the "Location" filter should be renamed "Region Restriction" OR "Region Type" should be the primary "Region".
-    // Let's assume:
-    // 1. "Region Restriction" (China/Overseas) -> filters.regionType
-    // 2. "Location" (Cities) -> filters.location
+    location: string[];
     isTrusted: boolean;
     isNew: boolean;
   };
@@ -68,7 +62,7 @@ const SALARY_OPTIONS = [
 
 // --- Components ---
 
-const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive }) => {
+const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, variant = 'default' }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,18 +80,34 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
     };
   }, [isOpen, onClose]);
 
+  // Determine button styles based on variant and active state
+  let buttonClass = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all border ";
+  
+  if (isActive || isOpen) {
+    if (variant === 'solid-blue') {
+       buttonClass += "bg-blue-600 text-white border-blue-600 font-medium shadow-sm hover:bg-blue-700";
+    } else if (variant === 'solid-purple') {
+       buttonClass += "bg-purple-600 text-white border-purple-600 font-medium shadow-sm hover:bg-purple-700";
+    } else {
+       buttonClass += "bg-indigo-50 text-indigo-600 border-indigo-200 font-medium";
+    }
+  } else {
+    buttonClass += "bg-white text-slate-700 border-transparent hover:bg-slate-50";
+  }
+
+  // Chevron color adjustment for solid variants
+  const chevronClass = `w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''} ${
+    (isActive || isOpen) && (variant === 'solid-blue' || variant === 'solid-purple') ? 'text-white' : ''
+  }`;
+
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         onClick={onToggle}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all border ${
-          isActive || isOpen
-            ? 'bg-indigo-50 text-indigo-600 border-indigo-200 font-medium'
-            : 'bg-white text-slate-700 border-transparent hover:bg-slate-50'
-        }`}
+        className={buttonClass}
       >
         <span className="truncate max-w-[100px]">{isActive && activeLabel ? activeLabel : label}</span>
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={chevronClass} />
       </button>
 
       {isOpen && (
@@ -151,15 +161,7 @@ export default function JobFilterBar({
     const current = (filters[section] as string[]) || [];
     let updated;
     
-    // Special handling for single-select behavior if desired, but user asked for multi-select dropdown for Source.
-    // For Region Type (China/Overseas), it seems mutually exclusive usually, but let's keep array for flexibility.
-    // If user wants "Dropdown to modify", maybe single select is better for Region.
-    // Let's implement toggle behavior.
-    
     if (checked) {
-       // If RegionType, maybe clear others if we want strict single select? 
-       // User said "Set China as default, but support dropdown to modify to Overseas".
-       // This implies switching.
        if (section === 'regionType') {
            updated = [value]; // Single select behavior
        } else {
@@ -167,7 +169,6 @@ export default function JobFilterBar({
        }
     } else {
        updated = current.filter(item => item !== value);
-       // Ensure at least one region is selected? No, user might want all. But default is China.
     }
 
     onFilterChange({ [section]: updated });
@@ -224,6 +225,7 @@ export default function JobFilterBar({
           isOpen={openDropdown === 'regionType'}
           onToggle={() => toggleDropdown('regionType')}
           onClose={() => setOpenDropdown(null)}
+          variant="solid-blue"
         >
           <CheckboxItem
             label="🇨🇳 中国可申"
@@ -246,6 +248,7 @@ export default function JobFilterBar({
           isOpen={openDropdown === 'sourceType'}
           onToggle={() => toggleDropdown('sourceType')}
           onClose={() => setOpenDropdown(null)}
+          variant="solid-purple"
         >
           <CheckboxItem
             label="✨ 俱乐部内推"
@@ -341,16 +344,7 @@ export default function JobFilterBar({
           ))}
         </FilterDropdown>
         
-        {/* Specific Location (Cities) - Renamed "区域限制" by user but we already used that for RegionType. 
-            User said: "区域限制（地点改为区域限制）".
-            Maybe they mean the City filter should be called "区域限制" instead of "地点"? 
-            But we have "Region Type" (China/Overseas). 
-            Let's call City filter "具体城市" (Specific City) or "城市地点".
-            Or maybe user means:
-            "Location" -> "区域限制" (Region Restriction).
-            And the China/Overseas toggle is "Region Type".
-            Let's stick to "城市/地点" for the city list.
-        */}
+        {/* Specific Location (Cities) */}
         <FilterDropdown
           label="城市/地点"
           activeLabel={getActiveLabel('location', locationOptions, '城市/地点')}
