@@ -541,7 +541,7 @@ export default function JobsPage() {
       <div className="flex-1 flex overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 gap-6">
 
         {/* Left Sidebar: Filters (Desktop) */}
-        <div className="hidden xl:flex flex-col w-72 flex-shrink-0 h-full overflow-hidden">
+        <div className="hidden xl:flex flex-col w-64 flex-shrink-0 h-full overflow-hidden">
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
              {/* Preference Settings Entry */}
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
@@ -615,7 +615,7 @@ export default function JobsPage() {
         </div>
 
         {/* Middle Column: Job List */}
-        <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[400px] xl:w-[420px]' : 'lg:w-[600px] mx-auto'} bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-shrink-0 transition-all duration-300`}>
+        <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[55%] xl:w-[55%]' : 'lg:w-[700px] mx-auto'} bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-shrink-0 transition-all duration-300`}>
           {/* Header: Search & Sort */}
           <div className="p-4 border-b border-slate-100 bg-white z-10 flex flex-col gap-3">
              <div className="relative">

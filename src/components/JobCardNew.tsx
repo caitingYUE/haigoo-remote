@@ -37,16 +37,16 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       return (
          <div
             onClick={() => onClick?.(job)}
-            className={`group relative p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${isActive ? 'bg-indigo-50/60 ring-inset ring-2 ring-indigo-500/20' : ''} ${className || ''}`}
+            className={`group relative p-5 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${isActive ? 'bg-indigo-50/60 ring-inset ring-2 ring-indigo-500/20' : ''} ${className || ''}`}
          >
             {/* Active Indicator */}
             {isActive && (
                <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 rounded-r"></div>
             )}
 
-            <div className="flex gap-4">
+            <div className="flex gap-5">
                {/* Company Logo */}
-               <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden">
+               <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm">
                   {job.logo ? (
                      <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
                   ) : (
@@ -54,43 +54,80 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   )}
                </div>
 
-               <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start mb-1">
-                     <h3 className={`font-bold text-slate-900 truncate pr-2 ${isActive ? 'text-indigo-700' : ''}`}>
-                        {job.translations?.title || job.title}
-                     </h3>
-                     {matchScore !== undefined && matchScore > 0 && (
-                        <span className="flex-shrink-0 inline-flex items-center text-xs font-bold text-amber-600">
-                           <Sparkles className="w-3 h-3 mr-1 fill-amber-500 text-amber-500" />
-                           {matchScore}%
-                        </span>
-                     )}
-                  </div>
-
-                  <div className="text-sm text-slate-500 mb-2 truncate">
-                     {job.translations?.company || job.company}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                     <span className="font-semibold text-slate-700">
-                        {formatSalary(job.salary)}
-                     </span>
-                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                     <span className="text-slate-500">
-                        {job.isRemote ? '远程' : (job.translations?.location || job.location)}
-                     </span>
-                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                     <span className="text-slate-500">
-                        {DateFormatter.formatPublishTime(job.publishedAt)}
-                     </span>
-                  </div>
-                  
-                  {isVerified && (
-                     <div className="mt-2 flex items-center gap-1 text-[10px] font-medium text-indigo-600">
-                        <Sparkles className="w-3 h-3" />
-                        <span>CLUB VERIFIED</span>
+               <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  <div>
+                     <div className="flex justify-between items-start gap-3 mb-1.5">
+                        <div className="flex-1 min-w-0">
+                           <h3 className={`font-bold text-base text-slate-900 truncate group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`}>
+                              {job.translations?.title || job.title}
+                           </h3>
+                           <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-sm text-slate-500 truncate max-w-[200px]">
+                                 {job.translations?.company || job.company}
+                              </span>
+                              {isVerified && (
+                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                                    <Sparkles className="w-2.5 h-2.5" />
+                                    CLUB
+                                 </span>
+                              )}
+                              {job.canRefer && (
+                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                    内推
+                                 </span>
+                              )}
+                           </div>
+                        </div>
+                        
+                        {/* Match Score */}
+                        {matchScore !== undefined && matchScore > 0 && (
+                           <div className="flex flex-col items-end">
+                              <div className="flex items-center gap-1">
+                                 <div className="relative w-8 h-8 flex items-center justify-center">
+                                    <svg className="w-full h-full transform -rotate-90">
+                                       <circle
+                                          cx="16"
+                                          cy="16"
+                                          r="14"
+                                          stroke="currentColor"
+                                          strokeWidth="2.5"
+                                          fill="none"
+                                          className="text-slate-100"
+                                       />
+                                       <circle
+                                          cx="16"
+                                          cy="16"
+                                          r="14"
+                                          stroke="currentColor"
+                                          strokeWidth="2.5"
+                                          fill="none"
+                                          strokeDasharray={2 * Math.PI * 14}
+                                          strokeDashoffset={2 * Math.PI * 14 * (1 - matchScore / 100)}
+                                          className={`text-amber-500 transition-all duration-1000 ease-out`}
+                                       />
+                                    </svg>
+                                    <span className="absolute text-[10px] font-bold text-slate-700">{matchScore}</span>
+                                 </div>
+                              </div>
+                           </div>
+                        )}
                      </div>
-                  )}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2">
+                     <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded-md">
+                           {formatSalary(job.salary)}
+                        </span>
+                        <span className="flex items-center text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                           <Globe className="w-3 h-3 mr-1 text-slate-400" />
+                           {job.isRemote ? '远程' : (job.translations?.location || job.location)}
+                        </span>
+                        <span className="text-slate-400 px-1">
+                           {DateFormatter.formatPublishTime(job.publishedAt)}
+                        </span>
+                     </div>
+                  </div>
                </div>
             </div>
          </div>
