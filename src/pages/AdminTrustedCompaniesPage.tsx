@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { 
     Building2, Search, Plus, Edit2, Trash2, 
     ExternalLink, X, Loader2,
-    Wand2, DownloadCloud, Upload, Image as ImageIcon,
-    Users
+    Wand2, DownloadCloud, Upload, Image as ImageIcon
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -35,12 +34,6 @@ export default function AdminTrustedCompaniesPage() {
     const [processingImage, setProcessingImage] = useState(false)
     const [coverUrlInput, setCoverUrlInput] = useState('')
     const fileInputRef = useRef<HTMLInputElement | null>(null)
-
-    // Contact Fetching
-    const [fetchingContacts, setFetchingContacts] = useState(false)
-    const [contactResults, setContactResults] = useState<any[]>([])
-    const [showContactModal, setShowContactModal] = useState(false)
-    const [contactFetchError, setContactFetchError] = useState<string | null>(null)
 
     useEffect(() => {
         loadCompanies()
@@ -223,30 +216,17 @@ export default function AdminTrustedCompaniesPage() {
 
     const handleApplyCrop = async () => {
         if (!coverSource || !croppedAreaPixels) return
+
         try {
             setProcessingImage(true)
             const croppedImage = await getCroppedImg(coverSource, croppedAreaPixels)
-
-            let finalImage = croppedImage
-            try {
-                const resp = await fetch('/api/process-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: croppedImage })
-                })
-                const data = await resp.json()
-                if (data?.success && data.image) {
-                    finalImage = data.image
-                }
-            } catch (error) {
-                console.warn('图片压缩失败，使用裁剪结果', error)
+            if (croppedImage) {
+                setFormData(prev => ({ ...prev, coverImage: croppedImage }))
+                setCoverSource('')
+                setShowCropper(false)
             }
-
-            setFormData(prev => ({ ...prev, coverImage: finalImage }))
-            resetCropperState()
-        } catch (error) {
-            console.error('裁剪失败', error)
-            alert('裁剪失败，请重试')
+        } catch (e) {
+            console.error('Failed to crop image:', e)
         } finally {
             setProcessingImage(false)
         }
@@ -289,35 +269,6 @@ export default function AdminTrustedCompaniesPage() {
             alert('分析失败，请重试')
         } finally {
             setAnalyzingId(null)
-        }
-    }
-
-    const handleFetchContacts = async () => {
-        if (!formData.linkedin) return
-        
-        try {
-            setFetchingContacts(true)
-            setContactFetchError(null)
-            
-            const response = await fetch(`/api/data/trusted-companies?action=fetch_linkedin_contacts&url=${encodeURIComponent(formData.linkedin)}`)
-            const data = await response.json()
-            
-            if (data.success) {
-                setContactResults(data.contacts || [])
-                if (data.contacts && data.contacts.length === 0) {
-                     setContactFetchError(data.message || '未找到公开联系人信息 (LinkedIn可能需要登录)')
-                }
-                setShowContactModal(true)
-            } else {
-                setContactFetchError(data.error || '获取失败')
-                setShowContactModal(true)
-            }
-        } catch (e) {
-            console.error('Failed to fetch contacts:', e)
-            setContactFetchError('网络请求失败')
-            setShowContactModal(true)
-        } finally {
-            setFetchingContacts(false)
         }
     }
 
@@ -643,24 +594,13 @@ export default function AdminTrustedCompaniesPage() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="url"
-                                            value={formData.linkedin || ''}
-                                            onChange={e => setFormData({...formData, linkedin: e.target.value})}
-                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="https://linkedin.com/company/..."
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleFetchContacts}
-                                            disabled={fetchingContacts || !formData.linkedin}
-                                            className="px-3 py-2 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 disabled:opacity-50 border border-indigo-200"
-                                            title="尝试获取联系人"
-                                        >
-                                            {fetchingContacts ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
-                                        </button>
-                                    </div>
+                                    <input
+                                        type="url"
+                                        value={formData.linkedin || ''}
+                                        onChange={e => setFormData({...formData, linkedin: e.target.value})}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="https://linkedin.com/company/..."
+                                    />
                                 </div>
                             </div>
 
@@ -773,73 +713,6 @@ export default function AdminTrustedCompaniesPage() {
                                 </div>
                             </div>
                             <p className="text-xs text-gray-500">固定16:9比例，裁剪后会自动压缩保存</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {showContactModal && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
-                    <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
-                        <div className="flex justify-between items-center p-4 border-b">
-                            <h3 className="text-lg font-semibold flex items-center gap-2">
-                                <Users className="w-5 h-5 text-indigo-600" />
-                                LinkedIn 联系人
-                            </h3>
-                            <button onClick={() => setShowContactModal(false)} className="text-gray-500 hover:text-gray-700">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-4 overflow-y-auto flex-1">
-                            {contactFetchError ? (
-                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
-                                    <p className="font-medium mb-1">获取受限</p>
-                                    <p>{contactFetchError}</p>
-                                    <div className="mt-3">
-                                        <a 
-                                            href={formData.linkedin} 
-                                            target="_blank" 
-                                            rel="noreferrer"
-                                            className="text-indigo-600 hover:underline text-sm flex items-center gap-1"
-                                        >
-                                            手动打开 LinkedIn 页面 <ExternalLink className="w-3 h-3" />
-                                        </a>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <p className="text-sm text-gray-500">找到 {contactResults.length} 个相关联系人：</p>
-                                    <div className="space-y-3">
-                                        {contactResults.map((contact, i) => (
-                                            <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                                {contact.image ? (
-                                                    <img src={contact.image} alt={contact.name} className="w-10 h-10 rounded-full object-cover" />
-                                                ) : (
-                                                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                                                        {contact.name?.charAt(0)}
-                                                    </div>
-                                                )}
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="font-medium text-gray-900 truncate">{contact.name}</h4>
-                                                    <p className="text-xs text-gray-500 truncate">{contact.title}</p>
-                                                    {contact.url && (
-                                                        <a href={contact.url} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 hover:underline mt-1 block">
-                                                            查看主页
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-4 border-t bg-gray-50 flex justify-end">
-                            <button
-                                onClick={() => setShowContactModal(false)}
-                                className="px-4 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-sm"
-                            >
-                                关闭
-                            </button>
                         </div>
                     </div>
                 </div>
