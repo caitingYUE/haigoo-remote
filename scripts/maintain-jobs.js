@@ -168,7 +168,7 @@ async function cleanAndFix() {
   try {
     // 1. Fetch all jobs
     console.log('📥 Fetching all jobs...');
-    const result = await neonHelper.query('SELECT job_id, title, company, location, region, published_at FROM jobs ORDER BY published_at DESC');
+    const result = await neonHelper.query('SELECT job_id, title, company, location, region, published_at, can_refer, is_trusted, source_type FROM jobs ORDER BY published_at DESC');
     const jobs = result || [];
     console.log(`✅ Fetched ${jobs.length} jobs.`);
 
@@ -204,8 +204,8 @@ async function cleanAndFix() {
       console.log('✅ Duplicates deleted.');
     }
 
-    // 4. Re-classify Regions
-    console.log('🌍 Re-classifying regions...');
+    // 4. Re-classify Regions & Update SourceType
+    console.log('🌍 Re-classifying regions & Backfilling SourceType...');
     let updatedCount = 0;
     const updates = [];
 
@@ -216,37 +216,50 @@ async function cleanAndFix() {
       // Debug logging for specific locations
       const locLower = (job.location || '').toLowerCase();
       if (locLower.includes('kuwait') || locLower.includes('india') || locLower.includes('united states')) {
-         console.log(`DEBUG: Job ${job.job_id} Loc: "${job.location}" Region: ${job.region} -> New: ${classifyRegion(job.location)}`);
+         // console.log(`DEBUG: Job ${job.job_id} Loc: "${job.location}" Region: ${job.region} -> New: ${classifyRegion(job.location)}`);
       }
 
       const newRegion = classifyRegion(job.location);
-      if (newRegion !== job.region) {
-        updates.push({ id: job.job_id, region: newRegion, old: job.region, loc: job.location });
+      
+      // Determine SourceType
+      let newSourceType = job.sourceType;
+      if (!newSourceType) {
+        if (job.canRefer) {
+          newSourceType = 'club-referral';
+        } else if (job.isTrusted) {
+          newSourceType = 'trusted';
+        } else {
+          // Default to third-party/rss if not internal/trusted
+          newSourceType = 'third-party'; 
+        }
+      }
+
+      // Check if update is needed
+      if (newRegion !== job.region || newSourceType !== job.sourceType) {
+        updates.push({ 
+          id: job.job_id, 
+          region: newRegion, 
+          sourceType: newSourceType,
+          oldRegion: job.region,
+          oldSourceType: job.sourceType
+        });
       }
     }
 
-    console.log(`Found ${updates.length} jobs requiring region update.`);
+    console.log(`Found ${updates.length} jobs requiring update.`);
 
     if (updates.length > 0) {
-      console.log('💾 Updating database regions...');
-      // Batch update
-      // Since SQL doesn't support massive bulk updates easily without complex query construction,
-      // we'll loop sequentially for simplicity in this script, or use small transactions.
-      // For 400 jobs, sequential is fine.
-      
+      console.log('💾 Updating database...');
       let processed = 0;
       for (const update of updates) {
-        await neonHelper.query('UPDATE jobs SET region = $1 WHERE job_id = $2', [update.region, update.id]);
+        await neonHelper.query(
+          'UPDATE jobs SET region = $1, source_type = $2 WHERE job_id = $3', 
+          [update.region, update.sourceType, update.id]
+        );
         processed++;
         if (processed % 50 === 0) process.stdout.write('.');
       }
-      console.log('\n✅ Regions updated.');
-      
-      // Log some examples
-      console.log('Sample updates:');
-      updates.slice(0, 5).forEach(u => {
-        console.log(`   Job ${u.id}: "${u.loc}" ${u.old} -> ${u.region}`);
-      });
+      console.log('\n✅ Jobs updated.');
     }
 
   } catch (e) {
