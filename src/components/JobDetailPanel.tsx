@@ -243,7 +243,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <div 
                         className="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors"
                         onClick={() => {
-                            const url = job.companyWebsite || job.sourceUrl
+                            const url = job.companyWebsite
                             if (url) {
                                 // Add confirmation dialog
                                 if (window.confirm(`即将离开本站跳转到 ${job.company || '企业官网'}，是否继续？`)) {
@@ -254,7 +254,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     >
                         <Building2 className="w-4 h-4" />
                         <span className="font-medium hover:underline">{displayText(job.company || '')}</span>
-                        {(job.companyWebsite || job.sourceUrl) && <ExternalLink className="w-3 h-3 ml-0.5" />}
+                        {job.companyWebsite && <ExternalLink className="w-3 h-3 ml-0.5" />}
                     </div>
                     <span className="text-slate-300">|</span>
                     <div className="flex items-center gap-1.5 relative group">

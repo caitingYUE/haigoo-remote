@@ -36,8 +36,8 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    // Handle company website click
    const handleCompanyClick = (e: React.MouseEvent) => {
       e.stopPropagation();
-      // Using companyWebsite from backend if available, fallback to url/sourceUrl
-      const url = job.companyWebsite || job.url || job.sourceUrl;
+      // Strict: Only use companyWebsite from backend (trusted_companies)
+      const url = job.companyWebsite;
       if (url) {
          window.open(url, '_blank', 'noopener,noreferrer');
       }
@@ -82,7 +82,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      <span className="font-serif italic text-2xl">{companyInitial}</span>
                   )}
                   {/* Hover Overlay for Link */}
-                  {(job.url || job.sourceUrl) && (
+                  {job.companyWebsite && (
                      <div 
                         onClick={handleCompanyClick}
                         className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]"
@@ -101,7 +101,10 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               {job.translations?.title || job.title}
                            </h3>
                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-sm font-medium text-slate-600 truncate max-w-[200px] hover:text-indigo-600 hover:underline cursor-pointer transition-colors" onClick={handleCompanyClick}>
+                              <span 
+                                 className={`text-sm font-medium text-slate-600 truncate max-w-[200px] transition-colors ${job.companyWebsite ? 'hover:text-indigo-600 hover:underline cursor-pointer' : ''}`}
+                                 onClick={job.companyWebsite ? handleCompanyClick : undefined}
+                              >
                                  {job.translations?.company || job.company}
                               </span>
                            </div>
