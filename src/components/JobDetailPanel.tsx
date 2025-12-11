@@ -306,7 +306,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         <div>
                              <h4 className="font-semibold text-slate-900 text-sm">该岗位来自 {job.source || '第三方平台'}</h4>
                              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                                 海狗为您聚合了该岗位信息，点击“一键投递”将跳转至原平台进行申请。
+                                 海狗为您聚合了该岗位信息，点击“前往申请”将跳转至原平台进行申请。
                              </p>
                         </div>
                      </div>
