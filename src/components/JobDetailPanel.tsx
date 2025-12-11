@@ -294,7 +294,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                 {/* Trusted Company Standards Banner */}
                 {job.isTrusted && (
-                    <TrustedStandardsBanner className="mb-6 mx-6" />
+                    <TrustedStandardsBanner className="mb-4 mt-2" />
                 )}
 
                 {job.salary && typeof job.salary === 'object' && job.salary.min > 0 && (

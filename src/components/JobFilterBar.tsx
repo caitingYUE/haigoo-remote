@@ -214,7 +214,7 @@ export default function JobFilterBar({
       if (filters.sourceType.length === 0) return '岗位来源';
       if (filters.sourceType.length === 1) {
           if (filters.sourceType[0] === 'club-referral') return '俱乐部内推';
-          if (filters.sourceType[0] === 'curated') return '可信企业精选';
+          if (filters.sourceType[0] === 'curated') return '官网直申';
           if (filters.sourceType[0] === 'third-party') return '第三方平台';
       }
       return `岗位来源 (${filters.sourceType.length})`;
@@ -319,7 +319,7 @@ export default function JobFilterBar({
             emphasized
           />
           <CheckboxItem
-            label="可信企业精选"
+            label="官网直申"
             checked={filters.sourceType.includes('curated')}
             onChange={(c) => handleCheckboxChange('sourceType', 'curated', c)}
           />
