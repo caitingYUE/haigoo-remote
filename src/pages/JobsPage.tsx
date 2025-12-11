@@ -239,7 +239,24 @@ export default function JobsPage() {
         setJobs(prevJobs => [...prevJobs, ...(data.jobs || [])])
       } else {
         // 首次加载或筛选条件变化时，替换数据
-        setJobs(data.jobs || [])
+        const newJobs = data.jobs || []
+        setJobs(newJobs)
+        
+        // 优化交互：筛选/搜索/排序后，自动选中第一个岗位（仅桌面端分栏视图）
+        if (newJobs.length > 0 && window.innerWidth >= 1024) {
+           const firstJob = newJobs[0]
+           setSelectedJob(firstJob)
+           setCurrentJobIndex(0)
+           setShowInlineDetail(true)
+           
+           // 同步更新URL，保持状态一致
+           const params = new URLSearchParams(location.search)
+           params.set('jobId', firstJob.id)
+           navigate({ search: params.toString() }, { replace: true })
+        } else {
+           // 移动端或无数据时，清除选中状态
+           setSelectedJob(null)
+        }
       }
       setTotalJobs(data.total || 0)
       setCurrentPage(page)
