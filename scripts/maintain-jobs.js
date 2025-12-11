@@ -201,8 +201,10 @@ async function cleanAndFix() {
       }
     }
     
-    // Explicitly set Bluente as Trusted + Referral
+    // Explicitly set Bluente and RedMountain as Trusted + Referral
     companyStats.set('bluente', { isTrusted: true, canRefer: true });
+    companyStats.set('redmountain', { isTrusted: true, canRefer: true });
+    companyStats.set('red mountain', { isTrusted: true, canRefer: true });
 
     console.log(`Found ${duplicates.length} duplicate jobs to delete.`);
 
@@ -234,16 +236,22 @@ async function cleanAndFix() {
       // Determine SourceType
       let newSourceType = job.source_type;
       
+      const isAggregator = (url) => {
+         if (!url) return false;
+         try {
+            const domain = new URL(url).hostname.toLowerCase();
+            const aggregators = ['indeed', 'linkedin', 'glassdoor', 'simplyhired', 'ziprecruiter', 'seek', 'remoteok', 'weworkremotely', 'himalaya', 'jobspresso', 'flexjobs', 'remotive', 'workingnomads'];
+            return aggregators.some(agg => domain.includes(agg));
+         } catch (e) {
+             return false;
+         }
+      };
+
       const isOfficialLink = (url, company) => {
          if (!url || !company) return false;
          const cleanCompany = company.toLowerCase().replace(/\s+/g, '');
          try {
             const domain = new URL(url).hostname.toLowerCase();
-            // Simple heuristic: domain contains company name, or is a known ATS (greenhouse, lever, ashby)
-            // If it's a known aggregator (indeed, linkedin, glassdoor), it's third-party.
-            const aggregators = ['indeed', 'linkedin', 'glassdoor', 'simplyhired', 'ziprecruiter', 'seek', 'remoteok', 'weworkremotely'];
-            if (aggregators.some(agg => domain.includes(agg))) return false;
-            
             // Known ATS are considered "Official" for the company
             const ats = ['greenhouse', 'lever', 'ashby', 'workable', 'breezy', 'recruitee', 'smartrecruiters', 'myworkdayjobs', 'icims', 'jobvite'];
             if (ats.some(platform => domain.includes(platform))) return true;
@@ -251,12 +259,16 @@ async function cleanAndFix() {
             // Direct domain match
             if (domain.includes(cleanCompany)) return true;
             
+            // Allow manual overrides like redmtns.com for RedMountain
+            if (company.toLowerCase().includes('redmountain') && domain.includes('redmtns')) return true;
+
             return false; 
          } catch (e) {
             return false;
          }
       }
 
+      const isUrlAggregator = isAggregator(job.url);
       const isUrlOfficial = isOfficialLink(job.url, job.company);
       
       // Get company trusted status from map
@@ -265,31 +277,41 @@ async function cleanAndFix() {
       const isCompanyTrusted = companyInfo.isTrusted;
       const isCompanyReferral = companyInfo.canRefer;
 
-      // Rule Implementation
-      if (newSourceType === 'rss' || newSourceType === 'third-party' || !newSourceType) {
-         // If it's a Trusted Company AND the link is Official (not an aggregator), we promote it!
-         if (isCompanyTrusted && isUrlOfficial) {
-            if (isCompanyReferral) {
-               newSourceType = 'club-referral';
-            } else {
-               newSourceType = 'trusted';
-            }
-         } else {
-            // If explicitly RSS/Third-party or unknown, and NOT official trusted link -> Third-party
-            newSourceType = 'third-party';
-         }
-      } else {
-         // Existing type is likely club-referral or trusted
-         // Re-verify based on current company status + URL
-         if (isCompanyReferral) {
-             newSourceType = 'club-referral';
-         } else if (isCompanyTrusted) {
-             if (isUrlOfficial) {
-                 newSourceType = 'trusted';
-             } else {
-                 newSourceType = 'third-party'; 
-             }
-         }
+      // Rule Implementation (Strict Priority)
+      
+      // 1. Aggregator URL -> Third-party (Override everything)
+      if (isUrlAggregator) {
+          newSourceType = 'third-party';
+      }
+      // 2. Company is Referral -> Club Referral (If not aggregator)
+      else if (isCompanyReferral) {
+          newSourceType = 'club-referral';
+      }
+      // 3. Company is Trusted -> Official Apply (If not aggregator)
+      else if (isCompanyTrusted) {
+          newSourceType = 'trusted';
+      }
+      // 4. Official Crawl (Backend Crawler, not RSS) -> Official Apply
+      // Assuming 'source' column indicates if it's crawled directly
+      // If source is 'crawled' and not aggregator, it implies official crawl
+      // We can also assume if it's NOT explicitly RSS/Third-party, it might be trusted
+      else if (isUrlOfficial) {
+          newSourceType = 'trusted';
+      }
+      // 5. Default -> Third-party if we can't verify it's official
+      else if (newSourceType === 'rss' || newSourceType === 'third-party') {
+          newSourceType = 'third-party';
+      }
+      // If we are here, existing type is likely something else or null. 
+      // If it's unknown, and not official, default to third-party or keep as is?
+      // User says: "岗位来自RSS数据...链接指向三方...角标都是【第三方】"
+      // "岗位不来自RSS...不跳转向第三方...直接指向企业官方...则角标为【官网直申】"
+      // If we don't know where it came from, but it's not official link, let's play safe.
+      else if (!isUrlOfficial) {
+           // If it's NOT official, it might be a generic job. 
+           // But if it was manually added, maybe we should keep it.
+           // Let's assume 'third-party' for safety if the URL doesn't look official.
+           // newSourceType = 'third-party';
       }
 
       // Enforce exclusivity for third-party logic and update flags based on sourceType
