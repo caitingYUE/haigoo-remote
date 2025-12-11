@@ -177,8 +177,20 @@ async function cleanAndFix() {
     const uniqueMap = new Map();
     const duplicates = [];
 
-    // Also build company stats
-    const companyStats = new Map();
+    // Also build company stats from MASTER companies table
+     // Fetch all companies first to get authoritative status
+     console.log('🏢 Fetching master company data...');
+     const companiesResult = await neonHelper.query('SELECT name, can_refer FROM trusted_companies');
+     const companyMasterMap = new Map();
+     if (companiesResult) {
+         for (const comp of companiesResult) {
+             companyMasterMap.set(comp.name.toLowerCase().trim(), {
+                 isTrusted: true, // Being in trusted_companies table implies trusted
+                 canRefer: comp.can_refer
+             });
+         }
+     }
+     console.log(`✅ Loaded ${companyMasterMap.size} master trusted companies.`);
 
     for (const job of jobs) {
       // Create a key based on normalized title and company
@@ -188,23 +200,10 @@ async function cleanAndFix() {
         duplicates.push(job.job_id);
       } else {
         uniqueMap.set(key, job);
-        
-        // Update company stats
-        if (job.company) {
-            const companyKey = job.company.toLowerCase().trim();
-            const current = companyStats.get(companyKey) || { isTrusted: false, canRefer: false };
-            companyStats.set(companyKey, {
-                isTrusted: current.isTrusted || job.is_trusted,
-                canRefer: current.canRefer || job.can_refer
-            });
-        }
       }
     }
     
-    // Explicitly set Bluente and RedMountain as Trusted + Referral
-    companyStats.set('bluente', { isTrusted: true, canRefer: true });
-    companyStats.set('redmountain', { isTrusted: true, canRefer: true });
-    companyStats.set('red mountain', { isTrusted: true, canRefer: true });
+    // REMOVED MANUAL WHITELIST - relying on companyMasterMap
 
     console.log(`Found ${duplicates.length} duplicate jobs to delete.`);
 
@@ -271,11 +270,33 @@ async function cleanAndFix() {
       const isUrlAggregator = isAggregator(job.url);
       const isUrlOfficial = isOfficialLink(job.url, job.company);
       
-      // Get company trusted status from map
+      // Get company trusted status from MASTER map
       const companyKey = (job.company || '').toLowerCase().trim();
-      const companyInfo = companyStats.get(companyKey) || { isTrusted: false, canRefer: false };
-      const isCompanyTrusted = companyInfo.isTrusted;
-      const isCompanyReferral = companyInfo.canRefer;
+      // Fallback to job's own flags if not in master list (though master list is preferred)
+      // But actually, if it's not in master list, it's likely not trusted/referral unless job has flags.
+      // However, job flags might be wrong (as per user issue). 
+      // User says: "后台打上了可内推标记" -> This implies it IS in the companies table or admin panel.
+      // So we should trust the Master Map primarily.
+      const companyInfo = companyMasterMap.get(companyKey);
+      
+      let isCompanyTrusted = false;
+      let isCompanyReferral = false;
+
+      if (companyInfo) {
+          isCompanyTrusted = companyInfo.isTrusted;
+          isCompanyReferral = companyInfo.canRefer;
+      } else {
+          // Fallback: If not in master table, maybe rely on existing job flags?
+          // BUT the whole point is job flags might be stale.
+          // If the company is NOT in the companies table, it can't be a "Club Trusted Company" officially.
+          // So defaulting to false is safer to avoid "fake" trusted jobs.
+          // However, to avoid breaking existing data that might not be synced to companies table yet:
+          // We can check if we should trust job.is_trusted.
+          // Given user's strictness, let's assume authoritative data comes from companies table.
+          // If a company is not in DB, it's just a raw crawled string.
+          isCompanyTrusted = false;
+          isCompanyReferral = false;
+      }
 
       // Rule Implementation (Strict Priority)
       
