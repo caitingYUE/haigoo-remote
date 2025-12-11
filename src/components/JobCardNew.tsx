@@ -162,11 +162,11 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         )}
 
                         {/* Custom Tags - Enforce check on normalized source type */}
-                        {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
+                        {/* {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
                            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs rounded-md border border-slate-200">
                               第三方
                            </span>
-                        )}
+                        )} */}
 
                         {job.companyTags && job.companyTags.slice(0, 3).map((tag, i) => (
                            <span key={i} className="px-2 py-0.5 bg-gray-50 text-gray-500 text-xs rounded-md border border-gray-100 truncate max-w-[100px]">
@@ -311,11 +311,11 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      {job.category}
                   </span>
                )}
-               {(job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+               {/* {(job.sourceType === 'rss' || job.sourceType === 'third-party') && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-medium border border-slate-200">
                      第三方
                   </span>
-               )}
+               )} */}
                <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100 max-w-[200px] truncate" title={job.location}>
                   <Globe className="w-3 h-3 mr-1.5 text-indigo-500 flex-shrink-0" />
                   {(job.translations?.location || job.location)}
