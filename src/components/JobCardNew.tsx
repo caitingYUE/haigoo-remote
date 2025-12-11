@@ -80,7 +80,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      <img 
                         src={job.logo} 
                         alt={job.company} 
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-contain p-1" 
                         onError={(e) => {
                            // Fallback to initial on error
                            const target = e.target as HTMLImageElement;
@@ -227,16 +227,18 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
             {/* Header Section */}
             <div className="flex items-start gap-4 mb-5">
                {/* Company Logo */}
-               <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-2xl shadow-inner flex-shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+               <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-2xl shadow-inner flex-shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
                   {job.logo ? (
                      <img 
                         src={job.logo} 
                         alt={job.company} 
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-contain p-1" 
                         onError={(e) => {
                            const target = e.target as HTMLImageElement;
                            target.style.display = 'none';
                            if (target.parentElement) {
+                              target.parentElement.classList.remove('bg-white');
+                              target.parentElement.classList.add('bg-gradient-to-br', 'from-slate-50', 'to-slate-100');
                               const span = document.createElement('span');
                               span.className = 'font-serif italic';
                               span.textContent = companyInitial;
@@ -245,7 +247,9 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         }}
                      />
                   ) : (
-                     <span className="font-serif italic">{companyInitial}</span>
+                     <div className="w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                        <span className="font-serif italic">{companyInitial}</span>
+                     </div>
                   )}
                </div>
 
