@@ -297,6 +297,21 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <TrustedStandardsBanner className="mb-4 mt-2" />
                 )}
 
+                {/* Third Party / RSS Source Banner */}
+                {(job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                     <div className="mb-4 mt-2 bg-slate-50 border border-slate-100 rounded-lg p-3 flex items-start gap-3">
+                        <div className="p-1.5 bg-white border border-slate-100 rounded-full text-slate-500 shrink-0">
+                             <ExternalLink className="w-4 h-4" />
+                        </div>
+                        <div>
+                             <h4 className="font-semibold text-slate-900 text-sm">该岗位来自 {job.source || '第三方平台'}</h4>
+                             <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                                 海狗为您聚合了该岗位信息，点击“一键投递”将跳转至原平台进行申请。
+                             </p>
+                        </div>
+                     </div>
+                )}
+
                 {job.salary && typeof job.salary === 'object' && job.salary.min > 0 && (
                     <div className="flex items-center gap-2 mb-4">
                         <DollarSign className="w-4 h-4 text-indigo-600" />
