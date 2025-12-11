@@ -190,10 +190,19 @@ export class CompanyService {
     /**
      * 获取企业官网信息（Logo、简介）
      */
-    static async fetchCompanyInfo(url: string): Promise<{ logo?: string; description?: string; title?: string }> {
+    static async fetchCompanyInfo(url: string, options: { translate?: boolean } = {}): Promise<{ logo?: string; description?: string; title?: string; translations?: { description: string } }> {
         try {
             // Updated to use the merged endpoint in trusted-companies.js
-            const response = await fetch(`/api/data/trusted-companies?action=crawl&url=${encodeURIComponent(url)}`);
+            const params = new URLSearchParams({
+                action: 'crawl',
+                url: url
+            });
+            
+            if (options.translate) {
+                params.append('translate', 'true');
+            }
+
+            const response = await fetch(`/api/data/trusted-companies?${params}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch company info');
             }

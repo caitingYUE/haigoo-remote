@@ -295,3 +295,6 @@ ALTER TABLE trusted_companies DROP COLUMN IF EXISTS founder_intro;
 ALTER TABLE trusted_companies DROP COLUMN IF EXISTS culture_image;
 ALTER TABLE trusted_companies DROP COLUMN IF EXISTS show_culture_on_home;
 
+-- 2025-12-11: Add translations column to trusted_companies table
+ALTER TABLE trusted_companies ADD COLUMN translations JSONB;
+ALTER TABLE extracted_companies ADD COLUMN translations JSONB;

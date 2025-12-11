@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Building2, Search, RefreshCw,
+    Building2, Search, RefreshCw, Download, Upload,
     ExternalLink, Globe, Tag, Briefcase, Eye, X, ChevronLeft, ChevronRight,
     Edit2, Wand2, Loader2, Save
 } from 'lucide-react';
@@ -23,6 +23,7 @@ interface Company {
     updatedAt: string;
     isTrusted?: boolean;
     order?: number;
+    translations?: any;
 }
 
 export default function AdminCompanyManagementPage() {
@@ -165,7 +166,7 @@ export default function AdminCompanyManagementPage() {
         }
     };
 
-    const handleUpdateInfo = async (company: Company) => {
+    const handleUpdateInfo = async (company: Company, options: { translate?: boolean } = {}) => {
         if (!company.url) {
             alert('该企业没有官网链接，无法更新信息');
             return;
@@ -173,7 +174,7 @@ export default function AdminCompanyManagementPage() {
 
         try {
             setUpdatingMap((prev: Record<string, boolean>) => ({ ...prev, [company.id]: true }));
-            const info = await CompanyService.fetchCompanyInfo(company.url);
+            const info = await CompanyService.fetchCompanyInfo(company.url, options);
             const classification = ClassificationService.classifyCompany(
                 company.name,
                 info.description || company.description || ''
@@ -184,7 +185,8 @@ export default function AdminCompanyManagementPage() {
                 description: info.description || company.description,
                 logo: info.logo || company.logo,
                 industry: classification.industry !== '其他' ? classification.industry : company.industry,
-                tags: Array.from(new Set([...(company.tags || []), ...classification.tags]))
+                tags: Array.from(new Set([...(company.tags || []), ...classification.tags])),
+                translations: info.translations || company.translations
             };
 
             const token = localStorage.getItem('haigoo_auth_token');
@@ -222,7 +224,7 @@ export default function AdminCompanyManagementPage() {
             return;
         }
 
-        if (!confirm(`发现 ${companiesToCrawl.length} 个企业需要补充信息。\n\n是否立即开始自动抓取？`)) {
+        if (!confirm(`发现 ${companiesToCrawl.length} 个企业需要补充信息。\n\n是否立即开始自动抓取并翻译？`)) {
             return;
         }
 
@@ -235,7 +237,8 @@ export default function AdminCompanyManagementPage() {
             for (let i = 0; i < companiesToCrawl.length; i++) {
                 const company = companiesToCrawl[i];
                 try {
-                    await handleUpdateInfo(company);
+                    // Enable translation for auto crawl
+                    await handleUpdateInfo(company, { translate: true });
                     successCount++;
                 } catch (e) {
                     failureCount++;
@@ -367,15 +370,15 @@ export default function AdminCompanyManagementPage() {
                 </h1>
                 <div className="flex gap-2">
                     <button onClick={handleRefresh} disabled={extracting} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2">
-                        <RefreshCw className={`w-4 h-4 ${extracting ? 'animate-spin' : ''}`} />
+                        <Download className={`w-4 h-4 ${extracting ? 'animate-bounce' : ''}`} />
                         {extracting ? '提取中...' : '刷新数据'}
                     </button>
                     <button onClick={handleSyncToJobs} disabled={syncing} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
-                        <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                        <Upload className={`w-4 h-4 ${syncing ? 'animate-bounce' : ''}`} />
                         {syncing ? '同步中...' : '同步到岗位'}
                     </button>
                     <button onClick={handleAutoCrawl} disabled={crawling} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-                        {crawling ? '抓取中...' : '自动补全信息'}
+                        {crawling ? '抓取中...' : '自动补全并翻译'}
                     </button>
                     <button onClick={handleAnalyzeIndustryAndTags} disabled={analyzing} className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
                         {analyzing ? '分析中...' : 'AI分析标签'}
