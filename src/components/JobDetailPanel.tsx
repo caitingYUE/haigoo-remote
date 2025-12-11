@@ -392,11 +392,26 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             className="border border-slate-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
                         >
                             <div className="flex items-start gap-4 mb-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                                    <span className="text-white font-bold text-lg">
-                                        {(job.company || '未知公司').charAt(0)}
-                                    </span>
-                                </div>
+                                {job.logo ? (
+                                    <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1">
+                                        <img 
+                                            src={job.logo} 
+                                            alt={job.company} 
+                                            className="w-full h-full object-contain"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                                (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-lg">${(job.company || '未知').charAt(0)}</span>`;
+                                                (e.target as HTMLImageElement).parentElement!.className = "w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0";
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
+                                        <span className="text-white font-bold text-lg">
+                                            {(job.company || '未知公司').charAt(0)}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-base font-semibold text-slate-900 mb-1">
                                         {displayText(job.company || '')}

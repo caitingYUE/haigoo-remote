@@ -377,7 +377,8 @@ export default function AdminCompanyManagementPage() {
                         <Upload className={`w-4 h-4 ${syncing ? 'animate-bounce' : ''}`} />
                         {syncing ? '同步中...' : '同步到岗位'}
                     </button>
-                    <button onClick={handleAutoCrawl} disabled={crawling} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                    <button onClick={handleAutoCrawl} disabled={crawling} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+                        <Wand2 className={`w-4 h-4 ${crawling ? 'animate-spin' : ''}`} />
                         {crawling ? '抓取中...' : '自动补全并翻译'}
                     </button>
                     <button onClick={handleAnalyzeIndustryAndTags} disabled={analyzing} className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">

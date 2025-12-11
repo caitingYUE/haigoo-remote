@@ -123,11 +123,27 @@ export default function CompanyDetailPage() {
 
                     <div className="flex items-start gap-6">
                         {/* Company Logo */}
-                        <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                            <span className="text-white font-bold text-2xl">
-                                {decodedCompanyName.charAt(0)}
-                            </span>
-                        </div>
+                        {companyInfo?.logo ? (
+                            <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 border border-slate-100 p-2 overflow-hidden">
+                                <img 
+                                    src={companyInfo.logo} 
+                                    alt={decodedCompanyName}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                        const parent = e.currentTarget.parentElement!;
+                                        parent.classList.remove('bg-white', 'p-2', 'border', 'border-slate-100');
+                                        parent.classList.add('bg-gradient-to-br', 'from-indigo-500', 'to-indigo-600');
+                                        parent.innerHTML = `<span class="text-white font-bold text-2xl">${decodedCompanyName.charAt(0)}</span>`;
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                                <span className="text-white font-bold text-2xl">
+                                    {decodedCompanyName.charAt(0)}
+                                </span>
+                            </div>
+                        )}
 
                         {/* Company Info */}
                         <div className="flex-1">
