@@ -403,7 +403,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     </h3>
                                     <div className="flex items-center gap-2 text-sm text-slate-600">
                                         <span>{companyInfo?.industry || job.category || '未分类'}</span>
-                                        {job.sourceUrl && (
+                                        {(job.sourceType === 'rss' || job.sourceType === 'third-party') && job.sourceUrl && (
                                             <>
                                                 <span className="text-slate-400">•</span>
                                                 <a
@@ -432,9 +432,21 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     {/* Source Label */}
                     {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party') && (
                         <div className="flex justify-end pb-4">
-                            <span className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-400 text-xs rounded-md border border-slate-100">
-                                来自: {job.source}
-                            </span>
+                            {job.sourceUrl ? (
+                                <a 
+                                    href={job.sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-3 py-1 bg-slate-50 text-indigo-600 hover:text-indigo-700 text-xs rounded-md border border-slate-100 hover:border-indigo-200 transition-colors"
+                                >
+                                    岗位来自 {job.source}
+                                    <ExternalLink className="w-3 h-3" />
+                                </a>
+                            ) : (
+                                <span className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-400 text-xs rounded-md border border-slate-100">
+                                    岗位来自 {job.source}
+                                </span>
+                            )}
                         </div>
                     )}
                 </div>

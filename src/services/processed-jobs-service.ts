@@ -129,7 +129,7 @@ class ProcessedJobsService {
         responsibilities: [],
         benefits: job.benefits || [],
         skills: job.tags || [],
-        postedAt: job.publishedAt,
+        publishedAt: job.publishedAt,
         expiresAt: undefined,
         source: job.source,
         sourceUrl: job.url,
