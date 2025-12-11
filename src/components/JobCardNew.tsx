@@ -47,35 +47,34 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       return (
          <div
             onClick={() => onClick?.(job)}
-            className={`group relative p-6 border-b border-slate-100 hover:bg-slate-50/80 transition-all duration-300 cursor-pointer ${isActive ? 'bg-indigo-50/60' : ''} ${className || ''}`}
+            className={`group relative p-5 bg-white rounded-xl mb-3 border transition-all duration-300 cursor-pointer 
+               ${isActive 
+                  ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10' 
+                  : 'border-slate-100 hover:border-indigo-200 hover:shadow-md'
+               } ${className || ''}`}
          >
-            {/* Active Indicator */}
-            {isActive && (
-               <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600"></div>
-            )}
+            {/* Corner Tag */}
+            <div className="absolute top-0 right-0 z-10 flex flex-col items-end">
+               {job.canRefer ? (
+                  <div className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-100/50">
+                     <Sparkles className="w-3 h-3" />
+                     内推通道
+                  </div>
+               ) : job.isTrusted ? (
+                  <div className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-100/50">
+                     <Building2 className="w-3 h-3" />
+                     官方直招
+                  </div>
+               ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
+                  <div className="text-[10px] font-medium px-2 py-1 rounded-bl-lg rounded-tr-lg text-slate-500 shadow-sm flex items-center gap-1 bg-slate-100 border-l border-b border-slate-200">
+                     聚合岗位
+                  </div>
+               ) : null}
+            </div>
 
-               {/* Corner Tag */}
-               <div className="absolute top-0 right-0 z-10 flex flex-col items-end">
-                  {job.canRefer ? (
-                     <div className="text-[10px] font-bold px-3 py-1 rounded-bl-xl text-white shadow-sm flex items-center gap-1 bg-gradient-to-bl from-amber-400 to-orange-500 shadow-amber-200 mb-1">
-                        <Sparkles className="w-3 h-3" />
-                        内推
-                     </div>
-                  ) : job.isTrusted ? (
-                     <div className="text-[10px] font-bold px-3 py-1 rounded-bl-xl text-white shadow-sm flex items-center gap-1 bg-gradient-to-bl from-blue-500 to-indigo-600 shadow-blue-200 mb-1">
-                        <Building2 className="w-3 h-3" />
-                        官网直申
-                     </div>
-                  ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
-                     <div className="text-[10px] font-bold px-3 py-1 rounded-bl-xl text-slate-500 shadow-sm flex items-center gap-1 bg-slate-100 border-l border-b border-slate-200 mb-1">
-                        第三方
-                     </div>
-                  ) : null}
-               </div>
-
-            <div className="flex gap-5 items-start">
+            <div className="flex gap-4 items-start">
                {/* Company Logo */}
-               <div className="w-16 h-16 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-105 relative group/logo">
+               <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-105 relative group/logo">
                   {job.logo ? (
                      <img 
                         src={job.logo} 
@@ -87,14 +86,14 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            target.style.display = 'none';
                            if (target.parentElement) {
                               const span = document.createElement('span');
-                              span.className = 'font-serif italic text-2xl';
+                              span.className = 'font-serif italic text-lg';
                               span.textContent = companyInitial;
                               target.parentElement.appendChild(span);
                            }
                         }}
                      />
                   ) : (
-                     <span className="font-serif italic text-2xl">{companyInitial}</span>
+                     <span className="font-serif italic text-lg">{companyInitial}</span>
                   )}
                   {/* Hover Overlay for Link */}
                   {job.companyWebsite && (
@@ -103,21 +102,21 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]"
                         title="访问来源"
                      >
-                        <ExternalLink className="w-5 h-5 text-white" />
+                        <ExternalLink className="w-4 h-4 text-white" />
                      </div>
                   )}
                </div>
 
-               <div className="flex-1 min-w-0 flex flex-col justify-between gap-3">
+               <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
                   <div>
-                     <div className="flex justify-between items-start gap-3 mb-1">
+                     <div className="flex justify-between items-start gap-3 mb-0.5">
                         <div className="flex-1 min-w-0">
-                           <h3 className={`font-bold text-lg text-slate-900 truncate group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`}>
+                           <h3 className={`font-bold text-base text-slate-900 truncate group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`}>
                               {job.translations?.title || job.title}
                            </h3>
-                           <div className="flex items-center gap-2 mt-1">
+                           <div className="flex items-center gap-2 mt-0.5">
                               <span 
-                                 className={`text-sm font-medium text-slate-600 truncate max-w-[200px] transition-colors ${job.companyWebsite ? 'hover:text-indigo-600 hover:underline cursor-pointer' : ''}`}
+                                 className={`text-xs font-medium text-slate-500 truncate max-w-[200px] transition-colors ${job.companyWebsite ? 'hover:text-indigo-600 hover:underline cursor-pointer' : ''}`}
                                  onClick={job.companyWebsite ? handleCompanyClick : undefined}
                               >
                                  {job.translations?.company || job.company}
@@ -127,10 +126,9 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         
                         {/* Match Score */}
                         {matchScore !== undefined && matchScore > 0 && (
-                           <div className="flex flex-col items-end">
-                              <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                                 <span className="text-xs font-bold text-slate-400">匹配度</span>
-                                 <span className={`text-sm font-extrabold ${matchScore >= 80 ? 'text-emerald-500' : matchScore >= 60 ? 'text-indigo-500' : 'text-amber-500'}`}>
+                           <div className="flex flex-col items-end pt-1">
+                              <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                 <span className={`text-xs font-extrabold ${matchScore >= 80 ? 'text-emerald-500' : matchScore >= 60 ? 'text-indigo-500' : 'text-amber-500'}`}>
                                     {matchScore}%
                                  </span>
                               </div>
@@ -139,37 +137,30 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      </div>
 
                      {/* Job Tags */}
-                     <div className="flex flex-wrap gap-2 mt-2">
+                     <div className="flex flex-wrap gap-1.5 mt-2">
                         {/* Job Type Tag */}
                         {job.type && (
-                           <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-md">
+                           <span className="px-1.5 py-0.5 bg-slate-50 text-slate-600 text-[10px] font-medium rounded border border-slate-100">
                               {job.type === 'full-time' ? '全职' : job.type}
                            </span>
                         )}
                         
                         {/* Category Tag */}
                         {job.category && (
-                           <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-md">
+                           <span className="px-1.5 py-0.5 bg-blue-50/50 text-blue-600 text-[10px] font-medium rounded border border-blue-100">
                               {job.category}
                            </span>
                         )}
 
                         {/* Experience Level Tag */}
                         {job.experienceLevel && (
-                           <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs font-medium rounded-md">
+                           <span className="px-1.5 py-0.5 bg-orange-50/50 text-orange-600 text-[10px] font-medium rounded border border-orange-100">
                               {job.experienceLevel}
                            </span>
                         )}
 
-                        {/* Custom Tags - Enforce check on normalized source type */}
-                        {/* {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
-                           <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs rounded-md border border-slate-200">
-                              第三方
-                           </span>
-                        )} */}
-
-                        {job.companyTags && job.companyTags.slice(0, 3).map((tag, i) => (
-                           <span key={i} className="px-2 py-0.5 bg-gray-50 text-gray-500 text-xs rounded-md border border-gray-100 truncate max-w-[100px]">
+                        {job.companyTags && job.companyTags.slice(0, 2).map((tag, i) => (
+                           <span key={i} className="px-1.5 py-0.5 bg-gray-50 text-gray-500 text-[10px] rounded border border-gray-100 truncate max-w-[80px]">
                               {tag}
                            </span>
                         ))}
@@ -177,17 +168,17 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-50 mt-1">
-                     <div className="flex flex-wrap items-center gap-4 text-xs">
-                        <span className={`text-sm ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md'}`}>
+                     <div className="flex flex-wrap items-center gap-3 text-xs w-full">
+                        <span className={`text-sm ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium text-xs' : 'font-bold text-rose-500'}`}>
                            {formatSalary(job.salary)}
                         </span>
                         
-                        <div className="flex items-center gap-4 text-slate-400 font-medium">
-                           <span className="flex items-center hover:text-indigo-500 transition-colors">
-                              <Globe className="w-3.5 h-3.5 mr-1" />
+                        <div className="flex items-center gap-3 text-slate-400 font-medium ml-auto">
+                           <span className="flex items-center max-w-[100px] truncate" title={job.translations?.location || job.location}>
+                              <Globe className="w-3 h-3 mr-1" />
                               {(job.translations?.location || job.location)}
                            </span>
-                           <span className="flex items-center">
+                           <span className="flex items-center text-[10px]">
                               {DateFormatter.formatPublishTime(job.publishedAt)}
                            </span>
                         </div>
@@ -207,18 +198,18 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          {/* Top Decoration for Verified Jobs */}
          <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
             {job.canRefer ? (
-               <div className="bg-gradient-to-bl from-amber-400 to-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 pointer-events-auto mb-1">
-                  <Sparkles className="w-3 h-3" />
-                  内推
+               <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg shadow-orange-100 flex items-center gap-1.5 pointer-events-auto mb-1">
+                  <Sparkles className="w-3.5 h-3.5 fill-white/20" />
+                  内推通道
                </div>
             ) : job.isTrusted ? (
-               <div className="bg-gradient-to-bl from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 pointer-events-auto mb-1">
-                  <Building2 className="w-3 h-3" />
-                  官网直申
+               <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg shadow-indigo-100 flex items-center gap-1.5 pointer-events-auto mb-1">
+                  <Building2 className="w-3.5 h-3.5 fill-white/20" />
+                  官方直招
                </div>
             ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
-               <div className="bg-slate-100 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 pointer-events-auto border-l border-b border-slate-200 mb-1">
-                  第三方
+               <div className="bg-slate-50 text-slate-500 text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-sm flex items-center gap-1.5 pointer-events-auto border-l border-b border-slate-100 mb-1">
+                  聚合岗位
                </div>
             ) : null}
          </div>

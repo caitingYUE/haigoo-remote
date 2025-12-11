@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, ShieldCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -294,7 +294,23 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                 {/* Trusted Company Standards Banner */}
                 {job.isTrusted && (
-                    <TrustedStandardsBanner className="mb-4 mt-2" />
+                    <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-start gap-4 shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                             <ShieldCheck className="w-24 h-24 text-indigo-600 rotate-12" />
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-md shadow-indigo-200">
+                             <ShieldCheck className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 relative z-10">
+                             <div className="flex items-center gap-2 mb-1">
+                                 <h4 className="font-bold text-slate-900">Haigoo 俱乐部认证企业</h4>
+                                 <span className="px-2 py-0.5 bg-white/60 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100">Verified</span>
+                             </div>
+                             <p className="text-sm text-slate-600 leading-relaxed">
+                                 该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，信息真实可靠，您可以放心投递。
+                             </p>
+                        </div>
+                    </div>
                 )}
 
                 {/* Third Party / RSS Source Banner - REMOVED as redundant */}
