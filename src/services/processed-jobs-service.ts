@@ -40,7 +40,8 @@ class ProcessedJobsService {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: limit.toString()
+        limit: limit.toString(),
+        _t: Date.now().toString() // Cache buster
       })
 
       // 添加筛选参数

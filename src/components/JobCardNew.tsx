@@ -77,7 +77,22 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                {/* Company Logo */}
                <div className="w-16 h-16 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-105 relative group/logo">
                   {job.logo ? (
-                     <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
+                     <img 
+                        src={job.logo} 
+                        alt={job.company} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                           // Fallback to initial on error
+                           const target = e.target as HTMLImageElement;
+                           target.style.display = 'none';
+                           if (target.parentElement) {
+                              const span = document.createElement('span');
+                              span.className = 'font-serif italic text-2xl';
+                              span.textContent = companyInitial;
+                              target.parentElement.appendChild(span);
+                           }
+                        }}
+                     />
                   ) : (
                      <span className="font-serif italic text-2xl">{companyInitial}</span>
                   )}
@@ -214,7 +229,21 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                {/* Company Logo */}
                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-2xl shadow-inner flex-shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
                   {job.logo ? (
-                     <img src={job.logo} alt={job.company} className="w-full h-full object-cover" />
+                     <img 
+                        src={job.logo} 
+                        alt={job.company} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                           const target = e.target as HTMLImageElement;
+                           target.style.display = 'none';
+                           if (target.parentElement) {
+                              const span = document.createElement('span');
+                              span.className = 'font-serif italic';
+                              span.textContent = companyInitial;
+                              target.parentElement.appendChild(span);
+                           }
+                        }}
+                     />
                   ) : (
                      <span className="font-serif italic">{companyInitial}</span>
                   )}

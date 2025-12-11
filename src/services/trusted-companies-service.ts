@@ -42,7 +42,7 @@ class TrustedCompaniesService {
 
     async getAllCompanies(): Promise<TrustedCompany[]> {
         try {
-            const response = await fetch(this.API_BASE);
+            const response = await fetch(`${this.API_BASE}?_t=${Date.now()}`);
             if (!response.ok) throw new Error('Failed to fetch companies');
             const data = await response.json();
             return data.companies || [];
