@@ -66,7 +66,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         <Building2 className="w-3 h-3" />
                         官网直申
                      </div>
-                  ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
+                  ) : (job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) ? (
                      <div className="text-[10px] font-bold px-3 py-1 rounded-bl-xl text-slate-500 shadow-sm flex items-center gap-1 bg-slate-100 border-l border-b border-slate-200 mb-1">
                         第三方
                      </div>
@@ -161,8 +161,8 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            </span>
                         )}
 
-                        {/* Custom Tags */}
-                        {(job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                        {/* Custom Tags - Enforce check on normalized source type */}
+                        {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
                            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs rounded-md border border-slate-200">
                               第三方
                            </span>
@@ -216,7 +216,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   <Building2 className="w-3 h-3" />
                   官网直申
                </div>
-            ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
+            ) : (job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) ? (
                <div className="bg-slate-100 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 pointer-events-auto border-l border-b border-slate-200 mb-1">
                   第三方
                </div>

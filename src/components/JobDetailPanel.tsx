@@ -298,7 +298,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 )}
 
                 {/* Third Party / RSS Source Banner */}
-                {(job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
                      <div className="mb-4 mt-2 bg-slate-50 border border-slate-100 rounded-lg p-3 flex items-start gap-3">
                         <div className="p-1.5 bg-white border border-slate-100 rounded-full text-slate-500 shrink-0">
                              <ExternalLink className="w-4 h-4" />
@@ -433,7 +433,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     </h3>
                                     <div className="flex items-center gap-2 text-sm text-slate-600">
                                         <span>{companyInfo?.industry || job.category || '未分类'}</span>
-                                        {(job.sourceType === 'rss' || job.sourceType === 'third-party') && job.sourceUrl && (
+                                        {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && job.sourceUrl && (
                                             <>
                                                 <span className="text-slate-400">•</span>
                                                 <a
@@ -460,7 +460,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </section>
 
                     {/* Source Label */}
-                    {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                    {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
                         <div className="flex justify-end pb-4">
                             {job.sourceUrl ? (
                                 <a 
