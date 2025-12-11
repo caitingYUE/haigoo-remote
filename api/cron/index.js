@@ -82,35 +82,107 @@ export default async function handler(req, res) {
   }
 }
 
-// Helper to run handlers in sequence
+// Helper to run handlers in sequence with SSE streaming support
 async function runSequence(req, mainRes, tasks) {
-  const results = [];
+  // Set SSE headers for the entire sequence
+  mainRes.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  mainRes.setHeader('Cache-Control', 'no-cache');
+  mainRes.setHeader('Connection', 'keep-alive');
+  mainRes.setHeader('Transfer-Encoding', 'chunked');
+  mainRes.setHeader('Access-Control-Allow-Origin', '*');
+  mainRes.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
 
-  for (const task of tasks) {
-    console.log(`[CronSequence] Starting ${task.name}...`);
+  console.log(`[CronSequence] Starting sequence with ${tasks.length} tasks...`);
+
+  // Send sequence start event
+  mainRes.write(`event: sequence_start
+data: ${JSON.stringify({
+    type: 'sequence_start',
+    message: `开始执行定时任务序列，共 ${tasks.length} 个任务`,
+    tasks: tasks.map(t => t.name),
+    timestamp: new Date().toISOString()
+  })}\n\n`);
+
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
+    console.log(`[CronSequence] Starting task ${i + 1}/${tasks.length}: ${task.name}...`);
+
+    // Send task start event
+    mainRes.write(`event: task_start data: ${JSON.stringify({
+      type: 'task_start',
+      task: task.name,
+      index: i + 1,
+      total: tasks.length,
+      message: `开始执行任务: ${task.name}`,
+      timestamp: new Date().toISOString()
+    })}\n\n`);
+
     try {
-      // Mock response object to capture output
-      let taskResult = {};
-      const mockRes = {
-        status: (code) => { taskResult.status = code; return mockRes; },
-        json: (data) => { taskResult.data = data; return mockRes; },
-        end: () => { return mockRes; },
-        setHeader: () => { },
+      // Create a pass-through response object that forwards SSE events to the main response
+      const passThroughRes = {
+        write: (chunk) => {
+          // Forward all SSE events to the main response
+          return mainRes.write(chunk);
+        },
+        end: () => {
+          // Do nothing - let the main response handle ending
+          return passThroughRes;
+        },
+        setHeader: () => {
+          // Headers are already set on mainRes
+          return passThroughRes;
+        },
+        status: () => {
+          // Status is handled by SSE events
+          return passThroughRes;
+        },
+        json: () => {
+          // JSON responses are not used in SSE mode
+          return passThroughRes;
+        },
         headersSent: false
       };
 
-      await task.handler(req, mockRes);
-      results.push({ task: task.name, status: taskResult.status || 200, result: taskResult.data });
-      console.log(`[CronSequence] Finished ${task.name}`);
+      // Execute the task handler
+      await task.handler(req, passThroughRes);
+
+      // Send task completion event
+      mainRes.write(`event: task_complete data: ${JSON.stringify({
+        type: 'task_complete',
+        task: task.name,
+        index: i + 1,
+        total: tasks.length,
+        message: `任务完成: ${task.name}`,
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+
+      console.log(`[CronSequence] Finished task ${i + 1}/${tasks.length}: ${task.name}`);
+
     } catch (err) {
-      console.error(`[CronSequence] Error in ${task.name}:`, err);
-      results.push({ task: task.name, status: 500, error: err.message });
+      console.error(`[CronSequence] Error in task ${task.name}:`, err);
+
+      // Send task error event
+      mainRes.write(`event: task_error data: ${JSON.stringify({
+        type: 'task_error',
+        task: task.name,
+        index: i + 1,
+        total: tasks.length,
+        error: err.message,
+        message: `任务执行失败: ${task.name}`,
+        timestamp: new Date().toISOString()
+      })}\n\n`);
     }
   }
 
-  return mainRes.status(200).json({
-    success: true,
-    sequence: results
-  });
+  // Send sequence completion event
+  mainRes.write(`event: sequence_complete data: ${JSON.stringify({
+    type: 'sequence_complete',
+    message: '定时任务序列执行完成',
+    totalTasks: tasks.length,
+    timestamp: new Date().toISOString()
+  })}\n\n`);
+
+  console.log('[CronSequence] Sequence completed successfully.');
+  mainRes.end();
 }
 
