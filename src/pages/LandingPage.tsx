@@ -155,7 +155,7 @@ export default function LandingPage() {
               <p className="text-slate-500">暂无精选岗位</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {featuredJobs.map((job) => (
                 <JobCardNew
                   key={job.id}

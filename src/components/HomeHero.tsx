@@ -69,6 +69,11 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-8 leading-[1.2] tracking-tight">
                         为中国人才打开<span className="text-indigo-600">全球远程工作入口</span>
                     </h1>
+                    
+                    {/* Subtitle */}
+                    <p className="text-slate-600 text-lg md:text-xl max-w-4xl mx-auto mb-10 leading-relaxed font-medium">
+                        从全球海量岗位中筛选出适合中国求职者的远程工作，不论你身在国内还是在海外，这里都有无限可能。
+                    </p>
 
                     {/* Search Bar - Large & Centered */}
                     <div className="w-full max-w-2xl relative mb-8">
@@ -96,16 +101,22 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     {/* Stats - Centered below search */}
                     <div className="flex flex-wrap justify-center gap-8 md:gap-16">
                         <div className="flex flex-col items-center">
-                            <span className="text-2xl font-bold text-slate-900 tracking-tight">9,342</span>
+                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
+                                {stats?.totalJobs ? stats.totalJobs.toLocaleString() : '9,342'}
+                            </span>
                             <span className="text-sm font-medium text-slate-500 mt-1">精选岗位数</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-2xl font-bold text-slate-900 tracking-tight">617</span>
-                            <span className="text-sm font-medium text-slate-500 mt-1">累计Offer数</span>
+                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
+                                {stats?.companiesCount ? stats.companiesCount.toLocaleString() : '617'}
+                            </span>
+                            <span className="text-sm font-medium text-slate-500 mt-1">认证企业数</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-2xl font-bold text-slate-900 tracking-tight">112</span>
-                            <span className="text-sm font-medium text-slate-500 mt-1">日均新增岗位数</span>
+                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
+                                {stats?.dailyJobs ? stats.dailyJobs.toLocaleString() : '112'}
+                            </span>
+                            <span className="text-sm font-medium text-slate-500 mt-1">新增岗位数</span>
                         </div>
                     </div>
                 </div>

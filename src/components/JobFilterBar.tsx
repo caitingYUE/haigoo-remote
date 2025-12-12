@@ -66,6 +66,12 @@ const SALARY_OPTIONS = [
   { label: '80k以上', value: '80000-999999' }
 ];
 
+const SOURCE_OPTIONS = [
+  { label: '官方直招', value: 'trusted' },
+  { label: '社区内推', value: 'club-referral' },
+  { label: '聚合岗位', value: 'rss' }
+];
+
 // --- Components ---
 
 const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, variant = 'default', icon }) => {
@@ -301,6 +307,26 @@ export default function JobFilterBar({
             checked={filters.regionType.includes('overseas')}
             onChange={(c) => handleCheckboxChange('regionType', 'overseas', c)}
           />
+        </FilterDropdown>
+
+        {/* Source Type */}
+        <FilterDropdown
+          label="岗位来源"
+          activeLabel={getActiveLabel('sourceType', SOURCE_OPTIONS, '岗位来源')}
+          isActive={filters.sourceType.length > 0}
+          isOpen={openDropdown === 'sourceType'}
+          onToggle={() => toggleDropdown('sourceType')}
+          onClose={() => setOpenDropdown(null)}
+          variant="solid-purple"
+        >
+          {SOURCE_OPTIONS.map(opt => (
+            <CheckboxItem
+              key={opt.value}
+              label={opt.label}
+              checked={filters.sourceType.includes(opt.value)}
+              onChange={(c) => handleCheckboxChange('sourceType', opt.value, c)}
+            />
+          ))}
         </FilterDropdown>
 
         {/* Function Type (Renamed from Category) */}
