@@ -60,16 +60,16 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                {job.canRefer ? (
                   <div className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-100/50">
                      <Sparkles className="w-3 h-3" />
-                     内推通道
+                     会员内推
                   </div>
                ) : job.isTrusted ? (
                   <div className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-100/50">
                      <Building2 className="w-3 h-3" />
-                     官方直招
+                     官网直申
                   </div>
                ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
                   <div className="text-[10px] font-medium px-2 py-1 rounded-bl-lg rounded-tr-lg text-slate-500 shadow-sm flex items-center gap-1 bg-slate-100 border-l border-b border-slate-200">
-                     聚合岗位
+                     三方平台
                   </div>
                ) : null}
             </div>
