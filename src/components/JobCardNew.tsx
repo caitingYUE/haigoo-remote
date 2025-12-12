@@ -159,6 +159,14 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            </span>
                         )}
 
+                        {/* Language Requirement Tag */}
+                        {job.languages && job.languages.length > 0 && (
+                           <span className="px-1.5 py-0.5 bg-purple-50/50 text-purple-600 text-[10px] font-medium rounded border border-purple-100 flex items-center gap-1">
+                              <Globe className="w-2.5 h-2.5" />
+                              {job.languages[0]}
+                           </span>
+                        )}
+
                         {job.companyTags && job.companyTags.slice(0, 2).map((tag, i) => (
                            <span key={i} className="px-1.5 py-0.5 bg-gray-50 text-gray-500 text-[10px] rounded border border-gray-100 truncate max-w-[80px]">
                               {tag}
