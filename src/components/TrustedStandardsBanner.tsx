@@ -17,6 +17,7 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
     '岗位来自官方招聘平台发布/内推合作，有可联系的对接人或联系方式'
   ];
 
+  // Force rebuild trigger - v2
   const getIntroText = () => {
       if (context === 'company') {
           return isExpanded
