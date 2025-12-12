@@ -62,6 +62,9 @@ export interface Job {
   // Featured job flag for homepage display
   isFeatured?: boolean
 
+  // Language requirements
+  languages?: string[]
+
   matchScore?: number
 }
 

@@ -66,6 +66,12 @@ const SALARY_OPTIONS = [
   { label: '80k以上', value: '80000-999999' }
 ];
 
+const SOURCE_OPTIONS = [
+  { label: '官方直招', value: 'trusted' },
+  { label: '社区内推', value: 'club-referral' },
+  { label: '聚合岗位', value: 'rss' }
+];
+
 // --- Components ---
 
 const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, variant = 'default', icon }) => {
@@ -202,24 +208,24 @@ export default function JobFilterBar({
     return `${defaultLabel} (${current.length})`;
   };
   
-  // Custom label logic for Region
-  const getRegionLabel = () => {
-      if (filters.regionType.includes('domestic')) return '中国可申';
-      if (filters.regionType.includes('overseas')) return '海外可申';
-      return '区域限制';
+  // Custom label logic for Function
+  const getCategoryLabel = () => {
+      const current = filters.category;
+      if (!current || current.length === 0) return '职能类型';
+      if (current.length === 1) {
+          const found = categoryOptions.find(o => o.value === current[0]);
+          return found ? found.label : current[0];
+      }
+      return `职能类型 (${current.length})`;
   };
 
-  // Custom label logic for Source
-  const getSourceLabel = () => {
-      if (filters.sourceType.length === 0) return '岗位来源';
-      if (filters.sourceType.length === 1) {
-          if (filters.sourceType[0] === 'club-referral') return '俱乐部内推';
-          if (filters.sourceType[0] === 'curated') return '官网直申';
-          if (filters.sourceType[0] === 'third-party') return '第三方平台';
-      }
-      return `岗位来源 (${filters.sourceType.length})`;
+  // Custom label logic for Region/Identity
+  const getRegionLabel = () => {
+      if (filters.regionType.includes('domestic')) return '中国居民';
+      if (filters.regionType.includes('overseas')) return '海外居民';
+      return '身份要求';
   };
-  
+
   const getMoreFiltersCount = () => {
     const count = 
       filters.experienceLevel.length + 
@@ -280,9 +286,9 @@ export default function JobFilterBar({
           </button>
         )}
 
-        {/* Region Type */}
+        {/* Region Type / Identity */}
         <FilterDropdown
-          label="区域限制"
+          label="身份要求"
           activeLabel={getRegionLabel()}
           isActive={filters.regionType.length > 0}
           isOpen={openDropdown === 'regionType'}
@@ -291,13 +297,13 @@ export default function JobFilterBar({
           variant="solid-blue"
         >
           <CheckboxItem
-            label="中国可申"
+            label="中国居民"
             checked={filters.regionType.includes('domestic')}
             onChange={(c) => handleCheckboxChange('regionType', 'domestic', c)}
             emphasized
           />
           <CheckboxItem
-            label="海外可申"
+            label="海外居民"
             checked={filters.regionType.includes('overseas')}
             onChange={(c) => handleCheckboxChange('regionType', 'overseas', c)}
           />
@@ -306,34 +312,27 @@ export default function JobFilterBar({
         {/* Source Type */}
         <FilterDropdown
           label="岗位来源"
-          activeLabel={getSourceLabel()}
+          activeLabel={getActiveLabel('sourceType', SOURCE_OPTIONS, '岗位来源')}
           isActive={filters.sourceType.length > 0}
           isOpen={openDropdown === 'sourceType'}
           onToggle={() => toggleDropdown('sourceType')}
           onClose={() => setOpenDropdown(null)}
+          variant="solid-purple"
         >
-          <CheckboxItem
-            label="俱乐部内推"
-            checked={filters.sourceType.includes('club-referral')}
-            onChange={(c) => handleCheckboxChange('sourceType', 'club-referral', c)}
-            emphasized
-          />
-          <CheckboxItem
-            label="官网直申"
-            checked={filters.sourceType.includes('curated')}
-            onChange={(c) => handleCheckboxChange('sourceType', 'curated', c)}
-          />
-          <CheckboxItem
-            label="第三方平台"
-            checked={filters.sourceType.includes('third-party')}
-            onChange={(c) => handleCheckboxChange('sourceType', 'third-party', c)}
-          />
+          {SOURCE_OPTIONS.map(opt => (
+            <CheckboxItem
+              key={opt.value}
+              label={opt.label}
+              checked={filters.sourceType.includes(opt.value)}
+              onChange={(c) => handleCheckboxChange('sourceType', opt.value, c)}
+            />
+          ))}
         </FilterDropdown>
 
-        {/* Category */}
+        {/* Function Type (Renamed from Category) */}
         <FilterDropdown
-          label="岗位分类"
-          activeLabel={getActiveLabel('category', categoryOptions, '岗位分类')}
+          label="职能类型"
+          activeLabel={getCategoryLabel()}
           isActive={filters.category.length > 0}
           isOpen={openDropdown === 'category'}
           onToggle={() => toggleDropdown('category')}

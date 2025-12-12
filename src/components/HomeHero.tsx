@@ -63,112 +63,60 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     return (
         <div className="relative bg-white pb-16 pt-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-col lg:flex-row gap-6 min-h-[480px]">
-                    {/* Left Side: Category Menu */}
-                    <div className="hidden lg:block w-64 flex-shrink-0 bg-white rounded-xl border border-slate-100 relative z-20">
-                        <div className="px-5 py-4 border-b border-slate-50">
-                            <h3 className="text-slate-900 font-bold text-base">
-                                热门岗位分类
-                            </h3>
-                        </div>
-                        <div className="py-2">
-                            {CATEGORIES.map((cat) => (
-                                <div
-                                    key={cat.name}
-                                    className="group px-5 py-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors duration-200"
-                                    onMouseEnter={() => setActiveCategory(cat.name)}
-                                    onMouseLeave={() => setActiveCategory(null)}
-                                >
-                                    <div className="flex items-center gap-3 text-slate-600 group-hover:text-slate-900 transition-colors">
-                                        <div className="text-slate-400 group-hover:text-slate-600">
-                                            {cat.icon}
-                                        </div>
-                                        <span className="font-medium text-sm">{cat.name}</span>
-                                    </div>
-                                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500" />
+                {/* Simplified Centered Hero - No Side Menu */}
+                <div className="flex flex-col items-center justify-center min-h-[360px] text-center">
+                    
+                    <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-8 leading-[1.2] tracking-tight">
+                        为中国人才打开<span className="text-indigo-600">全球远程工作入口</span>
+                    </h1>
+                    
+                    {/* Subtitle */}
+                    <p className="text-slate-600 text-lg md:text-xl max-w-4xl mx-auto mb-10 leading-relaxed font-medium">
+                        从全球海量岗位中精选出适合中国求职者的远程工作，不论你身在国内或是海外，都有无限可能。
+                    </p>
 
-                                    {/* Sub-menu Popup */}
-                                    {activeCategory === cat.name && (
-                                        <div className="absolute left-[calc(100%+8px)] top-0 w-[500px] min-h-full bg-white rounded-xl shadow-xl border border-slate-100 p-6 z-50 flex flex-wrap content-start gap-2">
-                                            <div className="w-full mb-3 pb-2 border-b border-slate-50">
-                                                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                                    {cat.name}
-                                                </h3>
-                                            </div>
-                                            {cat.subCategories.map((sub) => (
-                                                <div
-                                                    key={sub}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        navigate(`/jobs?search=${encodeURIComponent(sub)}`)
-                                                    }}
-                                                    className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg text-sm transition-colors cursor-pointer"
-                                                >
-                                                    {sub}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                    {/* Search Bar - Large & Centered */}
+                    <div className="w-full max-w-2xl relative mb-8">
+                        <div className="relative bg-white p-2 rounded-2xl shadow-lg shadow-indigo-100/50 border border-slate-200 flex items-center gap-2 focus-within:ring-4 focus-within:ring-indigo-50 focus-within:border-indigo-300 transition-all">
+                            <div className="flex-1 flex items-center gap-3 px-3">
+                                <Search className="w-6 h-6 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="搜索公司 / 职位 / 技能"
+                                    className="w-full py-3 bg-transparent outline-none text-slate-700 placeholder-slate-400 text-lg"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                />
+                            </div>
+                            <button
+                                onClick={handleSearch}
+                                className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white text-lg font-bold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg transform active:scale-95"
+                            >
+                                搜索
+                            </button>
                         </div>
                     </div>
 
-                    {/* Right Side: Brand Banner */}
-                    <div className="flex-1 relative rounded-xl overflow-hidden bg-gradient-to-br from-[#F8FAFC] to-[#EFF6FF] border border-indigo-50/50">
-                        {/* Abstract Background Shapes */}
-                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-100/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-                        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-50/60 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
-
-                        <div className="relative z-10 h-full flex flex-col justify-center px-10 md:px-16 py-12">
-                            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 leading-[1.15] tracking-tight">
-                                为中国人才打开<br />
-                                <span className="text-indigo-600">全球远程工作入口</span>
-                            </h1>
-
-                            <p className="text-slate-500 text-lg mb-10 max-w-xl leading-relaxed">
-                                从全球海量岗位中筛选出适合中国求职者的远程工作，<br />
-                                不论你身在国内还是在海外，这里都有无限可能。
-                            </p>
-
-                            {/* Search Bar */}
-                            <div className="max-w-xl relative">
-                                <div className="relative bg-white p-1.5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-2 focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-300 transition-all">
-                                    <div className="flex-1 flex items-center gap-3 px-3">
-                                        <Search className="w-5 h-5 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="搜索职位、公司、技能..."
-                                            className="w-full py-2.5 bg-transparent outline-none text-slate-700 placeholder-slate-400 text-base"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={handleSearch}
-                                        className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg transition-colors duration-200"
-                                    >
-                                        搜索
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Stats */}
-                            <div className="flex items-center gap-12 mt-12">
-                                <div className="flex flex-col">
-                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{Math.max(stats?.totalJobs || 0, 500)}+</span>
-                                    <span className="text-sm text-slate-500 mt-1">精选&内推岗位数量</span>
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{Math.max(stats?.companiesCount || 0, 300)}+</span>
-                                    <span className="text-sm text-slate-500 mt-1">精选&内推企业数量</span>
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-3xl font-bold text-slate-900 tracking-tight">{Math.max(stats?.dailyJobs || 0, 1000)}+</span>
-                                    <span className="text-sm text-slate-500 mt-1">日更岗位数量</span>
-                                </div>
-                            </div>
+                    {/* Stats - Centered below search */}
+                    <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+                        <div className="flex flex-col items-center">
+                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
+                                {stats?.totalJobs ? stats.totalJobs.toLocaleString() : '9,342'}
+                            </span>
+                            <span className="text-sm font-medium text-slate-500 mt-1">全部岗位数</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
+                                {stats?.companiesCount ? stats.companiesCount.toLocaleString() : '617'}
+                            </span>
+                            <span className="text-sm font-medium text-slate-500 mt-1">认证企业数</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
+                                {stats?.dailyJobs ? stats.dailyJobs.toLocaleString() : '112'}
+                            </span>
+                            <span className="text-sm font-medium text-slate-500 mt-1">日增岗位数</span>
                         </div>
                     </div>
                 </div>

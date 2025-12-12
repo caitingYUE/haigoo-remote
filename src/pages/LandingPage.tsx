@@ -127,14 +127,19 @@ export default function LandingPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
 
         {/* Featured Jobs Section */}
-        <div id="featured-jobs" className="mt-20">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">
-                精选机会
-              </h2>
-              <p className="text-slate-500 text-base">为你精心挑选的优质远程机会</p>
-            </div>
+        <div id="featured-jobs" className="mt-12">
+          {/* Section Header */}
+          <div className="flex items-center justify-between mb-8">
+             <div className="flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-indigo-600 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">精选机会</h2>
+             </div>
+             <button
+                onClick={() => navigate('/jobs?region=domestic')}
+                className="text-slate-500 hover:text-indigo-600 font-medium text-sm flex items-center gap-1 transition-colors"
+             >
+                查看全部 <ArrowRight className="w-4 h-4" />
+             </button>
           </div>
 
           {loading ? (
@@ -150,24 +155,24 @@ export default function LandingPage() {
               <p className="text-slate-500">暂无精选岗位</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {featuredJobs.map((job) => (
                 <JobCardNew
                   key={job.id}
                   job={job}
+                  variant="list" // Use list variant for feed style
                   onClick={() => navigate(`/jobs?region=domestic`)}
                 />
               ))}
             </div>
           )}
 
-          <div className="mt-12 text-center">
+          <div className="mt-8 text-center">
             <button
               onClick={() => navigate('/jobs?region=domestic')}
-              className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all duration-200 inline-flex items-center gap-2 shadow-sm hover:shadow-md"
+              className="w-full py-4 bg-white text-slate-600 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all duration-200 shadow-sm hover:shadow-md"
             >
-              查看更多职位
-              <ArrowRight className="w-4 h-4" />
+              加载更多机会
             </button>
           </div>
         </div>
