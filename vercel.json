@@ -7,11 +7,11 @@
   "crons": [
     {
       "path": "/api/cron/daily-ingest",
-      "schedule": "30 1 * * *"
+      "schedule": "10 15 * * *"
     },
     {
       "path": "/api/cron/daily-enrich",
-      "schedule": "0 2 * * *"
+      "schedule": "30 15 * * *"
     }
   ],
   "rewrites": [
