@@ -130,7 +130,7 @@ export default function TrustedCompaniesPage() {
                     
                     {/* Trusted Company Standards - Hero Banner */}
                     <div className="max-w-4xl mx-auto mb-8 text-left">
-                        <TrustedStandardsBanner />
+                        <TrustedStandardsBanner context="company" />
                     </div>
 
                     <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-4 items-center">

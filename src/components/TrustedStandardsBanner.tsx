@@ -3,9 +3,10 @@ import { Building2, ChevronDown, CheckCircle2, ShieldCheck } from 'lucide-react'
 
 interface TrustedStandardsBannerProps {
   className?: string;
+  context?: 'job' | 'company';
 }
 
-export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ className = '' }) => {
+export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ className = '', context = 'job' }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const standards = [
@@ -15,6 +16,17 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
     '有中国业务/分公司或对中国员工友好',
     '岗位来自官方招聘平台发布/内推合作，有可联系的对接人或联系方式'
   ];
+
+  const getIntroText = () => {
+      if (context === 'company') {
+          return isExpanded
+              ? 'Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业，符合以下 5 项标准：'
+              : 'Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业，让你放心探索远程工作世界。';
+      }
+      return isExpanded 
+          ? '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，符合以下 5 项标准：' 
+          : '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，信息真实可靠，您可以放心投递。';
+  };
 
   return (
     <div className={`bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 relative group ${className}`}>
@@ -44,10 +56,7 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
             </div>
             
             <p className="text-sm text-slate-600 leading-relaxed pr-8">
-                {isExpanded 
-                    ? '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，符合以下 5 项标准：' 
-                    : '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，信息真实可靠，您可以放心投递。'
-                }
+                {getIntroText()}
             </p>
             {!isExpanded && (
                 <p className="text-xs text-indigo-500 mt-2 font-medium flex items-center gap-1 hover:text-indigo-600 transition-colors">
