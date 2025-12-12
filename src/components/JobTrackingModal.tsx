@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Mail, MessageCircle, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react'
+import { X, Mail, MessageCircle, Upload, FileText, CheckCircle, AlertCircle, Sparkles } from 'lucide-react'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 
 export interface JobPreferences {
@@ -252,232 +252,242 @@ export function JobTrackingModal({
 
     if (!isOpen) return null
 
+    // Check if resume already exists (from initialPreferences or uploaded)
+    // The requirement says: "If the user has already uploaded a resume, this place does not need to show upload resume"
+    // We assume that if `initialPreferences.resumeName` is present, it means the user has a resume.
+    // However, `initialPreferences` comes from `userPreferences` in JobsPage, which is fetched from `/api/user-profile`.
+    // If the backend syncs resume status to preferences, this logic holds.
+    // Based on previous code, `resumeName` is part of preferences.
+    const hasResume = !!preferences.resumeName
+
     return createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1050] p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                {/* Header - More Compact */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/50">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">职位追踪</h2>
-                        <p className="text-sm text-slate-500 mt-1">
-                            当找不到满意的岗位时，提交您的需求，系统有合适岗位时将通知您
+                        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-indigo-600" />
+                            职位追踪
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            找不到满意的岗位？提交您的需求，有合适岗位时系统将通知您
                         </p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors"
                     >
                         <X className="w-5 h-5 text-slate-500" />
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    <p className="text-sm text-slate-600">
-                        <span className="text-red-500">*</span> 必填
-                    </p>
+                {/* Content - 2 Column Layout for Compactness */}
+                <div className="flex-1 overflow-y-auto p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Left Column: Core Preferences */}
+                        <div className="space-y-5">
+                             <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-4">
+                                <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                                    <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+                                    基本偏好 <span className="text-red-500 text-xs">*</span>
+                                </h3>
+                                
+                                <div className="space-y-4">
+                                    <AutocompleteField
+                                        label="职位类型"
+                                        required
+                                        selectedTags={preferences.jobTypes}
+                                        onAddTag={(tag) => setPreferences(prev => ({
+                                            ...prev,
+                                            jobTypes: [...prev.jobTypes, tag]
+                                        }))}
+                                        onRemoveTag={(tag) => setPreferences(prev => ({
+                                            ...prev,
+                                            jobTypes: prev.jobTypes.filter(t => t !== tag)
+                                        }))}
+                                        options={jobTypeOptions}
+                                        placeholder="例如：产品经理"
+                                    />
 
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-                        <h3 className="font-semibold text-slate-900">联系方式</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-900 mb-2">
-                                    <span className="flex items-center gap-2">
-                                        <Mail className="w-4 h-4" /> 邮箱
-                                    </span>
-                                </label>
-                                <input
-                                    type="email"
-                                    value={preferences.contactEmail || ''}
-                                    onChange={(e) => setPreferences(prev => ({ ...prev, contactEmail: e.target.value }))}
-                                    placeholder="your@email.com"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                />
+                                    <AutocompleteField
+                                        label="行业类型"
+                                        selectedTags={preferences.industries}
+                                        onAddTag={(tag) => setPreferences(prev => ({
+                                            ...prev,
+                                            industries: [...prev.industries, tag]
+                                        }))}
+                                        onRemoveTag={(tag) => setPreferences(prev => ({
+                                            ...prev,
+                                            industries: prev.industries.filter(t => t !== tag)
+                                        }))}
+                                        options={industryOptions}
+                                        placeholder="例如：互联网"
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-900 mb-2">
-                                    <span className="flex items-center gap-2">
-                                        <MessageCircle className="w-4 h-4" /> 微信号
-                                    </span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={preferences.contactWechat || ''}
-                                    onChange={(e) => setPreferences(prev => ({ ...prev, contactWechat: e.target.value }))}
-                                    placeholder="WeChat ID"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                />
+
+                            <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100 space-y-4">
+                                <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                                    <div className="w-1 h-4 bg-orange-500 rounded-full"></div>
+                                    详细要求
+                                </h3>
+                                
+                                <div className="space-y-4">
+                                    <AutocompleteField
+                                        label="地点偏好"
+                                        selectedTags={preferences.locations}
+                                        onAddTag={(tag) => setPreferences(prev => ({
+                                            ...prev,
+                                            locations: [...prev.locations, tag]
+                                        }))}
+                                        onRemoveTag={(tag) => setPreferences(prev => ({
+                                            ...prev,
+                                            locations: prev.locations.filter(t => t !== tag)
+                                        }))}
+                                        options={LOCATION_OPTIONS}
+                                        placeholder="例如：中国、远程"
+                                    />
+
+                                    <AutocompleteField
+                                        label="级别偏好"
+                                        selectedTags={preferences.levels}
+                                        onAddTag={(tag) => setPreferences(prev => ({
+                                            ...prev,
+                                            levels: [...prev.levels, tag]
+                                        }))}
+                                        onRemoveTag={(tag) => setPreferences(prev => ({
+                                            ...prev,
+                                            levels: prev.levels.filter(t => t !== tag)
+                                        }))}
+                                        options={LEVEL_OPTIONS}
+                                        placeholder="例如：高级/Senior"
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <AutocompleteField
-                        label="职位类型"
-                        required
-                        selectedTags={preferences.jobTypes}
-                        onAddTag={(tag) => setPreferences(prev => ({
-                            ...prev,
-                            jobTypes: [...prev.jobTypes, tag]
-                        }))}
-                        onRemoveTag={(tag) => setPreferences(prev => ({
-                            ...prev,
-                            jobTypes: prev.jobTypes.filter(t => t !== tag)
-                        }))}
-                        options={jobTypeOptions}
-                        placeholder="例如：产品经理、软件工程师"
-                    />
-
-                    <AutocompleteField
-                        label="行业类型"
-                        selectedTags={preferences.industries}
-                        onAddTag={(tag) => setPreferences(prev => ({
-                            ...prev,
-                            industries: [...prev.industries, tag]
-                        }))}
-                        onRemoveTag={(tag) => setPreferences(prev => ({
-                            ...prev,
-                            industries: prev.industries.filter(t => t !== tag)
-                        }))}
-                        options={industryOptions}
-                        placeholder="例如：互联网、人工智能"
-                    />
-
-                    <AutocompleteField
-                        label="地点偏好（国家/地区）"
-                        selectedTags={preferences.locations}
-                        onAddTag={(tag) => setPreferences(prev => ({
-                            ...prev,
-                            locations: [...prev.locations, tag]
-                        }))}
-                        onRemoveTag={(tag) => setPreferences(prev => ({
-                            ...prev,
-                            locations: prev.locations.filter(t => t !== tag)
-                        }))}
-                        options={LOCATION_OPTIONS}
-                        placeholder="例如：中国、美国、新加坡"
-                    />
-
-                    <AutocompleteField
-                        label="级别偏好"
-                        selectedTags={preferences.levels}
-                        onAddTag={(tag) => setPreferences(prev => ({
-                            ...prev,
-                            levels: [...prev.levels, tag]
-                        }))}
-                        onRemoveTag={(tag) => setPreferences(prev => ({
-                            ...prev,
-                            levels: prev.levels.filter(t => t !== tag)
-                        }))}
-                        options={LEVEL_OPTIONS}
-                        placeholder="例如：高级/Senior、经理/Manager"
-                    />
-
-                    {/* Resume Upload */}
-                    <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-3">
-                        <div className="flex items-center justify-between">
-                            <label className="block text-sm font-semibold text-slate-900">
-                                上传简历 <span className="text-xs font-normal text-slate-500 ml-1">(同步至个人中心)</span>
-                            </label>
-                            {preferences.resumeName && (
-                                <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                                    <CheckCircle className="w-3 h-3" /> 已上传
-                                </span>
-                            )}
-                        </div>
-                        
-                        {!preferences.resumeName ? (
-                            <div 
-                                onClick={() => !isUploading && fileInputRef.current?.click()}
-                                className={`border-2 border-dashed border-indigo-200 rounded-lg p-4 flex flex-col items-center justify-center transition-colors bg-white ${isUploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-indigo-50'}`}
-                            >
-                                {isUploading ? (
-                                    <div className="flex flex-col items-center gap-2 py-2">
-                                        <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                                        <span className="text-xs text-indigo-600 font-medium">正在上传并解析...</span>
+                        {/* Right Column: Contact & Resume */}
+                        <div className="space-y-5">
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+                                <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                                    <div className="w-1 h-4 bg-slate-500 rounded-full"></div>
+                                    联系方式
+                                </h3>
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                                            邮箱 <span className="text-slate-400 font-normal">(用于接收通知)</span>
+                                        </label>
+                                        <div className="relative">
+                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <input
+                                                type="email"
+                                                value={preferences.contactEmail || ''}
+                                                onChange={(e) => setPreferences(prev => ({ ...prev, contactEmail: e.target.value }))}
+                                                placeholder="your@email.com"
+                                                className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                                            />
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div className="flex flex-col items-center gap-2 py-2">
-                                        <Upload className="w-6 h-6 text-indigo-400" />
-                                        <span className="text-sm text-indigo-600 font-medium">点击上传简历文件</span>
-                                        <span className="text-xs text-slate-400">支持 PDF, DOC, DOCX, TXT</span>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-indigo-100">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <FileText className="w-4 h-4 text-indigo-600" />
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="text-sm font-medium text-slate-900 truncate">{preferences.resumeName}</span>
-                                        <span className="text-xs text-green-600">上传成功</span>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                                            微信号 <span className="text-slate-400 font-normal">(方便沟通)</span>
+                                        </label>
+                                        <div className="relative">
+                                            <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                value={preferences.contactWechat || ''}
+                                                onChange={(e) => setPreferences(prev => ({ ...prev, contactWechat: e.target.value }))}
+                                                placeholder="WeChat ID"
+                                                className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                                <button 
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1"
-                                >
-                                    更换
-                                </button>
                             </div>
-                        )}
-                        
-                        {uploadError && (
-                            <div className="flex items-center gap-2 text-xs text-red-500">
-                                <AlertCircle className="w-3 h-3" />
-                                {uploadError}
-                            </div>
-                        )}
-                        
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                            <span className="font-medium text-indigo-600">提示：</span> 
-                            简历将同步至个人中心，仅用于有合适岗位时通知您并帮您快速内推，不会对外公开。
-                        </p>
-                        
-                        <input 
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".pdf,.doc,.docx,.txt"
-                            onChange={handleUpload}
-                            className="hidden"
-                        />
-                    </div>
 
-                    {/* Supplementary Notes */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-900 mb-2">
-                            补充说明
-                        </label>
-                        <textarea
-                            value={preferences.notes || ''}
-                            onChange={(e) => setPreferences(prev => ({ ...prev, notes: e.target.value }))}
-                            placeholder="请填写您的其他需求或补充信息，例如：期望薪资范围、签证需求、特定技术栈等..."
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[100px] resize-y"
-                        />
+                            {/* Resume Upload - Conditionally Rendered */}
+                            {!hasResume && (
+                                <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-3">
+                                    <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                                        <div className="w-1 h-4 bg-indigo-500 rounded-full"></div>
+                                        简历上传 <span className="text-xs font-normal text-slate-500 ml-1">(同步至个人中心)</span>
+                                    </h3>
+                                    
+                                    <div 
+                                        onClick={() => !isUploading && fileInputRef.current?.click()}
+                                        className={`border-2 border-dashed border-indigo-200 rounded-lg p-4 flex flex-col items-center justify-center transition-colors bg-white/50 ${isUploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-indigo-50'}`}
+                                    >
+                                        {isUploading ? (
+                                            <div className="flex items-center gap-2 py-1">
+                                                <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                                <span className="text-xs text-indigo-600 font-medium">正在上传...</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 py-1">
+                                                <Upload className="w-5 h-5 text-indigo-400" />
+                                                <span className="text-sm text-indigo-600 font-medium">点击上传文件</span>
+                                                <span className="text-xs text-slate-400">(PDF, DOC, DOCX)</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {uploadError && (
+                                        <div className="flex items-center gap-2 text-xs text-red-500">
+                                            <AlertCircle className="w-3 h-3" />
+                                            {uploadError}
+                                        </div>
+                                    )}
+                                    
+                                    <input 
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,.txt"
+                                        onChange={handleUpload}
+                                        className="hidden"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Supplementary Notes */}
+                            <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                                    补充说明
+                                </label>
+                                <textarea
+                                    value={preferences.notes || ''}
+                                    onChange={(e) => setPreferences(prev => ({ ...prev, notes: e.target.value }))}
+                                    placeholder="其他需求，如：期望薪资、签证需求等..."
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[80px] resize-y bg-slate-50 focus:bg-white transition-colors"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="p-6 border-t border-slate-200 flex justify-between items-center">
+                {/* Footer - Compact */}
+                <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex justify-between items-center">
                     <button
-                        onClick={onClose}
-                        className="px-6 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors"
+                        onClick={() => setPreferences(DEFAULT_PREFERENCES)}
+                        className="text-xs text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1"
                     >
-                        取消
+                        清空所有
                     </button>
                     <div className="flex gap-3">
                         <button
-                            onClick={() => setPreferences(DEFAULT_PREFERENCES)}
-                            className="px-6 py-2 text-red-600 font-medium hover:bg-red-50 rounded-lg transition-colors"
+                            onClick={onClose}
+                            className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-200/50 rounded-lg transition-colors text-sm"
                         >
-                            清空
+                            取消
                         </button>
                         <button
                             onClick={handleSave}
-                            className="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all transform hover:scale-105 shadow-lg hover:shadow-slate-900/20"
+                            className="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all transform hover:scale-105 shadow-lg hover:shadow-slate-900/20 text-sm flex items-center gap-2"
                         >
-                            保存
+                            <CheckCircle className="w-4 h-4" />
+                            保存追踪
                         </button>
                     </div>
                 </div>
