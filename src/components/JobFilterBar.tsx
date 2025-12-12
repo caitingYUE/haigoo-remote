@@ -67,9 +67,9 @@ const SALARY_OPTIONS = [
 ];
 
 const SOURCE_OPTIONS = [
-  { label: '官方直招', value: 'trusted' },
-  { label: '社区内推', value: 'club-referral' },
-  { label: '聚合岗位', value: 'rss' }
+  { label: '官网直申', value: 'trusted' },
+  { label: '会员内推', value: 'club-referral' },
+  { label: '三方平台', value: 'rss' }
 ];
 
 // --- Components ---
