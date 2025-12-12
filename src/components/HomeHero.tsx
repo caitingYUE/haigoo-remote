@@ -72,7 +72,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     
                     {/* Subtitle */}
                     <p className="text-slate-600 text-lg md:text-xl max-w-4xl mx-auto mb-10 leading-relaxed font-medium">
-                        从全球海量岗位中筛选出适合中国求职者的远程工作，不论你身在国内还是在海外，这里都有无限可能。
+                        从全球海量岗位中精选出适合中国求职者的远程工作，不论你身在国内或是海外，都有无限可能。
                     </p>
 
                     {/* Search Bar - Large & Centered */}
@@ -104,7 +104,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             <span className="text-2xl font-bold text-slate-900 tracking-tight">
                                 {stats?.totalJobs ? stats.totalJobs.toLocaleString() : '9,342'}
                             </span>
-                            <span className="text-sm font-medium text-slate-500 mt-1">精选岗位数</span>
+                            <span className="text-sm font-medium text-slate-500 mt-1">全部岗位数</span>
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -116,7 +116,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             <span className="text-2xl font-bold text-slate-900 tracking-tight">
                                 {stats?.dailyJobs ? stats.dailyJobs.toLocaleString() : '112'}
                             </span>
-                            <span className="text-sm font-medium text-slate-500 mt-1">新增岗位数</span>
+                            <span className="text-sm font-medium text-slate-500 mt-1">日增岗位数</span>
                         </div>
                     </div>
                 </div>
