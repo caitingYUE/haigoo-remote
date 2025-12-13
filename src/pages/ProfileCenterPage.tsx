@@ -74,6 +74,37 @@ export default function ProfileCenterPage() {
     }
   }
 
+  const handleAddFavorite = async (job: Job) => {
+    try {
+      const resp = await fetch(`/api/user-profile?action=favorites_add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ jobId: job.id })
+      })
+
+      if (resp.ok) {
+        setFavorites(prev => [job, ...prev])
+        showSuccess('已收藏')
+      } else {
+        throw new Error('Failed to add')
+      }
+    } catch (error) {
+      showError('操作失败', '无法添加收藏')
+    }
+  }
+
+  const handleToggleFavorite = async (job: Job) => {
+    const isSaved = favorites.some(f => (f.id === job.id) || (f.jobId === job.id))
+    if (isSaved) {
+      await handleRemoveFavorite(job.id)
+    } else {
+      await handleAddFavorite(job)
+    }
+  }
+
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
     const t = sp.get('tab') as TabKey | null
@@ -865,8 +896,9 @@ export default function ProfileCenterPage() {
                 job={selectedJob}
                 isOpen={isJobDetailOpen}
                 onClose={() => { setIsJobDetailOpen(false); setSelectedJob(null) }}
-                onSave={() => handleRemoveFavorite(selectedJob.id)}
-                isSaved={true}
+                onSave={() => handleToggleFavorite(selectedJob)}
+                isSaved={favorites.some(f => (f.id === selectedJob.id) || (f.jobId === selectedJob.id))}
+                variant="center"
               />
             )}
           </main>
