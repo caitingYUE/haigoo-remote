@@ -7,7 +7,7 @@ import { resumeService } from '../services/resume-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
 import { Job } from '../types'
-import JobCard from '../components/JobCard'
+import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
 import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -561,10 +561,9 @@ export default function ProfileCenterPage() {
           <div className="grid grid-cols-1 gap-4">
             {favoritesWithStatus.map((f: any) => (
               <div key={f.id || f.jobId}>
-                <JobCard
+                <JobCardNew
                   job={f as Job}
-                  isSaved={true}
-                  onSave={() => handleRemoveFavorite(f.id || f.jobId)}
+                  variant="list"
                   onClick={() => { setSelectedJob(f as Job); setIsJobDetailOpen(true) }}
                 />
               </div>
