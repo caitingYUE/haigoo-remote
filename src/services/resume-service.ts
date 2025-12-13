@@ -83,16 +83,16 @@ export class ResumeService {
   /**
    * 分析简历质量
    */
-  async analyzeResume(resumeContent: string): Promise<ApiResponse<{
+  async analyzeResume(resumeContent: string, targetRole?: string): Promise<ApiResponse<{
     score: number
     strengths: string[]
     weaknesses: string[]
     suggestions: string[]
   }>> {
     try {
-      const systemPrompt = `你是一位专业的简历分析师，请分析用户提供的简历内容，从以下维度进行评估：
+      const systemPrompt = `你是一位专业的简历分析师，请分析用户提供的简历内容${targetRole ? `，并重点关注该简历与目标岗位"${targetRole}"的匹配度` : ''}，从以下维度进行评估：
 1. 内容完整性和结构
-2. 技能匹配度
+2. 技能匹配度${targetRole ? `（针对${targetRole}）` : ''}
 3. 工作经验描述
 4. 教育背景
 5. 格式和可读性

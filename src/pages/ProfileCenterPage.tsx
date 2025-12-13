@@ -338,17 +338,21 @@ export default function ProfileCenterPage() {
       return
     }
 
-    const isMember = authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date();
-
-    if (!isMember) {
-      setUpgradeSource('ai_resume');
-      setShowUpgradeModal(true);
-      return;
-    }
+    // 临时移除会员拦截，允许所有用户使用 AI 简历分析
+    // const isMember = authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date();
+    // if (!isMember) {
+    //   setUpgradeSource('ai_resume');
+    //   setShowUpgradeModal(true);
+    //   return;
+    // }
 
     try {
       showSuccess('正在分析简历...', 'AI 正在深度读取您的简历内容')
-      const analysis = await resumeService.analyzeResume(resumeText)
+      
+      // 获取用户求职意向
+      const targetRole = authUser?.profile?.targetRole || ''
+      
+      const analysis = await resumeService.analyzeResume(resumeText, targetRole)
       if (analysis.success && analysis.data) {
         setResumeScore(analysis.data.score || 0)
         setAiSuggestions(analysis.data.suggestions || [])
@@ -510,7 +514,7 @@ export default function ProfileCenterPage() {
                   <Crown className="w-4 h-4 text-yellow-300" />
                   Generate AI Suggestions
                 </button>
-                <p className="text-xs text-indigo-600/70 mt-2">Premium Feature</p>
+                <p className="text-xs text-indigo-600/70 mt-2">限时免费体验中</p>
               </div>
             )}
 
