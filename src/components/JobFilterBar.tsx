@@ -426,7 +426,7 @@ export default function JobFilterBar({
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white border border-indigo-600 rounded-lg shadow-sm text-sm font-bold hover:bg-indigo-700 transition-all whitespace-nowrap"
         >
           <Sparkles className="w-4 h-4 text-indigo-100" />
-          <span className="hidden sm:inline">追踪</span>
+          <span className="hidden sm:inline">岗位追踪</span>
         </button>
       </div>
     </div>
