@@ -504,15 +504,17 @@ export default function ProfileCenterPage() {
               <div className="p-4 bg-slate-50 text-slate-600 rounded-lg text-sm border border-slate-200">
                 Upload your resume to unlock AI-powered optimization suggestions.
               </div>
-            ) : aiSuggestions.length === 0 && (
+            ) : (
               <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
-                <p className="text-sm text-indigo-900 font-medium mb-3">Ready to optimize your resume?</p>
+                <p className="text-sm text-indigo-900 font-medium mb-3">
+                  {aiSuggestions.length > 0 ? 'Want to optimize again?' : 'Ready to optimize your resume?'}
+                </p>
                 <button
                   onClick={handleAnalyzeResume}
                   className="w-full py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-sm flex items-center justify-center gap-2"
                 >
                   <Crown className="w-4 h-4 text-yellow-300" />
-                  Generate AI Suggestions
+                  {aiSuggestions.length > 0 ? 'Regenerate Suggestions' : 'Generate AI Suggestions'}
                 </button>
                 <p className="text-xs text-indigo-600/70 mt-2">限时免费体验中</p>
               </div>
