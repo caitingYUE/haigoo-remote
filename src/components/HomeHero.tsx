@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Search, Code, Palette, Database, LineChart, Building, Settings, MoreHorizontal } from 'lucide-react'
 
@@ -40,6 +40,43 @@ const CATEGORIES = [
         subCategories: ['教育培训', '咨询', '投资', '管理', '其他']
     }
 ]
+
+// Animated Counter Component
+function AnimatedNumber({ value }: { value: number }) {
+    const [displayValue, setDisplayValue] = useState(0)
+
+    useEffect(() => {
+        let start = 0
+        const end = value
+        if (start === end) return
+
+        const totalDuration = 1000 // 1 second animation
+        const incrementTime = (totalDuration / end) * 100 // Adjust speed based on value size
+
+        // For large numbers, just increment by chunks
+        const step = Math.ceil(end / 20) 
+        
+        let current = 0
+        const timer = setInterval(() => {
+            current += step
+            if (current >= end) {
+                setDisplayValue(end)
+                clearInterval(timer)
+            } else {
+                setDisplayValue(current)
+            }
+        }, 50)
+
+        return () => clearInterval(timer)
+    }, [value])
+
+    // If value is 0 (initial state), show placeholder or 0
+    // If value is loaded (e.g. 9342), show it immediately or animate
+    // For better UX, we can just show the value directly if it's available on mount
+    // But to solve the "sudden change" issue, we can use a simple fade-in or keep the previous value
+    
+    return <span>{value ? value.toLocaleString() : '...'}</span>
+}
 
 interface HomeHeroProps {
     stats?: {
@@ -101,20 +138,20 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     {/* Stats - Centered below search */}
                     <div className="flex flex-wrap justify-center gap-8 md:gap-16">
                         <div className="flex flex-col items-center">
-                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
-                                {stats?.totalJobs ? stats.totalJobs.toLocaleString() : '9,342'}
+                            <span className="text-2xl font-bold text-slate-900 tracking-tight min-w-[60px] transition-all duration-300">
+                                {stats?.totalJobs ? stats.totalJobs.toLocaleString() : <span className="text-slate-200">...</span>}
                             </span>
                             <span className="text-sm font-medium text-slate-500 mt-1">全部岗位数</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
-                                {stats?.companiesCount ? stats.companiesCount.toLocaleString() : '617'}
+                            <span className="text-2xl font-bold text-slate-900 tracking-tight min-w-[60px] transition-all duration-300">
+                                {stats?.companiesCount ? stats.companiesCount.toLocaleString() : <span className="text-slate-200">...</span>}
                             </span>
                             <span className="text-sm font-medium text-slate-500 mt-1">认证企业数</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
-                                {stats?.dailyJobs ? stats.dailyJobs.toLocaleString() : '112'}
+                            <span className="text-2xl font-bold text-slate-900 tracking-tight min-w-[60px] transition-all duration-300">
+                                {stats?.dailyJobs ? stats.dailyJobs.toLocaleString() : <span className="text-slate-200">...</span>}
                             </span>
                             <span className="text-sm font-medium text-slate-500 mt-1">日增岗位数</span>
                         </div>

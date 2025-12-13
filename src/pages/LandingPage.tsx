@@ -134,12 +134,6 @@ export default function LandingPage() {
                 <div className="w-1.5 h-8 bg-indigo-600 rounded-full"></div>
                 <h2 className="text-2xl font-bold text-slate-900 tracking-tight">精选机会</h2>
              </div>
-             <button
-                onClick={() => navigate('/jobs?region=domestic')}
-                className="text-slate-500 hover:text-indigo-600 font-medium text-sm flex items-center gap-1 transition-colors"
-             >
-                查看全部 <ArrowRight className="w-4 h-4" />
-             </button>
           </div>
 
           {loading ? (
@@ -170,9 +164,10 @@ export default function LandingPage() {
           <div className="mt-8 text-center">
             <button
               onClick={() => navigate('/jobs?region=domestic')}
-              className="w-full py-4 bg-white text-slate-600 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all duration-200 shadow-sm hover:shadow-md"
+              className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all duration-200 inline-flex items-center gap-2 shadow-sm hover:shadow-md"
             >
-              加载更多机会
+              查看更多机会
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
