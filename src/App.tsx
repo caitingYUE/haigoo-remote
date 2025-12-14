@@ -21,11 +21,11 @@ const UserManagementPage = lazy(() => import('./pages/UserManagementPage'))
 const AdminTagManagementPage = lazy(() => import('./pages/AdminTagManagementPage'))
 const AdminCompanyManagementPage = lazy(() => import('./pages/AdminCompanyManagementPage'))
 const AdminTrustedCompaniesPage = lazy(() => import('./pages/AdminTrustedCompaniesPage'))
+const AdminApplicationsPage = lazy(() => import('./pages/AdminApplicationsPage'))
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'))
 const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
-const AboutPage = lazy(() => import('./pages/AboutPage'))
 const JoinClubApplicationPage = lazy(() => import('./pages/JoinClubApplicationPage'))
 
 function App() {
@@ -68,6 +68,13 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                {/* Member Applications Management */}
+                <Route path="/admin/applications" element={
+                  <ProtectedRoute>
+                    <AdminApplicationsPage />
+                  </ProtectedRoute>
+                } />
+
                 {/* AdminTeamPage 统一后台管理页面（需要登录） */}
                 <Route path="/admin_team" element={
                   <AdminRoute>
@@ -100,7 +107,6 @@ function App() {
                         } />
                         <Route path="/remote-experience" element={<RemoteExperiencePage />} />
                         <Route path="/membership" element={<MembershipPage />} />
-                        <Route path="/about" element={<AboutPage />} />
                         <Route path="/join-club-application" element={<JoinClubApplicationPage />} />
 
                         {/* 需要登录的页面 */}

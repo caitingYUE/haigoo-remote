@@ -295,6 +295,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
               <span className="material-symbols-outlined">people</span>
               求职者管理
             </Link>
+            <Link to="/admin/applications" className="nav-item">
+              <span className="material-symbols-outlined">assignment_ind</span>
+              会员申请
+            </Link>
             <a href="#" className="nav-item">
               <span className="material-symbols-outlined">storage</span>
               数据保留

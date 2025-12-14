@@ -180,6 +180,29 @@ export default async function handler(req, res) {
             return await runMigration(req, res);
         case 'stats':
             return await getStats(req, res);
+        case 'list_applications':
+            try {
+                const applications = await neonHelper.query(
+                    'SELECT * FROM club_applications ORDER BY created_at DESC'
+                );
+                return res.status(200).json({ success: true, applications });
+            } catch (error) {
+                return res.status(500).json({ success: false, error: error.message });
+            }
+        case 'update_application_status':
+            try {
+                const { id, status } = req.body || {};
+                if (!id || !status) {
+                    return res.status(400).json({ success: false, error: 'Missing id or status' });
+                }
+                await neonHelper.query(
+                    'UPDATE club_applications SET status = $1 WHERE id = $2',
+                    [status, id]
+                );
+                return res.status(200).json({ success: true });
+            } catch (error) {
+                return res.status(500).json({ success: false, error: error.message });
+            }
         default:
             return res.status(400).json({ error: 'Invalid action' });
     }
