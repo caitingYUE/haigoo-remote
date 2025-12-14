@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown } from 'lucide-react'
+import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { resumeService } from '../services/resume-service'
@@ -616,18 +616,18 @@ export default function ProfileCenterPage() {
       {/* 顶部标题与下载 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Resume Optimization</h2>
-          <p className="text-slate-500 mt-1">Enhance your resume with AI-powered suggestions.</p>
+          <h2 className="text-2xl font-bold text-slate-900">简历优化</h2>
+          <p className="text-slate-500 mt-1">利用 AI 智能分析，获取专业的简历优化建议。</p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
-          <Download className="w-4 h-4" />Download Optimized Resume
+          <Download className="w-4 h-4" />下载优化报告
         </button>
       </div>
 
       {/* 分数条 */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-base font-medium text-slate-900">Overall Resume Score</p>
+          <p className="text-base font-medium text-slate-900">简历综合得分</p>
           <p className="text-base font-bold text-indigo-600">{Math.max(0, Math.min(100, resumeScore))}%</p>
         </div>
         <div className="w-full bg-slate-100 rounded-full h-2.5">
@@ -635,11 +635,11 @@ export default function ProfileCenterPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Left Column: Resume Preview & Basic Info */}
-        <div className={`bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px] flex flex-col ${isSidebarCollapsed ? 'lg:col-span-1' : ''}`}>
+      <div className="flex flex-col gap-8">
+        {/* Top Section: Resume Preview & Basic Info */}
+        <div className={`bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px] flex flex-col w-full`}>
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900 px-1">Your Resume</h3>
+                <h3 className="text-lg font-bold text-slate-900 px-1">您的简历</h3>
                 {!latestResume && (
                     <p className="text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
                 )}
@@ -648,13 +648,13 @@ export default function ProfileCenterPage() {
               <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                 <div className="flex flex-col items-center gap-2 text-center max-w-[520px] mx-auto p-8">
                   <FileText className="w-12 h-12 text-slate-400 mb-2" />
-                  <p className="text-lg font-bold text-slate-900">No resume uploaded yet</p>
-                  <p className="text-sm text-slate-500 mb-6">Drag and drop your file here or click to upload.</p>
+                  <p className="text-lg font-bold text-slate-900">暂无简历</p>
+                  <p className="text-sm text-slate-500 mb-6">拖拽文件到此处或点击上传</p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center w-full max-w-[240px]"
                   >
-                    <Upload className="w-4 h-4 mr-2" />Upload Resume
+                    <Upload className="w-4 h-4 mr-2" />上传简历
                   </button>
                   <p className="text-xs text-slate-400 mt-4">支持 PDF、DOC、DOCX</p>
                 </div>
@@ -701,7 +701,7 @@ export default function ProfileCenterPage() {
                     ) : (
                       <div className="w-full h-full overflow-auto p-4 md:p-8 bg-slate-100 shadow-inner">
                         <div className="max-w-[210mm] mx-auto bg-white shadow-md min-h-[297mm] p-8 md:p-12">
-                          <pre className="whitespace-pre-wrap text-sm text-slate-700 font-sans leading-relaxed max-w-none">{resumeText || 'Preview not available. Content extracted below.'}</pre>
+                          <pre className="whitespace-pre-wrap text-sm text-slate-700 font-sans leading-relaxed max-w-none">{resumeText || '预览暂不可用'}</pre>
                         </div>
                       </div>
                     )}
@@ -715,17 +715,17 @@ export default function ProfileCenterPage() {
             )}
         </div>
 
-        {/* Right Column: AI Analysis Results */}
-        <div id="ai-analysis-section" className="space-y-4">
+        {/* Bottom Section: AI Analysis Results */}
+        <div id="ai-analysis-section" className="space-y-4 w-full">
           <div className="flex items-center justify-between">
-             <h3 className="text-lg font-bold text-slate-900 px-1">AI-Powered Suggestions</h3>
+             <h3 className="text-lg font-bold text-slate-900 px-1">AI 优化建议</h3>
           </div>
           
           <div className="space-y-3">
             {!resumeText ? (
               <div className="p-8 bg-slate-50 text-slate-500 rounded-xl text-center border-2 border-dashed border-slate-200">
                 <Crown className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p>Upload your resume to unlock AI-powered optimization suggestions.</p>
+                <p>上传简历以解锁 AI 智能优化建议。</p>
               </div>
             ) : isAnalyzing ? (
                <div className="p-12 bg-white border border-indigo-100 rounded-xl text-center shadow-sm">
@@ -759,26 +759,9 @@ export default function ProfileCenterPage() {
                     </div>
                   ))}
                   
-                  {/* Re-analyze Button - Moved here for better visibility */}
+                  {/* Re-analyze Button */}
                    <div className="mt-4 flex justify-center">
                         <button
-                          // Disabled logic:
-                          // 1. Loading (isAnalyzing)
-                          // 2. Non-member limit reached (backend 429, but UI can hint) - We don't track daily limit in frontend state easily without a fetch.
-                          //    But we can check if analyzed today based on local knowledge if we had it.
-                          //    Actually, backend returns 429 if limit reached.
-                          // 3. Content unchanged - We can check this! latestResume.updatedAt vs lastAnalyzedAt?
-                          //    We don't have full metadata here.
-                          // User request: "Always visible, disabled OR click to prompt".
-                          // Let's keep it enabled but show prompt on click if blocked?
-                          // User said: "just disabled, OR click to prompt... disabled with tooltip is better"
-                          // Since we don't have perfect sync of "limit reached" state without a query,
-                          // let's rely on the click handler to show the error (as currently implemented in handleAnalyzeResume),
-                          // BUT we can try to disable it if we KNOW.
-                          // For now, let's allow click so the backend message (specific error) is shown to user.
-                          // Wait, user said "Re-analysis button should continue to be up there, just not clickable OR prompt on click".
-                          // If I make it not clickable, I need to know WHY.
-                          // Let's make it clickable so they see the specific error message from backend (Limit reached vs Content unchanged).
                           onClick={handleAnalyzeResume}
                           disabled={isAnalyzing}
                           className={`px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 w-full
@@ -788,7 +771,7 @@ export default function ProfileCenterPage() {
                           {isAnalyzing ? (
                              <>
                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                               Analyzing...
+                               正在分析...
                              </>
                           ) : (
                              <>
@@ -802,14 +785,14 @@ export default function ProfileCenterPage() {
             ) : (
               <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
                 <p className="text-base text-indigo-900 font-medium mb-4">
-                  Ready to optimize your resume with AI?
+                  准备好使用 AI 优化简历了吗？
                 </p>
                 <button
                   onClick={handleAnalyzeResume}
                   className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-md flex items-center justify-center gap-2 mx-auto w-full"
                 >
                   <Crown className="w-5 h-5 text-yellow-300" />
-                  Generate AI Suggestions
+                  生成 AI 建议
                 </button>
                 <p className="text-xs text-indigo-600/70 mt-3">限时免费体验中 • 基于阿里通义千问大模型</p>
               </div>
@@ -824,8 +807,8 @@ export default function ProfileCenterPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">My Favorites</h2>
-          <p className="text-slate-500 mt-1">Your bookmarked job postings.</p>
+          <h2 className="text-2xl font-bold text-slate-900">我的收藏</h2>
+          <p className="text-slate-500 mt-1">您收藏的职位列表。</p>
         </div>
       </div>
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[300px]">
@@ -1059,88 +1042,106 @@ export default function ProfileCenterPage() {
         </div>
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
-          <aside className="w-full lg:w-64 flex-shrink-0 space-y-6">
+          <aside className={`transition-all duration-300 ease-in-out flex-shrink-0 space-y-6 relative ${isSidebarCollapsed ? 'w-20' : 'w-full lg:w-64'}`}>
+            {/* Toggle Button */}
+            <button
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="absolute -right-3 top-0 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-sm text-slate-500 hover:text-indigo-600 z-10 hidden lg:flex"
+            >
+                {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
+
             <div>
-              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-2">Personal Center</div>
+              <div className={`text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-2 ${isSidebarCollapsed ? 'text-center' : ''}`}>
+                  {isSidebarCollapsed ? '...' : 'Personal Center'}
+              </div>
               <div className="space-y-1" role="tablist" aria-label="个人中心切换">
                 <button
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'resume' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
-                    }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'resume' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
                   role="tab"
                   aria-selected={tab === 'resume'}
                   onClick={() => switchTab('resume')}
+                  title={isSidebarCollapsed ? "我的简历" : undefined}
                 >
                   <FileText className={`w-4 h-4 ${tab === 'resume' ? 'text-white' : 'text-slate-400'}`} />
-                  我的简历
+                  {!isSidebarCollapsed && "我的简历"}
                 </button>
                 <button
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'favorites' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
-                    }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'favorites' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
                   role="tab"
                   aria-selected={tab === 'favorites'}
                   onClick={() => switchTab('favorites')}
+                  title={isSidebarCollapsed ? "我的收藏" : undefined}
                 >
                   <Heart className={`w-4 h-4 ${tab === 'favorites' ? 'text-white' : 'text-slate-400'}`} />
-                  我的收藏
+                  {!isSidebarCollapsed && "我的收藏"}
                 </button>
                 <button
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'feedback' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
-                    }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'feedback' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
                   role="tab"
                   aria-selected={tab === 'feedback'}
                   onClick={() => switchTab('feedback')}
+                  title={isSidebarCollapsed ? "我要反馈" : undefined}
                 >
                   <MessageSquare className={`w-4 h-4 ${tab === 'feedback' ? 'text-white' : 'text-slate-400'}`} />
-                  我要反馈
+                  {!isSidebarCollapsed && "我要反馈"}
                 </button>
                 <button
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'recommend' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
-                    }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'recommend' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
                   role="tab"
                   aria-selected={tab === 'recommend'}
                   onClick={() => switchTab('recommend')}
+                  title={isSidebarCollapsed ? "我要推荐" : undefined}
                 >
                   <ThumbsUp className={`w-4 h-4 ${tab === 'recommend' ? 'text-white' : 'text-slate-400'}`} />
-                  我要推荐
+                  {!isSidebarCollapsed && "我要推荐"}
                 </button>
               </div>
             </div>
 
             {/* Membership Card */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 text-white shadow-lg relative overflow-hidden">
-              {/* Decoration */}
-              <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl"></div>
+            {!isSidebarCollapsed ? (
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 text-white shadow-lg relative overflow-hidden">
+                  {/* Decoration */}
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl"></div>
 
-              <div className="flex items-center gap-2 mb-4 relative z-10">
-                <Crown className="w-5 h-5 text-yellow-400" />
-                <h3 className="font-bold text-sm text-white">会员权益</h3>
-              </div>
+                  <div className="flex items-center gap-2 mb-4 relative z-10">
+                    <Crown className="w-5 h-5 text-yellow-400" />
+                    <h3 className="font-bold text-sm text-white">会员权益</h3>
+                  </div>
 
-              <div className="relative z-10">
-                {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
-                  <div>
-                    <p className="text-xs text-slate-300 mb-2">您当前是 <span className="font-bold text-yellow-300">{authUser.membershipLevel === 'club_go' ? '俱乐部Go会员' : 'Goo+会员'}</span></p>
-                    <p className="text-xs text-slate-400 mb-4">有效期至 {new Date(authUser.membershipExpireAt).toLocaleDateString()}</p>
-                    <button
-                      onClick={() => navigate('/membership')}
-                      className="w-full py-2 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white/20 transition-colors"
-                    >
-                      续费/升级
-                    </button>
+                  <div className="relative z-10">
+                    {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
+                      <div>
+                        <p className="text-xs text-slate-300 mb-2">您当前是 <span className="font-bold text-yellow-300">{authUser.membershipLevel === 'club_go' ? '俱乐部Go会员' : 'Goo+会员'}</span></p>
+                        <p className="text-xs text-slate-400 mb-4">有效期至 {new Date(authUser.membershipExpireAt).toLocaleDateString()}</p>
+                        <button
+                          onClick={() => navigate('/membership')}
+                          className="w-full py-2 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white/20 transition-colors"
+                        >
+                          续费/升级
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-xs text-slate-300 mb-4 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
+                        <button
+                          onClick={() => navigate('/membership')}
+                          className="w-full py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-colors shadow-sm"
+                        >
+                          立即开通
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div>
-                    <p className="text-xs text-slate-300 mb-4 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
-                    <button
-                      onClick={() => navigate('/membership')}
-                      className="w-full py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-colors shadow-sm"
-                    >
-                      立即开通
+                </div>
+            ) : (
+                <div className="flex justify-center" title="会员权益">
+                    <button onClick={() => setIsSidebarCollapsed(false)} className="p-2 bg-slate-900 text-yellow-400 rounded-full hover:bg-slate-800 transition-colors shadow-md">
+                        <Crown className="w-5 h-5" />
                     </button>
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
+            )}
           </aside>
 
           {/* Main Content */}
