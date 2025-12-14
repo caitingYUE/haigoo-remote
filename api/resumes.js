@@ -463,6 +463,7 @@ export default async function handler(req, res) {
         success: result.success,
         provider: result.provider,
         count: result.count,
+        ids: result.ids, // Return IDs
         mode
       })
     }

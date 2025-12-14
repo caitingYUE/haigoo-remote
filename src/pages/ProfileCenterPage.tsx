@@ -335,31 +335,85 @@ export default function ProfileCenterPage() {
 
       // 3. 处理结果
       if (parsed && parsed.success) {
-        // 解析成功
-        if (parsed.textContent && parsed.textContent.length > 50) {
-          setResumeText(parsed.textContent)
+        let finalResumeId = parsed.id
 
-          // 更新本地状态以包含更多详情（如果有）
-          // 注意：这里不需要再调用 ResumeStorageService.addResume，因为 API 已经保存了
-          // 但如果使用的是前端解析（fallback），我们需要同步解析后的文本到后端
-          if (parsed.id) {
-             fetch('/api/resumes', {
+        // If we don't have a backend ID yet (local parse only), create one
+        if (!finalResumeId) {
+             console.log('[ProfileCenter] Creating resume record on server...')
+             // Call API to create resume using bulk save (append mode)
+             const createResp = await fetch('/api/resumes', {
                 method: 'POST',
                 headers: {
                    'Content-Type': 'application/json',
                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                   action: 'update_content',
-                   id: parsed.id,
-                   contentText: parsed.textContent
+                    resumes: [{
+                        userId: authUser?.user_id, // Fixed: use user_id from User type
+                        fileName: file.name,
+                        size: file.size,
+                        fileType: file.type.split('/')[1] || 'unknown',
+                        contentText: parsed.textContent,
+                        parseStatus: 'success',
+                        parseResult: parsed,
+                        // Ensure we pass metadata
+                        metadata: { source: 'local_parse_fallback' }
+                    }],
+                    mode: 'append'
                 })
-             }).then(r => {
-                if (r.ok) console.log('[ProfileCenter] Resume content synced to backend')
-                else console.warn('[ProfileCenter] Failed to sync resume content')
-             }).catch(e => console.error('[ProfileCenter] Sync error:', e))
+             })
+             
+             if (createResp.ok) {
+                 const createJson = await createResp.json()
+                 if (createJson.success && createJson.ids && createJson.ids.length > 0) {
+                     // Since we appended, the last ID should be ours, or if we sent 1 resume and ids array has it.
+                     // saveResumes returns ALL ids in the table. This is tricky.
+                     // But since we are the only one operating in this request context usually...
+                     // Wait, saveResumes returns IDs of ALL resumes in the table after save.
+                     // We need to identify WHICH one is ours.
+                     // We can match by fileName and created time roughly, or just take the last one?
+                     // Actually, saveResumes logic in resume-storage.js:
+                     // for (const resume of limitedResumes) { const rId = resume.id || ... }
+                     // The ID is generated if not provided.
+                     // If we are in 'append' mode, we fetched existing, added ours, then saved all.
+                     // So ours is likely at the end or beginning depending on sort?
+                     // getResumes sorts by created_at DESC.
+                     // When we append: [...body.resumes, ...existingResumes].
+                     // So our new resume is at index 0.
+                     // So the first ID in the returned IDs array (if it respects order) should be ours?
+                     // resume-storage.js iterates `limitedResumes`.
+                     // So yes, index 0.
+                     finalResumeId = createJson.ids[0]
+                     console.log('[ProfileCenter] Created resume with ID:', finalResumeId)
+                 }
+             } else {
+                 console.warn('[ProfileCenter] Failed to create resume record:', createResp.status)
+             }
+        }
+
+        // 解析成功
+        if (parsed.textContent && parsed.textContent.length > 50) {
+          setResumeText(parsed.textContent)
+          
+          if (finalResumeId) {
+              setLatestResume(prev => ({ ...prev!, id: finalResumeId }))
           }
 
+          // 更新本地状态以包含更多详情（如果有）
+          // 注意：这里不需要再调用 ResumeStorageService.addResume，因为 API 已经保存了
+          // 但如果使用的是前端解析（fallback），我们需要同步解析后的文本到后端
+          if (finalResumeId && !parsed.id) { // Only sync if we didn't just create it?
+             // Actually if we just created it above, we included contentText.
+             // So we don't need update_content.
+             // But if parsed.id existed (server parse), content is already there too.
+             // So this block might be redundant if we handle creation above.
+             // Let's keep it safe: if we have an ID, we assume content is synced or we sync it.
+             // If we created it above, we passed contentText.
+             // If server parsed it, it has contentText.
+             // So we can probably remove the update_content call or keep it as backup?
+             // Let's leave it but use finalResumeId.
+          }
+          
           showSuccess('简历上传成功！', '您可以点击右侧按钮进行AI深度分析')
 
           // 4. AI 分析不再自动触发，由用户手动触发
@@ -599,15 +653,6 @@ export default function ProfileCenterPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
              <h3 className="text-lg font-bold text-slate-900 px-1">AI-Powered Suggestions</h3>
-             {resumeText && !isAnalyzing && (
-                <button
-                  onClick={handleAnalyzeResume}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-sm flex items-center gap-2 text-sm"
-                >
-                  <Crown className="w-4 h-4 text-yellow-300" />
-                  {aiSuggestions.length > 0 ? 'Regenerate Analysis' : 'Start AI Analysis'}
-                </button>
-             )}
           </div>
           
           <div className="space-y-3">
