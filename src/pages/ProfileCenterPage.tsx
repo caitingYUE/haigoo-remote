@@ -746,9 +746,9 @@ export default function ProfileCenterPage() {
                             <span className="font-bold text-sm">{item.priority}</span>
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-bold text-base text-slate-900">{item.issue}</h4>
-                              <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full">{item.category}</span>
+                          <div className="flex items-start justify-between gap-4 mb-2">
+                              <h4 className="font-bold text-base text-slate-900 flex-1">{item.issue}</h4>
+                              <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full flex-shrink-0 whitespace-nowrap">{item.category}</span>
                           </div>
                           <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
                             <span className="font-semibold text-indigo-600 mr-1">建议修改：</span>
