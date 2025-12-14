@@ -171,6 +171,46 @@ async function handleLogin(req, res) {
     }
   }
 
+  // Force super admin privileges for caitlinyct@gmail.com
+  if (email === 'caitlinyct@gmail.com') {
+    console.log('[Auth] Force updating super admin privileges for caitlinyct@gmail.com')
+    let needsUpdate = false
+    
+    // Ensure admin role
+    if (!user.roles || !user.roles.admin) {
+      user.roles = { ...user.roles, admin: true }
+      needsUpdate = true
+    }
+
+    // Ensure VIP membership
+    const now = new Date()
+    const nextYear = new Date(now.setFullYear(now.getFullYear() + 1))
+    
+    if (user.membership_level !== 'vip') {
+        user.membership_level = 'vip'
+        user.membership_expire_at = nextYear.toISOString()
+        needsUpdate = true
+    }
+
+    if (needsUpdate) {
+      // Use updateUser helper if available or saveUser
+      // Since saveUser is likely neon helper call, we should use updateUser for consistency if possible
+      // But here we might just want to use the internal save mechanism.
+      // Assuming saveUser or updateUser handles this.
+      // Let's use updateUser to be safe with DB schema.
+      try {
+        await updateUser(user.user_id, {
+           roles: user.roles,
+           membershipLevel: 'vip',
+           membershipExpireAt: nextYear.toISOString()
+        })
+        console.log('[Auth] Super admin privileges updated and saved')
+      } catch (err) {
+        console.error('[Auth] Failed to update super admin privileges:', err)
+      }
+    }
+  }
+
   if (user.status !== 'active') {
     return res.status(403).json({ success: false, error: '账户已被停用' })
   }

@@ -134,6 +134,7 @@ export default function ProfileCenterPage() {
     namespace: 'profile'
   })
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   useEffect(() => {
     ; (async () => {
@@ -636,7 +637,7 @@ export default function ProfileCenterPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* Left Column: Resume Preview & Basic Info */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px] flex flex-col lg:sticky lg:top-8">
+        <div className={`bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px] flex flex-col ${isSidebarCollapsed ? 'lg:col-span-1' : ''}`}>
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900 px-1">Your Resume</h3>
                 {!latestResume && (

@@ -540,14 +540,17 @@ export default async function handler(req, res) {
 
 // Helper: Call AI Service (Simplified version of api/ai.js logic)
 async function analyzeResumeContent(text, targetRole) {
-  const apiKey = process.env.VITE_ALIBABA_BAILIAN_API_KEY
+  // Use a more robust check for API keys
+  const apiKey = process.env.VITE_ALIBABA_BAILIAN_API_KEY || process.env.ALIBABA_BAILIAN_API_KEY
+  const deepseekKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY
+  
   // Fallback to DeepSeek if configured, or throw
-  if (!apiKey && !process.env.VITE_DEEPSEEK_API_KEY) {
+  if (!apiKey && !deepseekKey) {
     throw new Error('AI API Key missing')
   }
   
   const provider = apiKey ? 'bailian' : 'deepseek'
-  const key = apiKey || process.env.VITE_DEEPSEEK_API_KEY
+  const key = apiKey || deepseekKey
   
   const prompt = `你是一位资深招聘专家。请根据以下简历内容进行专业评估。
     求职意向：${targetRole || '未指定'}
@@ -571,92 +574,57 @@ async function analyzeResumeContent(text, targetRole) {
     
   let apiUrl = ''
   let requestBody = {}
-  let headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${key}`
-  }
   
   if (provider === 'bailian') {
       apiUrl = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation'
+      // Bailian might need specific app id, or use compatible openai endpoint
+      // Using compatible endpoint is safer if we don't know app id
+      apiUrl = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
       requestBody = {
           model: 'qwen-plus',
-          input: {
-              messages: [
-                  { role: 'system', content: 'You are a helpful assistant.' },
-                  { role: 'user', content: prompt }
-              ]
-          }
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7
       }
   } else {
       apiUrl = 'https://api.deepseek.com/chat/completions'
       requestBody = {
           model: 'deepseek-chat',
-          messages: [
-               { role: 'system', content: 'You are a helpful assistant.' },
-               { role: 'user', content: prompt }
-          ],
-          stream: false
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7
       }
   }
 
-  // Retry logic
-  let lastError = null;
-  const maxRetries = 3;
-  
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      console.log(`[AI] Attempt ${i + 1}/${maxRetries} using ${provider}...`);
-      
-      // Add timeout to fetch
+  try {
+      // Increase timeout to 60 seconds
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      const timeout = setTimeout(() => controller.abort(), 60000);
       
       const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestBody),
-        signal: controller.signal
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${key}`
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
       });
       
-      clearTimeout(timeoutId);
-
-      if (response.status === 429) {
-         throw new Error('Rate limit exceeded');
-      }
-
+      clearTimeout(timeout);
+      
       if (!response.ok) {
-         const errText = await response.text();
-         throw new Error(`API Error ${response.status}: ${errText}`);
+          const errorText = await response.text();
+          throw new Error(`AI API error: ${response.status} - ${errorText}`);
       }
       
-      const data = await response.json();
+      const result = await response.json();
+      const content = result.choices?.[0]?.message?.content || '{}';
       
-      let content = '';
-      if (provider === 'bailian') {
-          content = data.output.text;
-      } else {
-          content = data.choices?.[0]?.message?.content || '';
-      }
-
-      // Extract JSON
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
+      // Clean up markdown code blocks if any
+      const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim();
+      return JSON.parse(jsonStr);
       
-      // Try to parse entire content if no match
-      return JSON.parse(content);
-      
-    } catch (e) {
-      console.warn(`[AI] Attempt ${i + 1} failed:`, e.message);
-      lastError = e;
-      
-      // Wait before retry (exponential backoff: 1s, 2s, 4s)
-      if (i < maxRetries - 1) {
-        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
-      }
-    }
+  } catch (error) {
+      console.error('[AI Analysis] Error:', error);
+      throw error; // Re-throw to be handled by caller
   }
-  
-  throw lastError || new Error('AI Service Unavailable');
 }

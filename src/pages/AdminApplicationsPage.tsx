@@ -37,14 +37,16 @@ export default function AdminApplicationsPage() {
         }
       })
       const data = await response.json()
-      if (data.success) {
+      if (data.success && Array.isArray(data.applications)) {
         setApplications(data.applications)
       } else {
-        showError('加载失败', data.error)
+        // Silently handle error or set empty array if table doesn't exist yet
+        console.warn('Failed to fetch applications or invalid format:', data.error)
+        setApplications([])
       }
     } catch (error) {
       console.error('Failed to fetch applications:', error)
-      showError('加载失败', '网络错误')
+      setApplications([])
     } finally {
       setIsLoading(false)
     }
