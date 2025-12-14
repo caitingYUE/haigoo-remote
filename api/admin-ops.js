@@ -1,5 +1,9 @@
 
 import neonHelper from '../server-utils/dal/neon-helper.js';
+import userHelper from '../server-utils/user-helper.js';
+import { extractToken, verifyToken } from '../server-utils/auth-helpers.js';
+
+const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com';
 
 async function checkUserData(req, res) {
     try {
@@ -132,23 +136,27 @@ async function runMigration(req, res) {
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(255) NOT NULL,
                 type VARCHAR(50) NOT NULL,
-                title VARCHAR(255) NOT NULL,
-                content TEXT NOT NULL,
+                title VARCHAR(200) NOT NULL,
+                content TEXT,
                 is_read BOOLEAN DEFAULT false,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;
         await neonHelper.query(createNotificationsTableSQL);
+        // Add index safely
+        try {
+            await neonHelper.query('CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)');
+        } catch (e) { console.warn('Index creation skipped/failed', e.message); }
+        
         results.logs.push('Checked/Created notifications table');
 
         // Migration 5: Add reply fields to feedbacks table
         try {
-            await neonHelper.query('ALTER TABLE feedbacks ADD COLUMN reply_content TEXT');
-            await neonHelper.query('ALTER TABLE feedbacks ADD COLUMN replied_at TIMESTAMP');
-            results.logs.push('Added reply columns to feedbacks table');
+            await neonHelper.query('ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS reply_content TEXT');
+            await neonHelper.query('ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS replied_at TIMESTAMP');
+            results.logs.push('Checked/Added reply columns to feedbacks table');
         } catch (e) {
-            // Ignore if columns already exist
-            results.logs.push('Reply columns might already exist in feedbacks table');
+            results.logs.push(`Error adding columns: ${e.message}`);
         }
 
         results.success = true;
@@ -213,6 +221,16 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
+    // Verify Admin Access
+    const token = extractToken(req);
+    const payload = token ? verifyToken(token) : null;
+    const requester = payload?.userId ? await userHelper.getUserById(payload.userId) : null;
+    const isAdmin = !!(requester?.roles?.admin || requester?.email === SUPER_ADMIN_EMAIL);
+    
+    if (!isAdmin) {
+        return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' });
+    }
+
     const { action } = req.query;
 
     switch (action) {
@@ -251,6 +269,24 @@ export default async function handler(req, res) {
                 if (appResult && appResult.length > 0) {
                     const userId = appResult[0].user_id;
                     if (userId) {
+                        // 2.5 Upgrade User Membership if approved
+                        if (status === 'approved') {
+                            const nextYear = new Date();
+                            nextYear.setFullYear(nextYear.getFullYear() + 1);
+                            
+                            // Check if membership fields exist first (or use safe update logic)
+                            // We assume fields exist as per previous migrations or we should ensure them.
+                            // The DDL says: membership_level, membership_start_at, membership_expire_at were added.
+                            
+                            await neonHelper.query(`
+                                UPDATE users 
+                                SET membership_level = 'vip', 
+                                    membership_start_at = NOW(), 
+                                    membership_expire_at = $1 
+                                WHERE user_id = $2
+                            `, [nextYear.toISOString(), userId]);
+                        }
+
                         // 3. Create notification
                         let title = '会员申请状态更新';
                         let content = '';

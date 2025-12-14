@@ -14,8 +14,8 @@ import { Job } from '../types'
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const { user, token } = useAuth()
-  const [applicationStatus, setApplicationStatus] = useState<string>('none')
+  const { user, token, isAuthenticated } = useAuth()
+  const [applicationStatus, setApplicationStatus] = useState<string | null>(null)
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>([])
   const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>([])
   const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
@@ -23,8 +23,8 @@ export default function LandingPage() {
   const [stats, setStats] = useState({ totalJobs: 0, companiesCount: 0, dailyJobs: 0 })
 
   useEffect(() => {
-    if (user && token) {
-      fetch('/api/user-profile?action=application_status', {
+    if (isAuthenticated && token) {
+      fetch('/api/applications?action=my_status', {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => res.json())
@@ -34,17 +34,22 @@ export default function LandingPage() {
         }
       })
       .catch(err => console.error('Failed to fetch application status', err))
+    } else {
+      setApplicationStatus(null)
     }
-  }, [user, token])
+  }, [isAuthenticated, token])
 
   useEffect(() => {
-    const loadData = async () => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
       try {
         setLoading(true)
 
         // 1. Fetch real stats from backend
         try {
-            const statsResp = await fetch('/api/admin-ops?action=stats')
+            const statsResp = await fetch('/api/stats')
             const statsData = await statsResp.json()
             if (statsData.success && statsData.stats) {
                 setStats({
@@ -329,20 +334,29 @@ export default function LandingPage() {
                                     disabled
                                     className="px-10 py-4 bg-slate-300 text-slate-500 font-bold rounded-xl cursor-not-allowed shadow-none"
                                 >
-                                    已申请，等待反馈中
+                                    已申请，敬请等待
                                 </button>
                                 <p className="text-sm text-slate-400">如有疑问可联系：haigooremote@outlook.com</p>
                             </div>
                         )
+                    } else if (applicationStatus === 'approved') {
+                        return (
+                             <button 
+                                onClick={() => navigate('/jobs')}
+                                className="px-10 py-4 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1"
+                            >
+                                恭喜成为我们的会员
+                            </button>
+                        )
                     } else {
-                         return (
+                        return (
                             <button 
                                 onClick={() => navigate('/join-club-application')}
                                 className="px-10 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-2xl hover:-translate-y-1"
                             >
                                 加入我们，获得无限可能
                             </button>
-                         )
+                        )
                     }
                 })()}
             </div>

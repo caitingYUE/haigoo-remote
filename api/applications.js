@@ -14,6 +14,45 @@ export default async function handler(req, res) {
     return sendJson(res, {}, 200)
   }
 
+  // Handle GET requests (e.g., check status)
+  if (req.method === 'GET') {
+    const { action } = req.query;
+
+    if (action === 'my_status') {
+      try {
+        const token = extractToken(req)
+        if (!token) {
+           // Not logged in, no status
+           return sendJson(res, { success: true, status: null })
+        }
+        
+        const payload = verifyToken(token)
+        if (!payload || !payload.userId) {
+           return sendJson(res, { success: true, status: null })
+        }
+
+        if (neonHelper.isConfigured) {
+            // Get latest application status
+            const result = await neonHelper.query(
+                'SELECT status, created_at FROM club_applications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+                [payload.userId]
+            )
+            
+            if (result && result.length > 0) {
+                return sendJson(res, { success: true, status: result[0].status, createdAt: result[0].created_at })
+            }
+            return sendJson(res, { success: true, status: null })
+        }
+        
+        return sendJson(res, { success: true, status: null, mock: true })
+
+      } catch (error) {
+         console.error('Check status error:', error)
+         return sendJson(res, { success: false, error: error.message }, 500)
+      }
+    }
+  }
+
   if (req.method === 'POST') {
     try {
       const body = req.body

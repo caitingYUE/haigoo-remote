@@ -27,6 +27,8 @@ const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
 const JoinClubApplicationPage = lazy(() => import('./pages/JoinClubApplicationPage'))
+const NoPermissionPage = lazy(() => import('./pages/NoPermissionPage'))
+
 
 function App() {
   return (
@@ -39,40 +41,41 @@ function App() {
                 {/* 公开路由：登录和注册 */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/no-permission" element={<NoPermissionPage />} />
 
                 {/* AdminPanel 独立布局，用于数据管理（需要登录） */}
                 <Route path="/admin/data" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminPanel />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
 
                 {/* Tag Management - No Layout wrapper */}
                 <Route path="/admin/tag-management" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminTagManagementPage />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
 
                 {/* Company Management - No Layout wrapper */}
                 <Route path="/admin/companies" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminCompanyManagementPage />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
 
                 {/* Trusted Company Management - No Layout wrapper */}
                 <Route path="/admin/trusted-companies" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminTrustedCompaniesPage />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
 
                 {/* Member Applications Management */}
                 <Route path="/admin/applications" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminApplicationsPage />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
 
                 {/* AdminTeamPage 统一后台管理页面（需要登录） */}
@@ -101,9 +104,9 @@ function App() {
                         <Route path="/company/:id" element={<CompanyProfilePage />} />
                         <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
                         <Route path="/admin/location-categories" element={
-                          <ProtectedRoute>
+                          <AdminRoute>
                             <AdminLocationPage />
-                          </ProtectedRoute>
+                          </AdminRoute>
                         } />
                         <Route path="/remote-experience" element={<RemoteExperiencePage />} />
                         <Route path="/membership" element={<MembershipPage />} />
