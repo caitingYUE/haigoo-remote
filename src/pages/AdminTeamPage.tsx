@@ -39,6 +39,7 @@ import UserManagementPage from './UserManagementPage';
 import AdminCompanyManagementPage from './AdminCompanyManagementPage';
 import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
 import AdminTagManagementPage from './AdminTagManagementPage';
+import AdminApplicationsPage from './AdminApplicationsPage';
 import AdminFeedbackList from '../components/AdminFeedbackList';
 import CronTestControl from '../components/CronTestControl';
 import '../components/AdminPanel.css';
@@ -746,6 +747,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'tag-management', label: '标签管理', icon: Tag },
     { id: 'resumes', label: '简历数据', icon: FileText },
     { id: 'users', label: '用户管理', icon: Users },
+    { id: 'applications', label: '会员申请', icon: FileText },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'settings', label: '系统设置', icon: Settings }
@@ -845,6 +847,7 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'jobs' && renderJobDataManagement()}
               {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'users' && <UserManagementPage />}
+              {activeTab === 'applications' && <AdminApplicationsPage />}
               {activeTab === 'companies' && <AdminCompanyManagementPage />}
               {activeTab === 'trusted-companies' && <AdminTrustedCompaniesPage />}
               {activeTab === 'tag-management' && <AdminTagManagementPage />}

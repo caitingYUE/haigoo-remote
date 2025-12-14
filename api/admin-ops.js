@@ -107,6 +107,25 @@ async function runMigration(req, res) {
             results.logs.push(`Executed: ${sql}`);
         }
 
+        // Migration 3: club_applications table
+        const createApplicationsTableSQL = `
+            CREATE TABLE IF NOT EXISTS club_applications (
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(255),
+                experience TEXT,
+                career_ideal TEXT,
+                portfolio VARCHAR(2000),
+                expectations TEXT,
+                contribution TEXT,
+                contact TEXT,
+                contact_type VARCHAR(50) DEFAULT 'wechat',
+                status VARCHAR(50) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `;
+        await neonHelper.query(createApplicationsTableSQL);
+        results.logs.push('Checked/Created club_applications table');
+
         results.success = true;
         results.message = 'Migration completed successfully';
 

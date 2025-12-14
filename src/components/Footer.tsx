@@ -12,7 +12,7 @@ export default function Footer() {
     { 
       id: 'about', 
       label: '关于我们', 
-      href: '/about',
+      href: '#', // 暂时不可点击
       ariaLabel: '了解 Haigoo 的使命和团队'
     },
     { 
@@ -60,11 +60,22 @@ export default function Footer() {
               <a
                 key={link.id}
                 href={link.href}
-                className="text-sm text-slate-500 hover:text-haigoo-primary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-md px-1 py-1"
+                className={`text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-md px-1 py-1 ${
+                  link.href === '#' 
+                    ? 'text-slate-300 cursor-not-allowed hover:text-slate-300' 
+                    : 'text-slate-500 hover:text-haigoo-primary'
+                }`}
                 aria-label={link.ariaLabel}
+                onClick={(e) => {
+                  if (link.href === '#') {
+                    e.preventDefault()
+                  }
+                }}
                 onKeyDown={(e) => handleKeyDown(e, () => {
                   // 这里可以添加自定义导航逻辑
-                  window.location.href = link.href
+                  if (link.href !== '#') {
+                    window.location.href = link.href
+                  }
                 })}
               >
                 {link.label}
