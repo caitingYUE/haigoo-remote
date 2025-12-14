@@ -223,7 +223,7 @@ export default function LandingPage() {
         <div className="mt-24">
             <div className="text-center mb-16">
                 <h2 className="text-3xl font-bold text-slate-900 tracking-tight">俱乐部的核心亮点</h2>
-                <p className="mt-4 text-lg text-slate-500">我们不仅仅是一个招聘平台，更是一个基于共同价值观的专业社群。</p>
+                <p className="mt-4 text-lg text-slate-500">我们不仅仅是一个远程工作入口，更是一个信任和价值观驱动的远程爱好者俱乐部。</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-lg transition-shadow shadow-sm">
@@ -231,7 +231,7 @@ export default function LandingPage() {
                         <Users className="w-6 h-6 text-indigo-600" />
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-3">先交朋友，后合作</h3>
-                    <p className="text-slate-600 leading-relaxed">我们创造一个业余轻松的交流环境，让合作在相互了解和信任的基础上自然发生。</p>
+                    <p className="text-slate-600 leading-relaxed">我们创造一个业余轻松的交流环境，让合作在相互了解和信任的基础上自然发生。你可以在这里遇见好朋友、心仪的工作机会甚至是未来的事业合伙人</p>
                 </div>
                 <div className="bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-lg transition-shadow shadow-sm">
                     <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
@@ -244,8 +244,8 @@ export default function LandingPage() {
                     <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
                         <Award className="w-6 h-6 text-indigo-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">深度连结，共同成长</h3>
-                    <p className="text-slate-600 leading-relaxed">通过专属社群和活动，与行业精英、企业创始人直接对话，拓展你的人脉与视野。</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-3">持续挖掘全球远程机会</h3>
+                    <p className="text-slate-600 leading-relaxed">我们通过各种渠道挖掘来自全球各地的优质远程工作机会，确保找到真正对中国人友好的远程企业。让你放心探索世界。</p>
                 </div>
             </div>
         </div>
@@ -283,17 +283,17 @@ export default function LandingPage() {
                     <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-6">
                         <Briefcase className="w-8 h-8 text-indigo-600" />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">岗位内推</h3>
-                    <p className="text-sm text-slate-500">优先获得未公开的高质量远程岗位内推机会。</p>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">全站会员服务</h3>
+                    <p className="text-sm text-slate-500">享受全站所有内推机会、无限简历优化服务及后续陆续上线的其他会员功能。</p>
                 </div>
             </div>
 
             {/* Call to Action */}
             <div className="mt-16 bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xl shadow-indigo-100/50">
                 <h2 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">准备好开启新的职业篇章了吗？</h2>
-                <p className="text-lg text-slate-600 mb-8">加入远程俱乐部，与宽阔的世界伙伴一起，探索远程工作的无限可能。</p>
+                <p className="text-lg text-slate-600 mb-8">加入海狗远程俱乐部，与世界各地的小伙伴一起，探索远程工作和理想生活的无限可能。</p>
                 <button 
-                    onClick={() => navigate('/register')}
+                    onClick={() => navigate('/join-club-application')}
                     className="px-10 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-2xl hover:-translate-y-1"
                 >
                     加入我们，获得无限可能

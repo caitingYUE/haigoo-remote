@@ -303,3 +303,18 @@ ALTER TABLE extracted_companies ADD COLUMN translations JSONB;
 ALTER TABLE resumes ADD COLUMN ai_score INTEGER;
 ALTER TABLE resumes ADD COLUMN ai_suggestions JSONB;
 ALTER TABLE resumes ADD COLUMN last_analyzed_at TIMESTAMP;
+
+-- 2025-12-14: Add club_applications table
+CREATE TABLE club_applications (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255),
+  experience TEXT,
+  career_ideal TEXT,
+  portfolio VARCHAR(2000),
+  expectations TEXT,
+  contribution TEXT,
+  contact TEXT,
+  contact_type VARCHAR(50) DEFAULT 'wechat',
+  status VARCHAR(50) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
