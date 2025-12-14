@@ -1,3 +1,5 @@
+import { sendLog } from '../../lib/services/lark-message.js';
+
 export default async function handler(req, res) {
   const { task } = req.query;
 
@@ -5,6 +7,11 @@ export default async function handler(req, res) {
   const taskName = task || req.body?.task;
 
   console.log(`[CronRouter] Received request for task: ${taskName}, method: ${req.method}, query: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`);
+  sendLog(
+    `[CronRouter] Received request for task: ${taskName}, method: ${req.method}, query: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
+    'green',
+    '定时任务调度通知'
+  );
 
   if (!taskName) {
     return res.status(400).json({

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
+    "@larksuiteoapi/node-sdk": "^1.55.0",
     "@neondatabase/serverless": "^1.0.2",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@vercel/functions": "^3.3.3",
