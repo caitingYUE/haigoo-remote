@@ -6,7 +6,7 @@ import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import HomeHero from '../components/HomeHero'
 import JobCardNew from '../components/JobCardNew'
 import HomeCompanyCard from '../components/HomeCompanyCard'
-import { ArrowRight, TrendingUp, Building2, Zap } from 'lucide-react'
+import { ArrowRight, TrendingUp, Building2, Zap, Users, Target, Award, Briefcase } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { Job } from '../types'
@@ -217,6 +217,88 @@ export default function LandingPage() {
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
+        </div>
+
+        {/* Core Highlights - Migrated from AboutPage */}
+        <div className="mt-24">
+            <div className="text-center mb-16">
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">俱乐部的核心亮点</h2>
+                <p className="mt-4 text-lg text-slate-500">我们不仅仅是一个招聘平台，更是一个基于共同价值观的专业社群。</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-lg transition-shadow shadow-sm">
+                    <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
+                        <Users className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-3">先交朋友，后合作</h3>
+                    <p className="text-slate-600 leading-relaxed">我们创造一个业余轻松的交流环境，让合作在相互了解和信任的基础上自然发生。</p>
+                </div>
+                <div className="bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-lg transition-shadow shadow-sm">
+                    <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
+                        <Target className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-3">价值观与能力双重匹配</h3>
+                    <p className="text-slate-600 leading-relaxed">我们深入了解企业文化和CEO价值观，确保为你推荐的不仅仅是工作机会，更是事业归属。</p>
+                </div>
+                <div className="bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-lg transition-shadow shadow-sm">
+                    <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
+                        <Award className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-3">深度连结，共同成长</h3>
+                    <p className="text-slate-600 leading-relaxed">通过专属社群和活动，与行业精英、企业创始人直接对话，拓展你的人脉与视野。</p>
+                </div>
+            </div>
+        </div>
+
+        {/* Club Benefits - Migrated from AboutPage */}
+        <div id="club-benefits" className="mt-24">
+            <div className="text-center mb-16">
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">加入俱乐部，您将获得</h2>
+                <p className="mt-4 text-lg text-slate-500">我们为您提供超越求职的价值，助力你的职业成长。</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                 <div className="text-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-100 transition-colors">
+                    <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-6">
+                        <Target className="w-8 h-8 text-indigo-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">价值匹配</h3>
+                    <p className="text-sm text-slate-500">深入企业文化，为您匹配价值观契合的团队。</p>
+                </div>
+                <div className="text-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-100 transition-colors">
+                    <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-6">
+                        <Zap className="w-8 h-8 text-indigo-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">直连CEO</h3>
+                    <p className="text-sm text-slate-500">优秀会员有机会参与企业创始人深度交流。</p>
+                </div>
+                <div className="text-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-100 transition-colors">
+                    <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-6">
+                        <Users className="w-8 h-8 text-indigo-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">合作交流</h3>
+                    <p className="text-sm text-slate-500">保持行业敏感，在互动社群中分享洞见，共同成长。</p>
+                </div>
+                 <div className="text-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-100 transition-colors">
+                    <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-6">
+                        <Briefcase className="w-8 h-8 text-indigo-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">岗位内推</h3>
+                    <p className="text-sm text-slate-500">优先获得未公开的高质量远程岗位内推机会。</p>
+                </div>
+            </div>
+
+            {/* Call to Action */}
+            <div className="mt-16 bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xl shadow-indigo-100/50">
+                <h2 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">准备好开启新的职业篇章了吗？</h2>
+                <p className="text-lg text-slate-600 mb-8">加入远程俱乐部，与宽阔的世界伙伴一起，探索远程工作的无限可能。</p>
+                <button 
+                    onClick={() => navigate('/register')}
+                    className="px-10 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-2xl hover:-translate-y-1"
+                >
+                    加入我们，获得无限可能
+                </button>
+            </div>
         </div>
 
         {/* Job Alert Subscription */}
