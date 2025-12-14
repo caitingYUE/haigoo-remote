@@ -1,4 +1,4 @@
-import { Bell, User, Menu, ChevronDown } from 'lucide-react'
+import { Bell, User, Menu, ChevronDown, Trash2, Check } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -8,13 +8,81 @@ const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || logoSvg
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, logout, token } = useAuth()
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const notificationRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<number | null>(null)
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const userMenuButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Fetch notifications
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      fetch('/api/user-profile?action=notifications', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setNotifications(data.notifications || [])
+        }
+      })
+      .catch(console.error)
+    }
+  }, [isAuthenticated, token])
+
+  const unreadCount = notifications.filter(n => !n.isRead).length
+
+  const handleMarkRead = async (id?: string) => {
+    try {
+      const res = await fetch('/api/user-profile?action=notifications_mark_read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id })
+      })
+      if (res.ok) {
+        setNotifications(prev => prev.map(n => 
+          (!id || n.id === id) ? { ...n, isRead: true } : n
+        ))
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleDelete = async (id?: string) => {
+    try {
+      const res = await fetch('/api/user-profile?action=notifications_delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id })
+      })
+      if (res.ok) {
+        if (id) {
+            setNotifications(prev => prev.filter(n => n.id !== id))
+        } else {
+            setNotifications([])
+        }
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  // Click outside to close notification dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
 
   // 处理登出
@@ -186,18 +254,73 @@ export default function Header() {
             {isAuthenticated && (
               <>
                 {/* Notifications */}
-                <button
-                  className="p-3 text-slate-400 hover:text-slate-600 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  aria-label="通知，有 1 条新消息"
-                  title="通知"
-                >
-                  <Bell className="h-6 w-6" aria-hidden="true" />
-                  <span
-                    className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-400"
-                    aria-hidden="true"
-                  ></span>
-                  <span className="sr-only">有新通知</span>
-                </button>
+                <div ref={notificationRef} className="relative">
+                  <button
+                    onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                    className="p-3 text-slate-400 hover:text-slate-600 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    aria-label={`通知，有 ${unreadCount} 条新消息`}
+                    title="通知"
+                  >
+                    <Bell className="h-6 w-6" aria-hidden="true" />
+                    {unreadCount > 0 && (
+                      <span
+                        className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-400"
+                        aria-hidden="true"
+                      ></span>
+                    )}
+                  </button>
+
+                  {isNotificationOpen && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
+                      <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                        <h3 className="text-sm font-semibold text-slate-900">消息通知</h3>
+                        <div className="flex gap-2">
+                            <button onClick={() => handleMarkRead()} className="text-xs text-indigo-600 hover:text-indigo-800" title="全部已读">
+                                <Check className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete()} className="text-xs text-slate-400 hover:text-red-600" title="清空全部">
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                      </div>
+                      <div className="max-h-80 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center text-slate-500 text-sm">
+                            暂无消息
+                          </div>
+                        ) : (
+                          notifications.map(notification => (
+                            <div key={notification.id} className={`px-4 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 relative group ${!notification.isRead ? 'bg-indigo-50/30' : ''}`}>
+                              <div className="flex justify-between items-start mb-1">
+                                <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                                    notification.type === 'feedback_reply' ? 'bg-blue-100 text-blue-700' : 
+                                    notification.type === 'application_update' ? 'bg-green-100 text-green-700' : 
+                                    'bg-slate-100 text-slate-600'
+                                }`}>
+                                    {notification.type === 'feedback_reply' ? '反馈回复' : notification.type === 'application_update' ? '申请更新' : '系统消息'}
+                                </span>
+                                <span className="text-xs text-slate-400">{new Date(notification.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <h4 className={`text-sm font-medium mb-1 ${!notification.isRead ? 'text-slate-900' : 'text-slate-700'}`}>{notification.title}</h4>
+                              <p className="text-xs text-slate-600 leading-relaxed">{notification.content}</p>
+                              
+                              <div className="absolute top-2 right-2 hidden group-hover:flex gap-1 bg-white/80 rounded shadow-sm p-1">
+                                  {!notification.isRead && (
+                                      <button onClick={(e) => { e.stopPropagation(); handleMarkRead(notification.id) }} className="p-1 hover:text-indigo-600 text-slate-400" title="标为已读">
+                                          <Check className="w-3 h-3" />
+                                      </button>
+                                  )}
+                                  <button onClick={(e) => { e.stopPropagation(); handleDelete(notification.id) }} className="p-1 hover:text-red-600 text-slate-400" title="删除">
+                                      <Trash2 className="w-3 h-3" />
+                                  </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* User Menu - 优化用户菜单设计 */}
                 <div

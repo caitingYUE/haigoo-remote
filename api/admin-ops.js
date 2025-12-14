@@ -126,6 +126,31 @@ async function runMigration(req, res) {
         await neonHelper.query(createApplicationsTableSQL);
         results.logs.push('Checked/Created club_applications table');
 
+        // Migration 4: notifications table
+        const createNotificationsTableSQL = `
+            CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(255) NOT NULL,
+                type VARCHAR(50) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                is_read BOOLEAN DEFAULT false,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `;
+        await neonHelper.query(createNotificationsTableSQL);
+        results.logs.push('Checked/Created notifications table');
+
+        // Migration 5: Add reply fields to feedbacks table
+        try {
+            await neonHelper.query('ALTER TABLE feedbacks ADD COLUMN reply_content TEXT');
+            await neonHelper.query('ALTER TABLE feedbacks ADD COLUMN replied_at TIMESTAMP');
+            results.logs.push('Added reply columns to feedbacks table');
+        } catch (e) {
+            // Ignore if columns already exist
+            results.logs.push('Reply columns might already exist in feedbacks table');
+        }
+
         results.success = true;
         results.message = 'Migration completed successfully';
 
@@ -214,10 +239,68 @@ export default async function handler(req, res) {
                 if (!id || !status) {
                     return res.status(400).json({ success: false, error: 'Missing id or status' });
                 }
+                
+                // 1. Update status
                 await neonHelper.query(
                     'UPDATE club_applications SET status = $1 WHERE id = $2',
                     [status, id]
                 );
+
+                // 2. Fetch application to get user_id
+                const appResult = await neonHelper.query('SELECT user_id FROM club_applications WHERE id = $1', [id]);
+                if (appResult && appResult.length > 0) {
+                    const userId = appResult[0].user_id;
+                    if (userId) {
+                        // 3. Create notification
+                        let title = '会员申请状态更新';
+                        let content = '';
+                        if (status === 'approved') {
+                            content = '恭喜！您的会员申请已通过。欢迎加入海狗远程俱乐部！';
+                        } else if (status === 'rejected') {
+                            content = '很遗憾，您的会员申请未通过。您可以完善资料后再次尝试。';
+                        } else if (status === 'contacted') {
+                            content = '管理员已查看您的申请并会尽快与您联系。';
+                        }
+
+                        if (content) {
+                             await neonHelper.query(
+                                'INSERT INTO notifications (user_id, type, title, content) VALUES ($1, $2, $3, $4)',
+                                [userId, 'application_update', title, content]
+                            );
+                        }
+                    }
+                }
+
+                return res.status(200).json({ success: true });
+            } catch (error) {
+                return res.status(500).json({ success: false, error: error.message });
+            }
+        case 'reply_feedback':
+            try {
+                const { feedbackId, replyContent } = req.body || {};
+                if (!feedbackId || !replyContent) {
+                    return res.status(400).json({ success: false, error: 'Missing feedbackId or replyContent' });
+                }
+
+                // 1. Update feedback with reply
+                await neonHelper.query(
+                    'UPDATE feedbacks SET reply_content = $1, replied_at = NOW() WHERE id = $2',
+                    [replyContent, feedbackId]
+                );
+
+                // 2. Fetch feedback to get user_id
+                const fbResult = await neonHelper.query('SELECT user_id FROM feedbacks WHERE id = $1', [feedbackId]);
+                if (fbResult && fbResult.length > 0) {
+                    const userId = fbResult[0].user_id;
+                    if (userId) {
+                        // 3. Create notification
+                        await neonHelper.query(
+                            'INSERT INTO notifications (user_id, type, title, content) VALUES ($1, $2, $3, $4)',
+                            [userId, 'feedback_reply', '反馈回复', `管理员回复了您的反馈：${replyContent}`]
+                        );
+                    }
+                }
+
                 return res.status(200).json({ success: true });
             } catch (error) {
                 return res.status(500).json({ success: false, error: error.message });

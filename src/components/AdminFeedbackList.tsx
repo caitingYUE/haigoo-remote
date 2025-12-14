@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2, CheckCircle, XCircle, AlertCircle, MessageSquare } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertCircle, MessageSquare, Reply, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Feedback {
     id: string;
     userId: string;
+    username?: string;
+    email?: string;
     jobId?: string;
     accuracy: 'accurate' | 'inaccurate' | 'unknown';
     content: string;
@@ -12,6 +14,8 @@ interface Feedback {
     source?: string;
     sourceUrl?: string;
     createdAt: string;
+    replyContent?: string;
+    repliedAt?: string;
 }
 
 export default function AdminFeedbackList() {
@@ -45,6 +49,31 @@ export default function AdminFeedbackList() {
         fetchFeedbacks();
     }, [fetchFeedbacks]);
 
+    const handleReply = async (feedbackId: string) => {
+        const content = window.prompt('请输入回复内容：');
+        if (!content) return;
+
+        try {
+            const res = await fetch('/api/admin-ops?action=reply_feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ feedbackId, replyContent: content })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('回复成功');
+                fetchFeedbacks();
+            } else {
+                alert('回复失败: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('回复失败: 网络错误');
+        }
+    };
+
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
     if (error) return <div className="text-red-500 p-4">{error}</div>;
 
@@ -60,23 +89,28 @@ export default function AdminFeedbackList() {
                         <table className="data-table">
                             <thead>
                                 <tr>
-                                    <th>时间</th>
+                                    <th>时间/用户</th>
                                     <th>类型/准确性</th>
                                     <th>内容</th>
                                     <th>联系方式</th>
                                     <th>关联信息</th>
+                                    <th>操作</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {feedbacks.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="text-center py-8 text-slate-500">暂无反馈数据</td>
+                                        <td colSpan={6} className="text-center py-8 text-slate-500">暂无反馈数据</td>
                                     </tr>
                                 ) : (
                                     feedbacks.map(feedback => (
                                         <tr key={feedback.id}>
                                             <td className="text-sm text-slate-500">
-                                                {new Date(feedback.createdAt).toLocaleString()}
+                                                <div>{new Date(feedback.createdAt).toLocaleString()}</div>
+                                                <div className="flex items-center gap-1 mt-1 text-xs text-slate-400">
+                                                    <User className="w-3 h-3" />
+                                                    {feedback.username || feedback.userId.slice(0, 8)}
+                                                </div>
                                             </td>
                                             <td>
                                                 {feedback.jobId ? (
@@ -94,6 +128,13 @@ export default function AdminFeedbackList() {
                                             </td>
                                             <td className="max-w-md">
                                                 <div className="text-sm text-slate-900 break-words">{feedback.content}</div>
+                                                {feedback.replyContent && (
+                                                    <div className="mt-2 text-xs bg-slate-50 p-2 rounded border border-slate-100 text-slate-600">
+                                                        <div className="font-semibold text-indigo-600 mb-1">管理员回复:</div>
+                                                        {feedback.replyContent}
+                                                        <div className="text-slate-400 mt-1">{new Date(feedback.repliedAt!).toLocaleString()}</div>
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="text-sm text-slate-500">
                                                 {feedback.contact || '-'}
@@ -111,6 +152,17 @@ export default function AdminFeedbackList() {
                                                     </div>
                                                 ) : (
                                                     <span className="text-slate-400">-</span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {!feedback.replyContent && (
+                                                    <button
+                                                        onClick={() => handleReply(feedback.id)}
+                                                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                        title="回复用户"
+                                                    >
+                                                        <Reply className="w-4 h-4" />
+                                                    </button>
                                                 )}
                                             </td>
                                         </tr>
