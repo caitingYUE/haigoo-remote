@@ -8,9 +8,9 @@ export default async function handler(req, res) {
 
   console.log(`[CronRouter] Received request for task: ${taskName}, method: ${req.method}, query: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`);
   sendLog(
-    content = `[CronRouter] Received request for task: ${taskName}, method: ${req.method}, query: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
-    color = 'green',
-    title = '定时任务调度通知'
+    `[CronRouter] Received request for task: ${taskName}, method: ${req.method}, query: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
+    'green',
+    '定时任务调度通知'
   );
 
   if (!taskName) {
