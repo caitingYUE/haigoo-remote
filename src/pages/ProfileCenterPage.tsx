@@ -422,7 +422,7 @@ export default function ProfileCenterPage() {
              // Let's leave it but use finalResumeId.
           }
           
-          showSuccess('简历上传成功！', '您可以点击右侧按钮进行AI深度分析')
+          showSuccess('简历上传成功！', '您可以点击按钮进行AI深度分析')
 
           // 4. AI 分析不再自动触发，由用户手动触发
         } else {
@@ -761,21 +761,40 @@ export default function ProfileCenterPage() {
                   {/* Re-analyze Button - Moved here for better visibility */}
                    <div className="mt-4 flex justify-center">
                         <button
-                          disabled={!authUser?.membershipLevel && aiSuggestions.length > 0} 
-                          // Logic for disabled state handled in onClick or separate check, 
-                          // but for layout, we show it here.
-                          // Actually, let's copy the logic from previous messages:
-                          // Disabled if non-member and already analyzed today (handled by backend 429)
-                          // But user asked to keep it visible.
-                          // Let's use the same logic as the initial "Generate" button but "Re-generate"
+                          // Disabled logic:
+                          // 1. Loading (isAnalyzing)
+                          // 2. Non-member limit reached (backend 429, but UI can hint) - We don't track daily limit in frontend state easily without a fetch.
+                          //    But we can check if analyzed today based on local knowledge if we had it.
+                          //    Actually, backend returns 429 if limit reached.
+                          // 3. Content unchanged - We can check this! latestResume.updatedAt vs lastAnalyzedAt?
+                          //    We don't have full metadata here.
+                          // User request: "Always visible, disabled OR click to prompt".
+                          // Let's keep it enabled but show prompt on click if blocked?
+                          // User said: "just disabled, OR click to prompt... disabled with tooltip is better"
+                          // Since we don't have perfect sync of "limit reached" state without a query,
+                          // let's rely on the click handler to show the error (as currently implemented in handleAnalyzeResume),
+                          // BUT we can try to disable it if we KNOW.
+                          // For now, let's allow click so the backend message (specific error) is shown to user.
+                          // Wait, user said "Re-analysis button should continue to be up there, just not clickable OR prompt on click".
+                          // If I make it not clickable, I need to know WHY.
+                          // Let's make it clickable so they see the specific error message from backend (Limit reached vs Content unchanged).
                           onClick={handleAnalyzeResume}
-                          data-tooltip={authUser?.membershipLevel === 'none' ? '非会员每天只能使用1次简历分析功能' : '简历内容未变更，请勿重复分析'}
+                          disabled={isAnalyzing}
                           className={`px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 w-full
-                             ${(authUser?.membershipLevel === 'none' && aiSuggestions.length > 0) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}
+                             ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}
                           `}
                         >
-                          <Crown className="w-5 h-5 text-yellow-300" />
-                          重新生成 AI 建议
+                          {isAnalyzing ? (
+                             <>
+                               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                               Analyzing...
+                             </>
+                          ) : (
+                             <>
+                               <Crown className="w-5 h-5 text-yellow-300" />
+                               重新生成 AI 建议
+                             </>
+                          )}
                         </button>
                    </div>
               </div>

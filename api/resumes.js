@@ -419,15 +419,26 @@ export default async function handler(req, res) {
             }
         }
 
-        // 2. Check Content Change (For everyone)
-        // If already analyzed, and updated_at is OLDER than last_analyzed_at, reject
-        if (resume.lastAnalyzedAt && resume.updatedAt) {
-          const lastAnalyzed = new Date(resume.lastAnalyzedAt)
-          const lastUpdated = new Date(resume.updatedAt)
-          // Allow some buffer or simple comparison
-          if (lastAnalyzed >= lastUpdated) {
-            return sendJson(res, { success: false, error: '简历内容未变更，请勿重复分析', contentUnchanged: true }, 400)
-          }
+        // 2. Check Content Change (Strict check for everyone: must be updated since last analysis)
+        if (resume.lastAnalyzedAt) {
+           const lastAnalyzed = new Date(resume.lastAnalyzedAt)
+           // If updatedAt is missing, assume it hasn't been updated since creation/last save
+           // If updatedAt exists, check if it is NEWER than lastAnalyzed
+           
+           // Logic: If NO update time, OR update time <= last analysis time -> Block
+           // Meaning: lastAnalyzed >= updatedAt -> Block
+           
+           let lastUpdated = resume.updatedAt ? new Date(resume.updatedAt) : null
+           
+           // If we don't track updatedAt properly on initial upload, use uploadedAt or createdAt
+           if (!lastUpdated && resume.uploadedAt) lastUpdated = new Date(resume.uploadedAt)
+           
+           // If still null (legacy), allow ONE analysis if not analyzed yet (but we are in if lastAnalyzedAt block)
+           // If lastAnalyzedAt exists, we must have an update time > lastAnalyzedAt to allow re-analysis
+           
+           if (!lastUpdated || lastAnalyzed >= lastUpdated) {
+             return sendJson(res, { success: false, error: '简历内容未变更，请勿重复分析', contentUnchanged: true }, 400)
+           }
         }
 
         // 3. Call AI Service
