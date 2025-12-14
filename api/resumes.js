@@ -4,6 +4,7 @@
  */
 
 import { getResumes, saveResumes, saveUserResume, getResumeContent, deleteResume, updateResumeContent, updateResumeAnalysis } from '../server-utils/resume-storage.js'
+import neonHelper from '../server-utils/dal/neon-helper.js'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
@@ -379,23 +380,46 @@ export default async function handler(req, res) {
         if (!resume) return sendJson(res, { success: false, error: 'Resume not found' }, 404)
         if (resume.userId !== decoded.userId && !decoded.admin) return sendJson(res, { success: false, error: 'Permission denied' }, 403)
 
-        // 1. Check User Frequency Limit (1 per day)
-        // Filter resumes by this user
-        const userResumes = resumes.filter(r => r.userId === decoded.userId)
-        const now = new Date()
-        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-
-        const recentAnalysis = userResumes.find(r => {
-          if (!r.lastAnalyzedAt) return false
-          const analyzedAt = new Date(r.lastAnalyzedAt)
-          return analyzedAt > oneDayAgo
-        })
-
-        if (recentAnalysis) {
-          return sendJson(res, { success: false, error: '每天只能使用1次简历分析功能', limitReached: true }, 429)
+        // Check Membership Status
+        let isMember = false
+        if (neonHelper.isConfigured) {
+            try {
+                const userRows = await neonHelper.query(
+                    `SELECT membership_level, membership_expire_at FROM users WHERE user_id = $1`,
+                    [decoded.userId]
+                )
+                if (userRows && userRows.length > 0) {
+                    const u = userRows[0]
+                    if (u.membership_level && u.membership_level !== 'none') {
+                        const expireAt = new Date(u.membership_expire_at)
+                        if (expireAt > new Date()) {
+                            isMember = true
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[Resumes] Failed to check membership:', e)
+            }
         }
 
-        // 2. Check Content Change
+        // 1. Check User Frequency Limit (1 per day for non-members)
+        if (!isMember) {
+            const userResumes = resumes.filter(r => r.userId === decoded.userId)
+            const now = new Date()
+            const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+
+            const recentAnalysis = userResumes.find(r => {
+              if (!r.lastAnalyzedAt) return false
+              const analyzedAt = new Date(r.lastAnalyzedAt)
+              return analyzedAt > oneDayAgo
+            })
+
+            if (recentAnalysis) {
+              return sendJson(res, { success: false, error: '非会员每天只能使用1次简历分析功能', limitReached: true }, 429)
+            }
+        }
+
+        // 2. Check Content Change (For everyone)
         // If already analyzed, and updated_at is OLDER than last_analyzed_at, reject
         if (resume.lastAnalyzedAt && resume.updatedAt) {
           const lastAnalyzed = new Date(resume.lastAnalyzedAt)
@@ -520,12 +544,19 @@ async function analyzeResumeContent(text, targetRole) {
     简历内容：
     ${text.substring(0, 3000)}
     
-    请输出JSON格式：
+    请输出严格的JSON格式：
     {
       "score": 0-100之间的整数评分,
-      "suggestions": ["建议1", "建议2", "建议3", "建议4", "建议5"]
+      "suggestions": [
+        {
+          "category": "排版与格式" | "内容质量" | "语法与表达" | "关键技能",
+          "priority": "高" | "中" | "低",
+          "issue": "问题描述",
+          "suggestion": "具体修改建议"
+        }
+      ]
     }
-    只返回JSON，不要其他废话。`
+    建议数量控制在3-5条。只返回JSON，不要markdown代码块，不要其他废话。`
     
   let apiUrl = ''
   let requestBody = {}
@@ -557,32 +588,64 @@ async function analyzeResumeContent(text, targetRole) {
       }
   }
 
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(requestBody)
-  })
+  // Retry logic
+  let lastError = null;
+  const maxRetries = 3;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      console.log(`[AI] Attempt ${i + 1}/${maxRetries} using ${provider}...`);
+      
+      // Add timeout to fetch
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
 
-  const data = await response.json()
-  if (!response.ok) throw new Error(data.message || data.error || 'AI API Error')
+      if (response.status === 429) {
+         throw new Error('Rate limit exceeded');
+      }
 
-  let content = ''
-  if (provider === 'bailian') {
-      content = data.output.text
-  } else {
-      content = data.choices?.[0]?.message?.content || ''
-  }
+      if (!response.ok) {
+         const errText = await response.text();
+         throw new Error(`API Error ${response.status}: ${errText}`);
+      }
+      
+      const data = await response.json();
+      
+      let content = '';
+      if (provider === 'bailian') {
+          content = data.output.text;
+      } else {
+          content = data.choices?.[0]?.message?.content || '';
+      }
 
-  // Extract JSON
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (jsonMatch) {
-    return JSON.parse(jsonMatch[0])
+      // Extract JSON
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      
+      // Try to parse entire content if no match
+      return JSON.parse(content);
+      
+    } catch (e) {
+      console.warn(`[AI] Attempt ${i + 1} failed:`, e.message);
+      lastError = e;
+      
+      // Wait before retry (exponential backoff: 1s, 2s, 4s)
+      if (i < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+      }
+    }
   }
   
-  // Try to parse entire content if no match
-  try {
-      return JSON.parse(content)
-  } catch (e) {
-      throw new Error('Failed to parse AI response JSON')
-  }
+  throw lastError || new Error('AI Service Unavailable');
 }

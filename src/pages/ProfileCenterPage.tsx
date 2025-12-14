@@ -28,7 +28,15 @@ export default function ProfileCenterPage() {
   const [tab, setTab] = useState<TabKey>(initialTab)
   const [isUploading, setIsUploading] = useState(false)
   const [resumeScore, setResumeScore] = useState<number>(0)
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]) // Store AI suggestions
+  // Define suggestion type
+  interface AiSuggestion {
+    category: string
+    priority: '高' | '中' | '低'
+    issue: string
+    suggestion: string
+  }
+
+  const [aiSuggestions, setAiSuggestions] = useState<AiSuggestion[]>([]) // Store AI suggestions
   
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
@@ -626,9 +634,9 @@ export default function ProfileCenterPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-8">
-        {/* 上部分：简历预览与基础信息 */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[400px] flex flex-col">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        {/* Left Column: Resume Preview & Basic Info */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px] flex flex-col lg:sticky lg:top-8">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900 px-1">Your Resume</h3>
                 {!latestResume && (
@@ -678,11 +686,11 @@ export default function ProfileCenterPage() {
                   </div>
                 </div>
                 {(previewUrl || resumeText) && (
-                  <div className="rounded-xl border border-slate-200 flex-1 overflow-hidden bg-slate-50/50 flex flex-col min-h-[300px] max-h-[500px]">
+                  <div className="rounded-xl border border-slate-200 flex-1 overflow-hidden bg-slate-50/50 flex flex-col min-h-[400px] max-h-[700px]">
                     {previewUrl && fileType === 'application/pdf' ? (
                       <iframe
                         src={previewUrl}
-                        className="w-full h-full min-h-[300px] bg-white"
+                        className="w-full h-full min-h-[400px] bg-white"
                         title="Resume Preview"
                       />
                     ) : previewUrl && fileType.startsWith('image/') ? (
@@ -706,7 +714,7 @@ export default function ProfileCenterPage() {
             )}
         </div>
 
-        {/* 下部分：AI 分析结果 */}
+        {/* Right Column: AI Analysis Results */}
         <div id="ai-analysis-section" className="space-y-4">
           <div className="flex items-center justify-between">
              <h3 className="text-lg font-bold text-slate-900 px-1">AI-Powered Suggestions</h3>
@@ -716,7 +724,7 @@ export default function ProfileCenterPage() {
             {!resumeText ? (
               <div className="p-8 bg-slate-50 text-slate-500 rounded-xl text-center border-2 border-dashed border-slate-200">
                 <Crown className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p>Upload your resume above to unlock AI-powered optimization suggestions.</p>
+                <p>Upload your resume to unlock AI-powered optimization suggestions.</p>
               </div>
             ) : isAnalyzing ? (
                <div className="p-12 bg-white border border-indigo-100 rounded-xl text-center shadow-sm">
@@ -725,20 +733,51 @@ export default function ProfileCenterPage() {
                   <p className="text-slate-500">正在进行深度分析，这可能需要 30-60 秒，请耐心等待...</p>
                </div>
             ) : aiSuggestions.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {aiSuggestions.map((suggestion, idx) => (
+              <div className="grid grid-cols-1 gap-4">
+                  {aiSuggestions.map((item, idx) => (
                     <div key={idx} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 hover:border-indigo-200 transition-colors">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <CheckCircle className="w-5 h-5 text-indigo-600" />
+                      <div className="flex items-start gap-4">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
+                            item.priority === '高' ? 'bg-red-50 text-red-600' :
+                            item.priority === '中' ? 'bg-orange-50 text-orange-600' :
+                            'bg-blue-50 text-blue-600'
+                        }`}>
+                            <span className="font-bold text-sm">{item.priority}</span>
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-bold text-sm text-slate-900 mb-1">Optimization Point {idx + 1}</h4>
-                          <p className="text-sm text-slate-600 leading-relaxed">{suggestion}</p>
+                          <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-bold text-base text-slate-900">{item.issue}</h4>
+                              <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full">{item.category}</span>
+                          </div>
+                          <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <span className="font-semibold text-indigo-600 mr-1">建议修改：</span>
+                            {item.suggestion}
+                          </p>
                         </div>
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Re-analyze Button - Moved here for better visibility */}
+                   <div className="mt-4 flex justify-center">
+                        <button
+                          disabled={!authUser?.membershipLevel && aiSuggestions.length > 0} 
+                          // Logic for disabled state handled in onClick or separate check, 
+                          // but for layout, we show it here.
+                          // Actually, let's copy the logic from previous messages:
+                          // Disabled if non-member and already analyzed today (handled by backend 429)
+                          // But user asked to keep it visible.
+                          // Let's use the same logic as the initial "Generate" button but "Re-generate"
+                          onClick={handleAnalyzeResume}
+                          data-tooltip={authUser?.membershipLevel === 'none' ? '非会员每天只能使用1次简历分析功能' : '简历内容未变更，请勿重复分析'}
+                          className={`px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 w-full
+                             ${(authUser?.membershipLevel === 'none' && aiSuggestions.length > 0) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}
+                          `}
+                        >
+                          <Crown className="w-5 h-5 text-yellow-300" />
+                          重新生成 AI 建议
+                        </button>
+                   </div>
               </div>
             ) : (
               <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
@@ -747,7 +786,7 @@ export default function ProfileCenterPage() {
                 </p>
                 <button
                   onClick={handleAnalyzeResume}
-                  className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-md flex items-center justify-center gap-2 mx-auto"
+                  className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-md flex items-center justify-center gap-2 mx-auto w-full"
                 >
                   <Crown className="w-5 h-5 text-yellow-300" />
                   Generate AI Suggestions
