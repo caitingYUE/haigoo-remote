@@ -437,9 +437,16 @@ export default function ProfileCenterPage() {
   }
 
   const handleAnalyzeResume = async () => {
-    if (!resumeText) {
-      showError('无法分析', '简历内容为空，请重新上传')
+    // 确保 resumeText 存在
+    if (!resumeText || resumeText.length < 50) {
+      showError('无法分析', '简历内容为空或过短，请重新上传')
       return
+    }
+
+    // 滚动到分析区域，确保用户看到进度
+    const analysisSection = document.getElementById('ai-analysis-section')
+    if (analysisSection) {
+        analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
 
     // 临时移除会员拦截，允许所有用户使用 AI 简历分析
@@ -477,6 +484,27 @@ export default function ProfileCenterPage() {
       const targetRole = authUser?.profile?.targetRole || ''
       
       // Call backend API for analysis
+      // Ensure we have an ID. If latestResume.id is temporary (timestamp), we might fail if backend doesn't have it.
+      // But handleUpload logic tries to sync it.
+      // If synced successfully, backend has it.
+      // If not synced (e.g. only local parse), we need to ensure content is sent?
+      // Our API design for 'analyze' requires 'id'.
+      // If id is not found in DB, it returns 404.
+      // So we MUST ensure the resume exists in DB before calling analyze.
+      
+      // Check if ID is a timestamp (temporary)
+      const isTempId = latestResume?.id && /^\d{13}$/.test(latestResume.id);
+      
+      // If temp ID or no ID, we might need to create it first (should have been done in upload, but just in case)
+      let resumeIdToAnalyze = latestResume?.id;
+      
+      // If we are unsure if it's saved, we can try to re-save/sync content
+      // But 'analyze' endpoint reads from DB.
+      // Let's rely on the upload logic having done its job.
+      // But if we see 404 in logs, it means ID is not found.
+      
+      console.log('[ProfileCenter] Requesting analysis for ID:', resumeIdToAnalyze);
+
       const resp = await fetch('/api/resumes', {
           method: 'POST',
           headers: {
@@ -485,8 +513,11 @@ export default function ProfileCenterPage() {
           },
           body: JSON.stringify({
               action: 'analyze',
-              id: latestResume?.id,
-              targetRole
+              id: resumeIdToAnalyze,
+              targetRole,
+              // Fallback: send content if ID might be missing? No, API expects ID to load from DB.
+              // If we really want robustness, we could allow sending content directly to analyze endpoint,
+              // but that bypasses the "save result to DB" logic unless we also save it there.
           })
       })
       
@@ -499,11 +530,37 @@ export default function ProfileCenterPage() {
         setAiSuggestions(result.data.suggestions || [])
         showSuccess('简历分析完成！', `您的简历得分：${result.data.score || 0}%`)
       } else {
+        console.error('[ProfileCenter] Analysis failed:', result);
         if (result.limitReached) {
             showError('次数限制', '每天只能使用1次简历分析功能')
         } else if (result.contentUnchanged) {
             showError('无需分析', '简历内容未变更，请勿重复分析')
         } else {
+            // Handle "Resume content is empty" specifically
+            if (result.error === 'Resume content is empty') {
+                 // Try to sync content again
+                 console.log('[ProfileCenter] Content missing on server, trying to sync...');
+                 if (resumeIdToAnalyze && resumeText) {
+                     await fetch('/api/resumes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ action: 'update_content', id: resumeIdToAnalyze, contentText: resumeText })
+                     });
+                     // Retry analysis once
+                     const retryResp = await fetch('/api/resumes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ action: 'analyze', id: resumeIdToAnalyze, targetRole })
+                     });
+                     const retryResult = await retryResp.json();
+                     if (retryResp.ok && retryResult.success) {
+                        setResumeScore(retryResult.data.score || 0)
+                        setAiSuggestions(retryResult.data.suggestions || [])
+                        showSuccess('简历分析完成！', `您的简历得分：${retryResult.data.score || 0}%`)
+                        return;
+                     }
+                 }
+            }
             throw new Error(result.error || '分析未返回结果')
         }
       }
@@ -650,7 +707,7 @@ export default function ProfileCenterPage() {
         </div>
 
         {/* 下部分：AI 分析结果 */}
-        <div className="space-y-4">
+        <div id="ai-analysis-section" className="space-y-4">
           <div className="flex items-center justify-between">
              <h3 className="text-lg font-bold text-slate-900 px-1">AI-Powered Suggestions</h3>
           </div>
