@@ -279,9 +279,23 @@ export default function ProfileCenterPage() {
 
   const favoritesWithStatus = useMemo(() => favorites, [favorites])
 
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisStep, setAnalysisStep] = useState<string>('')
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // 1. File Type Validation
+    const validTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+    if (!validTypes.includes(file.type)) {
+      showError('文件格式不支持', '请上传 PDF, DOC 或 DOCX 格式的简历')
+      return
+    }
 
     setIsUploading(true)
     setResumeScore(0)
@@ -367,11 +381,34 @@ export default function ProfileCenterPage() {
 
     try {
       showSuccess('正在分析简历...', 'AI 正在深度读取您的简历内容')
+      setIsAnalyzing(true)
+      
+      // Simulate progress steps
+      const steps = [
+        '正在解析简历结构...',
+        '正在提取关键技能...',
+        '正在评估工作经历...',
+        '正在生成优化建议...',
+        '正在计算综合得分...'
+      ]
+      
+      let stepIndex = 0
+      setAnalysisStep(steps[0])
+      
+      const interval = setInterval(() => {
+        stepIndex = (stepIndex + 1) % steps.length
+        if (stepIndex < steps.length - 1) { // Don't loop endlessly if it takes too long
+             setAnalysisStep(steps[stepIndex])
+        }
+      }, 2500)
       
       // 获取用户求职意向
       const targetRole = authUser?.profile?.targetRole || ''
       
       const analysis = await resumeService.analyzeResume(resumeText, targetRole)
+      
+      clearInterval(interval)
+      
       if (analysis.success && analysis.data) {
         setResumeScore(analysis.data.score || 0)
         setAiSuggestions(analysis.data.suggestions || [])
@@ -382,6 +419,9 @@ export default function ProfileCenterPage() {
     } catch (aiError) {
       console.warn('AI analysis failed:', aiError)
       showError('分析失败', 'AI 服务暂时繁忙，请稍后重试')
+    } finally {
+      setIsAnalyzing(false)
+      setAnalysisStep('')
     }
   }
 
@@ -438,11 +478,15 @@ export default function ProfileCenterPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 左列：上传区 */}
-        <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-lg font-bold text-slate-900 px-1">Your Resume</h3>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[400px] flex flex-col">
+      <div className="flex flex-col gap-8">
+        {/* 上部分：简历预览与基础信息 */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[400px] flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900 px-1">Your Resume</h3>
+                {!latestResume && (
+                    <p className="text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
+                )}
+            </div>
             {!latestResume ? (
               <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                 <div className="flex flex-col items-center gap-2 text-center max-w-[520px] mx-auto p-8">
@@ -455,7 +499,7 @@ export default function ProfileCenterPage() {
                   >
                     <Upload className="w-4 h-4 mr-2" />Upload Resume
                   </button>
-                  <p className="text-xs text-slate-400 mt-4">支持 PDF、DOC、DOCX、TXT</p>
+                  <p className="text-xs text-slate-400 mt-4">支持 PDF、DOC、DOCX</p>
                 </div>
               </div>
             ) : (
@@ -486,11 +530,11 @@ export default function ProfileCenterPage() {
                   </div>
                 </div>
                 {(previewUrl || resumeText) && (
-                  <div className="rounded-xl border border-slate-200 flex-1 overflow-hidden bg-slate-50/50 flex flex-col min-h-[500px]">
+                  <div className="rounded-xl border border-slate-200 flex-1 overflow-hidden bg-slate-50/50 flex flex-col min-h-[300px] max-h-[500px]">
                     {previewUrl && fileType === 'application/pdf' ? (
                       <iframe
                         src={previewUrl}
-                        className="w-full h-full min-h-[500px] bg-white"
+                        className="w-full h-full min-h-[300px] bg-white"
                         title="Resume Preview"
                       />
                     ) : previewUrl && fileType.startsWith('image/') ? (
@@ -508,83 +552,71 @@ export default function ProfileCenterPage() {
                 )}
               </div>
             )}
-            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleUpload} className="hidden" />
+            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handleUpload} className="hidden" />
             {isUploading && (
               <div className="mt-4 text-sm text-slate-500 text-center">正在上传并分析...</div>
             )}
-          </div>
         </div>
 
-        {/* 右列：建议与CTA */}
-        <div className="lg:col-span-1 space-y-4">
-          <h3 className="text-lg font-bold text-slate-900 px-1">AI-Powered Suggestions</h3>
+        {/* 下部分：AI 分析结果 */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+             <h3 className="text-lg font-bold text-slate-900 px-1">AI-Powered Suggestions</h3>
+             {resumeText && !isAnalyzing && (
+                <button
+                  onClick={handleAnalyzeResume}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-sm flex items-center gap-2 text-sm"
+                >
+                  <Crown className="w-4 h-4 text-yellow-300" />
+                  {aiSuggestions.length > 0 ? 'Regenerate Analysis' : 'Start AI Analysis'}
+                </button>
+             )}
+          </div>
+          
           <div className="space-y-3">
             {!resumeText ? (
-              <div className="p-4 bg-slate-50 text-slate-600 rounded-lg text-sm border border-slate-200">
-                Upload your resume to unlock AI-powered optimization suggestions.
+              <div className="p-8 bg-slate-50 text-slate-500 rounded-xl text-center border-2 border-dashed border-slate-200">
+                <Crown className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p>Upload your resume above to unlock AI-powered optimization suggestions.</p>
+              </div>
+            ) : isAnalyzing ? (
+               <div className="p-12 bg-white border border-indigo-100 rounded-xl text-center shadow-sm">
+                  <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-6"></div>
+                  <h4 className="text-lg font-bold text-slate-900 mb-2">{analysisStep || '正在初始化 AI 引擎...'}</h4>
+                  <p className="text-slate-500">正在进行深度分析，这可能需要 30-60 秒，请耐心等待...</p>
+               </div>
+            ) : aiSuggestions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {aiSuggestions.map((suggestion, idx) => (
+                    <div key={idx} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 hover:border-indigo-200 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <CheckCircle className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-sm text-slate-900 mb-1">Optimization Point {idx + 1}</h4>
+                          <p className="text-sm text-slate-600 leading-relaxed">{suggestion}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
               </div>
             ) : (
-              <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
-                <p className="text-sm text-indigo-900 font-medium mb-3">
-                  {aiSuggestions.length > 0 ? 'Want to optimize again?' : 'Ready to optimize your resume?'}
+              <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
+                <p className="text-base text-indigo-900 font-medium mb-4">
+                  Ready to optimize your resume with AI?
                 </p>
                 <button
                   onClick={handleAnalyzeResume}
-                  className="w-full py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-sm flex items-center justify-center gap-2"
+                  className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-md flex items-center justify-center gap-2 mx-auto"
                 >
-                  <Crown className="w-4 h-4 text-yellow-300" />
-                  {aiSuggestions.length > 0 ? 'Regenerate Suggestions' : 'Generate AI Suggestions'}
+                  <Crown className="w-5 h-5 text-yellow-300" />
+                  Generate AI Suggestions
                 </button>
-                <p className="text-xs text-indigo-600/70 mt-2">限时免费体验中</p>
+                <p className="text-xs text-indigo-600/70 mt-3">限时免费体验中 • 基于阿里通义千问大模型</p>
               </div>
             )}
-
-            {aiSuggestions.length > 0 ? (
-              aiSuggestions.map((suggestion, idx) => (
-                <div key={idx} className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="font-bold text-sm text-slate-900">Optimization Suggestion</h4>
-                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">{suggestion}</p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 opacity-60">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="font-bold text-sm text-slate-900">Strengthen Your Action Verbs</h4>
-                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">Use powerful verbs to describe your accomplishments.</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 opacity-60">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="font-bold text-sm text-slate-900">Add Quantifiable Results</h4>
-                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">Include numbers and data to demonstrate your impact.</p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
           </div>
-          {aiSuggestions.length > 0 && (
-            <div className="flex flex-col gap-3 pt-2">
-              <button 
-                onClick={() => setAiSuggestions([])}
-                className="w-full py-2.5 bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium"
-              >
-                Reset Suggestions
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
