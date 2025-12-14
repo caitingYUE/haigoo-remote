@@ -61,20 +61,18 @@ async function startServer() {
         app.all('/api/resumes', async (req, res) => { await resumesHandler(req, res); });
         console.log('Resumes handler imported.');
 
-        console.log('Importing analyze-resume handler...');
-        const analyzeResumeHandler = (await import('./api/analyze-resume.js')).default;
-        app.all('/api/analyze-resume', async (req, res) => { await analyzeResumeHandler(req, res); });
-        console.log('Analyze-resume handler imported.');
+        console.log('Importing ai handler...');
+        const aiHandler = (await import('./api/ai.js')).default;
+        app.all('/api/ai', async (req, res) => { await aiHandler(req, res); });
+        console.log('AI handler imported.');
 
-        console.log('Importing process-image handler...');
-        const processImageHandler = (await import('./api/process-image.js')).default;
-        app.all('/api/process-image', async (req, res) => { await processImageHandler(req, res); });
-        console.log('Process-image handler imported.');
-
-        console.log('Importing proxy-image handler...');
-        const proxyImageHandler = (await import('./api/proxy-image.js')).default;
-        app.all('/api/proxy-image', async (req, res) => { await proxyImageHandler(req, res); });
-        console.log('Proxy-image handler imported.');
+        console.log('Importing images handler...');
+        const imagesHandler = (await import('./api/images.js')).default;
+        app.all('/api/images', async (req, res) => { await imagesHandler(req, res); });
+        // Backward compatibility if needed, or just redirect
+        app.all('/api/proxy-image', async (req, res) => { await imagesHandler(req, res); });
+        app.all('/api/process-image', async (req, res) => { await imagesHandler(req, res); });
+        console.log('Images handler imported.');
 
         console.log('Importing cron handlers...');
         const crawlTrustedJobsHandler = (await import('./lib/cron-handlers/crawl-trusted-jobs.js')).default;

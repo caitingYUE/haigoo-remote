@@ -43,7 +43,7 @@ export class AIService {
     }
 
     try {
-      const response = await fetch('/api/analyze-resume', {
+      const response = await fetch('/api/ai?action=analyze-resume', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -135,7 +135,7 @@ export class AIService {
    */
   async checkServiceHealth(): Promise<boolean> {
     try {
-      const response = await fetch('/api/analyze-resume', {
+      const response = await fetch('/api/ai?action=analyze-resume', {
         method: 'OPTIONS'
       })
       return response.ok

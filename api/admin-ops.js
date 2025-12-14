@@ -118,25 +118,69 @@ async function runMigration(req, res) {
     res.status(200).json(results);
 }
 
+async function getStats(req, res) {
+    try {
+        // Parallel queries for efficiency
+        const [jobsCount, domesticJobsResult, companiesCount, usersCount, dailyJobsResult] = await Promise.all([
+            neonHelper.count('jobs', { status: 'active' }),
+            neonHelper.query("SELECT COUNT(*) as count FROM jobs WHERE status = 'active' AND (region = 'domestic' OR region = 'both')"),
+            neonHelper.count('trusted_companies', { status: 'active' }),
+            neonHelper.count('users'),
+            neonHelper.query("SELECT COUNT(*) as count FROM jobs WHERE status = 'active' AND published_at >= NOW() - INTERVAL '24 hours'")
+        ])
+
+        const domesticJobsCount = domesticJobsResult && domesticJobsResult[0]
+            ? parseInt(domesticJobsResult[0].count, 10)
+            : 0
+        
+        const dailyJobsCount = dailyJobsResult && dailyJobsResult[0]
+            ? parseInt(dailyJobsResult[0].count, 10)
+            : 0
+
+        return res.status(200).json({
+            success: true,
+            stats: {
+                totalJobs: jobsCount || 0,
+                domesticJobs: domesticJobsCount || 0,
+                companiesCount: companiesCount || 0,
+                activeUsers: usersCount || 0,
+                dailyJobs: dailyJobsCount || 0
+            }
+        })
+    } catch (error) {
+        console.error('[AdminOps:Stats] Error fetching stats:', error)
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to fetch statistics'
+        })
+    }
+}
+
 export default async function handler(req, res) {
     // CORS
     if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
         return res.status(200).json({});
     }
+
+    // Set CORS headers for all responses
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     const { action } = req.query;
 
     switch (action) {
         case 'check-user':
-            return checkUserData(req, res);
+            return await checkUserData(req, res);
         case 'diagnose':
-            return diagnoseDb(req, res);
+            return await diagnoseDb(req, res);
         case 'migrate':
-            return runMigration(req, res);
+            return await runMigration(req, res);
+        case 'stats':
+            return await getStats(req, res);
         default:
-            return res.status(400).json({ error: 'Invalid action. Supported actions: check-user, diagnose, migrate' });
+            return res.status(400).json({ error: 'Invalid action' });
     }
 }

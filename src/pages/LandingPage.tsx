@@ -26,7 +26,7 @@ export default function LandingPage() {
 
         // 1. Fetch real stats from backend
         try {
-            const statsResp = await fetch('/api/stats')
+            const statsResp = await fetch('/api/admin-ops?action=stats')
             const statsData = await statsResp.json()
             if (statsData.success && statsData.stats) {
                 setStats({

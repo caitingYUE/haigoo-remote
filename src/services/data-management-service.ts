@@ -293,7 +293,7 @@ export class DataManagementService {
     responsibilities: string[]
   ): Promise<string | undefined> {
     try {
-      const response = await fetch('/api/generate-job-summary', {
+      const response = await fetch('/api/ai?action=generate-job-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
