@@ -40,10 +40,7 @@ export default function LandingPage() {
   }, [isAuthenticated, token])
 
   useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
+    const loadData = async () => {
       try {
         setLoading(true)
 
