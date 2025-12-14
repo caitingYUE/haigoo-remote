@@ -18,7 +18,8 @@ export async function getResumes() {
             SELECT 
                 resume_id, user_id, file_name, file_size, file_type,
                 parse_status, parse_result, parse_error, content_text, 
-                metadata, created_at, updated_at
+                metadata, created_at, updated_at,
+                ai_score, ai_suggestions, last_analyzed_at
             FROM resumes 
             ORDER BY created_at DESC
         `)
@@ -36,7 +37,10 @@ export async function getResumes() {
                 contentText: row.content_text,
                 metadata: row.metadata,
                 createdAt: row.created_at,
-                updatedAt: row.updated_at
+                updatedAt: row.updated_at,
+                aiScore: row.ai_score,
+                aiSuggestions: row.ai_suggestions,
+                lastAnalyzedAt: row.last_analyzed_at
                 // fileContent is intentionally omitted
             }))
             return { resumes, provider: 'neon' }
@@ -222,6 +226,26 @@ function deduplicateResumes(resumes) {
         seen.set(key, true)
         return true
     })
+}
+
+// 更新简历分析结果
+export async function updateResumeAnalysis(resumeId, aiScore, aiSuggestions) {
+    if (!neonHelper.isConfigured) {
+        return { success: false, error: 'Neon database not configured' }
+    }
+
+    try {
+        await neonHelper.query(`
+            UPDATE resumes 
+            SET ai_score = $1, ai_suggestions = $2, last_analyzed_at = NOW()
+            WHERE resume_id = $3
+        `, [aiScore, JSON.stringify(aiSuggestions), resumeId])
+
+        return { success: true }
+    } catch (error) {
+        console.error('[Resume Storage] Update analysis failed:', error.message)
+        return { success: false, error: error.message }
+    }
 }
 
 // 更新统计信息（辅助函数）

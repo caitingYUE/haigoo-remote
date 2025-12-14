@@ -214,6 +214,23 @@ export default function ProfileCenterPage() {
           // Fetch and set preview content
           const rId = latestResumeData.id || latestResumeData.resume_id
           
+          // Restore AI Analysis Result
+          if (latestResumeData.aiScore) {
+              setResumeScore(latestResumeData.aiScore)
+          }
+          if (latestResumeData.aiSuggestions) {
+              try {
+                  const suggestions = typeof latestResumeData.aiSuggestions === 'string' 
+                     ? JSON.parse(latestResumeData.aiSuggestions) 
+                     : latestResumeData.aiSuggestions
+                  if (Array.isArray(suggestions)) {
+                      setAiSuggestions(suggestions)
+                  }
+              } catch (e) {
+                  console.warn('[ProfileCenter] Failed to parse aiSuggestions', e)
+              }
+          }
+          
           // Robust file type detection
           let fType = (latestResumeData.fileType || latestResumeData.file_type || '').toLowerCase()
           if (!fType) {
@@ -405,16 +422,36 @@ export default function ProfileCenterPage() {
       // 获取用户求职意向
       const targetRole = authUser?.profile?.targetRole || ''
       
-      const analysis = await resumeService.analyzeResume(resumeText, targetRole)
+      // Call backend API for analysis
+      const resp = await fetch('/api/resumes', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+              action: 'analyze',
+              id: latestResume?.id,
+              targetRole
+          })
+      })
+      
+      const result = await resp.json()
       
       clearInterval(interval)
       
-      if (analysis.success && analysis.data) {
-        setResumeScore(analysis.data.score || 0)
-        setAiSuggestions(analysis.data.suggestions || [])
-        showSuccess('简历分析完成！', `您的简历得分：${analysis.data.score || 0}%`)
+      if (resp.ok && result.success) {
+        setResumeScore(result.data.score || 0)
+        setAiSuggestions(result.data.suggestions || [])
+        showSuccess('简历分析完成！', `您的简历得分：${result.data.score || 0}%`)
       } else {
-        throw new Error(analysis.error || '分析未返回结果')
+        if (result.limitReached) {
+            showError('次数限制', '每天只能使用1次简历分析功能')
+        } else if (result.contentUnchanged) {
+            showError('无需分析', '简历内容未变更，请勿重复分析')
+        } else {
+            throw new Error(result.error || '分析未返回结果')
+        }
       }
     } catch (aiError) {
       console.warn('AI analysis failed:', aiError)

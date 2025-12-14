@@ -3,7 +3,7 @@
  * bit.ly/resume-consolidation
  */
 
-import { getResumes, saveResumes, saveUserResume, getResumeContent, deleteResume, updateResumeContent } from '../server-utils/resume-storage.js'
+import { getResumes, saveResumes, saveUserResume, getResumeContent, deleteResume, updateResumeContent, updateResumeAnalysis } from '../server-utils/resume-storage.js'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
@@ -363,6 +363,72 @@ export default async function handler(req, res) {
 
       const body = JSON.parse(Buffer.concat(chunks).toString())
 
+      // === NEW: Handle Resume Analysis ===
+      if (body.action === 'analyze') {
+        const token = extractToken(req)
+        if (!token) return sendJson(res, { success: false, error: 'Unauthorized' }, 401)
+        const decoded = await verifyToken(token)
+        if (!decoded) return sendJson(res, { success: false, error: 'Invalid token' }, 401)
+
+        const { id, targetRole } = body
+        if (!id) return sendJson(res, { success: false, error: 'Missing resume id' }, 400)
+
+        const { resumes } = await getResumes()
+        const resume = resumes.find(r => r.id === id)
+
+        if (!resume) return sendJson(res, { success: false, error: 'Resume not found' }, 404)
+        if (resume.userId !== decoded.userId && !decoded.admin) return sendJson(res, { success: false, error: 'Permission denied' }, 403)
+
+        // 1. Check User Frequency Limit (1 per day)
+        // Filter resumes by this user
+        const userResumes = resumes.filter(r => r.userId === decoded.userId)
+        const now = new Date()
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+
+        const recentAnalysis = userResumes.find(r => {
+          if (!r.lastAnalyzedAt) return false
+          const analyzedAt = new Date(r.lastAnalyzedAt)
+          return analyzedAt > oneDayAgo
+        })
+
+        if (recentAnalysis) {
+          return sendJson(res, { success: false, error: '每天只能使用1次简历分析功能', limitReached: true }, 429)
+        }
+
+        // 2. Check Content Change
+        // If already analyzed, and updated_at is OLDER than last_analyzed_at, reject
+        if (resume.lastAnalyzedAt && resume.updatedAt) {
+          const lastAnalyzed = new Date(resume.lastAnalyzedAt)
+          const lastUpdated = new Date(resume.updatedAt)
+          // Allow some buffer or simple comparison
+          if (lastAnalyzed >= lastUpdated) {
+            return sendJson(res, { success: false, error: '简历内容未变更，请勿重复分析', contentUnchanged: true }, 400)
+          }
+        }
+
+        // 3. Call AI Service
+        const resumeText = resume.contentText || ''
+        if (!resumeText) return sendJson(res, { success: false, error: 'Resume content is empty' }, 400)
+
+        try {
+          const analysisResult = await analyzeResumeContent(resumeText, targetRole)
+
+          // 4. Save Result
+          await updateResumeAnalysis(id, analysisResult.score, analysisResult.suggestions)
+
+          return sendJson(res, {
+            success: true,
+            data: {
+              score: analysisResult.score,
+              suggestions: analysisResult.suggestions
+            }
+          })
+        } catch (aiErr) {
+          console.error('AI Analysis failed:', aiErr)
+          return sendJson(res, { success: false, error: 'AI服务繁忙，请稍后重试' }, 500)
+        }
+      }
+
       // Handle content update
       if (body.action === 'update_content') {
         const token = extractToken(req)
@@ -433,5 +499,89 @@ export default async function handler(req, res) {
       success: false,
       error: error.message || 'Internal server error'
     }, 500)
+  }
+}
+
+// Helper: Call AI Service (Simplified version of api/ai.js logic)
+async function analyzeResumeContent(text, targetRole) {
+  const apiKey = process.env.VITE_ALIBABA_BAILIAN_API_KEY
+  // Fallback to DeepSeek if configured, or throw
+  if (!apiKey && !process.env.VITE_DEEPSEEK_API_KEY) {
+    throw new Error('AI API Key missing')
+  }
+  
+  const provider = apiKey ? 'bailian' : 'deepseek'
+  const key = apiKey || process.env.VITE_DEEPSEEK_API_KEY
+  
+  const prompt = `你是一位资深招聘专家。请根据以下简历内容进行专业评估。
+    求职意向：${targetRole || '未指定'}
+    
+    简历内容：
+    ${text.substring(0, 3000)}
+    
+    请输出JSON格式：
+    {
+      "score": 0-100之间的整数评分,
+      "suggestions": ["建议1", "建议2", "建议3", "建议4", "建议5"]
+    }
+    只返回JSON，不要其他废话。`
+    
+  let apiUrl = ''
+  let requestBody = {}
+  let headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${key}`
+  }
+  
+  if (provider === 'bailian') {
+      apiUrl = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation'
+      requestBody = {
+          model: 'qwen-plus',
+          input: {
+              messages: [
+                  { role: 'system', content: 'You are a helpful assistant.' },
+                  { role: 'user', content: prompt }
+              ]
+          }
+      }
+  } else {
+      apiUrl = 'https://api.deepseek.com/chat/completions'
+      requestBody = {
+          model: 'deepseek-chat',
+          messages: [
+               { role: 'system', content: 'You are a helpful assistant.' },
+               { role: 'user', content: prompt }
+          ],
+          stream: false
+      }
+  }
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(requestBody)
+  })
+
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.message || data.error || 'AI API Error')
+
+  let content = ''
+  if (provider === 'bailian') {
+      content = data.output.text
+  } else {
+      content = data.choices?.[0]?.message?.content || ''
+  }
+
+  // Extract JSON
+  const jsonMatch = content.match(/\{[\s\S]*\}/)
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0])
+  }
+  
+  // Try to parse entire content if no match
+  try {
+      return JSON.parse(content)
+  } catch (e) {
+      throw new Error('Failed to parse AI response JSON')
   }
 }

@@ -298,3 +298,8 @@ ALTER TABLE trusted_companies DROP COLUMN IF EXISTS show_culture_on_home;
 -- 2025-12-11: Add translations column to trusted_companies table
 ALTER TABLE trusted_companies ADD COLUMN translations JSONB;
 ALTER TABLE extracted_companies ADD COLUMN translations JSONB;
+
+-- 2025-12-14: Add AI analysis fields to resumes table
+ALTER TABLE resumes ADD COLUMN ai_score INTEGER;
+ALTER TABLE resumes ADD COLUMN ai_suggestions JSONB;
+ALTER TABLE resumes ADD COLUMN last_analyzed_at TIMESTAMP;
