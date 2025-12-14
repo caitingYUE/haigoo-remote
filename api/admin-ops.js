@@ -2,8 +2,7 @@
 import neonHelper from '../server-utils/dal/neon-helper.js';
 import userHelper from '../server-utils/user-helper.js';
 import { extractToken, verifyToken } from '../server-utils/auth-helpers.js';
-
-const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com';
+import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js';
 
 async function checkUserData(req, res) {
     try {
@@ -225,7 +224,9 @@ export default async function handler(req, res) {
     const token = extractToken(req);
     const payload = token ? verifyToken(token) : null;
     const requester = payload?.userId ? await userHelper.getUserById(payload.userId) : null;
-    const isAdmin = !!(requester?.roles?.admin || requester?.email === SUPER_ADMIN_EMAIL);
+    
+    const isSuperAdmin = requester?.email && SUPER_ADMIN_EMAILS.includes(requester.email);
+    const isAdmin = !!(requester?.roles?.admin || isSuperAdmin);
     
     if (!isAdmin) {
         return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' });
@@ -248,6 +249,26 @@ export default async function handler(req, res) {
                     'SELECT * FROM club_applications ORDER BY created_at DESC'
                 );
                 return res.status(200).json({ success: true, applications });
+            } catch (error) {
+                return res.status(500).json({ success: false, error: error.message });
+            }
+        case 'delete_application':
+            if (!isSuperAdmin) return res.status(403).json({ success: false, error: 'Forbidden: Super Admin only' });
+            try {
+                const { id } = req.body || {};
+                if (!id) return res.status(400).json({ success: false, error: 'Missing id' });
+                await neonHelper.query('DELETE FROM club_applications WHERE id = $1', [id]);
+                return res.status(200).json({ success: true });
+            } catch (error) {
+                return res.status(500).json({ success: false, error: error.message });
+            }
+        case 'delete_feedback':
+            if (!isSuperAdmin) return res.status(403).json({ success: false, error: 'Forbidden: Super Admin only' });
+            try {
+                const { id } = req.body || {};
+                if (!id) return res.status(400).json({ success: false, error: 'Missing id' });
+                await neonHelper.query('DELETE FROM feedbacks WHERE id = $1', [id]);
+                return res.status(200).json({ success: true });
             } catch (error) {
                 return res.status(500).json({ success: false, error: error.message });
             }
@@ -280,11 +301,13 @@ export default async function handler(req, res) {
                             
                             await neonHelper.query(`
                                 UPDATE users 
-                                SET membership_level = 'vip', 
+                                SET membership_level = 'club_go', 
                                     membership_start_at = NOW(), 
                                     membership_expire_at = $1 
                                 WHERE user_id = $2
                             `, [nextYear.toISOString(), userId]);
+                            
+                            console.log(`[AdminOps] Upgraded user ${userId} to club_go membership`);
                         }
 
                         // 3. Create notification

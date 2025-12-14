@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Check, X, Clock, Eye, MoreHorizontal, MessageSquare, ExternalLink } from 'lucide-react'
+import { Check, X, Clock, Eye, MoreHorizontal, MessageSquare, ExternalLink, Trash2, Download } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
+import { SUPER_ADMIN_EMAILS } from '../config/admin'
 
 interface Application {
   id: number
@@ -18,11 +19,12 @@ interface Application {
 }
 
 export default function AdminApplicationsPage() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const { showSuccess, showError } = useNotificationHelpers()
   const [applications, setApplications] = useState<Application[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
+  const isSuperAdmin = user?.email && SUPER_ADMIN_EMAILS.includes(user.email)
 
   useEffect(() => {
     fetchApplications()
@@ -97,11 +99,82 @@ export default function AdminApplicationsPage() {
     }
   }
 
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('确定要删除这条申请记录吗？此操作不可恢复。')) return;
+    
+    try {
+        const response = await fetch('/api/admin-ops?action=delete_application', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ id })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showSuccess('删除成功');
+            setApplications(prev => prev.filter(app => app.id !== id));
+            if (selectedApp && selectedApp.id === id) setSelectedApp(null);
+        } else {
+            showError('删除失败', data.error);
+        }
+    } catch (e) {
+        showError('操作失败', '网络错误');
+    }
+  }
+
+  const handleExport = () => {
+    if (applications.length === 0) {
+        showError('暂无数据可导出');
+        return;
+    }
+    
+    // Convert to CSV
+    const headers = ['ID', 'User ID', 'Experience', 'Career Ideal', 'Portfolio', 'Expectations', 'Contribution', 'Contact', 'Contact Type', 'Status', 'Created At'];
+    const rows = applications.map(app => [
+        app.id,
+        app.user_id || '',
+        `"${(app.experience || '').replace(/"/g, '""')}"`,
+        `"${(app.career_ideal || '').replace(/"/g, '""')}"`,
+        `"${(app.portfolio || '').replace(/"/g, '""')}"`,
+        `"${(app.expectations || '').replace(/"/g, '""')}"`,
+        `"${(app.contribution || '').replace(/"/g, '""')}"`,
+        `"${(app.contact || '').replace(/"/g, '""')}"`,
+        app.contact_type,
+        app.status,
+        new Date(app.created_at).toLocaleString()
+    ]);
+    
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+    ].join('\n');
+    
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `member_applications_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold text-slate-900">会员申请管理</h1>
         <div className="flex gap-2">
+            {isSuperAdmin && (
+                <button 
+                    onClick={handleExport}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
+                    title="导出 CSV"
+                >
+                    <Download className="w-5 h-5" />
+                </button>
+            )}
             <button onClick={fetchApplications} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
                 <Clock className="w-5 h-5 text-slate-500" />
             </button>
@@ -146,6 +219,14 @@ export default function AdminApplicationsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
+                      {isSuperAdmin && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(app.id); }}
+                          className="text-red-600 hover:text-red-700 font-medium text-sm mr-4"
+                        >
+                          删除
+                        </button>
+                      )}
                       <button
                         onClick={() => setSelectedApp(app)}
                         className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"

@@ -848,6 +848,26 @@ export default function ProfileCenterPage() {
     const [content, setContent] = useState('')
     const [contact, setContact] = useState('')
     const [submitting, setSubmitting] = useState(false)
+    const [myFeedbacks, setMyFeedbacks] = useState<any[]>([])
+
+    const fetchMyFeedbacks = async () => {
+        try {
+            const res = await fetch('/api/user-profile?action=my_feedbacks', {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            const data = await res.json()
+            if (data.success) {
+                setMyFeedbacks(data.feedbacks || [])
+            }
+        } catch (e) {
+            console.error('Failed to fetch feedbacks', e)
+        }
+    }
+
+    useEffect(() => {
+        fetchMyFeedbacks()
+    }, [])
+
     const submit = async () => {
       if (!content.trim()) { showError('请填写反馈内容'); return }
       try {
@@ -858,7 +878,13 @@ export default function ProfileCenterPage() {
           body: JSON.stringify({ accuracy, content, contact })
         })
         const j = await r.json().catch(() => ({ success: false }))
-        if (r.ok && j.success) { showSuccess('反馈已提交'); setAccuracy('unknown'); setContent(''); setContact('') }
+        if (r.ok && j.success) { 
+            showSuccess('反馈已提交'); 
+            setAccuracy('unknown'); 
+            setContent(''); 
+            setContact('');
+            fetchMyFeedbacks(); // Refresh list
+        }
         else { showError('提交失败', j.error || '请稍后重试') }
       } catch (e) {
         showError('提交失败', '网络错误')
@@ -872,6 +898,7 @@ export default function ProfileCenterPage() {
             <p className="text-slate-500 mt-1">反馈岗位或平台信息问题与建议。</p>
           </div>
         </div>
+        
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="space-y-6">
             <div>
@@ -935,6 +962,43 @@ export default function ProfileCenterPage() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Feedback History */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100">
+                <h3 className="font-bold text-slate-900">历史反馈记录</h3>
+            </div>
+            <div className="divide-y divide-slate-100">
+                {myFeedbacks.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500 text-sm">暂无反馈记录</div>
+                ) : (
+                    myFeedbacks.map(item => (
+                        <div key={item.id} className="p-6 hover:bg-slate-50 transition-colors">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                                    item.accuracy === 'accurate' ? 'bg-green-100 text-green-700' :
+                                    item.accuracy === 'inaccurate' ? 'bg-red-100 text-red-700' :
+                                    'bg-slate-100 text-slate-600'
+                                }`}>
+                                    {item.accuracy === 'accurate' ? '准确' : item.accuracy === 'inaccurate' ? '不准确' : '平台建议/未知'}
+                                </span>
+                                <span className="text-xs text-slate-400">{new Date(item.createdAt).toLocaleString()}</span>
+                            </div>
+                            <p className="text-slate-800 text-sm mb-3 whitespace-pre-wrap">{item.content}</p>
+                            {item.replyContent && (
+                                <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100 mt-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-xs font-bold text-indigo-700">管理员回复</span>
+                                        <span className="text-xs text-indigo-400">{new Date(item.repliedAt).toLocaleString()}</span>
+                                    </div>
+                                    <p className="text-sm text-indigo-900">{item.replyContent}</p>
+                                </div>
+                            )}
+                        </div>
+                    ))
+                )}
+            </div>
         </div>
       </div>
     )

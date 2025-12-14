@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2, CheckCircle, XCircle, AlertCircle, MessageSquare, Reply, User } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertCircle, MessageSquare, Reply, User, Trash2, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { SUPER_ADMIN_EMAILS } from '../config/admin';
 
 interface Feedback {
     id: string;
@@ -19,10 +20,11 @@ interface Feedback {
 }
 
 export default function AdminFeedbackList() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const isSuperAdmin = user?.email && SUPER_ADMIN_EMAILS.includes(user.email);
 
     const fetchFeedbacks = useCallback(async () => {
         try {
@@ -74,6 +76,67 @@ export default function AdminFeedbackList() {
         }
     };
 
+    const handleDelete = async (id: string) => {
+        if (!window.confirm('确定要删除这条反馈记录吗？此操作不可恢复。')) return;
+        
+        try {
+            const res = await fetch('/api/admin-ops?action=delete_feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setFeedbacks(prev => prev.filter(f => f.id !== id));
+            } else {
+                alert('删除失败: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('删除失败: 网络错误');
+        }
+    };
+
+    const handleExport = () => {
+        if (feedbacks.length === 0) {
+            alert('暂无数据可导出');
+            return;
+        }
+        
+        // Convert to CSV
+        const headers = ['ID', 'User ID', 'Username', 'Email', 'Job ID', 'Accuracy', 'Content', 'Contact', 'Source', 'Created At', 'Reply Content', 'Replied At'];
+        const rows = feedbacks.map(f => [
+            f.id,
+            f.userId || '',
+            `"${(f.username || '').replace(/"/g, '""')}"`,
+            `"${(f.email || '').replace(/"/g, '""')}"`,
+            f.jobId || '',
+            f.accuracy,
+            `"${(f.content || '').replace(/"/g, '""')}"`,
+            `"${(f.contact || '').replace(/"/g, '""')}"`,
+            `"${(f.source || '').replace(/"/g, '""')}"`,
+            new Date(f.createdAt).toLocaleString(),
+            `"${(f.replyContent || '').replace(/"/g, '""')}"`,
+            f.repliedAt ? new Date(f.repliedAt).toLocaleString() : ''
+        ]);
+        
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+        
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `user_feedbacks_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
     if (error) return <div className="text-red-500 p-4">{error}</div>;
 
@@ -82,7 +145,18 @@ export default function AdminFeedbackList() {
             <div className="card">
                 <div className="card-header">
                     <h2>用户反馈列表</h2>
-                    <span className="text-sm text-slate-500">共 {feedbacks.length} 条</span>
+                    <div className="flex gap-2 items-center">
+                        <span className="text-sm text-slate-500 mr-2">共 {feedbacks.length} 条</span>
+                        {isSuperAdmin && (
+                            <button 
+                                onClick={handleExport}
+                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
+                                title="导出 CSV"
+                            >
+                                <Download className="w-5 h-5" />
+                            </button>
+                        )}
+                    </div>
                 </div>
                 <div className="card-content">
                     <div className="table-wrapper">
@@ -155,15 +229,26 @@ export default function AdminFeedbackList() {
                                                 )}
                                             </td>
                                             <td>
-                                                {!feedback.replyContent && (
-                                                    <button
-                                                        onClick={() => handleReply(feedback.id)}
-                                                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-                                                        title="回复用户"
-                                                    >
-                                                        <Reply className="w-4 h-4" />
-                                                    </button>
-                                                )}
+                                                <div className="flex items-center gap-2">
+                                                    {!feedback.replyContent && (
+                                                        <button
+                                                            onClick={() => handleReply(feedback.id)}
+                                                            className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                            title="回复用户"
+                                                        >
+                                                            <Reply className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    {isSuperAdmin && (
+                                                        <button
+                                                            onClick={() => handleDelete(feedback.id)}
+                                                            className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                            title="删除"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
