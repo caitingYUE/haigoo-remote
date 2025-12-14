@@ -61,6 +61,11 @@ async function startServer() {
         app.all('/api/resumes', async (req, res) => { await resumesHandler(req, res); });
         console.log('Resumes handler imported.');
 
+        console.log('Importing analyze-resume handler...');
+        const analyzeResumeHandler = (await import('./api/analyze-resume.js')).default;
+        app.all('/api/analyze-resume', async (req, res) => { await analyzeResumeHandler(req, res); });
+        console.log('Analyze-resume handler imported.');
+
         console.log('Importing process-image handler...');
         const processImageHandler = (await import('./api/process-image.js')).default;
         app.all('/api/process-image', async (req, res) => { await processImageHandler(req, res); });

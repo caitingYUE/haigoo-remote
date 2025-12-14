@@ -147,10 +147,30 @@ export async function saveUserResume(userId, resumeData) {
         // 更新统计信息
         await updateStats(resumes, 'neon')
         
-        return { success: true, provider: 'neon', count: resumes.length }
+        return { success: true, provider: 'neon', count: resumes.length, id: newResume.id }
     } catch (error) {
         console.error('[Resume Storage] Neon save user resume failed:', error.message)
         return { success: false, provider: 'error', error: error.message, count: 0 }
+    }
+}
+
+// 更新简历内容文本
+export async function updateResumeContent(resumeId, contentText) {
+    if (!neonHelper.isConfigured) {
+        return { success: false, error: 'Neon database not configured' }
+    }
+
+    try {
+        await neonHelper.query(`
+            UPDATE resumes 
+            SET content_text = $1, updated_at = NOW()
+            WHERE resume_id = $2
+        `, [contentText, resumeId])
+
+        return { success: true }
+    } catch (error) {
+        console.error('[Resume Storage] Update content failed:', error.message)
+        return { success: false, error: error.message }
     }
 }
 
@@ -197,53 +217,20 @@ export async function deleteResume(resumeId) {
 function deduplicateResumes(resumes) {
     const seen = new Map()
     return resumes.filter(resume => {
-        // 如果有 userId，优先按 userId 去重（每个用户只能有一份）
-        if (resume.userId) {
-            if (seen.has(resume.userId)) return false
-            seen.set(resume.userId, true)
-            return true
-        }
-
-        // 否则按文件名和大小（旧逻辑兼容）
-        const key = `${resume.fileName}_${resume.size}`
+        const key = `${resume.userId}-${resume.fileName}`
         if (seen.has(key)) return false
         seen.set(key, true)
         return true
     })
 }
 
-// 更新统计信息
+// 更新统计信息（辅助函数）
 async function updateStats(resumes, provider) {
-    const stats = {
-        totalCount: resumes.length,
-        successCount: resumes.filter(r => r.parseStatus === 'success').length,
-        failedCount: resumes.filter(r => r.parseStatus === 'failed').length,
-        lastUpdate: new Date().toISOString(),
-        storageProvider: provider,
-        estimatedSize: JSON.stringify(resumes).length
-    }
-
     try {
-        if (neonHelper.isConfigured) {
-            // 先删除旧的统计信息
-            await neonHelper.query('DELETE FROM resume_stats')
-            
-            // 插入新的统计信息
-            await neonHelper.query(`
-                INSERT INTO resume_stats (
-                    total_count, success_count, failed_count, 
-                    last_update, storage_provider, estimated_size
-                ) VALUES ($1, $2, $3, $4, $5, $6)
-            `, [
-                stats.totalCount,
-                stats.successCount,
-                stats.failedCount,
-                stats.lastUpdate,
-                stats.storageProvider,
-                stats.estimatedSize
-            ])
-        }
-    } catch (error) {
-        console.warn('[Resume Storage] Stats update failed:', error.message)
+        // 简单计算总数和今日新增
+        const total = resumes.length
+        // 这里只是简单的占位，实际可能需要更复杂的统计逻辑
+    } catch (e) {
+        // ignore stats errors
     }
 }

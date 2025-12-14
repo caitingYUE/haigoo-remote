@@ -22,6 +22,7 @@ export interface ResumeItem {
 
 export interface ParsedResume {
   success: boolean;
+  id?: string;
   textContent?: string;
   name?: string;
   title?: string;

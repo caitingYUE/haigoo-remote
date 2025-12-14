@@ -1,31 +1,22 @@
 /**
  * AI服务核心模块
- * 封装与阿里百炼API的交互逻辑
+ * 封装与后端AI代理API的交互逻辑
  */
 
-import { HttpClient } from './http-client'
 import { ALIBABA_BAILIAN_CONFIG, DEEPSEEK_CONFIG, API_CONFIG } from './config'
 import type {
   BailianRequest,
   BailianResponse,
   BailianMessage,
-  DeepSeekRequest,
-  DeepSeekResponse,
   ApiResponse
 } from './types'
 
 // AI服务类
 export class AIService {
-  private bailianClient: HttpClient
-  private deepSeekClient: HttpClient
-
-  constructor() {
-    this.bailianClient = new HttpClient(ALIBABA_BAILIAN_CONFIG.baseUrl)
-    this.deepSeekClient = new HttpClient(DEEPSEEK_CONFIG.baseUrl)
-  }
+  constructor() {}
 
   /**
-   * 发送消息到AI服务
+   * 发送消息到AI服务 (通过后端代理)
    */
   async sendMessage(
     messages: BailianMessage[],
@@ -37,126 +28,50 @@ export class AIService {
       provider?: 'bailian' | 'deepseek'
     }
   ): Promise<ApiResponse<BailianResponse>> {
-    // 默认使用 DeepSeek，如果未配置则回退到 Bailian
-    const provider = options?.provider || (DEEPSEEK_CONFIG.apiKey ? 'deepseek' : 'bailian')
+    const provider = options?.provider || 'bailian'
     
-    if (provider === 'deepseek') {
-      return this.sendDeepSeekMessage(messages, model, options)
-    }
-
-    return this.sendBailianMessage(messages, model, options)
-  }
-
-  /**
-   * 发送消息到阿里百炼API
-   */
-  private async sendBailianMessage(
-    messages: BailianMessage[],
-    model: string = ALIBABA_BAILIAN_CONFIG.models.qwen,
-    options?: {
-      maxTokens?: number
-      temperature?: number
-      topP?: number
-    }
-  ): Promise<ApiResponse<BailianResponse>> {
-    const request: BailianRequest = {
+    // Construct payload for proxy
+    const payload = {
+      messages,
       model,
-      input: {
-        messages
-      },
+      provider,
       parameters: {
         max_tokens: options?.maxTokens || API_CONFIG.maxTokens,
         temperature: options?.temperature || API_CONFIG.temperature,
-        top_p: options?.topP || 0.8
+        top_p: options?.topP
       }
     }
 
     try {
-      const response = await this.bailianClient.post<BailianResponse>(
-        '/services/aigc/text-generation/generation',
-        request
-      )
-
-      return response
-    } catch (error) {
-      console.error('阿里百炼API请求失败:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '未知错误',
-        message: 'AI服务调用失败'
-      }
-    }
-  }
-
-  /**
-   * 发送消息到 DeepSeek API
-   */
-  private async sendDeepSeekMessage(
-    messages: BailianMessage[],
-    model: string = DEEPSEEK_CONFIG.models.chat,
-    options?: {
-      maxTokens?: number
-      temperature?: number
-      topP?: number
-    }
-  ): Promise<ApiResponse<BailianResponse>> {
-    const request: DeepSeekRequest = {
-      model,
-      messages,
-      max_tokens: options?.maxTokens || API_CONFIG.maxTokens,
-      temperature: options?.temperature || API_CONFIG.temperature,
-      top_p: options?.topP || 1.0,
-      stream: false
-    }
-
-    try {
-      const headers = {
-        'Authorization': `Bearer ${DEEPSEEK_CONFIG.apiKey}`,
-        'Content-Type': 'application/json'
-      }
-
-      const response = await this.deepSeekClient.request<DeepSeekResponse>(
-        '/chat/completions',
-        {
-          method: 'POST',
-          body: request,
-          headers
-        }
-      )
-
-      if (!response.success || !response.data) {
-        return {
-          success: false,
-          error: response.error,
-          message: response.message
-        }
-      }
-
-      // 转换为 BailianResponse 格式以保持兼容性
-      const deepSeekData = response.data
-      const mappedResponse: BailianResponse = {
-        output: {
-          text: deepSeekData.choices[0]?.message?.content || '',
-          finish_reason: deepSeekData.choices[0]?.finish_reason || 'stop'
+      const response = await fetch('/api/analyze-resume', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        usage: {
-          input_tokens: deepSeekData.usage?.prompt_tokens || 0,
-          output_tokens: deepSeekData.usage?.completion_tokens || 0,
-          total_tokens: deepSeekData.usage?.total_tokens || 0
-        },
-        request_id: deepSeekData.id
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+         return {
+           success: false,
+           error: data.error,
+           message: data.message || 'AI Service Error'
+         }
       }
 
       return {
         success: true,
-        data: mappedResponse
+        data: data.data
       }
+
     } catch (error) {
-      console.error('DeepSeek API请求失败:', error)
+      console.error('AI Proxy Request Failed:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '未知错误',
-        message: 'AI服务调用失败'
+        error: error instanceof Error ? error.message : 'Unknown Error',
+        message: 'AI Service Call Failed'
       }
     }
   }
@@ -199,108 +114,37 @@ export class AIService {
     userInput: string,
     previousMessages?: BailianMessage[]
   ): BailianMessage[] {
-    const messages: BailianMessage[] = [
-      this.createSystemMessage(systemPrompt)
-    ]
+    const messages: BailianMessage[] = []
 
-    // 添加历史消息
+    // 1. 添加系统提示词
+    messages.push(this.createSystemMessage(systemPrompt))
+
+    // 2. 添加历史消息（如果存在）
     if (previousMessages && previousMessages.length > 0) {
       messages.push(...previousMessages)
     }
 
-    // 添加当前用户输入
+    // 3. 添加用户当前输入
     messages.push(this.createUserMessage(userInput))
 
     return messages
   }
 
   /**
-   * 流式响应处理（如果API支持）
-   */
-  async sendMessageStream(
-    messages: BailianMessage[],
-    model: string = ALIBABA_BAILIAN_CONFIG.models.qwen,
-    onChunk?: (chunk: string) => void
-  ): Promise<ApiResponse<string>> {
-    // 注意：这里需要根据阿里百炼API的实际流式接口进行调整
-    // 目前先实现非流式版本
-    const response = await this.sendMessage(messages, model)
-    
-    if (response.success && response.data) {
-      const fullText = response.data.output.text
-      
-      // 模拟流式输出
-      if (onChunk) {
-        const chunks = fullText.split(' ')
-        for (const chunk of chunks) {
-          onChunk(chunk + ' ')
-          await new Promise(resolve => setTimeout(resolve, 50))
-        }
-      }
-      
-      return {
-        success: true,
-        data: fullText
-      }
-    }
-
-    return {
-      success: false,
-      error: response.error,
-      message: response.message
-    }
-  }
-
-  /**
-   * 检查服务状态
+   * 检查服务健康状态
    */
   async checkServiceHealth(): Promise<boolean> {
     try {
-      const testMessages: BailianMessage[] = [
-        this.createSystemMessage('你是一个测试助手'),
-        this.createUserMessage('测试连接')
-      ]
-
-      const response = await this.sendMessage(testMessages, ALIBABA_BAILIAN_CONFIG.models.qwen, {
-        maxTokens: 10
+      const response = await fetch('/api/analyze-resume', {
+        method: 'OPTIONS'
       })
-
-      return response.success
-    } catch {
+      return response.ok
+    } catch (e) {
+      console.warn('AI Service health check failed:', e)
       return false
     }
   }
-
-  /**
-   * 获取模型信息
-   */
-  getAvailableModels() {
-    return ALIBABA_BAILIAN_CONFIG.models
-  }
-
-  /**
-   * 计算token数量（估算）
-   */
-  estimateTokens(text: string): number {
-    // 简单的token估算：中文字符按1.5个token计算，英文单词按1个token计算
-    const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length
-    const englishWords = (text.match(/[a-zA-Z]+/g) || []).length
-    const otherChars = text.length - chineseChars - englishWords
-    
-    return Math.ceil(chineseChars * 1.5 + englishWords + otherChars * 0.5)
-  }
-
-  /**
-   * 验证消息长度
-   */
-  validateMessageLength(messages: BailianMessage[], maxTokens: number = API_CONFIG.maxTokens): boolean {
-    const totalTokens = messages.reduce((sum, message) => {
-      return sum + this.estimateTokens(message.content)
-    }, 0)
-
-    return totalTokens <= maxTokens
-  }
 }
 
-// 创建默认的AI服务实例
+// 导出单例实例
 export const aiService = new AIService()

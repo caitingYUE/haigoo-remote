@@ -161,6 +161,7 @@ async function extractDataViaServer(file: File): Promise<ParsedResume | null> {
     if (data.name || data.email || data.mobile_number) {
       return {
         success: true,
+        id: json.id,
         textContent: data.text || '',
         name: data.name,
         title: data.designation ? (Array.isArray(data.designation) ? data.designation[0] : data.designation) : undefined,
@@ -177,7 +178,18 @@ async function extractDataViaServer(file: File): Promise<ParsedResume | null> {
 
     // 如果是 fallback 文本结果
     if (data.text) {
-      return extractResumeFields(normalizeText(data.text))
+      return {
+        ...extractResumeFields(normalizeText(data.text)),
+        id: json.id
+      }
+    }
+    
+    // Even if no text, return ID so we can update it later
+    if (json.id) {
+       return {
+         success: false,
+         id: json.id
+       }
     }
 
     return null
@@ -343,6 +355,9 @@ export async function parseResumeFileEnhanced(file: File): Promise<ParsedResume>
     return serverResult
   }
 
+  // Capture ID from server if available (even if parse failed)
+  const serverId = serverResult?.id
+
   let text = ''
 
   // 2. 如果服务端失败，尝试前端解析（回退方案）
@@ -350,7 +365,7 @@ export async function parseResumeFileEnhanced(file: File): Promise<ParsedResume>
     text = await extractTextFromPdf(file)
     if (text) {
       console.log(`[resume-parser] PDF parsed locally, ${text.length} chars`)
-      return extractResumeFields(text)
+      return { ...extractResumeFields(text), id: serverId }
     }
   }
 
@@ -361,7 +376,7 @@ export async function parseResumeFileEnhanced(file: File): Promise<ParsedResume>
     text = await extractTextFromDocx(file)
     if (text) {
       console.log(`[resume-parser] DOCX parsed locally, ${text.length} chars`)
-      return extractResumeFields(text)
+      return { ...extractResumeFields(text), id: serverId }
     }
   }
 
@@ -369,7 +384,7 @@ export async function parseResumeFileEnhanced(file: File): Promise<ParsedResume>
     text = await extractTextFromTxt(file)
     if (text) {
       console.log(`[resume-parser] TXT parsed locally, ${text.length} chars`)
-      return extractResumeFields(text)
+      return { ...extractResumeFields(text), id: serverId }
     }
   }
 
@@ -377,6 +392,7 @@ export async function parseResumeFileEnhanced(file: File): Promise<ParsedResume>
   console.error(`[resume-parser] All parse methods failed for ${file.name}`)
   return {
     success: false,
+    id: serverId,
     textContent: '',
     name: undefined,
     title: undefined

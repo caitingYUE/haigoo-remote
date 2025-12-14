@@ -50,6 +50,7 @@ export default function ProfileCenterPage() {
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const { showSuccess, showError } = useNotificationHelpers()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [upgradeSource, setUpgradeSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
 
   const handleRemoveFavorite = async (jobId: string) => {
@@ -309,6 +310,24 @@ export default function ProfileCenterPage() {
 
           // 更新本地状态以包含更多详情（如果有）
           // 注意：这里不需要再调用 ResumeStorageService.addResume，因为 API 已经保存了
+          // 但如果使用的是前端解析（fallback），我们需要同步解析后的文本到后端
+          if (parsed.id) {
+             fetch('/api/resumes', {
+                method: 'POST',
+                headers: {
+                   'Content-Type': 'application/json',
+                   'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                   action: 'update_content',
+                   id: parsed.id,
+                   contentText: parsed.textContent
+                })
+             }).then(r => {
+                if (r.ok) console.log('[ProfileCenter] Resume content synced to backend')
+                else console.warn('[ProfileCenter] Failed to sync resume content')
+             }).catch(e => console.error('[ProfileCenter] Sync error:', e))
+          }
 
           showSuccess('简历上传成功！', '您可以点击右侧按钮进行AI深度分析')
 

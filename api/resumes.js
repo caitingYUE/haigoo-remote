@@ -3,7 +3,7 @@
  * bit.ly/resume-consolidation
  */
 
-import { getResumes, saveResumes, saveUserResume, getResumeContent, deleteResume } from '../server-utils/resume-storage.js'
+import { getResumes, saveResumes, saveUserResume, getResumeContent, deleteResume, updateResumeContent } from '../server-utils/resume-storage.js'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
@@ -225,10 +225,12 @@ async function handleUpload(req, res) {
       fileContent: buffer.toString('base64') // Save file content for persistent preview
     }
 
+    let savedResumeId = null
     try {
       const saveResult = await saveUserResume(userId, resumeRecord)
+      savedResumeId = saveResult.id
       const provider = saveResult.provider || 'unknown'
-      console.log(`[resumes] Saved resume for user ${userId} (Status: ${finalParseStatus}, Provider: ${provider})`)
+      console.log(`[resumes] Saved resume for user ${userId} (Status: ${finalParseStatus}, Provider: ${provider}, ID: ${savedResumeId})`)
 
       if (provider === 'memory') {
         console.warn('[resumes] WARNING: Resume saved to memory. Data will be lost on server restart. Check DATABASE_URL.')
@@ -241,7 +243,8 @@ async function handleUpload(req, res) {
     return sendJson(res, {
       success: true,
       data: finalParsedData,
-      status: finalParseStatus
+      status: finalParseStatus,
+      id: savedResumeId
     })
 
   } catch (error) {
@@ -359,6 +362,18 @@ export default async function handler(req, res) {
       if (chunks.length === 0) return sendJson(res, { success: false, error: 'Empty body' }, 400)
 
       const body = JSON.parse(Buffer.concat(chunks).toString())
+
+      // Handle content update
+      if (body.action === 'update_content') {
+        const token = extractToken(req)
+        if (!token) return sendJson(res, { success: false, error: 'Unauthorized' }, 401)
+        
+        if (!body.id || !body.contentText) {
+           return sendJson(res, { success: false, error: 'Missing id or contentText' }, 400)
+        }
+        const result = await updateResumeContent(body.id, body.contentText)
+        return sendJson(res, result)
+      }
 
       if (!body.resumes || !Array.isArray(body.resumes)) {
         return sendJson(res, {
