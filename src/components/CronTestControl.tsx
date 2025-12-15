@@ -33,6 +33,7 @@ const CronTestControl: React.FC = () => {
     { step: 'Crawl Trusted Jobs', status: 'pending' },
     { step: 'Translate Jobs', status: 'pending' },
     { step: 'Enrich Companies', status: 'pending' },
+    { step: 'Daily Digest', status: 'pending' },
   ]);
 
   // Dragging state
@@ -86,14 +87,25 @@ const CronTestControl: React.FC = () => {
     { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
     { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
     { name: 'Enrich Companies', endpoint: '/api/cron/stream-enrich-companies' },
+    { name: 'Daily Digest', endpoint: '/api/cron/daily-digest' },
   ];
 
   // 根据流数据生成用户友好的消息
   const getStreamMessage = (data: any): string => {
     switch (data.type) {
-      // Translate Jobs 消息类型
+      // Daily Digest 消息类型
       case 'start':
+        if (data.message && data.message.includes('Found')) return `${data.message}`;
         return '任务开始执行';
+      case 'progress':
+        return `发送进度: 已发送 ${data.sent}，失败 ${data.errors}`;
+      case 'complete':
+        if (data.stats && data.stats.sent !== undefined) {
+          return `任务完成: 共发送 ${data.stats.sent}，失败 ${data.stats.errors}`;
+        }
+        return `任务完成：翻译 ${data.stats?.translatedJobs || 0}，跳过 ${data.stats?.skippedJobs || 0}，失败 ${data.stats?.failedJobs || 0}`;
+      
+      // Translate Jobs 消息类型
       case 'total':
         return `共 ${data.totalJobs} 个岗位，分 ${data.totalPages} 页处理`;
       case 'page_start':
@@ -325,6 +337,14 @@ const CronTestControl: React.FC = () => {
           newJobsFound: data.stats?.newJobsFound,
           totalCompanies: data.stats?.totalCompanies
         };
+
+      // Daily Digest 进度信息
+      case 'Daily Digest:start':
+        return { status: 'starting' };
+      case 'Daily Digest:progress':
+        return { sent: data.sent, errors: data.errors };
+      case 'Daily Digest:complete':
+        return { sent: data.stats?.sent, errors: data.stats?.errors, status: 'complete' };
 
       // 向后兼容：如果没有提供stepName，使用原来的逻辑（可能会有冲突）
       default:
