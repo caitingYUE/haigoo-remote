@@ -112,7 +112,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
     
                    <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
                       <div className="flex items-center gap-2">
-                         <h3 className={`font-bold text-base text-slate-900 truncate group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`}>
+                         <h3 className={`font-bold text-base text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
                             {job.translations?.title || job.title}
                          </h3>
                          {isTranslated && (
