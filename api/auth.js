@@ -20,7 +20,7 @@ import {
   isTokenExpired
 } from '../server-utils/auth-helpers.js'
 import { getUserByEmail, getUserById, saveUser, updateUser } from '../server-utils/user-helper.js'
-import { sendVerificationEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
+import { sendVerificationEmail, sendSubscriptionWelcomeEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
 import neonHelper from '../server-utils/dal/neon-helper.js'
@@ -497,6 +497,16 @@ async function handleSubscribe(req, res) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
+    }
+
+    // 发送欢迎邮件 (仅当渠道为 email 时)
+    if (channel === 'email' && isEmailServiceConfigured()) {
+        try {
+            await sendSubscriptionWelcomeEmail(identifier, topic)
+            console.log(`[auth] Subscription welcome email sent to ${identifier}`)
+        } catch (emailError) {
+            console.error('[auth] Failed to send subscription welcome email:', emailError)
+        }
     }
 
     return res.status(200).json({ success: true, message: '订阅成功' })
