@@ -124,11 +124,33 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-2 min-w-[240px] max-w-[300px] bg-white rounded-xl shadow-xl border border-slate-100 z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-          <div className="p-2 max-h-[400px] overflow-y-auto custom-scrollbar">
-            {children}
+        <>
+          {/* Mobile Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden" 
+            onClick={onClose}
+          />
+          
+          <div className="
+            z-50 overflow-hidden bg-white
+            
+            /* Mobile Styles */
+            fixed bottom-0 left-0 right-0 w-full rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.1)] border-t border-slate-200
+            animate-in slide-in-from-bottom duration-200
+            
+            /* Desktop Styles */
+            md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:w-auto md:min-w-[240px] md:max-w-[300px] md:rounded-xl md:shadow-xl md:border md:border-slate-100
+             md:animate-in md:fade-in md:zoom-in-95
+           ">
+             <div className="p-2 pb-8 md:pb-2 max-h-[60vh] md:max-h-[400px] overflow-y-auto custom-scrollbar">
+               {/* Mobile Handle */}
+               <div className="md:hidden flex justify-center pb-2 pt-1" onClick={onClose}>
+                  <div className="w-12 h-1 bg-slate-200 rounded-full"></div>
+              </div>
+              {children}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

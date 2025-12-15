@@ -446,7 +446,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation - 按要求移除顶部三个 Tab */}
+        {/* Mobile Navigation */}
         {isMenuOpen && (
           <nav
             className="md:hidden"
@@ -455,7 +455,46 @@ export default function Header() {
             aria-label="移动端导航"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-slate-200">
-              {/* 顶部三个 Tab 已移除 */}
+              <Link
+                to="/"
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                首页
+              </Link>
+              <Link
+                to="/jobs"
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/jobs'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                远程岗位
+              </Link>
+              <Link
+                to="/trusted-companies"
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/trusted-companies')
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                精选企业
+              </Link>
+              <Link
+                to="/profile"
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/profile')
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                个人中心
+              </Link>
 
               {/* 移动端用户菜单 */}
               {isAuthenticated && (

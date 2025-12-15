@@ -115,7 +115,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
         className={`bg-white dark:bg-zinc-900 shadow-xl flex flex-col relative transform transition-all duration-300 overflow-y-auto ${
           variant === 'center'
             ? `rounded-2xl w-full max-w-[1000px] h-auto max-h-[90vh] ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`
-            : `h-full w-full max-w-[95vw] md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw] ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'}`
+            : `h-full w-full max-w-full md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw] ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'}`
         }`}
         onClick={(e) => e.stopPropagation()}
       >

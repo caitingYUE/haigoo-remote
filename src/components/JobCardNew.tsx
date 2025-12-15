@@ -74,121 +74,128 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                ) : null}
             </div>
 
-            <div className="flex gap-4 items-center">
-               {/* Company Logo */}
-               <div className="w-14 h-14 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-105 relative group/logo">
-                  {job.logo ? (
-                     <img 
-                        src={job.logo} 
-                        alt={job.company} 
-                        className="w-full h-full object-contain p-1" 
-                        onError={(e) => {
-                           // Fallback to initial on error
-                           const target = e.target as HTMLImageElement;
-                           target.style.display = 'none';
-                           if (target.parentElement) {
-                              const span = document.createElement('span');
-                              span.className = 'font-serif italic text-lg';
-                              span.textContent = companyInitial;
-                              target.parentElement.appendChild(span);
-                           }
-                        }}
-                     />
-                  ) : (
-                     <span className="font-serif italic text-lg">{companyInitial}</span>
-                  )}
-                  {/* Hover Overlay for Link */}
-                  {job.companyWebsite && (
-                     <div 
-                        onClick={handleCompanyClick}
-                        className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]"
-                        title="访问来源"
-                     >
-                        <ExternalLink className="w-4 h-4 text-white" />
-                     </div>
-                  )}
-               </div>
-
-               <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
-                  <div className="flex items-center gap-2">
-                     <h3 className={`font-bold text-base text-slate-900 truncate group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`}>
-                        {job.translations?.title || job.title}
-                     </h3>
-                     {isTranslated && (
-                        <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-medium rounded border border-indigo-100 flex-shrink-0">
-                           译
-                        </span>
-                     )}
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                     <span 
-                        className={`font-medium truncate max-w-[200px] transition-colors ${job.companyWebsite ? 'hover:text-indigo-600 hover:underline cursor-pointer' : ''}`}
-                        onClick={job.companyWebsite ? handleCompanyClick : undefined}
-                     >
-                        {job.translations?.company || job.company}
-                     </span>
-                     <span className="text-slate-300">|</span>
-                     <span className="flex items-center truncate" title={job.translations?.location || job.location}>
-                        <Globe className="w-3 h-3 mr-1" />
-                        {(job.translations?.location || job.location)}
-                     </span>
-                     <span className="text-slate-300">|</span>
-                     <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
-                  </div>
-
-                  {/* Job Tags */}
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                     {/* Job Type Tag */}
-                     {job.type && (
-                        <span className="px-1.5 py-0.5 bg-slate-50 text-slate-600 text-[10px] font-medium rounded border border-slate-100">
-                           {job.type === 'full-time' ? '全职' : job.type}
-                        </span>
-                     )}
-                     
-                     {/* Category Tag */}
-                     {job.category && (
-                        <span className="px-1.5 py-0.5 bg-blue-50/50 text-blue-600 text-[10px] font-medium rounded border border-blue-100">
-                           {job.category}
-                        </span>
-                     )}
-
-                     {/* Experience Level Tag */}
-                     {job.experienceLevel && (
-                        <span className="px-1.5 py-0.5 bg-orange-50/50 text-orange-600 text-[10px] font-medium rounded border border-orange-100">
-                           {job.experienceLevel}
-                        </span>
-                     )}
-
-                     {/* Language Requirement Tag */}
-                     {job.languages && job.languages.length > 0 && (
-                        <span className="px-1.5 py-0.5 bg-purple-50/50 text-purple-600 text-[10px] font-medium rounded border border-purple-100 flex items-center gap-1">
-                           <Globe className="w-2.5 h-2.5" />
-                           {job.languages[0]}
-                        </span>
-                     )}
-
-                     {job.companyTags && job.companyTags.slice(0, 2).map((tag, i) => (
-                        <span key={i} className="px-1.5 py-0.5 bg-gray-50 text-gray-500 text-[10px] rounded border border-gray-100 truncate max-w-[80px]">
-                           {tag}
-                        </span>
-                     ))}
-                  </div>
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+               <div className="flex gap-4 flex-1">
+                   {/* Company Logo */}
+                   <div className="w-14 h-14 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-105 relative group/logo">
+                      {job.logo ? (
+                         <img 
+                            src={job.logo} 
+                            alt={job.company} 
+                            className="w-full h-full object-contain p-1" 
+                            onError={(e) => {
+                               // Fallback to initial on error
+                               const target = e.target as HTMLImageElement;
+                               target.style.display = 'none';
+                               if (target.parentElement) {
+                                  const span = document.createElement('span');
+                                  span.className = 'font-serif italic text-lg';
+                                  span.textContent = companyInitial;
+                                  target.parentElement.appendChild(span);
+                               }
+                            }}
+                         />
+                      ) : (
+                         <span className="font-serif italic text-lg">{companyInitial}</span>
+                      )}
+                      {/* Hover Overlay for Link */}
+                      {job.companyWebsite && (
+                         <div 
+                            onClick={handleCompanyClick}
+                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]"
+                            title="访问来源"
+                         >
+                            <ExternalLink className="w-4 h-4 text-white" />
+                         </div>
+                      )}
+                   </div>
+    
+                   <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+                      <div className="flex items-center gap-2">
+                         <h3 className={`font-bold text-base text-slate-900 truncate group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`}>
+                            {job.translations?.title || job.title}
+                         </h3>
+                         {isTranslated && (
+                            <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-medium rounded border border-indigo-100 flex-shrink-0">
+                               译
+                            </span>
+                         )}
+                      </div>
+    
+                      <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
+                         <span 
+                            className={`font-medium truncate max-w-[200px] transition-colors ${job.companyWebsite ? 'hover:text-indigo-600 hover:underline cursor-pointer' : ''}`}
+                            onClick={job.companyWebsite ? handleCompanyClick : undefined}
+                         >
+                            {job.translations?.company || job.company}
+                         </span>
+                         <span className="text-slate-300">|</span>
+                         <span className="flex items-center truncate" title={job.translations?.location || job.location}>
+                            <Globe className="w-3 h-3 mr-1" />
+                            {(job.translations?.location || job.location)}
+                         </span>
+                         <span className="text-slate-300 hidden sm:inline">|</span>
+                         <span className="hidden sm:inline">{DateFormatter.formatPublishTime(job.publishedAt)}</span>
+                      </div>
+    
+                      {/* Job Tags */}
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                         {/* Job Type Tag */}
+                         {job.type && (
+                            <span className="px-1.5 py-0.5 bg-slate-50 text-slate-600 text-[10px] font-medium rounded border border-slate-100">
+                               {job.type === 'full-time' ? '全职' : job.type}
+                            </span>
+                         )}
+                         
+                         {/* Category Tag */}
+                         {job.category && (
+                            <span className="px-1.5 py-0.5 bg-blue-50/50 text-blue-600 text-[10px] font-medium rounded border border-blue-100">
+                               {job.category}
+                            </span>
+                         )}
+    
+                         {/* Experience Level Tag */}
+                         {job.experienceLevel && (
+                            <span className="px-1.5 py-0.5 bg-orange-50/50 text-orange-600 text-[10px] font-medium rounded border border-orange-100">
+                               {job.experienceLevel}
+                            </span>
+                         )}
+    
+                         {/* Language Requirement Tag */}
+                         {job.languages && job.languages.length > 0 && (
+                            <span className="px-1.5 py-0.5 bg-purple-50/50 text-purple-600 text-[10px] font-medium rounded border border-purple-100 flex items-center gap-1">
+                               <Globe className="w-2.5 h-2.5" />
+                               {job.languages[0]}
+                            </span>
+                         )}
+    
+                         {job.companyTags && job.companyTags.slice(0, 2).map((tag, i) => (
+                            <span key={i} className="px-1.5 py-0.5 bg-gray-50 text-gray-500 text-[10px] rounded border border-gray-100 truncate max-w-[80px]">
+                               {tag}
+                            </span>
+                         ))}
+                      </div>
+                   </div>
                </div>
 
                {/* Right Side Info */}
-               <div className="flex flex-col items-end justify-center gap-1 pl-4 border-l border-slate-100 min-w-[120px] flex-shrink-0 py-2">
-                   <span className={`text-base ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium text-xs' : 'font-bold text-rose-500'}`}>
-                      {formatSalary(job.salary)}
-                   </span>
-                   
-                   {matchScore !== undefined && matchScore > 0 && (
-                      <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                         <span className={`text-xs font-extrabold ${matchScore >= 80 ? 'text-emerald-500' : matchScore >= 60 ? 'text-indigo-500' : 'text-amber-500'}`}>
-                            {matchScore}% 匹配
-                         </span>
-                      </div>
-                   )}
+               <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1 sm:pl-4 sm:border-l border-t sm:border-t-0 border-slate-100 w-full sm:w-auto min-w-[120px] flex-shrink-0 py-2 sm:py-0 pt-3 sm:pt-0">
+                   <div className="sm:hidden text-xs text-slate-400">
+                      {DateFormatter.formatPublishTime(job.publishedAt)}
+                   </div>
+                   <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1">
+                       <span className={`text-base ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium text-xs' : 'font-bold text-rose-500'}`}>
+                          {formatSalary(job.salary)}
+                       </span>
+                       
+                       {matchScore !== undefined && matchScore > 0 && (
+                          <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                             <span className={`text-xs font-extrabold ${matchScore >= 80 ? 'text-emerald-500' : matchScore >= 60 ? 'text-indigo-500' : 'text-amber-500'}`}>
+                                {matchScore}% 匹配
+                             </span>
+                          </div>
+                       )}
+                   </div>
                </div>
             </div>
          </div>
