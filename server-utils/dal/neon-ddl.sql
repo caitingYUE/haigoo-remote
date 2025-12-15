@@ -13,3 +13,8 @@ CREATE TABLE notifications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_notifications_user ON notifications(user_id);
+
+-- 2025-12-15: Add subscription tracking fields
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS fail_count INTEGER DEFAULT 0;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMP;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS frequency VARCHAR(50) DEFAULT 'daily';

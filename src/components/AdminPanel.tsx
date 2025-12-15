@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import { processedJobsService } from '../services/processed-jobs-service'
 import { Job as RSSJob } from '../types/rss-types';
 import { dataRetentionService, RetentionStats } from '../services/data-retention-service';
+import { SubscriptionsTable } from './SubscriptionsTable';
 import './AdminPanel.css';
 
 interface AdminPanelProps {
   className?: string;
 }
 
-type TabType = 'raw' | 'processed' | 'stats' | 'retention';
+type TabType = 'raw' | 'processed' | 'stats' | 'retention' | 'subscriptions';
 
 interface SimpleUnifiedJob {
   id: string;
@@ -256,6 +257,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
         return <StatsPanel stats={stats} />;
       case 'retention':
         return <RetentionPanel stats={retentionStats} onCleanup={handleCleanup} loading={loading} />;
+      case 'subscriptions':
+        return <SubscriptionsTable />;
       default:
         return null;
     }
@@ -374,6 +377,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
                 onClick={(e) => { e.preventDefault(); setActiveTab('retention'); }}
               >
                 数据保留
+              </a>
+              <a
+                href="#"
+                className={`tab-item ${activeTab === 'subscriptions' ? 'active' : ''}`}
+                onClick={(e) => { e.preventDefault(); setActiveTab('subscriptions'); }}
+              >
+                邮件订阅
               </a>
             </nav>
           </div>
