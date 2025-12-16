@@ -81,7 +81,10 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
       const json = await resp.json()
       setStatus(json.success ? 'done' : 'error')
       if (json.success) {
-          setTimeout(() => setStatus('idle'), 3000)
+          setTimeout(() => {
+              setStatus('idle')
+              setHasSubscription(true)
+          }, 2000)
       }
     } catch {
       setStatus('error')
