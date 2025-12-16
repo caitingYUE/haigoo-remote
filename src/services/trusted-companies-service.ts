@@ -28,6 +28,13 @@ export interface TrustedCompany {
     updatedAt: string;
 }
 
+export interface PaginatedCompaniesResponse {
+    companies: TrustedCompany[];
+    total: number;
+    page: number;
+    totalPages: number;
+}
+
 export interface CompanyMetadata {
     title: string;
     description: string;
@@ -41,6 +48,15 @@ export interface CompanyMetadata {
 class TrustedCompaniesService {
     private API_BASE = '/api/data/trusted-companies';
 
+    async getAllCompanies(): Promise<TrustedCompany[]>;
+    async getAllCompanies(params: {
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+        industry?: string;
+        search?: string;
+    }): Promise<PaginatedCompaniesResponse | TrustedCompany[]>;
     async getAllCompanies(params?: {
         page?: number;
         limit?: number;

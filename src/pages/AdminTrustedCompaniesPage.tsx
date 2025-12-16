@@ -60,15 +60,14 @@ export default function AdminTrustedCompaniesPage() {
                 industry: industryFilter,
                 search: searchTerm
             })
-            if (data.companies) {
+            if (Array.isArray(data)) {
+                setCompanies(data)
+                setTotalPages(1)
+                setTotalItems(data.length)
+            } else {
                 setCompanies(data.companies)
                 setTotalPages(data.totalPages)
                 setTotalItems(data.total)
-            } else {
-                // Fallback for array response
-                setCompanies(Array.isArray(data) ? data : [])
-                setTotalPages(1)
-                setTotalItems(Array.isArray(data) ? data.length : 0)
             }
         } catch (error) {
             console.error('Failed to load companies:', error)
