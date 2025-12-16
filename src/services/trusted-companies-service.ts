@@ -23,6 +23,7 @@ export interface TrustedCompany {
     isTrusted: boolean;
     canRefer: boolean;
     jobCount?: number;
+    lastCrawledAt?: string; // New field
     createdAt: string;
     updatedAt: string;
 }

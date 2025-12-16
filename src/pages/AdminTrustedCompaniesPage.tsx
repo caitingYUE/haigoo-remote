@@ -339,9 +339,10 @@ export default function AdminTrustedCompaniesPage() {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">在招岗位数量</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">链接</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]">在招岗位数量</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">岗位更新时间</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">链接</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">操作</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -349,16 +350,25 @@ export default function AdminTrustedCompaniesPage() {
                                 <tr key={company.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
-                                            {company.logo ? (
-                                                <img src={company.logo} alt="" className="h-8 w-8 rounded object-contain mr-3" />
-                                            ) : (
-                                                <div className="h-8 w-8 rounded bg-gray-100 flex items-center justify-center mr-3">
-                                                    <Building2 className="w-4 h-4 text-gray-400" />
+                                            <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200">
+                                                {company.logo ? (
+                                                    <img src={company.logo} alt="" className="h-full w-full object-contain p-1" />
+                                                ) : (
+                                                    <Building2 className="w-5 h-5 text-gray-400" />
+                                                )}
+                                            </div>
+                                            <div className="ml-4 max-w-xs">
+                                                <div className="font-medium text-gray-900 flex items-center gap-2">
+                                                    {company.name}
+                                                    {company.canRefer && (
+                                                        <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded border border-green-200 whitespace-nowrap">
+                                                            内推
+                                                        </span>
+                                                    )}
                                                 </div>
-                                            )}
-                                            <div>
-                                                <div className="font-medium text-gray-900">{company.name}</div>
-                                                <div className="text-xs text-gray-500 truncate max-w-xs">{company.description}</div>
+                                                <div className="text-xs text-gray-500 truncate" title={company.description}>
+                                                    {company.description || '暂无简介'}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -369,6 +379,16 @@ export default function AdminTrustedCompaniesPage() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         {company.jobCount ?? 0}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {company.lastCrawledAt ? (
+                                            <div className="flex flex-col">
+                                                <span>{new Date(company.lastCrawledAt).toLocaleDateString()}</span>
+                                                <span className="text-xs text-gray-400">{new Date(company.lastCrawledAt).toLocaleTimeString()}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400">-</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <div className="flex gap-2">

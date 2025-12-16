@@ -21,3 +21,6 @@ ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS frequency VARCHAR(50) DEFAULT
 
 -- 2025-12-16: Add nickname field for Feishu subscriptions
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS nickname VARCHAR(255);
+
+-- 2025-12-17: Add last_crawled_at to trusted_companies
+ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS last_crawled_at TIMESTAMP;
