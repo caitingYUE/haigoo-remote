@@ -71,8 +71,8 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
     return `已选 ${selectedTopics.length} 个类型`
   }
 
-  const renderDropdown = (isDarkBg: boolean) => (
-    <div className={`absolute z-50 mt-2 w-64 max-h-80 overflow-y-auto rounded-xl shadow-xl border p-2 ${isDarkBg ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+  const renderDropdown = (isDarkBg: boolean, className: string = "w-64") => (
+    <div className={`absolute top-full left-0 z-50 mt-2 max-h-80 overflow-y-auto rounded-xl shadow-xl border p-2 ${isDarkBg ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} ${className}`}>
       <div className={`px-2 py-1.5 text-xs font-medium mb-1 ${isDarkBg ? 'text-slate-400' : 'text-slate-500'}`}>
         最多可选 {MAX_SUBSCRIPTION_TOPICS} 个
       </div>
@@ -167,11 +167,7 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
                 <span className="truncate text-sm">{getButtonLabel()}</span>
                 <ChevronDown className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-white/60'}`} />
               </button>
-              {isDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-full sm:w-64">
-                      {renderDropdown(!isLight)}
-                  </div>
-              )}
+              {isDropdownOpen && renderDropdown(!isLight, "w-full sm:w-64")}
            </div>
 
           <input

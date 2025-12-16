@@ -73,6 +73,25 @@
   top: 0;
   z-index: 50;
   transition: all 0.3s ease;
+  overflow-y: auto;
+}
+
+/* 自定义滚动条 */
+.admin-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 2px;
+}
+
+.admin-panel.dark .admin-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-dark);
 }
 
 /* 折叠状态的侧边栏 */

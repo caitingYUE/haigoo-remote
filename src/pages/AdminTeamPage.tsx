@@ -29,7 +29,8 @@ import {
   MessageSquare,
   Tag,
   Building,
-  FileText
+  FileText,
+  Mail
 } from 'lucide-react';
 import { Job, JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
@@ -41,6 +42,7 @@ import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
 import AdminTagManagementPage from './AdminTagManagementPage';
 import AdminApplicationsPage from './AdminApplicationsPage';
 import AdminFeedbackList from '../components/AdminFeedbackList';
+import { SubscriptionsTable } from '../components/SubscriptionsTable';
 import CronTestControl from '../components/CronTestControl';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
@@ -746,6 +748,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
     { id: 'tag-management', label: '标签管理', icon: Tag },
     { id: 'resumes', label: '简历数据', icon: FileText },
+    { id: 'subscriptions', label: '订阅管理', icon: Mail },
     { id: 'users', label: '用户管理', icon: Users },
     { id: 'applications', label: '会员申请', icon: FileText },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
@@ -846,6 +849,7 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'rss' && renderRSSManagement()}
               {activeTab === 'jobs' && renderJobDataManagement()}
               {activeTab === 'resumes' && renderResumeLibrary()}
+              {activeTab === 'subscriptions' && <SubscriptionsTable />}
               {activeTab === 'users' && <UserManagementPage />}
               {activeTab === 'applications' && <AdminApplicationsPage />}
               {activeTab === 'companies' && <AdminCompanyManagementPage />}
