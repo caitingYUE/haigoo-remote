@@ -59,11 +59,11 @@
 
 /* 侧边栏导航 */
 .admin-sidebar {
-  width: 256px;
+  width: 240px;
   flex-shrink: 0;
   background: var(--background-light);
   border-right: 1px solid var(--border-light);
-  padding: 1rem;
+  padding: 1.25rem 0.75rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -72,8 +72,9 @@
   left: 0;
   top: 0;
   z-index: 50;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-y: auto;
+  box-shadow: 1px 0 10px rgba(0, 0, 0, 0.03);
 }
 
 /* 自定义滚动条 */
@@ -86,18 +87,22 @@
 }
 
 .admin-sidebar::-webkit-scrollbar-thumb {
-  background: var(--border-light);
-  border-radius: 2px;
+  background: transparent;
+  border-radius: 4px;
 }
 
-.admin-panel.dark .admin-sidebar::-webkit-scrollbar-thumb {
+.admin-sidebar:hover::-webkit-scrollbar-thumb {
+  background: var(--gray-200);
+}
+
+.admin-panel.dark .admin-sidebar:hover::-webkit-scrollbar-thumb {
   background: var(--border-dark);
 }
 
 /* 折叠状态的侧边栏 */
 .admin-sidebar.collapsed {
-  width: 80px;
-  padding: 1rem 0.5rem;
+  width: 72px;
+  padding: 1.25rem 0.5rem;
 }
 
 /* 折叠按钮 */
@@ -279,16 +284,16 @@
 /* 主内容区域 */
 .admin-main {
   flex: 1;
-  margin-left: 256px;
+  margin-left: 240px;
   padding: 1.5rem 2.5rem;
-  max-width: calc(100vw - 256px);
-  transition: all 0.3s ease;
+  max-width: calc(100vw - 240px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 侧边栏折叠时的主内容区域 */
 .admin-main.sidebar-collapsed {
-  margin-left: 80px;
-  max-width: calc(100vw - 80px);
+  margin-left: 72px;
+  max-width: calc(100vw - 72px);
 }
 
 .admin-container {

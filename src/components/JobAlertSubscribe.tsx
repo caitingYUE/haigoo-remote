@@ -64,11 +64,12 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
 
   const getButtonLabel = () => {
     if (selectedTopics.length === 0) return '选择岗位类型'
-    if (selectedTopics.length === 1) {
-        const t = SUBSCRIPTION_TOPICS.find(opt => opt.value === selectedTopics[0])
-        return t ? t.label : selectedTopics[0]
-    }
-    return `已选 ${selectedTopics.length} 个类型`
+    return null
+  }
+
+  const removeTopic = (e: React.MouseEvent, topicValue: string) => {
+      e.stopPropagation();
+      toggleTopic(topicValue);
   }
 
   const renderDropdown = (isDarkBg: boolean, className: string = "w-64") => (
@@ -76,26 +77,53 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
       <div className={`px-2 py-1.5 text-xs font-medium mb-1 ${isDarkBg ? 'text-slate-400' : 'text-slate-500'}`}>
         最多可选 {MAX_SUBSCRIPTION_TOPICS} 个
       </div>
-      {SUBSCRIPTION_TOPICS.map(opt => {
-        const isSelected = selectedTopics.includes(opt.value)
-        return (
-          <div 
-            key={opt.value}
-            onClick={() => toggleTopic(opt.value)}
-            className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors
-                ${isSelected 
-                    ? (isDarkBg ? 'bg-indigo-600/20 text-indigo-300' : 'bg-indigo-50 text-indigo-700') 
-                    : (isDarkBg ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-50')
-                }
-            `}
-          >
-            <span>{opt.label}</span>
-            {isSelected && <Check className="w-3.5 h-3.5" />}
-          </div>
-        )
-      })}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+        {SUBSCRIPTION_TOPICS.map(opt => {
+            const isSelected = selectedTopics.includes(opt.value)
+            return (
+            <div 
+                key={opt.value}
+                onClick={() => toggleTopic(opt.value)}
+                className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors
+                    ${isSelected 
+                        ? (isDarkBg ? 'bg-indigo-600/20 text-indigo-300' : 'bg-indigo-50 text-indigo-700') 
+                        : (isDarkBg ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-50')
+                    }
+                `}
+            >
+                <span>{opt.label}</span>
+                {isSelected && <Check className="w-3.5 h-3.5" />}
+            </div>
+            )
+        })}
+      </div>
     </div>
   )
+
+  const renderTriggerContent = (isLight: boolean) => {
+      if (selectedTopics.length === 0) {
+          return <span className={isLight ? 'text-slate-400' : 'text-white/60'}>选择岗位类型</span>
+      }
+      return (
+          <div className="flex flex-wrap gap-1.5 overflow-hidden max-h-[28px]">
+              {selectedTopics.map(t => {
+                  const label = SUBSCRIPTION_TOPICS.find(opt => opt.value === t)?.label || t
+                  return (
+                      <span key={t} className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium z-10 ${isLight ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-white/20 text-white border border-white/20'}`}>
+                          {label}
+                          <span 
+                            onClick={(e) => removeTopic(e, t)}
+                            className={`ml-1 hover:text-red-400 cursor-pointer p-0.5 rounded-full hover:bg-black/5`}
+                          >
+                              ×
+                          </span>
+                      </span>
+                  )
+              })}
+              {selectedTopics.length > 2 && <span className="text-xs opacity-50 self-center">...</span>}
+          </div>
+      )
+  }
 
   const renderHint = () => (
       <div className="flex items-start gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-100">
@@ -114,8 +142,8 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
                 className="cta-select mr-2 p-2 rounded border border-slate-300 text-sm flex items-center justify-between min-w-[120px] bg-white"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
-                <span className="truncate max-w-[100px]">{getButtonLabel()}</span>
-                <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
+                <div className="truncate max-w-[150px] flex items-center">{renderTriggerContent(true)}</div>
+                <ChevronDown className="w-3 h-3 ml-1 opacity-50 flex-shrink-0" />
             </button>
             {isDropdownOpen && renderDropdown(false)}
         </div>
@@ -164,8 +192,8 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
                 `}
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
-                <span className="truncate text-sm">{getButtonLabel()}</span>
-                <ChevronDown className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-white/60'}`} />
+                <div className="truncate flex-1 flex items-center mr-2">{renderTriggerContent(isLight)}</div>
+                <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isLight ? 'text-slate-400' : 'text-white/60'}`} />
               </button>
               {isDropdownOpen && renderDropdown(!isLight, "w-full sm:w-64")}
            </div>
@@ -212,8 +240,8 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
                   className="w-full px-3 py-2 border rounded-lg text-sm flex items-center justify-between hover:border-indigo-500 transition-colors"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
-                  <span className="text-slate-700">{getButtonLabel()}</span>
-                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                  <div className="flex-1 flex items-center mr-2">{renderTriggerContent(true)}</div>
+                  <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
               </button>
               {isDropdownOpen && renderDropdown(false)}
           </div>

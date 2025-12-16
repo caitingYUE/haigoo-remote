@@ -22,13 +22,13 @@ export const subscriptionsService = {
     return data.subscriptions;
   },
 
-  async add(email: string): Promise<Subscription> {
+  async add(email: string, topic?: string): Promise<Subscription> {
     const response = await fetch(`${API_BASE_URL}/subscriptions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, topic }),
     });
     if (!response.ok) {
         const error = await response.json();

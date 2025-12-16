@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { subscriptionsService, Subscription } from '../services/subscriptions-service';
-import { SUBSCRIPTION_TOPICS } from '../constants/subscription-topics';
+import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics';
 
 export const SubscriptionsTable: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -9,6 +9,7 @@ export const SubscriptionsTable: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
+  const [newTopics, setNewTopics] = useState<string[]>([]);
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
 
@@ -33,17 +34,31 @@ export const SubscriptionsTable: React.FC = () => {
 
   const handleAddSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newTopics.length === 0) {
+        setAddError('请至少选择一个岗位类型');
+        return;
+    }
     setAddLoading(true);
     setAddError(null);
     try {
-      await subscriptionsService.add(newEmail);
+      await subscriptionsService.add(newEmail, newTopics.join(','));
       setNewEmail('');
+      setNewTopics([]);
       setIsAddModalOpen(false);
       await loadSubscriptions();
     } catch (err) {
       setAddError(err instanceof Error ? err.message : '添加订阅失败');
     } finally {
       setAddLoading(false);
+    }
+  };
+
+  const toggleTopic = (value: string) => {
+    if (newTopics.includes(value)) {
+        setNewTopics(newTopics.filter(t => t !== value));
+    } else {
+        if (newTopics.length >= MAX_SUBSCRIPTION_TOPICS) return;
+        setNewTopics([...newTopics, value]);
     }
   };
 
@@ -238,20 +253,50 @@ export const SubscriptionsTable: React.FC = () => {
             </div>
             <form onSubmit={handleAddSubscription}>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px' }}>邮箱地址</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>邮箱地址</label>
                 <input
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   placeholder="name@example.com"
                   required
-                  style={{ width: '100%', padding: '8px', border: '1px solid #e2e8f0', borderRadius: '4px' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }}
                 />
               </div>
-              {addError && <div className="error" style={{ color: 'red', marginBottom: '16px' }}>{addError}</div>}
-              <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                <button type="button" className="btn-secondary" onClick={() => setIsAddModalOpen(false)} style={{ padding: '8px 16px', border: '1px solid #e2e8f0', borderRadius: '4px', background: 'white', cursor: 'pointer' }}>取消</button>
-                <button type="submit" className="btn-primary" disabled={addLoading} style={{ padding: '8px 16px', border: 'none', borderRadius: '4px', background: '#4F46E5', color: 'white', cursor: 'pointer' }}>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>
+                    岗位类型 <span style={{ color: '#6b7280', fontWeight: 400, fontSize: '12px' }}>(最多选{MAX_SUBSCRIPTION_TOPICS}个)</span>
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '200px', overflowY: 'auto', padding: '4px' }}>
+                    {SUBSCRIPTION_TOPICS.map(topic => {
+                        const isSelected = newTopics.includes(topic.value);
+                        return (
+                            <div 
+                                key={topic.value}
+                                onClick={() => toggleTopic(topic.value)}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '20px',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    border: isSelected ? '1px solid #4F46E5' : '1px solid #e5e7eb',
+                                    background: isSelected ? '#eff6ff' : 'white',
+                                    color: isSelected ? '#4F46E5' : '#374151',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {topic.label}
+                            </div>
+                        )
+                    })}
+                </div>
+              </div>
+
+              {addError && <div className="error" style={{ color: '#ef4444', marginBottom: '16px', fontSize: '14px' }}>{addError}</div>}
+              <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setIsAddModalOpen(false)} style={{ padding: '8px 16px', border: '1px solid #e2e8f0', borderRadius: '6px', background: 'white', cursor: 'pointer', color: '#374151' }}>取消</button>
+                <button type="submit" className="btn-primary" disabled={addLoading} style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', background: '#4F46E5', color: 'white', cursor: 'pointer', opacity: addLoading ? 0.7 : 1 }}>
                   {addLoading ? '添加中...' : '添加'}
                 </button>
               </div>
