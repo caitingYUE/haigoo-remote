@@ -361,12 +361,15 @@ export default function LandingPage() {
 
         {/* Job Alert Subscription */}
         <div className="mt-32">
-          <div className="relative bg-gradient-to-br from-indigo-50 to-indigo-50 rounded-3xl p-10 md:p-20 text-center overflow-hidden border border-indigo-100 shadow-lg shadow-indigo-50">
-            {/* Subtle Background Pattern */}
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/60 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-100/40 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
+          <div className="relative rounded-3xl border border-indigo-100 shadow-lg shadow-indigo-50">
+            {/* Background Container - Handles overflow for blobs */}
+            <div className="absolute inset-0 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-50 to-indigo-50">
+                 {/* Subtle Background Pattern */}
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/60 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-100/40 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
+            </div>
 
-            <div className="relative z-10 max-w-2xl mx-auto">
+            <div className="relative z-10 max-w-2xl mx-auto p-10 md:p-20 text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight text-slate-900 flex items-center justify-center gap-3">
                 <Zap className="w-8 h-8 text-indigo-600 fill-current" />
                 不错过任何机会

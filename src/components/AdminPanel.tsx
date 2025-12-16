@@ -302,6 +302,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
               <span className="material-symbols-outlined">assignment_ind</span>
               会员申请
             </Link>
+            <a
+              href="#"
+              className={`nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}
+              onClick={(e) => { e.preventDefault(); setActiveTab('subscriptions'); }}
+            >
+              <span className="material-symbols-outlined">mark_email_unread</span>
+              订阅管理
+            </a>
             <a href="#" className="nav-item">
               <span className="material-symbols-outlined">storage</span>
               数据保留
