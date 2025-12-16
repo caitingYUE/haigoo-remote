@@ -17,6 +17,19 @@ const FROM_NAME = process.env.FROM_NAME || 'Haigoo Team'
 // 检查 SMTP 是否配置
 const SMTP_CONFIGURED = !!(SMTP_USER && SMTP_PASS)
 
+function getTopicLabel(topic) {
+  const map = {
+    'all': '全部岗位',
+    'development': '技术开发',
+    'product': '产品设计',
+    'operations': '运营市场',
+    'data': '数据分析',
+    'function': '职能支持',
+    'ops_qa': '运维测试'
+  }
+  return map[topic] || topic
+}
+
 /**
  * 创建 Nodemailer transporter
  */
@@ -183,6 +196,7 @@ export async function sendPasswordResetEmail(to, username, token) {
  * @returns {Promise<boolean>} 是否发送成功
  */
 export async function sendSubscriptionWelcomeEmail(to, topic) {
+  const label = getTopicLabel(topic)
   const subject = '订阅成功！欢迎加入 Haigoo 岗位推送'
   const html = `
 <!DOCTYPE html>
@@ -205,7 +219,7 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
     <div class="content">
       <p>Hi,</p>
       <p>恭喜您成功订阅 Haigoo 的岗位推送服务！</p>
-      <p>您关注的主题是：<strong>${topic}</strong></p>
+      <p>您关注的主题是：<strong>${label}</strong></p>
       <p>我们将每天为您精选最匹配的 5 个远程工作机会，发送到您的邮箱。</p>
       <p>如果这不是您的操作，请忽略此邮件。</p>
     </div>
@@ -230,6 +244,7 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
 export async function sendDailyDigestEmail(to, jobs, topic) {
   if (!jobs || jobs.length === 0) return false
   
+  const label = getTopicLabel(topic)
   const jobsHtml = jobs.map(job => `
     <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
       <h3 style="margin: 0 0 5px;"><a href="${process.env.SITE_URL || 'http://localhost:3000'}/job/${job.id}" style="text-decoration: none; color: #667eea;">${job.title}</a></h3>
@@ -239,7 +254,7 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
     </div>
   `).join('')
 
-  const subject = `🔥 Haigoo 每日精选：${topic} 相关的远程机会`
+  const subject = `🔥 Haigoo 每日精选：${label} 相关的远程机会`
   const html = `
 <!DOCTYPE html>
 <html>
@@ -261,7 +276,7 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
     </div>
     <div class="content">
       <p>Hi,</p>
-      <p>这是为您精选的 <strong>${topic}</strong> 相关远程工作机会：</p>
+      <p>这是为您精选的 <strong>${label}</strong> 相关远程工作机会：</p>
       
       ${jobsHtml}
       

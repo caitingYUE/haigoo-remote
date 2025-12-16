@@ -456,6 +456,120 @@ async function handleResendVerification(req, res) {
 }
 
 /**
+ * 获取当前用户的订阅
+ */
+async function handleGetSubscriptions(req, res) {
+  const token = extractToken(req)
+  if (!token) return res.status(401).json({ success: false, error: '未授权' })
+  
+  const payload = verifyToken(token)
+  if (!payload) return res.status(401).json({ success: false, error: '无效令牌' })
+
+  try {
+    const user = await getUserById(payload.userId)
+    if (!user) return res.status(404).json({ success: false, error: '用户不存在' })
+
+    // 查询条件：user_id 匹配 或 identifier 匹配邮箱
+    // 注意：neonHelper.select 只能处理简单的 AND 条件，这里我们需要写原生 SQL 来处理 OR
+    const query = `
+      SELECT * FROM subscriptions 
+      WHERE user_id = $1 OR (channel = 'email' AND identifier = $2)
+      ORDER BY created_at DESC
+    `
+    const result = await neonHelper.query(query, [user.user_id, user.email])
+    
+    return res.status(200).json({ success: true, subscriptions: result || [] })
+  } catch (error) {
+    console.error('[auth] Get subscriptions error:', error)
+    return res.status(500).json({ success: false, error: '服务器错误' })
+  }
+}
+
+/**
+ * 更新订阅 (用户端)
+ */
+async function handleUpdateSubscription(req, res) {
+  const token = extractToken(req)
+  if (!token) return res.status(401).json({ success: false, error: '未授权' })
+  
+  const payload = verifyToken(token)
+  if (!payload) return res.status(401).json({ success: false, error: '无效令牌' })
+
+  const { id, topic, status } = req.body
+  if (!id) return res.status(400).json({ success: false, error: '订阅ID不能为空' })
+
+  try {
+    // 验证所有权
+    const user = await getUserById(payload.userId)
+    const sub = await neonHelper.select('subscriptions', { subscription_id: id })
+    
+    if (!sub || sub.length === 0) {
+      return res.status(404).json({ success: false, error: '订阅不存在' })
+    }
+
+    const subscription = sub[0]
+    // 允许修改如果：user_id 匹配，或者 identifier 是用户的邮箱
+    if (subscription.user_id !== user.user_id && subscription.identifier !== user.email) {
+      return res.status(403).json({ success: false, error: '无权修改此订阅' })
+    }
+
+    const updates = { updated_at: new Date().toISOString() }
+    if (topic) updates.topic = topic
+    if (status) updates.status = status
+    
+    // 如果订阅没有 user_id，顺便关联上
+    if (!subscription.user_id) updates.user_id = user.user_id
+
+    await neonHelper.update('subscriptions', updates, { subscription_id: id })
+    return res.status(200).json({ success: true, message: '更新成功' })
+  } catch (error) {
+    console.error('[auth] Update subscription error:', error)
+    return res.status(500).json({ success: false, error: '服务器错误' })
+  }
+}
+
+/**
+ * 删除订阅 (用户端)
+ */
+async function handleDeleteSubscription(req, res) {
+  const token = extractToken(req)
+  if (!token) return res.status(401).json({ success: false, error: '未授权' })
+  
+  const payload = verifyToken(token)
+  if (!payload) return res.status(401).json({ success: false, error: '无效令牌' })
+
+  const { id } = req.body
+  if (!id) return res.status(400).json({ success: false, error: '订阅ID不能为空' })
+
+  try {
+    const user = await getUserById(payload.userId)
+    const sub = await neonHelper.select('subscriptions', { subscription_id: id })
+    
+    if (!sub || sub.length === 0) {
+      return res.status(404).json({ success: false, error: '订阅不存在' })
+    }
+
+    const subscription = sub[0]
+    if (subscription.user_id !== user.user_id && subscription.identifier !== user.email) {
+      return res.status(403).json({ success: false, error: '无权删除此订阅' })
+    }
+
+    // 物理删除? 还是标记删除? 题目说"取消"，通常可以物理删除或者 status='inactive'
+    // 这里选择物理删除，或者如果用户希望"取消"是暂时停止，可以用 status='inactive'
+    // 既然有 DELETE method，通常是物理删除。但如果是取消订阅，status='inactive' 更好保留记录。
+    // 但是 api/admin/subscriptions.js 支持 DELETE。
+    // 这里我们直接 DELETE 吧，简单。
+    const query = `DELETE FROM subscriptions WHERE subscription_id = $1`
+    await neonHelper.query(query, [id])
+    
+    return res.status(200).json({ success: true, message: '已取消订阅' })
+  } catch (error) {
+    console.error('[auth] Delete subscription error:', error)
+    return res.status(500).json({ success: false, error: '服务器错误' })
+  }
+}
+
+/**
  * 处理用户订阅
  */
 async function handleSubscribe(req, res) {
@@ -467,6 +581,13 @@ async function handleSubscribe(req, res) {
   }
 
   try {
+    // 尝试查找用户以关联 user_id
+    let userId = null
+    if (channel === 'email') {
+        const user = await getUserByEmail(identifier)
+        if (user) userId = user.user_id
+    }
+
     // 检查订阅是否已存在
     const existingSubscription = await neonHelper.select('subscriptions', { 
       channel, 
@@ -476,15 +597,16 @@ async function handleSubscribe(req, res) {
     if (existingSubscription && existingSubscription.length > 0) {
       // 更新现有订阅
       const subscriptionId = existingSubscription[0].subscription_id
-      await neonHelper.update('subscriptions', 
-        { 
+      const updates = { 
           topic, 
+          status: 'active', // 重新激活
           updated_at: new Date().toISOString() 
-        }, 
-        { 
-          subscription_id: subscriptionId 
-        }
-      )
+      }
+      if (userId && !existingSubscription[0].user_id) {
+          updates.user_id = userId
+      }
+
+      await neonHelper.update('subscriptions', updates, { subscription_id: subscriptionId })
     } else {
       // 创建新订阅
       const subscriptionId = crypto.randomUUID()
@@ -493,6 +615,7 @@ async function handleSubscribe(req, res) {
         channel,
         identifier,
         topic,
+        user_id: userId, // 关联用户
         status: 'active',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -585,6 +708,18 @@ export default async function handler(req, res) {
 
       case 'subscribe':
         return await handleSubscribe(req, res)
+
+      case 'get-subscriptions':
+        if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+        return await handleGetSubscriptions(req, res)
+
+      case 'update-subscription':
+        if (req.method !== 'PUT') return res.status(405).json({ error: 'Method not allowed' })
+        return await handleUpdateSubscription(req, res)
+
+      case 'delete-subscription':
+        if (req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' })
+        return await handleDeleteSubscription(req, res)
 
       case 'copilot':
         return await handleCopilot(req, res)
