@@ -82,7 +82,25 @@ export const SubscriptionsTable: React.FC = () => {
       }
   }
 
-  const renderTopics = (topicStr: string) => {
+  const renderTopics = (topicStr: string | undefined, channel: string, nickname?: string) => {
+    if (channel === 'feishu') {
+        return (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                <span style={{ 
+                    display: 'inline-block', 
+                    padding: '2px 6px', 
+                    background: '#e0f2fe', 
+                    color: '#0369a1', 
+                    fontSize: '12px', 
+                    borderRadius: '4px',
+                    border: '1px solid #bae6fd'
+                }}>
+                    飞书昵称: {nickname || '-'}
+                </span>
+            </div>
+        )
+    }
+
     if (!topicStr) return <span style={{ color: '#9ca3af' }}>-</span>
     const topics = topicStr.split(',')
     return (
@@ -136,8 +154,8 @@ export const SubscriptionsTable: React.FC = () => {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>邮箱</th>
-                <th>主题</th>
+                <th>标识/联系方式</th>
+                <th>主题/信息</th>
                 <th>频率</th>
                 <th>状态</th>
                 <th>失败次数</th>
@@ -150,8 +168,22 @@ export const SubscriptionsTable: React.FC = () => {
               {currentSubscriptions.map((sub) => (
                 <tr key={sub.subscription_id}>
                   <td>{sub.subscription_id}</td>
-                  <td>{sub.identifier}</td>
-                  <td>{renderTopics(sub.topic)}</td>
+                  <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{
+                              fontSize: '10px',
+                              padding: '1px 4px',
+                              borderRadius: '4px',
+                              backgroundColor: sub.channel === 'feishu' ? '#dbeafe' : '#f3f4f6',
+                              color: sub.channel === 'feishu' ? '#1e40af' : '#4b5563',
+                              border: sub.channel === 'feishu' ? '1px solid #bfdbfe' : '1px solid #e5e7eb'
+                          }}>
+                              {sub.channel === 'feishu' ? '飞书' : 'Email'}
+                          </span>
+                          {sub.identifier}
+                      </div>
+                  </td>
+                  <td>{renderTopics(sub.topic, sub.channel, sub.nickname)}</td>
                   <td>{sub.frequency}</td>
                   <td>
                     <span

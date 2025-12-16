@@ -1,7 +1,9 @@
 export interface Subscription {
   subscription_id: number;
   identifier: string;
-  topic: string;
+  topic?: string;
+  nickname?: string;
+  channel: 'email' | 'feishu';
   frequency: string;
   status: 'active' | 'inactive' | 'bounced';
   created_at: string;

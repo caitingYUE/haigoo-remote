@@ -18,3 +18,6 @@ CREATE INDEX idx_notifications_user ON notifications(user_id);
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS fail_count INTEGER DEFAULT 0;
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMP;
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS frequency VARCHAR(50) DEFAULT 'daily';
+
+-- 2025-12-16: Add nickname field for Feishu subscriptions
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS nickname VARCHAR(255);

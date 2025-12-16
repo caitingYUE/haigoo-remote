@@ -407,6 +407,7 @@ export default function Header() {
                                 }`}
                               role="menuitem"
                               tabIndex={isUserMenuOpen ? 0 : -1}
+                              onClick={() => setIsUserMenuOpen(false)}
                             >
                               {item.label}
                             </Link>

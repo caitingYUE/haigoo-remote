@@ -575,9 +575,17 @@ async function handleDeleteSubscription(req, res) {
 async function handleSubscribe(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
   
-  const { channel, identifier, topic } = req.body || {}
-  if (!channel || !identifier || !topic) {
+  const { channel, identifier, topic, nickname } = req.body || {}
+  if (!channel || !identifier) {
     return res.status(400).json({ success: false, error: '缺少必要字段' })
+  }
+
+  // 验证不同渠道的必填项
+  if (channel === 'email' && !topic) {
+    return res.status(400).json({ success: false, error: '邮箱订阅需要选择岗位类型' })
+  }
+  if (channel === 'feishu' && !nickname) {
+    return res.status(400).json({ success: false, error: '飞书订阅需要提供昵称' })
   }
 
   try {
@@ -586,6 +594,13 @@ async function handleSubscribe(req, res) {
     if (channel === 'email') {
         const user = await getUserByEmail(identifier)
         if (user) userId = user.user_id
+    } else if (channel === 'feishu') {
+        // 尝试通过手机号查找用户 (手机号存储在 profile JSON 中)
+        const query = `SELECT user_id FROM users WHERE profile->>'phone' = $1 LIMIT 1`
+        const result = await neonHelper.query(query, [identifier])
+        if (result && result.length > 0) {
+            userId = result[0].user_id
+        }
     }
 
     // 检查订阅是否已存在
@@ -598,10 +613,14 @@ async function handleSubscribe(req, res) {
       // 更新现有订阅
       const subscriptionId = existingSubscription[0].subscription_id
       const updates = { 
-          topic, 
           status: 'active', // 重新激活
           updated_at: new Date().toISOString() 
       }
+      
+      // 根据渠道更新特定字段
+      if (channel === 'email') updates.topic = topic
+      if (channel === 'feishu') updates.nickname = nickname
+
       if (userId && !existingSubscription[0].user_id) {
           updates.user_id = userId
       }
@@ -610,16 +629,20 @@ async function handleSubscribe(req, res) {
     } else {
       // 创建新订阅
       const subscriptionId = crypto.randomUUID()
-      await neonHelper.insert('subscriptions', {
+      const newSub = {
         subscription_id: subscriptionId,
         channel,
         identifier,
-        topic,
         user_id: userId, // 关联用户
         status: 'active',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      })
+      }
+
+      if (channel === 'email') newSub.topic = topic
+      if (channel === 'feishu') newSub.nickname = nickname
+
+      await neonHelper.insert('subscriptions', newSub)
     }
 
     // 发送欢迎邮件 (仅当渠道为 email 时)
