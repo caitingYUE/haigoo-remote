@@ -1,16 +1,39 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
-import { Check, ChevronDown, Info } from 'lucide-react'
+import { Check, ChevronDown, Info, ArrowRight } from 'lucide-react'
 
 type Variant = 'card' | 'compact' | 'minimal'
 
 export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: { variant?: Variant, theme?: 'light' | 'dark' }) {
+  const navigate = useNavigate()
+  const { isAuthenticated, token } = useAuth()
   const [channel, setChannel] = useState<'email' | 'feishu'>('email')
   const [identifier, setIdentifier] = useState('')
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const [hasSubscription, setHasSubscription] = useState(false)
+  const [checkingSubscription, setCheckingSubscription] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      setCheckingSubscription(true)
+      fetch('/api/auth?action=my-subscriptions', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.subscriptions && data.subscriptions.length > 0) {
+          setHasSubscription(true)
+        }
+      })
+      .catch(err => console.error('Check subscription failed', err))
+      .finally(() => setCheckingSubscription(false))
+    }
+  }, [isAuthenticated, token])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -159,6 +182,27 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
   if (variant === 'minimal') {
     const isLight = theme === 'light'
 
+    if (hasSubscription) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-6 py-2">
+                <div className={`text-lg font-medium flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-white'}`}>
+                    <Check className="w-5 h-5 text-green-500" />
+                    您已订阅岗位提醒，可前往个人中心管理
+                </div>
+                <button
+                    onClick={() => navigate('/profile?tab=subscriptions')}
+                    className={`px-8 py-3 font-bold rounded-xl transition-colors shadow-lg flex items-center gap-2
+                        ${isLight
+                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
+                        : 'bg-white text-indigo-600 hover:bg-indigo-50 shadow-indigo-900/20'}`}
+                >
+                    管理我的订阅
+                    <ArrowRight className="w-4 h-4" />
+                </button>
+            </div>
+        )
+    }
+
     return (
       <div className="flex flex-col gap-3">
         {/* Channel Selector */}
@@ -234,35 +278,55 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
         <div className="font-semibold text-slate-900">订阅岗位提醒</div>
       </div>
       
-      <div className="space-y-3">
-          <div className="relative" ref={dropdownRef}>
-              <button 
-                  className="w-full px-3 py-2 border rounded-lg text-sm flex items-center justify-between hover:border-indigo-500 transition-colors"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              >
-                  <div className="flex-1 flex items-center mr-2">{renderTriggerContent(true)}</div>
-                  <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-              </button>
-              {isDropdownOpen && renderDropdown(false)}
-          </div>
+      {hasSubscription ? (
+        <div className="text-center py-4">
+            <div className="flex justify-center mb-2">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <Check className="w-5 h-5 text-green-600" />
+                </div>
+            </div>
+            <div className="text-slate-900 font-medium mb-1">您已订阅</div>
+            <p className="text-xs text-slate-500 mb-4">不错过任何好机会</p>
+            <button 
+                onClick={() => navigate('/profile?tab=subscriptions')} 
+                className="w-full py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors font-medium text-sm"
+            >
+                管理我的订阅
+            </button>
+        </div>
+      ) : (
+        <>
+            <div className="space-y-3">
+                <div className="relative" ref={dropdownRef}>
+                    <button 
+                        className="w-full px-3 py-2 border rounded-lg text-sm flex items-center justify-between hover:border-indigo-500 transition-colors"
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    >
+                        <div className="flex-1 flex items-center mr-2">{renderTriggerContent(true)}</div>
+                        <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    </button>
+                    {isDropdownOpen && renderDropdown(false)}
+                </div>
 
-          <div className="flex gap-2">
-            <select className="input w-24 px-2 py-2 border rounded-lg text-sm bg-slate-50" value={channel} onChange={e => setChannel(e.target.value as any)}>
-              <option value="email">Email</option>
-              <option value="feishu">飞书</option>
-            </select>
-            <input className="input flex-1 px-3 py-2 border rounded-lg text-sm" placeholder={channel === 'email' ? 'you@example.com' : 'Feishu ID'} value={identifier} onChange={e => setIdentifier(e.target.value)} />
-          </div>
-          
-          <button onClick={submit} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
-              {status === 'loading' ? '提交中...' : '立即订阅'}
-          </button>
-      </div>
+                <div className="flex gap-2">
+                    <select className="input w-24 px-2 py-2 border rounded-lg text-sm bg-slate-50" value={channel} onChange={e => setChannel(e.target.value as any)}>
+                    <option value="email">Email</option>
+                    <option value="feishu">飞书</option>
+                    </select>
+                    <input className="input flex-1 px-3 py-2 border rounded-lg text-sm" placeholder={channel === 'email' ? 'you@example.com' : 'Feishu ID'} value={identifier} onChange={e => setIdentifier(e.target.value)} />
+                </div>
+                
+                <button onClick={submit} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
+                    {status === 'loading' ? '提交中...' : '立即订阅'}
+                </button>
+            </div>
 
-      {renderHint()}
-      
-      {status === 'done' && <div className="mt-3 text-green-600 text-sm font-medium text-center">订阅成功！</div>}
-      {status === 'error' && <div className="mt-3 text-red-600 text-sm font-medium text-center">订阅失败，请重试</div>}
+            {renderHint()}
+            
+            {status === 'done' && <div className="mt-3 text-green-600 text-sm font-medium text-center">订阅成功！</div>}
+            {status === 'error' && <div className="mt-3 text-red-600 text-sm font-medium text-center">订阅失败，请重试</div>}
+        </>
+      )}
     </div>
   )
 }

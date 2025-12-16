@@ -80,9 +80,9 @@ function AnimatedNumber({ value }: { value: number }) {
 
 interface HomeHeroProps {
     stats?: {
-        totalJobs: number
-        companiesCount: number
-        dailyJobs: number
+        totalJobs: number | null
+        companiesCount: number | null
+        dailyJobs: number | null
     }
 }
 
@@ -139,19 +139,19 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     <div className="flex flex-wrap justify-center gap-8 md:gap-16">
                         <div className="flex flex-col items-center">
                             <span className="text-2xl font-bold text-slate-900 tracking-tight min-w-[60px] transition-all duration-300">
-                                {stats?.totalJobs ? stats.totalJobs.toLocaleString() : <span className="text-slate-200">...</span>}
+                                {stats?.totalJobs !== undefined && stats?.totalJobs !== null ? stats.totalJobs.toLocaleString() : <span className="text-slate-200">...</span>}
                             </span>
                             <span className="text-sm font-medium text-slate-500 mt-1">全部岗位数</span>
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-2xl font-bold text-slate-900 tracking-tight min-w-[60px] transition-all duration-300">
-                                {stats?.companiesCount ? stats.companiesCount.toLocaleString() : <span className="text-slate-200">...</span>}
+                                {stats?.companiesCount !== undefined && stats?.companiesCount !== null ? stats.companiesCount.toLocaleString() : <span className="text-slate-200">...</span>}
                             </span>
                             <span className="text-sm font-medium text-slate-500 mt-1">认证企业数</span>
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-2xl font-bold text-slate-900 tracking-tight min-w-[60px] transition-all duration-300">
-                                {stats?.dailyJobs ? stats.dailyJobs.toLocaleString() : <span className="text-slate-200">...</span>}
+                                {stats?.dailyJobs !== undefined && stats?.dailyJobs !== null ? stats.dailyJobs.toLocaleString() : <span className="text-slate-200">...</span>}
                             </span>
                             <span className="text-sm font-medium text-slate-500 mt-1">日增岗位数</span>
                         </div>

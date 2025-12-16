@@ -20,7 +20,7 @@ export default function LandingPage() {
   const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>([])
   const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({ totalJobs: 0, companiesCount: 0, dailyJobs: 0 })
+  const [stats, setStats] = useState<{totalJobs: number | null, companiesCount: number | null, dailyJobs: number | null}>({ totalJobs: null, companiesCount: null, dailyJobs: null })
 
   useEffect(() => {
     if (isAuthenticated && token) {
