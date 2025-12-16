@@ -246,48 +246,63 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
   
   const label = getTopicLabel(topic)
   const jobsHtml = jobs.map(job => `
-    <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
-      <h3 style="margin: 0 0 5px;"><a href="${process.env.SITE_URL || 'http://localhost:3000'}/job/${job.id}" style="text-decoration: none; color: #667eea;">${job.title}</a></h3>
-      <p style="margin: 0 0 5px; font-weight: bold; color: #555;">${job.company}</p>
-      <p style="margin: 0 0 5px; color: #777; font-size: 14px;">📍 ${job.location || 'Remote'} | 💰 ${job.salary || '薪资面议'}</p>
-      <p style="margin: 0; color: #666; font-size: 14px;">${(job.description || '').substring(0, 150)}...</p>
+    <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
+      <h3 style="margin: 0 0 10px; font-size: 18px;">
+        <a href="${process.env.SITE_URL || 'http://localhost:3000'}/job/${job.id}" style="text-decoration: none; color: #1a1a1a; font-weight: 700;">${job.title}</a>
+      </h3>
+      <div style="margin-bottom: 12px; font-weight: 600; color: #4F46E5; font-size: 15px;">${job.company}</div>
+      <div style="margin-bottom: 12px; color: #666; font-size: 14px; display: flex; align-items: center; gap: 10px;">
+        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px;">📍 ${job.location || 'Remote'}</span>
+        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px;">💰 ${job.salary || '薪资面议'}</span>
+      </div>
+      <p style="margin: 0; color: #555; font-size: 14px; line-height: 1.6;">${(job.description || '').substring(0, 160)}...</p>
+      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0;">
+         <a href="${process.env.SITE_URL || 'http://localhost:3000'}/job/${job.id}" style="text-decoration: none; color: #4F46E5; font-size: 14px; font-weight: 600;">查看详情 →</a>
+      </div>
     </div>
   `).join('')
 
-  const subject = `🔥 Haigoo 每日精选：${label} 相关的远程机会`
+  const subject = `🔥 Haigoo 每日精选：${label} 相关远程机会`
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f6f8fc; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-    .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
-    .btn { display: inline-block; background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    .header { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 16px 16px 0 0; }
+    .logo { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; display: block; text-decoration: none; color: white; }
+    .subtitle { font-size: 16px; opacity: 0.9; font-weight: 500; }
+    .content { background: #ffffff; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .footer { text-align: center; color: #9ca3af; font-size: 13px; margin-top: 30px; padding-bottom: 20px; }
+    .btn-primary { display: inline-block; background: #4F46E5; color: white; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; transition: all 0.2s; margin-top: 20px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+    .greeting { font-size: 18px; color: #1f2937; margin-bottom: 24px; }
+    .intro { color: #4b5563; margin-bottom: 30px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>今日推荐</h1>
+      <div class="logo">Haigoo</div>
+      <div class="subtitle">连接全球优质远程工作机会</div>
     </div>
     <div class="content">
-      <p>Hi,</p>
-      <p>这是为您精选的 <strong>${label}</strong> 相关远程工作机会：</p>
+      <div class="greeting">Hi,</div>
+      <div class="intro">这是为您精选的 <strong>${label}</strong> 相关远程工作机会：</div>
       
       ${jobsHtml}
       
       <center>
-        <a href="${process.env.SITE_URL || 'http://localhost:3000'}/jobs" class="btn">查看更多机会</a>
+        <a href="${process.env.SITE_URL || 'http://localhost:3000'}/jobs" class="btn-primary">查看更多机会</a>
       </center>
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
-      <p>Go Higher with Haigoo</p>
-      <p><a href="${process.env.SITE_URL || 'http://localhost:3000'}/unsubscribe?email=${encodeURIComponent(to)}" style="color: #999;">取消订阅</a></p>
+      <p style="margin-bottom: 10px;">&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
+      <p style="margin-bottom: 20px;">Go Higher with Haigoo</p>
+      <p>
+        <a href="${process.env.SITE_URL || 'http://localhost:3000'}/unsubscribe?email=${encodeURIComponent(to)}" style="color: #9ca3af; text-decoration: underline;">管理订阅设置</a>
+      </p>
     </div>
   </div>
 </body>

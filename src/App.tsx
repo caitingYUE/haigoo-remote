@@ -28,6 +28,8 @@ const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
 const JoinClubApplicationPage = lazy(() => import('./pages/JoinClubApplicationPage'))
 const NoPermissionPage = lazy(() => import('./pages/NoPermissionPage'))
+const JobDetailPage = lazy(() => import('./pages/JobDetailPage'))
+const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
 
 
 function App() {
@@ -42,6 +44,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/no-permission" element={<NoPermissionPage />} />
+                <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
                 {/* AdminPanel 独立布局，用于数据管理（需要登录） */}
                 <Route path="/admin/data" element={
@@ -100,6 +103,7 @@ function App() {
                         {/* 公开页面 */}
                         <Route path="/" element={<LandingPage />} />
                         <Route path="/jobs" element={<JobsPage />} />
+                        <Route path="/job/:id" element={<JobDetailPage />} />
                         <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
                         <Route path="/company/:id" element={<CompanyProfilePage />} />
                         <Route path="/companies/:companyName" element={<CompanyDetailPage />} />

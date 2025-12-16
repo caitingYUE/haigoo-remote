@@ -688,6 +688,31 @@ async function handleCopilot(req, res) {
 }
 
 /**
+ * 通过邮箱取消订阅
+ */
+async function handleUnsubscribeByEmail(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
+  
+  const { email } = req.body
+  if (!email) return res.status(400).json({ success: false, error: 'Email is required' })
+
+  try {
+    // 删除该邮箱关联的所有订阅 (包括 email 渠道订阅，以及该邮箱对应用户的订阅)
+    const query = `
+      DELETE FROM subscriptions 
+      WHERE (channel = 'email' AND identifier = $1) 
+      OR user_id IN (SELECT user_id FROM users WHERE email = $1)
+    `
+    await neonHelper.query(query, [email])
+    
+    return res.status(200).json({ success: true, message: '已取消所有订阅' })
+  } catch (error) {
+    console.error('[auth] Unsubscribe by email error:', error)
+    return res.status(500).json({ success: false, error: '服务器错误' })
+  }
+}
+
+/**
  * 主处理器
  */
 export default async function handler(req, res) {
@@ -743,6 +768,9 @@ export default async function handler(req, res) {
       case 'delete-subscription':
         if (req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' })
         return await handleDeleteSubscription(req, res)
+
+      case 'unsubscribe-by-email':
+        return await handleUnsubscribeByEmail(req, res)
 
       case 'copilot':
         return await handleCopilot(req, res)
