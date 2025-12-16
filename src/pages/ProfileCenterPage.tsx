@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { resumeService } from '../services/resume-service'
@@ -11,8 +11,7 @@ import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
 import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
-
-import { Bell, Trash2, Edit2, X, Check } from 'lucide-react'
+import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
 type TabKey = 'resume' | 'favorites' | 'feedback' | 'recommend' | 'subscriptions'
 
@@ -1011,17 +1010,19 @@ export default function ProfileCenterPage() {
     const [subscriptions, setSubscriptions] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [editingId, setEditingId] = useState<string | null>(null)
-    const [editTopic, setEditTopic] = useState('')
+    const [editTopics, setEditTopics] = useState<string[]>([])
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
 
-    const TOPIC_OPTIONS = [
-      { value: 'all', label: '全部岗位' },
-      { value: 'development', label: '技术开发' },
-      { value: 'product', label: '产品设计' },
-      { value: 'operations', label: '运营市场' },
-      { value: 'data', label: '数据分析' },
-      { value: 'function', label: '职能支持' },
-      { value: 'ops_qa', label: '运维测试' },
-    ]
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     const fetchSubscriptions = async () => {
       try {
@@ -1045,12 +1046,31 @@ export default function ProfileCenterPage() {
       fetchSubscriptions()
     }, [])
 
+    const startEditing = (sub: any) => {
+        setEditingId(sub.subscription_id)
+        setEditTopics(sub.topic ? sub.topic.split(',') : [])
+        setIsDropdownOpen(false)
+    }
+
+    const toggleEditTopic = (val: string) => {
+        if (editTopics.includes(val)) {
+            setEditTopics(editTopics.filter(t => t !== val))
+        } else {
+            if (editTopics.length >= MAX_SUBSCRIPTION_TOPICS) return
+            setEditTopics([...editTopics, val])
+        }
+    }
+
     const handleUpdate = async (id: string) => {
+      if (editTopics.length === 0) {
+          showError('请至少选择一个类型')
+          return
+      }
       try {
         const res = await fetch('/api/auth?action=update-subscription', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ id, topic: editTopic })
+          body: JSON.stringify({ id, topic: editTopics.join(',') })
         })
         const data = await res.json()
         if (data.success) {
@@ -1085,6 +1105,18 @@ export default function ProfileCenterPage() {
       }
     }
 
+    const getTopicLabel = (topicStr: string) => {
+        if (!topicStr) return '无'
+        const values = topicStr.split(',')
+        return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
+    }
+
+    const getEditLabel = () => {
+        if (editTopics.length === 0) return '请选择'
+        if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
+        return `已选 ${editTopics.length} 个`
+    }
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between mb-6">
@@ -1093,7 +1125,7 @@ export default function ProfileCenterPage() {
             <p className="text-slate-500 mt-1">管理您的岗位推送订阅。</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
           {loading ? (
             <div className="p-8 text-center text-slate-500">加载中...</div>
           ) : subscriptions.length === 0 ? (
@@ -1106,7 +1138,7 @@ export default function ProfileCenterPage() {
             <div className="divide-y divide-slate-100">
               {subscriptions.map(sub => (
                 <div key={sub.subscription_id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
-                  <div>
+                  <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${sub.channel === 'email' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                         {sub.channel === 'email' ? 'Email' : '飞书'}
@@ -1116,23 +1148,45 @@ export default function ProfileCenterPage() {
                       </span>
                     </div>
                     <div className="font-medium text-slate-900">{sub.identifier}</div>
-                    <div className="text-sm text-slate-500 mt-1">
+                    <div className="text-sm text-slate-500 mt-1 relative">
                       订阅内容：
                       {editingId === sub.subscription_id ? (
-                        <div className="inline-flex items-center gap-2 ml-2">
-                          <select 
-                            value={editTopic} 
-                            onChange={e => setEditTopic(e.target.value)}
-                            className="text-sm border rounded px-2 py-1 bg-white"
-                          >
-                            {TOPIC_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                          </select>
+                        <div className="inline-flex items-center gap-2 ml-2 relative" ref={dropdownRef}>
+                           <div className="relative">
+                                <button 
+                                    className="border rounded px-2 py-1 bg-white text-sm min-w-[100px] flex items-center justify-between"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                >
+                                    <span className="truncate max-w-[120px]">{getEditLabel()}</span>
+                                    <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />
+                                </button>
+                                {isDropdownOpen && (
+                                    <div className="absolute top-full left-0 mt-1 w-64 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-xl z-50 p-2">
+                                        <div className="text-xs text-slate-500 px-2 py-1 mb-1">最多可选 {MAX_SUBSCRIPTION_TOPICS} 个</div>
+                                        {SUBSCRIPTION_TOPICS.map(opt => {
+                                            const isSelected = editTopics.includes(opt.value)
+                                            return (
+                                                <div 
+                                                    key={opt.value}
+                                                    onClick={() => toggleEditTopic(opt.value)}
+                                                    className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors
+                                                        ${isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}
+                                                    `}
+                                                >
+                                                    <span>{opt.label}</span>
+                                                    {isSelected && <Check className="w-3.5 h-3.5" />}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                           </div>
                           <button onClick={() => handleUpdate(sub.subscription_id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="w-4 h-4" /></button>
                           <button onClick={() => setEditingId(null)} className="p-1 text-slate-400 hover:bg-slate-100 rounded"><X className="w-4 h-4" /></button>
                         </div>
                       ) : (
                         <span className="font-medium text-slate-700 ml-1">
-                          {TOPIC_OPTIONS.find(t => t.value === sub.topic)?.label || sub.topic}
+                          {getTopicLabel(sub.topic)}
                         </span>
                       )}
                     </div>
@@ -1141,7 +1195,7 @@ export default function ProfileCenterPage() {
                     {editingId !== sub.subscription_id && (
                       <>
                         <button 
-                          onClick={() => { setEditingId(sub.subscription_id); setEditTopic(sub.topic || 'all') }}
+                          onClick={() => startEditing(sub)}
                           className="flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
                         >
                           <Edit2 className="w-3.5 h-3.5" />

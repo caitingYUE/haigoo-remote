@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { subscriptionsService, Subscription } from '../services/subscriptions-service';
+import { SUBSCRIPTION_TOPICS } from '../constants/subscription-topics';
 
 export const SubscriptionsTable: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -66,6 +67,31 @@ export const SubscriptionsTable: React.FC = () => {
       }
   }
 
+  const renderTopics = (topicStr: string) => {
+    if (!topicStr) return <span style={{ color: '#9ca3af' }}>-</span>
+    const topics = topicStr.split(',')
+    return (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+            {topics.map(t => {
+                const label = SUBSCRIPTION_TOPICS.find(opt => opt.value === t)?.label || t
+                return (
+                    <span key={t} style={{ 
+                        display: 'inline-block', 
+                        padding: '2px 6px', 
+                        background: '#f3f4f6', 
+                        color: '#4b5563', 
+                        fontSize: '12px', 
+                        borderRadius: '4px',
+                        border: '1px solid #e5e7eb'
+                    }}>
+                        {label}
+                    </span>
+                )
+            })}
+        </div>
+    )
+  }
+
   // Pagination logic
   const totalPages = Math.ceil(subscriptions.length / itemsPerPage);
   const currentSubscriptions = subscriptions.slice(
@@ -110,7 +136,7 @@ export const SubscriptionsTable: React.FC = () => {
                 <tr key={sub.subscription_id}>
                   <td>{sub.subscription_id}</td>
                   <td>{sub.identifier}</td>
-                  <td>{sub.topic}</td>
+                  <td>{renderTopics(sub.topic)}</td>
                   <td>{sub.frequency}</td>
                   <td>
                     <span
