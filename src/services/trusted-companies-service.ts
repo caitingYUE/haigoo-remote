@@ -41,11 +41,36 @@ export interface CompanyMetadata {
 class TrustedCompaniesService {
     private API_BASE = '/api/data/trusted-companies';
 
-    async getAllCompanies(): Promise<TrustedCompany[]> {
+    async getAllCompanies(params?: {
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+        industry?: string;
+        search?: string;
+    }): Promise<any> {
         try {
-            const response = await fetch(`${this.API_BASE}?_t=${Date.now()}`);
+            const queryParams = new URLSearchParams();
+            queryParams.append('_t', Date.now().toString());
+            
+            if (params) {
+                if (params.page) queryParams.append('page', params.page.toString());
+                if (params.limit) queryParams.append('limit', params.limit.toString());
+                if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+                if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+                if (params.industry && params.industry !== 'all') queryParams.append('industry', params.industry);
+                if (params.search) queryParams.append('search', params.search);
+            }
+
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch companies');
             const data = await response.json();
+            
+            // If paginated response
+            if (data.total !== undefined) {
+                return data;
+            }
+            
             return data.companies || [];
         } catch (error) {
             console.error('Error fetching trusted companies:', error);

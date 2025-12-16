@@ -14,6 +14,16 @@ export default function AdminTrustedCompaniesPage() {
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
+    
+    // Pagination & Sort State
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [totalItems, setTotalItems] = useState(0)
+    const [sortBy, setSortBy] = useState('updatedAt')
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+    const [industryFilter, setIndustryFilter] = useState('all')
+    const PAGE_SIZE = 20
+
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingCompany, setEditingCompany] = useState<TrustedCompany | null>(null)
     const [formData, setFormData] = useState<Partial<TrustedCompany>>({})
@@ -37,17 +47,42 @@ export default function AdminTrustedCompaniesPage() {
 
     useEffect(() => {
         loadCompanies()
-    }, [])
+    }, [page, sortBy, sortOrder, industryFilter])
 
     const loadCompanies = async () => {
         try {
             setLoading(true)
-            const data = await trustedCompaniesService.getAllCompanies()
-            setCompanies(data)
+            const data = await trustedCompaniesService.getAllCompanies({
+                page,
+                limit: PAGE_SIZE,
+                sortBy,
+                sortOrder,
+                industry: industryFilter,
+                search: searchTerm
+            })
+            if (data.companies) {
+                setCompanies(data.companies)
+                setTotalPages(data.totalPages)
+                setTotalItems(data.total)
+            } else {
+                // Fallback for array response
+                setCompanies(Array.isArray(data) ? data : [])
+                setTotalPages(1)
+                setTotalItems(Array.isArray(data) ? data.length : 0)
+            }
         } catch (error) {
             console.error('Failed to load companies:', error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleSort = (field: string) => {
+        if (sortBy === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+        } else {
+            setSortBy(field)
+            setSortOrder('desc')
         }
     }
 
@@ -272,21 +307,17 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
-    const filteredCompanies = companies.filter(company => {
-        const matchSearch =
-            company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            company.industry?.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchRefer =
-            filterCanRefer === 'all' ||
-            (filterCanRefer === 'yes' ? !!company.canRefer : !company.canRefer)
-        return matchSearch && matchRefer
-    })
-
     const industries: CompanyIndustry[] = [
         '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech', 
         '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS', 
         '硬件/物联网', '消费生活', '其他'
     ]
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault()
+        setPage(1)
+        loadCompanies()
+    }
 
     return (
         <div className="p-6 max-w-[1600px] mx-auto">
@@ -306,27 +337,34 @@ export default function AdminTrustedCompaniesPage() {
                 </div>
             </div>
 
-            <div className="mb-6 flex flex-wrap gap-3 items-center">
+            <form onSubmit={handleSearch} className="mb-6 flex flex-wrap gap-3 items-center">
                 <div className="relative flex-1 min-w-[260px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                         type="text"
-                        placeholder="搜索企业名称、行业..."
+                        placeholder="搜索企业名称、简介..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
                 <select
-                    value={filterCanRefer}
-                    onChange={(e) => setFilterCanRefer(e.target.value as 'all' | 'yes' | 'no')}
-                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    value={industryFilter}
+                    onChange={(e) => {
+                        setIndustryFilter(e.target.value)
+                        setPage(1)
+                    }}
+                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
                 >
-                    <option value="all">全部内推状态</option>
-                    <option value="yes">可内推</option>
-                    <option value="no">不可内推</option>
+                    <option value="all">所有行业</option>
+                    {industries.map(ind => (
+                        <option key={ind} value={ind}>{ind}</option>
+                    ))}
                 </select>
-            </div>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
+                    搜索
+                </button>
+            </form>
 
             {loading ? (
                 <div className="flex justify-center py-12">
@@ -339,14 +377,34 @@ export default function AdminTrustedCompaniesPage() {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]">在招岗位数量</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">岗位更新时间</th>
+                                <th 
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
+                                    onClick={() => handleSort('jobCount')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        在招岗位
+                                        {sortBy === 'jobCount' && (
+                                            <span className="text-gray-700">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                    </div>
+                                </th>
+                                <th 
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
+                                    onClick={() => handleSort('updatedAt')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        更新时间
+                                        {sortBy === 'updatedAt' && (
+                                            <span className="text-gray-700">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                    </div>
+                                </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">链接</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">操作</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredCompanies.map(company => (
+                            {companies.map(company => (
                                 <tr key={company.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
@@ -445,6 +503,50 @@ export default function AdminTrustedCompaniesPage() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {!loading && (
+                <div className="mt-4 flex justify-between items-center">
+                    <div className="text-sm text-gray-500">
+                        共 {totalItems} 条记录，当前第 {page} / {totalPages} 页
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                            className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 text-sm bg-white"
+                        >
+                            上一页
+                        </button>
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let p = i + 1
+                            if (totalPages > 5) {
+                                if (page <= 3) p = i + 1
+                                else if (page >= totalPages - 2) p = totalPages - 4 + i
+                                else p = page - 2 + i
+                            }
+                            
+                            if (p < 1 || p > totalPages) return null
+                            
+                            return (
+                                <button
+                                    key={p}
+                                    onClick={() => setPage(p)}
+                                    className={`px-3 py-1 border rounded text-sm ${page === p ? 'bg-indigo-600 text-white' : 'hover:bg-gray-50 bg-white'}`}
+                                >
+                                    {p}
+                                </button>
+                            )
+                        })}
+                        <button
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            disabled={page === totalPages}
+                            className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 text-sm bg-white"
+                        >
+                            下一页
+                        </button>
+                    </div>
                 </div>
             )}
 
