@@ -99,26 +99,35 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
   }
 
   const renderDropdown = (isDarkBg: boolean, className: string = "w-64") => (
-    <div className={`absolute top-full left-0 z-50 mt-2 max-h-80 overflow-y-auto rounded-xl shadow-xl border p-2 ${isDarkBg ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} ${className}`}>
-      <div className={`px-2 py-1.5 text-xs font-medium mb-1 ${isDarkBg ? 'text-slate-400' : 'text-slate-500'}`}>
-        最多可选 {MAX_SUBSCRIPTION_TOPICS} 个
+    <div className={`absolute top-full left-0 z-50 mt-2 p-3 rounded-xl shadow-xl border ${isDarkBg ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} ${className}`}>
+      <div className={`flex justify-between items-center mb-2 px-1`}>
+        <span className={`text-xs font-medium ${isDarkBg ? 'text-slate-400' : 'text-slate-500'}`}>
+          最多可选 {MAX_SUBSCRIPTION_TOPICS} 个
+        </span>
+        {selectedTopics.length > 0 && (
+            <span 
+                onClick={(e) => { e.stopPropagation(); setSelectedTopics([]); }}
+                className="text-xs text-indigo-500 hover:text-indigo-600 cursor-pointer"
+            >
+                清空
+            </span>
+        )}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+      <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto custom-scrollbar">
         {SUBSCRIPTION_TOPICS.map(opt => {
             const isSelected = selectedTopics.includes(opt.value)
             return (
             <div 
                 key={opt.value}
                 onClick={() => toggleTopic(opt.value)}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm cursor-pointer transition-all border
                     ${isSelected 
-                        ? (isDarkBg ? 'bg-indigo-600/20 text-indigo-300' : 'bg-indigo-50 text-indigo-700') 
-                        : (isDarkBg ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-50')
+                        ? (isDarkBg ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-indigo-50 text-indigo-600 border-indigo-200 font-medium') 
+                        : (isDarkBg ? 'bg-slate-700 text-slate-300 border-slate-600 hover:border-slate-500' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:bg-slate-50')
                     }
                 `}
             >
-                <span>{opt.label}</span>
-                {isSelected && <Check className="w-3.5 h-3.5" />}
+                {opt.label}
             </div>
             )
         })}
@@ -282,15 +291,25 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
           />
           <button
             onClick={submit}
-            className={`px-6 py-3 font-bold rounded-xl transition-colors shadow-lg whitespace-nowrap
-                ${isLight
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
-                : 'bg-white text-indigo-600 hover:bg-indigo-50 shadow-indigo-900/20'}`}
+            disabled={status === 'loading' || status === 'done'}
+            className={`px-6 py-3 font-bold rounded-xl transition-all shadow-lg whitespace-nowrap flex items-center justify-center gap-2 min-w-[120px]
+                ${status === 'done' 
+                    ? (isLight ? 'bg-green-500 text-white shadow-green-200' : 'bg-green-500 text-white shadow-green-900/20')
+                    : (isLight
+                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
+                        : 'bg-white text-indigo-600 hover:bg-indigo-50 shadow-indigo-900/20')
+                }`}
           >
-            立即订阅
+            {status === 'loading' && <span className="animate-spin">⏳</span>}
+            {status === 'done' ? (
+                <>
+                    <Check className="w-5 h-5" />
+                    <span>订阅成功</span>
+                </>
+            ) : (
+                '立即订阅'
+            )}
           </button>
-          {status === 'done' && <div className={`absolute -bottom-8 left-0 text-sm font-medium ${isLight ? 'text-green-600' : 'text-white'}`}>订阅成功！</div>}
-          {status === 'error' && <div className={`absolute -bottom-8 left-0 text-sm font-medium ${isLight ? 'text-red-600' : 'text-red-100'}`}>订阅失败，请重试</div>}
         </div>
         {/* Hint Text */}
         <div className={`text-xs text-center sm:text-left ${isLight ? 'text-slate-500' : 'text-white/70'} mt-1 flex items-center justify-center sm:justify-start gap-1`}>
