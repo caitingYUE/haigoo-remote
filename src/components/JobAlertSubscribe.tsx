@@ -22,7 +22,7 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
   useEffect(() => {
     if (isAuthenticated && token) {
       setCheckingSubscription(true)
-      fetch('/api/auth?action=my-subscriptions', {
+      fetch('/api/auth?action=get-subscriptions', {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => res.json())

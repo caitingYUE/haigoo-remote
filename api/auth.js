@@ -610,6 +610,15 @@ async function handleSubscribe(req, res) {
     })
 
     if (existingSubscription && existingSubscription.length > 0) {
+      // 清理重复订阅 (如果存在多个，保留第一个，删除其他的)
+      if (existingSubscription.length > 1) {
+         console.log(`[auth] Found ${existingSubscription.length} duplicate subscriptions for ${identifier}, cleaning up...`)
+         const idsToDelete = existingSubscription.slice(1).map(s => s.subscription_id)
+         for (const id of idsToDelete) {
+             await neonHelper.query('DELETE FROM subscriptions WHERE subscription_id = $1', [id])
+         }
+      }
+
       // 更新现有订阅
       const subscriptionId = existingSubscription[0].subscription_id
       const updates = { 
@@ -758,6 +767,7 @@ export default async function handler(req, res) {
         return await handleSubscribe(req, res)
 
       case 'get-subscriptions':
+      case 'my-subscriptions':
         if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
         return await handleGetSubscriptions(req, res)
 
