@@ -47,7 +47,7 @@ export default function AdminTrustedCompaniesPage() {
 
     useEffect(() => {
         loadCompanies()
-    }, [page, sortBy, sortOrder, industryFilter])
+    }, [page, sortBy, sortOrder, industryFilter, filterCanRefer])
 
     const loadCompanies = async () => {
         try {
@@ -58,7 +58,8 @@ export default function AdminTrustedCompaniesPage() {
                 sortBy,
                 sortOrder,
                 industry: industryFilter,
-                search: searchTerm
+                search: searchTerm,
+                canRefer: filterCanRefer
             })
             if (Array.isArray(data)) {
                 setCompanies(data)
@@ -359,6 +360,18 @@ export default function AdminTrustedCompaniesPage() {
                     {industries.map(ind => (
                         <option key={ind} value={ind}>{ind}</option>
                     ))}
+                </select>
+                <select
+                    value={filterCanRefer}
+                    onChange={(e) => {
+                        setFilterCanRefer(e.target.value as 'all' | 'yes' | 'no')
+                        setPage(1)
+                    }}
+                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
+                >
+                    <option value="all">全部内推状态</option>
+                    <option value="yes">可内推</option>
+                    <option value="no">不可内推</option>
                 </select>
                 <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
                     搜索
