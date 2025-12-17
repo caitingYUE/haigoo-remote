@@ -31,7 +31,7 @@ export default function AdminSystemSettings() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/system-settings', {
+      const res = await fetch('/api/admin-ops?action=system-settings', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -56,7 +56,7 @@ export default function AdminSystemSettings() {
     
     setSaving(true);
     try {
-      const res = await fetch('/api/system-settings', {
+      const res = await fetch('/api/admin-ops?action=system-settings', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

@@ -3,6 +3,8 @@ import neonHelper from '../server-utils/dal/neon-helper.js';
 import userHelper from '../server-utils/user-helper.js';
 import { extractToken, verifyToken } from '../server-utils/auth-helpers.js';
 import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js';
+import { systemSettingsService } from '../lib/services/system-settings-service.js';
+import subscriptionsHandler from './admin/subscriptions.js';
 
 async function checkUserData(req, res) {
     try {
@@ -34,6 +36,34 @@ async function checkUserData(req, res) {
     } catch (error) {
         res.status(500).json({ error: error.message, stack: error.stack });
     }
+}
+
+async function handleSystemSettings(req, res) {
+  try {
+    if (req.method === 'GET') {
+      const settings = await systemSettingsService.getAllSettings();
+      return res.status(200).json({ success: true, data: settings });
+    }
+
+    if (req.method === 'POST') {
+      const { key, value } = req.body;
+      if (!key) {
+        return res.status(400).json({ error: 'Key is required' });
+      }
+      
+      const success = await systemSettingsService.setSetting(key, value);
+      if (success) {
+        return res.status(200).json({ success: true });
+      } else {
+        return res.status(500).json({ error: 'Failed to save setting' });
+      }
+    }
+
+    return res.status(405).json({ error: 'Method not allowed' });
+  } catch (error) {
+    console.error('System settings API error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
 async function diagnoseDb(req, res) {
@@ -220,6 +250,16 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
+    const { action } = req.query;
+
+    if (action === 'system-settings') {
+        return await handleSystemSettings(req, res);
+    }
+
+    if (action === 'subscriptions') {
+        return await subscriptionsHandler(req, res);
+    }
+
     // Verify Admin Access
     const token = extractToken(req);
     const payload = token ? verifyToken(token) : null;
@@ -231,8 +271,6 @@ export default async function handler(req, res) {
     if (!isAdmin) {
         return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' });
     }
-
-    const { action } = req.query;
 
     switch (action) {
         case 'check-user':

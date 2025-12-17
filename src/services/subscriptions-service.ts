@@ -16,7 +16,12 @@ const API_BASE_URL = '/api/admin';
 
 export const subscriptionsService = {
   async getAll(): Promise<Subscription[]> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions`);
+    const token = localStorage.getItem('haigoo_auth_token');
+    const response = await fetch(`/api/admin-ops?action=subscriptions`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch subscriptions');
     }
@@ -25,10 +30,12 @@ export const subscriptionsService = {
   },
 
   async add(email: string, topic?: string): Promise<Subscription> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions`, {
+    const token = localStorage.getItem('haigoo_auth_token');
+    const response = await fetch(`/api/admin-ops?action=subscriptions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ email, topic }),
     });
@@ -41,8 +48,12 @@ export const subscriptionsService = {
   },
 
   async delete(id: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions?id=${id}`, {
+    const token = localStorage.getItem('haigoo_auth_token');
+    const response = await fetch(`/api/admin-ops?action=subscriptions&id=${id}`, {
       method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     if (!response.ok) {
       throw new Error('Failed to delete subscription');
@@ -50,10 +61,12 @@ export const subscriptionsService = {
   },
 
   async updateStatus(id: number, status: string): Promise<Subscription> {
-      const response = await fetch(`${API_BASE_URL}/subscriptions`, {
+      const token = localStorage.getItem('haigoo_auth_token');
+      const response = await fetch(`/api/admin-ops?action=subscriptions`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ id, status }),
       });
