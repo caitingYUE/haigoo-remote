@@ -43,6 +43,7 @@ import AdminTagManagementPage from './AdminTagManagementPage';
 import AdminApplicationsPage from './AdminApplicationsPage';
 import AdminFeedbackList from '../components/AdminFeedbackList';
 import { SubscriptionsTable } from '../components/SubscriptionsTable';
+import AdminSystemSettings from '../components/admin/AdminSystemSettings';
 import CronTestControl from '../components/CronTestControl';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
@@ -689,55 +690,7 @@ const AdminTeamPage: React.FC = () => {
 
   // 渲染系统设置
   const renderSettings = () => (
-    <div className="space-y-6">
-      <div className="card">
-        <div className="card-header">
-          <h2>系统设置</h2>
-        </div>
-        <div className="card-content">
-          <div className="space-y-4">
-            <div className="setting-item">
-              <label className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={isDarkMode}
-                  onChange={(e) => setIsDarkMode(e.target.checked)}
-                  className="form-checkbox"
-                />
-                <span>深色模式</span>
-              </label>
-            </div>
-
-            <div className="setting-item">
-              <label className="block text-sm font-medium mb-2">
-                自动同步间隔 (分钟)
-              </label>
-              <input
-                type="number"
-                defaultValue={30}
-                className="form-input w-32"
-              />
-            </div>
-
-            <div className="setting-item">
-              <label className="block text-sm font-medium mb-2">
-                数据保留天数
-              </label>
-              <input
-                type="number"
-                defaultValue={30}
-                className="form-input w-32"
-              />
-            </div>
-
-            <button className="btn-primary">
-              <Save className="w-4 h-4" />
-              保存设置
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AdminSystemSettings />
   );
 
   const tabs = [
