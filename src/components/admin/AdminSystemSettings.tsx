@@ -31,16 +31,28 @@ export default function AdminSystemSettings() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin-ops?action=system-settings', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      // FIX: Use URLSearchParams to properly encode parameters
+      const params = new URLSearchParams({ action: 'system-settings' });
+      const res = await fetch(`/api/admin-ops?${params.toString()}`, {
+        headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+        }
       });
+      
+      if (!res.ok) {
+          throw new Error(`Server returned ${res.status}`);
+      }
+      
       const data = await res.json();
       if (data.success) {
         setSettings(data.data);
+      } else {
+        throw new Error(data.error || 'Failed to fetch settings');
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
-      setMessage({ type: 'error', text: '加载设置失败' });
+      setMessage({ type: 'error', text: '加载设置失败: ' + (error instanceof Error ? error.message : String(error)) });
     } finally {
       setLoading(false);
     }
@@ -56,11 +68,13 @@ export default function AdminSystemSettings() {
     
     setSaving(true);
     try {
-      const res = await fetch('/api/admin-ops?action=system-settings', {
+      const params = new URLSearchParams({ action: 'system-settings' });
+      const res = await fetch(`/api/admin-ops?${params.toString()}`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
           key: 'ai_translation_enabled',
@@ -68,17 +82,23 @@ export default function AdminSystemSettings() {
         })
       });
       
-      if (res.ok) {
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.success) {
         setSettings(prev => prev ? ({
           ...prev,
           ai_translation_enabled: { ...prev.ai_translation_enabled, value: newValue }
         }) : null);
         setMessage({ type: 'success', text: `AI 翻译已${newValue ? '启用' : '禁用'}` });
       } else {
-        throw new Error('Save failed');
+        throw new Error(data.error || 'Save failed');
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '保存设置失败' });
+      console.error('Failed to save settings:', error);
+      setMessage({ type: 'error', text: '保存设置失败: ' + (error instanceof Error ? error.message : String(error)) });
     } finally {
       setSaving(false);
       setTimeout(() => setMessage(null), 3000);

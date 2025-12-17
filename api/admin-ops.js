@@ -4,7 +4,7 @@ import userHelper from '../server-utils/user-helper.js';
 import { extractToken, verifyToken } from '../server-utils/auth-helpers.js';
 import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js';
 import { systemSettingsService } from '../lib/services/system-settings-service.js';
-import subscriptionsHandler from './admin/subscriptions.js';
+import subscriptionsHandler from '../lib/api-handlers/subscriptions.js';
 
 async function checkUserData(req, res) {
     try {
