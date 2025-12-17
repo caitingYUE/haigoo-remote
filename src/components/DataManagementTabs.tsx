@@ -299,26 +299,24 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         // 更新现有职位
         await dataManagementService.updateProcessedJob(editingJob.id, updatedJob, 'admin');
       } else {
-        // 新增职位 - 直接通过加载和保存来实现
-        const allJobs = await dataManagementService.getProcessedJobs(1, 10000); // 获取所有职位
+        // 新增职位 - 调用API保存
         const newJob: ProcessedJobData = {
           ...editingJob,
           ...updatedJob,
           id: `manual_${Date.now()}`, // 生成唯一ID
+          isManuallyEdited: true,
+          source: 'manual',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         } as ProcessedJobData;
 
-        // 将新职位添加到现有职位列表中
-        const updatedJobs = [newJob, ...allJobs.data];
-
-        // 这里需要调用私有方法，暂时使用localStorage作为fallback
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('processed_jobs_data', JSON.stringify(updatedJobs));
-        }
+        await dataManagementService.addProcessedJob(newJob);
       }
       setShowEditModal(false);
       setEditingJob(null);
-      // 后台静默刷新以确保数据一致性 - 暂时移除以避免覆盖乐观更新
-      // loadProcessedData();
+      
+      // 重新加载数据以显示最新状态
+      loadProcessedData();
     } catch (error) {
       console.error('保存职位失败:', error);
       showError('保存失败', '请重试');

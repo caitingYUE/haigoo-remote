@@ -497,18 +497,33 @@ export class DataManagementService {
   }
 
   /**
+   * 添加新的处理后职位
+   */
+  async addProcessedJob(job: ProcessedJobData): Promise<boolean> {
+    try {
+      job.isManuallyEdited = true;
+      job.updatedAt = new Date().toISOString();
+      await this.saveProcessedJobs([job], 'append');
+      return true;
+    } catch (error) {
+      console.error('添加职位失败:', error);
+      return false;
+    }
+  }
+
+  /**
    * 更新处理后的职位数据
    */
   async updateProcessedJob(jobId: string, updates: Partial<ProcessedJobData>, editedBy: string = 'admin'): Promise<boolean> {
     try {
-      const allJobs = await this.loadProcessedJobs();
-      const jobIndex = allJobs.findIndex(job => job.id === jobId);
-
-      if (jobIndex === -1) {
+      // 优化：仅获取需要更新的职位，而不是全部加载
+      const result = await this.getProcessedJobs(1, 1, { id: jobId });
+      
+      if (result.data.length === 0) {
         return false;
       }
 
-      const currentJob = allJobs[jobIndex];
+      const currentJob = result.data[0];
       const updatedJob = { ...currentJob };
       
       // Ensure editHistory exists
@@ -534,8 +549,8 @@ export class DataManagementService {
       updatedJob.isManuallyEdited = true;
       updatedJob.updatedAt = new Date().toISOString();
 
-      allJobs[jobIndex] = updatedJob;
-      await this.saveProcessedJobs(allJobs, 'replace');
+      // 使用 append 模式进行增量更新 (Upsert)，避免覆盖其他数据
+      await this.saveProcessedJobs([updatedJob], 'append');
 
       return true;
     } catch (error) {
