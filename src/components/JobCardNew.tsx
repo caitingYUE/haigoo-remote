@@ -58,18 +58,27 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
             {/* Corner Tag */}
             <div className="absolute top-0 right-0 z-10 flex flex-col items-end">
                {job.canRefer ? (
-                  <div className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-100/50">
+                  <div 
+                     className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-100/50"
+                     title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
+                  >
                      <Sparkles className="w-3 h-3" />
-                     会员内推
+                     Haigoo 内推
                   </div>
                ) : job.isTrusted ? (
-                  <div className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-100/50">
+                  <div 
+                     className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-100/50"
+                     title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
+                  >
                      <Building2 className="w-3 h-3" />
-                     官网直申
+                     企业官网岗位
                   </div>
                ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
-                  <div className="text-[10px] font-medium px-2 py-1 rounded-bl-lg rounded-tr-lg text-slate-500 shadow-sm flex items-center gap-1 bg-slate-100 border-l border-b border-slate-200">
-                     三方平台
+                  <div 
+                     className="text-[10px] font-medium px-2 py-1 rounded-bl-lg rounded-tr-lg text-slate-500 shadow-sm flex items-center gap-1 bg-slate-100 border-l border-b border-slate-200"
+                     title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
+                  >
+                     可信平台投递
                   </div>
                ) : null}
             </div>
@@ -210,18 +219,27 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          {/* Top Decoration for Verified Jobs */}
          <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
             {job.canRefer ? (
-               <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg shadow-orange-100 flex items-center gap-1.5 pointer-events-auto mb-1">
+               <div 
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg shadow-orange-100 flex items-center gap-1.5 pointer-events-auto mb-1"
+                  title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
+               >
                   <Sparkles className="w-3.5 h-3.5 fill-white/20" />
-                  内推通道
+                  Haigoo 内推
                </div>
             ) : job.isTrusted ? (
-               <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg shadow-indigo-100 flex items-center gap-1.5 pointer-events-auto mb-1">
+               <div 
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg shadow-indigo-100 flex items-center gap-1.5 pointer-events-auto mb-1"
+                  title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
+               >
                   <Building2 className="w-3.5 h-3.5 fill-white/20" />
-                  官方直招
+                  企业官网岗位
                </div>
             ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
-               <div className="bg-slate-50 text-slate-500 text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-sm flex items-center gap-1.5 pointer-events-auto border-l border-b border-slate-100 mb-1">
-                  聚合岗位
+               <div 
+                  className="bg-slate-50 text-slate-500 text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-sm flex items-center gap-1.5 pointer-events-auto border-l border-b border-slate-100 mb-1"
+                  title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
+               >
+                  可信平台投递
                </div>
             ) : null}
          </div>

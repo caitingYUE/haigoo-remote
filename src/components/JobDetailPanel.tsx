@@ -461,15 +461,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Source Label */}
                     {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
-                        <div className="flex justify-end pb-4">
+                        <div className="flex flex-col items-end pb-4 gap-1">
                             {job.sourceUrl ? (
                                 <a 
                                     href={job.sourceUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1 px-3 py-1 bg-slate-50 text-indigo-600 hover:text-indigo-700 text-xs rounded-md border border-slate-100 hover:border-indigo-200 transition-colors"
+                                    title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
                                 >
-                                    岗位来自 {job.source}
+                                    岗位来自 {job.source} (可信平台投递)
                                     <ExternalLink className="w-3 h-3" />
                                 </a>
                             ) : (
@@ -477,6 +478,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     岗位来自 {job.source}
                                 </span>
                             )}
+                            <p className="text-[10px] text-slate-400">
+                                * 投递将在外部招聘平台完成，可能需要另外注册账号
+                            </p>
                         </div>
                     )}
                 </div>

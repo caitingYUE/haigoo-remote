@@ -67,9 +67,9 @@ const SALARY_OPTIONS = [
 ];
 
 const SOURCE_OPTIONS = [
-  { label: '官网直申', value: 'trusted' },
-  { label: '会员内推', value: 'club-referral' },
-  { label: '三方平台', value: 'rss' }
+  { label: '企业官网岗位', value: 'trusted' },
+  { label: 'Haigoo 内推', value: 'club-referral' },
+  { label: '可信平台投递', value: 'rss' }
 ];
 
 // --- Components ---
