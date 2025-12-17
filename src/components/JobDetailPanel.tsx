@@ -9,8 +9,11 @@ import { MembershipUpgradeModal } from './MembershipUpgradeModal'
 import { ReferralModal } from './ReferralModal'
 import { LocationTooltip } from './LocationTooltip'
 import { TrustedStandardsBanner } from './TrustedStandardsBanner'
-// import { processedJobsService } from '../services/processed-jobs-service'
+import { ApplyInterceptModal } from './ApplyInterceptModal'
+import { ReferralApplicationModal } from './ReferralApplicationModal'
+import { RiskRatingDisplay } from './RiskRatingDisplay'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import { useNotificationHelpers } from './NotificationSystem'
 
 interface JobDetailPanelProps {
     job: Job
@@ -48,9 +51,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
     const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
-
-    const [showDisclaimer, setShowDisclaimer] = useState(false)
-    const [applyUrl, setApplyUrl] = useState('')
+    const [showApplyInterceptModal, setShowApplyInterceptModal] = useState(false)
+    const { showSuccess, showError } = useNotificationHelpers()
 
     useEffect(() => {
         if (job?.companyId) {
@@ -64,7 +66,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const riskRating = (job as any).riskRating;
     const haigooComment = (job as any).haigooComment;
     const hiddenFields = (job as any).hiddenFields;
-    
+
     // Check membership (Admin is also a member)
     const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
 
@@ -78,7 +80,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             // 智能回退逻辑：如果翻译内容过短且原文较长，可能翻译不完整，回退到原文
             // 比如：原文超过500字，但翻译少于200字
             const isTranslationTooShort = originalDesc.length > 500 && translatedDesc.length < 200
-            
+
             // 或者：原文有很多段落（>10行），但翻译只有寥寥几行（<3行）
             const originalLines = originalDesc.split('\n').length
             const translatedLines = translatedDesc.split('\n').length
@@ -93,23 +95,49 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job, showTranslation])
 
     const handleApply = () => {
-        // 1. Club Referral Job (High Value)
-        if (job.canRefer) {
-            if (!isMember) {
-                setShowUpgradeModal(true)
-                return;
-            }
-            // Member flow for Referral: Open Referral Modal
-            setIsReferralModalOpen(true);
+        // For referral jobs OR free users, show interceptmodal
+        if (job.canRefer || !isMember) {
+            setShowApplyInterceptModal(true);
             return;
         }
 
-        const url = job.url || job.sourceUrl
+        // Member users on non-referral jobs: direct apply + track
+        proceedToApply();
+    }
+
+    const proceedToApply = async () => {
+        const url = job.url || job.sourceUrl;
         if (url) {
-            window.open(url, '_blank', 'noopener,noreferrer')
+            window.open(url, '_blank', 'noopener,noreferrer');
+
+            // For members, auto-record the application
+            if (isMember) {
+                try {
+                    const token = localStorage.getItem('haigoo_auth_token');
+                    await fetch('/api/user-profile?action=record_interaction', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            jobId: job.id,
+                            type: 'apply_redirect',
+                            notes: ''
+                        })
+                    });
+                    showSuccess('已为你记录申请，可在「我的投递」查看');
+                } catch (error) {
+                    console.error('Failed to record interaction:', error);
+                }
+            }
         } else {
-            onApply?.(job.id)
+            onApply?.(job.id);
         }
+    }
+
+    const handleReferralSuccess = () => {
+        showSuccess('申请已提交，请耐心等待审核');
     }
 
     const handleShare = async () => {
@@ -255,7 +283,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3 text-sm text-slate-600 mb-4">
-                    <div 
+                    <div
                         className="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors"
                         onClick={() => {
                             const url = job.companyWebsite
@@ -277,11 +305,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         {(() => {
                             const locText = displayText(job.location || '', job.translations?.location);
                             const isGeneric = /(remote|anywhere|everywhere|worldwide|global|远程|全球)/i.test(locText);
-                            
+
                             if (isGeneric) {
                                 return <span className="text-slate-600">{locText}</span>;
                             }
-                            
+
                             return (
                                 <>
                                     <button
@@ -388,52 +416,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             {/* Content - Flat layout, no internal scroll */}
             <main className="flex-1 px-6 py-6">
                 <div>
-                    {/* Member-Only Insights (Risk Rating & Comment) */}
-                    {isMember && (riskRating || haigooComment) ? (
-                        <div className="mb-6 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
-                            <div className="flex items-center gap-2 mb-3">
-                                <ShieldCheck className="w-5 h-5 text-indigo-600" />
-                                <h3 className="font-bold text-slate-900">Haigoo 会员专属洞察</h3>
-                            </div>
-                            
-                            {riskRating && (
-                                <div className="flex flex-wrap gap-4 mb-3">
-                                    <div className="bg-white px-3 py-2 rounded-lg border border-slate-100 shadow-sm">
-                                        <div className="text-xs text-slate-500 mb-1">友好度</div>
-                                        <div className="font-semibold text-indigo-600 flex gap-0.5">
-                                            {[...Array(Math.min(5, Math.max(1, riskRating.friendliness || 3)))].map((_, i) => (
-                                                <span key={i}>★</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="bg-white px-3 py-2 rounded-lg border border-slate-100 shadow-sm">
-                                        <div className="text-xs text-slate-500 mb-1">回复率</div>
-                                        <div className="font-semibold text-slate-900">{riskRating.replyRate || '中等'}</div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {haigooComment && (
-                                <div className="text-sm text-slate-700 bg-white p-3 rounded-lg border border-slate-100 italic">
-                                    "{haigooComment}"
-                                </div>
-                            )}
-                        </div>
-                    ) : !isMember && (
-                        // Upsell for Free Users
-                        <div 
-                            className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-200 transition-colors group"
-                            onClick={() => setShowUpgradeModal(true)}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <ShieldCheck className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                                    <span className="font-medium text-slate-600 group-hover:text-indigo-600">解锁企业风险评估与人工点评</span>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-slate-400" />
-                            </div>
-                        </div>
-                    )}
+                    {/* Risk Rating Display - Using new component */}
+                    <RiskRatingDisplay
+                        riskRating={riskRating}
+                        haigooComment={haigooComment}
+                        hiddenFields={hiddenFields}
+                        isMember={isMember}
+                        className="mb-6"
+                    />
 
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
@@ -471,9 +461,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <div className="flex items-start gap-4 mb-3">
                                 {job.logo ? (
                                     <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1">
-                                        <img 
-                                            src={job.logo} 
-                                            alt={job.company} 
+                                        <img
+                                            src={job.logo}
+                                            alt={job.company}
                                             className="w-full h-full object-contain"
                                             onError={(e) => {
                                                 (e.target as HTMLImageElement).style.display = 'none';
@@ -525,7 +515,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
                         <div className="flex flex-col items-end pb-4 gap-1">
                             {job.sourceUrl ? (
-                                <a 
+                                <a
                                     href={job.sourceUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -605,13 +595,20 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             <MembershipUpgradeModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
-                triggerSource="referral"
+                triggerSource="general"
             />
-            <ReferralModal
+            <ApplyInterceptModal
+                isOpen={showApplyInterceptModal}
+                onClose={() => setShowApplyInterceptModal(false)}
+                job={job}
+                isMember={isMember}
+                onProceedToApply={proceedToApply}
+            />
+            <ReferralApplicationModal
                 isOpen={isReferralModalOpen}
                 onClose={() => setIsReferralModalOpen(false)}
-                jobId={job.id}
-                jobTitle={job.title}
+                job={job}
+                onSubmitSuccess={handleReferralSuccess}
             />
         </div >
     )
