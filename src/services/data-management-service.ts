@@ -387,6 +387,7 @@ export class DataManagementService {
    * 获取处理后的职位数据（分页查询）
    */
   async getProcessedJobs(page: number = 1, pageSize: number = 50, filters?: {
+    id?: string;
     category?: string;
     source?: string;
     experienceLevel?: string;
@@ -408,6 +409,10 @@ export class DataManagementService {
 
       // 应用过滤器
       let filteredJobs = allProcessedJobs;
+
+      if (filters?.id) {
+        filteredJobs = filteredJobs.filter(job => job.id === filters.id);
+      }
 
       if (filters?.category) {
         filteredJobs = filteredJobs.filter(job => job.category === filters.category);
