@@ -284,12 +284,12 @@ const AdminJobManagement: React.FC<AdminJobManagementProps> = ({
                                     className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 >
                                     <option value="">全部来源</option>
-                                    <option value="WeWorkRemotely">WeWorkRemotely</option>
-                                    <option value="Remotive">Remotive</option>
-                                    <option value="JobsCollider">JobsCollider</option>
-                                    <option value="RealWorkFromAnywhere">RealWorkFromAnywhere</option>
-                                    <option value="Himalayas">Himalayas</option>
-                                    <option value="NoDesk">NoDesk</option>
+                                    <option value="WeWorkRemotely">WeWorkRemotely (可信平台投递)</option>
+                                    <option value="Remotive">Remotive (可信平台投递)</option>
+                                    <option value="JobsCollider">JobsCollider (可信平台投递)</option>
+                                    <option value="RealWorkFromAnywhere">RealWorkFromAnywhere (可信平台投递)</option>
+                                    <option value="Himalayas">Himalayas (可信平台投递)</option>
+                                    <option value="NoDesk">NoDesk (可信平台投递)</option>
                                 </select>
                             </div>
                         </div>

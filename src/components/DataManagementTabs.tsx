@@ -713,11 +713,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有来源</option>
-              <option value="WeWorkRemotely">WeWorkRemotely</option>
-              <option value="Remotive">Remotive</option>
-              <option value="Himalayas">Himalayas</option>
-              <option value="NoDesk">NoDesk</option>
-              <option value="Manual">手动录入</option>
+              <option value="WeWorkRemotely">WeWorkRemotely (可信平台投递)</option>
+              <option value="Remotive">Remotive (可信平台投递)</option>
+              <option value="Himalayas">Himalayas (可信平台投递)</option>
+              <option value="NoDesk">NoDesk (可信平台投递)</option>
+              <option value="Manual">手动录入 (企业官网岗位)</option>
             </select>
 
             <input

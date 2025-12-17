@@ -325,8 +325,8 @@ async function cleanAndFix() {
       }
       // If we are here, existing type is likely something else or null. 
       // If it's unknown, and not official, default to third-party or keep as is?
-      // User says: "岗位来自RSS数据...链接指向三方...角标都是【第三方】"
-      // "岗位不来自RSS...不跳转向第三方...直接指向企业官方...则角标为【官网直申】"
+      // User says: "岗位来自RSS数据...链接指向三方...角标都是【可信平台投递】"
+      // "岗位不来自RSS...不跳转向第三方...直接指向企业官方...则角标为【企业官网岗位】"
       // If we don't know where it came from, but it's not official link, let's play safe.
       else if (!isUrlOfficial) {
            // If it's NOT official, it might be a generic job. 
