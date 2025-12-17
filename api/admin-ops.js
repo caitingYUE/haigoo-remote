@@ -188,6 +188,47 @@ async function runMigration(req, res) {
             results.logs.push(`Error adding columns: ${e.message}`);
         }
 
+        // Migration 6: Haigoo Member System (Consolidated Membership)
+        // 6.1 Users Table Updates
+        const userColumns = [
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS member_status VARCHAR(20) DEFAULT \'free\'',
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS member_expire_at TIMESTAMP WITH TIME ZONE',
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS member_since TIMESTAMP WITH TIME ZONE'
+        ];
+        for (const sql of userColumns) {
+            await neonHelper.query(sql);
+            results.logs.push(`Executed: ${sql}`);
+        }
+
+        // 6.2 Jobs Table Updates
+        const jobMemberColumns = [
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS risk_rating JSONB',
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS haigoo_comment TEXT',
+            'ALTER TABLE jobs ADD COLUMN IF NOT EXISTS hidden_fields JSONB'
+        ];
+        for (const sql of jobMemberColumns) {
+            await neonHelper.query(sql);
+            results.logs.push(`Executed: ${sql}`);
+        }
+
+        // 6.3 User Job Interactions Table
+        const createInteractionsTableSQL = `
+            CREATE TABLE IF NOT EXISTS user_job_interactions (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                job_id TEXT NOT NULL,
+                interaction_type VARCHAR(20) NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                resume_id TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(user_id, job_id, interaction_type)
+            );
+        `;
+        await neonHelper.query(createInteractionsTableSQL);
+        results.logs.push('Checked/Created user_job_interactions table');
+
         results.success = true;
         results.message = 'Migration completed successfully';
 
@@ -341,11 +382,14 @@ export default async function handler(req, res) {
                                 UPDATE users 
                                 SET membership_level = 'club_go', 
                                     membership_start_at = NOW(), 
-                                    membership_expire_at = $1 
+                                    membership_expire_at = $1,
+                                    member_status = 'active',
+                                    member_since = NOW(),
+                                    member_expire_at = $1
                                 WHERE user_id = $2
                             `, [nextYear.toISOString(), userId]);
                             
-                            console.log(`[AdminOps] Upgraded user ${userId} to club_go membership`);
+                            console.log(`[AdminOps] Upgraded user ${userId} to Haigoo Member (club_go legacy)`);
                         }
 
                         // 3. Create notification

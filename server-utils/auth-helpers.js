@@ -157,7 +157,11 @@ export function sanitizeUser(user) {
     // 会员字段
     membershipLevel: user.membershipLevel || user.membership_level || 'none',
     membershipStartAt: user.membershipStartAt || user.membership_start_at,
-    membershipExpireAt: user.membershipExpireAt || user.membership_expire_at
+    membershipExpireAt: user.membershipExpireAt || user.membership_expire_at,
+    // New Member System
+    memberStatus: user.memberStatus || user.member_status || 'free',
+    memberExpireAt: user.memberExpireAt || user.member_expire_at,
+    memberSince: user.memberSince || user.member_since
   }
 
   // 移除所有值为undefined的属性

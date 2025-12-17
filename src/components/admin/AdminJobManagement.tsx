@@ -47,6 +47,82 @@ const AdminJobManagement: React.FC<AdminJobManagementProps> = ({
     const [showJobDetail, setShowJobDetail] = useState(false);
     const [currentJobIndex, setCurrentJobIndex] = useState(-1);
 
+    // Internal Data Form State
+    const [internalData, setInternalData] = useState<{
+        friendliness: number;
+        replyRate: '低' | '中' | '高';
+        avgResponseTime: string;
+        risks: string;
+        haigooComment: string;
+        hiddenFields: string;
+    }>({
+        friendliness: 0,
+        replyRate: '中',
+        avgResponseTime: '',
+        risks: '',
+        haigooComment: '',
+        hiddenFields: ''
+    });
+
+    // Sync form when selectedJob changes
+    React.useEffect(() => {
+        if (selectedJob) {
+            setInternalData({
+                friendliness: selectedJob.riskRating?.friendliness || 0,
+                replyRate: selectedJob.riskRating?.replyRate || '中',
+                avgResponseTime: selectedJob.riskRating?.avgResponseTime || '',
+                risks: selectedJob.riskRating?.risks?.join('\n') || '',
+                haigooComment: selectedJob.haigooComment || '',
+                hiddenFields: selectedJob.hiddenFields ? JSON.stringify(selectedJob.hiddenFields, null, 2) : ''
+            });
+        }
+    }, [selectedJob]);
+
+    const handleSaveInternalData = async () => {
+        if (!selectedJob) return;
+
+        try {
+            let parsedHiddenFields = undefined;
+            if (internalData.hiddenFields) {
+                try {
+                    parsedHiddenFields = JSON.parse(internalData.hiddenFields);
+                } catch (e) {
+                    alert('隐藏字段必须是有效的JSON格式');
+                    return;
+                }
+            }
+
+            const data = {
+                riskRating: {
+                    friendliness: Number(internalData.friendliness),
+                    replyRate: internalData.replyRate,
+                    avgResponseTime: internalData.avgResponseTime,
+                    risks: internalData.risks.split('\n').filter(r => r.trim())
+                },
+                haigooComment: internalData.haigooComment,
+                hiddenFields: parsedHiddenFields
+            };
+
+            const success = await jobAggregator.updateJobInternalData(selectedJob.id, data);
+            if (success) {
+                alert('内部数据保存成功');
+                // Update local selectedJob state to reflect changes
+                setSelectedJob({
+                    ...selectedJob,
+                    riskRating: data.riskRating,
+                    haigooComment: data.haigooComment,
+                    hiddenFields: data.hiddenFields
+                });
+                await onRefresh();
+            } else {
+                alert('保存失败');
+            }
+        } catch (error) {
+            console.error('Failed to save internal data:', error);
+            alert('保存出错');
+        }
+    };
+
     // Dropdown toggles
     const [showCategoryFilter, setShowCategoryFilter] = useState(false);
 
@@ -707,6 +783,87 @@ const AdminJobManagement: React.FC<AdminJobManagementProps> = ({
                                             {selectedJob.remoteLocationRestriction}
                                         </span>
                                     )}
+                                </div>
+
+                                {/* Member Data Management */}
+                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4">
+                                    <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center">
+                                        <AlertCircle className="w-5 h-5 mr-2 text-indigo-600" />
+                                        内部数据管理 (Member Only)
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">友好度 (0-5)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="5"
+                                                value={internalData.friendliness}
+                                                onChange={(e) => setInternalData({ ...internalData, friendliness: Number(e.target.value) })}
+                                                className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">回复率</label>
+                                            <select
+                                                value={internalData.replyRate}
+                                                onChange={(e) => setInternalData({ ...internalData, replyRate: e.target.value as any })}
+                                                className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            >
+                                                <option value="低">低</option>
+                                                <option value="中">中</option>
+                                                <option value="高">高</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">平均响应时间</label>
+                                            <input
+                                                type="text"
+                                                value={internalData.avgResponseTime}
+                                                onChange={(e) => setInternalData({ ...internalData, avgResponseTime: e.target.value })}
+                                                className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="例如: 2天"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">潜在风险 (每行一个)</label>
+                                            <textarea
+                                                value={internalData.risks}
+                                                onChange={(e) => setInternalData({ ...internalData, risks: e.target.value })}
+                                                rows={3}
+                                                className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="例如: 只有少量HC&#10;需要加班"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">海狗点评 (Internal Comment)</label>
+                                            <textarea
+                                                value={internalData.haigooComment}
+                                                onChange={(e) => setInternalData({ ...internalData, haigooComment: e.target.value })}
+                                                rows={3}
+                                                className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                placeholder="内部评价..."
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">隐藏字段 (JSON)</label>
+                                            <textarea
+                                                value={internalData.hiddenFields}
+                                                onChange={(e) => setInternalData({ ...internalData, hiddenFields: e.target.value })}
+                                                rows={3}
+                                                className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-xs"
+                                                placeholder='{"timezone": "UTC+8", "englishLevel": "Fluent"}'
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 flex justify-end">
+                                        <button
+                                            onClick={handleSaveInternalData}
+                                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        >
+                                            保存内部数据
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {selectedJob.description && (

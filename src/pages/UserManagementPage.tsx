@@ -52,6 +52,8 @@ export default function UserManagementPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editUsername, setEditUsername] = useState('')
   const [editAdmin, setEditAdmin] = useState(false)
+  const [editMemberStatus, setEditMemberStatus] = useState<'free' | 'active' | 'expired'>('free')
+  const [editMemberExpireAt, setEditMemberExpireAt] = useState('')
 
   // API Token Usage State
   const [tokenUsage, setTokenUsage] = useState({
@@ -169,6 +171,8 @@ export default function UserManagementPage() {
     setEditingUser(user)
     setEditUsername(user.username)
     setEditAdmin(!!user.roles?.admin)
+    setEditMemberStatus(user.memberStatus || 'free')
+    setEditMemberExpireAt(user.memberExpireAt || '')
   }
 
   const saveEdit = async () => {
@@ -178,7 +182,13 @@ export default function UserManagementPage() {
       const resp = await fetch('/api/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ id: editingUser.user_id, username: editUsername, roles: { admin: editAdmin } })
+        body: JSON.stringify({ 
+          id: editingUser.user_id, 
+          username: editUsername, 
+          roles: { admin: editAdmin },
+          memberStatus: editMemberStatus,
+          memberExpireAt: editMemberExpireAt || null
+        })
       })
       const data = await resp.json()
       if (data.success && data.user) {
@@ -437,6 +447,20 @@ export default function UserManagementPage() {
                           {user.lastLoginAt ? formatDate(user.lastLoginAt) : '-'}
                         </div>
                       </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          user.memberStatus === 'active' ? 'bg-indigo-100 text-indigo-700' : 
+                          user.memberStatus === 'expired' ? 'bg-orange-100 text-orange-700' : 
+                          'bg-slate-100 text-slate-700'
+                        }`}>
+                          {user.memberStatus === 'active' ? 'Haigoo会员' : user.memberStatus === 'expired' ? '已过期' : '普通用户'}
+                        </span>
+                        {user.memberStatus === 'active' && user.memberExpireAt && (
+                          <div className="text-xs text-slate-400 mt-1">
+                            至 {new Date(user.memberExpireAt).toLocaleDateString()}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1">
@@ -528,6 +552,30 @@ export default function UserManagementPage() {
                 <input type="checkbox" disabled={editingUser?.email === SUPER_ADMIN_EMAIL} checked={editAdmin} onChange={(e) => setEditAdmin(e.target.checked)} />
                 <span>{editingUser?.email === SUPER_ADMIN_EMAIL ? '超级管理员（不可更改）' : '管理员权限'}</span>
               </label>
+
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">会员状态</label>
+                <select
+                  value={editMemberStatus}
+                  onChange={(e) => setEditMemberStatus(e.target.value as any)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg mb-2"
+                >
+                  <option value="free">普通用户</option>
+                  <option value="active">Haigoo会员</option>
+                  <option value="expired">已过期</option>
+                </select>
+                {editMemberStatus === 'active' && (
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">过期时间</label>
+                    <input
+                      type="datetime-local"
+                      value={editMemberExpireAt ? new Date(editMemberExpireAt).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => setEditMemberExpireAt(new Date(e.target.value).toISOString())}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm"
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* API Token Usage */}
               <div className="mt-4 pt-4 border-t border-slate-100">

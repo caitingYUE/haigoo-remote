@@ -66,6 +66,20 @@ export interface Job {
   languages?: string[]
 
   matchScore?: number
+
+  // Haigoo Member Fields
+  riskRating?: {
+    friendliness: number
+    replyRate: '低' | '中' | '高'
+    avgResponseTime?: string
+    risks?: string[]
+  }
+  haigooComment?: string
+  hiddenFields?: {
+    timezone?: string
+    englishLevel?: string
+    contractType?: string
+  }
 }
 
 export interface User {

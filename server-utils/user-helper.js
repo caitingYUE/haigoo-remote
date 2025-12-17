@@ -53,6 +53,14 @@ const userHelper = {
                 if (user.membership_level) user.membershipLevel = user.membership_level
                 if (user.membership_start_at) user.membershipStartAt = user.membership_start_at
                 if (user.membership_expire_at) user.membershipExpireAt = user.membership_expire_at
+                // New Member System
+                if (user.member_status) user.memberStatus = user.member_status
+                if (user.member_expire_at) user.memberExpireAt = user.member_expire_at
+                if (user.member_since) user.memberSince = user.member_since
+                // New Member System
+                if (user.member_status) user.memberStatus = user.member_status
+                if (user.member_expire_at) user.memberExpireAt = user.member_expire_at
+                if (user.member_since) user.memberSince = user.member_since
             }
 
             return user
@@ -405,6 +413,11 @@ const userHelper = {
                 if (status && ['active', 'suspended'].includes(status)) {
                     updateFields.status = status
                 }
+                
+                // Member System Updates
+                if (updates.memberStatus) updateFields.member_status = updates.memberStatus
+                if (updates.memberExpireAt) updateFields.member_expire_at = updates.memberExpireAt
+                if (updates.memberSince) updateFields.member_since = updates.memberSince
 
                 if (roles && typeof roles === 'object') {
                     // 超级管理员不可更改权限

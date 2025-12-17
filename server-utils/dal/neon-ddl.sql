@@ -363,3 +363,8 @@ VALUES
   ('ai_translation_enabled', 'false'::jsonb, 'Whether to enable paid AI translation services (DeepSeek/Bailian)'),
   ('ai_token_usage', '{"input": 0, "output": 0, "total": 0}'::jsonb, 'Token usage statistics for AI services')
 ON CONFLICT (key) DO NOTHING;
+
+-- 2025-12-17: Add Haigoo Member fields to jobs table
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS risk_rating JSONB;
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS haigoo_comment TEXT;
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS hidden_fields JSONB;

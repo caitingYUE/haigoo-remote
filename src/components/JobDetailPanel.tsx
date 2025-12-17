@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { segmentJobDescription } from '../utils/translation'
 import { SingleLineTags } from './SingleLineTags'
 import { MembershipUpgradeModal } from './MembershipUpgradeModal'
+import { ReferralModal } from './ReferralModal'
 import { LocationTooltip } from './LocationTooltip'
 import { TrustedStandardsBanner } from './TrustedStandardsBanner'
 // import { processedJobsService } from '../services/processed-jobs-service'
@@ -46,6 +47,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
+    const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
+
+    const [showDisclaimer, setShowDisclaimer] = useState(false)
+    const [applyUrl, setApplyUrl] = useState('')
 
     useEffect(() => {
         if (job?.companyId) {
@@ -54,6 +59,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             setCompanyInfo(null)
         }
     }, [job?.companyId])
+
+    // Member-only fields (from PRD)
+    const riskRating = (job as any).riskRating;
+    const haigooComment = (job as any).haigooComment;
+    const hiddenFields = (job as any).hiddenFields;
+    
+    // Check membership
+    const isMember = user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date();
 
     const jobDescriptionData = useMemo(() => {
         const originalDesc = typeof job?.description === 'string' ? job.description : (job?.description ? String(job.description) : '')
@@ -80,13 +93,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job, showTranslation])
 
     const handleApply = () => {
-        // 检查会员权限
+        // 1. Club Referral Job (High Value)
         if (job.canRefer) {
-            const isMember = user?.membershipLevel && user.membershipLevel !== 'none' && user.membershipExpireAt && new Date(user.membershipExpireAt) > new Date();
             if (!isMember) {
                 setShowUpgradeModal(true)
                 return;
             }
+            // Member flow for Referral: Open Referral Modal
+            setIsReferralModalOpen(true);
+            return;
         }
 
         const url = job.url || job.sourceUrl
@@ -373,6 +388,53 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             {/* Content - Flat layout, no internal scroll */}
             <main className="flex-1 px-6 py-6">
                 <div>
+                    {/* Member-Only Insights (Risk Rating & Comment) */}
+                    {isMember && (riskRating || haigooComment) ? (
+                        <div className="mb-6 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                            <div className="flex items-center gap-2 mb-3">
+                                <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                                <h3 className="font-bold text-slate-900">Haigoo 会员专属洞察</h3>
+                            </div>
+                            
+                            {riskRating && (
+                                <div className="flex flex-wrap gap-4 mb-3">
+                                    <div className="bg-white px-3 py-2 rounded-lg border border-slate-100 shadow-sm">
+                                        <div className="text-xs text-slate-500 mb-1">友好度</div>
+                                        <div className="font-semibold text-indigo-600 flex gap-0.5">
+                                            {[...Array(Math.min(5, Math.max(1, riskRating.friendliness || 3)))].map((_, i) => (
+                                                <span key={i}>★</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white px-3 py-2 rounded-lg border border-slate-100 shadow-sm">
+                                        <div className="text-xs text-slate-500 mb-1">回复率</div>
+                                        <div className="font-semibold text-slate-900">{riskRating.replyRate || '中等'}</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {haigooComment && (
+                                <div className="text-sm text-slate-700 bg-white p-3 rounded-lg border border-slate-100 italic">
+                                    "{haigooComment}"
+                                </div>
+                            )}
+                        </div>
+                    ) : !isMember && (
+                        // Upsell for Free Users
+                        <div 
+                            className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-200 transition-colors group"
+                            onClick={() => setShowUpgradeModal(true)}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                                    <span className="font-medium text-slate-600 group-hover:text-indigo-600">解锁企业风险评估与人工点评</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                            </div>
+                        </div>
+                    )}
+
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
                         <section key={index} className="mb-6">
@@ -544,6 +606,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 triggerSource="referral"
+            />
+            <ReferralModal
+                isOpen={isReferralModalOpen}
+                onClose={() => setIsReferralModalOpen(false)}
+                jobId={job.id}
+                jobTitle={job.title}
             />
         </div >
     )

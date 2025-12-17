@@ -42,9 +42,14 @@ export interface User {
   }
 
   // 会员信息
-  membershipLevel?: 'none' | 'club_go' | 'goo_plus';
-  membershipStartAt?: string;
-  membershipExpireAt?: string;
+  membershipLevel?: 'none' | 'club_go' | 'goo_plus'; // Deprecated
+  membershipStartAt?: string; // Deprecated
+  membershipExpireAt?: string; // Deprecated but might be reused or migrated
+  
+  // New Unified Member System
+  memberStatus?: 'free' | 'active' | 'expired';
+  memberExpireAt?: string;
+  memberSince?: string;
 
   // 求职偏好
   jobPreferences?: {

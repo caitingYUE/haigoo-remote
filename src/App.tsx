@@ -30,6 +30,7 @@ const JoinClubApplicationPage = lazy(() => import('./pages/JoinClubApplicationPa
 const NoPermissionPage = lazy(() => import('./pages/NoPermissionPage'))
 const JobDetailPage = lazy(() => import('./pages/JobDetailPage'))
 const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
+const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 
 
 function App() {
@@ -120,6 +121,11 @@ function App() {
                         <Route path="/profile" element={
                           <ProtectedRoute>
                             <ProfileCenterPage />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/my-applications" element={
+                          <ProtectedRoute>
+                            <MyApplicationsPage />
                           </ProtectedRoute>
                         } />
                       </Routes>

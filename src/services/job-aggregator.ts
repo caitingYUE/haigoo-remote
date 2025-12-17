@@ -1154,6 +1154,31 @@ class JobAggregator {
   }
 
   /**
+   * 更新岗位内部数据 (Member Only Fields)
+   */
+  async updateJobInternalData(jobId: string, data: {
+    riskRating?: Job['riskRating'];
+    haigooComment?: string;
+    hiddenFields?: Job['hiddenFields'];
+  }): Promise<boolean> {
+    const job = this.jobs.find(j => j.id === jobId);
+    if (job) {
+      if (data.riskRating !== undefined) job.riskRating = data.riskRating;
+      if (data.haigooComment !== undefined) job.haigooComment = data.haigooComment;
+      if (data.hiddenFields !== undefined) job.hiddenFields = data.hiddenFields;
+      
+      job.updatedAt = new Date().toISOString();
+      await this.saveJobsToStorage();
+
+      // Persist to API
+      this.syncJobToAPI(job).catch(err => console.error('Failed to sync internal data to API:', err));
+
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Helper to sync a single job to the backend API
    */
   private async syncJobToAPI(job: Job): Promise<void> {

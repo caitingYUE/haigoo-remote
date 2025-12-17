@@ -183,14 +183,14 @@ const MembershipPage: React.FC = () => {
               <p className="mt-4 text-lg text-slate-500">透明定价，无隐形消费。7天无理由退款保障。</p>
            </div>
 
-           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {/* Plan 1: Club Go */}
+           <div className="flex justify-center max-w-5xl mx-auto">
+              {/* Plan 1: Haigoo Member */}
               {plans.map((plan) => {
-                 const isPro = plan.id === 'goo_plus_yearly';
+                 const isPro = true; // Always highlight the single plan
                  return (
                     <div 
                       key={plan.id}
-                      className={`relative flex flex-col p-8 rounded-3xl transition-all duration-300 ${
+                      className={`relative flex flex-col p-8 rounded-3xl transition-all duration-300 w-full max-w-md ${
                          isPro 
                          ? 'bg-slate-900 text-white shadow-2xl ring-1 ring-slate-900 scale-105 z-10' 
                          : 'bg-white border border-slate-200 text-slate-900 shadow-lg hover:shadow-xl'

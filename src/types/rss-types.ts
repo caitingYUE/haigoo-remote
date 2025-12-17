@@ -40,6 +40,21 @@ export interface Job {
 
   // Featured status
   isFeatured?: boolean;
+
+  // Haigoo Member Fields
+  riskRating?: {
+    friendliness: number;
+    replyRate: '低' | '中' | '高';
+    avgResponseTime?: string;
+    risks?: string[];
+  };
+  haigooComment?: string;
+  hiddenFields?: {
+    timezone?: string;
+    englishLevel?: string;
+    contractType?: string;
+    [key: string]: any;
+  };
 }
 
 // 标准化的工作分类
