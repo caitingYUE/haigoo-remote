@@ -53,6 +53,25 @@ export default function UserManagementPage() {
   const [editUsername, setEditUsername] = useState('')
   const [editAdmin, setEditAdmin] = useState(false)
 
+  // API Token Usage State
+  const [tokenUsage, setTokenUsage] = useState({
+    input: 0,
+    output: 0,
+    total: 0
+  })
+
+  useEffect(() => {
+    if (editingUser?.apiUsage) {
+      setTokenUsage({
+        input: editingUser.apiUsage.inputTokens || 0,
+        output: editingUser.apiUsage.outputTokens || 0,
+        total: editingUser.apiUsage.totalTokens || 0
+      })
+    } else {
+      setTokenUsage({ input: 0, output: 0, total: 0 })
+    }
+  }, [editingUser])
+
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
@@ -509,6 +528,28 @@ export default function UserManagementPage() {
                 <input type="checkbox" disabled={editingUser?.email === SUPER_ADMIN_EMAIL} checked={editAdmin} onChange={(e) => setEditAdmin(e.target.checked)} />
                 <span>{editingUser?.email === SUPER_ADMIN_EMAIL ? '超级管理员（不可更改）' : '管理员权限'}</span>
               </label>
+
+              {/* API Token Usage */}
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <h4 className="font-semibold text-sm mb-3 text-slate-900 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-slate-500" />
+                  API 消耗统计
+                </h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="text-xs text-slate-500 mb-1">Total Tokens</div>
+                    <div className="text-lg font-bold text-slate-900">{tokenUsage.total.toLocaleString()}</div>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="text-xs text-slate-500 mb-1">Input</div>
+                    <div className="text-base font-medium text-slate-700">{tokenUsage.input.toLocaleString()}</div>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="text-xs text-slate-500 mb-1">Output</div>
+                    <div className="text-base font-medium text-slate-700">{tokenUsage.output.toLocaleString()}</div>
+                  </div>
+                </div>
+              </div>
 
               {/* 求职期望展示 */}
               <div className="mt-4 pt-4 border-t border-slate-100">

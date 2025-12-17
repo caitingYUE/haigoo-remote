@@ -3,9 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { Save, RefreshCw, Cpu, Database, Activity, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
+interface TokenUsage {
+  input: number;
+  output: number;
+  total: number;
+}
+
+interface DetailedTokenUsage extends TokenUsage {
+  translation?: TokenUsage;
+  resume_parsing?: TokenUsage;
+  job_matching?: TokenUsage;
+  other?: TokenUsage;
+}
+
 interface SystemSettings {
   ai_translation_enabled: { value: boolean };
-  ai_token_usage: { value: { input: number; output: number; total: number } };
+  ai_token_usage: { value: DetailedTokenUsage };
 }
 
 export default function AdminSystemSettings() {
@@ -79,6 +92,29 @@ export default function AdminSystemSettings() {
   const aiEnabled = settings?.ai_translation_enabled?.value ?? false;
   const tokenUsage = settings?.ai_token_usage?.value ?? { input: 0, output: 0, total: 0 };
 
+  const renderUsageCard = (title: string, usage?: TokenUsage, colorClass: string = 'bg-white') => {
+    const safeUsage = usage || { input: 0, output: 0, total: 0 };
+    return (
+      <div className={`p-4 rounded-lg border border-slate-200 shadow-sm ${colorClass}`}>
+        <div className="text-sm font-semibold text-slate-700 mb-2">{title}</div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <div className="text-xs text-slate-500">Total</div>
+            <div className="text-lg font-bold text-slate-900">{safeUsage.total.toLocaleString()}</div>
+          </div>
+          <div>
+            <div className="text-xs text-slate-500">Input</div>
+            <div className="text-sm text-slate-600">{safeUsage.input.toLocaleString()}</div>
+          </div>
+          <div>
+            <div className="text-xs text-slate-500">Output</div>
+            <div className="text-sm text-slate-600">{safeUsage.output.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center">
@@ -130,9 +166,9 @@ export default function AdminSystemSettings() {
         <div className="p-6 bg-slate-50/50">
           <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
             <Activity className="w-4 h-4" />
-            API Token 消耗统计
+            API Token 消耗统计 (总览)
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
               <div className="text-sm text-slate-500 mb-1">Total Tokens</div>
               <div className="text-2xl font-bold text-slate-900">{tokenUsage.total.toLocaleString()}</div>
@@ -146,6 +182,18 @@ export default function AdminSystemSettings() {
               <div className="text-xl font-semibold text-slate-700">{tokenUsage.output.toLocaleString()}</div>
             </div>
           </div>
+
+          <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Database className="w-4 h-4" />
+            分模块统计详情
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {renderUsageCard('翻译服务', tokenUsage.translation)}
+            {renderUsageCard('简历解析', tokenUsage.resume_parsing)}
+            {renderUsageCard('职位匹配', tokenUsage.job_matching)}
+            {renderUsageCard('其他', tokenUsage.other)}
+          </div>
+
           <p className="text-xs text-slate-400 mt-4 text-right">
             统计数据仅供参考，实际计费请以云服务商后台为准。
           </p>

@@ -57,6 +57,14 @@ export interface User {
     notes?: string
   }
   preferencesUpdatedAt?: string
+  
+  // API Token Usage
+  apiUsage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    lastUsedAt?: string;
+  }
 }
 
 // 登录请求
