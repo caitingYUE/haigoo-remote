@@ -65,8 +65,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const haigooComment = (job as any).haigooComment;
     const hiddenFields = (job as any).hiddenFields;
     
-    // Check membership
-    const isMember = user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date();
+    // Check membership (Admin is also a member)
+    const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
 
     const jobDescriptionData = useMemo(() => {
         const originalDesc = typeof job?.description === 'string' ? job.description : (job?.description ? String(job.description) : '')

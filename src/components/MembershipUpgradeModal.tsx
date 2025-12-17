@@ -108,7 +108,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
               }}
               className="w-full py-3.5 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
             >
-              立即开通会员 <ArrowRight className="w-4 h-4" />
+              立即成为 Haigoo Member <ArrowRight className="w-4 h-4" />
             </button>
             
             <button

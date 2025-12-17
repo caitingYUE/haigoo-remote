@@ -273,7 +273,7 @@ export default function LandingPage() {
         {/* Club Benefits - Migrated from AboutPage */}
         <div id="club-benefits" className="mt-24">
             <div className="text-center mb-16">
-                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">加入俱乐部，您将获得</h2>
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">加入 Haigoo Member，您将获得</h2>
                 <p className="mt-4 text-lg text-slate-500">我们为您提供超越求职的价值，助力你的职业成长。</p>
             </div>
 
@@ -311,7 +311,7 @@ export default function LandingPage() {
             {/* Call to Action */}
             <div className="mt-16 bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xl shadow-indigo-100/50">
                 <h2 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">准备好开启新的职业篇章了吗？</h2>
-                <p className="text-lg text-slate-600 mb-8">加入海狗远程俱乐部，与世界各地的小伙伴一起，探索远程工作和理想生活的无限可能。</p>
+                <p className="text-lg text-slate-600 mb-8">加入 Haigoo Member，与世界各地的小伙伴一起，探索远程工作和理想生活的无限可能。</p>
                 {(() => {
                     const isMember = user?.membershipLevel && user.membershipLevel !== 'none' && user.membershipExpireAt && new Date(user.membershipExpireAt) > new Date();
                     
@@ -321,7 +321,7 @@ export default function LandingPage() {
                                 onClick={() => navigate('/jobs')}
                                 className="px-10 py-4 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1"
                             >
-                                恭喜您加入我们，尽情探索吧
+                                恭喜成为 Haigoo Member，尽情探索吧
                             </button>
                         )
                     } else if (applicationStatus === 'pending') {
@@ -342,7 +342,7 @@ export default function LandingPage() {
                                 onClick={() => navigate('/jobs')}
                                 className="px-10 py-4 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1"
                             >
-                                恭喜成为我们的会员
+                                恭喜成为 Haigoo Member
                             </button>
                         )
                     } else {
@@ -351,7 +351,7 @@ export default function LandingPage() {
                                 onClick={() => navigate('/join-club-application')}
                                 className="px-10 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-2xl hover:-translate-y-1"
                             >
-                                加入我们，获得无限可能
+                                成为 Haigoo Member，获得无限可能
                             </button>
                         )
                     }

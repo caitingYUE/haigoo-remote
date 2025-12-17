@@ -368,3 +368,17 @@ ON CONFLICT (key) DO NOTHING;
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS risk_rating JSONB;
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS haigoo_comment TEXT;
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS hidden_fields JSONB;
+
+-- 2025-12-17: Add user_job_interactions table for tracking referrals and applications
+CREATE TABLE IF NOT EXISTS user_job_interactions (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  job_id VARCHAR(255) NOT NULL,
+  interaction_type VARCHAR(50) NOT NULL, -- 'referral', 'view', 'apply'
+  resume_id VARCHAR(255),
+  notes TEXT,
+  status VARCHAR(50), -- 'applied', 'viewed', 'interviewing', etc.
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, job_id, interaction_type)
+);

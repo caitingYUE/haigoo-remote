@@ -134,7 +134,7 @@ const MembershipPage: React.FC = () => {
              <Crown className="w-4 h-4" /> 会员权益全新升级
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
-             加入 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Haigoo Club</span> <br/>
+             加入 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Haigoo Member</span> <br/>
              开启您的全球远程职业生涯
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-10">
