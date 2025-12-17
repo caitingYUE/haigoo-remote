@@ -269,6 +269,7 @@ export default function JobFilterBar({
       experienceLevel: [],
       industry: [],
       regionType: [],
+      // sourceType: [], // Keep source filters if set elsewhere, or clear it? Assuming user can't set it via UI anymore, we should probably clear it to be safe, but let's just clear what's visible. Actually better to clear everything to reset state.
       sourceType: [],
       jobType: [],
       salary: [],
@@ -298,7 +299,7 @@ export default function JobFilterBar({
       {/* Filter Row */}
       <div className="flex flex-wrap items-center gap-2 flex-1">
         {/* Reset Button */}
-        {(filters.category.length > 0 || filters.experienceLevel.length > 0 || filters.industry.length > 0 || filters.regionType.length > 0 || filters.sourceType.length > 0 || filters.jobType.length > 0 || filters.salary.length > 0 || filters.location.length > 0 || filters.isTrusted || filters.isNew || searchTerm) && (
+        {(filters.category.length > 0 || filters.experienceLevel.length > 0 || filters.industry.length > 0 || filters.regionType.length > 0 || filters.jobType.length > 0 || filters.salary.length > 0 || filters.location.length > 0 || filters.isTrusted || filters.isNew || searchTerm) && (
           <button
             onClick={clearAllFilters}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-700 whitespace-nowrap"
@@ -329,26 +330,6 @@ export default function JobFilterBar({
             checked={filters.regionType.includes('overseas')}
             onChange={(c) => handleCheckboxChange('regionType', 'overseas', c)}
           />
-        </FilterDropdown>
-
-        {/* Source Type */}
-        <FilterDropdown
-          label="岗位来源"
-          activeLabel={getActiveLabel('sourceType', SOURCE_OPTIONS, '岗位来源')}
-          isActive={filters.sourceType.length > 0}
-          isOpen={openDropdown === 'sourceType'}
-          onToggle={() => toggleDropdown('sourceType')}
-          onClose={() => setOpenDropdown(null)}
-          variant="solid-purple"
-        >
-          {SOURCE_OPTIONS.map(opt => (
-            <CheckboxItem
-              key={opt.value}
-              label={opt.label}
-              checked={filters.sourceType.includes(opt.value)}
-              onChange={(c) => handleCheckboxChange('sourceType', opt.value, c)}
-            />
-          ))}
         </FilterDropdown>
 
         {/* Function Type (Renamed from Category) */}

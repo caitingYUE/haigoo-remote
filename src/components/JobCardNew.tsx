@@ -216,33 +216,10 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          onClick={() => onClick?.(job)}
          className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer overflow-hidden ${className || ''}`}
       >
-         {/* Top Decoration for Verified Jobs */}
-         <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
-            {job.canRefer ? (
-               <div 
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg shadow-orange-100 flex items-center gap-1.5 pointer-events-auto mb-1"
-                  title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
-               >
-                  <Sparkles className="w-3.5 h-3.5 fill-white/20" />
-                  Haigoo 内推
-               </div>
-            ) : job.isTrusted ? (
-               <div 
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-lg shadow-indigo-100 flex items-center gap-1.5 pointer-events-auto mb-1"
-                  title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
-               >
-                  <Building2 className="w-3.5 h-3.5 fill-white/20" />
-                  企业官网岗位
-               </div>
-            ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
-               <div 
-                  className="bg-slate-50 text-slate-500 text-[10px] font-bold px-3 py-1.5 rounded-bl-xl shadow-sm flex items-center gap-1.5 pointer-events-auto border-l border-b border-slate-100 mb-1"
-                  title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
-               >
-                  可信平台投递
-               </div>
-            ) : null}
-         </div>
+         {/* Top Decoration removed as requested to move tags inline */}
+         {/* <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
+            ...
+         </div> */}
 
          <div className="flex flex-col h-full">
             {/* Header Section */}
@@ -280,8 +257,30 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         {job.translations?.title || job.title}
                      </h3>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                     <span>{job.translations?.company || job.company}</span>
+                  <div className="flex flex-col gap-1.5">
+                     <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                        <span>{job.translations?.company || job.company}</span>
+                     </div>
+                     
+                     {/* Source Tag Inline */}
+                     <div className="flex items-center gap-2 mt-0.5">
+                        {job.canRefer ? (
+                           <div className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></div>
+                              Haigoo 内推
+                           </div>
+                        ) : job.isTrusted ? (
+                           <div className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                              企业官网岗位
+                           </div>
+                        ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
+                           <div className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                              可信平台投递
+                           </div>
+                        ) : null}
+                     </div>
                   </div>
                </div>
             </div>
