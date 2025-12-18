@@ -7,6 +7,7 @@ import { AppProvider } from './contexts/AppContext'
 import { AuthProvider } from './contexts/AuthContext'
 import NotificationProvider from './components/NotificationSystem'
 import ErrorBoundary from './components/ErrorBoundary'
+import GlobalVerificationGuard from './components/GlobalVerificationGuard'
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const JobsPage = lazy(() => import('./pages/JobsPage'))
@@ -137,8 +138,9 @@ function App() {
                 } />
               </Routes>
             </Suspense>
-          </NotificationProvider>
-        </AppProvider>
+          </GlobalVerificationGuard>
+        </NotificationProvider>
+      </AppProvider>
       </AuthProvider>
     </ErrorBoundary>
   )
