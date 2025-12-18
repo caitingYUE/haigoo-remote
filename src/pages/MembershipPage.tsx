@@ -196,53 +196,53 @@ const MembershipPage: React.FC = () => {
    return (
       <div className="min-h-screen bg-slate-50 font-sans">
          {/* Hero Section */}
-         <div className="relative overflow-hidden bg-[#0B1120] text-white pt-32 pb-48 px-4 sm:px-6 lg:px-8">
+         <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 text-white pt-24 pb-32 px-4 sm:px-6 lg:px-8">
             {/* Background Effects */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                {/* Main spotlight */}
-               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-[#0B1120]/0 to-[#0B1120]/0"></div>
+               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent"></div>
                
                {/* Accent orbs */}
-               <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px] animate-pulse"></div>
-               <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-600/20 rounded-full blur-[100px] animate-pulse delay-1000"></div>
+               <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-400/20 rounded-full blur-[100px] animate-pulse"></div>
+               <div className="absolute top-40 right-1/4 w-80 h-80 bg-teal-400/20 rounded-full blur-[100px] animate-pulse delay-1000"></div>
                
                {/* Grid pattern overlay */}
                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-               <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+               <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
             </div>
 
             <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
                {/* Premium Badge */}
-               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-200/10 to-amber-100/5 border border-amber-200/20 text-amber-200 text-xs font-bold tracking-widest uppercase mb-10 shadow-[0_0_15px_rgba(251,191,36,0.1)] backdrop-blur-md">
-                  <Crown className="w-3.5 h-3.5 fill-amber-200/50" /> 
+               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/90 text-xs font-bold tracking-widest uppercase mb-8 shadow-lg backdrop-blur-md">
+                  <Crown className="w-3.5 h-3.5 fill-white/80" /> 
                   Invite Only · Global Access
                </div>
 
                {/* Main Headline */}
-               <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
-                  <span className="block text-slate-300 text-2xl sm:text-3xl font-medium mb-4 tracking-normal">Join the Elite</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-slate-400 drop-shadow-lg">
+               <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
+                  <span className="block text-white/80 text-2xl sm:text-3xl font-medium mb-3 tracking-normal">Join the Elite</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-teal-100 drop-shadow-sm">
                      Haigoo Member
                   </span>
                </h1>
 
                {/* Subtitle */}
-               <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed font-light">
+               <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
                   开启您的全球远程职业生涯。<br className="hidden sm:block" />
                   解锁海量内推机会，获取 AI 智能简历优化，加入精英远程工作者社区。
                </p>
 
                {/* Current Status Card (if member) */}
                {currentMembership?.isActive && (
-                  <div className="inline-flex items-center gap-4 bg-white/5 border border-white/10 px-6 py-3 rounded-2xl backdrop-blur-md shadow-2xl">
-                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                  <div className="inline-flex items-center gap-4 bg-white/10 border border-white/20 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl">
+                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-lg">
                         <Check className="w-5 h-5 text-white" />
                      </div>
                      <div className="text-left">
-                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Current Status</p>
+                        <p className="text-[10px] text-white/60 uppercase font-bold tracking-wider">Current Status</p>
                         <p className="font-bold text-white text-base">
                            {currentMembership.level === 'club_go' ? 'Haigoo Member' : 'Haigoo Pro Member'}
-                           <span className="ml-2 text-xs font-normal text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                           <span className="ml-2 text-xs font-normal text-teal-100 bg-teal-500/20 px-2 py-0.5 rounded border border-teal-400/30">
                               Active
                            </span>
                         </p>
