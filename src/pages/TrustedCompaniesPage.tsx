@@ -8,13 +8,24 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import HomeCompanyCard from '../components/HomeCompanyCard'
 import { TrustedStandardsBanner } from '../components/TrustedStandardsBanner'
+import { CompanyNominationBanner } from '../components/CompanyNominationBanner'
+import { CompanyNominationModal } from '../components/CompanyNominationModal'
+import { useAuth } from '../contexts/AuthContext'
+import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 
 export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
+    const { user } = useAuth()
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [jobCounts, setJobCounts] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
+    const [isNominationModalOpen, setIsNominationModalOpen] = useState(false)
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+
+    // Check membership (Admin is also a member)
+    const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
+
 
     // Filters
     const [selectedIndustries, setSelectedIndustries] = useState<string[]>([])
@@ -122,20 +133,20 @@ export default function TrustedCompaniesPage() {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Hero Section */}
-            <div className="relative bg-white overflow-hidden py-16 sm:py-24">
+            <div className="relative bg-white overflow-hidden py-8 sm:py-12">
                 <div className="absolute inset-0 z-0 pointer-events-none">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50/80 via-white to-transparent opacity-70"></div>
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50/80 via-white to-transparent opacity-70"></div>
                 </div>
 
                 <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-6">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-3">
                         <Building className="w-3 h-3" /> Trusted Remote Companies
                     </span>
-                    <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">
+                    <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4 leading-tight tracking-tight">
                         发现全球顶尖<br className="sm:hidden" />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600"> 远程友好企业</span>
                     </h1>
-                    <p className="text-slate-500 max-w-2xl mx-auto mb-10 text-lg leading-relaxed">
+                    <p className="text-slate-500 max-w-2xl mx-auto mb-6 text-lg leading-relaxed">
                         Haigoo 严选全球远程工作机会，所有企业均经过人工审核，确保真实可靠。<br className="hidden md:block" />加入我们，开启自由职业的新篇章。
                     </p>
 
@@ -175,9 +186,14 @@ export default function TrustedCompaniesPage() {
                             </div>
                         </div>
                     </div>
-                    {/* Trusted Standards Banner - Moved here for better visibility */}
-                    <div className="mt-8 flex justify-center">
-                        <TrustedStandardsBanner />
+                    {/* Banners Grid */}
+                    <div className="mt-6 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <TrustedStandardsBanner 
+                            context="company" 
+                            isMember={isMember} 
+                            onShowUpgrade={() => setShowUpgradeModal(true)}
+                        />
+                        <CompanyNominationBanner onClick={() => setIsNominationModalOpen(true)} />
                     </div>
                 </div>
             </div>
