@@ -494,7 +494,7 @@ const MembershipPage: React.FC = () => {
                                  key={job.id} 
                                  job={job} 
                                  variant="grid"
-                                 matchScore={Math.floor(Math.random() * 15) + 85} // Mock high match score for demo
+                                 matchScore={job.matchScore || Math.floor(Math.random() * 15) + 85}
                                  onClick={() => navigate(`/jobs?jobId=${job.id}`)}
                               />
                            ))

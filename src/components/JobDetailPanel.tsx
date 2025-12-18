@@ -41,6 +41,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const navigate = useNavigate()
     const { user } = useAuth()
     const isAuthenticated = !!user
+    // Check membership (Admin is also a member)
+    const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
     const [feedbackAccuracy, setFeedbackAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
     const [feedbackContent, setFeedbackContent] = useState('')
@@ -65,9 +67,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         setFeedbackContent('')
         setFeedbackMessage('')
         
-        // Reset translation state
-        setShowTranslation(false)
-    }, [job?.id])
+        // Reset translation state - Auto-enable for members
+        setShowTranslation(isMember)
+    }, [job?.id, isMember])
 
     useEffect(() => {
         if (job?.companyId) {
@@ -81,9 +83,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const riskRating = (job as any).riskRating;
     const haigooComment = (job as any).haigooComment;
     const hiddenFields = (job as any).hiddenFields;
-
-    // Check membership (Admin is also a member)
-    const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
 
     const jobDescriptionData = useMemo(() => {
         const originalDesc = typeof job?.description === 'string' ? job.description : (job?.description ? String(job.description) : '')
