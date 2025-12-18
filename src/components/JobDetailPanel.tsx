@@ -47,13 +47,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [feedbackMessage, setFeedbackMessage] = useState('')
     // Translation defaults to false, enabled for members automatically
     const [showTranslation, setShowTranslation] = useState(false)
+    const [translationUsageCount, setTranslationUsageCount] = useState(0)
+    const TRANSLATION_FREE_LIMIT = 3
     const hasTranslation = !!(job?.translations?.title || job?.translations?.description)
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
     const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
     const [showApplyInterceptModal, setShowApplyInterceptModal] = useState(false)
-    const { showSuccess, showError } = useNotificationHelpers()
+    const { showSuccess, showError, showInfo } = useNotificationHelpers()
 
     useEffect(() => {
         if (job?.companyId) {
@@ -364,10 +366,22 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         {hasTranslation && (
                             <button
                                 onClick={() => {
-                                    if (!isMember && !showTranslation) {
-                                        // If trying to enable translation and not member
-                                        setShowUpgradeModal(true)
-                                        return
+                                    if (!isMember) {
+                                        if (translationUsageCount >= TRANSLATION_FREE_LIMIT) {
+                                            setShowUpgradeModal(true)
+                                            return
+                                        }
+
+                                        if (!showTranslation) {
+                                            // Enabling translation, increment count
+                                            const newCount = translationUsageCount + 1
+                                            setTranslationUsageCount(newCount)
+                                            localStorage.setItem('translation_usage_count', newCount.toString())
+
+                                            if (newCount >= TRANSLATION_FREE_LIMIT) {
+                                                showInfo('试用次数已用完', '升级会员享受无限翻译')
+                                            }
+                                        }
                                     }
                                     setShowTranslation(!showTranslation)
                                 }}
@@ -378,6 +392,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             >
                                 <Languages className="w-3.5 h-3.5" />
                                 {showTranslation ? '中文翻译' : '原文显示'}
+                                {!isMember && translationUsageCount < TRANSLATION_FREE_LIMIT && (
+                                    <span className="ml-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded">
+                                        试用 {TRANSLATION_FREE_LIMIT - translationUsageCount}/3
+                                    </span>
+                                )}
+                                {!isMember && translationUsageCount >= TRANSLATION_FREE_LIMIT && (
+                                    <span className="ml-1 px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">
+                                        会员专属
+                                    </span>
+                                )}
                             </button>
                         )}
 

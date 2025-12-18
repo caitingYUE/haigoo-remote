@@ -1,11 +1,11 @@
 
 import React, { useMemo } from 'react';
-import { Briefcase, Globe, ChevronRight, Sparkles, Building2, ExternalLink, Check, Target } from 'lucide-react';
+import { Briefcase, Globe, ChevronRight, Sparkles, ExternalLink, Check, Target } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { stripMarkdown } from '../utils/text-formatter';
-import { SingleLineTags } from './SingleLineTags';
 import { MemberBadge } from './MemberBadge';
+
 
 interface JobCardNewProps {
    job: Job;
@@ -32,8 +32,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       return `${currencySymbol}${formatAmount(salary.min)} - ${currencySymbol}${formatAmount(salary.max)}`;
    };
 
-   const isVerified = job.isTrusted || job.canRefer;
-
    // Handle company website click
    const handleCompanyClick = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -52,7 +50,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
             onClick={() => onClick?.(job)}
             className={`group relative p-6 bg-white rounded-2xl mb-4 border transition-all duration-300 cursor-pointer 
                ${isActive
-                  ? 'border-indigo-500/50 ring-2 ring-indigo-500/20 shadow-lg shadow-indigo-500/10 bg-indigo-50/5'
+                  ? 'border-indigo-400 ring-2 ring-indigo-400/30 shadow-xl shadow-indigo-400/20 bg-indigo-50/30'
                   : 'border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-0.5'
                } ${className || ''}`}
          >
@@ -60,15 +58,15 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
             <div className="absolute top-0 right-0 z-20 flex flex-col items-end">
                {job.canRefer ? (
                   <div
-                     className="px-2.5 py-1 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/20 text-[10px] font-bold tracking-wide"
+                     className="px-2.5 py-1 rounded-bl-2xl rounded-tr-2xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/20 text-[10px] font-bold tracking-wide"
                      title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
                   >
                      <Target className="w-3 h-3" />
-                     <span>内推</span>
+                     <span>Haigoo 内推</span>
                   </div>
                ) : job.isTrusted ? (
                   <div
-                     className="px-2.5 py-1 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-500/20 text-[10px] font-bold tracking-wide"
+                     className="px-2.5 py-1 rounded-bl-2xl rounded-tr-2xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-500/20 text-[10px] font-bold tracking-wide"
                      title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
                   >
                      <Sparkles className="w-3 h-3" />
@@ -76,11 +74,11 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   </div>
                ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
                   <div
-                     className="px-2.5 py-1 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-slate-500 to-slate-600 shadow-slate-500/20 text-[10px] font-bold tracking-wide"
+                     className="px-2.5 py-1 rounded-bl-2xl rounded-tr-2xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-slate-500 to-slate-600 shadow-slate-500/20 text-[10px] font-bold tracking-wide"
                      title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
                   >
                      <Check className="w-3 h-3" />
-                     <span>可信平台</span>
+                     <span>可信平台投递</span>
                   </div>
                ) : null}
             </div>
