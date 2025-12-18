@@ -618,7 +618,7 @@ export default function JobsPage() {
         {/* Main Content Area: Split View */}
         <div className="flex-1 flex overflow-hidden gap-6 min-h-0">
           {/* Middle Column: Job List */}
-          <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[55%] xl:w-[55%]' : 'lg:w-[800px] mx-auto'} bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden flex-shrink-0 transition-all duration-300`}>
+          <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[55%] xl:w-[55%]' : 'lg:w-[800px] mx-auto'} bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden flex-shrink-0`}>
             {/* List Header Info */}
             <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center text-xs text-slate-500 font-medium">
               <span>共找到 {totalJobs} 个相关职位</span>

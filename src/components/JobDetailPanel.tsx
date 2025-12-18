@@ -45,7 +45,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [feedbackContent, setFeedbackContent] = useState('')
     const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
     const [feedbackMessage, setFeedbackMessage] = useState('')
-    const [showTranslation, setShowTranslation] = useState(true)
+    // Translation defaults to false, enabled for members automatically
+    const [showTranslation, setShowTranslation] = useState(false)
     const hasTranslation = !!(job?.translations?.title || job?.translations?.description)
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -338,8 +339,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                 {/* Trusted Company Standards Banner */}
                 {job.isTrusted && (
-                    <div className="mb-5 transform scale-95 origin-left">
-                        <TrustedStandardsBanner className="" />
+                    <div className="mb-5">
+                        <TrustedStandardsBanner className="" isMember={isMember} />
                     </div>
                 )}
 
@@ -369,7 +370,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <div className="flex items-center gap-2">
                         {hasTranslation && (
                             <button
-                                onClick={() => setShowTranslation(!showTranslation)}
+                                onClick={() => {
+                                    if (!isMember && !showTranslation) {
+                                        // If trying to enable translation and not member
+                                        setShowUpgradeModal(true)
+                                        return
+                                    }
+                                    setShowTranslation(!showTranslation)
+                                }}
                                 className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${showTranslation
                                     ? 'bg-violet-50 text-violet-600 border-violet-100'
                                     : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'

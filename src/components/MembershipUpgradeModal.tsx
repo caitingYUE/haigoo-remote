@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Crown, Check, ArrowRight, Zap, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { MembershipApplicationModal } from './MembershipApplicationModal';
 
 interface MembershipUpgradeModalProps {
   isOpen: boolean;
@@ -15,8 +16,21 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
   triggerSource
 }) => {
   const navigate = useNavigate();
+  const [showApplication, setShowApplication] = useState(false);
 
   if (!isOpen) return null;
+
+  if (showApplication) {
+    return (
+      <MembershipApplicationModal 
+        isOpen={true} 
+        onClose={() => {
+          setShowApplication(false);
+          onClose();
+        }} 
+      />
+    );
+  }
 
   const content = {
     referral: {

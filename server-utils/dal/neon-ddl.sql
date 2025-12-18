@@ -382,3 +382,6 @@ CREATE TABLE IF NOT EXISTS user_job_interactions (
   updated_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(user_id, job_id, interaction_type)
 );
+
+-- 2025-12-18: Add nickname to club_applications
+ALTER TABLE club_applications ADD COLUMN IF NOT EXISTS nickname VARCHAR(255);
