@@ -335,13 +335,30 @@ export default async function handler(req, res) {
       }
 
       // 获取列表
+      // Ensure we filter by userId if not admin
+      const token = extractToken(req)
+      if (!token) return sendJson(res, { success: false, error: 'Authentication required' }, 401)
+      const decoded = await verifyToken(token)
+      if (!decoded) return sendJson(res, { success: false, error: 'Invalid token' }, 401)
+
       const { resumes, provider } = await getResumes()
+      
+      // Filter resumes for current user unless admin
+      let filteredResumes = resumes
+      if (!decoded.admin) {
+        filteredResumes = resumes.filter(r => r.userId === decoded.userId)
+      }
+
       res.setHeader('X-Storage-Provider', provider)
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+      res.setHeader('Pragma', 'no-cache')
+      res.setHeader('Expires', '0')
+      
       return sendJson(res, {
         success: true,
-        data: resumes,
+        data: filteredResumes,
         provider,
-        count: resumes.length
+        count: filteredResumes.length
       })
     }
 
