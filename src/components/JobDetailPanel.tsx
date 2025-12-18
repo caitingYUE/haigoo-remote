@@ -409,6 +409,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             >
                                 <Languages className="w-3.5 h-3.5" />
                                 <span>{showTranslation ? '切换原文' : '一键翻译'}</span>
+                                {isMember && (
+                                    <span className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold rounded border border-amber-100">
+                                        <Crown className="w-3 h-3" />
+                                        Member
+                                    </span>
+                                )}
                                 {!isAuthenticated && (
                                     <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">登录</span>
                                 )}

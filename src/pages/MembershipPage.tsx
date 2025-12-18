@@ -392,50 +392,118 @@ const MembershipPage: React.FC = () => {
             
             {/* Case 3: Is Member - Show Dashboard / Benefits */}
             {isAuthenticated && currentMembership?.isActive && (
-               <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-8 md:p-12">
-                   <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                            <Crown className="w-6 h-6 text-emerald-600" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-900">尊贵会员</h2>
-                            <p className="text-slate-500">您已享有以下专属权益</p>
-                        </div>
-                   </div>
-                   
-                   <div className="grid md:grid-cols-3 gap-6">
-                        <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
-                            <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center mb-4">
-                                <Zap className="w-5 h-5" />
-                            </div>
-                            <h3 className="font-bold text-slate-900 mb-2">无限次内推</h3>
-                            <p className="text-sm text-slate-500">简历直达 HR，优先处理，反馈更迅速。</p>
-                        </div>
-                        <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
-                             <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4">
-                                <Star className="w-5 h-5" />
-                            </div>
-                            <h3 className="font-bold text-slate-900 mb-2">AI 简历优化</h3>
-                            <p className="text-sm text-slate-500">基于 Job Description 智能优化简历，提高匹配度。</p>
-                        </div>
-                        <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
-                             <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4">
-                                <ShieldCheck className="w-5 h-5" />
-                            </div>
-                            <h3 className="font-bold text-slate-900 mb-2">岗位可靠性</h3>
-                            <p className="text-sm text-slate-500">人工审核所有岗位，保障真实性，远离诈骗。</p>
-                        </div>
-                   </div>
+               <div className="space-y-8">
+                  {/* 1. Member Status & Group */}
+                  <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
+                     <div className="p-8 md:p-10">
+                        <div className="flex flex-col md:flex-row gap-8 items-start">
+                           {/* Status Info */}
+                           <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-6">
+                                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200">
+                                    <Crown className="w-6 h-6 text-white" />
+                                 </div>
+                                 <div>
+                                    <h2 className="text-2xl font-bold text-slate-900">尊贵会员</h2>
+                                    <p className="text-slate-500">Haigoo Member</p>
+                                 </div>
+                              </div>
 
-                   <div className="mt-8 pt-8 border-t border-slate-100 text-center">
+                              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
+                                 <div className="flex items-center gap-3 text-slate-700">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                    </div>
+                                    <span className="font-medium">申请已通过，会员权益已生效</span>
+                                 </div>
+                                 
+                                 <div className="flex items-center gap-3 text-slate-700">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                       <Calendar className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                    <span className="font-medium">
+                                       有效期至：
+                                       {currentMembership.expireAt 
+                                          ? new Date(currentMembership.expireAt).toLocaleDateString() 
+                                          : '永久有效'}
+                                    </span>
+                                 </div>
+
+                                 <div className="flex items-center gap-3 text-slate-700">
+                                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                                       <Zap className="w-4 h-4 text-purple-600" />
+                                    </div>
+                                    <span className="font-medium">今日剩余翻译次数：无限次</span>
+                                 </div>
+                              </div>
+                              
+                              <div className="mt-6 flex gap-3">
+                                 <button 
+                                    onClick={() => navigate('/jobs?region=domestic')}
+                                    className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors inline-flex items-center gap-2 shadow-lg shadow-slate-200"
+                                 >
+                                    浏览内推岗位
+                                    <ArrowRight className="w-4 h-4" />
+                                 </button>
+                              </div>
+                           </div>
+
+                           {/* Group QR Code */}
+                           <div className="w-full md:w-auto flex flex-col items-center bg-indigo-50/50 rounded-2xl p-6 border border-indigo-100">
+                              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                 <Users className="w-5 h-5 text-indigo-600" />
+                                 会员专属服务群
+                              </h3>
+                              <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-3">
+                                 {/* Placeholder QR Code */}
+                                 <img 
+                                    src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=HaigooMemberGroup" 
+                                    alt="Feishu Group QR" 
+                                    className="w-32 h-32 object-contain rounded-lg"
+                                 />
+                              </div>
+                              <p className="text-xs text-slate-500 text-center max-w-[160px]">
+                                 请使用飞书扫码加入<br/>获取一手内推资讯
+                              </p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* 2. Recommended Jobs */}
+                  <div>
+                     <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                           <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                           会员专属推荐
+                        </h3>
                         <button 
-                            onClick={() => navigate('/jobs?region=domestic')}
-                            className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors inline-flex items-center gap-2"
+                           onClick={() => navigate('/jobs')}
+                           className="text-sm text-indigo-600 font-medium hover:underline flex items-center gap-1"
                         >
-                            去浏览内推岗位
-                            <ArrowRight className="w-5 h-5" />
+                           查看更多 <ChevronRight className="w-4 h-4" />
                         </button>
-                   </div>
+                     </div>
+                     
+                     <div className="grid md:grid-cols-3 gap-6">
+                        {recommendedJobs.length > 0 ? (
+                           recommendedJobs.map(job => (
+                              <JobCardNew 
+                                 key={job.id} 
+                                 job={job} 
+                                 variant="grid"
+                                 matchScore={Math.floor(Math.random() * 15) + 85} // Mock high match score for demo
+                                 onClick={() => navigate(`/jobs?jobId=${job.id}`)}
+                              />
+                           ))
+                        ) : (
+                           <div className="col-span-3 text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
+                              <Loader2 className="w-8 h-8 text-slate-300 animate-spin mx-auto mb-2" />
+                              <p className="text-slate-500">正在为您生成推荐...</p>
+                           </div>
+                        )}
+                     </div>
+                  </div>
                </div>
             )}
 
