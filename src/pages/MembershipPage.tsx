@@ -196,41 +196,56 @@ const MembershipPage: React.FC = () => {
    return (
       <div className="min-h-screen bg-slate-50 font-sans">
          {/* Hero Section */}
-         <div className="relative overflow-hidden bg-slate-900 text-white pt-24 pb-32 px-4 sm:px-6 lg:px-8">
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-20">
-               <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-indigo-600 blur-3xl mix-blend-screen animate-blob"></div>
-               <div className="absolute top-32 right-10 w-72 h-72 rounded-full bg-purple-600 blur-3xl mix-blend-screen animate-blob animation-delay-2000"></div>
-               {/* Noise texture overlay */}
-               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+         <div className="relative overflow-hidden bg-[#0B1120] text-white pt-32 pb-48 px-4 sm:px-6 lg:px-8">
+            {/* Background Effects */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+               {/* Main spotlight */}
+               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-[#0B1120]/0 to-[#0B1120]/0"></div>
+               
+               {/* Accent orbs */}
+               <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px] animate-pulse"></div>
+               <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-600/20 rounded-full blur-[100px] animate-pulse delay-1000"></div>
+               
+               {/* Grid pattern overlay */}
+               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+               <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
             </div>
 
-            <div className="relative z-10 max-w-4xl mx-auto text-center">
-               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-sm font-medium mb-8 backdrop-blur-sm">
-                  <Crown className="w-4 h-4" /> 会员权益全新升级
+            <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
+               {/* Premium Badge */}
+               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-200/10 to-amber-100/5 border border-amber-200/20 text-amber-200 text-xs font-bold tracking-widest uppercase mb-10 shadow-[0_0_15px_rgba(251,191,36,0.1)] backdrop-blur-md">
+                  <Crown className="w-3.5 h-3.5 fill-amber-200/50" /> 
+                  Invite Only · Global Access
                </div>
-               <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-8 leading-tight">
-                  加入 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Haigoo Member</span> <br className="hidden sm:block" />
-                  开启您的全球远程职业生涯
+
+               {/* Main Headline */}
+               <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
+                  <span className="block text-slate-300 text-2xl sm:text-3xl font-medium mb-4 tracking-normal">Join the Elite</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-slate-400 drop-shadow-lg">
+                     Haigoo Member
+                  </span>
                </h1>
-               <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-                  解锁海量内推机会，获取 AI 智能简历优化，加入精英远程工作者社区。<br className="hidden sm:block" />让找工作不再是一个人的战斗。
+
+               {/* Subtitle */}
+               <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed font-light">
+                  开启您的全球远程职业生涯。<br className="hidden sm:block" />
+                  解锁海量内推机会，获取 AI 智能简历优化，加入精英远程工作者社区。
                </p>
 
+               {/* Current Status Card (if member) */}
                {currentMembership?.isActive && (
-                  <div className="inline-block bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 px-6 py-4 rounded-2xl backdrop-blur-md">
-                     <div className="flex items-center gap-4">
-                        <div className="bg-emerald-500/20 p-2 rounded-full">
-                           <Check className="w-5 h-5 text-emerald-400" />
-                        </div>
-                        <div className="text-left">
-                           <p className="text-xs text-emerald-400 uppercase font-bold tracking-wider mb-0.5">Current Status</p>
-                           <p className="font-bold text-white text-lg flex items-center gap-2">
-                              {currentMembership.level === 'club_go' ? 'Haigoo Member' : 'Haigoo Pro Member'}
-                              <span className="text-sm font-normal text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded-md">
-                                 有效期至 {new Date(currentMembership.expireAt).toLocaleDateString()}
-                              </span>
-                           </p>
-                        </div>
+                  <div className="inline-flex items-center gap-4 bg-white/5 border border-white/10 px-6 py-3 rounded-2xl backdrop-blur-md shadow-2xl">
+                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                        <Check className="w-5 h-5 text-white" />
+                     </div>
+                     <div className="text-left">
+                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Current Status</p>
+                        <p className="font-bold text-white text-base">
+                           {currentMembership.level === 'club_go' ? 'Haigoo Member' : 'Haigoo Pro Member'}
+                           <span className="ml-2 text-xs font-normal text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                              Active
+                           </span>
+                        </p>
                      </div>
                   </div>
                )}
