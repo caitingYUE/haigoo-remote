@@ -106,7 +106,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
                <div className="bg-emerald-100 rounded-full p-1">
                   <Check className="w-3.5 h-3.5 text-emerald-600" />
                </div>
-               <span className="text-slate-700 text-sm font-medium">7天无理由退款保障</span>
+               <span className="text-slate-700 text-sm font-medium">获取优质远程人脉</span>
             </div>
           </div>
 

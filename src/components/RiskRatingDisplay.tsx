@@ -40,62 +40,56 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
     // 免费用户看到的蒙版版本
     if (!isMember) {
         return (
-            <div className={`bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 rounded-xl p-6 border border-white/10 shadow-xl shadow-indigo-900/20 relative overflow-hidden group ${className}`}>
-                {/* Noise & Background Effects */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-400/20 rounded-full blur-[40px] animate-pulse"></div>
-                
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 rounded-lg bg-white/10 border border-white/10 backdrop-blur-sm shadow-sm">
-                            <Crown className="w-5 h-5 text-teal-300" />
-                        </div>
-                        <h3 className="text-lg font-bold text-white tracking-tight">会员专属 - 企业风险评估</h3>
+            <div className={`bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-200 ${className}`}>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 rounded-lg">
+                        <Crown className="w-5 h-5 text-white" />
                     </div>
+                    <h3 className="text-lg font-bold text-slate-900">会员专属 - 企业风险评估</h3>
+                </div>
 
-                    <div className="relative">
-                        {/* Blurred Content Preview */}
-                        <div className="filter blur-sm select-none pointer-events-none opacity-40">
-                            <div className="space-y-3 text-sm text-white/80">
-                                <div className="flex items-center gap-2">
-                                    <Star className="w-4 h-4 text-white/50" />
-                                    <span className="font-medium">中国候选人友好度:</span>
-                                    <div className="flex gap-0.5">
-                                        {[1, 2, 3, 4].map(i => <Star key={i} className="w-3 h-3 text-white/50 fill-white/50" />)}
-                                        <Star className="w-3 h-3 text-white/20" />
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <TrendingUp className="w-4 h-4 text-white/50" />
-                                    <span className="font-medium">历史回复率:</span>
-                                    <span>高 (72%回复率)</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-white/50" />
-                                    <span className="font-medium">平均反馈周期:</span>
-                                    <span>5-7个工作日</span>
+                <div className="relative">
+                    {/* Blurred Content Preview */}
+                    <div className="filter blur-sm select-none pointer-events-none opacity-60">
+                        <div className="space-y-3 text-sm">
+                            <div className="flex items-center gap-2">
+                                <Star className="w-4 h-4 text-yellow-500" />
+                                <span className="font-medium">中国候选人友好度:</span>
+                                <div className="flex gap-0.5">
+                                    {[1, 2, 3, 4].map(i => <Star key={i} className="w-3 h-3 text-yellow-500 fill-yellow-500" />)}
+                                    <Star className="w-3 h-3 text-gray-300" />
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Unlock Overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <button
-                                onClick={() => navigate('/membership')}
-                                className="bg-white text-indigo-900 hover:bg-indigo-50 px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center gap-2 group/btn"
-                            >
-                                <Lock className="w-5 h-5 text-indigo-600 group-hover/btn:scale-110 transition-transform" />
-                                解锁会员查看完整评估
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <TrendingUp className="w-4 h-4 text-green-500" />
+                                <span className="font-medium">历史回复率:</span>
+                                <span>高 (72%回复率)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-blue-500" />
+                                <span className="font-medium">平均反馈周期:</span>
+                                <span>5-7个工作日</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-white/10">
-                        <p className="text-xs text-center text-white/60 flex items-center justify-center gap-1.5 font-light">
-                            <Sparkles className="w-3.5 h-3.5 text-teal-300" />
-                            升级会员，获取企业友好度、回复率、风险提示等深度评估信息
-                        </p>
+                    {/* Unlock Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <button
+                            onClick={() => navigate('/membership')}
+                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center gap-2"
+                        >
+                            <Lock className="w-5 h-5" />
+                            解锁会员查看完整评估
+                        </button>
                     </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-indigo-200">
+                    <p className="text-xs text-center text-indigo-700 flex items-center justify-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        升级会员，获取企业友好度、回复率、风险提示等深度评估信息
+                    </p>
                 </div>
             </div>
         );

@@ -40,10 +40,10 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     </button>
 
                     {/* Header Gradient */}
-                    <div className="h-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center relative overflow-hidden">
-                        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-                        <div className="relative z-10 bg-white/20 p-4 rounded-full backdrop-blur-md shadow-lg">
-                            <Crown className="w-12 h-12 text-white" />
+                    <div className="h-32 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+                        <div className="relative z-10 bg-white/10 p-4 rounded-full backdrop-blur-md border border-white/20 shadow-lg">
+                            <Crown className="w-12 h-12 text-white/90" />
                         </div>
                     </div>
 
@@ -79,7 +79,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 <div className="bg-green-100 p-1 rounded-full">
                                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
-                                <span className="text-sm font-medium text-slate-700">7天无理由退款保障</span>
+                                <span className="text-sm font-medium text-slate-700">内推简历优化1V1评估</span>
                             </div>
                         </div>
 

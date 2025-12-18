@@ -284,7 +284,7 @@ export default function LandingPage() {
         </div>
 
         {/* Membership CTA Section - Premium Dark Card */}
-        <div className="mt-12 relative rounded-[2.5rem] bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 overflow-hidden shadow-2xl shadow-indigo-900/20">
+        <div className="mt-12 relative rounded-[2.5rem] bg-gradient-to-br from-indigo-800 via-blue-700 to-teal-600 overflow-hidden shadow-2xl shadow-indigo-900/20">
           {/* Background Effects */}
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
@@ -292,7 +292,7 @@ export default function LandingPage() {
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-400/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-400/20 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3 animate-pulse delay-1000"></div>
 
-          <div className="relative z-10 px-8 py-20 md:px-20 text-center flex flex-col items-center">
+          <div className="relative z-10 px-8 py-16 md:px-20 text-center flex flex-col items-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/90 text-sm font-bold tracking-widest uppercase mb-8 shadow-lg backdrop-blur-md">
               <Crown className="w-4 h-4 fill-white/80" />
               Invite Only · Global Access
@@ -336,7 +336,7 @@ export default function LandingPage() {
                       onClick={() => navigate('/membership')}
                       className="px-10 py-4 bg-gradient-to-r from-white via-indigo-50 to-teal-50 hover:from-indigo-100 hover:to-teal-100 text-indigo-900 font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
                     >
-                      立即升级会员
+                      内测中，仅限邀请，申请加入
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   )

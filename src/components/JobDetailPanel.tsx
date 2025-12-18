@@ -250,7 +250,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     return (
         <div className="flex flex-col bg-white">
             {/* Header */}
-            <header className="flex-shrink-0 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-20 px-6 py-5 ss-premium-header">
+            <header className="flex-shrink-0 border-b border-slate-100 bg-white/50 backdrop-blur-md px-6 py-5 ss-premium-header">
                 <div className="flex items-start justify-between mb-4">
                     <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex-1 pr-6 leading-tight tracking-tight">
                         {displayText(job.title, job.translations?.title)}
@@ -559,7 +559,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <>
                                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-md border border-orange-100">
                                     <Sparkles className="w-3.5 h-3.5" />
-                                    企业官网 (Haigoo 核验)
+                                    企业官网岗位
                                 </div>
                                 <p className="text-[10px] text-slate-500">
                                     * 通过公司官网直接投递，Haigoo 已人工核实企业真实性

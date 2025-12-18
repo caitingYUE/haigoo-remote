@@ -70,7 +70,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
                   >
                      <Sparkles className="w-3.5 h-3.5" />
-                     <span>企业官网</span>
+                     <span>企业官网岗位</span>
                   </div>
                ) : (job.sourceType === 'rss' || job.sourceType === 'third-party' || (job.source && !job.isTrusted && !job.canRefer)) ? (
                   <div
