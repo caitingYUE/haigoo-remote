@@ -89,7 +89,8 @@ export async function sendEmail(to, subject, html) {
  * @returns {Promise<boolean>} 是否发送成功
  */
 export async function sendVerificationEmail(to, username, token) {
-  const verificationLink = `${process.env.SITE_URL || 'http://localhost:3000'}/verify-email?token=${token}&email=${encodeURIComponent(to)}`
+  const siteUrl = (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
+  const verificationLink = `${siteUrl}/verify-email?token=${token}&email=${encodeURIComponent(to)}`
   
   const subject = '验证您的 Haigoo 账户'
   const html = `

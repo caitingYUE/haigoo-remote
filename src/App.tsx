@@ -13,6 +13,7 @@ const JobsPage = lazy(() => import('./pages/JobsPage'))
 const RemoteExperiencePage = lazy(() => import('./pages/RemoteExperiencePage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'))
 const AdminLocationPage = lazy(() => import('./pages/AdminLocationPage'))
 const AdminPanel = lazy(() => import('./components/AdminPanel'))
 const ProfileCenterPage = lazy(() => import('./pages/ProfileCenterPage'))
@@ -40,9 +41,10 @@ function App() {
       <AuthProvider>
         <AppProvider>
           <NotificationProvider>
-            <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
-              <Routes>
-                {/* 公开路由：登录和注册 */}
+            <GlobalVerificationGuard>
+              <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
+                <Routes>
+                  {/* 公开路由：登录和注册 */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/no-permission" element={<NoPermissionPage />} />
