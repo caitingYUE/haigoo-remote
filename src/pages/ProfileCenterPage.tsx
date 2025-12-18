@@ -9,6 +9,7 @@ import { Job } from '../types'
 import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
 import { MembershipApplicationModal } from '../components/MembershipApplicationModal'
+import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
