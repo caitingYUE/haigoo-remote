@@ -620,9 +620,6 @@ export default function ProfileCenterPage() {
           <h2 className="text-2xl font-bold text-slate-900">简历优化</h2>
           <p className="text-slate-500 mt-1">利用 AI 智能分析，获取专业的简历优化建议。</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
-          <Download className="w-4 h-4" />下载优化报告
-        </button>
       </div>
 
       {/* 分数条 */}
