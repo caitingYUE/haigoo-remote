@@ -100,12 +100,12 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                         {/* Header */}
                         <div className="flex justify-between items-start">
                             <div>
-                                <h1 className="text-3xl font-bold tracking-tight mb-1">Haigoo Member</h1>
+                                <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">Haigoo Member</h1>
                                 <p className="text-white/60 text-xs tracking-widest uppercase">Global Remote Work Club</p>
                             </div>
-                            {/* Logo placeholder if image fails to load in canvas */}
-                            <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/20">
-                                <span className="font-bold text-xl">H</span>
+                            {/* Logo */}
+                            <div className="w-12 h-12 flex items-center justify-center">
+                                <img src="/Haigoo_white.svg" alt="Haigoo Logo" className="w-full h-full object-contain" crossOrigin="anonymous" />
                             </div>
                         </div>
 
