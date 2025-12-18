@@ -246,82 +246,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </h1>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleSave}
-                                className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${isSaved
-                                    ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
-                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                                    }`}
-                                title={isSaved ? '已收藏' : '收藏'}
-                            >
-                                <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
-                                <span className="hidden lg:inline">{isSaved ? '已收藏' : '收藏'}</span>
-                            </button>
-
-                            <button
-                                onClick={handleShare}
-                                className="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium"
-                                title="分享"
-                            >
-                                <Share2 className="w-3.5 h-3.5" />
-                                <span className="hidden lg:inline">分享</span>
-                            </button>
-
-                            {hasTranslation && (
-                                <button
-                                    onClick={() => {
-                                        if (!isAuthenticated) {
-                                            if (window.confirm('登录后可免费试用翻译功能（每日3次）\n\n是否前往登录？')) {
-                                                navigate('/login')
-                                            }
-                                            return
-                                        }
-
-                                        if (!isMember) {
-                                            if (translationUsageCount >= TRANSLATION_FREE_LIMIT) {
-                                                setShowUpgradeModal(true)
-                                                return
-                                            }
-
-                                            if (!showTranslation) {
-                                                const newCount = translationUsageCount + 1
-                                                setTranslationUsageCount(newCount)
-                                                localStorage.setItem('translation_usage_count', newCount.toString())
-
-                                                if (newCount >= TRANSLATION_FREE_LIMIT) {
-                                                    showInfo('试用次数已用完', '升级会员享受无限翻译')
-                                                }
-                                            }
-                                        }
-                                        setShowTranslation(!showTranslation)
-                                    }}
-                                    className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${showTranslation
-                                        ? 'bg-violet-50 text-violet-600 border-violet-100'
-                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                                        }`}
-                                    title={showTranslation ? '中文翻译' : '原文显示'}
-                                >
-                                    <Languages className="w-3.5 h-3.5" />
-                                    <span className="hidden lg:inline">{showTranslation ? '中文' : '原文'}</span>
-                                    {!isAuthenticated && (
-                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">登录</span>
-                                    )}
-                                    {isAuthenticated && !isMember && translationUsageCount < TRANSLATION_FREE_LIMIT && (
-                                        <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
-                                            {TRANSLATION_FREE_LIMIT - translationUsageCount}/3
-                                        </span>
-                                    )}
-                                    {isAuthenticated && !isMember && translationUsageCount >= TRANSLATION_FREE_LIMIT && (
-                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">
-                                            会员
-                                        </span>
-                                    )}
-                                </button>
-                            )}
-                        </div>
-
                         {onNavigateJob && (
                             <div className="flex items-center bg-slate-100/50 p-1 rounded-lg border border-slate-200/50">
                                 <button
@@ -406,15 +330,90 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </div>
                 </div>
 
-                {/* Feedback Button - Moved to bottom right */}
-                <div className="flex justify-end pt-4 border-t border-slate-100">
+                {/* Action Buttons - Moved to job description area */}
+                <div className="flex items-center justify-between gap-3 py-3 border-y border-slate-100 bg-slate-50/50">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleSave}
+                            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${isSaved
+                                ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            title={isSaved ? '已收藏' : '收藏'}
+                        >
+                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
+                            <span>{isSaved ? '已收藏' : '收藏'}</span>
+                        </button>
+
+                        <button
+                            onClick={handleShare}
+                            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium"
+                            title="分享"
+                        >
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>分享</span>
+                        </button>
+
+                        {hasTranslation && (
+                            <button
+                                onClick={() => {
+                                    if (!isAuthenticated) {
+                                        if (window.confirm('登录后可免费试用翻译功能（每日3次）\n\n是否前往登录？')) {
+                                            navigate('/login')
+                                        }
+                                        return
+                                    }
+
+                                    if (!isMember) {
+                                        if (translationUsageCount >= TRANSLATION_FREE_LIMIT) {
+                                            setShowUpgradeModal(true)
+                                            return
+                                        }
+
+                                        if (!showTranslation) {
+                                            const newCount = translationUsageCount + 1
+                                            setTranslationUsageCount(newCount)
+                                            localStorage.setItem('translation_usage_count', newCount.toString())
+
+                                            if (newCount >= TRANSLATION_FREE_LIMIT) {
+                                                showInfo('试用次数已用完', '升级会员享受无限翻译')
+                                            }
+                                        }
+                                    }
+                                    setShowTranslation(!showTranslation)
+                                }}
+                                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${showTranslation
+                                    ? 'bg-violet-50 text-violet-600 border-violet-100'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                    }`}
+                                title={showTranslation ? '中文翻译' : '原文显示'}
+                            >
+                                <Languages className="w-3.5 h-3.5" />
+                                <span>{showTranslation ? '中文翻译' : '原文显示'}</span>
+                                {!isAuthenticated && (
+                                    <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">登录</span>
+                                )}
+                                {isAuthenticated && !isMember && translationUsageCount < TRANSLATION_FREE_LIMIT && (
+                                    <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
+                                        {TRANSLATION_FREE_LIMIT - translationUsageCount}/3
+                                    </span>
+                                )}
+                                {isAuthenticated && !isMember && translationUsageCount >= TRANSLATION_FREE_LIMIT && (
+                                    <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">
+                                        会员
+                                    </span>
+                                )}
+                            </button>
+                        )}
+                    </div>
+
                     <button
                         onClick={() => setIsFeedbackOpen(true)}
-                        className="px-3 py-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-1.5 text-sm"
+                        className="px-3 py-1.5 text-slate-500 hover:text-slate-700 hover:bg-white border border-slate-200 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium"
                         title="反馈问题"
                     >
                         <MessageSquare className="w-4 h-4" />
-                        <span>反馈问题</span>
+                        <span>反馈</span>
                     </button>
                 </div>
             </header>
