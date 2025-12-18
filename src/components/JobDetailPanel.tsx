@@ -404,6 +404,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         className="mb-6"
                     />
 
+                    {/* Trusted Company Standards Banner - Restored */}
+                    {job.isTrusted && (
+                        <div className="mb-6">
+                            <TrustedStandardsBanner className="" isMember={isMember} />
+                        </div>
+                    )}
+
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
                         <section key={index} className="mb-8 last:mb-0">
@@ -411,7 +418,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
                                 {displayText(section.title)}
                             </h3>
-                            <div className="text-slate-600 text-base leading-7 lg:leading-8 tracking-wide font-normal">
+                            <div className="text-slate-600 text-base leading-7 lg:leading-8 tracking-wide font-normal whitespace-pre-line">
                                 {renderFormattedText(displayText(section.content))}
                             </div>
                         </section>

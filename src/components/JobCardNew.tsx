@@ -60,17 +60,19 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
             <div className="absolute top-0 right-0 z-10 flex flex-col items-end">
                {job.canRefer ? (
                   <div
-                     className="px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/20"
+                     className="px-2.5 py-1 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/20 text-[10px] font-bold tracking-wide"
                      title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
                   >
                      <MemberBadge variant="referral" size="sm" className="!border-0 !bg-transparent !text-white !p-0" />
+                     <span>内推</span>
                   </div>
                ) : job.isTrusted ? (
                   <div
-                     className="px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-500/20"
+                     className="px-2.5 py-1 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-500/20 text-[10px] font-bold tracking-wide"
                      title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
                   >
                      <MemberBadge variant="verified" size="sm" className="!border-0 !bg-transparent !text-white !p-0" />
+                     <span>官网直投</span>
                   </div>
                ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
                   <div
