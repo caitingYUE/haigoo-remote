@@ -15,7 +15,7 @@ export default function TrustedCompaniesPage() {
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [jobCounts, setJobCounts] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
-    
+
     // Filters
     const [selectedIndustries, setSelectedIndustries] = useState<string[]>([])
     const [selectedRegions, setSelectedRegions] = useState<string[]>([])
@@ -43,7 +43,7 @@ export default function TrustedCompaniesPage() {
 
             companiesData.forEach((company: TrustedCompany) => {
                 const companyNameNorm = normalize(company.name)
-                
+
                 const companyJobs = jobsData.filter((job: any) => {
                     if (!job.company) return false
                     const jobCompanyNorm = normalize(job.company)
@@ -109,10 +109,10 @@ export default function TrustedCompaniesPage() {
             job.title &&
             job.title.toLowerCase().includes(searchLower)
         )
-        
+
         // Industry Filter
         const industryMatch = selectedIndustries.length === 0 || (company.industry && selectedIndustries.includes(company.industry))
-        
+
         // Region Filter
         const regionMatch = selectedRegions.length === 0 || (company.address && selectedRegions.some(r => company.address?.includes(r)))
 
@@ -122,50 +122,61 @@ export default function TrustedCompaniesPage() {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Hero Section */}
-            <div className="bg-white border-b border-slate-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-center">
-                    <h1 className="text-3xl font-bold text-slate-900 mb-3">
-                        遇见创新者：我们的可信远程企业
+            <div className="relative bg-slate-900 overflow-hidden py-16 sm:py-24">
+                <div className="absolute inset-0 z-0">
+                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                    <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-indigo-600/30 blur-3xl mix-blend-screen animate-blob"></div>
+                    <div className="absolute top-32 right-10 w-72 h-72 rounded-full bg-purple-600/30 blur-3xl mix-blend-screen animate-blob animation-delay-2000"></div>
+                </div>
+
+                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-sm">
+                        <Building className="w-3 h-3" /> Trusted Remote Companies
+                    </span>
+                    <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
+                        发现全球顶尖<br className="sm:hidden" />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 to-purple-200">远程友好企业</span>
                     </h1>
-                    
-                    {/* Trusted Company Standards - Hero Banner */}
-                    <div className="max-w-4xl mx-auto mb-8 text-left">
-                        <TrustedStandardsBanner context="company" />
-                    </div>
+                    <p className="text-slate-400 max-w-2xl mx-auto mb-10 text-lg">
+                        Haigoo 严选全球远程工作机会，所有企业均经过人工审核，确保真实可靠。<br className="hidden md:block" />加入我们，开启自由职业的新篇章。
+                    </p>
 
-                    <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-4 items-center">
-                        <div className="flex-1 w-full">
-                            <SearchBar
-                                value={searchTerm}
-                                onChange={setSearchTerm}
-                                onSearch={setSearchTerm}
-                                placeholder="搜索岗位、公司或关键词..."
-                                className="w-full shadow-sm"
-                            />
-                        </div>
-
-                        {/* Filters */}
-                        <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar items-center">
-                            <MultiSelectDropdown
-                                label="行业"
-                                options={industryOptions}
-                                selected={selectedIndustries}
-                                onChange={setSelectedIndustries}
-                            />
-                            <MultiSelectDropdown
-                                label="地区"
-                                options={regionOptions}
-                                selected={selectedRegions}
-                                onChange={setSelectedRegions}
-                            />
-                            {(selectedIndustries.length > 0 || selectedRegions.length > 0) && (
-                                <button 
-                                    onClick={() => { setSelectedIndustries([]); setSelectedRegions([]); }}
-                                    className="text-sm text-slate-500 hover:text-indigo-600 whitespace-nowrap"
-                                >
-                                    重置
-                                </button>
-                            )}
+                    {/* Search & Filter Container */}
+                    <div className="max-w-5xl mx-auto bg-white/10 backdrop-blur-md rounded-2xl p-2 border border-white/10 shadow-2xl">
+                        <div className="flex flex-col md:flex-row gap-3">
+                            <div className="flex-1">
+                                <SearchBar
+                                    value={searchTerm}
+                                    onChange={setSearchTerm}
+                                    onSearch={setSearchTerm}
+                                    placeholder="搜索公司、行业或关键词..."
+                                    className="w-full bg-white/90 border-0 focus:ring-0 rounded-xl h-12"
+                                />
+                            </div>
+                            <div className="flex gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 px-1 md:px-0">
+                                <MultiSelectDropdown
+                                    label="行业"
+                                    options={industryOptions}
+                                    selected={selectedIndustries}
+                                    onChange={setSelectedIndustries}
+                                //  className="bg-white/90 border-0 rounded-xl h-12"
+                                />
+                                <MultiSelectDropdown
+                                    label="地区"
+                                    options={regionOptions}
+                                    selected={selectedRegions}
+                                    onChange={setSelectedRegions}
+                                //  className="bg-white/90 border-0 rounded-xl h-12"
+                                />
+                                {(selectedIndustries.length > 0 || selectedRegions.length > 0) && (
+                                    <button
+                                        onClick={() => { setSelectedIndustries([]); setSelectedRegions([]); }}
+                                        className="px-4 h-12 flex items-center text-sm font-medium text-white hover:bg-white/10 rounded-xl transition-colors whitespace-nowrap"
+                                    >
+                                        重置
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -159,7 +159,7 @@ const MembershipPage: React.FC = () => {
                         <div className="text-left">
                            <p className="text-xs text-emerald-400 uppercase font-bold tracking-wider mb-0.5">Current Status</p>
                            <p className="font-bold text-white text-lg flex items-center gap-2">
-                              {currentMembership.level === 'club_go' ? '俱乐部Go会员' : 'Goo+会员'}
+                              {currentMembership.level === 'club_go' ? 'Haigoo Member' : 'Haigoo Pro Member'}
                               <span className="text-sm font-normal text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded-md">
                                  有效期至 {new Date(currentMembership.expireAt).toLocaleDateString()}
                               </span>
@@ -182,8 +182,8 @@ const MembershipPage: React.FC = () => {
                      <div
                         key={plan.id}
                         className={`relative bg-white rounded-[2rem] transition-all duration-300 flex flex-col h-full overflow-hidden group ${isPopular
-                              ? 'shadow-2xl shadow-indigo-200 ring-2 ring-indigo-500 scale-105 z-10'
-                              : 'shadow-xl hover:shadow-2xl border border-slate-100 hover:-translate-y-1'
+                           ? 'shadow-2xl shadow-indigo-200 ring-2 ring-indigo-500 scale-105 z-10'
+                           : 'shadow-xl hover:shadow-2xl border border-slate-100 hover:-translate-y-1'
                            }`}
                      >
                         {isPopular && (
@@ -224,8 +224,8 @@ const MembershipPage: React.FC = () => {
                            <button
                               onClick={() => handleSubscribe(plan)}
                               className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg active:scale-95 ${isPopular
-                                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-indigo-500/25'
-                                    : 'bg-slate-900 text-white hover:bg-slate-800'
+                                 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-indigo-500/25'
+                                 : 'bg-slate-900 text-white hover:bg-slate-800'
                                  }`}
                            >
                               立即订阅
@@ -308,8 +308,8 @@ const MembershipPage: React.FC = () => {
                                  <button
                                     onClick={() => setPaymentMethod('xiaohongshu')}
                                     className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'xiaohongshu'
-                                          ? 'border-red-500 bg-red-50/30'
-                                          : 'border-slate-100 hover:border-red-100 hover:bg-red-50/10'
+                                       ? 'border-red-500 bg-red-50/30'
+                                       : 'border-slate-100 hover:border-red-100 hover:bg-red-50/10'
                                        }`}
                                  >
                                     {paymentMethod === 'xiaohongshu' && (
@@ -327,8 +327,8 @@ const MembershipPage: React.FC = () => {
                                  <button
                                     onClick={() => setPaymentMethod('wechat_transfer')}
                                     className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'wechat_transfer'
-                                          ? 'border-green-500 bg-green-50/30'
-                                          : 'border-slate-100 hover:border-green-100 hover:bg-green-50/10'
+                                       ? 'border-green-500 bg-green-50/30'
+                                       : 'border-slate-100 hover:border-green-100 hover:bg-green-50/10'
                                        }`}
                                  >
                                     {paymentMethod === 'wechat_transfer' && (

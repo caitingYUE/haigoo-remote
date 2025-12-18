@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown } from 'lucide-react'
+import { FileText, Upload, Download, CheckCircle, AlertCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { resumeService } from '../services/resume-service'
@@ -38,7 +38,7 @@ export default function ProfileCenterPage() {
   }
 
   const [aiSuggestions, setAiSuggestions] = useState<AiSuggestion[]>([]) // Store AI suggestions
-  
+
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -223,30 +223,30 @@ export default function ProfileCenterPage() {
 
           // Fetch and set preview content
           const rId = latestResumeData.id || latestResumeData.resume_id
-          
+
           // Restore AI Analysis Result
           if (latestResumeData.aiScore) {
-              setResumeScore(latestResumeData.aiScore)
+            setResumeScore(latestResumeData.aiScore)
           }
           if (latestResumeData.aiSuggestions) {
-              try {
-                  const suggestions = typeof latestResumeData.aiSuggestions === 'string' 
-                     ? JSON.parse(latestResumeData.aiSuggestions) 
-                     : latestResumeData.aiSuggestions
-                  if (Array.isArray(suggestions)) {
-                      setAiSuggestions(suggestions)
-                  }
-              } catch (e) {
-                  console.warn('[ProfileCenter] Failed to parse aiSuggestions', e)
+            try {
+              const suggestions = typeof latestResumeData.aiSuggestions === 'string'
+                ? JSON.parse(latestResumeData.aiSuggestions)
+                : latestResumeData.aiSuggestions
+              if (Array.isArray(suggestions)) {
+                setAiSuggestions(suggestions)
               }
+            } catch (e) {
+              console.warn('[ProfileCenter] Failed to parse aiSuggestions', e)
+            }
           }
-          
+
           // Robust file type detection
           let fType = (latestResumeData.fileType || latestResumeData.file_type || '').toLowerCase()
           if (!fType) {
-             const fName = latestResumeData.fileName || latestResumeData.file_name || ''
-             const parts = fName.split('.')
-             if (parts.length > 1) fType = parts[parts.length - 1].toLowerCase()
+            const fName = latestResumeData.fileName || latestResumeData.file_name || ''
+            const parts = fName.split('.')
+            if (parts.length > 1) fType = parts[parts.length - 1].toLowerCase()
           }
 
           let mimeType = 'text/plain'
@@ -254,43 +254,43 @@ export default function ProfileCenterPage() {
           else if (fType === 'doc') mimeType = 'application/msword'
           else if (fType === 'docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
           else if (fType === 'png' || fType === 'jpg' || fType === 'jpeg') mimeType = `image/${fType}`
-          
+
           console.log(`[ProfileCenter] Resolved file type: ${fType}, MIME: ${mimeType}`)
           setFileType(mimeType)
 
           if (rId) {
-             try {
-                 console.log('[ProfileCenter] Fetching preview content for', rId)
-                 const contentResp = await fetch(`/api/resumes?action=content&id=${rId}`, {
-                     headers: { Authorization: `Bearer ${token}` }
-                 })
-                 if (contentResp.ok) {
-                     const contentData = await contentResp.json()
-                     if (contentData.success && contentData.content) {
-                         try {
-                            // Convert base64 to Blob
-                            const byteCharacters = atob(contentData.content)
-                            const byteNumbers = new Array(byteCharacters.length)
-                            for (let i = 0; i < byteCharacters.length; i++) {
-                                byteNumbers[i] = byteCharacters.charCodeAt(i)
-                            }
-                            const byteArray = new Uint8Array(byteNumbers)
-                            const blob = new Blob([byteArray], { type: mimeType })
-                            const url = URL.createObjectURL(blob)
-                            setPreviewUrl(url)
-                            console.log('[ProfileCenter] Preview loaded successfully with MIME', mimeType)
-                         } catch (conversionErr) {
-                             console.error('[ProfileCenter] Failed to convert content to blob:', conversionErr)
-                         }
-                     } else {
-                         console.warn('[ProfileCenter] No content in response:', contentData)
-                     }
-                 } else {
-                     console.warn('[ProfileCenter] Content fetch failed status:', contentResp.status)
-                 }
-             } catch (err) {
-                 console.error('[ProfileCenter] Failed to load preview content:', err)
-             }
+            try {
+              console.log('[ProfileCenter] Fetching preview content for', rId)
+              const contentResp = await fetch(`/api/resumes?action=content&id=${rId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+              if (contentResp.ok) {
+                const contentData = await contentResp.json()
+                if (contentData.success && contentData.content) {
+                  try {
+                    // Convert base64 to Blob
+                    const byteCharacters = atob(contentData.content)
+                    const byteNumbers = new Array(byteCharacters.length)
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                      byteNumbers[i] = byteCharacters.charCodeAt(i)
+                    }
+                    const byteArray = new Uint8Array(byteNumbers)
+                    const blob = new Blob([byteArray], { type: mimeType })
+                    const url = URL.createObjectURL(blob)
+                    setPreviewUrl(url)
+                    console.log('[ProfileCenter] Preview loaded successfully with MIME', mimeType)
+                  } catch (conversionErr) {
+                    console.error('[ProfileCenter] Failed to convert content to blob:', conversionErr)
+                  }
+                } else {
+                  console.warn('[ProfileCenter] No content in response:', contentData)
+                }
+              } else {
+                console.warn('[ProfileCenter] Content fetch failed status:', contentResp.status)
+              }
+            } catch (err) {
+              console.error('[ProfileCenter] Failed to load preview content:', err)
+            }
           }
 
           console.log('[ProfileCenter] ✅ Resume loaded successfully')
@@ -331,12 +331,12 @@ export default function ProfileCenterPage() {
     // 1. 乐观更新：立即展示文件
     const tempId = Date.now().toString()
     setLatestResume({ id: tempId, name: file.name })
-    
+
     // Create preview URL
     const url = URL.createObjectURL(file)
     setPreviewUrl(url)
     setFileType(file.type)
-    
+
     showSuccess('开始上传简历...', '正在后台解析文件')
 
     try {
@@ -349,81 +349,81 @@ export default function ProfileCenterPage() {
 
         // If we don't have a backend ID yet (local parse only), create one
         if (!finalResumeId) {
-             console.log('[ProfileCenter] Creating resume record on server...')
-             // Call API to create resume using bulk save (append mode)
-             const createResp = await fetch('/api/resumes', {
-                method: 'POST',
-                headers: {
-                   'Content-Type': 'application/json',
-                   'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    resumes: [{
-                        userId: authUser?.user_id, // Fixed: use user_id from User type
-                        fileName: file.name,
-                        size: file.size,
-                        fileType: file.type.split('/')[1] || 'unknown',
-                        contentText: parsed.textContent,
-                        parseStatus: 'success',
-                        parseResult: parsed,
-                        // Ensure we pass metadata
-                        metadata: { source: 'local_parse_fallback' }
-                    }],
-                    mode: 'append'
-                })
-             })
-             
-             if (createResp.ok) {
-                 const createJson = await createResp.json()
-                 if (createJson.success && createJson.ids && createJson.ids.length > 0) {
-                     // Since we appended, the last ID should be ours, or if we sent 1 resume and ids array has it.
-                     // saveResumes returns ALL ids in the table. This is tricky.
-                     // But since we are the only one operating in this request context usually...
-                     // Wait, saveResumes returns IDs of ALL resumes in the table after save.
-                     // We need to identify WHICH one is ours.
-                     // We can match by fileName and created time roughly, or just take the last one?
-                     // Actually, saveResumes logic in resume-storage.js:
-                     // for (const resume of limitedResumes) { const rId = resume.id || ... }
-                     // The ID is generated if not provided.
-                     // If we are in 'append' mode, we fetched existing, added ours, then saved all.
-                     // So ours is likely at the end or beginning depending on sort?
-                     // getResumes sorts by created_at DESC.
-                     // When we append: [...body.resumes, ...existingResumes].
-                     // So our new resume is at index 0.
-                     // So the first ID in the returned IDs array (if it respects order) should be ours?
-                     // resume-storage.js iterates `limitedResumes`.
-                     // So yes, index 0.
-                     finalResumeId = createJson.ids[0]
-                     console.log('[ProfileCenter] Created resume with ID:', finalResumeId)
-                 }
-             } else {
-                 console.warn('[ProfileCenter] Failed to create resume record:', createResp.status)
-             }
+          console.log('[ProfileCenter] Creating resume record on server...')
+          // Call API to create resume using bulk save (append mode)
+          const createResp = await fetch('/api/resumes', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              resumes: [{
+                userId: authUser?.user_id, // Fixed: use user_id from User type
+                fileName: file.name,
+                size: file.size,
+                fileType: file.type.split('/')[1] || 'unknown',
+                contentText: parsed.textContent,
+                parseStatus: 'success',
+                parseResult: parsed,
+                // Ensure we pass metadata
+                metadata: { source: 'local_parse_fallback' }
+              }],
+              mode: 'append'
+            })
+          })
+
+          if (createResp.ok) {
+            const createJson = await createResp.json()
+            if (createJson.success && createJson.ids && createJson.ids.length > 0) {
+              // Since we appended, the last ID should be ours, or if we sent 1 resume and ids array has it.
+              // saveResumes returns ALL ids in the table. This is tricky.
+              // But since we are the only one operating in this request context usually...
+              // Wait, saveResumes returns IDs of ALL resumes in the table after save.
+              // We need to identify WHICH one is ours.
+              // We can match by fileName and created time roughly, or just take the last one?
+              // Actually, saveResumes logic in resume-storage.js:
+              // for (const resume of limitedResumes) { const rId = resume.id || ... }
+              // The ID is generated if not provided.
+              // If we are in 'append' mode, we fetched existing, added ours, then saved all.
+              // So ours is likely at the end or beginning depending on sort?
+              // getResumes sorts by created_at DESC.
+              // When we append: [...body.resumes, ...existingResumes].
+              // So our new resume is at index 0.
+              // So the first ID in the returned IDs array (if it respects order) should be ours?
+              // resume-storage.js iterates `limitedResumes`.
+              // So yes, index 0.
+              finalResumeId = createJson.ids[0]
+              console.log('[ProfileCenter] Created resume with ID:', finalResumeId)
+            }
+          } else {
+            console.warn('[ProfileCenter] Failed to create resume record:', createResp.status)
+          }
         }
 
         // 解析成功
         if (parsed.textContent && parsed.textContent.length > 50) {
           setResumeText(parsed.textContent)
-          
+
           if (finalResumeId) {
-              setLatestResume(prev => ({ ...prev!, id: finalResumeId }))
+            setLatestResume(prev => ({ ...prev!, id: finalResumeId }))
           }
 
           // 更新本地状态以包含更多详情（如果有）
           // 注意：这里不需要再调用 ResumeStorageService.addResume，因为 API 已经保存了
           // 但如果使用的是前端解析（fallback），我们需要同步解析后的文本到后端
           if (finalResumeId && !parsed.id) { // Only sync if we didn't just create it?
-             // Actually if we just created it above, we included contentText.
-             // So we don't need update_content.
-             // But if parsed.id existed (server parse), content is already there too.
-             // So this block might be redundant if we handle creation above.
-             // Let's keep it safe: if we have an ID, we assume content is synced or we sync it.
-             // If we created it above, we passed contentText.
-             // If server parsed it, it has contentText.
-             // So we can probably remove the update_content call or keep it as backup?
-             // Let's leave it but use finalResumeId.
+            // Actually if we just created it above, we included contentText.
+            // So we don't need update_content.
+            // But if parsed.id existed (server parse), content is already there too.
+            // So this block might be redundant if we handle creation above.
+            // Let's keep it safe: if we have an ID, we assume content is synced or we sync it.
+            // If we created it above, we passed contentText.
+            // If server parsed it, it has contentText.
+            // So we can probably remove the update_content call or keep it as backup?
+            // Let's leave it but use finalResumeId.
           }
-          
+
           showSuccess('简历上传成功！', '您可以点击按钮进行AI深度分析')
 
           // 4. AI 分析不再自动触发，由用户手动触发
@@ -456,7 +456,7 @@ export default function ProfileCenterPage() {
     // 滚动到分析区域，确保用户看到进度
     const analysisSection = document.getElementById('ai-analysis-section')
     if (analysisSection) {
-        analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
 
     // 临时移除会员拦截，允许所有用户使用 AI 简历分析
@@ -470,7 +470,7 @@ export default function ProfileCenterPage() {
     try {
       showSuccess('正在分析简历...', 'AI 正在深度读取您的简历内容')
       setIsAnalyzing(true)
-      
+
       // Simulate progress steps
       const steps = [
         '正在解析简历结构...',
@@ -479,20 +479,20 @@ export default function ProfileCenterPage() {
         '正在生成优化建议...',
         '正在计算综合得分...'
       ]
-      
+
       let stepIndex = 0
       setAnalysisStep(steps[0])
-      
+
       const interval = setInterval(() => {
         stepIndex = (stepIndex + 1) % steps.length
         if (stepIndex < steps.length - 1) { // Don't loop endlessly if it takes too long
-             setAnalysisStep(steps[stepIndex])
+          setAnalysisStep(steps[stepIndex])
         }
       }, 2500)
-      
+
       // 获取用户求职意向
       const targetRole = authUser?.profile?.targetRole || ''
-      
+
       // Call backend API for analysis
       // Ensure we have an ID. If latestResume.id is temporary (timestamp), we might fail if backend doesn't have it.
       // But handleUpload logic tries to sync it.
@@ -501,40 +501,40 @@ export default function ProfileCenterPage() {
       // Our API design for 'analyze' requires 'id'.
       // If id is not found in DB, it returns 404.
       // So we MUST ensure the resume exists in DB before calling analyze.
-      
+
       // Check if ID is a timestamp (temporary)
       const isTempId = latestResume?.id && /^\d{13}$/.test(latestResume.id);
-      
+
       // If temp ID or no ID, we might need to create it first (should have been done in upload, but just in case)
       let resumeIdToAnalyze = latestResume?.id;
-      
+
       // If we are unsure if it's saved, we can try to re-save/sync content
       // But 'analyze' endpoint reads from DB.
       // Let's rely on the upload logic having done its job.
       // But if we see 404 in logs, it means ID is not found.
-      
+
       console.log('[ProfileCenter] Requesting analysis for ID:', resumeIdToAnalyze);
 
       const resp = await fetch('/api/resumes', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-              action: 'analyze',
-              id: resumeIdToAnalyze,
-              targetRole,
-              // Fallback: send content if ID might be missing? No, API expects ID to load from DB.
-              // If we really want robustness, we could allow sending content directly to analyze endpoint,
-              // but that bypasses the "save result to DB" logic unless we also save it there.
-          })
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'analyze',
+          id: resumeIdToAnalyze,
+          targetRole,
+          // Fallback: send content if ID might be missing? No, API expects ID to load from DB.
+          // If we really want robustness, we could allow sending content directly to analyze endpoint,
+          // but that bypasses the "save result to DB" logic unless we also save it there.
+        })
       })
-      
+
       const result = await resp.json()
-      
+
       clearInterval(interval)
-      
+
       if (resp.ok && result.success) {
         setResumeScore(result.data.score || 0)
         setAiSuggestions(result.data.suggestions || [])
@@ -542,36 +542,36 @@ export default function ProfileCenterPage() {
       } else {
         console.error('[ProfileCenter] Analysis failed:', result);
         if (result.limitReached) {
-            showError('次数限制', '每天只能使用1次简历分析功能')
+          showError('次数限制', '每天只能使用1次简历分析功能')
         } else if (result.contentUnchanged) {
-            showError('无需分析', '简历内容未变更，请勿重复分析')
+          showError('无需分析', '简历内容未变更，请勿重复分析')
         } else {
-            // Handle "Resume content is empty" specifically
-            if (result.error === 'Resume content is empty') {
-                 // Try to sync content again
-                 console.log('[ProfileCenter] Content missing on server, trying to sync...');
-                 if (resumeIdToAnalyze && resumeText) {
-                     await fetch('/api/resumes', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ action: 'update_content', id: resumeIdToAnalyze, contentText: resumeText })
-                     });
-                     // Retry analysis once
-                     const retryResp = await fetch('/api/resumes', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ action: 'analyze', id: resumeIdToAnalyze, targetRole })
-                     });
-                     const retryResult = await retryResp.json();
-                     if (retryResp.ok && retryResult.success) {
-                        setResumeScore(retryResult.data.score || 0)
-                        setAiSuggestions(retryResult.data.suggestions || [])
-                        showSuccess('简历分析完成！', `您的简历得分：${retryResult.data.score || 0}%`)
-                        return;
-                     }
-                 }
+          // Handle "Resume content is empty" specifically
+          if (result.error === 'Resume content is empty') {
+            // Try to sync content again
+            console.log('[ProfileCenter] Content missing on server, trying to sync...');
+            if (resumeIdToAnalyze && resumeText) {
+              await fetch('/api/resumes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ action: 'update_content', id: resumeIdToAnalyze, contentText: resumeText })
+              });
+              // Retry analysis once
+              const retryResp = await fetch('/api/resumes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ action: 'analyze', id: resumeIdToAnalyze, targetRole })
+              });
+              const retryResult = await retryResp.json();
+              if (retryResp.ok && retryResult.success) {
+                setResumeScore(retryResult.data.score || 0)
+                setAiSuggestions(retryResult.data.suggestions || [])
+                showSuccess('简历分析完成！', `您的简历得分：${retryResult.data.score || 0}%`)
+                return;
+              }
             }
-            throw new Error(result.error || '分析未返回结果')
+          }
+          throw new Error(result.error || '分析未返回结果')
         }
       }
     } catch (aiError) {
@@ -615,10 +615,10 @@ export default function ProfileCenterPage() {
   const ResumeTab = () => (
     <div className="space-y-6">
       {/* 顶部标题与下载 */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">简历优化</h2>
-          <p className="text-slate-500 mt-1">利用 AI 智能分析，获取专业的简历优化建议。</p>
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">简历优化</h2>
+          <p className="text-slate-500 mt-2 text-lg">利用 AI 智能分析，获取专业的简历优化建议。</p>
         </div>
       </div>
 
@@ -636,89 +636,89 @@ export default function ProfileCenterPage() {
       <div className="flex flex-col gap-8">
         {/* Top Section: Resume Preview & Basic Info */}
         <div className={`bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px] flex flex-col w-full`}>
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900 px-1">您的简历</h3>
-                {!latestResume && (
-                    <p className="text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
-                )}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-slate-900 px-1">您的简历</h3>
+            {!latestResume && (
+              <p className="text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
+            )}
+          </div>
+          {!latestResume ? (
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+              <div className="flex flex-col items-center gap-2 text-center max-w-[520px] mx-auto p-8">
+                <FileText className="w-12 h-12 text-slate-400 mb-2" />
+                <p className="text-lg font-bold text-slate-900">暂无简历</p>
+                <p className="text-sm text-slate-500 mb-6">拖拽文件到此处或点击上传</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center w-full max-w-[240px]"
+                >
+                  <Upload className="w-4 h-4 mr-2" />上传简历
+                </button>
+                <p className="text-xs text-slate-400 mt-4">支持 PDF、DOC、DOCX</p>
+              </div>
             </div>
-            {!latestResume ? (
-              <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                <div className="flex flex-col items-center gap-2 text-center max-w-[520px] mx-auto p-8">
-                  <FileText className="w-12 h-12 text-slate-400 mb-2" />
-                  <p className="text-lg font-bold text-slate-900">暂无简历</p>
-                  <p className="text-sm text-slate-500 mb-6">拖拽文件到此处或点击上传</p>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center w-full max-w-[240px]"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />上传简历
-                  </button>
-                  <p className="text-xs text-slate-400 mt-4">支持 PDF、DOC、DOCX</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4 h-full flex flex-col">
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-indigo-600" />
-                      <span className="font-medium text-slate-900">{latestResume.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center"
-                        title="重新上传简历"
-                      >
-                        <Upload className="w-4 h-4 mr-1" />
-                        重新上传
-                      </button>
-                      <button
-                        onClick={handleDeleteResume}
-                        className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="删除简历"
-                      >
-                        删除
-                      </button>
-                    </div>
+          ) : (
+            <div className="space-y-4 h-full flex flex-col">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                    <span className="font-medium text-slate-900">{latestResume.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center"
+                      title="重新上传简历"
+                    >
+                      <Upload className="w-4 h-4 mr-1" />
+                      重新上传
+                    </button>
+                    <button
+                      onClick={handleDeleteResume}
+                      className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="删除简历"
+                    >
+                      删除
+                    </button>
                   </div>
                 </div>
-                {(previewUrl || resumeText) && (
-                  <div className="rounded-xl border border-slate-200 flex-1 overflow-hidden bg-slate-50/50 flex flex-col min-h-[400px] max-h-[700px]">
-                    {previewUrl && fileType === 'application/pdf' ? (
-                      <iframe
-                        src={previewUrl}
-                        className="w-full h-full min-h-[400px] bg-white"
-                        title="Resume Preview"
-                      />
-                    ) : previewUrl && fileType.startsWith('image/') ? (
-                      <div className="w-full h-full overflow-auto flex justify-center bg-slate-100 p-4">
-                        <img src={previewUrl} alt="Resume" className="max-w-full h-auto shadow-md" />
-                      </div>
-                    ) : (
-                      <div className="w-full h-full overflow-auto p-4 md:p-8 bg-slate-100 shadow-inner">
-                        <div className="max-w-[210mm] mx-auto bg-white shadow-md min-h-[297mm] p-8 md:p-12">
-                          <pre className="whitespace-pre-wrap text-sm text-slate-700 font-sans leading-relaxed max-w-none">{resumeText || '预览暂不可用'}</pre>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
-            )}
-            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handleUpload} className="hidden" />
-            {isUploading && (
-              <div className="mt-4 text-sm text-slate-500 text-center">正在上传并分析...</div>
-            )}
+              {(previewUrl || resumeText) && (
+                <div className="rounded-xl border border-slate-200 flex-1 overflow-hidden bg-slate-50/50 flex flex-col min-h-[400px] max-h-[700px]">
+                  {previewUrl && fileType === 'application/pdf' ? (
+                    <iframe
+                      src={previewUrl}
+                      className="w-full h-full min-h-[400px] bg-white"
+                      title="Resume Preview"
+                    />
+                  ) : previewUrl && fileType.startsWith('image/') ? (
+                    <div className="w-full h-full overflow-auto flex justify-center bg-slate-100 p-4">
+                      <img src={previewUrl} alt="Resume" className="max-w-full h-auto shadow-md" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full overflow-auto p-4 md:p-8 bg-slate-100 shadow-inner">
+                      <div className="max-w-[210mm] mx-auto bg-white shadow-md min-h-[297mm] p-8 md:p-12">
+                        <pre className="whitespace-pre-wrap text-sm text-slate-700 font-sans leading-relaxed max-w-none">{resumeText || '预览暂不可用'}</pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handleUpload} className="hidden" />
+          {isUploading && (
+            <div className="mt-4 text-sm text-slate-500 text-center">正在上传并分析...</div>
+          )}
         </div>
 
         {/* Bottom Section: AI Analysis Results */}
         <div id="ai-analysis-section" className="space-y-4 w-full">
           <div className="flex items-center justify-between">
-             <h3 className="text-lg font-bold text-slate-900 px-1">AI 优化建议</h3>
+            <h3 className="text-lg font-bold text-slate-900 px-1">AI 优化建议</h3>
           </div>
-          
+
           <div className="space-y-3">
             {!resumeText ? (
               <div className="p-8 bg-slate-50 text-slate-500 rounded-xl text-center border-2 border-dashed border-slate-200">
@@ -726,59 +726,58 @@ export default function ProfileCenterPage() {
                 <p>上传简历以解锁 AI 智能优化建议。</p>
               </div>
             ) : isAnalyzing ? (
-               <div className="p-12 bg-white border border-indigo-100 rounded-xl text-center shadow-sm">
-                  <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-6"></div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-2">{analysisStep || '正在初始化 AI 引擎...'}</h4>
-                  <p className="text-slate-500">正在进行深度分析，这可能需要 30-60 秒，请耐心等待...</p>
-               </div>
+              <div className="p-12 bg-white border border-indigo-100 rounded-xl text-center shadow-sm">
+                <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-6"></div>
+                <h4 className="text-lg font-bold text-slate-900 mb-2">{analysisStep || '正在初始化 AI 引擎...'}</h4>
+                <p className="text-slate-500">正在进行深度分析，这可能需要 30-60 秒，请耐心等待...</p>
+              </div>
             ) : aiSuggestions.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                  {aiSuggestions.map((item, idx) => (
-                    <div key={idx} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 hover:border-indigo-200 transition-colors">
-                      <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
-                            item.priority === '高' ? 'bg-red-50 text-red-600' :
-                            item.priority === '中' ? 'bg-orange-50 text-orange-600' :
-                            'bg-blue-50 text-blue-600'
+                {aiSuggestions.map((item, idx) => (
+                  <div key={idx} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 hover:border-indigo-200 transition-colors">
+                    <div className="flex items-start gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${item.priority === '高' ? 'bg-red-50 text-red-600' :
+                        item.priority === '中' ? 'bg-orange-50 text-orange-600' :
+                          'bg-blue-50 text-blue-600'
                         }`}>
-                            <span className="font-bold text-sm">{item.priority}</span>
+                        <span className="font-bold text-sm">{item.priority}</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between gap-4 mb-2">
+                          <h4 className="font-bold text-base text-slate-900 flex-1">{item.issue}</h4>
+                          <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full flex-shrink-0 whitespace-nowrap">{item.category}</span>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between gap-4 mb-2">
-                              <h4 className="font-bold text-base text-slate-900 flex-1">{item.issue}</h4>
-                              <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full flex-shrink-0 whitespace-nowrap">{item.category}</span>
-                          </div>
-                          <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
-                            <span className="font-semibold text-indigo-600 mr-1">建议修改：</span>
-                            {item.suggestion}
-                          </p>
-                        </div>
+                        <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                          <span className="font-semibold text-indigo-600 mr-1">建议修改：</span>
+                          {item.suggestion}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                  
-                  {/* Re-analyze Button */}
-                   <div className="mt-4 flex justify-center">
-                        <button
-                          onClick={handleAnalyzeResume}
-                          disabled={isAnalyzing}
-                          className={`px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 w-full
+                  </div>
+                ))}
+
+                {/* Re-analyze Button */}
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={handleAnalyzeResume}
+                    disabled={isAnalyzing}
+                    className={`px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 w-full
                              ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}
                           `}
-                        >
-                          {isAnalyzing ? (
-                             <>
-                               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                               正在分析...
-                             </>
-                          ) : (
-                             <>
-                               <Crown className="w-5 h-5 text-yellow-300" />
-                               重新生成 AI 建议
-                             </>
-                          )}
-                        </button>
-                   </div>
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        正在分析...
+                      </>
+                    ) : (
+                      <>
+                        <Crown className="w-5 h-5 text-yellow-300" />
+                        重新生成 AI 建议
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
@@ -849,21 +848,21 @@ export default function ProfileCenterPage() {
     const [myFeedbacks, setMyFeedbacks] = useState<any[]>([])
 
     const fetchMyFeedbacks = async () => {
-        try {
-            const res = await fetch('/api/user-profile?action=my_feedbacks', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            const data = await res.json()
-            if (data.success) {
-                setMyFeedbacks(data.feedbacks || [])
-            }
-        } catch (e) {
-            console.error('Failed to fetch feedbacks', e)
+      try {
+        const res = await fetch('/api/user-profile?action=my_feedbacks', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (data.success) {
+          setMyFeedbacks(data.feedbacks || [])
         }
+      } catch (e) {
+        console.error('Failed to fetch feedbacks', e)
+      }
     }
 
     useEffect(() => {
-        fetchMyFeedbacks()
+      fetchMyFeedbacks()
     }, [])
 
     const submit = async () => {
@@ -876,12 +875,12 @@ export default function ProfileCenterPage() {
           body: JSON.stringify({ accuracy, content, contact })
         })
         const j = await r.json().catch(() => ({ success: false }))
-        if (r.ok && j.success) { 
-            showSuccess('反馈已提交'); 
-            setAccuracy('unknown'); 
-            setContent(''); 
-            setContact('');
-            fetchMyFeedbacks(); // Refresh list
+        if (r.ok && j.success) {
+          showSuccess('反馈已提交');
+          setAccuracy('unknown');
+          setContent('');
+          setContact('');
+          fetchMyFeedbacks(); // Refresh list
         }
         else { showError('提交失败', j.error || '请稍后重试') }
       } catch (e) {
@@ -889,7 +888,7 @@ export default function ProfileCenterPage() {
       } finally { setSubmitting(false) }
     }
 
-  return (
+    return (
       <div className="space-y-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -897,7 +896,7 @@ export default function ProfileCenterPage() {
             <p className="text-slate-500 mt-1">反馈岗位或平台信息问题与建议。</p>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="space-y-6">
             <div>
@@ -965,39 +964,38 @@ export default function ProfileCenterPage() {
 
         {/* Feedback History */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-100">
-                <h3 className="font-bold text-slate-900">历史反馈记录</h3>
-            </div>
-            <div className="divide-y divide-slate-100">
-                {myFeedbacks.length === 0 ? (
-                    <div className="p-8 text-center text-slate-500 text-sm">暂无反馈记录</div>
-                ) : (
-                    myFeedbacks.map(item => (
-                        <div key={item.id} className="p-6 hover:bg-slate-50 transition-colors">
-                            <div className="flex justify-between items-start mb-2">
-                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                                    item.accuracy === 'accurate' ? 'bg-green-100 text-green-700' :
-                                    item.accuracy === 'inaccurate' ? 'bg-red-100 text-red-700' :
-                                    'bg-slate-100 text-slate-600'
-                                }`}>
-                                    {item.accuracy === 'accurate' ? '准确' : item.accuracy === 'inaccurate' ? '不准确' : '平台建议/未知'}
-                                </span>
-                                <span className="text-xs text-slate-400">{new Date(item.createdAt).toLocaleString()}</span>
-                            </div>
-                            <p className="text-slate-800 text-sm mb-3 whitespace-pre-wrap">{item.content}</p>
-                            {item.replyContent && (
-                                <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100 mt-3">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-xs font-bold text-indigo-700">管理员回复</span>
-                                        <span className="text-xs text-indigo-400">{new Date(item.repliedAt).toLocaleString()}</span>
-                                    </div>
-                                    <p className="text-sm text-indigo-900">{item.replyContent}</p>
-                                </div>
-                            )}
-                        </div>
-                    ))
-                )}
-            </div>
+          <div className="p-6 border-b border-slate-100">
+            <h3 className="font-bold text-slate-900">历史反馈记录</h3>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {myFeedbacks.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-sm">暂无反馈记录</div>
+            ) : (
+              myFeedbacks.map(item => (
+                <div key={item.id} className="p-6 hover:bg-slate-50 transition-colors">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${item.accuracy === 'accurate' ? 'bg-green-100 text-green-700' :
+                      item.accuracy === 'inaccurate' ? 'bg-red-100 text-red-700' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>
+                      {item.accuracy === 'accurate' ? '准确' : item.accuracy === 'inaccurate' ? '不准确' : '平台建议/未知'}
+                    </span>
+                    <span className="text-xs text-slate-400">{new Date(item.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="text-slate-800 text-sm mb-3 whitespace-pre-wrap">{item.content}</p>
+                  {item.replyContent && (
+                    <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100 mt-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-indigo-700">管理员回复</span>
+                        <span className="text-xs text-indigo-400">{new Date(item.repliedAt).toLocaleString()}</span>
+                      </div>
+                      <p className="text-sm text-indigo-900">{item.replyContent}</p>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     )
@@ -1012,13 +1010,13 @@ export default function ProfileCenterPage() {
     const dropdownRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsDropdownOpen(false)
-            }
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setIsDropdownOpen(false)
         }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
+      }
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
     const fetchSubscriptions = async () => {
@@ -1044,24 +1042,24 @@ export default function ProfileCenterPage() {
     }, [])
 
     const startEditing = (sub: any) => {
-        setEditingId(sub.subscription_id)
-        setEditTopics(sub.topic ? sub.topic.split(',') : [])
-        setIsDropdownOpen(false)
+      setEditingId(sub.subscription_id)
+      setEditTopics(sub.topic ? sub.topic.split(',') : [])
+      setIsDropdownOpen(false)
     }
 
     const toggleEditTopic = (val: string) => {
-        if (editTopics.includes(val)) {
-            setEditTopics(editTopics.filter(t => t !== val))
-        } else {
-            if (editTopics.length >= MAX_SUBSCRIPTION_TOPICS) return
-            setEditTopics([...editTopics, val])
-        }
+      if (editTopics.includes(val)) {
+        setEditTopics(editTopics.filter(t => t !== val))
+      } else {
+        if (editTopics.length >= MAX_SUBSCRIPTION_TOPICS) return
+        setEditTopics([...editTopics, val])
+      }
     }
 
     const handleUpdate = async (id: string) => {
       if (editTopics.length === 0) {
-          showError('请至少选择一个类型')
-          return
+        showError('请至少选择一个类型')
+        return
       }
       try {
         const res = await fetch('/api/auth?action=update-subscription', {
@@ -1103,15 +1101,15 @@ export default function ProfileCenterPage() {
     }
 
     const getTopicLabel = (topicStr: string) => {
-        if (!topicStr) return '无'
-        const values = topicStr.split(',')
-        return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
+      if (!topicStr) return '无'
+      const values = topicStr.split(',')
+      return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
     }
 
     const getEditLabel = () => {
-        if (editTopics.length === 0) return '请选择'
-        if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
-        return `已选 ${editTopics.length} 个`
+      if (editTopics.length === 0) return '请选择'
+      if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
+      return `已选 ${editTopics.length} 个`
     }
 
     return (
@@ -1149,35 +1147,35 @@ export default function ProfileCenterPage() {
                       订阅内容：
                       {editingId === sub.subscription_id ? (
                         <div className="inline-flex items-center gap-2 ml-2 relative" ref={dropdownRef}>
-                           <div className="relative">
-                                <button 
-                                    className="border rounded px-2 py-1 bg-white text-sm min-w-[100px] flex items-center justify-between"
-                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                >
-                                    <span className="truncate max-w-[120px]">{getEditLabel()}</span>
-                                    <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />
-                                </button>
-                                {isDropdownOpen && (
-                                    <div className="absolute top-full left-0 mt-1 w-64 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-xl z-50 p-2">
-                                        <div className="text-xs text-slate-500 px-2 py-1 mb-1">最多可选 {MAX_SUBSCRIPTION_TOPICS} 个</div>
-                                        {SUBSCRIPTION_TOPICS.map(opt => {
-                                            const isSelected = editTopics.includes(opt.value)
-                                            return (
-                                                <div 
-                                                    key={opt.value}
-                                                    onClick={() => toggleEditTopic(opt.value)}
-                                                    className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors
+                          <div className="relative">
+                            <button
+                              className="border rounded px-2 py-1 bg-white text-sm min-w-[100px] flex items-center justify-between"
+                              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            >
+                              <span className="truncate max-w-[120px]">{getEditLabel()}</span>
+                              <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />
+                            </button>
+                            {isDropdownOpen && (
+                              <div className="absolute top-full left-0 mt-1 w-64 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-xl z-50 p-2">
+                                <div className="text-xs text-slate-500 px-2 py-1 mb-1">最多可选 {MAX_SUBSCRIPTION_TOPICS} 个</div>
+                                {SUBSCRIPTION_TOPICS.map(opt => {
+                                  const isSelected = editTopics.includes(opt.value)
+                                  return (
+                                    <div
+                                      key={opt.value}
+                                      onClick={() => toggleEditTopic(opt.value)}
+                                      className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors
                                                         ${isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}
                                                     `}
-                                                >
-                                                    <span>{opt.label}</span>
-                                                    {isSelected && <Check className="w-3.5 h-3.5" />}
-                                                </div>
-                                            )
-                                        })}
+                                    >
+                                      <span>{opt.label}</span>
+                                      {isSelected && <Check className="w-3.5 h-3.5" />}
                                     </div>
-                                )}
-                           </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
                           <button onClick={() => handleUpdate(sub.subscription_id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="w-4 h-4" /></button>
                           <button onClick={() => setEditingId(null)} className="p-1 text-slate-400 hover:bg-slate-100 rounded"><X className="w-4 h-4" /></button>
                         </div>
@@ -1191,14 +1189,14 @@ export default function ProfileCenterPage() {
                   <div className="flex items-center gap-3">
                     {editingId !== sub.subscription_id && (
                       <>
-                        <button 
+                        <button
                           onClick={() => startEditing(sub)}
                           className="flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                           修改
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(sub.subscription_id)}
                           className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                         >
@@ -1305,135 +1303,144 @@ export default function ProfileCenterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
+    <div className="min-h-screen bg-slate-50/50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="mb-8">
           <button
-            className="flex items-center text-slate-500 hover:text-slate-900 transition-colors"
+            className="flex items-center text-slate-500 hover:text-slate-900 transition-colors group"
             onClick={() => navigate(-1)}
             aria-label="返回上一页"
           >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            <span className="text-sm font-medium">返回</span>
+            <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center mr-2 shadow-sm group-hover:border-indigo-300 transition-all">
+              <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+            </div>
+            <span className="text-sm font-medium">返回上一页</span>
           </button>
         </div>
+
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
-          <aside className={`transition-all duration-300 ease-in-out flex-shrink-0 space-y-6 relative ${isSidebarCollapsed ? 'w-20' : 'w-full lg:w-64'}`}>
+          <aside className={`transition-all duration-300 ease-in-out flex-shrink-0 space-y-6 relative ${isSidebarCollapsed ? 'w-20' : 'w-full lg:w-72'}`}>
             {/* Toggle Button */}
             <button
-                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                className="absolute -right-3 top-0 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-sm text-slate-500 hover:text-indigo-600 z-10 hidden lg:flex"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="absolute -right-3 top-6 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-md text-slate-500 hover:text-indigo-600 z-10 hidden lg:flex hover:scale-110 transition-transform"
             >
-                {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              {isSidebarCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
             </button>
 
-            <div>
-              <div className={`text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-2 ${isSidebarCollapsed ? 'text-center' : ''}`}>
-                  {isSidebarCollapsed ? '...' : 'Personal Center'}
-              </div>
-              <div className="space-y-1" role="tablist" aria-label="个人中心切换">
-                <button
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'resume' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
-                  role="tab"
-                  aria-selected={tab === 'resume'}
-                  onClick={() => switchTab('resume')}
-                  title={isSidebarCollapsed ? "我的简历" : undefined}
-                >
-                  <FileText className={`w-4 h-4 ${tab === 'resume' ? 'text-white' : 'text-slate-400'}`} />
-                  {!isSidebarCollapsed && "我的简历"}
-                </button>
-                <button
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'favorites' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
-                  role="tab"
-                  aria-selected={tab === 'favorites'}
-                  onClick={() => switchTab('favorites')}
-                  title={isSidebarCollapsed ? "我的收藏" : undefined}
-                >
-                  <Heart className={`w-4 h-4 ${tab === 'favorites' ? 'text-white' : 'text-slate-400'}`} />
-                  {!isSidebarCollapsed && "我的收藏"}
-                </button>
-                <button
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'feedback' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
-                  role="tab"
-                  aria-selected={tab === 'feedback'}
-                  onClick={() => switchTab('feedback')}
-                  title={isSidebarCollapsed ? "我要反馈" : undefined}
-                >
-                  <MessageSquare className={`w-4 h-4 ${tab === 'feedback' ? 'text-white' : 'text-slate-400'}`} />
-                  {!isSidebarCollapsed && "我要反馈"}
-                </button>
-                <button
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'recommend' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
-                  role="tab"
-                  aria-selected={tab === 'recommend'}
-                  onClick={() => switchTab('recommend')}
-                  title={isSidebarCollapsed ? "我要推荐" : undefined}
-                >
-                  <ThumbsUp className={`w-4 h-4 ${tab === 'recommend' ? 'text-white' : 'text-slate-400'}`} />
-                  {!isSidebarCollapsed && "我要推荐"}
-                </button>
-                <button
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === 'subscriptions' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
-                  role="tab"
-                  aria-selected={tab === 'subscriptions'}
-                  onClick={() => switchTab('subscriptions')}
-                  title={isSidebarCollapsed ? "订阅管理" : undefined}
-                >
-                  <Bell className={`w-4 h-4 ${tab === 'subscriptions' ? 'text-white' : 'text-slate-400'}`} />
-                  {!isSidebarCollapsed && "订阅管理"}
-                </button>
-              </div>
-            </div>
-
-            {/* Membership Card */}
+            {/* Member Card - Premium Upgrade */}
             {!isSidebarCollapsed ? (
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 text-white shadow-lg relative overflow-hidden">
-                  {/* Decoration */}
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl"></div>
+              <div className="bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] rounded-2xl p-6 text-white shadow-xl relative overflow-hidden border border-slate-800">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full -mr-10 -mt-10 blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/10 rounded-full -ml-10 -mb-10 blur-2xl"></div>
 
-                  <div className="flex items-center gap-2 mb-4 relative z-10">
-                    <Crown className="w-5 h-5 text-yellow-400" />
-                    <h3 className="font-bold text-sm text-white">会员权益</h3>
-                  </div>
-
-                  <div className="relative z-10">
-                    {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
-                      <div>
-                        <p className="text-xs text-slate-300 mb-2">您当前是 <span className="font-bold text-yellow-300">{authUser.membershipLevel === 'club_go' ? '俱乐部Go会员' : 'Goo+会员'}</span></p>
-                        <p className="text-xs text-slate-400 mb-4">有效期至 {new Date(authUser.membershipExpireAt).toLocaleDateString()}</p>
-                        <button
-                          onClick={() => navigate('/membership')}
-                          className="w-full py-2 bg-white/10 border border-white/20 text-white text-xs font-bold rounded-lg hover:bg-white/20 transition-colors"
-                        >
-                          续费/升级
-                        </button>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-indigo-500/20 rounded-lg">
+                        <Crown className="w-5 h-5 text-indigo-400" />
                       </div>
-                    ) : (
-                      <div>
-                        <p className="text-xs text-slate-300 mb-4 leading-relaxed">加入俱乐部，解锁内推直达与AI简历深度优化。</p>
-                        <button
-                          onClick={() => navigate('/membership')}
-                          className="w-full py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-colors shadow-sm"
-                        >
-                          立即开通
-                        </button>
-                      </div>
+                      <span className="font-bold text-sm tracking-wide text-indigo-100">会员中心</span>
+                    </div>
+                    {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && (
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[10px] font-bold text-indigo-300 uppercase">
+                        Active
+                      </span>
                     )}
                   </div>
+
+                  {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-slate-400 mb-1">当前等级</p>
+                        <p className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                          {authUser.membershipLevel === 'club_go' ? 'Haigoo Member' : 'Haigoo Pro Member'}
+                          <CheckCircle className="w-4 h-4 text-emerald-400" />
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 mb-1">有效期至</p>
+                        <p className="text-sm font-medium text-slate-300 font-mono">
+                          {new Date(authUser.membershipExpireAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate('/membership')}
+                        className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-bold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
+                      >
+                        续费 / 升级权益 <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-lg font-bold text-white mb-2">开通会员</h4>
+                        <p className="text-xs text-slate-300 leading-relaxed opacity-90">
+                          解锁无限次 AI 简历优化、内推直达通道及职位专属推荐权益。
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate('/membership')}
+                        className="w-full py-3 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-400 hover:to-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 group"
+                      >
+                        立即开通 <Zap className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      </button>
+                    </div>
+                  )}
                 </div>
+              </div>
             ) : (
-                <div className="flex justify-center" title="会员权益">
-                    <button onClick={() => setIsSidebarCollapsed(false)} className="p-2 bg-slate-900 text-yellow-400 rounded-full hover:bg-slate-800 transition-colors shadow-md">
-                        <Crown className="w-5 h-5" />
-                    </button>
-                </div>
+              <div className="flex justify-center" title="会员权益">
+                <button onClick={() => setIsSidebarCollapsed(false)} className="p-3 bg-slate-900 text-indigo-400 rounded-2xl hover:bg-slate-800 transition-colors shadow-lg border border-slate-800">
+                  <Crown className="w-6 h-6" />
+                </button>
+              </div>
             )}
+
+            <div>
+              <div className={`text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-4 ${isSidebarCollapsed ? 'text-center px-0' : ''}`}>
+                {isSidebarCollapsed ? 'MENU' : 'Dashboard'}
+              </div>
+              <nav className="space-y-1" role="tablist">
+                {[
+                  { id: 'resume', label: '我的简历', icon: FileText },
+                  { id: 'favorites', label: '我的收藏', icon: Heart },
+                  { id: 'subscriptions', label: '订阅管理', icon: Bell },
+                  { id: 'recommend', label: '我要推荐', icon: ThumbsUp },
+                  { id: 'feedback', label: '我要反馈', icon: MessageSquare }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative
+                        ${tab === item.id
+                        ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-100'
+                        : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm'
+                      } 
+                        ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
+                    role="tab"
+                    aria-selected={tab === item.id}
+                    onClick={() => switchTab(item.id as TabKey)}
+                    title={isSidebarCollapsed ? item.label : undefined}
+                  >
+                    <item.icon className={`w-5 h-5 transition-colors ${tab === item.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                    {!isSidebarCollapsed && (
+                      <span>{item.label}</span>
+                    )}
+                    {tab === item.id && !isSidebarCollapsed && (
+                      <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            </div>
           </aside>
 
-          {/* Main Content */}
+          {/* Main Content Area */}
           <main className="flex-1 min-w-0">
-            {tab === 'resume' ? <ResumeTab /> : tab === 'favorites' ? <FavoritesTab /> : tab === 'feedback' ? <FeedbackTab /> : tab === 'subscriptions' ? <SubscriptionsTab /> : <RecommendTab />}
+            <div className="transition-all duration-300">
+              {tab === 'resume' ? <ResumeTab /> : tab === 'favorites' ? <FavoritesTab /> : tab === 'feedback' ? <FeedbackTab /> : tab === 'subscriptions' ? <SubscriptionsTab /> : <RecommendTab />}
+            </div>
             {isJobDetailOpen && selectedJob && (
               <JobDetailModal
                 job={selectedJob}

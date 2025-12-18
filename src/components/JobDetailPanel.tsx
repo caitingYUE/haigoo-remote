@@ -235,181 +235,159 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     return (
         <div className="flex flex-col bg-white">
             {/* Header */}
-            <header className="flex-shrink-0 border-b border-slate-200 px-6 py-4">
-                <div className="flex items-start justify-between mb-3">
-                    <h1 className="text-2xl font-bold text-slate-900 flex-1 pr-4">
+            <header className="flex-shrink-0 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-20 px-6 py-5 ss-premium-header">
+                <div className="flex items-start justify-between mb-4">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex-1 pr-6 leading-tight tracking-tight">
                         {displayText(job.title, job.translations?.title)}
                     </h1>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                         {onNavigateJob && (
-                            <>
+                            <div className="flex items-center bg-slate-100/50 p-1 rounded-lg border border-slate-200/50">
                                 <button
                                     onClick={() => onNavigateJob('prev')}
                                     disabled={!canNavigatePrev}
-                                    className={`p-2 rounded-lg transition-all flex items-center justify-center border ${canNavigatePrev
-                                        ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-                                        : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                                    className={`p-1.5 rounded-md transition-all flex items-center justify-center ${canNavigatePrev
+                                        ? 'hover:bg-white text-slate-600 hover:text-indigo-600 shadow-sm'
+                                        : 'text-slate-300 cursor-not-allowed'
                                         }`}
                                     title="上一个职位"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                 </button>
+                                <div className="w-px h-4 bg-slate-200 mx-1"></div>
                                 <button
                                     onClick={() => onNavigateJob('next')}
                                     disabled={!canNavigateNext}
-                                    className={`p-2 rounded-lg transition-all flex items-center justify-center border ${canNavigateNext
-                                        ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-                                        : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                                    className={`p-1.5 rounded-md transition-all flex items-center justify-center ${canNavigateNext
+                                        ? 'hover:bg-white text-slate-600 hover:text-indigo-600 shadow-sm'
+                                        : 'text-slate-300 cursor-not-allowed'
                                         }`}
                                     title="下一个职位"
                                 >
                                     <ChevronRight className="h-4 w-4" />
                                 </button>
-                                {showCloseButton && <div className="w-px h-6 bg-slate-200 mx-1"></div>}
-                            </>
+                            </div>
                         )}
 
                         {showCloseButton && onClose && (
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-all flex items-center gap-2"
+                                className="ml-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
                             >
                                 <X className="h-4 w-4" />
-                                <span>关闭</span>
                             </button>
                         )}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-sm text-slate-600 mb-4">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 mb-5">
                     <div
-                        className="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors"
+                        className="flex items-center gap-1.5 cursor-pointer text-slate-700 font-bold hover:text-indigo-600 transition-colors bg-slate-50 px-2 py-1 rounded-md border border-slate-100 hover:border-indigo-100"
                         onClick={() => {
                             const url = job.companyWebsite
                             if (url) {
-                                // Add confirmation dialog
                                 if (window.confirm(`即将离开本站跳转到 ${job.company || '企业官网'}，是否继续？`)) {
                                     window.open(url, '_blank', 'noopener,noreferrer')
                                 }
                             }
                         }}
                     >
-                        <Building2 className="w-4 h-4" />
-                        <span className="font-medium hover:underline">{displayText(job.company || '')}</span>
-                        {job.companyWebsite && <ExternalLink className="w-3 h-3 ml-0.5" />}
+                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate max-w-[200px]">{displayText(job.company || '')}</span>
+                        {job.companyWebsite && <ExternalLink className="w-3 h-3 ml-0.5 opacity-50" />}
                     </div>
-                    <span className="text-slate-300">|</span>
-                    <div className="flex items-center gap-1.5 relative group">
-                        <MapPin className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
                         {(() => {
                             const locText = displayText(job.location || '', job.translations?.location);
                             const isGeneric = /(remote|anywhere|everywhere|worldwide|global|远程|全球)/i.test(locText);
-
-                            if (isGeneric) {
-                                return <span className="text-slate-600">{locText}</span>;
-                            }
-
                             return (
-                                <>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setShowLocationTooltip(!showLocationTooltip)
-                                        }}
-                                        className="hover:text-indigo-600 hover:underline decoration-dashed underline-offset-4 transition-colors text-left"
-                                    >
-                                        {locText}
-                                    </button>
-                                    {showLocationTooltip && (
-                                        <div className="absolute top-full left-0 mt-2 z-50">
-                                            <LocationTooltip
-                                                location={job.location || ''}
-                                                onClose={() => setShowLocationTooltip(false)}
-                                            />
-                                        </div>
-                                    )}
-                                </>
-                            );
+                                <span
+                                    className={`truncate max-w-[150px] ${!isGeneric ? 'cursor-help border-b border-dashed border-slate-300 hover:text-indigo-600 hover:border-indigo-400' : ''}`}
+                                    onClick={(e) => {
+                                        if (!isGeneric) {
+                                            e.stopPropagation();
+                                            setShowLocationTooltip(!showLocationTooltip);
+                                        }
+                                    }}
+                                >
+                                    {locText}
+                                </span>
+                            )
                         })()}
+                        {showLocationTooltip && (
+                            <div className="absolute z-50 mt-8">
+                                <LocationTooltip location={job.location || ''} onClose={() => setShowLocationTooltip(false)} />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                        <DollarSign className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="font-semibold text-slate-900">
+                            {(job.salary && typeof job.salary === 'object' && job.salary.min > 0)
+                                ? `${job.salary.currency === 'USD' ? '$' : '¥'}${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}`
+                                : '薪资面议'}
+                        </span>
                     </div>
                 </div>
 
                 {/* Trusted Company Standards Banner */}
                 {job.isTrusted && (
-                    <TrustedStandardsBanner className="mb-6" />
-                )}
-
-                {/* Third Party / RSS Source Banner - REMOVED as redundant */}
-                {/* {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
-                     <div className="mb-4 mt-2 bg-slate-50 border border-slate-100 rounded-lg p-3 flex items-start gap-3">
-                        <div className="p-1.5 bg-white border border-slate-100 rounded-full text-slate-500 shrink-0">
-                             <ExternalLink className="w-4 h-4" />
-                        </div>
-                        <div>
-                             <h4 className="font-semibold text-slate-900 text-sm">该岗位来自 {job.source || '第三方平台'}</h4>
-                             <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                                 海狗为您聚合了该岗位信息，点击“前往申请”将跳转至原平台进行申请。
-                             </p>
-                        </div>
-                     </div>
-                )} */}
-
-                {job.salary && typeof job.salary === 'object' && job.salary.min > 0 && (
-                    <div className="flex items-center gap-2 mb-4">
-                        <DollarSign className="w-4 h-4 text-indigo-600" />
-                        <span className="font-semibold text-indigo-600">
-                            {job.salary.currency}{job.salary.min.toLocaleString()} - {job.salary.currency}{job.salary.max.toLocaleString()}
-                        </span>
+                    <div className="mb-5 transform scale-95 origin-left">
+                        <TrustedStandardsBanner className="" />
                     </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                    <button
-                        onClick={handleShare}
-                        className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-all flex items-center gap-1.5"
-                        title="分享"
-                    >
-                        <Share2 className="w-4 h-4" />
-                        <span className="text-sm">分享</span>
-                    </button>
-
-                    <button
-                        onClick={handleSave}
-                        className={`p-2 rounded-lg transition-all flex items-center gap-1.5 ${isSaved
-                            ? 'bg-indigo-50 text-indigo-600'
-                            : 'hover:bg-slate-100 text-slate-600'
-                            }`}
-                        title={isSaved ? '已收藏' : '收藏'}
-                    >
-                        <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
-                        <span className="text-sm">{isSaved ? '已收藏' : '收藏'}</span>
-                    </button>
-
-                    {/* Translation Toggle - Inline with actions */}
-                    {hasTranslation && (
+                {/* Action Buttons Toolbar */}
+                <div className="flex items-center justify-between gap-2 pt-4 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
                         <button
-                            onClick={() => setShowTranslation(!showTranslation)}
-                            className={`p-2 rounded-lg transition-all flex items-center gap-1.5 ${showTranslation
-                                ? 'text-indigo-600 font-medium'
-                                : 'text-slate-600 hover:bg-slate-100'
+                            onClick={handleSave}
+                            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${isSaved
+                                ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                 }`}
-                            title={showTranslation ? '切换到原文' : '切换到翻译'}
                         >
-                            <Languages className="w-4 h-4" />
-                            <span className="text-sm">{showTranslation ? '译' : '原'}</span>
+                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
+                            {isSaved ? '已收藏' : '收藏'}
                         </button>
-                    )}
 
-                    <button
-                        onClick={() => setIsFeedbackOpen(true)}
-                        className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-all flex items-center gap-1.5"
-                        title="反馈"
-                    >
-                        <MessageSquare className="w-4 h-4" />
-                        <span className="text-sm">反馈</span>
-                    </button>
+                        <button
+                            onClick={handleShare}
+                            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium"
+                        >
+                            <Share2 className="w-3.5 h-3.5" />
+                            分享
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {hasTranslation && (
+                            <button
+                                onClick={() => setShowTranslation(!showTranslation)}
+                                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${showTranslation
+                                    ? 'bg-violet-50 text-violet-600 border-violet-100'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                    }`}
+                            >
+                                <Languages className="w-3.5 h-3.5" />
+                                {showTranslation ? '中文翻译' : '原文显示'}
+                            </button>
+                        )}
+
+                        <button
+                            onClick={() => setIsFeedbackOpen(true)}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                            title="反馈问题"
+                        >
+                            <MessageSquare className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -427,11 +405,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
-                        <section key={index} className="mb-6">
-                            <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                        <section key={index} className="mb-8 last:mb-0">
+                            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
                                 {displayText(section.title)}
                             </h3>
-                            <div className="text-slate-600 text-sm leading-relaxed">
+                            <div className="text-slate-600 text-base leading-7 lg:leading-8 tracking-wide font-normal">
                                 {renderFormattedText(displayText(section.content))}
                             </div>
                         </section>

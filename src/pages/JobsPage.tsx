@@ -714,7 +714,7 @@ export default function JobsPage() {
           </div>
 
           {/* Right Column: Detail Panel (Desktop Only) */}
-          <div className="hidden lg:flex flex-1 bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden h-full flex-col relative transition-all duration-300">
+          <div className="hidden lg:flex flex-1 bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden h-full flex-col relative">
             {selectedJob ? (
               <div className="h-full overflow-y-auto custom-scrollbar overscroll-y-contain">
                 <JobDetailPanel

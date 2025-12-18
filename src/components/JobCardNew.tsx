@@ -50,31 +50,31 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       return (
          <div
             onClick={() => onClick?.(job)}
-            className={`group relative p-5 bg-white rounded-xl mb-3 border transition-all duration-300 cursor-pointer 
+            className={`group relative p-6 bg-white rounded-2xl mb-4 border transition-all duration-300 cursor-pointer 
                ${isActive
-                  ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10'
-                  : 'border-slate-100 hover:border-indigo-200 hover:shadow-md'
+                  ? 'border-indigo-500/50 ring-2 ring-indigo-500/20 shadow-lg shadow-indigo-500/10 bg-indigo-50/5'
+                  : 'border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-0.5'
                } ${className || ''}`}
          >
             {/* Corner Tag */}
             <div className="absolute top-0 right-0 z-10 flex flex-col items-end">
                {job.canRefer ? (
                   <div
-                     className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-100/50"
+                     className="px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/20"
                      title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
                   >
-                     <MemberBadge variant="referral" size="sm" className="!border-0" />
+                     <MemberBadge variant="referral" size="sm" className="!border-0 !bg-transparent !text-white !p-0" />
                   </div>
                ) : job.isTrusted ? (
                   <div
-                     className="text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-100/50"
+                     className="px-3 py-1.5 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-500/20"
                      title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
                   >
-                     <MemberBadge variant="verified" size="sm" className="!border-0" />
+                     <MemberBadge variant="verified" size="sm" className="!border-0 !bg-transparent !text-white !p-0" />
                   </div>
                ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
                   <div
-                     className="text-[10px] font-medium px-2 py-1 rounded-bl-lg rounded-tr-lg text-slate-500 shadow-sm flex items-center gap-1 bg-slate-100 border-l border-b border-slate-200"
+                     className="text-[10px] font-medium px-3 py-1 rounded-bl-xl rounded-tr-xl text-slate-500 shadow-sm flex items-center gap-1 bg-slate-50 border-l border-b border-slate-100"
                      title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
                   >
                      可信平台投递
@@ -82,15 +82,15 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                ) : null}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-               <div className="flex gap-4 flex-1">
+            <div className="flex flex-col sm:flex-row gap-5 sm:items-center">
+               <div className="flex gap-5 flex-1">
                   {/* Company Logo */}
-                  <div className="w-14 h-14 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-lg flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-105 relative group/logo">
+                  <div className="w-16 h-16 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-xl flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-105 relative group/logo">
                      {job.logo ? (
                         <img
                            src={job.logo}
                            alt={job.company}
-                           className="w-full h-full object-contain p-1"
+                           className="w-full h-full object-contain p-2"
                            onError={(e) => {
                               // Fallback to initial on error
                               const target = e.target as HTMLImageElement;
