@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle, Crown, ArrowRight, Shield, TrendingUp } from 'lucide-react';
+import { X, CheckCircle, Crown, ArrowRight, Shield, TrendingUp, Sparkles, Target, CheckCircle2, FileCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Job } from '../types';
 
@@ -49,8 +49,9 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
                     {/* Body */}
                     <div className="p-8 pt-10 text-center -mt-6 relative z-10 bg-white rounded-t-3xl">
-                        <div className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold uppercase tracking-wide rounded-full mb-4">
-                            🎯 内推专属
+                        <div className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold uppercase tracking-wide rounded-full mb-4">
+                            <Target className="w-3.5 h-3.5" />
+                            内推专属
                         </div>
 
                         <h3 className="text-2xl font-bold text-slate-900 mb-3">
@@ -64,19 +65,19 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         <div className="bg-slate-50 rounded-xl p-4 mb-8 text-left space-y-3 border border-slate-100">
                             <div className="flex items-center gap-3">
                                 <div className="bg-green-100 p-1 rounded-full">
-                                    <CheckCircle className="w-3 h-3 text-green-600" />
+                                    <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
                                 <span className="text-sm font-medium text-slate-700">内推成功率提升 300%</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="bg-green-100 p-1 rounded-full">
-                                    <CheckCircle className="w-3 h-3 text-green-600" />
+                                    <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
                                 <span className="text-sm font-medium text-slate-700">简历直达 Hiring Manager</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="bg-green-100 p-1 rounded-full">
-                                    <CheckCircle className="w-3 h-3 text-green-600" />
+                                    <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
                                 <span className="text-sm font-medium text-slate-700">7天无理由退款保障</span>
                             </div>
@@ -130,10 +131,11 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 <Shield className="w-8 h-8 text-green-600" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                                    ✅ Haigoo 已人工审核此岗位
+                                <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                                    <FileCheck className="w-6 h-6 text-green-600" />
+                                    Haigoo 已人工审核此岗位
                                 </h3>
-                                <p className="text-sm text-slate-600">
+                                <p className="text-sm text-slate-600 mt-1">
                                     我们已验证该岗位的真实性和有效性
                                 </p>
                             </div>
@@ -171,8 +173,9 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             <div className="flex items-start gap-3">
                                 <TrendingUp className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
                                 <div className="flex-1">
-                                    <p className="text-sm font-semibold text-indigo-900 mb-1">
-                                        💎 升级会员，查看企业深度评估
+                                    <p className="text-sm font-semibold text-indigo-900 mb-1 flex items-center gap-1.5">
+                                        <Sparkles className="w-4 h-4 text-indigo-600" />
+                                        升级会员，查看企业深度评估
                                     </p>
                                     <p className="text-xs text-indigo-700">
                                         中国候选人友好度 · 历史回复率 · 平均反馈周期 · 风险提示

@@ -94,23 +94,22 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
 
   // Determine button styles based on variant and active state
   let buttonClass = "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border whitespace-nowrap ";
-  
+
   if (isActive || isOpen) {
     if (variant === 'solid-blue') {
-       buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
+      buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
     } else if (variant === 'solid-purple') {
-       buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
+      buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
     } else {
-       buttonClass += "bg-indigo-50 text-indigo-600 border-indigo-200 font-medium";
+      buttonClass += "bg-indigo-50 text-indigo-600 border-indigo-200 font-medium";
     }
   } else {
     buttonClass += "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300";
   }
 
   // Chevron color adjustment for solid variants
-  const chevronClass = `w-3.5 h-3.5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''} ${
-    (isActive || isOpen) && (variant === 'solid-blue' || variant === 'solid-purple') ? 'text-white' : 'text-slate-400'
-  }`;
+  const chevronClass = `w-3.5 h-3.5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''} ${(isActive || isOpen) && (variant === 'solid-blue' || variant === 'solid-purple') ? 'text-white' : 'text-slate-400'
+    }`;
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -126,11 +125,11 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
       {isOpen && (
         <>
           {/* Mobile Overlay */}
-          <div 
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden" 
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
             onClick={onClose}
           />
-          
+
           <div className="
             z-50 overflow-hidden bg-white
             
@@ -142,10 +141,10 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
             md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:w-auto md:min-w-[240px] md:max-w-[300px] md:rounded-xl md:shadow-xl md:border md:border-slate-100
              md:animate-in md:fade-in md:zoom-in-95
            ">
-             <div className="p-2 pb-8 md:pb-2 max-h-[60vh] md:max-h-[400px] overflow-y-auto custom-scrollbar">
-               {/* Mobile Handle */}
-               <div className="md:hidden flex justify-center pb-2 pt-1" onClick={onClose}>
-                  <div className="w-12 h-1 bg-slate-200 rounded-full"></div>
+            <div className="p-2 pb-8 md:pb-2 max-h-[60vh] md:max-h-[400px] overflow-y-auto custom-scrollbar">
+              {/* Mobile Handle */}
+              <div className="md:hidden flex justify-center pb-2 pt-1" onClick={onClose}>
+                <div className="w-12 h-1 bg-slate-200 rounded-full"></div>
               </div>
               {children}
             </div>
@@ -158,8 +157,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
 
 const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, count, emphasized }) => (
   <label className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full">
-    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${
-       checked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'
+    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${checked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'
       }`}>
       {checked && <Check className="w-3 h-3 text-white" />}
     </div>
@@ -206,15 +204,15 @@ export default function JobFilterBar({
   const handleCheckboxChange = (section: keyof typeof filters, value: string, checked: boolean) => {
     const current = (filters[section] as string[]) || [];
     let updated;
-    
+
     if (checked) {
-       if (section === 'regionType') {
-           updated = [value]; // Single select behavior
-       } else {
-           updated = [...current, value];
-       }
+      if (section === 'regionType') {
+        updated = [value]; // Single select behavior
+      } else {
+        updated = [...current, value];
+      }
     } else {
-       updated = current.filter(item => item !== value);
+      updated = current.filter(item => item !== value);
     }
 
     onFilterChange({ [section]: updated });
@@ -229,38 +227,38 @@ export default function JobFilterBar({
     }
     return `${defaultLabel} (${current.length})`;
   };
-  
+
   // Custom label logic for Function
   const getCategoryLabel = () => {
-      const current = filters.category;
-      if (!current || current.length === 0) return '职能类型';
-      if (current.length === 1) {
-          const found = categoryOptions.find(o => o.value === current[0]);
-          return found ? found.label : current[0];
-      }
-      return `职能类型 (${current.length})`;
+    const current = filters.category;
+    if (!current || current.length === 0) return '职能类型';
+    if (current.length === 1) {
+      const found = categoryOptions.find(o => o.value === current[0]);
+      return found ? found.label : current[0];
+    }
+    return `职能类型 (${current.length})`;
   };
 
   // Custom label logic for Region/Identity
   const getRegionLabel = () => {
-      if (filters.regionType.includes('domestic')) return '中国居民';
-      if (filters.regionType.includes('overseas')) return '海外居民';
-      return '身份要求';
+    if (filters.regionType.includes('domestic')) return '中国居民';
+    if (filters.regionType.includes('overseas')) return '海外居民';
+    return '身份要求';
   };
 
   const getMoreFiltersCount = () => {
-    const count = 
-      filters.experienceLevel.length + 
-      filters.salary.length + 
-      filters.industry.length + 
+    const count =
+      filters.experienceLevel.length +
+      filters.salary.length +
+      filters.industry.length +
       filters.location.length;
     return count > 0 ? `更多筛选 (${count})` : '更多筛选';
   };
-  
-  const hasMoreFilters = 
-    filters.experienceLevel.length > 0 || 
-    filters.salary.length > 0 || 
-    filters.industry.length > 0 || 
+
+  const hasMoreFilters =
+    filters.experienceLevel.length > 0 ||
+    filters.salary.length > 0 ||
+    filters.industry.length > 0 ||
     filters.location.length > 0;
 
   const clearAllFilters = () => {
@@ -281,7 +279,7 @@ export default function JobFilterBar({
   };
 
   return (
-    <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col xl:flex-row gap-3">
+    <div className="bg-white/80 backdrop-blur-md p-2 rounded-2xl border border-slate-200/60 shadow-lg shadow-indigo-100/20 flex flex-col xl:flex-row gap-3 transition-all duration-300">
       {/* Search Input - Compact */}
       <div className="relative flex-1 xl:max-w-xs min-w-[240px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -412,16 +410,15 @@ export default function JobFilterBar({
       {/* Actions */}
       <div className="flex items-center gap-2 justify-end">
         <button
-           onClick={onSortChange}
-           className={`flex items-center gap-2 px-3 py-2 border rounded-lg shadow-sm text-sm font-medium transition-all whitespace-nowrap ${
-             sortBy === 'recent'
-               ? 'bg-slate-900 border-slate-900 text-white'
-               : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-           }`}
-           title={sortBy === 'recent' ? '当前：最新发布' : '当前：相关度排序'}
+          onClick={onSortChange}
+          className={`flex items-center gap-2 px-3 py-2 border rounded-lg shadow-sm text-sm font-medium transition-all whitespace-nowrap ${sortBy === 'recent'
+              ? 'bg-slate-900 border-slate-900 text-white'
+              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          title={sortBy === 'recent' ? '当前：最新发布' : '当前：相关度排序'}
         >
-           <SortAsc className="w-4 h-4" />
-           <span className="hidden sm:inline">{sortBy === 'recent' ? '最新' : '相关'}</span>
+          <SortAsc className="w-4 h-4" />
+          <span className="hidden sm:inline">{sortBy === 'recent' ? '最新' : '相关'}</span>
         </button>
 
         <button

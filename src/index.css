@@ -3,63 +3,88 @@
 @tailwind utilities;
 
 /* Haigoo 专业颜色系统 v2.1 - 增强版 */
+/* Haigoo Premium Design System v3.0 */
 :root {
-  /* 主品牌色系 */
-  --haigoo-primary: #3182CE;
-  --haigoo-primary-hover: #256bb0;
-  --haigoo-primary-active: #1D4ED8;
-  --haigoo-primary-light: #EAF3FF;
-  --haigoo-primary-dark: #1A365D;
+  /* Brand Colors - International Tech Blue */
+  --haigoo-primary: #0F172A;
+  /* Deep Slate/Navy as primary for logic/structure */
+  --haigoo-primary-hover: #1E293B;
+  --haigoo-primary-active: #020617;
+  --haigoo-primary-light: #F1F5F9;
+  --haigoo-primary-dark: #020617;
 
-  /* 辅助色系 */
-  --haigoo-secondary: #F59F0B;
-  --haigoo-accent: #0EA5A3;
+  /* Accent Colors - Vibrant & Professional */
+  --haigoo-accent: #3B82F6;
+  /* Bright Blue for Call-to-Actions */
+  --haigoo-accent-hover: #2563EB;
+  --haigoo-secondary: #6366F1;
+  /* Indigo for Membership/Premium */
   --haigoo-success: #10B981;
+  /* Emerald */
   --haigoo-warning: #F59E0B;
+  /* Amber */
   --haigoo-error: #EF4444;
+  /* Red */
+  --haigoo-info: #0EA5E9;
+  /* Sky */
 
-  /* 中性色系 - 增强版 */
-  --haigoo-gray-25: #FCFCFD;
-  --haigoo-gray-50: #F9FAFB;
-  --haigoo-gray-100: #F3F4F6;
-  --haigoo-gray-150: #EAECF0;
-  --haigoo-gray-200: #E5E7EB;
-  --haigoo-gray-300: #D1D5DB;
-  --haigoo-gray-350: #B8BCC8;
-  --haigoo-gray-400: #9CA3AF;
-  --haigoo-gray-450: #8B92A5;
-  --haigoo-gray-500: #6B7280;
-  --haigoo-gray-600: #4B5563;
-  --haigoo-gray-700: #374151;
-  --haigoo-gray-800: #1F2937;
-  --haigoo-gray-900: #111827;
+  /* Neutral Scale - Pure & Clean */
+  --haigoo-gray-25: #FFFFFF;
+  --haigoo-gray-50: #FAFAFA;
+  --haigoo-gray-100: #F4F4F5;
+  --haigoo-gray-150: #E4E4E7;
+  --haigoo-gray-200: #E4E4E7;
+  --haigoo-gray-300: #D4D4D8;
+  --haigoo-gray-350: #A1A1AA;
+  --haigoo-gray-400: #A1A1AA;
+  --haigoo-gray-450: #71717A;
+  --haigoo-gray-500: #71717A;
+  --haigoo-gray-600: #52525B;
+  --haigoo-gray-700: #3F3F46;
+  --haigoo-gray-800: #27272A;
+  --haigoo-gray-900: #18181B;
 
-  /* 阴影系统 */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  /* Typography Colors */
+  --text-primary: #18181B;
+  --text-secondary: #52525B;
+  --text-tertiary: #A1A1AA;
 
-  /* 过渡动画 */
-  --transition-standard: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-fast: all 0.15s ease-out;
-  --transition-slow: all 0.5s ease-in-out;
+  /* Premium Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 8px 16px -4px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.08), 0 4px 12px -4px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 20px 48px -12px rgba(0, 0, 0, 0.12), 0 8px 24px -8px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
 
-  /* 标签颜色系统 */
-  --tag-development: #3B82F6;
-  --tag-design: #8B5CF6;
-  --tag-marketing: #EC4899;
-  --tag-sales: #10B981;
-  --tag-support: #F59E0B;
-  --tag-management: #6B7280;
-  --tag-remote: #06B6D4;
-  --tag-hybrid: #8B5CF6;
-  --tag-onsite: #6B7280;
-  --tag-urgent: #EF4444;
-  --tag-normal: #6B7280;
-  --tag-flexible: #10B981;
+  /* Transitions */
+  --transition-standard: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  --transition-smooth: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+  --transition-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  /* 6px */
+  --radius-md: 0.5rem;
+  /* 8px */
+  --radius-lg: 0.75rem;
+  /* 12px */
+  --radius-xl: 1rem;
+  /* 16px */
+  --radius-2xl: 1.5rem;
+  /* 24px */
+
+  /* Tag Colors - Softer & More Professional */
+  --tag-development-bg: #EFF6FF;
+  --tag-development-text: #3B82F6;
+  --tag-design-bg: #F5F3FF;
+  --tag-design-text: #8B5CF6;
+  --tag-marketing-bg: #FDF2F8;
+  --tag-marketing-text: #EC4899;
+  --tag-sales-bg: #ECFDF5;
+  --tag-sales-text: #10B981;
+  --tag-product-bg: #FFF7ED;
+  --tag-product-text: #F97316;
 }
 
 /* Tab 导航专业交互状态 */

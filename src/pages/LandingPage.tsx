@@ -2,12 +2,12 @@ import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
-import '../styles/landing-upgrade.css'
+// import '../styles/landing-upgrade.css' // Removed legacy CSS
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import HomeHero from '../components/HomeHero'
 import JobCardNew from '../components/JobCardNew'
 import HomeCompanyCard from '../components/HomeCompanyCard'
-import { ArrowRight, TrendingUp, Building2, Zap, Users, Target, Award, Briefcase } from 'lucide-react'
+import { ArrowRight, TrendingUp, Building2, Zap, Users, Target, Globe, Sparkles, CheckCircle2 } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { Job } from '../types'
@@ -20,20 +20,20 @@ export default function LandingPage() {
   const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>([])
   const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<{totalJobs: number | null, companiesCount: number | null, dailyJobs: number | null}>({ totalJobs: null, companiesCount: null, dailyJobs: null })
+  const [stats, setStats] = useState<{ totalJobs: number | null, companiesCount: number | null, dailyJobs: number | null }>({ totalJobs: null, companiesCount: null, dailyJobs: null })
 
   useEffect(() => {
     if (isAuthenticated && token) {
       fetch('/api/applications?action=my_status', {
         headers: { Authorization: `Bearer ${token}` }
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setApplicationStatus(data.status)
-        }
-      })
-      .catch(err => console.error('Failed to fetch application status', err))
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setApplicationStatus(data.status)
+          }
+        })
+        .catch(err => console.error('Failed to fetch application status', err))
     } else {
       setApplicationStatus(null)
     }
@@ -46,17 +46,17 @@ export default function LandingPage() {
 
         // 1. Fetch real stats from backend
         try {
-            const statsResp = await fetch('/api/stats')
-            const statsData = await statsResp.json()
-            if (statsData.success && statsData.stats) {
-                setStats({
-                    totalJobs: statsData.stats.domesticJobs || statsData.stats.totalJobs,
-                    companiesCount: statsData.stats.companiesCount,
-                    dailyJobs: statsData.stats.dailyJobs || 0
-                })
-            }
+          const statsResp = await fetch('/api/stats')
+          const statsData = await statsResp.json()
+          if (statsData.success && statsData.stats) {
+            setStats({
+              totalJobs: statsData.stats.domesticJobs || statsData.stats.totalJobs,
+              companiesCount: statsData.stats.companiesCount,
+              dailyJobs: statsData.stats.dailyJobs || 0
+            })
+          }
         } catch (e) {
-            console.error('Failed to fetch stats:', e)
+          console.error('Failed to fetch stats:', e)
         }
 
         const [jobs, companies, featuredResp] = await Promise.all([
@@ -111,10 +111,10 @@ export default function LandingPage() {
 
         // Filter for featured jobs
         if (featuredResp && featuredResp.jobs && featuredResp.jobs.length > 0) {
-            setFeaturedJobs(featuredResp.jobs)
+          setFeaturedJobs(featuredResp.jobs)
         } else {
-            const featured = domesticJobs.filter(job => job.isFeatured === true)
-            setFeaturedJobs(featured.slice(0, 6))
+          const featured = domesticJobs.filter(job => job.isFeatured === true)
+          setFeaturedJobs(featured.slice(0, 6))
         }
 
         // Sort companies by total active jobs (using database count)
@@ -125,10 +125,6 @@ export default function LandingPage() {
         // Set trusted companies (top 6)
         setTrustedCompanies(sortedCompanies.slice(0, 6))
 
-        // Set stats (Use backend stats if available, otherwise fallback)
-        // const uniqueCompanies = new Set(jobs.map(j => j.company).filter(Boolean))
-        // Stats are now fetched from /api/stats at the beginning
-        
       } catch (error) {
         console.error('Failed to load data:', error)
       } finally {
@@ -140,20 +136,71 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      {/* New Hero Section */}
+    <div className="min-h-screen bg-white">
+      {/* Premium Dark Hero Section */}
       <HomeHero stats={stats} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
+
+        {/* Brand Promise Section - "Why Haigoo?" */}
+        <div className="py-24 border-b border-slate-100">
+          <div className="text-center mb-16 max-w-3xl mx-auto">
+            <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm mb-3 block">Why Choose Us</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">
+              不仅仅是找工作，<br />
+              更是开启一种全新的 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">自由生活方式</span>
+            </h2>
+            <p className="text-lg text-slate-500 leading-relaxed">
+              Haigoo 严选全球远程机会，不仅注重薪资回报，更看重企业文化与 Work-Life Balance。
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <Globe className="w-6 h-6 text-white" />,
+                title: "全球全球及格线",
+                desc: "严选全球范围内对中国友好的远程企业，无需肉身出海，即可享受全球薪资。",
+                color: "bg-blue-500"
+              },
+              {
+                icon: <Target className="w-6 h-6 text-white" />,
+                title: "精准匹配",
+                desc: "深入了解企业文化和招聘需求，为您推荐价值观契合的团队，拒绝海投无效沟通。",
+                color: "bg-indigo-500"
+              },
+              {
+                icon: <Users className="w-6 h-6 text-white" />,
+                title: "社群链接",
+                desc: "加入高质量远程工作者社群，与优秀的人同行，分享经验，拓展人脉。",
+                color: "bg-purple-500"
+              }
+            ].map((item, index) => (
+              <div key={index} className="group p-8 rounded-3xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300">
+                <div className={`w-14 h-14 ${item.color} rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-200/50 group-hover:scale-110 transition-transform duration-300`}>
+                  {item.icon}
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">{item.title}</h3>
+                <p className="text-slate-600 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Featured Jobs Section */}
-        <div id="featured-jobs" className="mt-12">
-          {/* Section Header */}
-          <div className="flex items-center justify-between mb-8">
-             <div className="flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-indigo-600 rounded-full"></div>
-                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">精选机会</h2>
-             </div>
+        <div id="featured-jobs" className="py-24">
+          <div className="flex items-center justify-between mb-12">
+            <div className="flex flex-col gap-2">
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">精选机会</h2>
+              <p className="text-slate-500">每周精选高薪/高增长/好文化的优质岗位</p>
+            </div>
+            <button
+              onClick={() => navigate('/jobs?region=domestic')}
+              className="hidden md:flex px-6 py-2.5 bg-white text-slate-700 font-medium rounded-full border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 items-center gap-2 group"
+            >
+              查看全部
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
 
           {loading ? (
@@ -164,27 +211,27 @@ export default function LandingPage() {
               </div>
             </div>
           ) : featuredJobs.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
+            <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100 border-dashed">
               <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <p className="text-slate-500">暂无精选岗位</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {featuredJobs.map((job) => (
                 <JobCardNew
                   key={job.id}
                   job={job}
-                  variant="list" // Use list variant for feed style
+                  variant="list"
                   onClick={() => navigate(`/jobs?region=domestic`)}
                 />
               ))}
             </div>
           )}
 
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center md:hidden">
             <button
               onClick={() => navigate('/jobs?region=domestic')}
-              className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all duration-200 inline-flex items-center gap-2 shadow-sm hover:shadow-md"
+              className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 transition-all duration-200 inline-flex items-center gap-2 shadow-sm"
             >
               查看更多机会
               <ArrowRight className="w-4 h-4" />
@@ -193,14 +240,21 @@ export default function LandingPage() {
         </div>
 
         {/* Trusted Companies Section */}
-        <div className="mt-24">
-          <div className="flex items-end justify-between mb-10">
+        <div className="py-24 border-t border-slate-100">
+          <div className="flex items-end justify-between mb-12">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">
+              <h2 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
                 精选企业
               </h2>
-              <p className="text-slate-500 text-base">经过验证的优质远程企业</p>
+              <p className="text-slate-500">Haigoo 认证的优质远程雇主</p>
             </div>
+            <button
+              onClick={() => navigate('/trusted-companies')}
+              className="hidden md:flex px-6 py-2.5 bg-white text-slate-700 font-medium rounded-full border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 items-center gap-2 group"
+            >
+              浏览所有企业
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
 
           {loading ? (
@@ -211,7 +265,7 @@ export default function LandingPage() {
               </div>
             </div>
           ) : trustedCompanies.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
+            <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100 border-dashed">
               <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <p className="text-slate-500">暂无企业数据</p>
             </div>
@@ -227,158 +281,82 @@ export default function LandingPage() {
               ))}
             </div>
           )}
+        </div>
 
-          <div className="mt-12 text-center">
-            <button
-              onClick={() => navigate('/trusted-companies')}
-              className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all duration-200 inline-flex items-center gap-2 shadow-sm hover:shadow-md"
-            >
-              查看更多企业
-              <ArrowRight className="w-4 h-4" />
-            </button>
+        {/* Membership CTA Section - Premium Dark Card */}
+        <div className="mt-12 relative rounded-[2.5rem] bg-[#0F172A] overflow-hidden shadow-2xl shadow-indigo-900/20">
+          {/* Background Effects */}
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
+
+          <div className="relative z-10 px-8 py-20 md:px-20 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-sm font-medium mb-8">
+              <Sparkles className="w-4 h-4" />
+              Haigoo Membership
+            </div>
+
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+              加入 Haigoo Member
+            </h2>
+            <p className="text-lg text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+              解锁企业深度风险评估、内推直达通道、无限收藏夹等专属特权，<br className="hidden md:block" />
+              让你的远程求职之路更加顺畅。
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              {(() => {
+                const isMember = user?.membershipLevel && user.membershipLevel !== 'none' && user.membershipExpireAt && new Date(user.membershipExpireAt) > new Date();
+
+                if (isMember) {
+                  return (
+                    <button
+                      onClick={() => navigate('/jobs')}
+                      className="px-10 py-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle2 className="w-5 h-5" />
+                      您已是尊贵会员 - 去探索岗位
+                    </button>
+                  )
+                } else if (applicationStatus === 'pending') {
+                  return (
+                    <button disabled className="px-10 py-4 bg-slate-700 text-slate-400 font-bold rounded-xl cursor-not-allowed w-full sm:w-auto">
+                      会员申请审核中
+                    </button>
+                  )
+                } else {
+                  return (
+                    <button
+                      onClick={() => navigate('/membership')} // Changed to point to membership page strictly
+                      className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
+                    >
+                      立即升级会员
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  )
+                }
+              })()}
+            </div>
           </div>
-        </div>
-
-        {/* Core Highlights - Migrated from AboutPage */}
-        <div className="mt-24">
-            <div className="text-center mb-16">
-                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">俱乐部的核心亮点</h2>
-                <p className="mt-4 text-lg text-slate-500">我们不仅仅是一个远程工作入口，更是一个信任和价值观驱动的远程爱好者俱乐部。</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-lg transition-shadow shadow-sm">
-                    <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
-                        <Users className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">先交朋友，后合作</h3>
-                    <p className="text-slate-600 leading-relaxed">我们创造一个轻松的交流环境，让合作在相互了解和信任中自然发生。你可以在这里遇见朋友、心仪的工作机会甚至是未来的事业合伙人。</p>
-                </div>
-                <div className="bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-lg transition-shadow shadow-sm">
-                    <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
-                        <Target className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">价值观与能力双重匹配</h3>
-                    <p className="text-slate-600 leading-relaxed">我们深入了解企业文化和CEO价值观，确保为你推荐的不仅仅是工作机会，更是事业归属。</p>
-                </div>
-                <div className="bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-lg transition-shadow shadow-sm">
-                    <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
-                        <Award className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">持续挖掘全球远程机会</h3>
-                    <p className="text-slate-600 leading-relaxed">我们通过各种渠道挖掘来自全球的优质远程机会，确保找到对中国人友好的远程企业，让你放心探索世界。</p>
-                </div>
-            </div>
-        </div>
-
-        {/* Club Benefits - Migrated from AboutPage */}
-        <div id="club-benefits" className="mt-24">
-            <div className="text-center mb-16">
-                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">加入 Haigoo Member，您将获得</h2>
-                <p className="mt-4 text-lg text-slate-500">我们为您提供超越求职的价值，助力你的职业成长。</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                 <div className="text-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-100 transition-colors">
-                    <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-                        <Target className="w-8 h-8 text-indigo-600" />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">价值匹配</h3>
-                    <p className="text-sm text-slate-500">深入企业文化，为您匹配价值观契合的团队。</p>
-                </div>
-                <div className="text-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-100 transition-colors">
-                    <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-                        <Zap className="w-8 h-8 text-indigo-600" />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">直连CEO</h3>
-                    <p className="text-sm text-slate-500">优秀会员有机会参与企业创始人深度交流。</p>
-                </div>
-                <div className="text-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-100 transition-colors">
-                    <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-                        <Users className="w-8 h-8 text-indigo-600" />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">合作交流</h3>
-                    <p className="text-sm text-slate-500">保持行业敏感，在互动社群中分享洞见，共同成长。</p>
-                </div>
-                 <div className="text-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-100 transition-colors">
-                    <div className="w-16 h-16 mx-auto bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-                        <Briefcase className="w-8 h-8 text-indigo-600" />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">全站会员服务</h3>
-                    <p className="text-sm text-slate-500">享受所有内推机会、无限简历优化及即将上线的其他会员服务。</p>
-                </div>
-            </div>
-
-            {/* Call to Action */}
-            <div className="mt-16 bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xl shadow-indigo-100/50">
-                <h2 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">准备好开启新的职业篇章了吗？</h2>
-                <p className="text-lg text-slate-600 mb-8">加入 Haigoo Member，与世界各地的小伙伴一起，探索远程工作和理想生活的无限可能。</p>
-                {(() => {
-                    const isMember = user?.membershipLevel && user.membershipLevel !== 'none' && user.membershipExpireAt && new Date(user.membershipExpireAt) > new Date();
-                    
-                    if (isMember) {
-                        return (
-                             <button 
-                                onClick={() => navigate('/jobs')}
-                                className="px-10 py-4 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1"
-                            >
-                                恭喜成为 Haigoo Member，尽情探索吧
-                            </button>
-                        )
-                    } else if (applicationStatus === 'pending') {
-                        return (
-                            <div className="flex flex-col items-center gap-2">
-                                <button 
-                                    disabled
-                                    className="px-10 py-4 bg-slate-300 text-slate-500 font-bold rounded-xl cursor-not-allowed shadow-none"
-                                >
-                                    已申请，敬请等待
-                                </button>
-                                <p className="text-sm text-slate-400">如有疑问可联系：haigooremote@outlook.com</p>
-                            </div>
-                        )
-                    } else if (applicationStatus === 'approved') {
-                        return (
-                             <button 
-                                onClick={() => navigate('/jobs')}
-                                className="px-10 py-4 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1"
-                            >
-                                恭喜成为 Haigoo Member
-                            </button>
-                        )
-                    } else {
-                        return (
-                            <button 
-                                onClick={() => navigate('/join-club-application')}
-                                className="px-10 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 hover:shadow-2xl hover:-translate-y-1"
-                            >
-                                成为 Haigoo Member，获得无限可能
-                            </button>
-                        )
-                    }
-                })()}
-            </div>
         </div>
 
         {/* Job Alert Subscription */}
         <div className="mt-32">
-          <div className="relative rounded-3xl border border-indigo-100 shadow-lg shadow-indigo-50">
-            {/* Background Container - Handles overflow for blobs */}
-            <div className="absolute inset-0 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-50 to-indigo-50">
-                 {/* Subtle Background Pattern */}
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/60 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-100/40 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
-            </div>
+          <div className="relative rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-50 overflow-hidden bg-white">
+            <div className="absolute inset-0 bg-gradient-to-br from-white via-indigo-50/30 to-blue-50/30"></div>
 
-            <div className="relative z-10 max-w-2xl mx-auto p-10 md:p-20 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight text-slate-900 flex items-center justify-center gap-3">
-                <Zap className="w-8 h-8 text-indigo-600 fill-current" />
-                不错过任何机会
+            <div className="relative z-10 max-w-2xl mx-auto p-12 text-center">
+              <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3 hover:rotate-6 transition-transform">
+                <Zap className="w-8 h-8 text-indigo-600 fill-indigo-600" />
+              </div>
+
+              <h2 className="text-3xl font-bold mb-4 tracking-tight text-slate-900">
+                不错过任何新机会
               </h2>
               <p className="text-slate-600 mb-10 text-lg leading-relaxed">
                 订阅岗位提醒，第一时间获取最新的远程工作机会。<br />
-                支持 <span className="font-semibold text-indigo-600">Email</span> 和 <span className="font-semibold text-indigo-600">飞书</span> 推送，不错过每一个好机会。
+                支持 <span className="font-semibold text-indigo-600">Email</span> 和 <span className="font-semibold text-indigo-600">飞书</span> 推送。
               </p>
-              <div className="bg-white/50 backdrop-blur-md p-2 rounded-2xl inline-block w-full max-w-md border border-white/50 shadow-sm">
+              <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 inline-block w-full">
                 <JobAlertSubscribe variant="minimal" theme="light" />
               </div>
             </div>
@@ -386,21 +364,6 @@ export default function LandingPage() {
         </div>
 
       </div>
-
-      {/* Global Animations */}
-      <style>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-      `}</style>
     </div>
   )
 }

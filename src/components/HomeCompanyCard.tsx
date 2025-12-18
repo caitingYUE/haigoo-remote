@@ -1,6 +1,7 @@
 import React from 'react'
 import { Building2, Briefcase, CheckCircle, Clock } from 'lucide-react'
 import { TrustedCompany } from '../services/trusted-companies-service'
+import { MemberBadge } from './MemberBadge'
 
 interface HomeCompanyCardProps {
     company: TrustedCompany
@@ -74,20 +75,16 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                 )}
 
                 {/* Badges Overlay */}
-                <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                    {company.isTrusted && (
-                        <div className="flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full shadow-sm border border-green-100">
-                            <CheckCircle className="w-3 h-3 text-green-600 fill-green-50" />
-                            <span className="text-[10px] font-bold text-green-700">已审核</span>
+                <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+                    {company.canRefer ? (
+                        <div title="可内推">
+                            <MemberBadge variant="referral" size="sm" className="shadow-sm border-0" />
                         </div>
-                    )}
-                </div>
-                <div className="absolute bottom-3 right-3">
-                    {company.canRefer && (
-                        <div className="px-2 py-1 bg-green-50/90 backdrop-blur-sm rounded-full shadow-sm border border-green-100 text-[10px] font-bold text-green-700">
-                            可内推
+                    ) : company.isTrusted ? (
+                        <div title="已验证">
+                            <MemberBadge variant="verified" size="sm" className="shadow-sm border-0" />
                         </div>
-                    )}
+                    ) : null}
                 </div>
             </div>
 

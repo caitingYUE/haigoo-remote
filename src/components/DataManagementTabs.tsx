@@ -314,7 +314,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       }
       setShowEditModal(false);
       setEditingJob(null);
-      
+
       // 重新加载数据以显示最新状态
       loadProcessedData();
     } catch (error) {
@@ -746,7 +746,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             </button>
             <button
               onClick={async () => {
-                if (!confirm('⚠️ 确定要清除所有职位数据吗？\n\n此操作不可撤销，将删除所有处理后的职位数据！')) return;
+                if (!confirm('确定要清除所有职位数据吗？\n\n此操作不可撤销，将删除所有处理后的职位数据！')) return;
                 try {
                   setLoading(true);
                   // Clear processed jobs data

@@ -269,7 +269,7 @@ export default function AdminTagManagementPage() {
                 ))}
                 {tags.length === 0 && (
                     <div className="text-center py-12 text-slate-400">
-                        <div className="text-4xl mb-2">📝</div>
+                        <div className="text-4xl mb-2 text-indigo-500"><Tag className="w-10 h-10" /></div>
                         <p className="text-sm">暂无标签</p>
                     </div>
                 )}

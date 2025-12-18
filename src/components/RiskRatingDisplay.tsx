@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, Star, Clock, AlertTriangle, Lock, TrendingUp } from 'lucide-react';
+import { Crown, Star, Clock, AlertTriangle, Lock, TrendingUp, Sparkles, MessageSquare, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface RiskRating {
@@ -55,7 +55,10 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
                             <div className="flex items-center gap-2">
                                 <Star className="w-4 h-4 text-yellow-500" />
                                 <span className="font-medium">中国候选人友好度:</span>
-                                <span>★★★★☆ (4/5)</span>
+                                <div className="flex gap-0.5">
+                                    {[1, 2, 3, 4].map(i => <Star key={i} className="w-3 h-3 text-yellow-500 fill-yellow-500" />)}
+                                    <Star className="w-3 h-3 text-gray-300" />
+                                </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <TrendingUp className="w-4 h-4 text-green-500" />
@@ -83,8 +86,9 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-indigo-200">
-                    <p className="text-xs text-center text-indigo-700">
-                        💎 升级会员，获取企业友好度、回复率、风险提示等深度评估信息
+                    <p className="text-xs text-center text-indigo-700 flex items-center justify-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        升级会员，获取企业友好度、回复率、风险提示等深度评估信息
                     </p>
                 </div>
             </div>
@@ -110,7 +114,10 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 rounded-lg">
                     <Crown className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">💎 会员专属 - 企业风险评估</h3>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-indigo-500" />
+                    会员专属 - 企业风险评估
+                </h3>
             </div>
 
             {/* Risk Rating */}
@@ -126,8 +133,8 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
                                         <Star
                                             key={star}
                                             className={`w-4 h-4 ${star <= riskRating.friendly_score!
-                                                    ? 'text-yellow-500 fill-yellow-500'
-                                                    : 'text-gray-300'
+                                                ? 'text-yellow-500 fill-yellow-500'
+                                                : 'text-gray-300'
                                                 }`}
                                         />
                                     ))}
@@ -190,7 +197,8 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
             {haigooComment && (
                 <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
                     <p className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
-                        📝 Haigoo 人工点评
+                        <MessageSquare className="w-4 h-4 text-indigo-500" />
+                        Haigoo 人工点评
                     </p>
                     <p className="text-sm text-slate-700 leading-relaxed italic border-l-4 border-indigo-300 pl-3">
                         "{haigooComment}"
@@ -202,7 +210,8 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
             {hiddenFields && Object.keys(hiddenFields).length > 0 && (
                 <div className="bg-white rounded-lg p-4 shadow-sm">
                     <p className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                        🔓 会员解锁信息
+                        <Lock className="w-4 h-4 text-indigo-500" />
+                        会员解锁信息
                     </p>
                     <div className="space-y-2 text-sm">
                         {hiddenFields.timezone_pref && (
