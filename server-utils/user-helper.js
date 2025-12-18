@@ -57,15 +57,6 @@ const userHelper = {
                 if (user.member_status) user.memberStatus = user.member_status
                 if (user.member_expire_at) user.memberExpireAt = user.member_expire_at
                 if (user.member_since) user.memberSince = user.member_since
-
-                // Force Super Admin to be active member and admin
-                if (user.email === SUPER_ADMIN_EMAIL) {
-                    user.roles = { ...(user.roles || {}), admin: true };
-                    user.memberStatus = 'active';
-                    if (!user.memberExpireAt) {
-                        user.memberExpireAt = new Date('2099-12-31').toISOString();
-                    }
-                }
             }
 
             return user

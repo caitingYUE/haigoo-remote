@@ -1358,26 +1358,26 @@ export default function ProfileCenterPage() {
                       </div>
                       <span className="font-bold text-sm tracking-wide text-white/90">会员中心</span>
                     </div>
-                    {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && (
+                    {((authUser?.memberStatus === 'active' && authUser.memberExpireAt && new Date(authUser.memberExpireAt) > new Date()) || !!authUser?.roles?.admin) && (
                       <span className="px-2 py-0.5 rounded-full bg-teal-500/20 border border-teal-400/30 text-[10px] font-bold text-teal-200 uppercase">
                         Active
                       </span>
                     )}
                   </div>
 
-                  {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
+                  {((authUser?.memberStatus === 'active' && authUser.memberExpireAt && new Date(authUser.memberExpireAt) > new Date()) || !!authUser?.roles?.admin) ? (
                     <div className="space-y-4">
                       <div>
                         <p className="text-xs text-indigo-200 mb-1">当前等级</p>
                         <p className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                          {authUser.membershipLevel === 'club_go' ? 'Haigoo Member' : 'Haigoo Pro Member'}
+                          {(authUser.membershipLevel === 'club_go' || !authUser.membershipLevel) ? 'Haigoo Member' : 'Haigoo Pro Member'}
                           <CheckCircle className="w-4 h-4 text-teal-300" />
                         </p>
                       </div>
                       <div>
                         <p className="text-xs text-indigo-200 mb-1">有效期至</p>
                         <p className="text-sm font-medium text-white/80 font-mono">
-                          {new Date(authUser.membershipExpireAt).toLocaleDateString()}
+                          {authUser.memberExpireAt ? new Date(authUser.memberExpireAt).toLocaleDateString() : '永久有效'}
                         </p>
                       </div>
                       <button
