@@ -205,6 +205,16 @@ export default function TrustedCompaniesPage() {
                     </div>
                 )}
             </div>
+            {/* Modals */}
+            <CompanyNominationModal 
+                isOpen={isNominationModalOpen} 
+                onClose={() => setIsNominationModalOpen(false)} 
+            />
+            <MembershipUpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                triggerSource="general"
+            />
         </div >
     )
 }
