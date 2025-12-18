@@ -150,35 +150,35 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      <div className="flex flex-wrap gap-1.5 mt-1">
                         {/* Job Type Tag */}
                         {job.type && (
-                           <span className="px-1.5 py-0.5 bg-slate-50 text-slate-600 text-[10px] font-medium rounded border border-slate-100">
+                           <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-medium rounded border border-slate-200">
                               {job.type === 'full-time' ? '全职' : job.type}
                            </span>
                         )}
 
                         {/* Category Tag */}
                         {job.category && (
-                           <span className="px-1.5 py-0.5 bg-blue-50/50 text-blue-600 text-[10px] font-medium rounded border border-blue-100">
+                           <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-medium rounded border border-blue-200">
                               {job.category}
                            </span>
                         )}
 
                         {/* Experience Level Tag */}
                         {job.experienceLevel && (
-                           <span className="px-1.5 py-0.5 bg-orange-50/50 text-orange-600 text-[10px] font-medium rounded border border-orange-100">
+                           <span className="px-1.5 py-0.5 bg-orange-50 text-orange-700 text-[10px] font-medium rounded border border-orange-200">
                               {job.experienceLevel}
                            </span>
                         )}
 
                         {/* Language Requirement Tag */}
                         {job.languages && job.languages.length > 0 && (
-                           <span className="px-1.5 py-0.5 bg-purple-50/50 text-purple-600 text-[10px] font-medium rounded border border-purple-100 flex items-center gap-1">
+                           <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-medium rounded border border-purple-200 flex items-center gap-1">
                               <Globe className="w-2.5 h-2.5" />
                               {job.languages[0]}
                            </span>
                         )}
 
                         {job.companyTags && job.companyTags.slice(0, 2).map((tag, i) => (
-                           <span key={i} className="px-1.5 py-0.5 bg-gray-50 text-gray-500 text-[10px] rounded border border-gray-100 truncate max-w-[80px]">
+                           <span key={i} className="px-1.5 py-0.5 bg-slate-50 text-slate-600 text-[10px] rounded border border-slate-200 truncate max-w-[80px]">
                               {tag}
                            </span>
                         ))}

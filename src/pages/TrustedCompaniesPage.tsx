@@ -122,35 +122,33 @@ export default function TrustedCompaniesPage() {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Hero Section */}
-            <div className="relative bg-slate-900 overflow-hidden py-16 sm:py-24">
-                <div className="absolute inset-0 z-0">
-                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                    <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-indigo-600/30 blur-3xl mix-blend-screen animate-blob"></div>
-                    <div className="absolute top-32 right-10 w-72 h-72 rounded-full bg-purple-600/30 blur-3xl mix-blend-screen animate-blob animation-delay-2000"></div>
+            <div className="relative bg-white overflow-hidden py-16 sm:py-24">
+                <div className="absolute inset-0 z-0 pointer-events-none">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50/80 via-white to-transparent opacity-70"></div>
                 </div>
 
                 <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-sm">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-6">
                         <Building className="w-3 h-3" /> Trusted Remote Companies
                     </span>
-                    <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
+                    <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">
                         发现全球顶尖<br className="sm:hidden" />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 to-purple-200">远程友好企业</span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600"> 远程友好企业</span>
                     </h1>
-                    <p className="text-slate-400 max-w-2xl mx-auto mb-10 text-lg">
+                    <p className="text-slate-500 max-w-2xl mx-auto mb-10 text-lg leading-relaxed">
                         Haigoo 严选全球远程工作机会，所有企业均经过人工审核，确保真实可靠。<br className="hidden md:block" />加入我们，开启自由职业的新篇章。
                     </p>
 
                     {/* Search & Filter Container */}
-                    <div className="max-w-5xl mx-auto bg-white/10 backdrop-blur-md rounded-2xl p-2 border border-white/10 shadow-2xl">
-                        <div className="flex flex-col md:flex-row gap-3">
+                    <div className="max-w-4xl mx-auto bg-white rounded-2xl p-2 border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                        <div className="flex flex-col md:flex-row gap-2">
                             <div className="flex-1">
                                 <SearchBar
                                     value={searchTerm}
                                     onChange={setSearchTerm}
                                     onSearch={setSearchTerm}
                                     placeholder="搜索公司、行业或关键词..."
-                                    className="w-full bg-white/90 border-0 focus:ring-0 rounded-xl h-12"
+                                    className="w-full bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500 rounded-xl h-11 text-slate-900 placeholder-slate-400"
                                 />
                             </div>
                             <div className="flex gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 px-1 md:px-0">
@@ -159,25 +157,27 @@ export default function TrustedCompaniesPage() {
                                     options={industryOptions}
                                     selected={selectedIndustries}
                                     onChange={setSelectedIndustries}
-                                //  className="bg-white/90 border-0 rounded-xl h-12"
                                 />
                                 <MultiSelectDropdown
                                     label="地区"
                                     options={regionOptions}
                                     selected={selectedRegions}
                                     onChange={setSelectedRegions}
-                                //  className="bg-white/90 border-0 rounded-xl h-12"
                                 />
                                 {(selectedIndustries.length > 0 || selectedRegions.length > 0) && (
                                     <button
                                         onClick={() => { setSelectedIndustries([]); setSelectedRegions([]); }}
-                                        className="px-4 h-12 flex items-center text-sm font-medium text-white hover:bg-white/10 rounded-xl transition-colors whitespace-nowrap"
+                                        className="px-4 h-11 flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors whitespace-nowrap"
                                     >
                                         重置
                                     </button>
                                 )}
                             </div>
                         </div>
+                    </div>
+                    {/* Trusted Standards Banner - Moved here for better visibility */}
+                    <div className="mt-8 flex justify-center">
+                        <TrustedStandardsBanner />
                     </div>
                 </div>
             </div>
