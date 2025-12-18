@@ -3,24 +3,25 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Sparkles, Globe, Briefcase, Building2 } from 'lucide-react'
 
 // Animated Counter Component
-function AnimatedNumber({ value }: { value: number }) {
+function AnimatedNumber({ value }: { value: number | null | undefined }) {
     const [displayValue, setDisplayValue] = useState(0)
 
     useEffect(() => {
-        let start = 0
+        if (value === null || value === undefined) {
+            setDisplayValue(0)
+            return
+        }
+        
         const end = value
-        // Allow animation even if start === end (for re-render stability), but usually value changes from 0 or null
-        // If value is 0, we should display 0
-        if (value === 0) {
+        if (end === 0) {
             setDisplayValue(0)
             return
         }
 
         const totalDuration = 1000 // 1 second animation
-        const incrementTime = (totalDuration / end) * 100
-
+        
         const step = Math.max(1, Math.ceil(end / 20)) // Ensure step is at least 1
-
+        
         let current = 0
         const timer = setInterval(() => {
             current += step
@@ -35,7 +36,7 @@ function AnimatedNumber({ value }: { value: number }) {
         return () => clearInterval(timer)
     }, [value])
 
-    return <span>{value !== undefined && value !== null ? displayValue.toLocaleString() : '...'}</span>
+    return <span>{displayValue.toLocaleString()}</span>
 }
 
 interface HomeHeroProps {

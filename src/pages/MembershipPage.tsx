@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, Gift, Users, ChevronRight } from 'lucide-react';
+import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, Gift, Users, ChevronRight, Loader2, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -36,12 +36,75 @@ const MembershipPage: React.FC = () => {
    const [currentMembership, setCurrentMembership] = useState<any>(null);
    const [showApplicationModal, setShowApplicationModal] = useState(false);
 
+   // Application Logic
+   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+   const [formData, setFormData] = useState({
+      nickname: '',
+      contact: '',
+      experience: '',
+      career_ideal: '',
+      contact_type: 'wechat'
+   });
+   const [submitting, setSubmitting] = useState(false);
+   const [submitSuccess, setSubmitSuccess] = useState(false);
+   const [error, setError] = useState('');
+
+   useEffect(() => {
+      if (user) {
+         setFormData(prev => ({
+            ...prev,
+            nickname: user.username || user.profile?.fullName || prev.nickname
+         }));
+      }
+   }, [user]);
+
    useEffect(() => {
       fetchPlans();
       if (isAuthenticated) {
          fetchStatus();
+         fetchApplicationStatus();
       }
    }, [isAuthenticated]);
+
+   const fetchApplicationStatus = async () => {
+      try {
+          const token = localStorage.getItem('haigoo_auth_token');
+          if (!token) return;
+          const res = await fetch('/api/applications?action=my_status', {
+               headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.success) {
+               setApplicationStatus(data.status);
+          }
+      } catch (e) { console.error(e) }
+  };
+
+   const handleApplicationSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!formData.nickname || !formData.contact || !formData.experience || !formData.career_ideal) {
+        setError('请填写所有必填项');
+        return;
+      }
+      setSubmitting(true);
+      setError('');
+      try {
+         const token = localStorage.getItem('haigoo_auth_token');
+         const res = await fetch('/api/user-profile?action=submit_application', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+             body: JSON.stringify(formData)
+         });
+         const data = await res.json();
+         if (data.success) {
+             setSubmitSuccess(true);
+             setApplicationStatus('pending');
+         } else {
+             setError(data.error || '提交失败');
+         }
+      } catch (err) { setError('网络错误'); } finally { setSubmitting(false); }
+  };
+
 
    const fetchPlans = async () => {
       try {
@@ -174,75 +237,193 @@ const MembershipPage: React.FC = () => {
             </div>
          </div>
 
-         {/* Pricing Section */}
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 -mt-20 relative z-20">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
-               {plans.map((plan) => {
-                  // Logic to highlight popular plan
-                  const isPopular = plan.id.includes('quarterly') || plan.name.includes('季度') || plan.id === 'club_membership_quarterly';
+         {/* Application Flow Section */}
+         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 -mt-20 relative z-20">
+            
+            {/* Case 1: Not Authenticated */}
+            {!isAuthenticated && (
+               <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-8 md:p-12 text-center">
+                  <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                     <Users className="w-8 h-8 text-indigo-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-4">登录以申请会员</h2>
+                  <p className="text-slate-500 max-w-lg mx-auto mb-8">
+                     Haigoo 会员目前处于内测阶段，仅限邀请加入。请先登录您的账户，然后填写申请表单。
+                  </p>
+                  <button
+                     onClick={() => navigate('/login?redirect=/membership')}
+                     className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-indigo-200"
+                  >
+                     立即登录 / 注册
+                  </button>
+               </div>
+            )}
 
-                  return (
-                     <div
-                        key={plan.id}
-                        className={`relative bg-white rounded-[2rem] transition-all duration-300 flex flex-col h-full overflow-hidden group ${isPopular
-                           ? 'shadow-2xl shadow-indigo-200 ring-2 ring-indigo-500 scale-105 z-10'
-                           : 'shadow-xl hover:shadow-2xl border border-slate-100 hover:-translate-y-1'
-                           }`}
-                     >
-                        {isPopular && (
-                           <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                        )}
-                        {isPopular && (
-                           <div className="absolute top-6 right-6">
-                              <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full border border-indigo-100 uppercase tracking-wide">
-                                 Most Popular
-                              </span>
-                           </div>
-                        )}
-
-                        <div className="p-8 flex-1">
-                           <h3 className="text-xl font-bold text-slate-900 mb-2">{plan.name}</h3>
-                           <div className="flex items-baseline gap-1 mb-4">
-                              <span className="text-4xl font-extrabold text-slate-900">¥{plan.price}</span>
-                              <span className="text-slate-500 font-medium">/{plan.duration_days >= 30 ? (plan.duration_days >= 90 ? '季度' : '月') : '天'}</span>
-                           </div>
-
-                           <p className="text-slate-500 text-sm mb-8 min-h-[40px] leading-relaxed">
-                              {plan.id.includes('go') ? '体验核心功能，开始您的远程之旅' : '全方位服务，加速您的求职进程，享受完整的社群支持'}
-                           </p>
-
-                           <div className="space-y-4 mb-8">
-                              {plan.features.map((feature, index) => (
-                                 <div key={index} className="flex items-start gap-3 group-hover:transform group-hover:translate-x-1 transition-transform duration-300">
-                                    <div className={`mt-0.5 rounded-full p-1 shrink-0 ${isPopular ? 'bg-indigo-100' : 'bg-slate-100'}`}>
-                                       <Check className={`w-3 h-3 ${isPopular ? 'text-indigo-600' : 'text-slate-600'}`} />
-                                    </div>
-                                    <span className="text-slate-600 text-sm flex-1">{feature}</span>
-                                 </div>
-                              ))}
-                           </div>
-                        </div>
-
-                        <div className="p-8 pt-0 mt-auto">
-                           <button
-                              onClick={() => handleSubscribe(plan)}
-                              className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg active:scale-95 ${isPopular
-                                 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-indigo-500/25'
-                                 : 'bg-slate-900 text-white hover:bg-slate-800'
-                                 }`}
-                           >
-                              立即订阅
-                              {isPopular && <ArrowRight className="w-4 h-4 inline-block ml-2" />}
-                           </button>
-                           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400">
-                              <ShieldCheck className="w-3 h-3" />
-                              7天无理由退款保障
-                           </div>
-                        </div>
+            {/* Case 2: Authenticated but Not Member */}
+            {isAuthenticated && (!currentMembership || !currentMembership.isActive) && (
+               <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
+                  <div className="p-8 md:p-12">
+                     <div className="text-center mb-10">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-2">申请加入 Haigoo Member</h2>
+                        <p className="text-slate-500">
+                           当前处于内测阶段，会员资格需人工审核。请填写以下信息，我们将在 3 个工作日内反馈。
+                        </p>
                      </div>
-                  )
-               })}
-            </div>
+
+                     {/* Application Status Check */}
+                     {submitSuccess || applicationStatus === 'pending' ? (
+                        <div className="text-center py-10 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+                           <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <Loader2 className="w-8 h-8 animate-spin" />
+                           </div>
+                           <h3 className="text-xl font-bold text-slate-900 mb-2">申请审核中</h3>
+                           <p className="text-slate-500 max-w-xs mx-auto">
+                              您的申请已提交，正在排队审核中。结果将通过邮件或短信通知您。
+                           </p>
+                        </div>
+                     ) : (
+                        <form onSubmit={handleApplicationSubmit} className="space-y-6 max-w-lg mx-auto">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">昵称 / 称呼 *</label>
+                                <input
+                                    type="text"
+                                    value={formData.nickname}
+                                    onChange={e => setFormData({ ...formData, nickname: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                                    placeholder="怎么称呼您"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">联系方式 *</label>
+                                <div className="flex gap-2 mb-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, contact_type: 'wechat' })}
+                                        className={`flex-1 py-2 text-sm font-medium rounded-lg border ${formData.contact_type === 'wechat' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        微信
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, contact_type: 'email' })}
+                                        className={`flex-1 py-2 text-sm font-medium rounded-lg border ${formData.contact_type === 'email' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        邮箱
+                                    </button>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={formData.contact}
+                                    onChange={e => setFormData({ ...formData, contact: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                                    placeholder={formData.contact_type === 'wechat' ? '请输入微信号' : '请输入邮箱地址'}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">职业背景 *</label>
+                                <textarea
+                                    value={formData.experience}
+                                    onChange={e => setFormData({ ...formData, experience: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all min-h-[100px]"
+                                    placeholder="例如：3年全栈开发经验，熟悉 React/Node.js..."
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">求职方向 *</label>
+                                <textarea
+                                    value={formData.career_ideal}
+                                    onChange={e => setFormData({ ...formData, career_ideal: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all min-h-[80px]"
+                                    placeholder="例如：希望寻找海外远程全职工作，期望薪资..."
+                                    required
+                                />
+                            </div>
+
+                            {error && (
+                                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                    {error}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {submitting ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        提交中...
+                                    </>
+                                ) : (
+                                    <>
+                                        提交申请
+                                        <Send className="w-5 h-5" />
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                     )}
+                  </div>
+               </div>
+            )}
+            
+            {/* Case 3: Is Member - Show Dashboard / Benefits */}
+            {isAuthenticated && currentMembership?.isActive && (
+               <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-8 md:p-12">
+                   <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                            <Crown className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-900">尊贵会员</h2>
+                            <p className="text-slate-500">您已享有以下专属权益</p>
+                        </div>
+                   </div>
+                   
+                   <div className="grid md:grid-cols-3 gap-6">
+                        <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
+                            <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center mb-4">
+                                <Zap className="w-5 h-5" />
+                            </div>
+                            <h3 className="font-bold text-slate-900 mb-2">无限次内推</h3>
+                            <p className="text-sm text-slate-500">简历直达 HR，优先处理，反馈更迅速。</p>
+                        </div>
+                        <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
+                             <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4">
+                                <Star className="w-5 h-5" />
+                            </div>
+                            <h3 className="font-bold text-slate-900 mb-2">AI 简历优化</h3>
+                            <p className="text-sm text-slate-500">基于 Job Description 智能优化简历，提高匹配度。</p>
+                        </div>
+                        <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
+                             <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4">
+                                <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <h3 className="font-bold text-slate-900 mb-2">岗位可靠性</h3>
+                            <p className="text-sm text-slate-500">人工审核所有岗位，保障真实性，远离诈骗。</p>
+                        </div>
+                   </div>
+
+                   <div className="mt-8 pt-8 border-t border-slate-100 text-center">
+                        <button 
+                            onClick={() => navigate('/jobs?region=domestic')}
+                            className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors inline-flex items-center gap-2"
+                        >
+                            去浏览内推岗位
+                            <ArrowRight className="w-5 h-5" />
+                        </button>
+                   </div>
+               </div>
+            )}
+
 
             {/* FAQ / Trust Section */}
             <div className="mt-24 max-w-4xl mx-auto">
@@ -254,9 +435,9 @@ const MembershipPage: React.FC = () => {
                <div className="grid md:grid-cols-2 gap-6">
                   {[
                      { q: "什么是内推直达？", a: "我们会将您的简历直接发送给合作伙伴企业的HR或招聘负责人，跳过简历初筛环节，大大提高面试概率。" },
-                     { q: "如果没找到工作可以退款吗？", a: "我们提供7天无理由退款。如果您在7天内觉得服务不满意，可以申请全额退款。超过7天后，虽然主要是为了筛选优质信息，但我们也会尽力协助解决问题。" },
-                     { q: "海外岗位支持工签吗？", a: "部分岗位支持工签（Visa Sponsorship），我们在职位筛选时会特别标注。对于远程岗位，通常通过Contractor签约，无需工签也能合法工作。" },
-                     { q: "会员有效期如何计算？", a: "从您支付成功的即刻起算。例如月度会员，有效期为支付当日起的30天，系统会自动提醒续费。" }
+                     { q: "怎么加入会员？", a: "当前处于内测阶段，会员仅限邀请，在当前页面填写申请后，我们将在3天内回复，请注意填写正确的联系方式。" },
+                     { q: "这里的岗位可靠吗？", a: "当前所有岗位都经过了人工审核，对于会员用户还会通过历史申请记录的追踪来增强岗位可信度的判断。" },
+                     { q: "远程岗位的薪资如何保障", a: "远程岗位里有全职、实习、合同工等多种情况，会依据具体企业、具体岗位来定，有些会在岗位详情页说明，有些需要在面试中沟通。" }
                   ].map((faq, i) => (
                      <div key={i} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                         <h3 className="font-bold text-slate-900 mb-3 flex items-start gap-2">

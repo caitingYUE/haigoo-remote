@@ -159,8 +159,8 @@ export default function LandingPage() {
             {[
               {
                 icon: <Globe className="w-6 h-6 text-white" />,
-                title: "全球全球及格线",
-                desc: "严选全球范围内对中国友好的远程企业，无需肉身出海，即可享受全球薪资。",
+                title: "中国可申",
+                desc: "严选全球范围内对中国人才友好的远程企业，无需出海，也可享有全球薪资。",
                 color: "bg-blue-500"
               },
               {
