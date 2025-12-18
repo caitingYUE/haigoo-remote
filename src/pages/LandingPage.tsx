@@ -240,10 +240,10 @@ export default function LandingPage() {
         </div>
 
         {/* Trusted Companies Section */}
-        <div className="py-24 border-t border-slate-100">
-          <div className="flex items-end justify-between mb-12">
+        <div className="py-16 border-t border-slate-100">
+          <div className="flex items-end justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
+              <h2 className="text-2xl font-bold text-slate-900 mb-1 tracking-tight">
                 精选企业
               </h2>
               <p className="text-slate-500">Haigoo 认证的优质远程雇主</p>

@@ -18,6 +18,10 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
   const navigate = useNavigate();
   const [showApplication, setShowApplication] = useState(false);
 
+  const handleUpgradeClick = () => {
+    setShowApplication(true);
+  };
+
   if (!isOpen) return null;
 
   if (showApplication) {
@@ -116,13 +120,10 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
 
           <div className="space-y-3">
             <button
-              onClick={() => {
-                onClose();
-                navigate('/membership');
-              }}
+              onClick={handleUpgradeClick}
               className="w-full py-3.5 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
             >
-              立即成为 Haigoo Member <ArrowRight className="w-4 h-4" />
+              申请成为 Haigoo Member <ArrowRight className="w-4 h-4" />
             </button>
             
             <button

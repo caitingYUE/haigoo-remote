@@ -8,11 +8,11 @@ import { usePageCache } from '../hooks/usePageCache'
 import { Job } from '../types'
 import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
-import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
+import { MembershipApplicationModal } from '../components/MembershipApplicationModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
-type TabKey = 'resume' | 'favorites' | 'feedback' | 'recommend' | 'subscriptions'
+type TabKey = 'resume' | 'favorites' | 'feedback' | 'recommend' | 'subscriptions' | 'membership'
 
 export default function ProfileCenterPage() {
   const { user: authUser, token } = useAuth()
@@ -22,7 +22,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['resume', 'favorites', 'feedback', 'recommend', 'subscriptions'].includes(t) ? t : 'resume'
+    return t && ['resume', 'favorites', 'feedback', 'recommend', 'subscriptions', 'membership'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)

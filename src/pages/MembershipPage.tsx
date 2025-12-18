@@ -21,6 +21,8 @@ interface PaymentInfo {
    instruction: string;
 }
 
+import { MembershipApplicationModal } from '../components/MembershipApplicationModal';
+
 const MembershipPage: React.FC = () => {
    const { user, isAuthenticated } = useAuth();
    const navigate = useNavigate();
@@ -32,6 +34,7 @@ const MembershipPage: React.FC = () => {
    const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
    const [showPaymentModal, setShowPaymentModal] = useState(false);
    const [currentMembership, setCurrentMembership] = useState<any>(null);
+   const [showApplicationModal, setShowApplicationModal] = useState(false);
 
    useEffect(() => {
       fetchPlans();
@@ -75,8 +78,8 @@ const MembershipPage: React.FC = () => {
          return;
       }
       setSelectedPlan(plan);
-      setShowPaymentModal(true);
-      setPaymentInfo(null); // Reset previous info
+      // Beta Phase: Show Application Modal instead of direct payment
+      setShowApplicationModal(true);
    };
 
    const handleCreatePayment = async () => {
@@ -266,6 +269,12 @@ const MembershipPage: React.FC = () => {
                </div>
             </div>
          </div>
+
+         {/* Application Modal */}
+         <MembershipApplicationModal
+            isOpen={showApplicationModal}
+            onClose={() => setShowApplicationModal(false)}
+         />
 
          {/* Payment Modal */}
          {showPaymentModal && selectedPlan && (

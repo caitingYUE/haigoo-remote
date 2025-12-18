@@ -9,12 +9,17 @@ function AnimatedNumber({ value }: { value: number }) {
     useEffect(() => {
         let start = 0
         const end = value
-        if (start === end) return
+        // Allow animation even if start === end (for re-render stability), but usually value changes from 0 or null
+        // If value is 0, we should display 0
+        if (value === 0) {
+            setDisplayValue(0)
+            return
+        }
 
         const totalDuration = 1000 // 1 second animation
         const incrementTime = (totalDuration / end) * 100
 
-        const step = Math.ceil(end / 20)
+        const step = Math.max(1, Math.ceil(end / 20)) // Ensure step is at least 1
 
         let current = 0
         const timer = setInterval(() => {
@@ -30,7 +35,7 @@ function AnimatedNumber({ value }: { value: number }) {
         return () => clearInterval(timer)
     }, [value])
 
-    return <span>{value ? value.toLocaleString() : '...'}</span>
+    return <span>{value !== undefined && value !== null ? displayValue.toLocaleString() : '...'}</span>
 }
 
 interface HomeHeroProps {

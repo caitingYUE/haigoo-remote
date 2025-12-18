@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, ShieldCheck } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, ShieldCheck, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -290,6 +290,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <div className="flex items-center gap-1.5">
                         <Building2 className="w-3.5 h-3.5 text-slate-400" />
                         <span className="truncate max-w-[200px] font-medium">{displayText(job.company || '')}</span>
+                        {job.isTrusted && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 flex-shrink-0">
+                                <Sparkles className="w-3 h-3" />
+                                认证
+                            </span>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-1.5">
