@@ -21,14 +21,14 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
 
   // Force rebuild trigger - v2
   const getIntroText = () => {
-      if (context === 'company') {
-          return isExpanded
-              ? 'Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业，符合以下 5 项标准：'
-              : 'Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业，让你放心探索远程工作世界。';
-      }
-      return isExpanded 
-          ? '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，符合以下 5 项标准：' 
-          : '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，信息真实可靠，您可以放心投递。';
+    if (context === 'company') {
+      return isExpanded
+        ? 'Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业，符合以下 5 项标准：'
+        : 'Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业，让你放心探索远程工作世界。';
+    }
+    return isExpanded
+      ? '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，符合以下 5 项标准：'
+      : '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，信息真实可靠，您可以放心投递。';
   };
 
   const handleToggle = () => {
@@ -41,45 +41,57 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
     <div className={`bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 relative group ${className}`}>
       {/* Background Decoration */}
       <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
-          <ShieldCheck className="w-24 h-24 text-indigo-600 rotate-12" />
+        <ShieldCheck className="w-24 h-24 text-indigo-600 rotate-12" />
       </div>
 
       {/* Header / Collapsed View */}
-      <div 
+      <div
         className="p-4 flex items-start gap-4 cursor-pointer relative z-10"
         onClick={handleToggle}
       >
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-md shadow-indigo-200 mt-1">
-             <ShieldCheck className="w-5 h-5 text-white" />
+          <ShieldCheck className="w-5 h-5 text-white" />
         </div>
-        
+
         <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2 mb-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-bold text-slate-900 text-base">Haigoo 俱乐部认证企业</h4>
-                    <span className="px-2 py-0.5 bg-white/60 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100 whitespace-nowrap">Verified</span>
-                </div>
-                {isMember && (
-                  <button className={`p-1 rounded-full hover:bg-indigo-100/50 text-indigo-400 transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
-                      <ChevronDown className="w-5 h-5" />
-                  </button>
-                )}
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="font-bold text-slate-900 text-base">Haigoo 俱乐部认证企业</h4>
+              <span className="px-2 py-0.5 bg-white/60 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100 whitespace-nowrap">Verified</span>
             </div>
-            
-            <p className="text-sm text-slate-600 leading-relaxed pr-8">
-                {getIntroText()}
+            {isMember && (
+              <button className={`p-1 rounded-full hover:bg-indigo-100/50 text-indigo-400 transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
+                <ChevronDown className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+
+          <p className="text-sm text-slate-600 leading-relaxed pr-8">
+            {getIntroText()}
+          </p>
+          {!isExpanded && isMember && (
+            <p className="text-xs text-indigo-500 mt-2 font-medium flex items-center gap-1 hover:text-indigo-600 transition-colors">
+              点击查看 5 项认证标准 <ChevronDown className="w-3 h-3" />
             </p>
-            {!isExpanded && isMember && (
-                <p className="text-xs text-indigo-500 mt-2 font-medium flex items-center gap-1 hover:text-indigo-600 transition-colors">
-                    点击查看 5 项认证标准 <ChevronDown className="w-3 h-3" />
-                </p>
-            )}
-            {!isMember && (
-               <p className="text-xs text-slate-400 mt-2 font-medium flex items-center gap-1">
-                  <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">Member Only</span> 
-                  认证详情仅会员可见
-               </p>
-            )}
+          )}
+          {!isMember && onShowUpgrade && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowUpgrade();
+              }}
+              className="mt-3 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-sm font-bold rounded-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              解锁认证详情
+            </button>
+          )}
+          {!isMember && !onShowUpgrade && (
+            <p className="text-xs text-slate-400 mt-2 font-medium flex items-center gap-1">
+              <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">Member Only</span>
+              认证详情仅会员可见
+            </p>
+          )}
         </div>
       </div>
 
@@ -97,9 +109,9 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
             ))}
           </div>
           <div className="mt-4 pt-3 border-t border-indigo-100/50">
-             <p className="text-xs text-indigo-400/80 italic">
-                * Haigoo 持续监控企业状态，如发现异常将立即取消认证
-             </p>
+            <p className="text-xs text-indigo-400/80 italic">
+              * Haigoo 持续监控企业状态，如发现异常将立即取消认证
+            </p>
           </div>
         </div>
       </div>

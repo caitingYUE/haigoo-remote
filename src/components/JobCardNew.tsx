@@ -57,13 +57,13 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                } ${className || ''}`}
          >
             {/* Corner Tag */}
-            <div className="absolute top-0 right-0 z-10 flex flex-col items-end">
+            <div className="absolute top-0 right-0 z-20 flex flex-col items-end">
                {job.canRefer ? (
                   <div
                      className="px-2.5 py-1 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/20 text-[10px] font-bold tracking-wide"
                      title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
                   >
-                     <MemberBadge variant="referral" size="sm" className="!border-0 !bg-transparent !text-white !p-0" />
+                     <Target className="w-3 h-3" />
                      <span>内推</span>
                   </div>
                ) : job.isTrusted ? (
@@ -71,15 +71,16 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      className="px-2.5 py-1 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-indigo-500/20 text-[10px] font-bold tracking-wide"
                      title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
                   >
-                     <MemberBadge variant="verified" size="sm" className="!border-0 !bg-transparent !text-white !p-0" />
+                     <Sparkles className="w-3 h-3" />
                      <span>官网直投</span>
                   </div>
                ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
                   <div
-                     className="text-[10px] font-medium px-3 py-1 rounded-bl-xl rounded-tr-xl text-slate-500 shadow-sm flex items-center gap-1 bg-slate-50 border-l border-b border-slate-100"
+                     className="px-2.5 py-1 rounded-bl-xl rounded-tr-xl text-white shadow-sm flex items-center gap-1.5 bg-gradient-to-r from-slate-500 to-slate-600 shadow-slate-500/20 text-[10px] font-bold tracking-wide"
                      title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
                   >
-                     可信平台投递
+                     <Check className="w-3 h-3" />
+                     <span>可信平台</span>
                   </div>
                ) : null}
             </div>
@@ -215,7 +216,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    return (
       <div
          onClick={() => onClick?.(job)}
-         className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer overflow-hidden ${className || ''}`}
+         className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer ${className || ''}`}
       >
          {/* Top Decoration removed as requested to move tags inline */}
          {/* <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
