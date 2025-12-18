@@ -89,7 +89,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                     onClose();
                                     navigate('/membership');
                                 }}
-                                className="w-full py-3.5 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                                className="w-full py-3.5 px-6 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200/50 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                             >
                                 立即成为 Haigoo Member <ArrowRight className="w-4 h-4" />
                             </button>

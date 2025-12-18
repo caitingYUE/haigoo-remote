@@ -80,7 +80,7 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
                 e.stopPropagation();
                 onShowUpgrade();
               }}
-              className="mt-3 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-sm font-bold rounded-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
+              className="mt-3 px-4 py-2 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white text-sm font-bold rounded-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
             >
               <ShieldCheck className="w-4 h-4" />
               解锁认证详情

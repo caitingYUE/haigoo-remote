@@ -1344,20 +1344,22 @@ export default function ProfileCenterPage() {
 
             {/* Member Card - Premium Upgrade */}
             {!isSidebarCollapsed ? (
-              <div className="bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] rounded-2xl p-6 text-white shadow-xl relative overflow-hidden border border-slate-800">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full -mr-10 -mt-10 blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/10 rounded-full -ml-10 -mb-10 blur-2xl"></div>
+              <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden border border-white/10">
+                {/* Background Effects */}
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-400/20 rounded-full -mr-10 -mt-10 blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-400/20 rounded-full -ml-10 -mb-10 blur-2xl animate-pulse delay-700"></div>
 
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-indigo-500/20 rounded-lg">
-                        <Crown className="w-5 h-5 text-indigo-400" />
+                      <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-sm border border-white/10">
+                        <Crown className="w-5 h-5 text-indigo-200" />
                       </div>
-                      <span className="font-bold text-sm tracking-wide text-indigo-100">会员中心</span>
+                      <span className="font-bold text-sm tracking-wide text-white/90">会员中心</span>
                     </div>
                     {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && (
-                      <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[10px] font-bold text-indigo-300 uppercase">
+                      <span className="px-2 py-0.5 rounded-full bg-teal-500/20 border border-teal-400/30 text-[10px] font-bold text-teal-200 uppercase">
                         Active
                       </span>
                     )}
@@ -1366,38 +1368,38 @@ export default function ProfileCenterPage() {
                   {authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date() ? (
                     <div className="space-y-4">
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">当前等级</p>
+                        <p className="text-xs text-indigo-200 mb-1">当前等级</p>
                         <p className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                           {authUser.membershipLevel === 'club_go' ? 'Haigoo Member' : 'Haigoo Pro Member'}
-                          <CheckCircle className="w-4 h-4 text-emerald-400" />
+                          <CheckCircle className="w-4 h-4 text-teal-300" />
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">有效期至</p>
-                        <p className="text-sm font-medium text-slate-300 font-mono">
+                        <p className="text-xs text-indigo-200 mb-1">有效期至</p>
+                        <p className="text-sm font-medium text-white/80 font-mono">
                           {new Date(authUser.membershipExpireAt).toLocaleDateString()}
                         </p>
                       </div>
                       <button
                         onClick={() => navigate('/membership')}
-                        className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-bold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
+                        className="w-full py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-xl transition-all shadow-lg backdrop-blur-md flex items-center justify-center gap-2 group"
                       >
-                        续费 / 升级权益 <ChevronRight className="w-3 h-3" />
+                        续费 / 升级权益 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <div>
                         <h4 className="text-lg font-bold text-white mb-2">开通会员</h4>
-                        <p className="text-xs text-slate-300 leading-relaxed opacity-90">
+                        <p className="text-xs text-indigo-100 leading-relaxed opacity-90">
                           解锁无限次 AI 简历优化、内推直达通道及职位专属推荐权益。
                         </p>
                       </div>
                       <button
                         onClick={() => navigate('/membership')}
-                        className="w-full py-3 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-400 hover:to-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 group"
+                        className="w-full py-3 bg-gradient-to-r from-white via-indigo-50 to-teal-50 hover:from-indigo-100 hover:to-teal-100 text-indigo-900 text-sm font-bold rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
                       >
-                        立即开通 <Zap className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        立即开通 <Zap className="w-4 h-4 text-teal-600 group-hover:scale-110 transition-transform" />
                       </button>
                     </div>
                   )}
@@ -1405,7 +1407,7 @@ export default function ProfileCenterPage() {
               </div>
             ) : (
               <div className="flex justify-center" title="会员权益">
-                <button onClick={() => setIsSidebarCollapsed(false)} className="p-3 bg-slate-900 text-indigo-400 rounded-2xl hover:bg-slate-800 transition-colors shadow-lg border border-slate-800">
+                <button onClick={() => setIsSidebarCollapsed(false)} className="p-3 bg-gradient-to-br from-indigo-900 to-teal-800 text-white rounded-2xl hover:shadow-lg transition-all shadow-md border border-white/10">
                   <Crown className="w-6 h-6" />
                 </button>
               </div>

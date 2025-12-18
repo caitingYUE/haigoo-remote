@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, ShieldCheck, Sparkles } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, ShieldCheck, Sparkles, Target } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -405,10 +405,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     ? 'bg-violet-50 text-violet-600 border-violet-100'
                                     : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                                     }`}
-                                title={showTranslation ? '中文翻译' : '原文显示'}
+                                title={showTranslation ? '切换原文' : '一键翻译'}
                             >
                                 <Languages className="w-3.5 h-3.5" />
-                                <span>{showTranslation ? '中文翻译' : '原文显示'}</span>
+                                <span>{showTranslation ? '切换原文' : '一键翻译'}</span>
                                 {!isAuthenticated && (
                                     <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">登录</span>
                                 )}
@@ -544,29 +544,51 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </section>
 
                     {/* Source Label */}
-                    {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
-                        <div className="flex flex-col items-end pb-4 gap-1">
-                            {job.sourceUrl ? (
-                                <a
-                                    href={job.sourceUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-3 py-1 bg-slate-50 text-indigo-600 hover:text-indigo-700 text-xs rounded-md border border-slate-100 hover:border-indigo-200 transition-colors"
-                                    title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
-                                >
-                                    岗位来自 {job.source} (可信平台投递)
-                                    <ExternalLink className="w-3 h-3" />
-                                </a>
-                            ) : (
-                                <span className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-400 text-xs rounded-md border border-slate-100">
-                                    岗位来自 {job.source}
-                                </span>
-                            )}
-                            <p className="text-[10px] text-slate-400">
-                                * 投递将在外部招聘平台完成，可能需要另外注册账号
-                            </p>
-                        </div>
-                    )}
+                    <div className="flex flex-col items-end pb-4 gap-1">
+                        {job.canRefer ? (
+                            <>
+                                <div className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-md border border-indigo-100">
+                                    <Target className="w-3.5 h-3.5" />
+                                    Haigoo 内推 (会员专属)
+                                </div>
+                                <p className="text-[10px] text-slate-500">
+                                    * 由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）
+                                </p>
+                            </>
+                        ) : job.isTrusted ? (
+                            <>
+                                <div className="inline-flex items-center gap-1 px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-md border border-orange-100">
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    企业官网 (Haigoo 核验)
+                                </div>
+                                <p className="text-[10px] text-slate-500">
+                                    * 通过公司官网直接投递，Haigoo 已人工核实企业真实性
+                                </p>
+                            </>
+                        ) : (job.sourceType === 'rss' || job.sourceType === 'third-party' || (job.source && !job.isTrusted && !job.canRefer)) ? (
+                            <>
+                                {job.sourceUrl ? (
+                                    <a
+                                        href={job.sourceUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 px-3 py-1 bg-slate-50 text-indigo-600 hover:text-indigo-700 text-xs rounded-md border border-slate-100 hover:border-indigo-200 transition-colors"
+                                        title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
+                                    >
+                                        岗位来自 {job.source} (可信平台投递)
+                                        <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                ) : (
+                                    <span className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-400 text-xs rounded-md border border-slate-100">
+                                        岗位来自 {job.source}
+                                    </span>
+                                )}
+                                <p className="text-[10px] text-slate-400">
+                                    * 来自已审核的成熟招聘平台，可能需要另外注册账号
+                                </p>
+                            </>
+                        ) : null}
+                    </div>
                 </div>
             </main >
 

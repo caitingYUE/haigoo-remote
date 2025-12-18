@@ -62,7 +62,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
                   >
                      <Target className="w-3.5 h-3.5" />
-                     <span>内推</span>
+                     <span>Haigoo 内推</span>
                   </div>
                ) : job.isTrusted ? (
                   <div
@@ -70,15 +70,15 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
                   >
                      <Sparkles className="w-3.5 h-3.5" />
-                     <span>官网直投</span>
+                     <span>企业官网</span>
                   </div>
-               ) : (job.sourceType === 'rss' || job.sourceType === 'third-party') ? (
+               ) : (job.sourceType === 'rss' || job.sourceType === 'third-party' || (job.source && !job.isTrusted && !job.canRefer)) ? (
                   <div
                      className="px-3 py-1.5 rounded-bl-xl rounded-tr-2xl text-white shadow-md flex items-center gap-1.5 bg-cyan-600 text-xs font-bold tracking-wide whitespace-nowrap"
                      title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
                   >
                      <Check className="w-3.5 h-3.5" />
-                     <span>可信平台</span>
+                     <span>可信平台投递</span>
                   </div>
                ) : null}
             </div>

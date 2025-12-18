@@ -64,13 +64,13 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
         </button>
 
         {/* Header Image / Gradient - Premium Dark Theme */}
-        <div className="h-40 bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="h-40 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
            {/* Decorative elements */}
-           <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
-           <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-500/30 rounded-full blur-[40px] animate-pulse"></div>
-           <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-purple-500/30 rounded-full blur-[40px] animate-pulse delay-700"></div>
+           <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+           <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-400/20 rounded-full blur-[40px] animate-pulse"></div>
+           <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-teal-400/20 rounded-full blur-[40px] animate-pulse delay-700"></div>
            
-           <div className="relative z-10 bg-white/10 p-4 rounded-full backdrop-blur-md shadow-2xl border border-white/10 ring-1 ring-white/20">
+           <div className="relative z-10 bg-white/10 p-4 rounded-full backdrop-blur-md shadow-2xl border border-white/20 ring-1 ring-white/10">
               {content.icon}
            </div>
         </div>

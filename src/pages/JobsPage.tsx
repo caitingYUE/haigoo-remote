@@ -118,12 +118,10 @@ export default function JobsPage() {
 
   const saveUserPreferences = async (preferences: JobPreferences) => {
     if (!isAuthenticated || !token) {
-      console.log('[Preferences] Cannot save: not authenticated')
       navigate('/login')
       return
     }
 
-    console.log('[Preferences] Saving preferences:', preferences)
     try {
       const resp = await fetch('/api/user-profile?action=save_preferences', {
         method: 'POST',
@@ -134,19 +132,17 @@ export default function JobsPage() {
         body: JSON.stringify({ preferences })
       })
 
-      console.log('[Preferences] Save response status:', resp.status)
       if (resp.ok) {
         const data = await resp.json()
-        console.log('[Preferences] ✅ Save successful:', data)
         setUserPreferences(preferences)
         showSuccess('求职期望已保存')
       } else {
         const errorText = await resp.text()
-        console.error('[Preferences] ❌ Save failed:', resp.status, errorText)
+        console.error('[Preferences] Save failed:', resp.status, errorText)
         showError('保存失败，请稍后重试')
       }
     } catch (error) {
-      console.error('[Preferences] ❌ Save error:', error)
+      console.error('[Preferences] Save error:', error)
       showError('保存失败，请检查网络连接')
     }
   }
@@ -621,7 +617,7 @@ export default function JobsPage() {
           <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[55%] xl:w-[55%]' : 'lg:w-[800px] mx-auto'} bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden flex-shrink-0`}>
             {/* List Header Info */}
             <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center text-xs text-slate-500 font-medium">
-              <span>共找到 {totalJobs} 个相关职位</span>
+              <span>共找到 {totalJobs || distributedJobs.length} 个相关职位</span>
               {filters.isTrusted && (
                 <span className="flex items-center gap-1 text-indigo-600">
                   <Zap className="w-3 h-3 fill-indigo-600" />
