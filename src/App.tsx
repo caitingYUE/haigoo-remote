@@ -34,6 +34,7 @@ const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 
 
 function App() {
+  console.log('Haigoo Frontend Version: 2025-12-18-Fix-Visuals-v2');
   return (
     <ErrorBoundary>
       <AuthProvider>

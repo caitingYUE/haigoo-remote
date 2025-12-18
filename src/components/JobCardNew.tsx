@@ -48,7 +48,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       return (
          <div
             onClick={() => onClick?.(job)}
-            className={`group relative p-6 bg-white rounded-2xl mb-4 border transition-all duration-300 cursor-pointer 
+            className={`group relative p-6 bg-white rounded-2xl mb-4 border cursor-pointer overflow-visible
                ${isActive
                   ? 'border-indigo-400 ring-2 ring-indigo-400/30 shadow-xl shadow-indigo-400/20 bg-indigo-50/30'
                   : 'border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-0.5'
@@ -214,7 +214,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    return (
       <div
          onClick={() => onClick?.(job)}
-         className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer ${className || ''}`}
+         className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] cursor-pointer overflow-visible ${className || ''}`}
       >
          {/* Top Decoration removed as requested to move tags inline */}
          {/* <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
