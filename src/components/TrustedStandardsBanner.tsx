@@ -5,9 +5,10 @@ interface TrustedStandardsBannerProps {
   className?: string;
   context?: 'job' | 'company';
   isMember?: boolean;
+  onShowUpgrade?: () => void;
 }
 
-export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ className = '', context = 'job', isMember = false }) => {
+export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ className = '', context = 'job', isMember = false, onShowUpgrade }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const standards = [

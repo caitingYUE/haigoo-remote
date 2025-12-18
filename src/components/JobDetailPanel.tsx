@@ -407,7 +407,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     {/* Trusted Company Standards Banner - Restored */}
                     {job.isTrusted && (
                         <div className="mb-6">
-                            <TrustedStandardsBanner className="" isMember={isMember} />
+                            <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => setShowUpgradeModal(true)} />
                         </div>
                     )}
 

@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { Briefcase, Globe, ChevronRight, Sparkles, Building2, ExternalLink, Check } from 'lucide-react';
+import { Briefcase, Globe, ChevronRight, Sparkles, Building2, ExternalLink, Check, Target } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { stripMarkdown } from '../utils/text-formatter';
