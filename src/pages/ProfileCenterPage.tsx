@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -10,6 +10,7 @@ import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
 import { MembershipApplicationModal } from '../components/MembershipApplicationModal'
 import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
+import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
@@ -59,6 +60,7 @@ export default function ProfileCenterPage() {
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const { showSuccess, showError } = useNotificationHelpers()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [showCertificateModal, setShowCertificateModal] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [upgradeSource, setUpgradeSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
 
