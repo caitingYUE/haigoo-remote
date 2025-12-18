@@ -337,13 +337,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </div>
                 </div>
 
-                {/* Trusted Company Standards Banner */}
-                {job.isTrusted && (
-                    <div className="mb-5">
-                        <TrustedStandardsBanner className="" isMember={isMember} />
-                    </div>
-                )}
-
                 {/* Action Buttons Toolbar */}
                 <div className="flex items-center justify-between gap-2 pt-4 border-t border-slate-100">
                     <div className="flex items-center gap-2">
