@@ -59,6 +59,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
 
     useEffect(() => {
+        // Reset state when job changes
+        setIsFeedbackOpen(false)
+        setFeedbackAccuracy('unknown')
+        setFeedbackContent('')
+        setFeedbackMessage('')
+        
+        // Reset translation state
+        setShowTranslation(false)
+    }, [job?.id])
+
+    useEffect(() => {
         if (job?.companyId) {
             trustedCompaniesService.getCompanyById(job.companyId).then(setCompanyInfo).catch(() => setCompanyInfo(null))
         } else {
