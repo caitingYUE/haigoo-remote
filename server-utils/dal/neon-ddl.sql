@@ -36,54 +36,7 @@ CREATE TABLE jobs (
   job_id VARCHAR(255) UNIQUE NOT NULL,
   title VARCHAR(500) NOT NULL,
   company VARCHAR(200) NOT NULL,
-  location VARCHAR(200) DEFAULT 'Remote',
-  description TEXT,
-  url VARCHAR(2000),
-  published_at TIMESTAMP NOT NULL,
-  source VARCHAR(100) DEFAULT 'unknown',
-  category VARCHAR(100) DEFAULT '其他',
-  salary VARCHAR(200),
-  job_type VARCHAR(50) DEFAULT 'full-time',
-  experience_level VARCHAR(50) DEFAULT 'Mid',
-  tags JSONB DEFAULT '[]',
-  requirements JSONB DEFAULT '[]',
-  benefits JSONB DEFAULT '[]',
-  is_remote BOOLEAN DEFAULT true,
-  status VARCHAR(50) DEFAULT 'active',
-  region VARCHAR(50) DEFAULT 'overseas',
-  translations JSONB,
-  is_translated BOOLEAN DEFAULT false,
-  translated_at TIMESTAMP,
-  company_id VARCHAR(255),
-  source_type VARCHAR(50) DEFAULT 'rss',
-  is_trusted BOOLEAN DEFAULT false,
-  can_refer BOOLEAN DEFAULT false,
-  company_logo VARCHAR(2000),
-  company_website VARCHAR(2000),
-  company_description TEXT,
-  industry VARCHAR(100),
-  company_tags JSONB DEFAULT '[]',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- favorites - 存储用户收藏的工作
-CREATE TABLE favorites (
-  id SERIAL PRIMARY KEY,
-  user_id VARCHAR(255),
-  job_id VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, job_id)
-);
-
--- raw_rss - 存储原始RSS数据
-CREATE TABLE raw_rss (
-  id SERIAL PRIMARY KEY,
-  raw_id VARCHAR(255) UNIQUE NOT NULL,
-  source VARCHAR(100) NOT NULL,
-  category VARCHAR(100) DEFAULT '',
-  url VARCHAR(2000),
-  title VARCHAR(500) NOT NULL,
+  location VARCHAR(200),
   description TEXT,
   link VARCHAR(2000),
   pub_date TIMESTAMP NOT NULL,
@@ -133,106 +86,116 @@ CREATE TABLE resume_stats (
   success_count INTEGER DEFAULT 0,
   failed_count INTEGER DEFAULT 0,
   last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  storage_provider VARCHAR(50) DEFAULT 'neon',
-  estimated_size INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- trusted_companies - 存储可信企业信息
+-- feedbacks - 存储用户反馈
+CREATE TABLE feedbacks (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255),
+  type VARCHAR(50) NOT NULL,
+  content TEXT NOT NULL,
+  contact VARCHAR(200),
+  status VARCHAR(50) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- favorites - 存储用户收藏
+CREATE TABLE favorites (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  job_id VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, job_id)
+);
+
+-- trusted_companies - 存储信任的公司列表
 CREATE TABLE trusted_companies (
   id SERIAL PRIMARY KEY,
-  company_id VARCHAR(255) UNIQUE NOT NULL,
-  name VARCHAR(500) NOT NULL,
-  website VARCHAR(2000),
+  name VARCHAR(200) UNIQUE NOT NULL,
+  logo VARCHAR(500),
+  website VARCHAR(500),
   description TEXT,
-  logo VARCHAR(2000),
-  cover_image TEXT,
-  industry VARCHAR(100) DEFAULT '其他',
   tags JSONB DEFAULT '[]',
-  source VARCHAR(50) DEFAULT 'manual',
-  job_count INTEGER DEFAULT 0,
-  can_refer BOOLEAN DEFAULT false,
   status VARCHAR(50) DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- extracted_companies - 存储从岗位数据提取的企业信息
+-- extracted_companies - 存储从岗位中提取的公司
 CREATE TABLE extracted_companies (
   id SERIAL PRIMARY KEY,
-  company_id VARCHAR(255) UNIQUE NOT NULL,
-  name VARCHAR(500) NOT NULL,
-  url VARCHAR(2000),
-  description TEXT,
-  logo VARCHAR(2000),
-  cover_image TEXT,
-  industry VARCHAR(100) DEFAULT '其他',
+  name VARCHAR(200) UNIQUE NOT NULL,
+  source_job_id VARCHAR(255),
+  count INTEGER DEFAULT 1,
+  first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- processed_jobs - 存储处理后的岗位信息
+CREATE TABLE processed_jobs (
+  id SERIAL PRIMARY KEY,
+  job_id VARCHAR(255) UNIQUE NOT NULL,
+  title VARCHAR(500) NOT NULL,
+  company VARCHAR(200) NOT NULL,
+  location VARCHAR(200),
+  salary VARCHAR(200),
+  job_type VARCHAR(50),
+  experience_level VARCHAR(50),
+  category VARCHAR(100),
   tags JSONB DEFAULT '[]',
-  source VARCHAR(50) DEFAULT 'extracted',
-  job_count INTEGER DEFAULT 0,
+  description TEXT,
+  requirements TEXT,
+  benefits TEXT,
+  link VARCHAR(2000),
+  source VARCHAR(50),
+  pub_date TIMESTAMP NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- company_stats - 存储企业统计信息
-CREATE TABLE company_stats (
+-- system_stats - 存储系统统计信息
+CREATE TABLE system_stats (
   id SERIAL PRIMARY KEY,
-  total_companies INTEGER DEFAULT 0,
   total_jobs INTEGER DEFAULT 0,
-  active_companies INTEGER DEFAULT 0,
-  last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  total_companies INTEGER DEFAULT 0,
+  total_users INTEGER DEFAULT 0,
+  last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- tag_config - 存储标签配置信息
-CREATE TABLE tag_config (
+-- data_retention_policies - 存储数据保留策略
+CREATE TABLE data_retention_policies (
   id SERIAL PRIMARY KEY,
-  config_type VARCHAR(50) NOT NULL,
-  config_data JSONB NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(config_type)
-);
-
--- feedbacks - 存储用户反馈信息
-CREATE TABLE feedbacks (
-  id SERIAL PRIMARY KEY,
-  feedback_id VARCHAR(255) UNIQUE NOT NULL,
-  user_id VARCHAR(255) NOT NULL,
-  job_id VARCHAR(255) NOT NULL,
-  accuracy INTEGER DEFAULT 0,
-  content TEXT,
-  contact TEXT,
-  source VARCHAR(100),
-  source_url VARCHAR(2000),
+  table_name VARCHAR(100) UNIQUE NOT NULL,
+  retention_days INTEGER NOT NULL,
+  description VARCHAR(200),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- recommendations - 存储用户推荐信息
-CREATE TABLE recommendations (
+-- Insert default policies
+INSERT INTO data_retention_policies (table_name, retention_days, description)
+VALUES 
+  ('jobs', 30, 'Raw job data retention'),
+  ('processed_jobs', 90, 'Processed job data retention'),
+  ('resumes', 30, 'Resume file retention (if not user associated)'),
+  ('feedbacks', 365, 'Feedback retention')
+ON CONFLICT (table_name) DO NOTHING;
+
+-- company_images - 存储公司图片缓存
+CREATE TABLE company_images (
   id SERIAL PRIMARY KEY,
-  recommendation_id VARCHAR(255) UNIQUE NOT NULL,
-  user_id VARCHAR(255) NOT NULL,
-  job_id VARCHAR(255) NOT NULL,
-  content TEXT,
-  contact TEXT,
-  source VARCHAR(100),
-  source_url VARCHAR(2000),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  domain VARCHAR(255) UNIQUE NOT NULL,
+  logo_url VARCHAR(500),
+  cover_url VARCHAR(500),
+  last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  storage_provider VARCHAR(50) DEFAULT 'neon',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- location_categories - 存储地址分类配置
-CREATE TABLE location_categories (
-  id SERIAL PRIMARY KEY,
-  config_id VARCHAR(255) UNIQUE NOT NULL,
-  categories JSONB DEFAULT '{}',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- user_profile_stats - 存储用户资料统计信息
+-- user_profile_stats - 存储用户画像统计
 CREATE TABLE user_profile_stats (
   id SERIAL PRIMARY KEY,
   total_users INTEGER DEFAULT 0,
@@ -385,3 +348,13 @@ CREATE TABLE IF NOT EXISTS user_job_interactions (
 
 -- 2025-12-18: Add nickname to club_applications
 ALTER TABLE club_applications ADD COLUMN IF NOT EXISTS nickname VARCHAR(255);
+
+-- 2025-12-18: Ensure membership fields in users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_level VARCHAR(50) DEFAULT 'none';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_start_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_expire_at TIMESTAMP;
+
+-- 2025-12-18: Add new unified member system fields to users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_status VARCHAR(50) DEFAULT 'free';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_expire_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_since TIMESTAMP;

@@ -1,4 +1,4 @@
-import { Bell, User, Menu, ChevronDown, Trash2, Check } from 'lucide-react'
+import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -13,6 +13,10 @@ export default function Header() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isAuthenticated, logout, token } = useAuth()
+  
+  // 判断是否为会员
+  const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
+
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<number | null>(null)

@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, Gift, Users, ChevronRight, Loader2, Send } from 'lucide-react';
+import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, Gift, Users, ChevronRight, Loader2, Send, CheckCircle2, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import JobCardNew from '../components/JobCardNew';
 
 interface Plan {
    id: string;
@@ -35,6 +36,7 @@ const MembershipPage: React.FC = () => {
    const [showPaymentModal, setShowPaymentModal] = useState(false);
    const [currentMembership, setCurrentMembership] = useState<any>(null);
    const [showApplicationModal, setShowApplicationModal] = useState(false);
+   const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
 
    // Application Logic
    const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
