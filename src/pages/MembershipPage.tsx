@@ -36,6 +36,7 @@ const MembershipPage: React.FC = () => {
    const [showPaymentModal, setShowPaymentModal] = useState(false);
    const [currentMembership, setCurrentMembership] = useState<any>(null);
    const [showApplicationModal, setShowApplicationModal] = useState(false);
+   const [showCertificateModal, setShowCertificateModal] = useState(false);
    const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
 
    // Application Logic
@@ -243,7 +244,7 @@ const MembershipPage: React.FC = () => {
                      <div className="text-left">
                         <p className="text-[10px] text-white/60 uppercase font-bold tracking-wider">Current Status</p>
                         <p className="font-bold text-white text-base">
-                           {currentMembership.level === 'club_go' ? 'Haigoo Member' : 'Haigoo Pro Member'}
+                           {currentMembership.level === 'club_go' ? 'Haigoo Member' : 'Haigoo Member'}
                            <span className="ml-2 text-xs font-normal text-teal-100 bg-teal-500/20 px-2 py-0.5 rounded border border-teal-400/30">
                               Active
                            </span>

@@ -50,6 +50,7 @@ export interface User {
   memberStatus?: 'free' | 'active' | 'expired';
   memberExpireAt?: string;
   memberSince?: string;
+  memberDisplayId?: number;
 
   // 求职偏好
   jobPreferences?: {

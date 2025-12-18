@@ -4,10 +4,11 @@ import { useAuth } from '../contexts/AuthContext'
 
 // import '../styles/landing-upgrade.css' // Removed legacy CSS
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
+import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import HomeHero from '../components/HomeHero'
 import JobCardNew from '../components/JobCardNew'
 import HomeCompanyCard from '../components/HomeCompanyCard'
-import { ArrowRight, TrendingUp, Building2, Zap, Users, Target, Globe, Sparkles, CheckCircle2, Crown } from 'lucide-react'
+import { ArrowRight, TrendingUp, Building2, Zap, Users, Target, Globe, Sparkles, CheckCircle2, Crown, Download } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { Job } from '../types'
@@ -16,6 +17,7 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const { user, token, isAuthenticated } = useAuth()
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null)
+  const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>([])
   const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>([])
   const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})

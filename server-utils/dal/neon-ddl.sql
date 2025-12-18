@@ -39,6 +39,14 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_level VARCHAR(50) DEFAULT 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_start_at TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_expire_at TIMESTAMP;
 
+-- 2025-02-17: 新增会员编号字段 (需手动执行)
+-- 创建序列，从 100001 开始
+-- CREATE SEQUENCE IF NOT EXISTS member_id_seq START 100001;
+-- 添加字段
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS member_display_id INTEGER;
+-- 初始化现有会员的编号 (可选，如果想给老会员补号)
+-- UPDATE users SET member_display_id = nextval('member_id_seq') WHERE member_status = 'active' AND member_display_id IS NULL;
+
 -- jobs - 存储岗位信息
 CREATE TABLE jobs (
   id SERIAL PRIMARY KEY,
@@ -96,30 +104,4 @@ CREATE TABLE resume_stats (
   failed_count INTEGER DEFAULT 0,
   last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- feedbacks - 存储用户反馈
-CREATE TABLE feedbacks (
-  id SERIAL PRIMARY KEY,
-  user_id VARCHAR(255),
-  type VARCHAR(50) NOT NULL,
-  content TEXT NOT NULL,
-  contact VARCHAR(200),
-  status VARCHAR(50) DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- payment_records - 存储支付记录 (新增)
-CREATE TABLE IF NOT EXISTS payment_records (
-  id SERIAL PRIMARY KEY,
-  payment_id VARCHAR(255) UNIQUE NOT NULL,
-  user_id VARCHAR(255) NOT NULL,
-  amount DECIMAL(10, 2) NOT NULL,
-  currency VARCHAR(10) DEFAULT 'CNY',
-  payment_method VARCHAR(50),
-  status VARCHAR(50) DEFAULT 'pending',
-  plan_id VARCHAR(50),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

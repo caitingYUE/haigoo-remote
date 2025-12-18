@@ -1370,7 +1370,7 @@ export default function ProfileCenterPage() {
                       <div>
                         <p className="text-xs text-indigo-200 mb-1">当前等级</p>
                         <p className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                          {(authUser.membershipLevel === 'club_go' || !authUser.membershipLevel) ? 'Haigoo Member' : 'Haigoo Pro Member'}
+                          {(authUser.membershipLevel === 'club_go' || !authUser.membershipLevel) ? 'Haigoo Member' : 'Haigoo Member'}
                           <CheckCircle className="w-4 h-4 text-teal-300" />
                         </p>
                       </div>
@@ -1385,6 +1385,12 @@ export default function ProfileCenterPage() {
                         className="w-full py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-xl transition-all shadow-lg backdrop-blur-md flex items-center justify-center gap-2 group"
                       >
                         续费 / 升级权益 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                      <button
+                        onClick={() => setShowCertificateModal(true)}
+                        className="w-full py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 text-indigo-100 text-xs font-bold rounded-xl transition-all shadow-lg backdrop-blur-md flex items-center justify-center gap-2 group mt-2"
+                      >
+                        下载会员证书 <Download className="w-3 h-3 group-hover:translate-y-0.5 transition-transform" />
                       </button>
                     </div>
                   ) : (

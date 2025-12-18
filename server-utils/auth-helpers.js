@@ -161,7 +161,8 @@ export function sanitizeUser(user) {
     // New Member System
     memberStatus: user.memberStatus || user.member_status || 'free',
     memberExpireAt: user.memberExpireAt || user.member_expire_at,
-    memberSince: user.memberSince || user.member_since
+    memberSince: user.memberSince || user.member_since,
+    memberDisplayId: user.memberDisplayId || user.member_display_id
   }
 
   // 移除所有值为undefined的属性
