@@ -141,7 +141,8 @@ export default function ProfileCenterPage() {
     ; (async () => {
       try {
         if (!authUser || !token) {
-          console.log('[ProfileCenter] No auth user or token')
+          console.log('[ProfileCenter] No auth user or token, clearing favorites')
+          setFavorites([])
           return
         }
         console.log('[ProfileCenter] Fetching favorites...')
@@ -178,7 +179,13 @@ export default function ProfileCenterPage() {
     (async () => {
       try {
         if (!authUser || !token) {
-          console.log('[ProfileCenter] No auth user or token')
+          console.log('[ProfileCenter] No auth user or token, clearing resume state')
+          setLatestResume(null)
+          setResumeText('')
+          setPreviewUrl(null)
+          setResumeScore(0)
+          setAiSuggestions([])
+          setFileType('')
           return
         }
 
@@ -295,7 +302,13 @@ export default function ProfileCenterPage() {
 
           console.log('[ProfileCenter] ✅ Resume loaded successfully')
         } else {
-          console.log('[ProfileCenter] No resumes found in database')
+          console.log('[ProfileCenter] No resumes found in database, clearing resume state')
+          setLatestResume(null)
+          setResumeText('')
+          setPreviewUrl(null)
+          setResumeScore(0)
+          setAiSuggestions([])
+          setFileType('')
         }
       } catch (e) {
         console.error('[ProfileCenter] ❌ Failed to fetch resumes:', e)
