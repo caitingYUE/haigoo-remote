@@ -329,181 +329,178 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </span>
                     </div>
                 </div>
+            </header>
 
-        </div>
-                </div >
-            </header >
+            {/* Action Buttons - Part of scrollable content now */}
+            <div className="flex-shrink-0 px-6 py-3 border-b border-slate-100 bg-slate-50/50">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleSave}
+                            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${isSaved
+                                ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            title={isSaved ? '已收藏' : '收藏'}
+                        >
+                            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
+                            <span>{isSaved ? '已收藏' : '收藏'}</span>
+                        </button>
 
-    {/* Action Buttons - Part of scrollable content now */ }
-    < div className = "flex-shrink-0 px-6 py-3 border-b border-slate-100 bg-slate-50/50" >
-        <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-                <button
-                    onClick={handleSave}
-                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${isSaved
-                        ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
-                    title={isSaved ? '已收藏' : '收藏'}
-                >
-                    <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
-                    <span>{isSaved ? '已收藏' : '收藏'}</span>
-                </button>
+                        <button
+                            onClick={handleShare}
+                            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium"
+                            title="分享"
+                        >
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>分享</span>
+                        </button>
 
-                <button
-                    onClick={handleShare}
-                    className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium"
-                    title="分享"
-                >
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>分享</span>
-                </button>
-
-                {hasTranslation && (
-                    <button
-                        onClick={() => {
-                            if (!isAuthenticated) {
-                                if (window.confirm('登录后可免费试用翻译功能（每日3次）\n\n是否前往登录？')) {
-                                    navigate('/login')
-                                }
-                                return
-                            }
-
-                            if (!isMember) {
-                                if (translationUsageCount >= TRANSLATION_FREE_LIMIT) {
-                                    setShowUpgradeModal(true)
-                                    return
-                                }
-
-                                if (!showTranslation) {
-                                    const newCount = translationUsageCount + 1
-                                    setTranslationUsageCount(newCount)
-                                    localStorage.setItem('translation_usage_count', newCount.toString())
-
-                                    if (newCount >= TRANSLATION_FREE_LIMIT) {
-                                        showInfo('试用次数已用完', '升级会员享受无限翻译')
+                        {hasTranslation && (
+                            <button
+                                onClick={() => {
+                                    if (!isAuthenticated) {
+                                        if (window.confirm('登录后可免费试用翻译功能（每日3次）\n\n是否前往登录？')) {
+                                            navigate('/login')
+                                        }
+                                        return
                                     }
-                                }
-                            }
-                            setShowTranslation(!showTranslation)
-                        }}
-                        className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${showTranslation
-                            ? 'bg-violet-50 text-violet-600 border-violet-100'
-                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                            }`}
-                        title={showTranslation ? '中文翻译' : '原文显示'}
-                    >
-                        <Languages className="w-3.5 h-3.5" />
-                        <span>{showTranslation ? '中文翻译' : '原文显示'}</span>
-                        {!isAuthenticated && (
-                            <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">登录</span>
-                        )}
-                        {isAuthenticated && !isMember && translationUsageCount < TRANSLATION_FREE_LIMIT && (
-                            <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
-                                {TRANSLATION_FREE_LIMIT - translationUsageCount}/3
-                            </span>
-                        )}
-                        {isAuthenticated && !isMember && translationUsageCount >= TRANSLATION_FREE_LIMIT && (
-                            <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">
-                                会员
-                            </span>
-                        )}
-                    </button>
-                )}
-            </div>
 
-            <button
-                onClick={() => setIsFeedbackOpen(true)}
-                className="px-3 py-1.5 text-slate-500 hover:text-slate-700 hover:bg-white border border-slate-200 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium"
-                title="反馈问题"
-            >
-                <MessageSquare className="w-4 h-4" />
-                <span>反馈</span>
-            </button>
-        </div>
+                                    if (!isMember) {
+                                        if (translationUsageCount >= TRANSLATION_FREE_LIMIT) {
+                                            setShowUpgradeModal(true)
+                                            return
+                                        }
+
+                                        if (!showTranslation) {
+                                            const newCount = translationUsageCount + 1
+                                            setTranslationUsageCount(newCount)
+                                            localStorage.setItem('translation_usage_count', newCount.toString())
+
+                                            if (newCount >= TRANSLATION_FREE_LIMIT) {
+                                                showInfo('试用次数已用完', '升级会员享受无限翻译')
+                                            }
+                                        }
+                                    }
+                                    setShowTranslation(!showTranslation)
+                                }}
+                                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${showTranslation
+                                    ? 'bg-violet-50 text-violet-600 border-violet-100'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                    }`}
+                                title={showTranslation ? '中文翻译' : '原文显示'}
+                            >
+                                <Languages className="w-3.5 h-3.5" />
+                                <span>{showTranslation ? '中文翻译' : '原文显示'}</span>
+                                {!isAuthenticated && (
+                                    <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">登录</span>
+                                )}
+                                {isAuthenticated && !isMember && translationUsageCount < TRANSLATION_FREE_LIMIT && (
+                                    <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
+                                        {TRANSLATION_FREE_LIMIT - translationUsageCount}/3
+                                    </span>
+                                )}
+                                {isAuthenticated && !isMember && translationUsageCount >= TRANSLATION_FREE_LIMIT && (
+                                    <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded">
+                                        会员
+                                    </span>
+                                )}
+                            </button>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => setIsFeedbackOpen(true)}
+                        className="px-3 py-1.5 text-slate-500 hover:text-slate-700 hover:bg-white border border-slate-200 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium"
+                        title="反馈问题"
+                    >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>反馈</span>
+                    </button>
+                </div>
             </div >
 
-    {/* Content - Flat layout, no internal scroll */ }
-    < main className = "flex-1 px-6 py-6" >
-        <div>
-            {/* Risk Rating Display - Using new component */}
-            <RiskRatingDisplay
-                riskRating={riskRating}
-                haigooComment={haigooComment}
-                hiddenFields={hiddenFields}
-                isMember={isMember}
-                className="mb-6"
-            />
-
-            {/* Trusted Company Standards Banner - Restored */}
-            {job.isTrusted && (
-                <div className="mb-6">
-                    <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => setShowUpgradeModal(true)} />
-                </div>
-            )}
-
-            {/* Job Description Sections */}
-            {jobDescriptionData.sections.map((section, index) => (
-                <section key={index} className="mb-8 last:mb-0">
-                    <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                        <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
-                        {displayText(section.title)}
-                    </h3>
-                    <div className="text-slate-600 text-base leading-7 lg:leading-8 tracking-wide font-normal whitespace-pre-line">
-                        {renderFormattedText(displayText(section.content))}
-                    </div>
-                </section>
-            ))}
-
-            {/* Skills/Tags */}
-            {(((job as any).tags && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0)) && (
-                <section className="py-4 border-b border-slate-100">
-                    <h3 className="text-base font-semibold text-slate-900 mb-3">
-                        技能要求
-                    </h3>
-                    <SingleLineTags
-                        tags={(Array.isArray((job as any).tags) && (job as any).tags.length > 0
-                            ? (job as any).tags
-                            : (job.skills || [])) as string[]}
-                        size="sm"
+            {/* Content - Flat layout, no internal scroll */}
+            < main className="flex-1 px-6 py-6" >
+                <div>
+                    {/* Risk Rating Display - Using new component */}
+                    <RiskRatingDisplay
+                        riskRating={riskRating}
+                        haigooComment={haigooComment}
+                        hiddenFields={hiddenFields}
+                        isMember={isMember}
+                        className="mb-6"
                     />
-                </section>
-            )}
 
-            {/* Company Card at Bottom */}
-            <section className="py-6">
-                <div
-                    onClick={handleCompanyClick}
-                    className="border border-slate-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
-                >
-                    <div className="flex items-start gap-4 mb-3">
-                        {job.logo ? (
-                            <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1">
-                                <img
-                                    src={job.logo}
-                                    alt={job.company}
-                                    className="w-full h-full object-contain"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                        (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-lg">${(job.company || '未知').charAt(0)}</span>`;
-                                        (e.target as HTMLImageElement).parentElement!.className = "w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0";
-                                    }}
-                                />
-                            </div>
-                        ) : (
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                                <span className="text-white font-bold text-lg">
-                                    {(job.company || '未知公司').charAt(0)}
-                                </span>
-                            </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                            <h3 className="text-base font-semibold text-slate-900 mb-1">
-                                {displayText(job.company || '')}
+                    {/* Trusted Company Standards Banner - Restored */}
+                    {job.isTrusted && (
+                        <div className="mb-6">
+                            <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => setShowUpgradeModal(true)} />
+                        </div>
+                    )}
+
+                    {/* Job Description Sections */}
+                    {jobDescriptionData.sections.map((section, index) => (
+                        <section key={index} className="mb-8 last:mb-0">
+                            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
+                                {displayText(section.title)}
                             </h3>
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                                <span>{companyInfo?.industry || job.category || '未分类'}</span>
-                                {/* {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && job.sourceUrl && (
+                            <div className="text-slate-600 text-base leading-7 lg:leading-8 tracking-wide font-normal whitespace-pre-line">
+                                {renderFormattedText(displayText(section.content))}
+                            </div>
+                        </section>
+                    ))}
+
+                    {/* Skills/Tags */}
+                    {(((job as any).tags && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0)) && (
+                        <section className="py-4 border-b border-slate-100">
+                            <h3 className="text-base font-semibold text-slate-900 mb-3">
+                                技能要求
+                            </h3>
+                            <SingleLineTags
+                                tags={(Array.isArray((job as any).tags) && (job as any).tags.length > 0
+                                    ? (job as any).tags
+                                    : (job.skills || [])) as string[]}
+                                size="sm"
+                            />
+                        </section>
+                    )}
+
+                    {/* Company Card at Bottom */}
+                    <section className="py-6">
+                        <div
+                            onClick={handleCompanyClick}
+                            className="border border-slate-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
+                        >
+                            <div className="flex items-start gap-4 mb-3">
+                                {job.logo ? (
+                                    <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1">
+                                        <img
+                                            src={job.logo}
+                                            alt={job.company}
+                                            className="w-full h-full object-contain"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                                (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-lg">${(job.company || '未知').charAt(0)}</span>`;
+                                                (e.target as HTMLImageElement).parentElement!.className = "w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0";
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
+                                        <span className="text-white font-bold text-lg">
+                                            {(job.company || '未知公司').charAt(0)}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-base font-semibold text-slate-900 mb-1">
+                                        {displayText(job.company || '')}
+                                    </h3>
+                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                        <span>{companyInfo?.industry || job.category || '未分类'}</span>
+                                        {/* {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && job.sourceUrl && (
                                             <>
                                                 <span className="text-slate-400">•</span>
                                                 <a
@@ -518,98 +515,98 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 </a>
                                             </>
                                         )} */}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-600">查看企业详情及更多岗位</span>
+                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Source Label */}
+                    {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
+                        <div className="flex flex-col items-end pb-4 gap-1">
+                            {job.sourceUrl ? (
+                                <a
+                                    href={job.sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-3 py-1 bg-slate-50 text-indigo-600 hover:text-indigo-700 text-xs rounded-md border border-slate-100 hover:border-indigo-200 transition-colors"
+                                    title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
+                                >
+                                    岗位来自 {job.source} (可信平台投递)
+                                    <ExternalLink className="w-3 h-3" />
+                                </a>
+                            ) : (
+                                <span className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-400 text-xs rounded-md border border-slate-100">
+                                    岗位来自 {job.source}
+                                </span>
+                            )}
+                            <p className="text-[10px] text-slate-400">
+                                * 投递将在外部招聘平台完成，可能需要另外注册账号
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </main >
+
+            {/* Footer */}
+            < footer className="border-t border-slate-100 bg-white p-4 flex-shrink-0" >
+                <button
+                    onClick={handleApply}
+                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium transition-all hover:shadow-md flex items-center justify-center gap-2"
+                >
+                    <Zap className="w-4 h-4" />
+                    前往申请，Go！
+                </button>
+            </footer >
+
+            {/* Feedback Modal */}
+            {
+                isFeedbackOpen && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30">
+                        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md mx-4">
+                            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+                                <h3 className="text-base font-semibold">岗位信息反馈</h3>
+                                <button onClick={() => setIsFeedbackOpen(false)} className="p-2 rounded-lg hover:bg-slate-100">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="p-5 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">该岗位信息是否准确？</label>
+                                    <div className="flex items-center gap-3">
+                                        <label className="inline-flex items-center gap-1 text-sm">
+                                            <input type="radio" name="accuracy" value="accurate" checked={feedbackAccuracy === 'accurate'} onChange={() => setFeedbackAccuracy('accurate')} />
+                                            准确
+                                        </label>
+                                        <label className="inline-flex items-center gap-1 text-sm">
+                                            <input type="radio" name="accuracy" value="inaccurate" checked={feedbackAccuracy === 'inaccurate'} onChange={() => setFeedbackAccuracy('inaccurate')} />
+                                            不准确
+                                        </label>
+                                        <label className="inline-flex items-center gap-1 text-sm">
+                                            <input type="radio" name="accuracy" value="unknown" checked={feedbackAccuracy === 'unknown'} onChange={() => setFeedbackAccuracy('unknown')} />
+                                            不确定
+                                        </label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">反馈内容</label>
+                                    <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
+                                </div>
+                                {feedbackMessage && <div className="text-sm text-indigo-600">{feedbackMessage}</div>}
+                                <div className="flex justify-end gap-2">
+                                    <button onClick={() => setIsFeedbackOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                                    <button onClick={submitFeedback} disabled={feedbackSubmitting} className="px-4 py-2 text-sm bg-slate-900 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50">提交</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">查看企业详情及更多岗位</span>
-                        <ChevronRight className="w-4 h-4 text-slate-400" />
-                    </div>
-                </div>
-            </section>
-
-            {/* Source Label */}
-            {job.source && (job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && (
-                <div className="flex flex-col items-end pb-4 gap-1">
-                    {job.sourceUrl ? (
-                        <a
-                            href={job.sourceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-3 py-1 bg-slate-50 text-indigo-600 hover:text-indigo-700 text-xs rounded-md border border-slate-100 hover:border-indigo-200 transition-colors"
-                            title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
-                        >
-                            岗位来自 {job.source} (可信平台投递)
-                            <ExternalLink className="w-3 h-3" />
-                        </a>
-                    ) : (
-                        <span className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-400 text-xs rounded-md border border-slate-100">
-                            岗位来自 {job.source}
-                        </span>
-                    )}
-                    <p className="text-[10px] text-slate-400">
-                        * 投递将在外部招聘平台完成，可能需要另外注册账号
-                    </p>
-                </div>
-            )}
-        </div>
-            </main >
-
-    {/* Footer */ }
-    < footer className = "border-t border-slate-100 bg-white p-4 flex-shrink-0" >
-        <button
-            onClick={handleApply}
-            className="w-full bg-slate-900 hover:bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium transition-all hover:shadow-md flex items-center justify-center gap-2"
-        >
-            <Zap className="w-4 h-4" />
-            前往申请，Go！
-        </button>
-            </footer >
-
-    {/* Feedback Modal */ }
-{
-    isFeedbackOpen && (
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30">
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md mx-4">
-                <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-                    <h3 className="text-base font-semibold">岗位信息反馈</h3>
-                    <button onClick={() => setIsFeedbackOpen(false)} className="p-2 rounded-lg hover:bg-slate-100">
-                        <X className="w-4 h-4" />
-                    </button>
-                </div>
-                <div className="p-5 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-2">该岗位信息是否准确？</label>
-                        <div className="flex items-center gap-3">
-                            <label className="inline-flex items-center gap-1 text-sm">
-                                <input type="radio" name="accuracy" value="accurate" checked={feedbackAccuracy === 'accurate'} onChange={() => setFeedbackAccuracy('accurate')} />
-                                准确
-                            </label>
-                            <label className="inline-flex items-center gap-1 text-sm">
-                                <input type="radio" name="accuracy" value="inaccurate" checked={feedbackAccuracy === 'inaccurate'} onChange={() => setFeedbackAccuracy('inaccurate')} />
-                                不准确
-                            </label>
-                            <label className="inline-flex items-center gap-1 text-sm">
-                                <input type="radio" name="accuracy" value="unknown" checked={feedbackAccuracy === 'unknown'} onChange={() => setFeedbackAccuracy('unknown')} />
-                                不确定
-                            </label>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">反馈内容</label>
-                        <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
-                    </div>
-                    {feedbackMessage && <div className="text-sm text-indigo-600">{feedbackMessage}</div>}
-                    <div className="flex justify-end gap-2">
-                        <button onClick={() => setIsFeedbackOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-                        <button onClick={submitFeedback} disabled={feedbackSubmitting} className="px-4 py-2 text-sm bg-slate-900 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50">提交</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
+                )
+            }
             <MembershipUpgradeModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
