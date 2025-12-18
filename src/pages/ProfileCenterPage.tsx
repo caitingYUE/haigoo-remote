@@ -1478,6 +1478,13 @@ export default function ProfileCenterPage() {
             onClose={() => setShowUpgradeModal(false)}
             triggerSource={upgradeSource}
           />
+          {authUser && (
+            <MembershipCertificateModal
+              isOpen={showCertificateModal}
+              onClose={() => setShowCertificateModal(false)}
+              user={authUser}
+            />
+          )}
         </div>
       </div>
     </div>

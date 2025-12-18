@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, Gift, Users, ChevronRight, Loader2, Send, CheckCircle2, Calendar } from 'lucide-react';
+import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, Gift, Users, ChevronRight, Loader2, Send, CheckCircle2, Calendar, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -23,6 +23,7 @@ interface PaymentInfo {
 }
 
 import { MembershipApplicationModal } from '../components/MembershipApplicationModal';
+import { MembershipCertificateModal } from '../components/MembershipCertificateModal';
 
 const MembershipPage: React.FC = () => {
    const { user, isAuthenticated } = useAuth();
