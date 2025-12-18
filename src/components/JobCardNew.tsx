@@ -55,7 +55,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                } ${className || ''}`}
          >
             {/* Corner Tag */}
-            <div className="absolute top-0 right-0 z-20 flex flex-col items-end">
+            <div className="absolute top-0 right-0 z-10 flex flex-col items-end">
                {job.canRefer ? (
                   <div
                      className="px-2.5 py-1 rounded-bl-2xl rounded-tr-2xl text-white shadow-md flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-[10px] font-bold tracking-wide"
