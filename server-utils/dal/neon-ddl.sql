@@ -41,9 +41,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS membership_expire_at TIMESTAMP;
 
 -- 2025-02-17: 新增会员编号字段 (需手动执行)
 -- 创建序列，从 100001 开始
--- CREATE SEQUENCE IF NOT EXISTS member_id_seq START 100001;
+CREATE SEQUENCE IF NOT EXISTS member_id_seq START 100001;
 -- 添加字段
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS member_display_id INTEGER;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_display_id INTEGER;
 -- 初始化现有会员的编号 (可选，如果想给老会员补号)
 -- UPDATE users SET member_display_id = nextval('member_id_seq') WHERE member_status = 'active' AND member_display_id IS NULL;
 

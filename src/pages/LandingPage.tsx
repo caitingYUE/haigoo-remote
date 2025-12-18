@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
-// import '../styles/landing-upgrade.css' // Removed legacy CSS
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import HomeHero from '../components/HomeHero'
@@ -318,13 +317,22 @@ export default function LandingPage() {
 
                 if (isMember) {
                   return (
-                    <button
-                      onClick={() => navigate('/jobs')}
-                      className="px-10 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl backdrop-blur-md w-full sm:w-auto flex items-center justify-center gap-2"
-                    >
-                      <CheckCircle2 className="w-5 h-5 text-teal-300" />
-                      您已是尊贵会员 - 去探索岗位
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                      <button
+                        onClick={() => navigate('/jobs')}
+                        className="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl backdrop-blur-md flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle2 className="w-5 h-5 text-teal-300" />
+                        您已是尊贵会员 - 去探索岗位
+                      </button>
+                      <button
+                        onClick={() => setShowCertificateModal(true)}
+                        className="px-8 py-4 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 text-indigo-100 font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl backdrop-blur-md flex items-center justify-center gap-2"
+                      >
+                        <Download className="w-5 h-5" />
+                        下载会员证书
+                      </button>
+                    </div>
                   )
                 } else if (applicationStatus === 'pending') {
                   return (

@@ -57,6 +57,7 @@ const userHelper = {
                 if (user.member_status) user.memberStatus = user.member_status
                 if (user.member_expire_at) user.memberExpireAt = user.member_expire_at
                 if (user.member_since) user.memberSince = user.member_since
+                if (user.member_display_id) user.memberDisplayId = user.member_display_id
             }
 
             return user
