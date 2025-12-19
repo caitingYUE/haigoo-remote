@@ -64,48 +64,53 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         return data.layers.flatMap(l => l.keywords).sort((a, b) => b.weight - a.weight);
     }, [data]);
 
-    // Generate Positions (Cone Shape)
+    // Generate Positions (Structured Cone with Layers)
     const treeItems = useMemo(() => {
         const items: any[] = [];
         const centerX = width / 2;
-        const topY = 150;
-        const bottomY = height - 100;
+        const topY = 120;
+        const bottomY = height - 150;
         const treeHeight = bottomY - topY;
 
-        // Distribute keywords from top (high weight?) No, usually small at top, big at bottom for visual balance?
-        // Or actually, main skills at center?
-        // Let's try random distribution within a cone.
+        // Sort keywords by weight (heaviest first)
+        const sortedKeywords = [...allKeywords].sort((a, b) => b.weight - a.weight);
 
-        allKeywords.forEach((kw, i) => {
-            // Normlized height position (0 = top, 1 = bottom)
-            // We want to fill the cone.
-            // Simple algorithm: assign random Y, then calculate max X width at that Y.
+        // Distribute in structured layers (6 layers)
+        const layerCount = 6;
+        const keywordsPerLayer = Math.ceil(sortedKeywords.length / layerCount);
 
-            // Let's do structured layers for better readability
-            const layerCount = 6;
-            const layerIndex = i % layerCount;
-            // This is naive. Let's maximize density.
+        sortedKeywords.forEach((kw, i) => {
+            const layerIndex = Math.floor(i / keywordsPerLayer);
+            const positionInLayer = i % keywordsPerLayer;
+            const totalInLayer = Math.min(keywordsPerLayer, sortedKeywords.length - layerIndex * keywordsPerLayer);
 
-            const progress = (i / allKeywords.length);
-            // Let larger weights be distributed throughout, or maybe concentrated in middle?
-            // Let's just random scatter within cone for organic look
-
-            const yNorm = 0.1 + (Math.random() * 0.8); // 10% to 90% down the tree
+            // Y position: top to bottom
+            const yNorm = (layerIndex + 0.5) / layerCount;
             const y = topY + (yNorm * treeHeight);
 
-            const coneWidthAtY = (yNorm) * (width * 0.8); // Cone gets wider
-            const xOffset = (Math.random() - 0.5) * coneWidthAtY;
+            // X position: spread across cone width
+            const coneWidthAtY = yNorm * (width * 0.7);
+            const angleStep = Math.PI / (totalInLayer + 1);
+            const angle = angleStep * (positionInLayer + 1) - Math.PI / 2;
+            const xOffset = Math.cos(angle) * (coneWidthAtY / 2);
             const x = centerX + xOffset;
 
-            const fontSize = 12 + (kw.weight * 2); // 14px to 32px
+            // Font size based on weight
+            const fontSize = 11 + (kw.weight * 1.8); // 12px to 29px
+
+            // Color based on layer and theme
+            let color = theme.primary;
+            if (layerIndex % 3 === 1) color = theme.secondary;
+            if (layerIndex % 3 === 2) color = theme.accent;
 
             items.push({
                 text: kw.text,
                 x,
                 y,
                 fontSize,
-                color: Math.random() > 0.7 ? theme.accent : (Math.random() > 0.5 ? theme.secondary : theme.primary),
-                rotation: (Math.random() - 0.5) * 20 // Slight tilt
+                color,
+                rotation: (Math.random() - 0.5) * 10, // Subtle tilt
+                delay: i * 0.05 // For animation
             });
         });
         return items;
@@ -121,13 +126,49 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                         <feMergeNode in="SourceGraphic" />
                     </feMerge>
                 </filter>
+                <linearGradient id="trunkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#a16207" />
+                    <stop offset="100%" stopColor="#854d0e" />
+                </linearGradient>
+                {/* Theme-specific gradients */}
+                {data.style === 'engineering' && (
+                    <pattern id="circuitPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                        <path d="M0 10 L20 10 M10 0 L10 20" stroke={theme.primary} strokeWidth="0.5" opacity="0.3" />
+                    </pattern>
+                )}
             </defs>
 
-            {/* Trunk */}
-            <rect x={width / 2 - 20} y={height - 120} width={40} height={80} rx={4} fill="#854d0e" />
-            <text x={width / 2} y={height - 60} textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" style={{ fontFamily: theme.font }}>{data.trunk_core_role}</text>
+            {/* Background Pattern for Engineering Style */}
+            {data.style === 'engineering' && (
+                <rect width={width} height={height} fill="url(#circuitPattern)" opacity="0.1" />
+            )}
 
-            {/* Tree Content */}
+            {/* Decorative Branches */}
+            <g opacity="0.15">
+                {[...Array(8)].map((_, i) => {
+                    const angle = (i / 8) * Math.PI - Math.PI / 2;
+                    const length = 80 + (i * 15);
+                    const startY = height - 200 + (i * 30);
+                    return (
+                        <path
+                            key={i}
+                            d={`M${width / 2} ${startY} Q${width / 2 + Math.cos(angle) * length / 2} ${startY - 20} ${width / 2 + Math.cos(angle) * length} ${startY - 40}`}
+                            stroke={theme.primary}
+                            strokeWidth="3"
+                            fill="none"
+                            strokeLinecap="round"
+                        />
+                    );
+                })}
+            </g>
+
+            {/* Trunk with Gradient */}
+            <rect x={width / 2 - 20} y={height - 140} width={40} height={100} rx={6} fill="url(#trunkGradient)" />
+            <text x={width / 2} y={height - 70} textAnchor="middle" fill="white" fontSize="13" fontWeight="bold" style={{ fontFamily: theme.font }}>
+                {data.trunk_core_role}
+            </text>
+
+            {/* Tree Content - Keywords */}
             {treeItems.map((item, i) => (
                 <text
                     key={i}
@@ -136,28 +177,33 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                     textAnchor="middle"
                     fill={item.color}
                     fontSize={item.fontSize}
-                    fontWeight="bold"
+                    fontWeight="600"
                     transform={`rotate(${item.rotation}, ${item.x}, ${item.y})`}
-                    style={{ fontFamily: theme.font, textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                    style={{
+                        fontFamily: theme.font,
+                        textShadow: data.style === 'creative' ? '2px 2px 4px rgba(0,0,0,0.1)' : 'none',
+                        opacity: 0.95
+                    }}
                 >
                     {item.text}
                 </text>
             ))}
 
-            {/* Star */}
-            <g transform={`translate(${width / 2}, 100)`}>
+            {/* Star with Enhanced Glow */}
+            <g transform={`translate(${width / 2}, 80)`}>
+                <circle r="35" fill={theme.accent} opacity="0.2" filter="url(#glow)" />
                 <path
-                    d="M0,-30 L7,-10 L28,-10 L11,5 L17,26 L0,14 L-17,26 L-11,5 L-28,-10 L-7,-10 Z"
+                    d="M0,-28 L6,-9 L26,-9 L10,4 L16,24 L0,13 L-16,24 L-10,4 L-26,-9 L-6,-9 Z"
                     fill={theme.accent}
                     filter="url(#glow)"
                 />
-                <text y={50} textAnchor="middle" fill={theme.text} fontSize="18" fontWeight="bold" letterSpacing="2" style={{ fontFamily: theme.font }}>
+                <text y={55} textAnchor="middle" fill={theme.text} fontSize="16" fontWeight="bold" letterSpacing="1" style={{ fontFamily: theme.font }}>
                     {data.star_label}
                 </text>
             </g>
 
-            {/* Data Label */}
-            <text x={width - 20} y={height - 20} textAnchor="end" fill={theme.text} opacity="0.5" fontSize="12" style={{ fontFamily: theme.font }}>
+            {/* Watermark */}
+            <text x={width - 15} y={height - 15} textAnchor="end" fill={theme.text} opacity="0.4" fontSize="11" style={{ fontFamily: theme.font }}>
                 Haigoo 简历圣诞树
             </text>
         </svg>
