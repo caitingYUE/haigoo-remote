@@ -17,7 +17,28 @@ export default function ChristmasPage() {
     const [showEmailModal, setShowEmailModal] = useState(false);
     const [showHappinessCard, setShowHappinessCard] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isPublic, setIsPublic] = useState(true);
+    const [hasPublished, setHasPublished] = useState(false);
     const treeRef = useRef<HTMLDivElement>(null);
+
+    const publishToForest = async () => {
+        if (!isPublic || hasPublished || !treeData) return;
+        try {
+            await fetch('/api/campaign/forest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tree_id: treeData.tree_id || Date.now().toString(),
+                    tree_data: treeData,
+                    star_label: treeData.tree_structure.star_label,
+                    user_nickname: 'Someone' // TODO: Get from auth or input
+                })
+            });
+            setHasPublished(true);
+        } catch (err) {
+            console.error('Failed to publish to forest:', err);
+        }
+    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -111,6 +132,7 @@ export default function ChristmasPage() {
     };
 
     const handleDownloadClick = () => {
+        publishToForest(); // Auto-publish if checked
         setShowEmailModal(true);
     };
 
@@ -264,21 +286,35 @@ export default function ChristmasPage() {
                                 <p className="text-indigo-600 font-semibold">"{treeData.interpretation.future_wish}"</p>
                             </div>
 
-                            <div className="mt-8 flex justify-center gap-4">
-                                <button
-                                    onClick={() => window.location.reload()}
-                                    className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all"
-                                >
-                                    再试一次
-                                </button>
-                                <button
-                                    onClick={handleDownloadClick}
-                                    disabled={isDownloading}
-                                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    {isDownloading ? '生成中...' : '下载我的树'}
-                                </button>
+                            <div className="mt-8 flex flex-col items-center gap-4">
+                                {/* Opt-in Checkbox */}
+                                <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-500 hover:text-indigo-600 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={isPublic}
+                                        onChange={(e) => setIsPublic(e.target.checked)}
+                                        disabled={hasPublished}
+                                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                    <span>允许将我的圣诞树种在<button onClick={() => navigate('/christmas/forest')} className="text-indigo-600 font-bold hover:underline mx-1">人才森林</button>中</span>
+                                </label>
+
+                                <div className="flex justify-center gap-4 w-full">
+                                    <button
+                                        onClick={() => window.location.reload()}
+                                        className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all"
+                                    >
+                                        再试一次
+                                    </button>
+                                    <button
+                                        onClick={handleDownloadClick}
+                                        disabled={isDownloading}
+                                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        {isDownloading ? '生成中...' : '下载我的树'}
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Happiness Card Trigger */}
