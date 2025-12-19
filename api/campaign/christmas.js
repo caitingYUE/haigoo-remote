@@ -71,19 +71,29 @@ export default async function handler(req, res) {
 
         // Handle Multipart Upload
         const contentType = req.headers['content-type'] || '';
-        if (contentType.includes('multipart/form-data')) {
-            const { buffer, filename } = await parseMultipartSimple(req);
-            await loadDependencies();
-            const ext = path.extname(filename).toLowerCase().replace('.', '');
+        console.log('[Christmas] Incoming request content-type:', contentType);
 
-            if (ext === 'pdf' && pdfParse) {
-                const data = await pdfParse(buffer);
-                text = data.text;
-            } else if ((ext === 'docx' || ext === 'doc') && mammoth) {
-                const result = await mammoth.extractRawText({ buffer });
-                text = result.value;
-            } else if (ext === 'txt') {
-                text = buffer.toString('utf-8');
+        if (contentType.includes('multipart/form-data')) {
+            try {
+                const { buffer, filename } = await parseMultipartSimple(req);
+                console.log(`[Christmas] Parsed file: ${filename}, size: ${buffer.length}`);
+
+                await loadDependencies();
+                const ext = path.extname(filename).toLowerCase().replace('.', '');
+
+                if (ext === 'pdf' && pdfParse) {
+                    const data = await pdfParse(buffer);
+                    text = data.text;
+                } else if ((ext === 'docx' || ext === 'doc') && mammoth) {
+                    const result = await mammoth.extractRawText({ buffer });
+                    text = result.value;
+                } else if (ext === 'txt') {
+                    text = buffer.toString('utf-8');
+                }
+                console.log(`[Christmas] Extracted text length: ${text?.length}`);
+            } catch (err) {
+                console.error('[Christmas] Multipart parse failed:', err);
+                throw err;
             }
         }
         // Handle JSON Body (Raw text paste)
