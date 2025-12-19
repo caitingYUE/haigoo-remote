@@ -43,7 +43,7 @@
     "natural": "^8.1.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.10",
-    "pdf-parse": "^2.4.5",
+    "pdf-parse": "^1.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-easy-crop": "^5.5.6",

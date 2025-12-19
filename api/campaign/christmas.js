@@ -347,7 +347,15 @@ export default async function handler(req, res) {
         }
 
         // Return 400 for validation errors, 500 for actual crashes
-        if (error.message.includes('无法识别简历内容') || error.message.includes('too short')) {
+        // Return 400 for validation errors, 500 for actual crashes
+        if (error.message.includes('无法识别简历内容') ||
+            error.message.includes('too short') ||
+            error.message.includes('不支持的文件格式') ||
+            error.message.includes('不支持旧版') ||
+            error.message.includes('Word文档解析失败') ||
+            error.message.includes('PDF已加密') ||
+            error.message.includes('PDF文件损坏')
+        ) {
             return res.status(400).json({ success: false, error: error.message });
         }
 
