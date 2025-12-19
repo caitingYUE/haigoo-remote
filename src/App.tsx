@@ -35,6 +35,8 @@ const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
 const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 
 
+const ChristmasPage = lazy(() => import('./pages/ChristmasPage'))
+
 function App() {
   console.log('Haigoo Frontend Version: 2025-12-18-Fix-Visuals-v2');
   return (
@@ -45,102 +47,105 @@ function App() {
             <GlobalVerificationGuard>
               <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
                 <Routes>
+                  {/* Public: Christmas Campaign */}
+                  <Route path="/christmas" element={<ChristmasPage />} />
+
                   {/* 公开路由：登录和注册 */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/no-permission" element={<NoPermissionPage />} />
-                <Route path="/unsubscribe" element={<UnsubscribePage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/no-permission" element={<NoPermissionPage />} />
+                  <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
-                {/* AdminPanel 独立布局，用于数据管理（需要登录） */}
-                <Route path="/admin/data" element={
-                  <AdminRoute>
-                    <AdminPanel />
-                  </AdminRoute>
-                } />
+                  {/* AdminPanel 独立布局，用于数据管理（需要登录） */}
+                  <Route path="/admin/data" element={
+                    <AdminRoute>
+                      <AdminPanel />
+                    </AdminRoute>
+                  } />
 
-                {/* Tag Management - No Layout wrapper */}
-                <Route path="/admin/tag-management" element={
-                  <AdminRoute>
-                    <AdminTagManagementPage />
-                  </AdminRoute>
-                } />
+                  {/* Tag Management - No Layout wrapper */}
+                  <Route path="/admin/tag-management" element={
+                    <AdminRoute>
+                      <AdminTagManagementPage />
+                    </AdminRoute>
+                  } />
 
-                {/* Company Management - No Layout wrapper */}
-                <Route path="/admin/companies" element={
-                  <AdminRoute>
-                    <AdminCompanyManagementPage />
-                  </AdminRoute>
-                } />
+                  {/* Company Management - No Layout wrapper */}
+                  <Route path="/admin/companies" element={
+                    <AdminRoute>
+                      <AdminCompanyManagementPage />
+                    </AdminRoute>
+                  } />
 
-                {/* Trusted Company Management - No Layout wrapper */}
-                <Route path="/admin/trusted-companies" element={
-                  <AdminRoute>
-                    <AdminTrustedCompaniesPage />
-                  </AdminRoute>
-                } />
+                  {/* Trusted Company Management - No Layout wrapper */}
+                  <Route path="/admin/trusted-companies" element={
+                    <AdminRoute>
+                      <AdminTrustedCompaniesPage />
+                    </AdminRoute>
+                  } />
 
-                {/* Member Applications Management */}
-                <Route path="/admin/applications" element={
-                  <AdminRoute>
-                    <AdminApplicationsPage />
-                  </AdminRoute>
-                } />
+                  {/* Member Applications Management */}
+                  <Route path="/admin/applications" element={
+                    <AdminRoute>
+                      <AdminApplicationsPage />
+                    </AdminRoute>
+                  } />
 
-                {/* AdminTeamPage 统一后台管理页面（需要登录） */}
-                <Route path="/admin_team" element={
-                  <AdminRoute>
-                    <AdminTeamPage />
-                  </AdminRoute>
-                } />
+                  {/* AdminTeamPage 统一后台管理页面（需要登录） */}
+                  <Route path="/admin_team" element={
+                    <AdminRoute>
+                      <AdminTeamPage />
+                    </AdminRoute>
+                  } />
 
-                {/* 用户管理页面（需要登录） */}
-                <Route path="/admin/users" element={
-                  <AdminRoute>
-                    <UserManagementPage />
-                  </AdminRoute>
-                } />
+                  {/* 用户管理页面（需要登录） */}
+                  <Route path="/admin/users" element={
+                    <AdminRoute>
+                      <UserManagementPage />
+                    </AdminRoute>
+                  } />
 
-                {/* 其他页面使用标准布局 */}
-                <Route path="/*" element={
-                  <Layout>
-                    <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
-                      <Routes>
-                        {/* 公开页面 */}
-                        <Route path="/" element={<LandingPage />} />
-                        <Route path="/jobs" element={<JobsPage />} />
-                        <Route path="/job/:id" element={<JobDetailPage />} />
-                        <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
-                        <Route path="/company/:id" element={<CompanyProfilePage />} />
-                        <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
-                        <Route path="/admin/location-categories" element={
-                          <AdminRoute>
-                            <AdminLocationPage />
-                          </AdminRoute>
-                        } />
-                        <Route path="/remote-experience" element={<RemoteExperiencePage />} />
-                        <Route path="/membership" element={<MembershipPage />} />
-                        <Route path="/join-club-application" element={<JoinClubApplicationPage />} />
+                  {/* 其他页面使用标准布局 */}
+                  <Route path="/*" element={
+                    <Layout>
+                      <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
+                        <Routes>
+                          {/* 公开页面 */}
+                          <Route path="/" element={<LandingPage />} />
+                          <Route path="/jobs" element={<JobsPage />} />
+                          <Route path="/job/:id" element={<JobDetailPage />} />
+                          <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
+                          <Route path="/company/:id" element={<CompanyProfilePage />} />
+                          <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
+                          <Route path="/admin/location-categories" element={
+                            <AdminRoute>
+                              <AdminLocationPage />
+                            </AdminRoute>
+                          } />
+                          <Route path="/remote-experience" element={<RemoteExperiencePage />} />
+                          <Route path="/membership" element={<MembershipPage />} />
+                          <Route path="/join-club-application" element={<JoinClubApplicationPage />} />
 
-                        {/* 需要登录的页面 */}
-                        <Route path="/profile" element={
-                          <ProtectedRoute>
-                            <ProfileCenterPage />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/my-applications" element={
-                          <ProtectedRoute>
-                            <MyApplicationsPage />
-                          </ProtectedRoute>
-                        } />
-                      </Routes>
-                    </Suspense>
-                  </Layout>
-                } />
-              </Routes>
-            </Suspense>
-          </GlobalVerificationGuard>
-        </NotificationProvider>
-      </AppProvider>
+                          {/* 需要登录的页面 */}
+                          <Route path="/profile" element={
+                            <ProtectedRoute>
+                              <ProfileCenterPage />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/my-applications" element={
+                            <ProtectedRoute>
+                              <MyApplicationsPage />
+                            </ProtectedRoute>
+                          } />
+                        </Routes>
+                      </Suspense>
+                    </Layout>
+                  } />
+                </Routes>
+              </Suspense>
+            </GlobalVerificationGuard>
+          </NotificationProvider>
+        </AppProvider>
       </AuthProvider>
     </ErrorBoundary>
   )
