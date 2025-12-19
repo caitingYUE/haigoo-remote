@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Building2, Briefcase } from 'lucide-react'
+import { ArrowLeft, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
@@ -10,6 +11,7 @@ import { SingleLineTags } from '../components/SingleLineTags'
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
+    const { user } = useAuth()
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [jobs, setJobs] = useState<Job[]>([])
     const [loading, setLoading] = useState(true)
