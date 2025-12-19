@@ -105,3 +105,32 @@ CREATE TABLE resume_stats (
   last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- trusted_companies - 存储可信企业库 (2025-02-18 Add certified info fields)
+-- CREATE TABLE IF NOT EXISTS trusted_companies (
+--   company_id VARCHAR(255) PRIMARY KEY,
+--   name VARCHAR(255) NOT NULL,
+--   website VARCHAR(500),
+--   careers_page VARCHAR(500),
+--   linkedin VARCHAR(500),
+--   description TEXT,
+--   logo VARCHAR(500),
+--   cover_image VARCHAR(500),
+--   industry VARCHAR(100),
+--   tags JSONB DEFAULT '[]',
+--   source VARCHAR(50) DEFAULT 'manual',
+--   job_count INTEGER DEFAULT 0,
+--   can_refer BOOLEAN DEFAULT false,
+--   status VARCHAR(50) DEFAULT 'active',
+--   translations JSONB DEFAULT '{}',
+--   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--   last_crawled_at TIMESTAMP
+-- );
+
+-- 2025-02-18: 新增企业认证信息字段 (LinkedIn Info)
+ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS address VARCHAR(500); -- 总部地址
+ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS employee_count VARCHAR(100); -- 员工人数
+ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS founded_year VARCHAR(50); -- 成立年份
+ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS specialties JSONB DEFAULT '[]'; -- 领域/专长
+

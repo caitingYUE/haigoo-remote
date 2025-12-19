@@ -18,6 +18,9 @@ export interface TrustedCompany {
     logo?: string;
     coverImage?: string;
     address?: string;
+    employeeCount?: string;
+    foundedYear?: string;
+    specialties?: string[];
     tags?: CompanyTag[];
     industry?: CompanyIndustry;
     isTrusted: boolean;

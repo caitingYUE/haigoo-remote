@@ -24,6 +24,11 @@ interface Company {
     isTrusted?: boolean;
     order?: number;
     translations?: any;
+    linkedin?: string;
+    address?: string;
+    employeeCount?: string;
+    foundedYear?: string;
+    specialties?: string[];
 }
 
 export default function AdminCompanyManagementPage() {
@@ -78,7 +83,12 @@ export default function AdminCompanyManagementPage() {
                             url: c.url || tc.website || tc.careersPage || c.url,
                             logo: c.logo || tc.logo || c.logo,
                             description: c.description || tc.description || c.description,
-                            tags: Array.from(new Set([...(c.tags || []), ...(tc.tags || [])]))
+                            tags: Array.from(new Set([...(c.tags || []), ...(tc.tags || [])])),
+                            linkedin: tc.linkedin,
+                            address: tc.address,
+                            employeeCount: tc.employeeCount,
+                            foundedYear: tc.foundedYear,
+                            specialties: tc.specialties
                         };
                     });
                 } catch (e) {
@@ -322,6 +332,40 @@ export default function AdminCompanyManagementPage() {
         setSelectedCompany(company);
         setEditForm({ ...company });
         setIsEditModalOpen(true);
+    };
+
+    const handleFetchLinkedInInfo = async () => {
+        if (!editForm.linkedin) {
+            alert('请先输入LinkedIn链接');
+            return;
+        }
+
+        try {
+            // Use the same update info logic but point to LinkedIn URL
+            // Since our crawler is generic, it might work if LinkedIn page is public
+            // Or we can add specific logic here if we had a dedicated endpoint
+            const response = await fetch(`/api/data/trusted-companies?action=crawl&url=${encodeURIComponent(editForm.linkedin)}&translate=true`);
+            const data = await response.json();
+
+            if (data.error) {
+                alert('获取失败: ' + data.error);
+                return;
+            }
+
+            setEditForm(prev => ({
+                ...prev,
+                description: data.description || prev.description,
+                logo: data.logo || prev.logo,
+                address: data.address || prev.address,
+                // Note: Generic crawler might not get employee count/founded year/specialties
+                // We leave them for manual entry or future enhancement
+            }));
+            
+            alert('获取成功！请检查并补充信息。');
+        } catch (error) {
+            console.error('Fetch LinkedIn error:', error);
+            alert('获取失败，请稍后重试');
+        }
     };
 
     const handleSaveCompany = async () => {
@@ -578,6 +622,69 @@ export default function AdminCompanyManagementPage() {
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     />
                                 </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn 链接</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="url"
+                                        value={editForm.linkedin || ''}
+                                        onChange={e => setEditForm({ ...editForm, linkedin: e.target.value })}
+                                        className="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="https://www.linkedin.com/company/..."
+                                    />
+                                    <button
+                                        onClick={handleFetchLinkedInInfo}
+                                        className="px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 whitespace-nowrap"
+                                        title="尝试抓取公开信息"
+                                    >
+                                        <Wand2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">总部地址</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.address || ''}
+                                        onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">员工人数</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.employeeCount || ''}
+                                        onChange={e => setEditForm({ ...editForm, employeeCount: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="e.g. 1000+"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">成立年份</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.foundedYear || ''}
+                                        onChange={e => setEditForm({ ...editForm, foundedYear: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="e.g. 2010"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">领域/专长 (JSON数组或逗号分隔)</label>
+                                <input
+                                    type="text"
+                                    value={Array.isArray(editForm.specialties) ? editForm.specialties.join(', ') : (editForm.specialties || '')}
+                                    onChange={e => setEditForm({ ...editForm, specialties: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean) })}
+                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="e.g. SaaS, AI, Cloud Computing"
+                                />
                             </div>
 
                             <div>
