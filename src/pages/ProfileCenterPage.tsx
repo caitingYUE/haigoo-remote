@@ -474,13 +474,14 @@ export default function ProfileCenterPage() {
       analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
 
-    // 临时移除会员拦截，允许所有用户使用 AI 简历分析
-    // const isMember = authUser?.membershipLevel && authUser.membershipLevel !== 'none' && authUser.membershipExpireAt && new Date(authUser.membershipExpireAt) > new Date();
-    // if (!isMember) {
-    //   setUpgradeSource('ai_resume');
-    //   setShowUpgradeModal(true);
-    //   return;
-    // }
+    // 会员权限检查
+    const isMember = (authUser?.memberStatus === 'active' && authUser.memberExpireAt && new Date(authUser.memberExpireAt) > new Date()) || !!authUser?.roles?.admin;
+    
+    if (!isMember) {
+      setUpgradeSource('ai_resume');
+      setShowUpgradeModal(true);
+      return;
+    }
 
     try {
       showSuccess('正在分析简历...', 'AI 正在深度读取您的简历内容')

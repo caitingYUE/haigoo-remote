@@ -225,6 +225,16 @@ export default function Header() {
             </Link>
 
             <Link
+              to="/membership"
+              className={`text-base font-medium transition-colors ${location.pathname === '/membership'
+                ? 'text-indigo-600 font-semibold'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
+            >
+              会员中心
+            </Link>
+
+            <Link
               to="/profile"
               className={`text-base font-medium transition-colors ${location.pathname.startsWith('/profile')
                 ? 'text-indigo-600 font-semibold'
@@ -348,31 +358,31 @@ export default function Header() {
                         <img
                           src={user.avatar}
                           alt={user.username}
-                          className={`w-8 h-8 rounded-full shadow-sm ${isMember ? 'ring-2 ring-amber-400 border-2 border-white' : ''}`}
+                          className={`w-8 h-8 rounded-full shadow-sm ${isMember ? 'ring-2 ring-indigo-400 border-2 border-white' : ''}`}
                         />
                         {isMember && (
-                          <div className="absolute -top-1.5 -right-1.5 bg-amber-100 rounded-full p-0.5 border border-white shadow-sm">
-                            <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />
+                          <div className="absolute -top-1.5 -right-1.5 bg-indigo-100 rounded-full p-0.5 border border-white shadow-sm">
+                            <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />
                           </div>
                         )}
                       </div>
                     ) : (
                       <div className="relative">
                         <div
-                          className={`w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center shadow-sm ${isMember ? 'ring-2 ring-amber-400 border-2 border-white' : ''}`}
+                          className={`w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center shadow-sm ${isMember ? 'ring-2 ring-indigo-400 border-2 border-white' : ''}`}
                           role="img"
                           aria-label="用户头像"
                         >
                           <User className="h-4 w-4 text-white" aria-hidden="true" />
                         </div>
                         {isMember && (
-                          <div className="absolute -top-1.5 -right-1.5 bg-amber-100 rounded-full p-0.5 border border-white shadow-sm">
-                            <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />
+                          <div className="absolute -top-1.5 -right-1.5 bg-indigo-100 rounded-full p-0.5 border border-white shadow-sm">
+                            <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />
                           </div>
                         )}
                       </div>
                     )}
-                    <span className={`text-sm font-medium hidden sm:block ${isMember ? 'text-amber-600' : ''}`}>{user?.username || '用户'}</span>
+                    <span className={`text-sm font-medium hidden sm:block ${isMember ? 'text-indigo-600' : ''}`}>{user?.username || '用户'}</span>
                     <ChevronDown
                       className={`h-4 w-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
                       aria-hidden="true"
@@ -504,6 +514,16 @@ export default function Header() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 精选企业
+              </Link>
+              <Link
+                to="/membership"
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/membership'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                会员中心
               </Link>
               <Link
                 to="/profile"
