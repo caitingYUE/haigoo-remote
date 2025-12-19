@@ -49,43 +49,35 @@ async function loadDependencies() {
     }
 }
 
-// Simple multipart parser (reused logic)
-async function parseMultipartSimple(req) {
+import Busboy from 'busboy';
+
+// Helper: Parse Multipart Body with Busboy
+async function parseMultipartWithBusboy(req) {
     return new Promise((resolve, reject) => {
-        const chunks = [];
-        req.on('data', chunk => chunks.push(chunk));
-        req.on('end', () => {
-            try {
-                const buffer = Buffer.concat(chunks);
-                const boundary = req.headers['content-type']?.split('boundary=')[1];
-                if (!boundary) return reject(new Error('No boundary found'));
+        const busboy = Busboy({ headers: req.headers });
+        let fileBuffer = null;
+        let filename = '';
 
-                const boundaryBuffer = Buffer.from(`--${boundary}`);
-                let start = buffer.indexOf(boundaryBuffer) + boundaryBuffer.length;
-
-                while (start < buffer.length) {
-                    const end = buffer.indexOf(boundaryBuffer, start);
-                    if (end === -1) break;
-
-                    const part = buffer.slice(start, end);
-                    const headerEnd = part.indexOf(Buffer.from('\r\n\r\n'));
-                    if (headerEnd !== -1) {
-                        const header = part.slice(0, headerEnd).toString();
-                        if (header.includes('filename=')) {
-                            const filenameMatch = header.match(/filename="([^"]+)"/);
-                            const filename = filenameMatch ? filenameMatch[1] : 'file';
-                            let fileBuffer = part.slice(headerEnd + 4);
-                            if (fileBuffer.slice(-2).toString() === '\r\n') fileBuffer = fileBuffer.slice(0, -2);
-                            resolve({ buffer: fileBuffer, filename });
-                            return;
-                        }
-                    }
-                    start = end + boundaryBuffer.length;
-                }
-                reject(new Error('No file found'));
-            } catch (err) { reject(err); }
+        busboy.on('file', (name, file, info) => {
+            const { filename: fName } = info;
+            filename = fName;
+            const chunks = [];
+            file.on('data', (data) => chunks.push(data));
+            file.on('end', () => {
+                fileBuffer = Buffer.concat(chunks);
+            });
         });
-        req.on('error', reject);
+
+        busboy.on('finish', () => {
+            if (fileBuffer) {
+                resolve({ buffer: fileBuffer, filename });
+            } else {
+                reject(new Error('No file found in multipart request'));
+            }
+        });
+
+        busboy.on('error', (err) => reject(err));
+        req.pipe(busboy);
     });
 }
 
@@ -225,8 +217,8 @@ export default async function handler(req, res) {
         console.log('[Christmas] Incoming request content-type:', contentType);
 
         if (contentType.includes('multipart/form-data')) {
-            const { buffer, filename } = await parseMultipartSimple(req);
-            console.log(`[Christmas] Parsed file: ${filename}, size: ${buffer.length}`);
+            const { buffer, filename } = await parseMultipartWithBusboy(req);
+            console.log(`[Christmas] Parsed file with Busboy: ${filename}, size: ${buffer.length}`);
 
             // 1. Save to temp file for Python
             const tempDir = os.tmpdir();
@@ -260,6 +252,13 @@ export default async function handler(req, res) {
                         text = buffer.toString('utf-8');
                     } else {
                         console.warn(`[Christmas] Unsupported extension or missing parser for: ${ext}`);
+                    }
+
+                    if (!text || text.trim().length === 0) {
+                        console.warn(`[Christmas] Parsed text length is 0 for ${filename}. This might be a scanned PDF (image only) or encrypted.`);
+                        // Maybe throw specific error visible to user?
+                        // throw new Error('Could not extract text from file. Is it a scanned image?');
+                        // For now we rely on the generic "too short" error later, but the logs will explain it.
                     }
                 } catch (parseErr) {
                     console.error(`[Christmas] Node.js parsing failed for ${ext}:`, parseErr);
