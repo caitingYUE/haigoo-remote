@@ -234,7 +234,8 @@ const userHelper = {
 
             // 查询所有用户，排除敏感信息
             const result = await neonHelper.query(`
-        SELECT user_id, email, username, status, roles, created_at, updated_at 
+        SELECT user_id, email, username, status, roles, created_at, updated_at,
+               member_status, member_expire_at, member_since, member_display_id
         FROM users 
         ORDER BY created_at DESC
       `)
@@ -250,8 +251,21 @@ const userHelper = {
                         // 获取用户收藏的职位
                         const favResult = await neonHelper.select('favorites', { user_id: userId })
                         const favorites = favResult || []
-                        return {
+                        
+                        // 转换字段名为驼峰格式
+                        const mappedUser = {
                             ...user,
+                            userId: user.user_id,
+                            createdAt: user.created_at,
+                            updatedAt: user.updated_at,
+                            memberStatus: user.member_status,
+                            memberExpireAt: user.member_expire_at,
+                            memberSince: user.member_since,
+                            memberDisplayId: user.member_display_id
+                        }
+
+                        return {
+                            ...mappedUser,
                             favorites: favorites.map(fav => fav.job_id || fav.jobId),
                             favoritesCount: favorites.length
                         }
