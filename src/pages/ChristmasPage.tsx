@@ -34,7 +34,7 @@ export default function ChristmasPage() {
                     tree_id: treeData.tree_id || Date.now().toString(),
                     tree_data: treeData,
                     star_label: treeData.tree_structure?.star_label || 'Star',
-                    user_nickname: user?.nickname || 'Guest'
+                    user_nickname: user?.username || 'Guest'
                 })
             });
             setHasPublished(true);
