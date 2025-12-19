@@ -237,7 +237,7 @@ export default function ChristmasPage() {
                                         <div ref={treeRef} className="bg-[#0a0a1a] relative overflow-hidden rounded-sm">
                                             {/* Inner Glow */}
                                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.05),transparent_80%)] pointer-events-none z-0"></div>
-                                            <TreeRenderer data={treeData} width={600} height={800} />
+                                            <TreeRenderer data={treeData.tree_structure || treeData} width={600} height={800} />
                                             
                                             {/* Branding Watermark */}
                                             <div className="absolute bottom-4 right-4 text-[#d4af37]/40 font-serif text-sm tracking-widest uppercase z-10">
