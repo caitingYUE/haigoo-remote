@@ -78,8 +78,8 @@ async function parseMultipartSimple(req) {
     });
 }
 
-import { saveUserResume } from '../../lib/server-utils/resume-storage.js';
-import { extractToken, verifyToken } from '../../lib/server-utils/auth-helpers.js';
+import { saveUserResume } from '../../server-utils/resume-storage.js';
+import { extractToken, verifyToken } from '../../server-utils/auth-helpers.js';
 
 // Python Parser Helper
 async function parseWithPython(filePath) {
