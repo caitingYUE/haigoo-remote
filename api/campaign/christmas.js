@@ -261,7 +261,7 @@ export default async function handler(req, res) {
                     if (ext === 'pdf' && pdfParse) {
                         const data = await pdfParse(buffer);
                         text = data.text;
-                        console.log(`[Christmas] PDF parsed text length: ${text?.length}`);
+                        console.log(`[Christmas] PDF parsed. Pages: ${data.numpages}, Info: ${JSON.stringify(data.info)}, Text length: ${text?.length}`);
                     } else if ((ext === 'docx' || ext === 'doc') && mammoth) {
                         const result = await mammoth.extractRawText({ buffer });
                         text = result.value;
@@ -321,7 +321,7 @@ export default async function handler(req, res) {
         console.log(`[Christmas] Final Text length: ${text?.length}`);
 
         if (!text || text.trim().length < 50) {
-            return res.status(400).json({ success: false, error: 'Resume content too short or empty' });
+            return res.status(400).json({ success: false, error: '简历内容过短，请提供更详细的简历。' });
         }
 
         // Generate Tree
@@ -338,6 +338,12 @@ export default async function handler(req, res) {
         if (tempFilePath) {
             try { await fs.unlink(tempFilePath); } catch (e) { }
         }
+
+        // Return 400 for validation errors, 500 for actual crashes
+        if (error.message.includes('无法识别简历内容') || error.message.includes('too short')) {
+            return res.status(400).json({ success: false, error: error.message });
+        }
+
         return res.status(500).json({ success: false, error: error.message || 'Internal Server Error' });
     }
 }
