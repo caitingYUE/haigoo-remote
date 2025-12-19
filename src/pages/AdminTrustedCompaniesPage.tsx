@@ -194,6 +194,36 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
+    const handleFetchLinkedInInfo = async () => {
+        if (!formData.linkedin) {
+            alert('请先输入LinkedIn链接');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/data/trusted-companies?action=crawl&url=${encodeURIComponent(formData.linkedin)}&translate=true`);
+            const data = await response.json();
+
+            if (data.error) {
+                alert('获取失败: ' + data.error);
+                return;
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                description: data.description || prev.description,
+                logo: data.logo || prev.logo,
+                address: data.address || prev.address,
+                coverImage: data.coverImage || prev.coverImage
+            }));
+            
+            alert('获取成功！请检查并补充信息。');
+        } catch (error) {
+            console.error('Fetch LinkedIn error:', error);
+            alert('获取失败，请稍后重试');
+        }
+    };
+
     const openCropperWithSource = (source: string) => {
         // Fix CORS issues by proxying remote images
         if (source.startsWith('http') && !source.includes('/api/images')) {
@@ -728,14 +758,67 @@ export default function AdminTrustedCompaniesPage() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="url"
+                                            value={formData.linkedin || ''}
+                                            onChange={e => setFormData({...formData, linkedin: e.target.value})}
+                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                            placeholder="https://linkedin.com/company/..."
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleFetchLinkedInInfo}
+                                            className="px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 whitespace-nowrap"
+                                            title="尝试抓取公开信息"
+                                        >
+                                            <Wand2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">总部地址</label>
                                     <input
-                                        type="url"
-                                        value={formData.linkedin || ''}
-                                        onChange={e => setFormData({...formData, linkedin: e.target.value})}
+                                        type="text"
+                                        value={formData.address || ''}
+                                        onChange={e => setFormData({ ...formData, address: e.target.value })}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="https://linkedin.com/company/..."
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">员工人数</label>
+                                    <input
+                                        type="text"
+                                        value={formData.employeeCount || ''}
+                                        onChange={e => setFormData({ ...formData, employeeCount: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="e.g. 1000+"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">成立年份</label>
+                                    <input
+                                        type="text"
+                                        value={formData.foundedYear || ''}
+                                        onChange={e => setFormData({ ...formData, foundedYear: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="e.g. 2010"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">领域/专长 (逗号分隔)</label>
+                                <input
+                                    type="text"
+                                    value={Array.isArray(formData.specialties) ? formData.specialties.join(', ') : (formData.specialties || '')}
+                                    onChange={e => setFormData({ ...formData, specialties: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean) })}
+                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="e.g. SaaS, AI, Cloud Computing"
+                                />
                             </div>
 
                             <div>
