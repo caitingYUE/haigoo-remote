@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { TreeRenderer } from '../components/Christmas/TreeRenderer';
-import { Upload, Sparkles, Share2, Loader2, FileText } from 'lucide-react';
+import { EmailCaptureModal } from '../components/Christmas/EmailCaptureModal';
+import { Upload, Sparkles, Share2, Loader2, FileText, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import html2canvas from 'html2canvas';
 
 export default function ChristmasPage() {
     const { user } = useAuth();
@@ -11,6 +13,9 @@ export default function ChristmasPage() {
     const [step, setStep] = useState<'upload' | 'processing' | 'result'>('upload');
     const [treeData, setTreeData] = useState<any>(null);
     const [error, setError] = useState('');
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const treeRef = useRef<HTMLDivElement>(null);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -61,6 +66,72 @@ export default function ChristmasPage() {
         } catch (err: any) {
             setError(err.message);
             setStep('upload');
+        }
+    };
+
+    const handleEmailSubmit = async (email: string) => {
+        if (email) {
+            try {
+                await fetch('/api/campaign/christmas-lead', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, tree_id: treeData?.tree_id || Date.now() })
+                });
+            } catch (err) {
+                console.error('Failed to save email:', err);
+            }
+        }
+        // Proceed with download regardless
+        await downloadTree();
+    };
+
+    const downloadTree = async () => {
+        if (!treeRef.current) return;
+
+        setIsDownloading(true);
+        try {
+            const canvas = await html2canvas(treeRef.current, {
+                backgroundColor: null,
+                scale: 2, // High resolution
+                logging: false
+            });
+
+            const link = document.createElement('a');
+            link.download = `haigoo-christmas-tree-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) {
+            console.error('Download failed:', err);
+            alert('下载失败，请重试');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const handleDownloadClick = () => {
+        setShowEmailModal(true);
+    };
+
+    const handleShare = async () => {
+        if (navigator.share && treeRef.current) {
+            try {
+                const canvas = await html2canvas(treeRef.current, { scale: 2 });
+                canvas.toBlob(async (blob) => {
+                    if (blob) {
+                        const file = new File([blob], 'my-christmas-tree.png', { type: 'image/png' });
+                        await navigator.share({
+                            title: '我的职业圣诞树 - Haigoo',
+                            text: '看看我的职业成长树！',
+                            files: [file]
+                        });
+                    }
+                });
+            } catch (err) {
+                console.error('Share failed:', err);
+            }
+        } else {
+            // Fallback: copy link or show share modal
+            alert('分享功能开发中...');
         }
     };
 
@@ -149,16 +220,29 @@ export default function ChristmasPage() {
                 {step === 'result' && treeData && (
                     <div className="w-full flex flex-col items-center animate-in fade-in zoom-in duration-500">
 
-                        {/* Visual */}
-                        <div className="relative group mb-8">
+                        {/* Visual - Wrapped for Screenshot */}
+                        <div ref={treeRef} className="relative group mb-8 bg-white p-8 rounded-2xl">
                             <TreeRenderer data={treeData.tree_structure} />
 
                             {/* Hover Actions (Desktop) */}
                             <div className="absolute -right-16 top-0 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-50 text-indigo-600" title="下载高清图">
-                                    <Upload className="w-5 h-5 rotate-180" />
+                                <button
+                                    onClick={handleDownloadClick}
+                                    disabled={isDownloading}
+                                    className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-50 text-indigo-600 disabled:opacity-50"
+                                    title="下载高清图"
+                                >
+                                    {isDownloading ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <Download className="w-5 h-5" />
+                                    )}
                                 </button>
-                                <button className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-pink-50 text-pink-500" title="分享">
+                                <button
+                                    onClick={handleShare}
+                                    className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-pink-50 text-pink-500"
+                                    title="分享"
+                                >
                                     <Share2 className="w-5 h-5" />
                                 </button>
                             </div>
@@ -185,12 +269,23 @@ export default function ChristmasPage() {
                                 >
                                     再试一次
                                 </button>
-                                <button className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 rounded-xl font-bold transition-all flex items-center gap-2">
-                                    <Share2 className="w-4 h-4" />
-                                    生成分享卡片
+                                <button
+                                    onClick={handleDownloadClick}
+                                    disabled={isDownloading}
+                                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    {isDownloading ? '生成中...' : '下载我的树'}
                                 </button>
                             </div>
                         </div>
+
+                        {/* Email Capture Modal */}
+                        <EmailCaptureModal
+                            isOpen={showEmailModal}
+                            onClose={() => setShowEmailModal(false)}
+                            onSubmit={handleEmailSubmit}
+                        />
 
                     </div>
                 )}
