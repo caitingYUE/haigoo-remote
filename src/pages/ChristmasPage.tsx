@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { TreeRenderer } from '../components/Christmas/TreeRenderer';
 import { EmailCaptureModal } from '../components/Christmas/EmailCaptureModal';
+import { HappinessCard } from '../components/Christmas/HappinessCard';
 import { Upload, Sparkles, Share2, Loader2, FileText, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +15,7 @@ export default function ChristmasPage() {
     const [treeData, setTreeData] = useState<any>(null);
     const [error, setError] = useState('');
     const [showEmailModal, setShowEmailModal] = useState(false);
+    const [showHappinessCard, setShowHappinessCard] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const treeRef = useRef<HTMLDivElement>(null);
 
@@ -278,14 +280,29 @@ export default function ChristmasPage() {
                                     {isDownloading ? '生成中...' : '下载我的树'}
                                 </button>
                             </div>
+
+                            {/* Happiness Card Trigger */}
+                            <div className="mt-8 pt-6 border-t border-slate-200">
+                                <button
+                                    onClick={() => setShowHappinessCard(true)}
+                                    className="w-full py-3 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 rounded-xl font-bold transition-all border border-red-200 flex items-center justify-center gap-2 group"
+                                >
+                                    <span className="text-xl group-hover:scale-125 transition-transform duration-300">🧧</span>
+                                    抽取今日治愈卡片 (每日一次)
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Email Capture Modal */}
+                        {/* Modals */}
                         <EmailCaptureModal
                             isOpen={showEmailModal}
                             onClose={() => setShowEmailModal(false)}
                             onSubmit={handleEmailSubmit}
                         />
+
+                        {showHappinessCard && (
+                            <HappinessCard onClose={() => setShowHappinessCard(false)} />
+                        )}
 
                     </div>
                 )}
