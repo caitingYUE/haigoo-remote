@@ -190,8 +190,7 @@ const MembershipPage: React.FC = () => {
       }
    }
 
-   if (loading) {
-      // Fetch Recommended Jobs for Members
+   // Fetch Recommended Jobs for Members
    useEffect(() => {
       const fetchRecommended = async () => {
          // Check user membership status correctly
@@ -213,7 +212,8 @@ const MembershipPage: React.FC = () => {
       }
    }, [isAuthenticated, user, currentMembership]);
 
-   return (
+   if (loading) {
+      return (
          <div className="min-h-screen flex items-center justify-center bg-white">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
          </div>
