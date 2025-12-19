@@ -1,5 +1,7 @@
 import { generateChristmasTree } from '../../lib/services/christmas-service.js';
 import { createRequire } from 'module';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
 import path from 'path';
 import os from 'os';
 import fs from 'fs/promises';
@@ -57,6 +59,49 @@ async function parseMultipartSimple(req) {
     });
 }
 
+// Python Parser Helper
+async function parseWithPython(filePath) {
+    return new Promise((resolve, reject) => {
+        // Adjust path: api/campaign/christmas.js -> ../../server-utils/resume-parser.py
+        const pythonScript = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../server-utils/resume-parser.py');
+        console.log(`[Christmas] Spawning python: ${pythonScript} ${filePath}`);
+
+        const pythonProcess = spawn('python3', [pythonScript, filePath]);
+
+        const timeout = setTimeout(() => {
+            console.warn('[Christmas] Python parsing timed out, killing process...');
+            pythonProcess.kill();
+            resolve(null);
+        }, 8000); // 8s timeout
+
+        let stdout = '';
+        let stderr = '';
+
+        pythonProcess.stdout.on('data', (data) => stdout += data.toString());
+        pythonProcess.stderr.on('data', (data) => stderr += data.toString());
+
+        pythonProcess.on('close', (code) => {
+            clearTimeout(timeout);
+            if (code !== 0 && code !== null) {
+                console.error(`[Christmas] Python exited with code ${code}: ${stderr}`);
+                return resolve(null);
+            }
+            try {
+                const result = JSON.parse(stdout);
+                resolve(result);
+            } catch (e) {
+                console.error(`[Christmas] Failed to parse Python output: ${stdout}`);
+                resolve(null);
+            }
+        });
+        pythonProcess.on('error', (err) => {
+            clearTimeout(timeout);
+            console.error('[Christmas] Failed to start Python process:', err);
+            resolve(null);
+        });
+    });
+}
+
 export default async function handler(req, res) {
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -66,18 +111,32 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+    let tempFilePath = null;
+
     try {
         let text = '';
-
-        // Handle Multipart Upload
         const contentType = req.headers['content-type'] || '';
         console.log('[Christmas] Incoming request content-type:', contentType);
 
         if (contentType.includes('multipart/form-data')) {
-            try {
-                const { buffer, filename } = await parseMultipartSimple(req);
-                console.log(`[Christmas] Parsed file: ${filename}, size: ${buffer.length}`);
+            const { buffer, filename } = await parseMultipartSimple(req);
+            console.log(`[Christmas] Parsed file: ${filename}, size: ${buffer.length}`);
 
+            // 1. Save to temp file for Python
+            const tempDir = os.tmpdir();
+            tempFilePath = path.join(tempDir, `christmas-${Date.now()}-${filename.replace(/\s+/g, '_')}`);
+            await fs.writeFile(tempFilePath, buffer);
+            console.log(`[Christmas] Saved temp file: ${tempFilePath}`);
+
+            // 2. Try Python Parsing
+            const pythonResult = await parseWithPython(tempFilePath);
+
+            if (pythonResult && pythonResult.success && pythonResult.data && pythonResult.data.content) {
+                console.log('[Christmas] Python parse success');
+                text = pythonResult.data.content;
+            } else {
+                console.log('[Christmas] Python parse failed or empty, using Node.js fallback');
+                // 3. Fallback to Node.js
                 await loadDependencies();
                 const ext = path.extname(filename).toLowerCase().replace('.', '');
 
@@ -90,14 +149,10 @@ export default async function handler(req, res) {
                 } else if (ext === 'txt') {
                     text = buffer.toString('utf-8');
                 }
-                console.log(`[Christmas] Extracted text length: ${text?.length}`);
-            } catch (err) {
-                console.error('[Christmas] Multipart parse failed:', err);
-                throw err;
             }
         }
-        // Handle JSON Body (Raw text paste)
         else {
+            // JSON Paste flow
             const chunks = [];
             for await (const chunk of req) chunks.push(chunk);
             if (chunks.length > 0) {
@@ -105,6 +160,13 @@ export default async function handler(req, res) {
                 text = body.text || '';
             }
         }
+
+        // Clean up temp file
+        if (tempFilePath) {
+            try { await fs.unlink(tempFilePath); } catch (e) { }
+        }
+
+        console.log(`[Christmas] Final Text length: ${text?.length}`);
 
         if (!text || text.trim().length < 50) {
             return res.status(400).json({ success: false, error: 'Resume content too short or empty' });
@@ -120,6 +182,9 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('[ChristmasAPI] Error:', error);
+        if (tempFilePath) {
+            try { await fs.unlink(tempFilePath); } catch (e) { }
+        }
         return res.status(500).json({ success: false, error: error.message || 'Internal Server Error' });
     }
 }
