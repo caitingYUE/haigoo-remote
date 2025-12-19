@@ -59,8 +59,12 @@ async function parseMultipartSimple(req) {
     });
 }
 
+import { saveUserResume } from '../../lib/server-utils/resume-storage.js';
+import { extractToken, verifyToken } from '../../lib/server-utils/auth-helpers.js';
+
 // Python Parser Helper
 async function parseWithPython(filePath) {
+    // ... existing python logic ...
     return new Promise((resolve, reject) => {
         // Adjust path: api/campaign/christmas.js -> ../../server-utils/resume-parser.py
         const pythonScript = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../server-utils/resume-parser.py');
@@ -102,6 +106,7 @@ async function parseWithPython(filePath) {
     });
 }
 
+
 export default async function handler(req, res) {
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -115,6 +120,20 @@ export default async function handler(req, res) {
 
     try {
         let text = '';
+
+        // 1. Resolve User ID (Early Auth Check)
+        let userId = null;
+        try {
+            const token = extractToken(req);
+            if (token) {
+                const payload = await verifyToken(token);
+                if (payload && payload.userId) {
+                    userId = payload.userId;
+                }
+            }
+        } catch (e) { console.warn('[Christmas] Auth check failed:', e.message); }
+
+        // Handle Multipart Upload
         const contentType = req.headers['content-type'] || '';
         console.log('[Christmas] Incoming request content-type:', contentType);
 
@@ -150,6 +169,25 @@ export default async function handler(req, res) {
                     text = buffer.toString('utf-8');
                 }
             }
+
+            // --- Persistence Logic ---
+            if (userId && text && text.length > 50) {
+                try {
+                    console.log(`[Christmas] Saving resume for user: ${userId}`);
+                    const saveResult = await saveUserResume(userId, {
+                        fileName: filename,
+                        size: buffer.length,
+                        fileType: path.extname(filename).toLowerCase().replace('.', ''),
+                        contentText: text,
+                        fileContent: buffer, // Save actual file
+                        metadata: { source: 'christmas_campaign' },
+                        parseStatus: 'success'
+                    });
+                    console.log(`[Christmas] Resume saved: ${saveResult.success}`);
+                } catch (saveErr) {
+                    console.error('[Christmas] Save failed:', saveErr);
+                }
+            }
         }
         else {
             // JSON Paste flow
@@ -174,6 +212,7 @@ export default async function handler(req, res) {
 
         // Generate Tree
         const treeData = await generateChristmasTree(text);
+
 
         return res.status(200).json({
             success: true,
