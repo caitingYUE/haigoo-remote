@@ -124,7 +124,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             <span className="text-sm font-medium">全部岗位</span>
                         </div>
                         <span className="text-3xl font-bold text-slate-900 tracking-tight">
-                            {stats?.totalJobs !== undefined && stats?.totalJobs !== null ? <AnimatedNumber value={stats.totalJobs} /> : <span className="text-slate-300">...</span>}
+                            {stats?.totalJobs && stats.totalJobs > 0 ? <AnimatedNumber value={stats.totalJobs} /> : "500+"}
                         </span>
                     </div>
 
@@ -136,7 +136,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             <span className="text-sm font-medium">认证企业</span>
                         </div>
                         <span className="text-3xl font-bold text-slate-900 tracking-tight">
-                            {stats?.companiesCount !== undefined && stats?.companiesCount !== null ? <AnimatedNumber value={stats.companiesCount} /> : <span className="text-slate-300">...</span>}
+                            {stats?.companiesCount && stats.companiesCount > 0 ? <AnimatedNumber value={stats.companiesCount} /> : "100+"}
                         </span>
                     </div>
 
@@ -148,7 +148,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             <span className="text-sm font-medium">日增岗位</span>
                         </div>
                         <span className="text-3xl font-bold text-emerald-600 tracking-tight">
-                            +{stats?.dailyJobs !== undefined && stats?.dailyJobs !== null ? <AnimatedNumber value={stats.dailyJobs} /> : <span className="text-slate-300">...</span>}
+                            {stats?.dailyJobs && stats.dailyJobs > 0 ? <>+<AnimatedNumber value={stats.dailyJobs} /></> : "50+"}
                         </span>
                     </div>
                 </div>
