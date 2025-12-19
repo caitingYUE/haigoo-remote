@@ -9,6 +9,24 @@ import neonHelper from '../../server-utils/dal/neon-helper.js';
 
 const require = createRequire(import.meta.url);
 
+export const config = {
+    api: {
+        bodyParser: false,
+    },
+};
+
+// Helper: Parse JSON Body manually (since bodyParser is disabled)
+async function parseJsonBody(req) {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    if (chunks.length === 0) return {};
+    try {
+        return JSON.parse(Buffer.concat(chunks).toString());
+    } catch (e) {
+        return {};
+    }
+}
+
 // Lazy load dependencies
 let pdfParse, mammoth;
 async function loadDependencies() {
@@ -120,7 +138,8 @@ export default async function handler(req, res) {
     // Route: /api/campaign/christmas?action=lead (Email capture)
     if (req.url?.includes('action=lead')) {
         try {
-            const { email, tree_id } = req.body;
+            const body = await parseJsonBody(req);
+            const { email, tree_id } = body;
 
             if (!email || !email.includes('@')) {
                 return res.status(400).json({ success: false, error: 'Invalid email' });
@@ -252,12 +271,8 @@ export default async function handler(req, res) {
         }
         else {
             // JSON Paste flow
-            const chunks = [];
-            for await (const chunk of req) chunks.push(chunk);
-            if (chunks.length > 0) {
-                const body = JSON.parse(Buffer.concat(chunks).toString());
-                text = body.text || '';
-            }
+            const body = await parseJsonBody(req);
+            text = body.text || '';
         }
 
         // Clean up temp file
