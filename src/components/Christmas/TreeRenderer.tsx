@@ -1,7 +1,61 @@
-// ... imports
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
-// ... interfaces and themes remain same until component definition
+/**
+ * Tree Renderer Component
+ * Renders a "Resume Christmas Tree" using SVG based on keywords and weights.
+ */
+
+interface Keyword {
+    text: string;
+    weight: number;
+}
+
+interface TreeLayer {
+    category: string;
+    keywords: Keyword[];
+}
+
+interface TreeData {
+    trunk_core_role: string;
+    layers: TreeLayer[];
+    star_label: string;
+    style: 'engineering' | 'creative' | 'growth';
+}
+
+interface TreeRendererProps {
+    data: TreeData;
+    width?: number;
+    height?: number;
+    showDecorations?: boolean;
+}
+
+const THEMES = {
+    engineering: {
+        primary: '#10b981', // Emerald
+        secondary: '#3b82f6', // Blue
+        accent: '#f59e0b', // Amber
+        bg: '#0f172a',    // Dark Slate
+        text: '#ffffff',
+        font: 'Space Mono, monospace'
+    },
+    creative: {
+        primary: '#f472b6', // Pink
+        secondary: '#a78bfa', // Violet
+        accent: '#fcd34d', // Yellow
+        bg: '#ffffff',
+        text: '#374151',
+        font: 'Outfit, sans-serif'
+    },
+    growth: {
+        primary: '#84cc16', // Lime
+        secondary: '#22c55e', // Green
+        accent: '#fbbf24', // Amber
+        bg: '#f0fdf4',
+        text: '#166534',
+        font: 'Inter, sans-serif'
+    }
+};
 
 export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, height = 800, showDecorations = true }) => {
     const theme = THEMES[data.style] || THEMES.growth;
