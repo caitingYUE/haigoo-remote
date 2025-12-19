@@ -229,59 +229,66 @@ export default async function handler(req, res) {
                 console.log(`[Christmas] File magic bytes: ${magic}`);
             }
 
-            // 1. Save to temp file for Python (if needed, but skipping Python on Vercel is better optimization)
-            const tempDir = os.tmpdir();
-            tempFilePath = path.join(tempDir, `christmas-${Date.now()}-${safeFilename}`);
+            // Optimization: Skip unsupported Python on serverless
+            // const tempDir = os.tmpdir();
+            // tempFilePath = path.join(tempDir, `christmas-${Date.now()}-${safeFilename}`);
+            // await fs.writeFile(tempFilePath, buffer);
 
-            // Optimization: Skip Python if we know it will fail (Vercel)
-            // But for now, we'll keep the logic but expect fallback.
-            await fs.writeFile(tempFilePath, buffer);
-            console.log(`[Christmas] Saved temp file: ${tempFilePath}`);
+            // 3. Node.js Parsing (Primary method now)
+            await loadDependencies();
+            const ext = path.extname(safeFilename).toLowerCase().replace('.', '');
+            console.log(`[Christmas] Processing file: ${safeFilename} (ext: ${ext}), buffer size: ${buffer.length}`);
 
-            // 2. Try Python Parsing
-            let pythonResult = null;
             try {
-                // Fast fail for Vercel environment could be added here
-                pythonResult = await parseWithPython(tempFilePath);
-            } catch (pyErr) {
-                console.warn('[Christmas] Python invocation failed, moving to fallback.');
-            }
-
-            if (pythonResult && pythonResult.success && pythonResult.data && pythonResult.data.content) {
-                console.log('[Christmas] Python parse success');
-                text = pythonResult.data.content;
-            } else {
-                console.log('[Christmas] Python parse failed or empty, using Node.js fallback');
-                // 3. Fallback to Node.js
-                await loadDependencies();
-                const ext = path.extname(safeFilename).toLowerCase().replace('.', '');
-                console.log(`[Christmas] Processing file: ${safeFilename} (ext: ${ext}), buffer size: ${buffer.length}`);
-
-                try {
-                    if (ext === 'pdf' && pdfParse) {
+                if (ext === 'pdf' && pdfParse) {
+                    try {
                         const data = await pdfParse(buffer);
                         text = data.text;
                         console.log(`[Christmas] PDF parsed. Pages: ${data.numpages}, Info: ${JSON.stringify(data.info)}, Text length: ${text?.length}`);
-                    } else if ((ext === 'docx' || ext === 'doc') && mammoth) {
+
+                        if (data.text && data.text.length < 50) {
+                            console.warn('[Christmas] PDF text overly short.');
+                        }
+                    } catch (pdfErr) {
+                        console.error('[Christmas] PDF Parse Error:', pdfErr.message);
+                        if (pdfErr.message.includes('Password')) {
+                            throw new Error('PDF已加密，请上传无密码版本或直接粘贴文本。');
+                        }
+                        throw new Error('PDF文件损坏或格式不兼容，请尝试其他文件或粘贴文本。');
+                    }
+                }
+                else if (ext === 'docx' && mammoth) {
+                    try {
                         const result = await mammoth.extractRawText({ buffer });
                         text = result.value;
                         console.log(`[Christmas] DOCX parsed text length: ${text?.length}`);
-                    } else if (ext === 'txt') {
-                        text = buffer.toString('utf-8');
-                    } else {
-                        console.warn(`[Christmas] Unsupported extension or missing parser for: ${ext}`);
+                        if (result.messages && result.messages.length > 0) {
+                            console.log('[Christmas] Mammoth messages:', result.messages);
+                        }
+                    } catch (docxErr) {
+                        console.error('[Christmas] DOCX Parse Error:', docxErr);
+                        throw new Error('Word文档解析失败，可能是格式复杂。请尝试粘贴文本。');
                     }
-
-                    if (!text || text.trim().length < 50) {
-                        console.warn(`[Christmas] Parsed text is too short. Length: ${text?.length}`);
-                        // Return simpler error for user
-                        throw new Error('无法识别简历内容。如果是图片/扫描件PDF，请先转换为文字版Word或直接粘贴文本。');
-                    }
-                } catch (parseErr) {
-                    console.error(`[Christmas] Parsing failed for ${ext}:`, parseErr);
-                    // Propagate specific error message if it's the one we threw
-                    if (parseErr.message.includes('无法识别简历内容')) throw parseErr;
                 }
+                else if (ext === 'doc') {
+                    throw new Error('不支持旧版 .doc 格式。请另存为 .docx 格式后上传，或直接粘贴文本。');
+                }
+                else if (ext === 'txt') {
+                    text = buffer.toString('utf-8');
+                } else {
+                    console.warn(`[Christmas] Unsupported extension or missing parser for: ${ext}`);
+                    throw new Error('不支持的文件格式。仅支持 PDF, DOCX, TXT。');
+                }
+
+                // Final validation
+                if (!text || text.trim().length < 50) {
+                    console.warn(`[Christmas] Parsed text is too short. Length: ${text?.length}`);
+                    throw new Error('无法识别简历内容。如果是图片/扫描件PDF，请先转换为文字版Word或直接粘贴文本。');
+                }
+
+            } catch (parseErr) {
+                console.error(`[Christmas] Parsing validation failed:`, parseErr.message);
+                throw parseErr; // Re-throw to be caught by main handler
             }
 
             // --- Persistence Logic ---
