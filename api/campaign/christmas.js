@@ -30,11 +30,22 @@ async function parseJsonBody(req) {
 // Lazy load dependencies
 let pdfParse, mammoth;
 async function loadDependencies() {
+    console.log('[Christmas] Loading dependencies...');
     if (!pdfParse) {
-        try { pdfParse = require('pdf-parse/lib/pdf-parse.js'); } catch (e) { }
+        try {
+            pdfParse = require('pdf-parse');
+            console.log('[Christmas] pdf-parse loaded');
+        } catch (e) {
+            console.error('[Christmas] Failed to load pdf-parse:', e);
+        }
     }
     if (!mammoth) {
-        try { mammoth = (await import('mammoth')).default; } catch (e) { }
+        try {
+            mammoth = (await import('mammoth')).default;
+            console.log('[Christmas] mammoth loaded');
+        } catch (e) {
+            console.error('[Christmas] Failed to load mammoth:', e);
+        }
     }
 }
 
@@ -234,15 +245,24 @@ export default async function handler(req, res) {
                 // 3. Fallback to Node.js
                 await loadDependencies();
                 const ext = path.extname(filename).toLowerCase().replace('.', '');
+                console.log(`[Christmas] Processing file: ${filename} (ext: ${ext}), buffer size: ${buffer.length}`);
 
-                if (ext === 'pdf' && pdfParse) {
-                    const data = await pdfParse(buffer);
-                    text = data.text;
-                } else if ((ext === 'docx' || ext === 'doc') && mammoth) {
-                    const result = await mammoth.extractRawText({ buffer });
-                    text = result.value;
-                } else if (ext === 'txt') {
-                    text = buffer.toString('utf-8');
+                try {
+                    if (ext === 'pdf' && pdfParse) {
+                        const data = await pdfParse(buffer);
+                        text = data.text;
+                        console.log(`[Christmas] PDF parsed text length: ${text?.length}`);
+                    } else if ((ext === 'docx' || ext === 'doc') && mammoth) {
+                        const result = await mammoth.extractRawText({ buffer });
+                        text = result.value;
+                        console.log(`[Christmas] DOCX parsed text length: ${text?.length}`);
+                    } else if (ext === 'txt') {
+                        text = buffer.toString('utf-8');
+                    } else {
+                        console.warn(`[Christmas] Unsupported extension or missing parser for: ${ext}`);
+                    }
+                } catch (parseErr) {
+                    console.error(`[Christmas] Node.js parsing failed for ${ext}:`, parseErr);
                 }
             }
 
