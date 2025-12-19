@@ -218,16 +218,34 @@ export default async function handler(req, res) {
 
         if (contentType.includes('multipart/form-data')) {
             const { buffer, filename } = await parseMultipartWithBusboy(req);
-            console.log(`[Christmas] Parsed file with Busboy: ${filename}, size: ${buffer.length}`);
 
-            // 1. Save to temp file for Python
+            // Sanitize filename to avoid encoding issues with temp files
+            const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+            console.log(`[Christmas] Parsed file with Busboy: ${safeFilename} (orig: ${filename}), size: ${buffer.length}`);
+
+            // Log Magic Bytes for debugging
+            if (buffer.length > 4) {
+                const magic = buffer.slice(0, 4).toString('hex');
+                console.log(`[Christmas] File magic bytes: ${magic}`);
+            }
+
+            // 1. Save to temp file for Python (if needed, but skipping Python on Vercel is better optimization)
             const tempDir = os.tmpdir();
-            tempFilePath = path.join(tempDir, `christmas-${Date.now()}-${filename.replace(/\s+/g, '_')}`);
+            tempFilePath = path.join(tempDir, `christmas-${Date.now()}-${safeFilename}`);
+
+            // Optimization: Skip Python if we know it will fail (Vercel)
+            // But for now, we'll keep the logic but expect fallback.
             await fs.writeFile(tempFilePath, buffer);
             console.log(`[Christmas] Saved temp file: ${tempFilePath}`);
 
             // 2. Try Python Parsing
-            const pythonResult = await parseWithPython(tempFilePath);
+            let pythonResult = null;
+            try {
+                // Fast fail for Vercel environment could be added here
+                pythonResult = await parseWithPython(tempFilePath);
+            } catch (pyErr) {
+                console.warn('[Christmas] Python invocation failed, moving to fallback.');
+            }
 
             if (pythonResult && pythonResult.success && pythonResult.data && pythonResult.data.content) {
                 console.log('[Christmas] Python parse success');
@@ -236,8 +254,8 @@ export default async function handler(req, res) {
                 console.log('[Christmas] Python parse failed or empty, using Node.js fallback');
                 // 3. Fallback to Node.js
                 await loadDependencies();
-                const ext = path.extname(filename).toLowerCase().replace('.', '');
-                console.log(`[Christmas] Processing file: ${filename} (ext: ${ext}), buffer size: ${buffer.length}`);
+                const ext = path.extname(safeFilename).toLowerCase().replace('.', '');
+                console.log(`[Christmas] Processing file: ${safeFilename} (ext: ${ext}), buffer size: ${buffer.length}`);
 
                 try {
                     if (ext === 'pdf' && pdfParse) {
@@ -254,14 +272,15 @@ export default async function handler(req, res) {
                         console.warn(`[Christmas] Unsupported extension or missing parser for: ${ext}`);
                     }
 
-                    if (!text || text.trim().length === 0) {
-                        console.warn(`[Christmas] Parsed text length is 0 for ${filename}. This might be a scanned PDF (image only) or encrypted.`);
-                        // Maybe throw specific error visible to user?
-                        // throw new Error('Could not extract text from file. Is it a scanned image?');
-                        // For now we rely on the generic "too short" error later, but the logs will explain it.
+                    if (!text || text.trim().length < 50) {
+                        console.warn(`[Christmas] Parsed text is too short. Length: ${text?.length}`);
+                        // Return simpler error for user
+                        throw new Error('无法识别简历内容。如果是图片/扫描件PDF，请先转换为文字版Word或直接粘贴文本。');
                     }
                 } catch (parseErr) {
-                    console.error(`[Christmas] Node.js parsing failed for ${ext}:`, parseErr);
+                    console.error(`[Christmas] Parsing failed for ${ext}:`, parseErr);
+                    // Propagate specific error message if it's the one we threw
+                    if (parseErr.message.includes('无法识别简历内容')) throw parseErr;
                 }
             }
 
