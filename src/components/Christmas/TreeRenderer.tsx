@@ -1,65 +1,12 @@
-import React, { useMemo } from 'react';
+// ... imports
+import { motion } from 'framer-motion';
 
-/**
- * Tree Renderer Component
- * Renders a "Resume Christmas Tree" using SVG based on keywords and weights.
- */
-
-interface Keyword {
-    text: string;
-    weight: number;
-}
-
-interface TreeLayer {
-    category: string;
-    keywords: Keyword[];
-}
-
-interface TreeData {
-    trunk_core_role: string;
-    layers: TreeLayer[];
-    star_label: string;
-    style: 'engineering' | 'creative' | 'growth';
-}
-
-interface TreeRendererProps {
-    data: TreeData;
-    width?: number;
-    height?: number;
-    showDecorations?: boolean;
-}
-
-const THEMES = {
-    engineering: {
-        primary: '#10b981', // Emerald
-        secondary: '#3b82f6', // Blue
-        accent: '#f59e0b', // Amber
-        bg: '#0f172a',    // Dark Slate
-        text: '#ffffff',
-        font: 'Space Mono, monospace'
-    },
-    creative: {
-        primary: '#f472b6', // Pink
-        secondary: '#a78bfa', // Violet
-        accent: '#fcd34d', // Yellow
-        bg: '#ffffff',
-        text: '#374151',
-        font: 'Outfit, sans-serif'
-    },
-    growth: {
-        primary: '#84cc16', // Lime
-        secondary: '#22c55e', // Green
-        accent: '#fbbf24', // Amber
-        bg: '#f0fdf4',
-        text: '#166534',
-        font: 'Inter, sans-serif'
-    }
-};
+// ... interfaces and themes remain same until component definition
 
 export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, height = 800, showDecorations = true }) => {
     const theme = THEMES[data.style] || THEMES.growth;
 
-    // Flatten keywords and sort by weight for placement
+    // ... keyword processing logic logic same ...
     const allKeywords = useMemo(() => {
         return data.layers.flatMap(l => l.keywords).sort((a, b) => b.weight - a.weight);
     }, [data]);
@@ -143,34 +90,58 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 <rect width={width} height={height} fill="url(#circuitPattern)" opacity="0.1" />
             )}
 
-            {/* Decorative Branches */}
+            {/* Decorative Branches - Animated */}
             <g opacity="0.15">
                 {[...Array(8)].map((_, i) => {
                     const angle = (i / 8) * Math.PI - Math.PI / 2;
                     const length = 80 + (i * 15);
                     const startY = height - 200 + (i * 30);
                     return (
-                        <path
+                        <motion.path
                             key={i}
                             d={`M${width / 2} ${startY} Q${width / 2 + Math.cos(angle) * length / 2} ${startY - 20} ${width / 2 + Math.cos(angle) * length} ${startY - 40}`}
                             stroke={theme.primary}
                             strokeWidth="3"
                             fill="none"
                             strokeLinecap="round"
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{ duration: 1.5, delay: i * 0.1, ease: 'easeOut' }}
                         />
                     );
                 })}
             </g>
 
-            {/* Trunk with Gradient */}
-            <rect x={width / 2 - 20} y={height - 140} width={40} height={100} rx={6} fill="url(#trunkGradient)" />
-            <text x={width / 2} y={height - 70} textAnchor="middle" fill="white" fontSize="13" fontWeight="bold" style={{ fontFamily: theme.font }}>
+            {/* Trunk with Gradient - Growing Animation */}
+            <motion.rect
+                x={width / 2 - 20}
+                y={height - 140}
+                width={40}
+                height={100}
+                rx={6}
+                fill="url(#trunkGradient)"
+                initial={{ scaleY: 0, originY: 1 }}
+                animate={{ scaleY: 1 }}
+                transition={{ duration: 0.8, ease: 'backOut' }}
+            />
+            <motion.text
+                x={width / 2}
+                y={height - 70}
+                textAnchor="middle"
+                fill="white"
+                fontSize="13"
+                fontWeight="bold"
+                style={{ fontFamily: theme.font }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+            >
                 {data.trunk_core_role}
-            </text>
+            </motion.text>
 
-            {/* Tree Content - Keywords */}
+            {/* Tree Content - Keywords with Staggered Animation */}
             {treeItems.map((item, i) => (
-                <text
+                <motion.text
                     key={i}
                     x={item.x}
                     y={item.y}
@@ -184,28 +155,69 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                         textShadow: data.style === 'creative' ? '2px 2px 4px rgba(0,0,0,0.1)' : 'none',
                         opacity: 0.95
                     }}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 0.95 }}
+                    transition={{
+                        delay: 0.5 + (treeItems.length - i) * 0.03, // Bottom (heavier) layer first-ish, actually heavier sorted first... let's do simply index delay
+                        type: 'spring',
+                        stiffness: 200,
+                        damping: 10
+                    }}
                 >
                     {item.text}
-                </text>
+                </motion.text>
             ))}
 
-            {/* Star with Enhanced Glow */}
+            {/* Star with Enhanced Glow & Animation */}
             <g transform={`translate(${width / 2}, 80)`}>
-                <circle r="35" fill={theme.accent} opacity="0.2" filter="url(#glow)" />
-                <path
+                <motion.circle
+                    r="35"
+                    fill={theme.accent}
+                    opacity="0.2"
+                    filter="url(#glow)"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [0, 1.2, 1] }}
+                    transition={{ delay: 2, duration: 0.8 }}
+                />
+                <motion.path
                     d="M0,-28 L6,-9 L26,-9 L10,4 L16,24 L0,13 L-16,24 L-10,4 L-26,-9 L-6,-9 Z"
                     fill={theme.accent}
                     filter="url(#glow)"
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 2.2, type: 'spring' }}
                 />
-                <text y={55} textAnchor="middle" fill={theme.text} fontSize="16" fontWeight="bold" letterSpacing="1" style={{ fontFamily: theme.font }}>
+                <motion.text
+                    y={55}
+                    textAnchor="middle"
+                    fill={theme.text}
+                    fontSize="16"
+                    fontWeight="bold"
+                    letterSpacing="1"
+                    style={{ fontFamily: theme.font }}
+                    initial={{ opacity: 0, y: 65 }}
+                    animate={{ opacity: 1, y: 55 }}
+                    transition={{ delay: 2.5 }}
+                >
                     {data.star_label}
-                </text>
+                </motion.text>
             </g>
 
-            {/* Watermark */}
-            <text x={width - 15} y={height - 15} textAnchor="end" fill={theme.text} opacity="0.4" fontSize="11" style={{ fontFamily: theme.font }}>
+            {/* Watermark - Fade In */}
+            <motion.text
+                x={width - 15}
+                y={height - 15}
+                textAnchor="end"
+                fill={theme.text}
+                opacity="0.4"
+                fontSize="11"
+                style={{ fontFamily: theme.font }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                transition={{ delay: 3 }}
+            >
                 Haigoo 简历圣诞树
-            </text>
+            </motion.text>
         </svg>
     );
 };

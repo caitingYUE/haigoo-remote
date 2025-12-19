@@ -169,14 +169,18 @@ export default function ChristmasPage() {
 
             <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-12 relative z-10 flex flex-col items-center justify-center">
 
+                import {RotatingQuotes} from '../components/Christmas/RotatingQuotes';
+
+                // ... inside component
+
                 {/* Header */}
                 <div className="text-center mb-12">
                     <h1 className="text-4xl md:text-6xl font-black text-slate-900 mb-4 tracking-tight">
                         您的职业圣诞树
                     </h1>
-                    <p className="text-xl text-slate-600 font-light">
-                        Resume Christmas Tree — 这是你亲手照料的一棵树 🌲
-                    </p>
+                    <div className="max-w-2xl mx-auto">
+                        <RotatingQuotes />
+                    </div>
                 </div>
 
                 {/* --- STEP: UPLOAD --- */}
