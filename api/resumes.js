@@ -419,21 +419,9 @@ export default async function handler(req, res) {
             }
         }
 
-        // 1. Check User Frequency Limit (1 per day for non-members)
+        // 1. Check Membership (Strict: Members Only)
         if (!isMember) {
-            const userResumes = resumes.filter(r => r.userId === decoded.userId)
-            const now = new Date()
-            const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-
-            const recentAnalysis = userResumes.find(r => {
-              if (!r.lastAnalyzedAt) return false
-              const analyzedAt = new Date(r.lastAnalyzedAt)
-              return analyzedAt > oneDayAgo
-            })
-
-            if (recentAnalysis) {
-              return sendJson(res, { success: false, error: '非会员每天只能使用1次简历分析功能', limitReached: true }, 429)
-            }
+            return sendJson(res, { success: false, error: '仅限会员使用 AI 简历分析功能', limitReached: true }, 403)
         }
 
         // 2. Check Content Change (Strict check for everyone: must be updated since last analysis)

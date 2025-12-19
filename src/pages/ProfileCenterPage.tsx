@@ -560,7 +560,7 @@ export default function ProfileCenterPage() {
         if (result.limitReached) {
           showError('次数限制', '每天只能使用1次简历分析功能')
         } else if (result.contentUnchanged) {
-          showError('无需分析', '简历内容未变更，请勿重复分析')
+          showError('需要更新简历', '简历内容未变更。如需重新分析，请更新简历内容并重新上传。')
         } else {
           // Handle "Resume content is empty" specifically
           if (result.error === 'Resume content is empty') {
@@ -807,7 +807,7 @@ export default function ProfileCenterPage() {
                   <Crown className="w-5 h-5 text-yellow-300" />
                   生成 AI 建议
                 </button>
-                <p className="text-xs text-indigo-600/70 mt-3">限时免费体验中 • 基于阿里通义千问大模型</p>
+                <p className="text-xs text-indigo-600/70 mt-3">会员专属权益 • 不限次数优化</p>
               </div>
             )}
           </div>
