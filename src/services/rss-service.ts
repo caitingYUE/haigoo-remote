@@ -23,9 +23,9 @@ export interface RSSFeedItem {
   remoteLocationRestriction?: string;
   // Reserve enterprise fields
   companyIndustry?: string;
-   companyTags?: string[];
-   companyWebsite?: string;
-   companyDescription?: string;
+  companyTags?: string[];
+  companyWebsite?: string;
+  companyDescription?: string;
 }
 
 export interface ParsedRSSData {
@@ -261,7 +261,7 @@ class RSSService {
 
     for (const baseUrl of baseCandidates) {
       try {
-        const proxyUrl = `${baseUrl}/api/rss-proxy?url=${encodeURIComponent(url)}`;
+        const proxyUrl = `${baseUrl}/api/proxy?type=rss&url=${encodeURIComponent(url)}`;
         console.log(`Fetching RSS via proxy: ${proxyUrl}`);
 
         const response = await fetch(proxyUrl, {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { 
-    Building2, Search, Plus, Edit2, Trash2, 
+import {
+    Building2, Search, Plus, Edit2, Trash2,
     ExternalLink, X, Loader2,
     Wand2, DownloadCloud, Upload, Image as ImageIcon
 } from 'lucide-react'
@@ -14,7 +14,7 @@ export default function AdminTrustedCompaniesPage() {
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
-    
+
     // Pagination & Sort State
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
@@ -28,7 +28,7 @@ export default function AdminTrustedCompaniesPage() {
     const [editingCompany, setEditingCompany] = useState<TrustedCompany | null>(null)
     const [formData, setFormData] = useState<Partial<TrustedCompany>>({})
     const [saving, setSaving] = useState(false)
-    
+
     // New states for automation features
     const [crawlingId, setCrawlingId] = useState<string | null>(null)
     const [autoFilling, setAutoFilling] = useState(false)
@@ -129,7 +129,7 @@ export default function AdminTrustedCompaniesPage() {
         try {
             setSaving(true)
             const success = await trustedCompaniesService.saveCompany(formData)
-            
+
             if (success) {
                 setIsModalOpen(false)
                 setCoverUrlInput('')
@@ -216,7 +216,7 @@ export default function AdminTrustedCompaniesPage() {
                 address: data.address || prev.address,
                 coverImage: data.coverImage || prev.coverImage
             }));
-            
+
             alert('获取成功！请检查并补充信息。');
         } catch (error) {
             console.error('Fetch LinkedIn error:', error);
@@ -338,8 +338,8 @@ export default function AdminTrustedCompaniesPage() {
     }
 
     const industries: CompanyIndustry[] = [
-        '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech', 
-        '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS', 
+        '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
+        '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
         '硬件/物联网', '消费生活', '其他'
     ]
 
@@ -357,7 +357,7 @@ export default function AdminTrustedCompaniesPage() {
                     可信企业管理
                 </h1>
                 <div className="flex gap-3">
-                    <button 
+                    <button
                         onClick={handleAdd}
                         className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2"
                     >
@@ -419,7 +419,7 @@ export default function AdminTrustedCompaniesPage() {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
-                                <th 
+                                <th
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
                                     onClick={() => handleSort('jobCount')}
                                 >
@@ -430,7 +430,7 @@ export default function AdminTrustedCompaniesPage() {
                                         )}
                                     </div>
                                 </th>
-                                <th 
+                                <th
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
                                     onClick={() => handleSort('updatedAt')}
                                 >
@@ -510,8 +510,8 @@ export default function AdminTrustedCompaniesPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button 
-                                            onClick={() => handleCrawlJobs(company.id)} 
+                                        <button
+                                            onClick={() => handleCrawlJobs(company.id)}
                                             disabled={crawlingId === company.id}
                                             className="text-gray-600 hover:text-indigo-600 mr-4 disabled:opacity-50"
                                             title="抓取岗位数据"
@@ -568,9 +568,9 @@ export default function AdminTrustedCompaniesPage() {
                                 else if (page >= totalPages - 2) p = totalPages - 4 + i
                                 else p = page - 2 + i
                             }
-                            
+
                             if (p < 1 || p > totalPages) return null
-                            
+
                             return (
                                 <button
                                     key={p}
@@ -603,7 +603,7 @@ export default function AdminTrustedCompaniesPage() {
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        
+
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -612,7 +612,7 @@ export default function AdminTrustedCompaniesPage() {
                                         type="text"
                                         required
                                         value={formData.name || ''}
-                                        onChange={e => setFormData({...formData, name: e.target.value})}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     />
                                 </div>
@@ -631,7 +631,7 @@ export default function AdminTrustedCompaniesPage() {
                                     </div>
                                     <select
                                         value={formData.industry || ''}
-                                        onChange={e => setFormData({...formData, industry: e.target.value as CompanyIndustry})}
+                                        onChange={e => setFormData({ ...formData, industry: e.target.value as CompanyIndustry })}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     >
                                         <option value="">选择行业</option>
@@ -646,7 +646,7 @@ export default function AdminTrustedCompaniesPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">简介</label>
                                 <textarea
                                     value={formData.description || ''}
-                                    onChange={e => setFormData({...formData, description: e.target.value})}
+                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
                                     rows={3}
                                     className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                 />
@@ -659,7 +659,7 @@ export default function AdminTrustedCompaniesPage() {
                                         <input
                                             type="url"
                                             value={formData.website || ''}
-                                            onChange={e => setFormData({...formData, website: e.target.value})}
+                                            onChange={e => setFormData({ ...formData, website: e.target.value })}
                                             className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                             placeholder="https://..."
                                         />
@@ -679,7 +679,7 @@ export default function AdminTrustedCompaniesPage() {
                                     <input
                                         type="url"
                                         value={formData.logo || ''}
-                                        onChange={e => setFormData({...formData, logo: e.target.value})}
+                                        onChange={e => setFormData({ ...formData, logo: e.target.value })}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     />
                                 </div>
@@ -751,7 +751,7 @@ export default function AdminTrustedCompaniesPage() {
                                     <input
                                         type="url"
                                         value={formData.careersPage || ''}
-                                        onChange={e => setFormData({...formData, careersPage: e.target.value})}
+                                        onChange={e => setFormData({ ...formData, careersPage: e.target.value })}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                         placeholder="https://..."
                                     />
@@ -762,7 +762,7 @@ export default function AdminTrustedCompaniesPage() {
                                         <input
                                             type="url"
                                             value={formData.linkedin || ''}
-                                            onChange={e => setFormData({...formData, linkedin: e.target.value})}
+                                            onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
                                             className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                             placeholder="https://linkedin.com/company/..."
                                         />
@@ -827,7 +827,7 @@ export default function AdminTrustedCompaniesPage() {
                                     type="text"
                                     value={Array.isArray(formData.tags) ? formData.tags.join(', ') : (formData.tags || '')}
                                     onChange={e => setFormData({
-                                        ...formData, 
+                                        ...formData,
                                         tags: e.target.value.split(/[,，]/).map(t => t.trim()).filter(Boolean)
                                     })}
                                     className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
@@ -840,7 +840,7 @@ export default function AdminTrustedCompaniesPage() {
                                     <input
                                         type="checkbox"
                                         checked={formData.isTrusted ?? true}
-                                        onChange={e => setFormData({...formData, isTrusted: e.target.checked})}
+                                        onChange={e => setFormData({ ...formData, isTrusted: e.target.checked })}
                                         className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                                     />
                                     <span className="text-sm font-medium text-gray-700">设为可信企业</span>
@@ -849,7 +849,7 @@ export default function AdminTrustedCompaniesPage() {
                                     <input
                                         type="checkbox"
                                         checked={formData.canRefer ?? false}
-                                        onChange={e => setFormData({...formData, canRefer: e.target.checked})}
+                                        onChange={e => setFormData({ ...formData, canRefer: e.target.checked })}
                                         className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                                     />
                                     <span className="text-sm font-medium text-gray-700">支持内推</span>

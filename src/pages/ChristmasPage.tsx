@@ -72,7 +72,7 @@ export default function ChristmasPage() {
     const handleEmailSubmit = async (email: string) => {
         if (email) {
             try {
-                await fetch('/api/campaign/christmas-lead', {
+                await fetch('/api/campaign/christmas?action=lead', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, tree_id: treeData?.tree_id || Date.now() })

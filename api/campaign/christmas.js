@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import os from 'os';
 import fs from 'fs/promises';
+import neonHelper from '../../server-utils/dal/neon-helper.js';
 
 const require = createRequire(import.meta.url);
 
@@ -116,6 +117,52 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+    // Route: /api/campaign/christmas?action=lead (Email capture)
+    if (req.url?.includes('action=lead')) {
+        try {
+            const { email, tree_id } = req.body;
+
+            if (!email || !email.includes('@')) {
+                return res.status(400).json({ success: false, error: 'Invalid email' });
+            }
+
+            // Save to database (create table if needed)
+            if (neonHelper.isConfigured) {
+                try {
+                    // Create table if not exists
+                    await neonHelper.query(`
+                        CREATE TABLE IF NOT EXISTS campaign_leads (
+                            id SERIAL PRIMARY KEY,
+                            email VARCHAR(255) NOT NULL,
+                            tree_id VARCHAR(255),
+                            source VARCHAR(50) DEFAULT 'christmas_download',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    // Insert lead
+                    await neonHelper.query(`
+                        INSERT INTO campaign_leads (email, tree_id, source)
+                        VALUES ($1, $2, $3)
+                        ON CONFLICT DO NOTHING
+                    `, [email, tree_id || null, 'christmas_download']);
+
+                    console.log(`[ChristmasLead] Saved email: ${email}`);
+                } catch (dbErr) {
+                    console.error('[ChristmasLead] DB error:', dbErr);
+                    // Non-blocking - continue even if DB fails
+                }
+            }
+
+            return res.status(200).json({ success: true });
+
+        } catch (error) {
+            console.error('[ChristmasLead] Error:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Main Route: Tree Generation
     let tempFilePath = null;
 
     try {
