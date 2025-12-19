@@ -237,18 +237,26 @@ const MembershipPage: React.FC = () => {
                </p>
 
                {/* Current Status Card (if member) */}
-               {currentMembership?.isActive && (
+               {((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin) && (
                   <div className="inline-flex items-center gap-4 bg-white/10 border border-white/20 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl">
                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-lg">
                         <Check className="w-5 h-5 text-white" />
                      </div>
                      <div className="text-left">
                         <p className="text-[10px] text-white/60 uppercase font-bold tracking-wider">Current Status</p>
-                        <p className="font-bold text-white text-base">
-                           {currentMembership.level === 'club_go' ? 'Haigoo Member' : 'Haigoo Member'}
-                           <span className="ml-2 text-xs font-normal text-teal-100 bg-teal-500/20 px-2 py-0.5 rounded border border-teal-400/30">
+                        <p className="font-bold text-white text-base flex items-center gap-3">
+                           {currentMembership?.level === 'club_go' ? 'Haigoo Member' : 'Haigoo Member'}
+                           <span className="text-xs font-normal text-teal-100 bg-teal-500/20 px-2 py-0.5 rounded border border-teal-400/30">
                               Active
                            </span>
+                           <button
+                              onClick={() => setShowCertificateModal(true)}
+                              className="text-xs flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded border border-white/20 transition-colors"
+                              title="下载会员证书"
+                           >
+                              <Download className="w-3 h-3" />
+                              证书
+                           </button>
                         </p>
                      </div>
                   </div>
@@ -279,7 +287,7 @@ const MembershipPage: React.FC = () => {
             )}
 
             {/* Case 2: Authenticated but Not Member */}
-            {isAuthenticated && (!currentMembership || !currentMembership.isActive) && (
+            {isAuthenticated && (!((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin)) && (
                <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
                   <div className="p-8 md:p-12">
                      <div className="text-center mb-10">

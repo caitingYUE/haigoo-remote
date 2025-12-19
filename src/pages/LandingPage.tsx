@@ -356,6 +356,15 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Certificate Modal - Ensure it renders */}
+        {user && (
+          <MembershipCertificateModal
+            isOpen={showCertificateModal}
+            onClose={() => setShowCertificateModal(false)}
+            user={user}
+          />
+        )}
+        
         {/* Job Alert Subscription */}
         <div className="mt-32">
           <div className="relative rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-50 overflow-hidden bg-white">
