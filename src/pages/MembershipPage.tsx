@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import JobCardNew from '../components/JobCardNew';
+import { processedJobsService } from '../services/processed-jobs-service';
 
 interface Plan {
    id: string;
@@ -190,7 +191,29 @@ const MembershipPage: React.FC = () => {
    }
 
    if (loading) {
-      return (
+      // Fetch Recommended Jobs for Members
+   useEffect(() => {
+      const fetchRecommended = async () => {
+         // Check user membership status correctly
+         const isMember = (currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
+         
+         if (isMember) {
+            try {
+               // Reuse processed jobs service to get featured/recommended jobs
+               const { jobs } = await processedJobsService.getProcessedJobs(1, 3, { isFeatured: true });
+               setRecommendedJobs(jobs);
+            } catch (error) {
+               console.error('Failed to fetch recommended jobs:', error);
+            }
+         }
+      };
+
+      if (isAuthenticated && user) {
+         fetchRecommended();
+      }
+   }, [isAuthenticated, user, currentMembership]);
+
+   return (
          <div className="min-h-screen flex items-center justify-center bg-white">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
          </div>
@@ -403,7 +426,7 @@ const MembershipPage: React.FC = () => {
             )}
             
             {/* Case 3: Is Member - Show Dashboard / Benefits */}
-            {isAuthenticated && currentMembership?.isActive && (
+            {isAuthenticated && ((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin) && (
                <div className="space-y-8">
                   {/* 1. Member Status & Group */}
                   <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
@@ -435,9 +458,9 @@ const MembershipPage: React.FC = () => {
                                     </div>
                                     <span className="font-medium">
                                        有效期至：
-                                       {currentMembership.expireAt 
+                                       {currentMembership?.expireAt 
                                           ? new Date(currentMembership.expireAt).toLocaleDateString() 
-                                          : '永久有效'}
+                                          : (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString() : '永久有效')}
                                     </span>
                                  </div>
 
