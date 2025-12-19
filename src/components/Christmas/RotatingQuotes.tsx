@@ -28,7 +28,7 @@ export const RotatingQuotes = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.5 }}
-                    className="text-slate-500 italic text-sm md:text-base font-serif"
+                    className="text-inherit italic text-sm md:text-base font-serif"
                 >
                     "{QUOTES[index]}"
                 </motion.p>

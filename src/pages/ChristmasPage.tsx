@@ -1,30 +1,31 @@
 import React, { useState, useRef } from 'react';
 import { TreeRenderer } from '../components/Christmas/TreeRenderer';
-import { EmailCaptureModal } from '../components/Christmas/EmailCaptureModal';
-import { HappinessCard } from '../components/Christmas/HappinessCard';
 import { RotatingQuotes } from '../components/Christmas/RotatingQuotes';
 import { ChristmasErrorBoundary } from '../components/Christmas/ChristmasErrorBoundary';
-import { Upload, Sparkles, Share2, Loader2, FileText, Download } from 'lucide-react';
+import { Upload, Sparkles, Share2, Loader2, Download, Wand2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
+
+// Helper for corner decorations
+const Corner = ({ className }: { className?: string }) => (
+    <svg className={`w-16 h-16 absolute text-[#d4af37] opacity-80 ${className}`} viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M 10 10 L 40 10 M 10 10 L 10 40 M 15 15 L 35 15 M 15 15 L 15 35" />
+        <circle cx="10" cy="10" r="3" fill="currentColor" />
+    </svg>
+);
 
 export default function ChristmasPage() {
     const { user } = useAuth();
-    const navigate = useNavigate();
-
+    
     const [step, setStep] = useState<'upload' | 'processing' | 'result'>('upload');
     const [treeData, setTreeData] = useState<any>(null);
     const [error, setError] = useState('');
-    const [showEmailModal, setShowEmailModal] = useState(false);
-    const [showHappinessCard, setShowHappinessCard] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
-    const [isPublic, setIsPublic] = useState(true);
     const [hasPublished, setHasPublished] = useState(false);
     const treeRef = useRef<HTMLDivElement>(null);
 
     const publishToForest = async () => {
-        if (!isPublic || hasPublished || !treeData) return;
+        if (hasPublished || !treeData) return;
         try {
             await fetch('/api/campaign/forest', {
                 method: 'POST',
@@ -32,8 +33,8 @@ export default function ChristmasPage() {
                 body: JSON.stringify({
                     tree_id: treeData.tree_id || Date.now().toString(),
                     tree_data: treeData,
-                    star_label: treeData.tree_structure.star_label,
-                    user_nickname: 'Someone' // TODO: Get from auth or input
+                    star_label: treeData.tree_structure?.star_label || 'Star',
+                    user_nickname: user?.nickname || 'Guest'
                 })
             });
             setHasPublished(true);
@@ -71,7 +72,7 @@ export default function ChristmasPage() {
 
     const handleTextSubmit = async (text: string) => {
         if (text.length < 50) {
-            setError('Please enter at least 50 characters');
+            setError('请输入至少50个字符');
             return;
         }
         setStep('processing');
@@ -94,35 +95,23 @@ export default function ChristmasPage() {
         }
     };
 
-    const handleEmailSubmit = async (email: string) => {
-        if (email) {
-            try {
-                await fetch('/api/campaign/christmas?action=lead', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, tree_id: treeData?.tree_id || Date.now() })
-                });
-            } catch (err) {
-                console.error('Failed to save email:', err);
-            }
-        }
-        // Proceed with download regardless
-        await downloadTree();
-    };
-
     const downloadTree = async () => {
         if (!treeRef.current) return;
+
+        // Auto-publish when saving
+        publishToForest();
 
         setIsDownloading(true);
         try {
             const canvas = await html2canvas(treeRef.current, {
-                backgroundColor: null,
-                scale: 2, // High resolution
-                logging: false
+                backgroundColor: '#0a0a1a', // Match the dark theme
+                scale: 2,
+                logging: false,
+                useCORS: true
             });
 
             const link = document.createElement('a');
-            link.download = `haigoo-christmas-tree-${Date.now()}.png`;
+            link.download = `haigoo-magic-tree-${Date.now()}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         } catch (err) {
@@ -133,227 +122,164 @@ export default function ChristmasPage() {
         }
     };
 
-    const handleDownloadClick = () => {
-        publishToForest(); // Auto-publish if checked
-        setShowEmailModal(true);
-    };
-
-    const handleShare = async () => {
-        if (navigator.share && treeRef.current) {
-            try {
-                const canvas = await html2canvas(treeRef.current, { scale: 2 });
-                canvas.toBlob(async (blob) => {
-                    if (blob) {
-                        const file = new File([blob], 'my-christmas-tree.png', { type: 'image/png' });
-                        await navigator.share({
-                            title: '我的职业圣诞树 - Haigoo',
-                            text: '看看我的职业成长树！',
-                            files: [file]
-                        });
-                    }
-                });
-            } catch (err) {
-                console.error('Share failed:', err);
-            }
-        } else {
-            // Fallback: copy link or show share modal
-            alert('分享功能开发中...');
-        }
-    };
-
     return (
         <ChristmasErrorBoundary>
-            <div className="min-h-screen bg-slate-50 flex flex-col relative overflow-hidden">
-                {/* Background Decor */}
-                <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
-                    <div className="absolute top-10 left-10 w-32 h-32 bg-red-300 rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-20 right-20 w-64 h-64 bg-green-300 rounded-full blur-3xl"></div>
+            <div className="min-h-screen bg-[#050510] text-[#e2e8f0] font-serif relative overflow-x-hidden selection:bg-[#d4af37] selection:text-black">
+                
+                {/* Magical Background Layers */}
+                <div className="fixed inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#1e1b4b,transparent_70%)] opacity-60"></div>
+                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 animate-pulse"></div>
+                    {/* Floating Glows */}
+                    <div className="absolute top-20 left-[10%] w-64 h-64 bg-purple-500/10 rounded-full blur-[100px]"></div>
+                    <div className="absolute bottom-20 right-[10%] w-80 h-80 bg-blue-500/10 rounded-full blur-[100px]"></div>
                 </div>
 
-                <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-12 relative z-10 flex flex-col items-center justify-center">
-
+                <div className="relative z-10 w-full max-w-6xl mx-auto px-4 py-8 md:py-16 flex flex-col items-center">
+                    
                     {/* Header */}
-                    <div className="text-center mb-12">
-                        <h1 className="text-4xl md:text-6xl font-black text-slate-900 mb-4 tracking-tight">
-                            您的职业圣诞树
+                    <div className="text-center mb-16 relative">
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-px h-12 bg-gradient-to-b from-transparent to-[#d4af37]/50"></div>
+                        <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-[#fcd34d] to-[#b45309] mb-6 tracking-wide" style={{ fontFamily: 'Cinzel, serif' }}>
+                            Magical Career Tree
                         </h1>
-                        <div className="max-w-2xl mx-auto">
+                        <p className="text-xl md:text-2xl text-[#94a3b8] font-light italic" style={{ fontFamily: 'Great Vibes, cursive' }}>
+                            Transform your resume into a festive masterpiece
+                        </p>
+                        
+                        <div className="mt-8 max-w-xl mx-auto opacity-80">
                             <RotatingQuotes />
                         </div>
                     </div>
 
                     {/* --- STEP: UPLOAD --- */}
-                    {
-                        step === 'upload' && (
-                            <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl p-8 border border-white/50 backdrop-blur-sm">
-                                <div className="flex flex-col gap-6">
-                                    {/* File Upload */}
-                                    <div className="relative group cursor-pointer">
-                                        <input
-                                            type="file"
-                                            accept=".pdf,.docx,.txt"
-                                            onChange={handleFileUpload}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        />
-                                        <div className="border-2 border-dashed border-slate-300 group-hover:border-indigo-500 rounded-2xl p-10 flex flex-col items-center justify-center transition-all bg-slate-50 group-hover:bg-indigo-50/30">
-                                            <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                                <Upload className="w-8 h-8 text-indigo-600" />
-                                            </div>
-                                            <h3 className="text-lg font-bold text-slate-900">上传简历 PDF/Word</h3>
-                                            <p className="text-sm text-slate-500 mt-2">支持拖拽上传</p>
-                                        </div>
+                    {step === 'upload' && (
+                        <div className="w-full max-w-2xl relative group">
+                            {/* Card Glow */}
+                            <div className="absolute -inset-1 bg-gradient-to-r from-[#d4af37] via-[#f59e0b] to-[#d4af37] rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                            
+                            <div className="relative bg-[#0f172a] border border-[#d4af37]/30 rounded-3xl p-8 md:p-12 text-center overflow-hidden">
+                                <Corner className="top-4 left-4" />
+                                <Corner className="top-4 right-4 rotate-90" />
+                                <Corner className="bottom-4 right-4 rotate-180" />
+                                <Corner className="bottom-4 left-4 -rotate-90" />
+
+                                <div className="mb-8">
+                                    <div className="w-20 h-20 mx-auto bg-[#1e293b] rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(212,175,55,0.2)]">
+                                        <Wand2 className="w-10 h-10 text-[#d4af37]" />
                                     </div>
+                                    <h2 className="text-2xl font-bold text-[#f1f5f9] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>
+                                        Begin the Magic
+                                    </h2>
+                                    <p className="text-slate-400">Upload your resume to generate your unique tree</p>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <label className="relative cursor-pointer group/upload">
+                                        <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
+                                        <div className="h-full border-2 border-dashed border-slate-700 hover:border-[#d4af37] rounded-xl p-6 flex flex-col items-center justify-center transition-all bg-slate-900/50 hover:bg-slate-800/80">
+                                            <Upload className="w-8 h-8 text-slate-400 mb-3 group-hover/upload:text-[#d4af37] transition-colors" />
+                                            <span className="text-sm font-medium text-slate-300">Upload Resume</span>
+                                            <span className="text-xs text-slate-500 mt-1">PDF, DOCX, TXT</span>
+                                        </div>
+                                    </label>
 
                                     <div className="relative">
-                                        <div className="absolute inset-0 flex items-center">
-                                            <div className="w-full border-t border-slate-200"></div>
-                                        </div>
-                                        <div className="relative flex justify-center text-sm">
-                                            <span className="px-2 bg-white text-slate-500">或粘贴文本</span>
+                                        <div className="h-full border-2 border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-900/50">
+                                            <textarea 
+                                                placeholder="Or paste your resume content here..."
+                                                className="w-full h-24 bg-transparent border-none resize-none text-sm text-slate-300 focus:ring-0 placeholder-slate-600 text-center"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && e.metaKey) {
+                                                        handleTextSubmit(e.currentTarget.value);
+                                                    }
+                                                }}
+                                                onBlur={(e) => {
+                                                    if (e.target.value.length > 50) handleTextSubmit(e.target.value);
+                                                }}
+                                            />
+                                            <div className="mt-2 text-xs text-slate-500">Paste & Click Outside</div>
                                         </div>
                                     </div>
-
-
-                                    <textarea
-                                        className="w-full h-32 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm"
-                                        placeholder="在此粘贴简历内容..."
-                                        onBlur={(e) => {
-                                            if (e.target.value.length > 50) handleTextSubmit(e.target.value)
-                                        }}
-                                    ></textarea>
-
-                                    {error && (
-                                        <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-lg">
-                                            {error}
-                                        </div>
-                                    )}
                                 </div>
                             </div>
-                        )
-                    }
+                        </div>
+                    )}
 
                     {/* --- STEP: PROCESSING --- */}
-                    {
-                        step === 'processing' && (
-                            <div className="text-center">
-                                <div className="w-24 h-24 mx-auto mb-8 relative">
-                                    <div className="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
-                                    <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
-                                    <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600 w-8 h-8 animate-pulse" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-slate-800 mb-2">正在栽种您的圣诞树...</h2>
-                                <p className="text-slate-500 animate-pulse">解析职业年轮 · 提取技能养分 · 编写治愈解读</p>
+                    {step === 'processing' && (
+                        <div className="text-center py-20">
+                            <div className="relative w-24 h-24 mx-auto mb-8">
+                                <div className="absolute inset-0 border-4 border-[#d4af37]/20 rounded-full"></div>
+                                <div className="absolute inset-0 border-4 border-t-[#d4af37] rounded-full animate-spin"></div>
+                                <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-[#d4af37] animate-pulse" />
                             </div>
-                        )
-                    }
+                            <h3 className="text-2xl font-bold text-[#e2e8f0] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>
+                                Weaving Spells...
+                            </h3>
+                            <p className="text-slate-400 animate-pulse">Analyzing your career path</p>
+                        </div>
+                    )}
 
                     {/* --- STEP: RESULT --- */}
-                    {
-                        step === 'result' && treeData && (
-                            <div className="w-full flex flex-col items-center animate-in fade-in zoom-in duration-500">
-
-                                {/* Visual - Wrapped for Screenshot */}
-                                <div ref={treeRef} className="relative group mb-8 bg-white p-8 rounded-2xl">
-                                    <TreeRenderer data={treeData.tree_structure} />
-
-                                    {/* Hover Actions (Desktop) */}
-                                    <div className="absolute -right-16 top-0 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={handleDownloadClick}
-                                            disabled={isDownloading}
-                                            className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-50 text-indigo-600 disabled:opacity-50"
-                                            title="下载高清图"
-                                        >
-                                            {isDownloading ? (
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                            ) : (
-                                                <Download className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                        <button
-                                            onClick={handleShare}
-                                            className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-pink-50 text-pink-500"
-                                            title="分享"
-                                        >
-                                            <Share2 className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Interpretation Card */}
-                                <div className="w-full max-w-2xl bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-white/50 text-center">
-                                    <div className="flex justify-center mb-6">
-                                        <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold tracking-wider uppercase">
-                                            AI 深度解读
-                                        </span>
-                                    </div>
-
-                                    <div className="space-y-6 font-medium text-slate-700 text-lg leading-relaxed">
-                                        <p>"{treeData.interpretation.personality}"</p>
-                                        <p>"{treeData.interpretation.uniqueness}"</p>
-                                        <p className="text-indigo-600 font-semibold">"{treeData.interpretation.future_wish}"</p>
-                                    </div>
-
-                                    <div className="mt-8 flex flex-col items-center gap-4">
-                                        {/* Opt-in Checkbox */}
-                                        <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-500 hover:text-indigo-600 transition-colors">
-                                            <input
-                                                type="checkbox"
-                                                checked={isPublic}
-                                                onChange={(e) => setIsPublic(e.target.checked)}
-                                                disabled={hasPublished}
-                                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                            />
-                                            <span>允许将我的圣诞树种在<button onClick={() => navigate('/christmas/forest')} className="text-indigo-600 font-bold hover:underline mx-1">人才森林</button>中</span>
-                                        </label>
-
-                                        <div className="flex justify-center gap-4 w-full">
-                                            <button
-                                                onClick={() => window.location.reload()}
-                                                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all"
-                                            >
-                                                再试一次
-                                            </button>
-                                            <button
-                                                onClick={handleDownloadClick}
-                                                disabled={isDownloading}
-                                                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50"
-                                            >
-                                                <Download className="w-4 h-4" />
-                                                {isDownloading ? '生成中...' : '下载我的树'}
-                                            </button>
+                    {step === 'result' && treeData && (
+                        <div className="w-full animate-in fade-in zoom-in duration-1000">
+                            <div className="flex flex-col lg:flex-row gap-8 items-start justify-center">
+                                
+                                {/* The Tree Frame */}
+                                <div className="relative mx-auto lg:mx-0">
+                                    {/* Ornate Frame */}
+                                    <div className="relative bg-[#0a0a1a] p-4 md:p-8 rounded-sm shadow-2xl border-[8px] border-[#1e1e1e]"
+                                         style={{ 
+                                             boxShadow: '0 0 0 1px #444, 0 0 0 4px #d4af37, 0 0 50px rgba(0,0,0,0.8)',
+                                             backgroundImage: 'url("https://www.transparenttextures.com/patterns/dark-wood.png")'
+                                         }}>
+                                        <div ref={treeRef} className="bg-[#0a0a1a] relative overflow-hidden rounded-sm">
+                                            {/* Inner Glow */}
+                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.05),transparent_80%)] pointer-events-none z-0"></div>
+                                            <TreeRenderer data={treeData} width={600} height={800} />
+                                            
+                                            {/* Branding Watermark */}
+                                            <div className="absolute bottom-4 right-4 text-[#d4af37]/40 font-serif text-sm tracking-widest uppercase z-10">
+                                                Haigoo · Christmas
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Happiness Card Trigger */}
-                                    <div className="mt-8 pt-6 border-t border-slate-200">
-                                        <button
-                                            onClick={() => setShowHappinessCard(true)}
-                                            className="w-full py-3 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 rounded-xl font-bold transition-all border border-red-200 flex items-center justify-center gap-2 group"
+                                    {/* Action Bar */}
+                                    <div className="mt-8 flex justify-center gap-4">
+                                        <button 
+                                            onClick={downloadTree}
+                                            disabled={isDownloading}
+                                            className="group relative px-8 py-3 bg-[#d4af37] text-[#0f172a] font-bold rounded-full overflow-hidden shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all"
                                         >
-                                            <span className="text-xl group-hover:scale-125 transition-transform duration-300">🧧</span>
-                                            抽取今日治愈卡片 (每日一次)
+                                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                            <div className="flex items-center gap-2 relative">
+                                                {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                                                <span>Save Keepsake</span>
+                                            </div>
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={() => setStep('upload')}
+                                            className="px-8 py-3 bg-transparent border border-[#d4af37]/50 text-[#d4af37] font-bold rounded-full hover:bg-[#d4af37]/10 transition-all"
+                                        >
+                                            Create Another
                                         </button>
                                     </div>
                                 </div>
-
-                                {/* Modals */}
-                                <EmailCaptureModal
-                                    isOpen={showEmailModal}
-                                    onClose={() => setShowEmailModal(false)}
-                                    onSubmit={handleEmailSubmit}
-                                />
-
-                                {showHappinessCard && (
-                                    <HappinessCard onClose={() => setShowHappinessCard(false)} />
-                                )}
-
                             </div>
-                        )
-                    }
+                        </div>
+                    )}
 
-                </div >
-            </div >
-        </ChristmasErrorBoundary >
+                    {error && (
+                        <div className="mt-8 p-4 bg-red-900/50 border border-red-500/50 text-red-200 rounded-xl flex items-center gap-3">
+                            <span className="text-xl">⚠️</span>
+                            {error}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </ChristmasErrorBoundary>
     );
 }
