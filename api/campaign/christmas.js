@@ -121,17 +121,27 @@ export default async function handler(req, res) {
     try {
         let text = '';
 
-        // 1. Resolve User ID (Early Auth Check)
+        // 1. Resolve User ID (Auth or Random Lead)
         let userId = null;
+        let isAnonymous = false;
+
         try {
             const token = extractToken(req);
             if (token) {
                 const payload = await verifyToken(token);
                 if (payload && payload.userId) {
                     userId = payload.userId;
+                    console.log(`[Christmas] User authenticated: ${userId}`);
                 }
             }
         } catch (e) { console.warn('[Christmas] Auth check failed:', e.message); }
+
+        // If no authenticated user, generate random Lead ID
+        if (!userId) {
+            isAnonymous = true;
+            userId = `lead_xmas_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+            console.log(`[Christmas] Generated Lead ID: ${userId}`);
+        }
 
         // Handle Multipart Upload
         const contentType = req.headers['content-type'] || '';
@@ -173,14 +183,18 @@ export default async function handler(req, res) {
             // --- Persistence Logic ---
             if (userId && text && text.length > 50) {
                 try {
-                    console.log(`[Christmas] Saving resume for user: ${userId}`);
+                    console.log(`[Christmas] Saving resume for user: ${userId} (Anonymous: ${isAnonymous})`);
                     const saveResult = await saveUserResume(userId, {
                         fileName: filename,
                         size: buffer.length,
                         fileType: path.extname(filename).toLowerCase().replace('.', ''),
                         contentText: text,
                         fileContent: buffer, // Save actual file
-                        metadata: { source: 'christmas_campaign' },
+                        metadata: {
+                            source: 'christmas_campaign',
+                            user_type: isAnonymous ? 'lead' : 'registered',
+                            is_lead: isAnonymous
+                        },
                         parseStatus: 'success'
                     });
                     console.log(`[Christmas] Resume saved: ${saveResult.success}`);
