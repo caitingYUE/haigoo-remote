@@ -1,8 +1,11 @@
 import React, { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { TreeRenderer } from '../components/Christmas/TreeRenderer';
 import { RotatingQuotes } from '../components/Christmas/RotatingQuotes';
+import { EmailCaptureModal } from '../components/Christmas/EmailCaptureModal';
+import { HappinessCard } from '../components/Christmas/HappinessCard';
 import { ChristmasErrorBoundary } from '../components/Christmas/ChristmasErrorBoundary';
-import { Upload, Sparkles, Share2, Loader2, Download, Wand2 } from 'lucide-react';
+import { Upload, Sparkles, Share2, Loader2, Download, Wand2, Gift, Trees } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import html2canvas from 'html2canvas';
 
@@ -22,6 +25,8 @@ export default function ChristmasPage() {
     const [error, setError] = useState('');
     const [isDownloading, setIsDownloading] = useState(false);
     const [hasPublished, setHasPublished] = useState(false);
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [showHappinessCard, setShowHappinessCard] = useState(false);
     const treeRef = useRef<HTMLDivElement>(null);
 
     const publishToForest = async () => {
@@ -64,6 +69,8 @@ export default function ChristmasPage() {
 
             setTreeData(json.data);
             setStep('result');
+            // Auto-publish when generated successfully
+            publishToForest();
         } catch (err: any) {
             setError(err.message);
             setStep('upload');
@@ -89,17 +96,36 @@ export default function ChristmasPage() {
 
             setTreeData(json.data);
             setStep('result');
+            // Auto-publish when generated successfully
+            publishToForest();
         } catch (err: any) {
             setError(err.message);
             setStep('upload');
         }
     };
 
+    const handleDownloadClick = () => {
+        setShowEmailModal(true);
+    };
+
+    const handleEmailSubmit = async (email: string) => {
+        if (email) {
+            try {
+                await fetch('/api/campaign/christmas?action=lead', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, tree_id: treeData?.tree_id || Date.now() })
+                });
+            } catch (err) {
+                console.error('Failed to save email:', err);
+            }
+        }
+        // Proceed with download regardless
+        await downloadTree();
+    };
+
     const downloadTree = async () => {
         if (!treeRef.current) return;
-
-        // Auto-publish when saving
-        publishToForest();
 
         setIsDownloading(true);
         try {
@@ -119,6 +145,28 @@ export default function ChristmasPage() {
             alert('下载失败，请重试');
         } finally {
             setIsDownloading(false);
+        }
+    };
+
+    const handleShare = async () => {
+        if (navigator.share && treeRef.current) {
+            try {
+                const canvas = await html2canvas(treeRef.current, { scale: 2, backgroundColor: '#0a0a1a', useCORS: true });
+                canvas.toBlob(async (blob) => {
+                    if (blob) {
+                        const file = new File([blob], 'my-christmas-tree.png', { type: 'image/png' });
+                        await navigator.share({
+                            title: '我的职业圣诞树 - Haigoo',
+                            text: '看看我的职业成长树！',
+                            files: [file]
+                        });
+                    }
+                });
+            } catch (err) {
+                console.error('Share failed:', err);
+            }
+        } else {
+            alert('请使用浏览器自带分享功能，或截图分享');
         }
     };
 
@@ -227,44 +275,85 @@ export default function ChristmasPage() {
                             <div className="flex flex-col lg:flex-row gap-8 items-start justify-center">
                                 
                                 {/* The Tree Frame */}
-                                <div className="relative mx-auto lg:mx-0">
+                                <div className="relative mx-auto lg:mx-0 max-w-2xl w-full">
                                     {/* Ornate Frame */}
                                     <div className="relative bg-[#0a0a1a] p-4 md:p-8 rounded-sm shadow-2xl border-[8px] border-[#1e1e1e]"
                                          style={{ 
                                              boxShadow: '0 0 0 1px #444, 0 0 0 4px #d4af37, 0 0 50px rgba(0,0,0,0.8)',
                                              backgroundImage: 'url("https://www.transparenttextures.com/patterns/dark-wood.png")'
                                          }}>
-                                        <div ref={treeRef} className="bg-[#0a0a1a] relative overflow-hidden rounded-sm">
+                                        <div ref={treeRef} className="bg-[#0a0a1a] relative overflow-hidden rounded-sm flex flex-col">
                                             {/* Inner Glow */}
                                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.05),transparent_80%)] pointer-events-none z-0"></div>
+                                            
+                                            {/* Tree */}
                                             <TreeRenderer data={treeData.tree_structure || treeData} width={600} height={800} />
                                             
+                                            {/* AI Interpretation Section (Inside the frame for download) */}
+                                            {treeData.interpretation && (
+                                                <div className="px-8 pb-12 pt-4 relative z-10 text-center">
+                                                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#d4af37]/30 to-transparent mb-6"></div>
+                                                    
+                                                    <div className="space-y-4 font-serif">
+                                                        <p className="text-[#fcd34d] text-lg italic">
+                                                            "{treeData.interpretation.personality}"
+                                                        </p>
+                                                        <p className="text-slate-400 text-sm leading-relaxed">
+                                                            {treeData.interpretation.uniqueness}
+                                                        </p>
+                                                        <p className="text-[#d4af37] text-sm mt-4 font-medium">
+                                                            ✨ {treeData.interpretation.future_wish}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {/* Branding Watermark */}
-                                            <div className="absolute bottom-4 right-4 text-[#d4af37]/40 font-serif text-sm tracking-widest uppercase z-10">
+                                            <div className="absolute bottom-2 right-4 text-[#d4af37]/30 font-serif text-xs tracking-widest uppercase z-10">
                                                 Haigoo · Christmas
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Action Bar */}
-                                    <div className="mt-8 flex justify-center gap-4">
+                                    <div className="mt-8 flex flex-wrap justify-center gap-4">
                                         <button 
-                                            onClick={downloadTree}
+                                            onClick={handleDownloadClick}
                                             disabled={isDownloading}
-                                            className="group relative px-8 py-3 bg-[#d4af37] text-[#0f172a] font-bold rounded-full overflow-hidden shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all"
+                                            className="group relative px-6 py-3 bg-[#d4af37] text-[#0f172a] font-bold rounded-full overflow-hidden shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all flex items-center gap-2"
                                         >
-                                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                                            <div className="flex items-center gap-2 relative">
-                                                {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                                                <span>Save Keepsake</span>
-                                            </div>
+                                            {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                                            <span>保存纪念</span>
+                                        </button>
+
+                                        <button 
+                                            onClick={() => setShowHappinessCard(true)}
+                                            className="px-6 py-3 bg-red-900/30 border border-red-500/30 text-red-200 font-bold rounded-full hover:bg-red-900/50 hover:border-red-500/60 transition-all flex items-center gap-2"
+                                        >
+                                            <Gift className="w-5 h-5" />
+                                            <span>抽取祝福</span>
                                         </button>
                                         
                                         <button 
-                                            onClick={() => setStep('upload')}
-                                            className="px-8 py-3 bg-transparent border border-[#d4af37]/50 text-[#d4af37] font-bold rounded-full hover:bg-[#d4af37]/10 transition-all"
+                                            onClick={handleShare}
+                                            className="px-6 py-3 bg-slate-800/50 border border-slate-600/50 text-slate-300 font-bold rounded-full hover:bg-slate-700/50 transition-all flex items-center gap-2"
                                         >
-                                            Create Another
+                                            <Share2 className="w-5 h-5" />
+                                            <span>分享</span>
+                                        </button>
+
+                                        <Link to="/campaign/forest" className="px-6 py-3 bg-green-900/30 border border-green-500/30 text-green-200 font-bold rounded-full hover:bg-green-900/50 hover:border-green-500/60 transition-all flex items-center gap-2">
+                                            <Trees className="w-5 h-5" />
+                                            <span>参观森林</span>
+                                        </Link>
+                                    </div>
+                                    
+                                    <div className="mt-4 text-center">
+                                        <button 
+                                            onClick={() => setStep('upload')}
+                                            className="text-sm text-slate-500 hover:text-[#d4af37] transition-colors underline decoration-dotted"
+                                        >
+                                            重新生成一棵
                                         </button>
                                     </div>
                                 </div>
@@ -277,6 +366,16 @@ export default function ChristmasPage() {
                             <span className="text-xl">⚠️</span>
                             {error}
                         </div>
+                    )}
+
+                    <EmailCaptureModal 
+                        isOpen={showEmailModal} 
+                        onClose={() => setShowEmailModal(false)} 
+                        onSubmit={handleEmailSubmit} 
+                    />
+                    
+                    {showHappinessCard && (
+                        <HappinessCard onClose={() => setShowHappinessCard(false)} />
                     )}
                 </div>
             </div>
