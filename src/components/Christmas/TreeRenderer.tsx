@@ -30,23 +30,22 @@ interface TreeRendererProps {
     showDecorations?: boolean;
 }
 
-// Word Cloud Palette
+// Word Cloud Palette - Warmer, Christmas Theme
 const PALETTE = [
-    '#fcd34d', // Gold
-    '#fca5a5', // Soft Red
-    '#86efac', // Soft Green
-    '#93c5fd', // Soft Blue
-    '#e2e8f0', // White/Slate
-    '#f0abfc', // Pink
+    '#fbbf24', // Warm Gold
+    '#f87171', // Warm Red
+    '#4ade80', // Bright Green
+    '#60a5fa', // Ice Blue
+    '#f1f5f9', // Snow White
+    '#f472b6', // Pink
 ];
 
 const FONTS = [
     'Great Vibes, cursive',
     'Cinzel, serif',
     'Rubik, sans-serif',
-    'Orbitron, sans-serif',
     'Nunito, sans-serif',
-    'Microsoft YaHei, sans-serif' // Fallback for Chinese
+    'Microsoft YaHei, sans-serif'
 ];
 
 export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, height = 800 }) => {
@@ -62,10 +61,10 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         // Fallback if AI returned no keywords
         if (kw.length === 0) {
             const defaults = [
-                "Growth", "Success", "Passion", "Dream", "Future", 
-                "Skills", "Innovation", "Creativity", "Teamwork", 
-                "Leadership", "Vision", "Goal", "Action", "Focus",
-                "Learning", "Courage", "Wisdom", "Talent", "Energy"
+                "Love", "Hope", "Warmth", "Joy", "Peace", 
+                "Family", "Friends", "Kindness", "Giving", 
+                "Dream", "Magic", "Believe", "Light", "Home",
+                "Faith", "Wonder", "Spirit", "Wish", "Heart"
             ];
             kw = defaults.map(text => ({ text, weight: Math.floor(Math.random() * 5) + 5 }));
         }
@@ -91,20 +90,20 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         
         // Tree Boundaries
         const topY = 140; 
-        const bottomY = height - 120;
+        const bottomY = height - 140; // Lifted slightly for snow ground
         const treeHeight = bottomY - topY;
-        const maxTreeWidth = width * 0.9;
+        const maxTreeWidth = width * 0.85; // Slightly narrower for elegance
         
         // 1. Generate a Fine-Grained Grid
         // Decreased step size for higher resolution placement
         const points: {x: number, y: number}[] = [];
-        const stepY = 5; // Finer vertical steps (was 15)
-        const stepX = 5; // Finer horizontal steps (was 15)
+        const stepY = 5; 
+        const stepX = 5; 
         
         for (let y = topY; y < bottomY; y += stepY) {
             const progress = (y - topY) / treeHeight;
             // Conical shape width at this Y
-            const currentLineWidth = 60 + (maxTreeWidth - 60) * Math.pow(progress, 0.9);
+            const currentLineWidth = 50 + (maxTreeWidth - 50) * Math.pow(progress, 0.9);
             const halfW = currentLineWidth / 2;
             
             // Scan X row
@@ -117,13 +116,12 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             }
         }
         
-        // Shuffle points randomly to fill space more organically, 
-        // instead of top-down which causes clumping
+        // Shuffle points randomly
         points.sort(() => Math.random() - 0.5);
 
         // Helper: Check collision
         const checkCollision = (rect: any) => {
-            const pad = 4; // Increased padding for cleaner separation (was 2)
+            const pad = 4; 
             for (const item of items) {
                 if (rect.x < item.x + item.width + pad &&
                     rect.x + rect.width + pad > item.x &&
@@ -142,9 +140,9 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
 
         let workingKeywords = [...allKeywords];
         
-        // Add decorations
-        const DECORATIONS = ['★', '✦', '❄', '♥', '•', '✨', '✴', '✶'];
-        for(let i=0; i<40; i++) {
+        // Add decorations - Winter Theme
+        const DECORATIONS = ['❄', '❅', '❆', '★', '✦', '✨', '•'];
+        for(let i=0; i<50; i++) {
              workingKeywords.push({
                  text: DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)],
                  weight: 1, 
@@ -171,7 +169,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             if (!isDeco) {
                  fontSize = 14 + Math.pow(kw.weight, 1.2) * 2.5;
             } else {
-                 fontSize = 8 + Math.random() * 8;
+                 fontSize = 10 + Math.random() * 10;
             }
 
             // Measure
@@ -181,7 +179,6 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             const textHeight = fontSize * 0.8; 
 
             // Find first point that fits
-            let placed = false;
             
             for (let i = 0; i < points.length; i++) {
                 const p = points[i];
@@ -195,7 +192,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 
                 // Boundary check
                 const progress = (p.y - topY) / treeHeight;
-                const currentHalfW = (60 + (maxTreeWidth - 60) * Math.pow(progress, 0.9)) / 2;
+                const currentHalfW = (50 + (maxTreeWidth - 50) * Math.pow(progress, 0.9)) / 2;
                 if (p.x - textWidth/2 < centerX - currentHalfW || p.x + textWidth/2 > centerX + currentHalfW) {
                     continue; 
                 }
@@ -211,13 +208,12 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                         fontSize,
                         font,
                         color,
-                        // Reduced rotation: Mostly horizontal, slight random tilt
+                        // Reduced rotation
                         rotation: isDeco ? Math.random() * 360 : (Math.random() - 0.5) * 10, 
                         delay: items.length * 0.005
                     });
                     
                     points.splice(i, 1); 
-                    placed = true;
                     break;
                 }
             }
@@ -227,41 +223,94 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
     }, [allKeywords, width, height]);
 
     return (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto shadow-2xl rounded-sm" style={{ backgroundColor: '#1a1a1a' }}>
+        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto shadow-2xl rounded-sm" style={{ backgroundColor: '#0f172a' }}>
             <defs>
                 <filter id="glow-text">
-                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
+                    <feGaussianBlur stdDeviation="1" result="coloredBlur" />
                     <feMerge>
                         <feMergeNode in="coloredBlur" />
                         <feMergeNode in="SourceGraphic" />
                     </feMerge>
                 </filter>
-                <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#0f172a" />
-                    <stop offset="100%" stopColor="#1e1b4b" />
+                <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#020617" /> {/* Dark Night */}
+                    <stop offset="60%" stopColor="#172554" /> {/* Deep Blue */}
+                    <stop offset="100%" stopColor="#1e3a8a" /> {/* Blue Glow */}
                 </linearGradient>
+                <radialGradient id="auroraGlow" cx="50%" cy="0%" r="70%">
+                    <stop offset="0%" stopColor="#4ade80" stopOpacity="0.2" />
+                    <stop offset="50%" stopColor="#818cf8" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="transparent" />
+                </radialGradient>
                 <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
                     <stop offset="0%" stopColor="#fff" stopOpacity="0.8" />
                     <stop offset="100%" stopColor="#fff" stopOpacity="0" />
                 </radialGradient>
             </defs>
 
-            {/* 1. Background */}
-            <rect width={width} height={height} fill="url(#bgGradient)" />
+            {/* 1. Background: Snowy Night Sky */}
+            <rect width={width} height={height} fill="url(#skyGradient)" />
+            <rect width={width} height={height} fill="url(#auroraGlow)" />
             
             {/* 2. Stars (Background) */}
-            {[...Array(60)].map((_, i) => (
+            {[...Array(80)].map((_, i) => (
                 <circle
                     key={`bg-star-${i}`}
                     cx={Math.random() * width}
-                    cy={Math.random() * height}
+                    cy={Math.random() * (height - 100)}
                     r={Math.random() * 1.5}
                     fill="#fff"
-                    opacity={Math.random() * 0.5 + 0.2}
+                    opacity={Math.random() * 0.7 + 0.3}
                 />
             ))}
 
-            {/* 3. The Word Cloud Tree */}
+            {/* 3. Snow Ground */}
+            <path 
+                d={`M0 ${height} L0 ${height-80} Q ${width/2} ${height-120} ${width} ${height-80} L ${width} ${height} Z`} 
+                fill="#f1f5f9"
+                opacity="0.9"
+            />
+            <path 
+                d={`M0 ${height} L0 ${height-60} Q ${width/2} ${height-100} ${width} ${height-60} L ${width} ${height} Z`} 
+                fill="#e2e8f0" 
+                opacity="0.8"
+            />
+
+            {/* 3.5 Elk Silhouette (Left Side) */}
+            <g transform={`translate(${width * 0.15}, ${height - 90}) scale(0.6)`}>
+                <path 
+                    d="M50,10 C55,5 60,5 65,10 L60,20 L65,15 L70,20 L65,30 C75,30 80,40 80,50 L80,70 L75,70 L75,55 L65,55 L65,70 L60,70 L60,50 C50,50 40,45 40,35 L40,25 Z" 
+                    fill="#1e293b" 
+                    opacity="0.2"
+                />
+                <path 
+                    d="M20,20 L30,30 M30,20 L20,30" 
+                    stroke="#1e293b" 
+                    strokeWidth="2" 
+                    opacity="0.2"
+                />
+            </g>
+            
+            {/* 3.6 Sleigh Silhouette (Sky) */}
+             <g transform={`translate(${width * 0.8}, 80) scale(0.4)`}>
+                <path 
+                    d="M10,20 L50,20 L60,10 L50,10 L10,20 Z M15,20 L20,30 L40,30 L45,20" 
+                    fill="#1e293b" 
+                    opacity="0.1"
+                />
+            </g>
+
+            {/* 4. Trunk (Planted in snow) */}
+            <rect 
+                x={width/2 - 15} 
+                y={height - 140} 
+                width={30} 
+                height={80} 
+                fill="#3f2e26" 
+                rx="4"
+            />
+
+            {/* 5. The Word Cloud Tree */}
             {treeItems.map((item, i) => (
                 <motion.text
                     key={`word-${i}`}
@@ -284,7 +333,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 </motion.text>
             ))}
 
-            {/* 4. Top Star */}
+            {/* 6. Top Star */}
             <g transform={`translate(${width / 2}, 110)`}>
                 <circle r="40" fill="url(#starGlow)" opacity="0.5" />
                 <motion.path
@@ -309,24 +358,15 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                     {data.star_label.length > 15 ? data.star_label.substring(0, 15) + '...' : data.star_label}
                 </text>
             </g>
-
-            {/* 5. Trunk */}
-            <rect 
-                x={width/2 - 20} 
-                y={height - 130} 
-                width={40} 
-                height={60} 
-                fill="#573a25" 
-                rx="4"
-            />
             
-            {/* 6. Base/Label */}
+            {/* 7. Base/Label */}
             <text 
                 x={width/2} 
                 y={height - 50} 
                 textAnchor="middle" 
-                fill="#e2e8f0" 
-                fontSize="18" 
+                fill="#1e293b" 
+                fontSize="20" 
+                fontWeight="bold"
                 fontFamily="Great Vibes, cursive"
             >
                 {data.trunk_core_role}

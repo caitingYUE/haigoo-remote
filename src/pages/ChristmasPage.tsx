@@ -172,30 +172,67 @@ export default function ChristmasPage() {
 
     return (
         <ChristmasErrorBoundary>
-            <div className="min-h-screen bg-[#050510] text-[#e2e8f0] font-serif relative overflow-x-hidden selection:bg-[#d4af37] selection:text-black">
+            <style>{`
+                @keyframes snow {
+                    0% { transform: translateY(-10px); }
+                    100% { transform: translateY(100vh); }
+                }
+                .snowflake {
+                    position: absolute;
+                    top: -10px;
+                    color: white;
+                    animation: snow linear infinite;
+                    opacity: 0.8;
+                }
+            `}</style>
+            <div className="min-h-screen bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#cbd5e1] text-[#1e293b] font-serif relative overflow-x-hidden selection:bg-[#fca5a5] selection:text-white">
                 
-                {/* Magical Background Layers */}
-                <div className="fixed inset-0 pointer-events-none">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#1e1b4b,transparent_70%)] opacity-60"></div>
-                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 animate-pulse"></div>
-                    {/* Floating Glows */}
-                    <div className="absolute top-20 left-[10%] w-64 h-64 bg-purple-500/10 rounded-full blur-[100px]"></div>
-                    <div className="absolute bottom-20 right-[10%] w-80 h-80 bg-blue-500/10 rounded-full blur-[100px]"></div>
+                {/* Snowy Background Layers */}
+                <div className="fixed inset-0 pointer-events-none z-0">
+                    {/* Aurora Borealis */}
+                    <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-transparent via-[#4ade80]/10 to-transparent opacity-60 blur-3xl transform -skew-y-6"></div>
+                    <div className="absolute top-0 right-0 w-full h-1/2 bg-gradient-to-b from-transparent via-[#818cf8]/10 to-transparent opacity-60 blur-3xl transform skew-y-6"></div>
+                    
+                    {/* Stars */}
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
+                    
+                    {/* Snowflakes (Generated via CSS/JS) */}
+                    {[...Array(50)].map((_, i) => (
+                        <div 
+                            key={i}
+                            className="snowflake text-white"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                animationDuration: `${Math.random() * 5 + 5}s`,
+                                animationDelay: `${Math.random() * 5}s`,
+                                fontSize: `${Math.random() * 20 + 10}px`,
+                                opacity: Math.random() * 0.7 + 0.3
+                            }}
+                        >
+                            ❄
+                        </div>
+                    ))}
+                    
+                    {/* Warm Glows (Fireplace/Cabin feel) */}
+                    <div className="absolute bottom-0 left-[20%] w-96 h-96 bg-orange-500/10 rounded-full blur-[120px]"></div>
+                    <div className="absolute bottom-0 right-[20%] w-96 h-96 bg-red-500/10 rounded-full blur-[120px]"></div>
                 </div>
 
                 <div className="relative z-10 w-full max-w-6xl mx-auto px-4 py-8 md:py-16 flex flex-col items-center">
                     
                     {/* Header */}
                     <div className="text-center mb-16 relative">
-                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-px h-12 bg-gradient-to-b from-transparent to-[#d4af37]/50"></div>
-                        <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-[#fcd34d] to-[#b45309] mb-6 tracking-wide" style={{ fontFamily: 'Cinzel, serif' }}>
-                            Magical Career Tree
+                        {/* Title Glow */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white/50 blur-3xl -z-10 rounded-full"></div>
+                        
+                        <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-[#b91c1c] to-[#991b1b] mb-6 tracking-wide drop-shadow-sm" style={{ fontFamily: 'Cinzel, serif' }}>
+                            Christmas Career Tree
                         </h1>
-                        <p className="text-xl md:text-2xl text-[#94a3b8] font-light italic" style={{ fontFamily: 'Great Vibes, cursive' }}>
-                            Transform your resume into a festive masterpiece
+                        <p className="text-xl md:text-2xl text-[#334155] font-light italic" style={{ fontFamily: 'Great Vibes, cursive' }}>
+                            Plant your dreams in the winter snow...
                         </p>
                         
-                        <div className="mt-8 max-w-xl mx-auto opacity-80">
+                        <div className="mt-8 max-w-xl mx-auto">
                             <RotatingQuotes />
                         </div>
                     </div>
@@ -204,39 +241,39 @@ export default function ChristmasPage() {
                     {step === 'upload' && (
                         <div className="w-full max-w-2xl relative group">
                             {/* Card Glow */}
-                            <div className="absolute -inset-1 bg-gradient-to-r from-[#d4af37] via-[#f59e0b] to-[#d4af37] rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                            <div className="absolute -inset-1 bg-gradient-to-r from-[#ef4444] via-[#f59e0b] to-[#ef4444] rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
                             
-                            <div className="relative bg-[#0f172a] border border-[#d4af37]/30 rounded-3xl p-8 md:p-12 text-center overflow-hidden">
-                                <Corner className="top-4 left-4" />
-                                <Corner className="top-4 right-4 rotate-90" />
-                                <Corner className="bottom-4 right-4 rotate-180" />
-                                <Corner className="bottom-4 left-4 -rotate-90" />
+                            <div className="relative bg-white/90 backdrop-blur-md border border-white/50 rounded-3xl p-8 md:p-12 text-center overflow-hidden shadow-xl">
+                                <Corner className="top-4 left-4 text-[#b91c1c]" />
+                                <Corner className="top-4 right-4 rotate-90 text-[#b91c1c]" />
+                                <Corner className="bottom-4 right-4 rotate-180 text-[#b91c1c]" />
+                                <Corner className="bottom-4 left-4 -rotate-90 text-[#b91c1c]" />
 
                                 <div className="mb-8">
-                                    <div className="w-20 h-20 mx-auto bg-[#1e293b] rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(212,175,55,0.2)]">
-                                        <Wand2 className="w-10 h-10 text-[#d4af37]" />
+                                    <div className="w-20 h-20 mx-auto bg-red-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                                        <Wand2 className="w-10 h-10 text-[#b91c1c]" />
                                     </div>
-                                    <h2 className="text-2xl font-bold text-[#f1f5f9] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>
-                                        Begin the Magic
+                                    <h2 className="text-2xl font-bold text-[#1e293b] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>
+                                        Create Your Winter Magic
                                     </h2>
-                                    <p className="text-slate-400">Upload your resume to generate your unique tree</p>
+                                    <p className="text-slate-500">Upload your resume to grow your tree</p>
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <label className="relative cursor-pointer group/upload">
                                         <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
-                                        <div className="h-full border-2 border-dashed border-slate-700 hover:border-[#d4af37] rounded-xl p-6 flex flex-col items-center justify-center transition-all bg-slate-900/50 hover:bg-slate-800/80">
-                                            <Upload className="w-8 h-8 text-slate-400 mb-3 group-hover/upload:text-[#d4af37] transition-colors" />
-                                            <span className="text-sm font-medium text-slate-300">Upload Resume</span>
-                                            <span className="text-xs text-slate-500 mt-1">PDF, DOCX, TXT</span>
+                                        <div className="h-full border-2 border-dashed border-red-200 hover:border-red-400 rounded-xl p-6 flex flex-col items-center justify-center transition-all bg-red-50/50 hover:bg-red-50">
+                                            <Upload className="w-8 h-8 text-red-300 mb-3 group-hover/upload:text-red-500 transition-colors" />
+                                            <span className="text-sm font-medium text-slate-600">Upload Resume</span>
+                                            <span className="text-xs text-slate-400 mt-1">PDF, DOCX, TXT</span>
                                         </div>
                                     </label>
 
                                     <div className="relative">
-                                        <div className="h-full border-2 border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-900/50">
+                                        <div className="h-full border-2 border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
                                             <textarea 
                                                 placeholder="Or paste your resume content here..."
-                                                className="w-full h-24 bg-transparent border-none resize-none text-sm text-slate-300 focus:ring-0 placeholder-slate-600 text-center"
+                                                className="w-full h-24 bg-transparent border-none resize-none text-sm text-slate-600 focus:ring-0 placeholder-slate-400 text-center"
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter' && e.metaKey) {
                                                         handleTextSubmit(e.currentTarget.value);
@@ -246,7 +283,7 @@ export default function ChristmasPage() {
                                                     if (e.target.value.length > 50) handleTextSubmit(e.target.value);
                                                 }}
                                             />
-                                            <div className="mt-2 text-xs text-slate-500">Paste & Click Outside</div>
+                                            <div className="mt-2 text-xs text-slate-400">Paste & Click Outside</div>
                                         </div>
                                     </div>
                                 </div>
@@ -258,14 +295,14 @@ export default function ChristmasPage() {
                     {step === 'processing' && (
                         <div className="text-center py-20">
                             <div className="relative w-24 h-24 mx-auto mb-8">
-                                <div className="absolute inset-0 border-4 border-[#d4af37]/20 rounded-full"></div>
-                                <div className="absolute inset-0 border-4 border-t-[#d4af37] rounded-full animate-spin"></div>
-                                <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-[#d4af37] animate-pulse" />
+                                <div className="absolute inset-0 border-4 border-red-200 rounded-full"></div>
+                                <div className="absolute inset-0 border-4 border-t-red-500 rounded-full animate-spin"></div>
+                                <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-red-500 animate-pulse" />
                             </div>
-                            <h3 className="text-2xl font-bold text-[#e2e8f0] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>
-                                Weaving Spells...
+                            <h3 className="text-2xl font-bold text-[#1e293b] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>
+                                Gathering Snowflakes...
                             </h3>
-                            <p className="text-slate-400 animate-pulse">Analyzing your career path</p>
+                            <p className="text-slate-500 animate-pulse">Planting your career seeds</p>
                         </div>
                     )}
 
@@ -277,28 +314,27 @@ export default function ChristmasPage() {
                                 {/* The Tree Frame */}
                                 <div className="relative mx-auto lg:mx-0 max-w-2xl w-full">
                                     {/* Ornate Frame */}
-                                    <div className="relative bg-[#0a0a1a] p-4 md:p-8 rounded-sm shadow-2xl border-[8px] border-[#1e1e1e]"
+                                    <div className="relative bg-[#f8fafc] p-4 md:p-8 rounded-sm shadow-2xl border-[8px] border-[#78350f]"
                                          style={{ 
-                                             boxShadow: '0 0 0 1px #444, 0 0 0 4px #d4af37, 0 0 50px rgba(0,0,0,0.8)',
-                                             backgroundImage: 'url("https://www.transparenttextures.com/patterns/dark-wood.png")'
+                                             boxShadow: '0 0 0 1px #50250a, 0 0 0 4px #d4af37, 0 20px 50px rgba(0,0,0,0.3)',
+                                             backgroundImage: 'url("https://www.transparenttextures.com/patterns/wood-pattern.png")'
                                          }}>
-                                        <div ref={treeRef} className="bg-[#0a0a1a] relative overflow-hidden rounded-sm flex flex-col">
-                                            {/* Inner Glow */}
-                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.05),transparent_80%)] pointer-events-none z-0"></div>
+                                        <div ref={treeRef} className="bg-[#0f172a] relative overflow-hidden rounded-sm flex flex-col">
+                                            {/* Inner Glow is handled by TreeRenderer's own background now */}
                                             
                                             {/* Tree */}
                                             <TreeRenderer data={treeData.tree_structure || treeData} width={600} height={800} />
                                             
                                             {/* AI Interpretation Section (Inside the frame for download) */}
                                             {treeData.interpretation && (
-                                                <div className="px-8 pb-12 pt-4 relative z-10 text-center">
+                                                <div className="px-8 pb-12 pt-4 relative z-10 text-center bg-gradient-to-t from-[#f1f5f9] to-transparent -mt-20">
                                                     <div className="w-full h-px bg-gradient-to-r from-transparent via-[#d4af37]/30 to-transparent mb-6"></div>
                                                     
                                                     <div className="space-y-4 font-serif">
-                                                        <p className="text-[#fcd34d] text-lg italic">
+                                                        <p className="text-[#b45309] text-lg italic font-bold">
                                                             "{treeData.interpretation.personality}"
                                                         </p>
-                                                        <p className="text-slate-400 text-sm leading-relaxed">
+                                                        <p className="text-slate-600 text-sm leading-relaxed">
                                                             {treeData.interpretation.uniqueness}
                                                         </p>
                                                         <p className="text-[#d4af37] text-sm mt-4 font-medium">
@@ -309,7 +345,7 @@ export default function ChristmasPage() {
                                             )}
 
                                             {/* Branding Watermark */}
-                                            <div className="absolute bottom-2 right-4 text-[#d4af37]/30 font-serif text-xs tracking-widest uppercase z-10">
+                                            <div className="absolute bottom-2 right-4 text-slate-400 font-serif text-xs tracking-widest uppercase z-10">
                                                 Haigoo · Christmas
                                             </div>
                                         </div>
@@ -320,7 +356,7 @@ export default function ChristmasPage() {
                                         <button 
                                             onClick={handleDownloadClick}
                                             disabled={isDownloading}
-                                            className="group relative px-6 py-3 bg-[#d4af37] text-[#0f172a] font-bold rounded-full overflow-hidden shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] transition-all flex items-center gap-2"
+                                            className="group relative px-6 py-3 bg-[#b91c1c] text-white font-bold rounded-full overflow-hidden shadow-[0_0_20px_rgba(185,28,28,0.3)] hover:shadow-[0_0_30px_rgba(185,28,28,0.5)] transition-all flex items-center gap-2 hover:-translate-y-1"
                                         >
                                             {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
                                             <span>保存纪念</span>
@@ -328,7 +364,7 @@ export default function ChristmasPage() {
 
                                         <button 
                                             onClick={() => setShowHappinessCard(true)}
-                                            className="px-6 py-3 bg-red-900/30 border border-red-500/30 text-red-200 font-bold rounded-full hover:bg-red-900/50 hover:border-red-500/60 transition-all flex items-center gap-2"
+                                            className="px-6 py-3 bg-white border border-red-200 text-red-600 font-bold rounded-full hover:bg-red-50 hover:border-red-300 transition-all flex items-center gap-2 hover:-translate-y-1 shadow-sm"
                                         >
                                             <Gift className="w-5 h-5" />
                                             <span>抽取祝福</span>
@@ -336,13 +372,13 @@ export default function ChristmasPage() {
                                         
                                         <button 
                                             onClick={handleShare}
-                                            className="px-6 py-3 bg-slate-800/50 border border-slate-600/50 text-slate-300 font-bold rounded-full hover:bg-slate-700/50 transition-all flex items-center gap-2"
+                                            className="px-6 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-full hover:bg-slate-50 transition-all flex items-center gap-2 hover:-translate-y-1 shadow-sm"
                                         >
                                             <Share2 className="w-5 h-5" />
                                             <span>分享</span>
                                         </button>
 
-                                        <Link to="/campaign/forest" className="px-6 py-3 bg-green-900/30 border border-green-500/30 text-green-200 font-bold rounded-full hover:bg-green-900/50 hover:border-green-500/60 transition-all flex items-center gap-2">
+                                        <Link to="/campaign/forest" className="px-6 py-3 bg-green-50 border border-green-200 text-green-700 font-bold rounded-full hover:bg-green-100 transition-all flex items-center gap-2 hover:-translate-y-1 shadow-sm">
                                             <Trees className="w-5 h-5" />
                                             <span>参观森林</span>
                                         </Link>
@@ -351,7 +387,7 @@ export default function ChristmasPage() {
                                     <div className="mt-4 text-center">
                                         <button 
                                             onClick={() => setStep('upload')}
-                                            className="text-sm text-slate-500 hover:text-[#d4af37] transition-colors underline decoration-dotted"
+                                            className="text-sm text-slate-500 hover:text-[#b91c1c] transition-colors underline decoration-dotted"
                                         >
                                             重新生成一棵
                                         </button>
@@ -362,7 +398,7 @@ export default function ChristmasPage() {
                     )}
 
                     {error && (
-                        <div className="mt-8 p-4 bg-red-900/50 border border-red-500/50 text-red-200 rounded-xl flex items-center gap-3">
+                        <div className="mt-8 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl flex items-center gap-3">
                             <span className="text-xl">⚠️</span>
                             {error}
                         </div>

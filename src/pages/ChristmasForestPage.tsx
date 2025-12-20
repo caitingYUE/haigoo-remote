@@ -43,19 +43,19 @@ export default function ChristmasForestPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 relative overflow-hidden font-serif">
             {/* Header */}
             <div className="sticky top-0 bg-white/80 backdrop-blur-md z-40 border-b border-slate-200 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
                     <button
                         onClick={() => navigate('/christmas')}
-                        className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 transition-colors"
+                        className="flex items-center gap-2 text-slate-600 hover:text-[#b91c1c] transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
                         <span className="font-medium">返回我的树</span>
                     </button>
-                    <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-indigo-600">
-                        🎄 人才森林
+                    <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#b91c1c] to-[#15803d]" style={{ fontFamily: 'Cinzel, serif' }}>
+                        🎄 Talent Forest
                     </h1>
                     <div className="w-20"></div> {/* Spacer */}
                 </div>
@@ -64,8 +64,8 @@ export default function ChristmasForestPage() {
             {/* Content */}
             <div className="max-w-7xl mx-auto py-8">
                 <div className="mb-8 text-center">
-                    <h2 className="text-3xl font-bold text-slate-800 mb-2">探索职业的多样性</h2>
-                    <p className="text-slate-500">每一棵树都代表一段独特的职业旅程</p>
+                    <h2 className="text-3xl font-bold text-[#1e293b] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>Explore Career Diversity</h2>
+                    <p className="text-slate-500 italic" style={{ fontFamily: 'Great Vibes, cursive', fontSize: '1.2rem' }}>Every tree tells a unique winter story</p>
                 </div>
 
                 <ForestGrid trees={trees} onTreeClick={setSelectedTree} />
