@@ -20,6 +20,17 @@ export default function CompanyDetailPage() {
         !!user?.roles?.admin
     );
 
+    // DEBUG: Log user and membership status
+    useEffect(() => {
+        if (user) {
+            console.log('[CompanyDetail] User:', user.email);
+            console.log('[CompanyDetail] MemberStatus:', user.memberStatus);
+            console.log('[CompanyDetail] ExpireAt:', user.memberExpireAt);
+            console.log('[CompanyDetail] IsAdmin:', !!user.roles?.admin);
+            console.log('[CompanyDetail] Calculated isMember:', isMember);
+        }
+    }, [user, isMember]);
+
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [jobs, setJobs] = useState<Job[]>([])
     const [loading, setLoading] = useState(true)
@@ -211,13 +222,15 @@ export default function CompanyDetailPage() {
                                     <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100">
                                         <Shield className="w-4 h-4 text-indigo-600" />
                                         <h2 className="text-sm font-bold text-slate-900">企业认证信息</h2>
-                                        <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium border border-amber-200 ml-1">
-                                            会员专属
-                                        </span>
+                                        {!isMember && (
+                                            <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium border border-amber-200 ml-1">
+                                                会员专属
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div className="p-4 relative">
-                                        {user?.memberStatus && user.memberStatus !== 'free' ? (
+                                        {isMember ? (
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                                 {/* Website - New Position */}
                                                 {companyInfo.website && (
