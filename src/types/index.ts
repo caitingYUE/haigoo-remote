@@ -125,4 +125,5 @@ export interface JobFilter {
   salaryMin: number
   salaryMax: number
   skills: string[]
+  source?: 'all' | 'referral' | 'trusted' | 'official' | 'platform'
 }

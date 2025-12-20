@@ -54,69 +54,69 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
       />
 
       {/* Modal Content */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors z-10"
+          className="absolute top-3 right-3 p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-10"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
         {/* Header Image / Gradient - Premium Dark Theme */}
-        <div className="h-48 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="h-40 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
            {/* Decorative elements */}
            <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
            <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-400/20 rounded-full blur-[40px] animate-pulse"></div>
            <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-teal-400/20 rounded-full blur-[40px] animate-pulse delay-700"></div>
            
-           <div className="relative z-10 bg-white/10 p-4 rounded-full backdrop-blur-md shadow-2xl border border-white/20 ring-1 ring-white/10">
-              {content.icon}
+           <div className="relative z-10 bg-white/10 p-3 rounded-full backdrop-blur-md shadow-2xl border border-white/20 ring-1 ring-white/10">
+              {React.cloneElement(content.icon as React.ReactElement, { className: "w-10 h-10 text-white/90" })}
            </div>
         </div>
 
         {/* Body */}
-        <div className="p-8 pt-6 text-center relative z-10 bg-white">
-          <div className="inline-block px-3 py-1 bg-gradient-to-r from-amber-100 to-amber-50 border border-amber-200 text-amber-700 text-xs font-bold uppercase tracking-wide rounded-full mb-6 shadow-sm">
+        <div className="p-6 pt-5 text-center relative z-10 bg-white">
+          <div className="inline-block px-2.5 py-0.5 bg-gradient-to-r from-amber-100 to-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold uppercase tracking-wide rounded-full mb-4 shadow-sm">
             Premium Feature
           </div>
           
-          <h3 className="text-2xl font-bold text-slate-900 mb-3 tracking-tight">
+          <h3 className="text-xl font-bold text-slate-900 mb-2 tracking-tight">
             {content.title}
           </h3>
           
-          <p className="text-slate-600 mb-8 leading-relaxed">
+          <p className="text-sm text-slate-600 mb-6 leading-relaxed">
             {content.description}
           </p>
 
-          <div className="bg-slate-50 rounded-xl p-5 mb-8 text-left space-y-4 border border-slate-100">
-            <div className="flex items-center gap-3">
+          <div className="bg-slate-50 rounded-xl p-4 mb-6 text-left space-y-3 border border-slate-100">
+            <div className="flex items-center gap-2.5">
                <div className="bg-emerald-100 rounded-full p-1">
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <Check className="w-3 h-3 text-emerald-600" />
                </div>
-               <span className="text-slate-700 text-sm font-medium">{content.highlight}</span>
+               <span className="text-slate-700 text-xs font-medium">{content.highlight}</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
                <div className="bg-emerald-100 rounded-full p-1">
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <Check className="w-3 h-3 text-emerald-600" />
                </div>
-               <span className="text-slate-700 text-sm font-medium">解锁全部会员专属权益</span>
+               <span className="text-slate-700 text-xs font-medium">解锁全部会员专属权益</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
                <div className="bg-emerald-100 rounded-full p-1">
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <Check className="w-3 h-3 text-emerald-600" />
                </div>
-               <span className="text-slate-700 text-sm font-medium">获取优质远程人脉</span>
+               <span className="text-slate-700 text-xs font-medium">获取优质远程人脉</span>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
              <button
                onClick={() => {
                  onClose();
                  navigate('/membership');
                }}
-               className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 group"
+               className="w-full py-3 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 group text-sm"
              >
                申请成为 Haigoo Member
                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -124,7 +124,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
              
              <button
                onClick={onClose}
-               className="text-sm text-slate-400 hover:text-slate-600 transition-colors py-2"
+               className="text-xs text-slate-400 hover:text-slate-600 transition-colors py-1.5"
              >
                暂不需要，谢谢
              </button>

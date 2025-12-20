@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Filter, X, DollarSign, Briefcase, Sparkles } from 'lucide-react'
+import { Search, Filter, X, DollarSign, Briefcase, Sparkles, Target, Shield, Globe } from 'lucide-react'
 import { JobFilter as JobFilterType } from '../types'
 
 interface JobFilterProps {
@@ -15,6 +15,13 @@ export default function JobFilter({ filters, onFiltersChange }: JobFilterProps) 
     onFiltersChange({
       ...filters,
       search: value || ''
+    })
+  }
+
+  const handleSourceChange = (source: 'all' | 'referral' | 'trusted' | 'official' | 'platform') => {
+    onFiltersChange({
+      ...filters,
+      source: source === 'all' ? undefined : source
     })
   }
 

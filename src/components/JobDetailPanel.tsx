@@ -392,6 +392,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             const newCount = translationUsageCount + 1
                                             setTranslationUsageCount(newCount)
                                             localStorage.setItem('translation_usage_count', newCount.toString())
+                                            localStorage.setItem('translation_usage_date', new Date().toDateString())
 
                                             if (newCount >= TRANSLATION_FREE_LIMIT) {
                                                 showInfo('试用次数已用完', '升级会员享受无限翻译')
