@@ -82,42 +82,53 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         return kw.sort((a, b) => (b.weight || 5) - (a.weight || 5));
     }, [data]);
 
-    // Generate Layout: Spiral Layout (Word Cloud Style)
+    // Generate Layout: Point-Grid Scan (Robust & Dense)
     const treeItems = useMemo(() => {
-        if (typeof window === 'undefined') return []; // Client-side only
+        if (typeof window === 'undefined') return [];
 
         const items: any[] = [];
         const centerX = width / 2;
         
         // Tree Boundaries
-        const topY = 150;
+        const topY = 140; // Just below star
         const bottomY = height - 120;
         const treeHeight = bottomY - topY;
         const maxTreeWidth = width * 0.9;
         
-        // Helper: Check if a rect is inside the tree triangle
-        const isInsideTree = (x: number, y: number, w: number, h: number) => {
-            // Check 4 corners? Or just center? 
-            // Better: Check if the whole box is roughly inside.
-            // Simplified: Check center + spread
-            
-            if (y - h/2 < topY || y + h/2 > bottomY) return false;
-            
+        // 1. Generate a Grid of candidate points inside the tree triangle
+        // This ensures we cover the whole shape uniformly
+        const points: {x: number, y: number}[] = [];
+        const stepY = 15; // Vertical density
+        const stepX = 15; // Horizontal density
+        
+        for (let y = topY; y < bottomY; y += stepY) {
             const progress = (y - topY) / treeHeight;
-            const currentHalfWidth = ((maxTreeWidth / 2) * progress) - 20; // -20 padding
+            // Conical shape width at this Y
+            // Ensure min width at top (60px) so small words fit
+            const currentLineWidth = 60 + (maxTreeWidth - 60) * Math.pow(progress, 0.9);
+            const halfW = currentLineWidth / 2;
             
-            const minX = centerX - currentHalfWidth;
-            const maxX = centerX + currentHalfWidth;
-            
-            return (x - w/2 > minX && x + w/2 < maxX);
-        };
+            // Scan X row
+            for (let x = centerX - halfW; x <= centerX + halfW; x += stepX) {
+                // Add some random jitter to grid points for organic look
+                points.push({
+                    x: x + (Math.random() - 0.5) * 10, 
+                    y: y + (Math.random() - 0.5) * 5
+                });
+            }
+        }
+        
+        // Shuffle points to prevent "scanning lines" artifact, 
+        // BUT prioritize Y (top to bottom) to ensure top fills first?
+        // Actually, for "filling the shape", random access is better for organic cloud, 
+        // but sorting by Y helps prevent empty top.
+        // Let's Sort points by distance from "Tree Axis Top" to fill top-down naturally
+        points.sort((a, b) => a.y - b.y);
 
-        // Helper: Check collision with existing items
-        const checkCollision = (rect: any, existing: any[]) => {
-            for (const item of existing) {
-                // Simple AABB collision
-                // Expand slightly for spacing
-                const pad = 4;
+        // Helper: Check collision
+        const checkCollision = (rect: any) => {
+            const pad = 2; // Tight padding
+            for (const item of items) {
                 if (rect.x < item.x + item.width + pad &&
                     rect.x + rect.width + pad > item.x &&
                     rect.y < item.y + item.height + pad &&
@@ -128,93 +139,107 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             return false;
         };
 
-        // Canvas for measuring text
+        // Canvas for measuring
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) return [];
 
-        const workingKeywords = [...allKeywords];
-        // Add some decorations to the list
-        const DECORATIONS = ['★', '✦', '❄', '♥', '•', '✨'];
-        for(let i=0; i<15; i++) {
+        let workingKeywords = [...allKeywords];
+        
+        // Add LOTS of decorations to fill gaps
+        const DECORATIONS = ['★', '✦', '❄', '♥', '•', '✨', '✴', '✶'];
+        for(let i=0; i<40; i++) {
              workingKeywords.push({
                  text: DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)],
-                 weight: 1 + Math.random() * 2,
+                 weight: 1, // Low weight
                  isDecoration: true
              } as any);
         }
 
-        // Sort by weight desc (place big words first)
-        workingKeywords.sort((a, b) => b.weight - a.weight);
+        // Sort: Big words first, then small words, then decorations
+        // This ensures structure is defined by main keywords
+        workingKeywords.sort((a, b) => {
+             const wa = (a as any).isDecoration ? 0 : a.weight;
+             const wb = (b as any).isDecoration ? 0 : b.weight;
+             return wb - wa;
+        });
 
-        // Place each word
+        // Loop through all words
         for (const kw of workingKeywords) {
-            // Determine styling
             const isDeco = (kw as any).isDecoration;
+            
+            // Styling
             const font = isDeco ? 'Arial' : FONTS[Math.floor(Math.random() * FONTS.length)];
             const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
             
-            // Size calculation
-            let fontSize = 12 + Math.pow(kw.weight, 0.8) * 4;
-            if (isDeco) fontSize = 10 + Math.random() * 10;
-            
-            // Measure
+            // Size: Make big words BIG, small words small
+            let fontSize = 12;
+            if (!isDeco) {
+                 // Weight 1-10 -> Size 14-48
+                 fontSize = 14 + Math.pow(kw.weight, 1.2) * 2.5;
+            } else {
+                 fontSize = 8 + Math.random() * 8;
+            }
+
+            // Measure (approximate if ctx fails, but use ctx)
             ctx.font = `${fontSize}px ${font}`;
             const metrics = ctx.measureText(kw.text);
             const textWidth = metrics.width;
-            const textHeight = fontSize; // Approx
+            const textHeight = fontSize * 0.8; // Tight bounding box height
 
-            // Spiral Search
-            let angle = 0;
-            let radius = 0;
-            const step = 0.5; // Angle step
-            const maxRadius = width / 2;
+            // Find first point that fits
+            // We iterate through our pre-calculated grid points
+            let placed = false;
             
-            // Random start angle
-            angle = Math.random() * 6.28;
-
-            while (radius < maxRadius) {
-                // Calculate position
-                // Start spiral from center-ish of the tree mass
-                const startX = centerX;
-                const startY = topY + treeHeight * 0.6; // 60% down
-
-                const x = startX + radius * Math.cos(angle);
-                const y = startY + radius * Math.sin(angle) * 0.8; // Flatten spiral slightly
-
-                // Rotation (small random)
-                const rotation = isDeco ? Math.random() * 360 : (Math.random() - 0.5) * 30;
-
-                // Candidate Rect (unrotated AABB for simplicity)
+            // Optimization: Don't check every single point for every word, 
+            // maybe skip some if we fail a lot? No, "300% effort" means check thoroughly.
+            
+            // Try to place at best point
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                // Check if point is already "taken" (optimization)? No, check rect collision.
+                
                 const rect = {
-                    x: x - textWidth / 2,
-                    y: y - textHeight / 2,
+                    x: p.x - textWidth / 2,
+                    y: p.y - textHeight / 2,
                     width: textWidth,
                     height: textHeight
                 };
-
-                if (isInsideTree(x, y, textWidth, textHeight)) {
-                    if (!checkCollision(rect, items)) {
-                        // Placed!
-                        items.push({
-                            text: kw.text,
-                            x,
-                            y,
-                            width: textWidth,
-                            height: textHeight, // Stored for collision
-                            fontSize,
-                            font,
-                            color,
-                            rotation,
-                            delay: items.length * 0.01
-                        });
-                        break; // Move to next word
-                    }
+                
+                // Boundary check (Double check: grid is inside, but text width might stick out)
+                const progress = (p.y - topY) / treeHeight;
+                const currentHalfW = (60 + (maxTreeWidth - 60) * Math.pow(progress, 0.9)) / 2;
+                if (p.x - textWidth/2 < centerX - currentHalfW || p.x + textWidth/2 > centerX + currentHalfW) {
+                    continue; // Sticks out horizontally
                 }
 
-                // Increment spiral
-                angle += step;
-                radius += 2; // Radius step
+                if (!checkCollision(rect)) {
+                    // Place it!
+                    items.push({
+                        text: kw.text,
+                        x: p.x,
+                        y: p.y,
+                        width: textWidth,
+                        height: textHeight,
+                        fontSize,
+                        font,
+                        color,
+                        rotation: isDeco ? Math.random() * 360 : (Math.random() - 0.5) * 20,
+                        delay: items.length * 0.005
+                    });
+                    
+                    // Remove this point and nearby points to speed up future checks?
+                    // Actually, removing just this point is enough to prevent exact overlap, 
+                    // collision check handles the rest.
+                    points.splice(i, 1); 
+                    placed = true;
+                    break;
+                }
+            }
+            
+            // If big word failed to place, maybe retry with smaller font?
+            if (!placed && !isDeco && fontSize > 20) {
+                 // Retry logic could go here, but grid is dense enough usually.
             }
         }
 
