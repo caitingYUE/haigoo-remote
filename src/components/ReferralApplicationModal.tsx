@@ -28,6 +28,66 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingResumes, setIsLoadingResumes] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('文件大小不能超过 5MB');
+            return;
+        }
+
+        // Check file type
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        if (!allowedTypes.includes(file.type)) {
+            alert('仅支持 PDF, DOC, DOCX 格式');
+            return;
+        }
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('resume', file);
+
+        try {
+            const response = await fetch('/api/resumes', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                // Refresh list
+                await fetchResumes();
+                // Select the new resume
+                if (data.data?.id) {
+                    setSelectedResumeId(data.data.id);
+                }
+                alert('简历上传成功');
+            } else {
+                throw new Error('上传失败');
+            }
+        } catch (error) {
+            console.error('Failed to upload resume:', error);
+            alert('简历上传失败，请重试');
+        } finally {
+            setIsUploading(false);
+            // Reset input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {

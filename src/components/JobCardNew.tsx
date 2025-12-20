@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { Briefcase, Globe, ChevronRight, Sparkles, ExternalLink, Check, Target } from 'lucide-react';
+import { Briefcase, Globe, ChevronRight, Sparkles, Check, Target } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { stripMarkdown } from '../utils/text-formatter';
@@ -32,7 +32,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       return `${currencySymbol}${formatAmount(salary.min)} - ${currencySymbol}${formatAmount(salary.max)}`;
    };
 
-   // Handle company website click - DISABLED as per new requirements
+   // Handle company website click
    // const handleCompanyClick = (e: React.MouseEvent) => {
    //    e.stopPropagation();
    //    // Strict: Only use companyWebsite from backend (trusted_companies)
@@ -108,15 +108,14 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         <span className="font-serif italic text-lg">{companyInitial}</span>
                      )}
                      {/* Hover Overlay for Link */}
-                     {job.companyWebsite && (
+                     {/* {job.companyWebsite && (
                         <div
-                           onClick={handleCompanyClick}
                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]"
                            title="访问来源"
                         >
                            <ExternalLink className="w-4 h-4 text-white" />
                         </div>
-                     )}
+                     )} */}
                   </div>
 
                   <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
@@ -133,8 +132,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
                      <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
                         <span
-                           className={`font-medium truncate max-w-[200px] transition-colors ${job.companyWebsite ? 'hover:text-indigo-600 hover:underline cursor-pointer' : ''}`}
-                           onClick={job.companyWebsite ? handleCompanyClick : undefined}
+                           className={`font-medium truncate max-w-[200px] transition-colors`}
                         >
                            {job.translations?.company || job.company}
                         </span>

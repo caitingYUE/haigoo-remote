@@ -61,6 +61,7 @@ class ProcessedJobsService {
       if (filters.region) params.append('region', filters.region)
       if (filters.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString())
       if (filters.canRefer !== undefined) params.append('canRefer', filters.canRefer.toString())
+      if (filters.sortBy) params.append('sortBy', filters.sortBy)
       // Append source filter if present
       if (filters.sourceFilter && filters.sourceFilter !== 'all') {
         params.append('sourceFilter', filters.sourceFilter)
