@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star } from 'lucide-react'
+import { ArrowLeft, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star, Shield } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -149,7 +149,15 @@ export default function CompanyDetailPage() {
 
                         {/* Company Info */}
                         <div className="flex-1">
-                            <h1 className="text-2xl font-bold text-slate-900 mb-2">{decodedCompanyName}</h1>
+                            <h1 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                                {companyInfo?.name || decodedCompanyName}
+                                {companyInfo?.isTrusted && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-bold align-middle">
+                                        <Shield className="w-3 h-3" />
+                                        已认证
+                                    </span>
+                                )}
+                            </h1>
 
                             <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-3">
                                 {companyInfo?.industry && (

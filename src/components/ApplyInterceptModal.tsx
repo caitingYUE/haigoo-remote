@@ -1,12 +1,14 @@
 import React from 'react';
-import { X, CheckCircle, Crown, ArrowRight, Shield, TrendingUp, Sparkles, Target, CheckCircle2, FileCheck } from 'lucide-react';
+import { X, CheckCircle, Crown, ArrowRight, Shield, TrendingUp, Sparkles, Target, CheckCircle2, FileCheck, Building2, MapPin, Users, Star, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Job } from '../types';
+import { TrustedCompany } from '../services/trusted-companies-service';
 
 interface ApplyInterceptModalProps {
     isOpen: boolean;
     onClose: () => void;
     job: Job;
+    companyInfo?: TrustedCompany | null;
     isMember: boolean;
     onProceedToApply: () => void;
 }
@@ -15,12 +17,132 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     isOpen,
     onClose,
     job,
+    companyInfo,
     isMember,
     onProceedToApply
 }) => {
     const navigate = useNavigate();
 
     if (!isOpen) return null;
+
+    // Member View for Trusted Company Jobs (Not Referral)
+    if (isMember && job.isTrusted) {
+        return (
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+                <div
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                    onClick={onClose}
+                />
+
+                <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 border-b border-indigo-100">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-white p-3 rounded-xl shadow-sm border border-indigo-100">
+                                {companyInfo?.logo ? (
+                                    <img src={companyInfo.logo} alt={companyInfo.name} className="w-10 h-10 object-contain" />
+                                ) : (
+                                    <Building2 className="w-10 h-10 text-indigo-600" />
+                                )}
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+                                    {companyInfo?.name || job.company}
+                                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full font-bold">已认证</span>
+                                </h3>
+                                <p className="text-sm text-slate-600">
+                                    Haigoo Member 专属认证信息
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-6">
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            {companyInfo?.companyRating && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                                        <span className="text-sm font-semibold text-slate-900">企业评分</span>
+                                    </div>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-lg font-bold text-slate-900">{companyInfo.companyRating}</span>
+                                        {companyInfo.ratingSource && (
+                                            <span className="text-xs text-slate-500">via {companyInfo.ratingSource}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {companyInfo?.employeeCount && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Users className="w-4 h-4 text-indigo-500" />
+                                        <span className="text-sm font-semibold text-slate-900">员工规模</span>
+                                    </div>
+                                    <div className="text-sm text-slate-900 font-medium">
+                                        {companyInfo.employeeCount}
+                                    </div>
+                                </div>
+                            )}
+
+                            {companyInfo?.address && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 col-span-2">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <MapPin className="w-4 h-4 text-indigo-500" />
+                                        <span className="text-sm font-semibold text-slate-900">总部地址</span>
+                                    </div>
+                                    <div className="text-sm text-slate-900 font-medium">
+                                        {companyInfo.address}
+                                    </div>
+                                </div>
+                            )}
+
+                             {companyInfo?.foundedYear && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Calendar className="w-4 h-4 text-indigo-500" />
+                                        <span className="text-sm font-semibold text-slate-900">成立年份</span>
+                                    </div>
+                                    <div className="text-sm text-slate-900 font-medium">
+                                        {companyInfo.foundedYear}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="bg-green-50 rounded-xl p-4 mb-6 border border-green-100 flex items-start gap-3">
+                            <Shield className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <h4 className="text-sm font-bold text-green-800 mb-1">Haigoo 安全保障</h4>
+                                <p className="text-xs text-green-700 leading-relaxed">
+                                    作为会员，您正在申请的是经过 Haigoo 深度验证的真实企业岗位。我们已核实该企业的合法性及招聘真实性。
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                onClose();
+                                onProceedToApply();
+                            }}
+                            className="w-full py-3.5 px-6 bg-slate-900 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                        >
+                            前往官网申请 <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // 内推岗位且为免费用户 - 显示会员升级引导
     if (job.canRefer && !isMember) {

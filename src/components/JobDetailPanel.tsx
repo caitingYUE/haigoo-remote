@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, ShieldCheck, Sparkles, Target, Crown } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, Shield, Sparkles, Target, Crown, Lock, CheckCircle2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -109,8 +109,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job, showTranslation])
 
     const handleApply = () => {
-        // For referral jobs OR free users, show interceptmodal
-        if (job.canRefer || !isMember) {
+        // For referral jobs OR free users OR trusted jobs (for members to see certification), show interceptmodal
+        if (job.canRefer || !isMember || (isMember && job.isTrusted)) {
             setShowApplyInterceptModal(true);
             return;
         }
@@ -522,22 +522,22 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     </h3>
                                     <div className="flex items-center gap-2 text-sm text-slate-600">
                                         <span>{companyInfo?.industry || job.category || '未分类'}</span>
-                                        {/* {(job.sourceType === 'rss' || job.sourceType === 'third-party' || (!job.isTrusted && !job.canRefer)) && job.sourceUrl && (
-                                            <>
-                                                <span className="text-slate-400">•</span>
-                                                <a
-                                                    href={job.sourceUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <ExternalLink className="w-3 h-3" />
-                                                    查看原始岗位
-                                                </a>
-                                            </>
-                                        )} */}
                                     </div>
+                                    {job.isTrusted && (
+                                        <div className="mt-2">
+                                            {isMember ? (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                                                    <CheckCircle2 className="w-3 h-3" />
+                                                    企业已认证
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
+                                                    <Lock className="w-3 h-3" />
+                                                    认证信息仅会员可见
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -660,6 +660,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 isOpen={showApplyInterceptModal}
                 onClose={() => setShowApplyInterceptModal(false)}
                 job={job}
+                companyInfo={companyInfo}
                 isMember={isMember}
                 onProceedToApply={proceedToApply}
             />
