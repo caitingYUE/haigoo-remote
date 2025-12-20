@@ -48,6 +48,10 @@
       "destination": "/api/resumes"
     },
     {
+      "source": "/api/stats",
+      "destination": "/api/data?resource=stats"
+    },
+    {
       "source": "/api/:match*",
       "destination": "/api/:match*"
     },

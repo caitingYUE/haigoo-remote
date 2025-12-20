@@ -43,12 +43,9 @@ async function startServer() {
         console.log('Importing data handler...');
         const dataHandler = (await import('./api/data.js')).default;
         app.all(/^\/api\/data/, async (req, res) => { await dataHandler(req, res); });
+        // Map /api/stats to data handler for consolidation
+        app.all('/api/stats', async (req, res) => { req.url = '/api/data/stats'; await dataHandler(req, res); });
         console.log('Data handler imported.');
-
-        console.log('Importing stats handler...');
-        const statsHandler = (await import('./api/stats.js')).default;
-        app.all('/api/stats', async (req, res) => { await statsHandler(req, res); });
-        console.log('Stats handler imported.');
 
         console.log('Importing admin-ops handler...');
         const adminOpsHandler = (await import('./api/admin-ops.js')).default;
