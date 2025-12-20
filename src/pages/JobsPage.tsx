@@ -54,7 +54,7 @@ export default function JobsPage() {
       category: [] as string[],
       experienceLevel: [] as string[],
       industry: [] as string[],
-      regionType: ['domestic'] as string[],
+      regionType: [] as string[],
       sourceType: [] as string[],
       type: [] as string[],
       location: [] as string[],
@@ -567,7 +567,7 @@ export default function JobsPage() {
       category: [],
       experienceLevel: [],
       industry: [],
-      regionType: ['domestic'], // Default to domestic (China Available)
+      regionType: [], // Default to all regions
       sourceType: [],
       type: [],
       location: [],
