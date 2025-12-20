@@ -5,6 +5,7 @@ import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { stripMarkdown } from '../utils/text-formatter';
 import { MemberBadge } from './MemberBadge';
+import { getJobSourceType } from '../utils/job-source-helper';
 
 
 interface JobCardNewProps {
@@ -18,6 +19,7 @@ interface JobCardNewProps {
 
 export default function JobCardNew({ job, onClick, matchScore, className, variant = 'grid', isActive = false }: JobCardNewProps) {
    // const navigate = useNavigate();
+   const sourceType = getJobSourceType(job);
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
@@ -56,7 +58,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          >
             {/* Corner Tag */}
             <div className="absolute top-0 right-0 z-20 flex flex-col items-end">
-               {job.canRefer ? (
+               {sourceType === 'referral' ? (
                   <div
                      className="px-3 py-1.5 rounded-bl-xl rounded-tr-2xl text-white shadow-md flex items-center gap-1.5 bg-indigo-600 text-xs font-bold tracking-wide whitespace-nowrap"
                      title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
@@ -64,7 +66,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      <Target className="w-3.5 h-3.5" />
                      <span>Haigoo 内推</span>
                   </div>
-               ) : job.isTrusted ? (
+               ) : sourceType === 'official' ? (
                   <div
                      className="px-3 py-1.5 rounded-bl-xl rounded-tr-2xl text-white shadow-md flex items-center gap-1.5 bg-orange-500 text-xs font-bold tracking-wide whitespace-nowrap"
                      title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
@@ -72,7 +74,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      <Sparkles className="w-3.5 h-3.5" />
                      <span>企业官网岗位</span>
                   </div>
-               ) : (job.sourceType === 'rss' || job.sourceType === 'third-party' || (job.source && !job.isTrusted && !job.canRefer)) ? (
+               ) : sourceType === 'trusted_platform' ? (
                   <div
                      className="px-3 py-1.5 rounded-bl-xl rounded-tr-2xl text-white shadow-md flex items-center gap-1.5 bg-cyan-600 text-xs font-bold tracking-wide whitespace-nowrap"
                      title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
@@ -262,9 +264,9 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
                      {/* Source Tag Inline */}
                      <div className="flex items-center gap-2 mt-0.5">
-                        {job.canRefer && <MemberBadge variant="referral" size="sm" />}
-                        {job.isTrusted && !job.canRefer && <MemberBadge variant="verified" size="sm" />}
-                        {(job.sourceType === 'rss' || job.sourceType === 'third-party') && !job.isTrusted && !job.canRefer && (
+                        {sourceType === 'referral' && <MemberBadge variant="referral" size="sm" />}
+                        {sourceType === 'official' && <MemberBadge variant="verified" size="sm" />}
+                        {sourceType === 'trusted_platform' && (
                            <div className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
                               <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                               可信平台投递

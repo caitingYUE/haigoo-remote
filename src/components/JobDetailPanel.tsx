@@ -14,6 +14,7 @@ import { ReferralApplicationModal } from './ReferralApplicationModal'
 import { RiskRatingDisplay } from './RiskRatingDisplay'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { useNotificationHelpers } from './NotificationSystem'
+import { getJobSourceType } from '../utils/job-source-helper'
 
 interface JobDetailPanelProps {
     job: Job
@@ -40,6 +41,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 }) => {
     const navigate = useNavigate()
     const { user } = useAuth()
+    const sourceType = getJobSourceType(job)
     const isAuthenticated = !!user
     // Check membership (Admin is also a member)
     const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
@@ -567,7 +569,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Source Label */}
                     <div className="flex flex-col items-end pb-4 gap-1">
-                        {job.canRefer ? (
+                        {sourceType === 'referral' ? (
                             <>
                                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-md border border-indigo-100">
                                     <Target className="w-3.5 h-3.5" />
@@ -577,7 +579,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     * 由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）
                                 </p>
                             </>
-                        ) : job.isTrusted ? (
+                        ) : sourceType === 'official' ? (
                             <>
                                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-md border border-orange-100">
                                     <Sparkles className="w-3.5 h-3.5" />
@@ -587,7 +589,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     * 通过公司官网直接投递，Haigoo 已人工核实企业真实性
                                 </p>
                             </>
-                        ) : (job.sourceType === 'rss' || job.sourceType === 'third-party' || (job.source && !job.isTrusted && !job.canRefer)) ? (
+                        ) : sourceType === 'trusted_platform' ? (
                             <>
                                 {job.sourceUrl ? (
                                     <a
