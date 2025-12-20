@@ -116,8 +116,14 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             }
         }
         
-        // Shuffle points randomly
-        points.sort(() => Math.random() - 0.5);
+        // Sort points: Center-Out Strategy (Prefer points closer to spine)
+        // This fixes the "spiral" or "unbalanced" look by filling the core first.
+        points.sort((a, b) => {
+             const distA = Math.abs(a.x - centerX);
+             const distB = Math.abs(b.x - centerX);
+             // Add a tiny bit of random noise to avoid looking too robotic
+             return (distA - distB) + (Math.random() * 10 - 5);
+        });
 
         // Helper: Check collision
         const checkCollision = (rect: any) => {

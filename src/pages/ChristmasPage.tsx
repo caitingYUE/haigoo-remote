@@ -5,8 +5,9 @@ import { RotatingQuotes } from '../components/Christmas/RotatingQuotes';
 import { EmailCaptureModal } from '../components/Christmas/EmailCaptureModal';
 import { HappinessCard } from '../components/Christmas/HappinessCard';
 import { ChristmasErrorBoundary } from '../components/Christmas/ChristmasErrorBoundary';
-import { Upload, Sparkles, Share2, Loader2, Download, Wand2, Gift, Trees, ShieldCheck } from 'lucide-react';
+import { Upload, Sparkles, Share2, Loader2, Download, Wand2, Gift, Trees, ShieldCheck, ArrowLeft, Briefcase } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 
 // Helper for corner decorations
@@ -19,6 +20,7 @@ const Corner = ({ className }: { className?: string }) => (
 
 export default function ChristmasPage() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     
     const [step, setStep] = useState<'upload' | 'processing' | 'result'>('upload');
     const [treeData, setTreeData] = useState<any>(null);

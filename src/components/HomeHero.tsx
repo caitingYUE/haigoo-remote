@@ -75,10 +75,12 @@ export default function HomeHero({ stats }: HomeHeroProps) {
             <div className="absolute inset-0 z-0 pointer-events-none">
                 {isChristmas ? (
                     <>
-                        <div className="absolute top-0 left-1/4 w-96 h-96 bg-red-100/50 rounded-full blur-3xl -translate-y-1/2"></div>
-                        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-green-100/40 rounded-full blur-3xl translate-y-1/3"></div>
-                        <div className="absolute top-10 right-10 opacity-20 transform rotate-12">
-                             <Sparkles className="w-24 h-24 text-red-300" />
+                        {/* Warm Golden Glow (Left) */}
+                        <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-100/50 rounded-full blur-3xl -translate-y-1/2"></div>
+                        {/* Soft Festive Red (Right) - Reduced intensity for healing feel */}
+                        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-red-50/40 rounded-full blur-3xl translate-y-1/3"></div>
+                        <div className="absolute top-10 right-10 opacity-30 transform rotate-12">
+                             <Sparkles className="w-24 h-24 text-amber-300" />
                         </div>
                     </>
                 ) : (
