@@ -23,6 +23,7 @@ export interface TrustedCompany {
     specialties?: string[];
     companyRating?: string;
     ratingSource?: string;
+    aliases?: string[]; // Alternative names for matching
     tags?: CompanyTag[];
     industry?: CompanyIndustry;
     isTrusted: boolean;
