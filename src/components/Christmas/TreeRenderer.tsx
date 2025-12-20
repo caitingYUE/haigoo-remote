@@ -88,7 +88,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         const centerX = width / 2;
         
         // Tree Dimensions - ADJUSTED FOR TALLER, DENSER TREE
-        const topY = 80;  // Moved up from 160 to fill the empty top space
+        const topY = 150;  // Start below the star
         const bottomY = height - 100;
         const treeHeight = bottomY - topY;
         const maxTreeWidth = width * 0.95; // Wider bottom
@@ -106,8 +106,8 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             const progress = (currentY - topY) / treeHeight;
             
             // Triangle Shape: Conical
-            // Start very narrow at top
-            const currentLineWidth = 20 + (maxTreeWidth - 20) * progress;
+            // Ensure minimum width at top to fit at least one word
+            const currentLineWidth = 80 + (maxTreeWidth - 80) * progress;
             
             const lineItems: any[] = [];
             let usedWidth = 0;
