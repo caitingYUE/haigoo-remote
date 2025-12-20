@@ -407,8 +407,9 @@ export default async function handler(req, res) {
         if (neonHelper.isConfigured) {
             try {
                 // Always fetch user to check member status, even if admin (to update local vars if needed)
+                // Fix: Remove legacy columns that might cause errors if migration failed
                 const userRows = await neonHelper.query(
-                    `SELECT membership_level, membership_expire_at, member_status, member_expire_at, roles FROM users WHERE user_id = $1`,
+                    `SELECT member_status, member_expire_at, roles FROM users WHERE user_id = $1`,
                     [decoded.userId]
                 )
                 if (userRows && userRows.length > 0) {
@@ -416,14 +417,6 @@ export default async function handler(req, res) {
                     
                     // Check admin role from DB
                     if (u.roles && u.roles.admin) isMember = true
-                    
-                    // Check legacy fields
-                    if (!isMember && u.membership_level && u.membership_level !== 'none') {
-                        const expireAt = new Date(u.membership_expire_at)
-                        if (expireAt > new Date()) {
-                            isMember = true
-                        }
-                    }
                     
                     // Check new fields (member_status)
                     if (!isMember && u.member_status === 'active') {
