@@ -26,6 +26,7 @@ export interface ProcessedJobsFilters {
   isFeatured?: boolean
   canRefer?: boolean
   sourceFilter?: string
+  sortBy?: 'recent' | 'relevance'
 }
 
 class ProcessedJobsService {

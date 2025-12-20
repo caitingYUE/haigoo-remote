@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import HomeHero from '../components/HomeHero'
 import JobCardNew from '../components/JobCardNew'
+import JobDetailModal from '../components/JobDetailModal'
+import { useNotificationHelpers } from '../components/NotificationSystem'
 import HomeCompanyCard from '../components/HomeCompanyCard'
 import { ArrowRight, TrendingUp, Building2, Zap, Users, Target, Globe, Sparkles, CheckCircle2, Crown, Download } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -15,16 +17,79 @@ import { Job } from '../types'
 export default function LandingPage() {
   const navigate = useNavigate()
   const { user, token, isAuthenticated } = useAuth()
+  const { showSuccess, showWarning, showError } = useNotificationHelpers()
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>([])
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>([])
   const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<{ totalJobs: number | null, companiesCount: number | null, dailyJobs: number | null }>({ totalJobs: null, companiesCount: null, dailyJobs: null })
 
+  const toggleSaveJob = async (jobId: string) => {
+    if (!isAuthenticated || !token) {
+      showWarning('请先登录', '登录后可以收藏职位')
+      navigate('/login')
+      return
+    }
+
+    const isSaved = savedJobs.has(jobId)
+    // Optimistic update
+    setSavedJobs(prev => {
+      const next = new Set(prev)
+      if (isSaved) next.delete(jobId)
+      else next.add(jobId)
+      return next
+    })
+
+    try {
+      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ jobId })
+      })
+
+      if (!resp.ok) throw new Error('操作失败')
+
+      showSuccess(isSaved ? '已取消收藏' : '收藏成功')
+    } catch (error) {
+      console.error('Failed to toggle save:', error)
+      showError('操作失败，请重试')
+      // Rollback
+      setSavedJobs(prev => {
+        const next = new Set(prev)
+        if (isSaved) next.add(jobId)
+        else next.delete(jobId)
+        return next
+      })
+    }
+  }
+
+  const handleJobClick = (job: Job) => {
+    setSelectedJob(job)
+    setIsDetailModalOpen(true)
+  }
+
+  const handleNavigateJob = (direction: 'prev' | 'next') => {
+    if (!selectedJob) return
+    const currentIndex = featuredJobs.findIndex(j => j.id === selectedJob.id)
+    if (currentIndex === -1) return
+
+    let nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1
+    if (nextIndex >= 0 && nextIndex < featuredJobs.length) {
+      setSelectedJob(featuredJobs[nextIndex])
+    }
+  }
+
   useEffect(() => {
     if (isAuthenticated && token) {
+      // Fetch application status
       fetch('/api/applications?action=my_status', {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -35,8 +100,21 @@ export default function LandingPage() {
           }
         })
         .catch(err => console.error('Failed to fetch application status', err))
+
+      // Fetch saved jobs
+      fetch('/api/user-profile?action=favorites', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.favorites)) {
+            setSavedJobs(new Set(data.favorites.map((j: any) => j.id || j.job_id)))
+          }
+        })
+        .catch(err => console.error('Failed to fetch saved jobs', err))
     } else {
       setApplicationStatus(null)
+      setSavedJobs(new Set())
     }
   }, [isAuthenticated, token])
 
@@ -223,7 +301,7 @@ export default function LandingPage() {
                   key={job.id}
                   job={job}
                   variant="list"
-                  onClick={() => navigate(`/jobs?region=domestic`)}
+                  onClick={() => handleJobClick(job)}
                 />
               ))}
             </div>
@@ -364,6 +442,18 @@ export default function LandingPage() {
             user={user}
           />
         )}
+
+        <JobDetailModal
+          job={selectedJob}
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          onSave={selectedJob ? () => toggleSaveJob(selectedJob.id) : undefined}
+          isSaved={selectedJob ? savedJobs.has(selectedJob.id) : false}
+          jobs={featuredJobs}
+          currentJobIndex={selectedJob ? featuredJobs.findIndex(j => j.id === selectedJob.id) : -1}
+          onNavigateJob={handleNavigateJob}
+          variant="center"
+        />
         
         {/* Job Alert Subscription */}
         <div className="mt-32">
