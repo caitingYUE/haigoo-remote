@@ -35,18 +35,22 @@ export default function VerifyEmailPage() {
         if (result.success) {
           setStatus('success')
           setMessage('邮箱验证成功！')
-          // 3秒后自动跳转
-          setTimeout(() => {
-            navigate('/')
-          }, 3000)
+          setTimeout(() => { navigate('/') }, 3000)
         } else {
           // 如果返回"邮箱已验证"，也视为成功
-          if (result.message === '邮箱已验证') {
+          if (result.message === '邮箱已验证' || result.message?.includes('already verified')) {
              setStatus('success')
              setMessage('您的邮箱此前已验证成功')
-             setTimeout(() => {
-                navigate('/')
-             }, 3000)
+             setTimeout(() => { navigate('/') }, 3000)
+          } else if (result.error?.includes('expired') || result.error?.includes('invalid')) {
+             // 二次确认：如果Token失效，可能是因为已经验证过了（Strict Mode双重请求导致）
+             // 尝试获取最新的用户信息（如果已登录）或者提示用户登录检查
+             // 由于 verifyEmail 可能会自动登录或更新状态，我们检查 AuthContext 中的 user
+             // 但这里是在 async 函数中，useAuth 的 user 可能还没更新
+             // 我们简单提示一个友好的错误，或者尝试假定成功如果时间很短？不，这不安全。
+             // 更好的做法是提示："验证链接已失效或已使用。如果您已完成验证，请直接登录。"
+             setStatus('error')
+             setMessage('验证链接已失效或已使用。如果您刚刚已验证，请直接登录。')
           } else {
              setStatus('error')
              setMessage(result.error || '验证失败，链接可能已过期')

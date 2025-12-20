@@ -399,17 +399,26 @@ export default async function handler(req, res) {
 
         // Check Membership Status
         let isMember = false
+        // Admin override
+        if (decoded.admin) {
+            isMember = true
+        }
+        
         if (neonHelper.isConfigured) {
             try {
+                // Always fetch user to check member status, even if admin (to update local vars if needed)
                 const userRows = await neonHelper.query(
-                    `SELECT membership_level, membership_expire_at, member_status, member_expire_at FROM users WHERE user_id = $1`,
+                    `SELECT membership_level, membership_expire_at, member_status, member_expire_at, roles FROM users WHERE user_id = $1`,
                     [decoded.userId]
                 )
                 if (userRows && userRows.length > 0) {
                     const u = userRows[0]
                     
+                    // Check admin role from DB
+                    if (u.roles && u.roles.admin) isMember = true
+                    
                     // Check legacy fields
-                    if (u.membership_level && u.membership_level !== 'none') {
+                    if (!isMember && u.membership_level && u.membership_level !== 'none') {
                         const expireAt = new Date(u.membership_expire_at)
                         if (expireAt > new Date()) {
                             isMember = true
@@ -420,6 +429,9 @@ export default async function handler(req, res) {
                     if (!isMember && u.member_status === 'active') {
                         const expireAt = u.member_expire_at ? new Date(u.member_expire_at) : null
                         if (expireAt && expireAt > new Date()) {
+                            isMember = true
+                        } else if (!expireAt) {
+                            // If active but no expire date, assume permanent/lifetime
                             isMember = true
                         }
                     }

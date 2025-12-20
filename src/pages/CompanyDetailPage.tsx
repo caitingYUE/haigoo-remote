@@ -200,12 +200,35 @@ export default function CompanyDetailPage() {
                                     )}
                                 </div>
                             </div>
+                            
+                            {/* Job Listings - Moved into main column to flow naturally below header */}
+                            <div className="mt-8">
+                                <h2 className="text-lg font-semibold text-slate-900 mb-4">在招岗位</h2>
+
+                                {jobs.length === 0 ? (
+                                    <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-slate-100">
+                                        <div className="text-slate-400 text-lg mb-2">暂无在招岗位</div>
+                                        <p className="text-slate-500">该公司目前没有开放的职位</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {jobs.map((job) => (
+                                            <JobCardNew
+                                                key={job.id}
+                                                job={job}
+                                                onClick={handleJobClick}
+                                                className="h-[397px] w-full"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Right Column: Certified Info (Sidebar) */}
                         {(companyInfo?.employeeCount || companyInfo?.address || companyInfo?.foundedYear || (companyInfo?.specialties && companyInfo.specialties.length > 0) || companyInfo?.companyRating) && (
                             <div className="lg:w-80 flex-shrink-0">
-                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
                                     <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                                         <div className="flex items-center gap-2">
                                             <Shield className="w-4 h-4 text-indigo-600" />
@@ -317,28 +340,7 @@ export default function CompanyDetailPage() {
                 </div>
             </div>
 
-            {/* Job Listings */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">在招岗位</h2>
-
-                {jobs.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
-                        <div className="text-slate-400 text-lg mb-2">暂无在招岗位</div>
-                        <p className="text-slate-500">该公司目前没有开放的职位</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {jobs.map((job) => (
-                            <JobCardNew
-                                key={job.id}
-                                job={job}
-                                onClick={handleJobClick}
-                                className="h-[397px] w-full"
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
+            {/* Job Listings - Removed from here, moved to main column */}
         </div>
     )
 }
