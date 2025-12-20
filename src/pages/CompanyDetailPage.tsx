@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star, Shield } from 'lucide-react'
+import { ArrowLeft, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star, Shield, Crown, Info } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -124,9 +124,9 @@ export default function CompanyDetailPage() {
                     </button>
 
                     <div className="flex flex-col lg:flex-row gap-8 items-start">
-                        {/* Left Column: Identity + Description */}
-                        <div className="flex-1">
-                            <div className="flex items-start gap-6 mb-6">
+                        {/* Left Column: Identity + Certified Info (Main) */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-6 mb-8">
                                 {/* Company Logo */}
                                 {companyInfo?.logo ? (
                                     <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 border border-slate-100 p-2 overflow-hidden">
@@ -150,9 +150,9 @@ export default function CompanyDetailPage() {
                                     </div>
                                 )}
 
-                                {/* Company Info */}
-                                <div className="flex-1">
-                                    <h1 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                                {/* Company Info Header */}
+                                <div className="flex-1 min-w-0">
+                                    <h1 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2 flex-wrap">
                                         {companyInfo?.name || decodedCompanyName}
                                         {companyInfo?.isTrusted && (
                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-bold align-middle">
@@ -187,88 +187,104 @@ export default function CompanyDetailPage() {
                                     </div>
 
                                     {companyInfo?.tags && companyInfo.tags.length > 0 && (
-                                        <div className="mb-4">
+                                        <div className="">
                                             <SingleLineTags tags={companyInfo.tags} size="sm" />
-                                        </div>
-                                    )}
-
-                                    {/* Company Description - Integrated here */}
-                                    {companyInfo?.description && (
-                                        <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                            {companyInfo.description}
                                         </div>
                                     )}
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Right Column: Certified Info (Sidebar -> Header Card) */}
-                        {(companyInfo?.employeeCount || companyInfo?.address || companyInfo?.foundedYear || (companyInfo?.specialties && companyInfo.specialties.length > 0) || companyInfo?.companyRating) && (
-                            <div className="lg:w-80 flex-shrink-0">
-                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden max-h-[320px] overflow-y-auto custom-scrollbar">
-                                    <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 sticky top-0 z-10 backdrop-blur-sm">
-                                        <div className="flex items-center gap-2">
-                                            <Shield className="w-4 h-4 text-indigo-600" />
-                                            <h2 className="text-sm font-bold text-slate-900">企业认证信息</h2>
+                            {/* Certified Info - Expanded Section (Member Feature) */}
+                            {(companyInfo?.employeeCount || companyInfo?.address || companyInfo?.foundedYear || (companyInfo?.specialties && companyInfo.specialties.length > 0) || companyInfo?.companyRating) && (
+                                <div className="mb-8 relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/30 shadow-sm">
+                                    {/* Member Badge Header */}
+                                    <div className="px-6 py-4 border-b border-indigo-100/50 flex items-center justify-between bg-white/50 backdrop-blur-sm">
+                                        <div className="flex items-center gap-2 text-indigo-700">
+                                            <div className="p-1.5 bg-indigo-100 rounded-lg">
+                                                <Crown className="w-4 h-4" />
+                                            </div>
+                                            <h2 className="font-bold">企业认证信息</h2>
+                                            <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium border border-amber-200">
+                                                会员专属
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div className="p-4 relative">
+                                    <div className="p-6 relative">
                                         {user?.memberStatus && user.memberStatus !== 'free' ? (
-                                            <div className="space-y-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                {/* Rating */}
                                                 {companyInfo.companyRating && (
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="mt-0.5"><Star className="w-4 h-4 text-amber-500 fill-amber-500" /></div>
+                                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
+                                                        <div className="mt-1 p-2 bg-amber-50 rounded-lg">
+                                                            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                                                        </div>
                                                         <div>
-                                                            <div className="text-xs text-slate-500 mb-0.5">企业评分</div>
-                                                            <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                                            <div className="text-xs text-slate-500 mb-1">企业评分</div>
+                                                            <div className="font-bold text-slate-900 flex items-center gap-2 text-lg">
                                                                 {companyInfo.companyRating}
-                                                                {companyInfo.ratingSource && (
-                                                                    <span className="text-xs font-normal text-slate-400">
-                                                                        via {companyInfo.ratingSource}
-                                                                    </span>
-                                                                )}
+                                                            </div>
+                                                            {companyInfo.ratingSource && (
+                                                                <div className="text-xs text-slate-400">
+                                                                    via {companyInfo.ratingSource}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Address */}
+                                                {companyInfo.address && (
+                                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm md:col-span-2 lg:col-span-1">
+                                                        <div className="mt-1 p-2 bg-indigo-50 rounded-lg">
+                                                            <MapPin className="w-5 h-5 text-indigo-500" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-xs text-slate-500 mb-1">总部地址</div>
+                                                            <div className="font-medium text-slate-900 leading-snug">
+                                                                {companyInfo.address}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 )}
                                                 
-                                                {companyInfo.address && (
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="mt-0.5"><MapPin className="w-4 h-4 text-indigo-500" /></div>
-                                                        <div>
-                                                            <div className="text-xs text-slate-500 mb-0.5">总部地址</div>
-                                                            <div className="text-sm font-medium text-slate-900">{companyInfo.address}</div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                
+                                                {/* Employees */}
                                                 {companyInfo.employeeCount && (
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="mt-0.5"><Users className="w-4 h-4 text-indigo-500" /></div>
+                                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
+                                                        <div className="mt-1 p-2 bg-blue-50 rounded-lg">
+                                                            <Users className="w-5 h-5 text-blue-500" />
+                                                        </div>
                                                         <div>
-                                                            <div className="text-xs text-slate-500 mb-0.5">员工人数</div>
-                                                            <div className="text-sm font-medium text-slate-900">{companyInfo.employeeCount}</div>
+                                                            <div className="text-xs text-slate-500 mb-1">员工人数</div>
+                                                            <div className="font-medium text-slate-900">
+                                                                {companyInfo.employeeCount}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
                                                 
+                                                {/* Founded */}
                                                 {companyInfo.foundedYear && (
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="mt-0.5"><Calendar className="w-4 h-4 text-indigo-500" /></div>
+                                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
+                                                        <div className="mt-1 p-2 bg-emerald-50 rounded-lg">
+                                                            <Calendar className="w-5 h-5 text-emerald-500" />
+                                                        </div>
                                                         <div>
-                                                            <div className="text-xs text-slate-500 mb-0.5">成立年份</div>
-                                                            <div className="text-sm font-medium text-slate-900">{companyInfo.foundedYear}</div>
+                                                            <div className="text-xs text-slate-500 mb-1">成立年份</div>
+                                                            <div className="font-medium text-slate-900">
+                                                                {companyInfo.foundedYear}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
 
+                                                {/* Specialties - Full Width */}
                                                 {companyInfo.specialties && companyInfo.specialties.length > 0 && (
-                                                    <div className="pt-2 border-t border-slate-200/50">
-                                                        <div className="text-xs text-slate-500 mb-2">领域专长</div>
-                                                        <div className="flex flex-wrap gap-1.5">
+                                                    <div className="col-span-full pt-4 mt-2 border-t border-indigo-50">
+                                                        <div className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wider">领域专长</div>
+                                                        <div className="flex flex-wrap gap-2">
                                                             {companyInfo.specialties.map((spec, idx) => (
-                                                                <span key={idx} className="text-xs px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200">
+                                                                <span key={idx} className="px-3 py-1 bg-white text-slate-700 rounded-lg border border-slate-200 text-sm font-medium shadow-sm">
                                                                     {spec}
                                                                 </span>
                                                             ))}
@@ -277,42 +293,52 @@ export default function CompanyDetailPage() {
                                                 )}
                                             </div>
                                         ) : (
+                                            /* Locked State */
                                             <>
-                                                <div className="space-y-4 filter blur-[3px] select-none opacity-60 pointer-events-none">
-                                                    <div className="flex items-start gap-3">
-                                                        <Star className="w-4 h-4 text-amber-500" />
-                                                        <div><div className="text-xs text-slate-500">企业评分</div><div className="text-sm font-bold">4.8 (Glassdoor)</div></div>
-                                                    </div>
-                                                    <div className="flex items-start gap-3">
-                                                        <MapPin className="w-4 h-4 text-indigo-500" />
-                                                        <div><div className="text-xs text-slate-500">总部地址</div><div className="text-sm font-medium">San Francisco, CA</div></div>
-                                                    </div>
-                                                    <div className="flex items-start gap-3">
-                                                        <Users className="w-4 h-4 text-indigo-500" />
-                                                        <div><div className="text-xs text-slate-500">员工人数</div><div className="text-sm font-medium">1000-5000</div></div>
-                                                    </div>
-                                                    <div className="flex items-start gap-3">
-                                                        <Calendar className="w-4 h-4 text-indigo-500" />
-                                                        <div><div className="text-xs text-slate-500">成立年份</div><div className="text-sm font-medium">2010</div></div>
-                                                    </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 filter blur-[5px] select-none opacity-50 pointer-events-none">
+                                                    <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl"><div className="w-10 h-10 bg-amber-50 rounded-lg"></div><div className="space-y-2"><div className="w-16 h-3 bg-slate-200 rounded"></div><div className="w-12 h-5 bg-slate-200 rounded"></div></div></div>
+                                                    <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl"><div className="w-10 h-10 bg-indigo-50 rounded-lg"></div><div className="space-y-2"><div className="w-16 h-3 bg-slate-200 rounded"></div><div className="w-24 h-5 bg-slate-200 rounded"></div></div></div>
+                                                    <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl"><div className="w-10 h-10 bg-blue-50 rounded-lg"></div><div className="space-y-2"><div className="w-16 h-3 bg-slate-200 rounded"></div><div className="w-20 h-5 bg-slate-200 rounded"></div></div></div>
+                                                    <div className="col-span-full h-20 bg-slate-50 rounded-xl"></div>
                                                 </div>
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/10 p-4 text-center">
-                                                    <span className="text-xs font-semibold text-slate-900 mb-3 bg-white/80 px-2 py-1 rounded backdrop-blur-sm">
-                                                        认证信息仅会员可见
-                                                    </span>
-                                                    <button 
-                                                        onClick={() => navigate('/membership')}
-                                                        className="w-full py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 shadow-lg transform transition hover:scale-105"
-                                                    >
-                                                        解锁完整信息
-                                                    </button>
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/30 backdrop-blur-[1px] z-10">
+                                                    <div className="bg-white p-6 rounded-2xl shadow-xl border border-indigo-100 text-center max-w-sm mx-auto">
+                                                        <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                            <Crown className="w-6 h-6" />
+                                                        </div>
+                                                        <h3 className="text-lg font-bold text-slate-900 mb-2">解锁企业深度认证信息</h3>
+                                                        <p className="text-slate-500 text-sm mb-6">
+                                                            升级会员即可查看企业评分、薪资范围、面试评价等深度信息
+                                                        </p>
+                                                        <button 
+                                                            onClick={() => navigate('/membership')}
+                                                            className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transform transition hover:-translate-y-0.5 active:translate-y-0"
+                                                        >
+                                                            立即解锁
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </>
                                         )}
                                     </div>
                                 </div>
+                            )}
+                        </div>
+
+                        {/* Right Column: Description (Sidebar) */}
+                        <div className="lg:w-80 flex-shrink-0">
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
+                                <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                                    <Info className="w-4 h-4 text-slate-500" />
+                                    <h2 className="font-bold text-slate-900">关于我们</h2>
+                                </div>
+                                <div className="p-5">
+                                    <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                        {companyInfo?.description || '暂无简介'}
+                                    </div>
+                                </div>
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     {/* Job Listings - Full Width */}
