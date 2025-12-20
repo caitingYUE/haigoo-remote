@@ -82,129 +82,140 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         return kw.sort((a, b) => (b.weight || 5) - (a.weight || 5));
     }, [data]);
 
-    // Generate Layout: Word Cloud Tree
+    // Generate Layout: Spiral Layout (Word Cloud Style)
     const treeItems = useMemo(() => {
+        if (typeof window === 'undefined') return []; // Client-side only
+
         const items: any[] = [];
         const centerX = width / 2;
         
-        // Tree Dimensions - ADJUSTED FOR TALLER, DENSER TREE
-        const topY = 150;  // Start below the star
-        const bottomY = height - 100;
+        // Tree Boundaries
+        const topY = 150;
+        const bottomY = height - 120;
         const treeHeight = bottomY - topY;
-        const maxTreeWidth = width * 0.95; // Wider bottom
-
-        let currentY = topY;
-        let keywordIndex = 0;
+        const maxTreeWidth = width * 0.9;
         
-        // Decorative symbols to mix in
-        const DECORATIONS = ['★', '✦', '❄', '♥', '•', '✨'];
-        
-        const workingKeywords = [...allKeywords];
-        
-        // Loop until we reach the bottom
-        while (currentY < bottomY) {
-            const progress = (currentY - topY) / treeHeight;
+        // Helper: Check if a rect is inside the tree triangle
+        const isInsideTree = (x: number, y: number, w: number, h: number) => {
+            // Check 4 corners? Or just center? 
+            // Better: Check if the whole box is roughly inside.
+            // Simplified: Check center + spread
             
-            // Triangle Shape: Conical
-            // Ensure minimum width at top to fit at least one word
-            const currentLineWidth = 80 + (maxTreeWidth - 80) * progress;
+            if (y - h/2 < topY || y + h/2 > bottomY) return false;
             
-            const lineItems: any[] = [];
-            let usedWidth = 0;
-            let maxFontSizeInLine = 0;
+            const progress = (y - topY) / treeHeight;
+            const currentHalfWidth = ((maxTreeWidth / 2) * progress) - 20; // -20 padding
             
-            // Try to fill this line
-            let attempts = 0;
-            // Allow more items per line
-            while (usedWidth < currentLineWidth && attempts < 20) {
-                // Recycle keywords if we run out
-                if (keywordIndex >= workingKeywords.length) {
-                    keywordIndex = 0; 
+            const minX = centerX - currentHalfWidth;
+            const maxX = centerX + currentHalfWidth;
+            
+            return (x - w/2 > minX && x + w/2 < maxX);
+        };
+
+        // Helper: Check collision with existing items
+        const checkCollision = (rect: any, existing: any[]) => {
+            for (const item of existing) {
+                // Simple AABB collision
+                // Expand slightly for spacing
+                const pad = 4;
+                if (rect.x < item.x + item.width + pad &&
+                    rect.x + rect.width + pad > item.x &&
+                    rect.y < item.y + item.height + pad &&
+                    rect.y + rect.height + pad > item.y) {
+                    return true;
                 }
-
-                // Decision: Add a keyword OR a decoration?
-                // 15% chance to add a decoration if not at the very start of line
-                if (Math.random() < 0.15 && lineItems.length > 0) {
-                    const deco = DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)];
-                    const decoSize = 10 + Math.random() * 8;
-                    const decoColor = PALETTE[Math.floor(Math.random() * PALETTE.length)];
-                    
-                    lineItems.push({
-                        text: deco,
-                        fontSize: decoSize,
-                        width: decoSize * 1.5,
-                        font: 'Arial', // Standard font for symbols
-                        color: decoColor,
-                        rotation: Math.random() * 360,
-                        isDecoration: true
-                    });
-                    usedWidth += decoSize * 1.5;
-                }
-
-                const kw = workingKeywords[keywordIndex];
-                
-                // Dynamic Font Size based on weight
-                // Base size slightly smaller for density
-                const baseSize = 12;
-                const weightBonus = Math.pow(kw.weight || 1, 0.8) * 3.5; 
-                let fontSize = baseSize + weightBonus;
-                
-                // Scale down at the very top to fit the tip
-                if (progress < 0.1) fontSize *= 0.6;
-                else if (progress < 0.2) fontSize *= 0.8;
-
-                // Random variation
-                fontSize *= (0.9 + Math.random() * 0.4);
-
-                // Estimate text width
-                const textWidth = kw.text.length * fontSize * 0.5 + 8;
-
-                // Check if fits
-                if (usedWidth + textWidth <= currentLineWidth * 1.1) { 
-                    const font = FONTS[Math.floor(Math.random() * FONTS.length)];
-                    const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
-                    // More rotation variation for "hand-drawn" messy look
-                    const rotation = (Math.random() - 0.5) * 30; 
-
-                    lineItems.push({ 
-                        ...kw, 
-                        fontSize, 
-                        width: textWidth, 
-                        font, 
-                        color,
-                        rotation,
-                        isDecoration: false
-                    });
-                    
-                    usedWidth += textWidth;
-                    maxFontSizeInLine = Math.max(maxFontSizeInLine, fontSize);
-                    keywordIndex++;
-                } else {
-                    break; 
-                }
-                attempts++;
             }
+            return false;
+        };
 
-            // Layout the line (Center align)
-            let currentX = centerX - (usedWidth / 2);
-            lineItems.forEach((item) => {
-                items.push({
-                    text: item.text,
-                    x: currentX + (item.width / 2), 
-                    y: currentY,
-                    fontSize: item.fontSize,
-                    font: item.font,
-                    color: item.color,
-                    rotation: item.rotation,
-                    delay: items.length * 0.005 + (progress * 2) // Cascade animation
-                });
-                currentX += item.width;
-            });
+        // Canvas for measuring text
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return [];
 
-            // Advance Y
-            // Very tight spacing
-            const lineHeight = Math.max(12, maxFontSizeInLine * 0.65);
-            currentY += lineHeight;
+        const workingKeywords = [...allKeywords];
+        // Add some decorations to the list
+        const DECORATIONS = ['★', '✦', '❄', '♥', '•', '✨'];
+        for(let i=0; i<15; i++) {
+             workingKeywords.push({
+                 text: DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)],
+                 weight: 1 + Math.random() * 2,
+                 isDecoration: true
+             } as any);
+        }
+
+        // Sort by weight desc (place big words first)
+        workingKeywords.sort((a, b) => b.weight - a.weight);
+
+        // Place each word
+        for (const kw of workingKeywords) {
+            // Determine styling
+            const isDeco = (kw as any).isDecoration;
+            const font = isDeco ? 'Arial' : FONTS[Math.floor(Math.random() * FONTS.length)];
+            const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+            
+            // Size calculation
+            let fontSize = 12 + Math.pow(kw.weight, 0.8) * 4;
+            if (isDeco) fontSize = 10 + Math.random() * 10;
+            
+            // Measure
+            ctx.font = `${fontSize}px ${font}`;
+            const metrics = ctx.measureText(kw.text);
+            const textWidth = metrics.width;
+            const textHeight = fontSize; // Approx
+
+            // Spiral Search
+            let angle = 0;
+            let radius = 0;
+            const step = 0.5; // Angle step
+            const maxRadius = width / 2;
+            
+            // Random start angle
+            angle = Math.random() * 6.28;
+
+            while (radius < maxRadius) {
+                // Calculate position
+                // Start spiral from center-ish of the tree mass
+                const startX = centerX;
+                const startY = topY + treeHeight * 0.6; // 60% down
+
+                const x = startX + radius * Math.cos(angle);
+                const y = startY + radius * Math.sin(angle) * 0.8; // Flatten spiral slightly
+
+                // Rotation (small random)
+                const rotation = isDeco ? Math.random() * 360 : (Math.random() - 0.5) * 30;
+
+                // Candidate Rect (unrotated AABB for simplicity)
+                const rect = {
+                    x: x - textWidth / 2,
+                    y: y - textHeight / 2,
+                    width: textWidth,
+                    height: textHeight
+                };
+
+                if (isInsideTree(x, y, textWidth, textHeight)) {
+                    if (!checkCollision(rect, items)) {
+                        // Placed!
+                        items.push({
+                            text: kw.text,
+                            x,
+                            y,
+                            width: textWidth,
+                            height: textHeight, // Stored for collision
+                            fontSize,
+                            font,
+                            color,
+                            rotation,
+                            delay: items.length * 0.01
+                        });
+                        break; // Move to next word
+                    }
+                }
+
+                // Increment spiral
+                angle += step;
+                radius += 2; // Radius step
+            }
         }
 
         return items;

@@ -105,6 +105,7 @@
 * 一级分支：技能 / 行业 / 角色
 * 装饰物：关键词词云（大小 = 权重）
 * 星星：个人职业标签（如“Backend Builder”“AI Explorer”）
+* 注意：从简历里提取关键词，且隐去隐私信息，包括学校、企业、联系方式、姓名等，只根据工作内容、技能、学校经历等非隐私内容做成词云
 
 #### 风格类型（MVP：3 种）
 
@@ -297,3 +298,29 @@
 
 > 本 PRD 核心原则：
 > **轻、温和、有美感、可传播、可复用**
+
+
+### 附录：词云算法
+
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+# 基础词云
+wordcloud = WordCloud(width=800, height=600, 
+                      background_color='white',
+                      font_path='SimHei.ttf').generate(text)
+plt.imshow(wordcloud)
+plt.axis('off')
+plt.savefig('wordcloud.png', dpi=300, bbox_inches='tight')
+
+
+
+# 升级版本词云
+from stylecloud import gen_stylecloud
+
+gen_stylecloud(
+    text='关键词1 关键词2 关键词3.. .',
+    style='monokai',  # 配色风格
+    font_path='SimHei.ttf',
+    output_name='wordcloud.png'
+)
