@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Loader2, Send } from 'lucide-react';
+import { X, Check, Loader2, Send, Crown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface MembershipApplicationModalProps {
@@ -13,7 +13,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
 }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    nickname: user?.username || user?.profile?.fullName || '',
+    // nickname removed
     contact: '',
     experience: '',
     career_ideal: '',
@@ -27,7 +27,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nickname || !formData.contact || !formData.experience || !formData.career_ideal) {
+    if (!formData.contact || !formData.experience || !formData.career_ideal) {
       setError('请填写所有必填项');
       return;
     }
@@ -37,13 +37,21 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
 
     try {
       const token = localStorage.getItem('haigoo_auth_token');
+      // Construct payload without nickname
+      const payload = {
+        contact: formData.contact,
+        experience: formData.experience,
+        career_ideal: formData.career_ideal,
+        contact_type: formData.contact_type
+      };
+      
       const res = await fetch('/api/user-profile?action=submit_application', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -68,11 +76,19 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
 
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-teal-50">
-          <h3 className="text-lg font-bold text-slate-900">申请加入 Haigoo Member</h3>
+        <div className="px-6 py-6 border-b border-white/10 flex items-center justify-between bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 relative overflow-hidden">
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+          
+          <h3 className="text-xl font-bold text-white relative z-10 flex items-center gap-2">
+            <span className="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
+               <Crown className="w-5 h-5 text-white" />
+            </span>
+            申请加入 Haigoo Member
+          </h3>
           <button 
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors relative z-10"
           >
             <X className="w-5 h-5" />
           </button>
@@ -111,18 +127,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    昵称 / 称呼 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.nickname}
-                    onChange={e => setFormData({...formData, nickname: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                    placeholder="大家怎么称呼你"
-                  />
-                </div>
+                {/* Nickname field removed */}
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">

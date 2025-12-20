@@ -64,7 +64,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
         </button>
 
         {/* Header Image / Gradient - Premium Dark Theme */}
-        <div className="h-40 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="h-48 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
            {/* Decorative elements */}
            <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
            <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-400/20 rounded-full blur-[40px] animate-pulse"></div>
@@ -116,7 +116,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
                  onClose();
                  navigate('/membership');
                }}
-               className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 group"
+               className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 group"
              >
                申请成为 Haigoo Member
                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

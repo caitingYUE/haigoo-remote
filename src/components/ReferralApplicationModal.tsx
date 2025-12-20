@@ -112,20 +112,23 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all">
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+                    className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-10"
                 >
                     <X className="w-5 h-5" />
                 </button>
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
-                    <div className="flex items-center gap-3 mb-2">
+                <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 p-6 text-white relative overflow-hidden">
+                    {/* Decorative background elements */}
+                    <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+                    
+                    <div className="relative z-10 flex items-center gap-3 mb-2">
                         <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
                             <Send className="w-6 h-6" />
                         </div>
                         <h2 className="text-2xl font-bold">申请内推</h2>
                     </div>
-                    <p className="text-indigo-100 text-sm">
+                    <p className="relative z-10 text-indigo-100 text-sm">
                         填写以下信息，我们将在 <strong>3个工作日内</strong> 审核您的申请
                     </p>
                 </div>

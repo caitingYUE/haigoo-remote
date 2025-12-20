@@ -37,27 +37,30 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                 <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+                        className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-20"
                     >
                         <X className="w-5 h-5" />
                     </button>
 
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 border-b border-indigo-100">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-white p-3 rounded-xl shadow-sm border border-indigo-100">
+                    <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 p-6 border-b border-white/10 relative overflow-hidden">
+                        {/* Decorative background elements */}
+                        <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+                        
+                        <div className="relative z-10 flex items-start gap-4">
+                            <div className="bg-white/10 p-3 rounded-xl shadow-lg border border-white/20 backdrop-blur-md">
                                 {companyInfo?.logo ? (
                                     <img src={companyInfo.logo} alt={companyInfo.name} className="w-10 h-10 object-contain" />
                                 ) : (
-                                    <Building2 className="w-10 h-10 text-indigo-600" />
+                                    <Building2 className="w-10 h-10 text-white" />
                                 )}
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+                                <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
                                     {companyInfo?.name || job.company}
-                                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full font-bold">已认证</span>
+                                    <span className="px-2 py-0.5 bg-white/20 text-white text-xs rounded-full font-bold border border-white/10 backdrop-blur-md">已认证</span>
                                 </h3>
-                                <p className="text-sm text-slate-600">
+                                <p className="text-sm text-indigo-100/80">
                                     Haigoo Member 专属认证信息
                                 </p>
                             </div>
@@ -156,15 +159,19 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                 <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+                        className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-20"
                     >
                         <X className="w-5 h-5" />
                     </button>
 
                     {/* Header Gradient */}
-                    <div className="h-32 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex items-center justify-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-                        <div className="relative z-10 bg-white/10 p-4 rounded-full backdrop-blur-md border border-white/20 shadow-lg">
+                    <div className="h-48 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
+                        {/* Decorative elements */}
+                        <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+                        <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-400/20 rounded-full blur-[40px] animate-pulse"></div>
+                        <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-teal-400/20 rounded-full blur-[40px] animate-pulse delay-700"></div>
+                        
+                        <div className="relative z-10 bg-white/10 p-4 rounded-full backdrop-blur-md shadow-2xl border border-white/20 ring-1 ring-white/10">
                             <Crown className="w-12 h-12 text-white/90" />
                         </div>
                     </div>
