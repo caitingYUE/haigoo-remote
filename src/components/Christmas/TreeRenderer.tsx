@@ -45,7 +45,8 @@ const FONTS = [
     'Cinzel, serif',
     'Rubik, sans-serif',
     'Orbitron, sans-serif',
-    'Nunito, sans-serif'
+    'Nunito, sans-serif',
+    'Microsoft YaHei, sans-serif' // Fallback for Chinese
 ];
 
 export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, height = 800 }) => {
@@ -53,11 +54,32 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
     // Flatten and Sort Keywords
     const allKeywords = useMemo(() => {
         // Boost quantity if low by duplicating nicely (fallback)
-        let kw = data.layers.flatMap(l => l.keywords);
+        let kw = data.layers?.flatMap(l => l.keywords || []) || [];
+        
+        // Safety: Filter out empty text
+        kw = kw.filter(k => k && k.text && k.text.trim().length > 0);
+
+        // Fallback if AI returned no keywords
+        if (kw.length === 0) {
+            const defaults = [
+                "Growth", "Success", "Passion", "Dream", "Future", 
+                "Skills", "Innovation", "Creativity", "Teamwork", 
+                "Leadership", "Vision", "Goal", "Action", "Focus",
+                "Learning", "Courage", "Wisdom", "Talent", "Energy"
+            ];
+            kw = defaults.map(text => ({ text, weight: Math.floor(Math.random() * 5) + 5 }));
+        }
+
         if (kw.length < 20) {
             kw = [...kw, ...kw]; // Double up if too few to form a tree
         }
-        return kw.sort((a, b) => b.weight - a.weight);
+        
+        // Triple up if still small (e.g. only 5-10 items)
+        if (kw.length < 40) {
+             kw = [...kw, ...kw];
+        }
+
+        return kw.sort((a, b) => (b.weight || 5) - (a.weight || 5));
     }, [data]);
 
     // Generate Layout: Word Cloud Tree
