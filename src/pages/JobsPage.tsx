@@ -196,9 +196,14 @@ export default function JobsPage() {
 
       queryParams.append('page', page.toString())
       queryParams.append('pageSize', pageSize.toString())
-
-      // 添加筛选条件
-      if (sortBy === 'recent') queryParams.append('sortBy', 'recent')
+      
+      // Explicitly handle sortBy
+      if (sortBy === 'recent') {
+        queryParams.append('sortBy', 'recent')
+      } else {
+        // Explicitly send relevance to ensure backend knows the intent
+        queryParams.append('sortBy', 'relevance')
+      }
       if (searchTerm) queryParams.append('search', searchTerm)
       if (filters.category.length > 0) queryParams.append('category', filters.category.join(','))
       if (filters.experienceLevel.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
