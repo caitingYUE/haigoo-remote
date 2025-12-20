@@ -8,6 +8,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import NotificationProvider from './components/NotificationSystem'
 import ErrorBoundary from './components/ErrorBoundary'
 import GlobalVerificationGuard from './components/GlobalVerificationGuard'
+import { lazyRetry } from './utils/lazyRetry'
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const JobsPage = lazy(() => import('./pages/JobsPage'))
@@ -17,7 +18,7 @@ const RegisterPage = lazy(() => import('./pages/RegisterPage'))
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'))
 const AdminLocationPage = lazy(() => import('./pages/AdminLocationPage'))
 const AdminPanel = lazy(() => import('./components/AdminPanel'))
-const ProfileCenterPage = lazy(() => import('./pages/ProfileCenterPage'))
+const ProfileCenterPage = lazyRetry(() => import('./pages/ProfileCenterPage'), 'ProfileCenterPage')
 const AdminTeamPage = lazy(() => import('./pages/AdminTeamPage'))
 const UserManagementPage = lazy(() => import('./pages/UserManagementPage'))
 const AdminTagManagementPage = lazy(() => import('./pages/AdminTagManagementPage'))
@@ -27,7 +28,7 @@ const AdminApplicationsPage = lazy(() => import('./pages/AdminApplicationsPage')
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'))
 const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
-const MembershipPage = lazy(() => import('./pages/MembershipPage'))
+const MembershipPage = lazyRetry(() => import('./pages/MembershipPage'), 'MembershipPage')
 const JoinClubApplicationPage = lazy(() => import('./pages/JoinClubApplicationPage'))
 const NoPermissionPage = lazy(() => import('./pages/NoPermissionPage'))
 const JobDetailPage = lazy(() => import('./pages/JobDetailPage'))
@@ -35,8 +36,8 @@ const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
 const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 
 
-const ChristmasPage = lazy(() => import('./pages/ChristmasPage'))
-const ChristmasForestPage = lazy(() => import('./pages/ChristmasForestPage'))
+const ChristmasPage = lazyRetry(() => import('./pages/ChristmasPage'), 'ChristmasPage')
+const ChristmasForestPage = lazyRetry(() => import('./pages/ChristmasForestPage'), 'ChristmasForestPage')
 
 function App() {
   console.log('Haigoo Frontend Version: 2025-12-18-Fix-Visuals-v2');
