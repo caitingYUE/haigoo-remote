@@ -43,18 +43,18 @@ export default function ChristmasForestPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 relative overflow-hidden font-serif">
+        <div className="min-h-screen bg-gradient-to-b from-[#fff7ed] to-[#eff6ff] relative overflow-hidden font-serif">
             {/* Header */}
-            <div className="sticky top-0 bg-white/80 backdrop-blur-md z-40 border-b border-slate-200 shadow-sm">
+            <div className="sticky top-0 bg-white/80 backdrop-blur-md z-40 border-b border-red-100 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
                     <button
                         onClick={() => navigate('/christmas')}
-                        className="flex items-center gap-2 text-slate-600 hover:text-[#b91c1c] transition-colors"
+                        className="flex items-center gap-2 text-slate-600 hover:text-[#dc2626] transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
                         <span className="font-medium">返回我的树</span>
                     </button>
-                    <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#b91c1c] to-[#15803d]" style={{ fontFamily: 'Cinzel, serif' }}>
+                    <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#dc2626] to-[#15803d]" style={{ fontFamily: 'Cinzel, serif' }}>
                         🎄 Talent Forest
                     </h1>
                     <div className="w-20"></div> {/* Spacer */}
@@ -64,15 +64,15 @@ export default function ChristmasForestPage() {
             {/* Content */}
             <div className="max-w-7xl mx-auto py-8">
                 <div className="mb-8 text-center">
-                    <h2 className="text-3xl font-bold text-[#1e293b] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>Explore Career Diversity</h2>
-                    <p className="text-slate-500 italic" style={{ fontFamily: 'Great Vibes, cursive', fontSize: '1.2rem' }}>Every tree tells a unique winter story</p>
+                    <h2 className="text-3xl font-bold text-[#7f1d1d] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>Explore Career Diversity</h2>
+                    <p className="text-slate-600 italic" style={{ fontFamily: 'Great Vibes, cursive', fontSize: '1.2rem' }}>Every tree tells a unique winter story</p>
                 </div>
 
                 <ForestGrid trees={trees} onTreeClick={setSelectedTree} />
 
                 {loading && (
                     <div className="flex justify-center py-8">
-                        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                        <Loader2 className="w-8 h-8 animate-spin text-[#dc2626]" />
                     </div>
                 )}
 

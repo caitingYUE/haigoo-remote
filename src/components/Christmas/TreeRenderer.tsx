@@ -30,14 +30,14 @@ interface TreeRendererProps {
     showDecorations?: boolean;
 }
 
-// Word Cloud Palette - Warmer, Christmas Theme
+// Word Cloud Palette - Warmer, Christmas Theme (Day/Warm Mode)
 const PALETTE = [
-    '#fbbf24', // Warm Gold
-    '#f87171', // Warm Red
-    '#4ade80', // Bright Green
-    '#60a5fa', // Ice Blue
-    '#f1f5f9', // Snow White
-    '#f472b6', // Pink
+    '#dc2626', // Santa Red
+    '#15803d', // Cedar Green
+    '#b45309', // Deep Gold/Bronze
+    '#f59e0b', // Bright Gold
+    '#1e293b', // Dark Slate (Contrast)
+    '#7f1d1d', // Deep Burgundy
 ];
 
 const FONTS = [
@@ -223,44 +223,43 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
     }, [allKeywords, width, height]);
 
     return (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto shadow-2xl rounded-sm" style={{ backgroundColor: '#0f172a' }}>
+        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto shadow-2xl rounded-sm" style={{ backgroundColor: '#fff7ed' }}>
             <defs>
                 <filter id="glow-text">
-                    <feGaussianBlur stdDeviation="1" result="coloredBlur" />
+                    <feGaussianBlur stdDeviation="0.5" result="coloredBlur" />
                     <feMerge>
                         <feMergeNode in="coloredBlur" />
                         <feMergeNode in="SourceGraphic" />
                     </feMerge>
                 </filter>
-                <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#020617" /> {/* Dark Night */}
-                    <stop offset="60%" stopColor="#172554" /> {/* Deep Blue */}
-                    <stop offset="100%" stopColor="#1e3a8a" /> {/* Blue Glow */}
+                <linearGradient id="daySkyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#fff7ed" /> {/* Warm Cream */}
+                    <stop offset="100%" stopColor="#eff6ff" /> {/* Ice Blue */}
                 </linearGradient>
-                <radialGradient id="auroraGlow" cx="50%" cy="0%" r="70%">
-                    <stop offset="0%" stopColor="#4ade80" stopOpacity="0.2" />
-                    <stop offset="50%" stopColor="#818cf8" stopOpacity="0.1" />
+                <radialGradient id="sunGlow" cx="50%" cy="0%" r="70%">
+                    <stop offset="0%" stopColor="#fef08a" stopOpacity="0.4" />
+                    <stop offset="50%" stopColor="#fef08a" stopOpacity="0.1" />
                     <stop offset="100%" stopColor="transparent" />
                 </radialGradient>
                 <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#fff" stopOpacity="0.8" />
-                    <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#fef08a" stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="#fef08a" stopOpacity="0" />
                 </radialGradient>
             </defs>
 
-            {/* 1. Background: Snowy Night Sky */}
-            <rect width={width} height={height} fill="url(#skyGradient)" />
-            <rect width={width} height={height} fill="url(#auroraGlow)" />
+            {/* 1. Background: Warm Day Sky */}
+            <rect width={width} height={height} fill="url(#daySkyGradient)" />
+            <rect width={width} height={height} fill="url(#sunGlow)" />
             
-            {/* 2. Stars (Background) */}
-            {[...Array(80)].map((_, i) => (
+            {/* 2. Stars (Background) - Golden/Subtle */}
+            {[...Array(60)].map((_, i) => (
                 <circle
                     key={`bg-star-${i}`}
                     cx={Math.random() * width}
                     cy={Math.random() * (height - 100)}
                     r={Math.random() * 1.5}
-                    fill="#fff"
-                    opacity={Math.random() * 0.7 + 0.3}
+                    fill="#fcd34d"
+                    opacity={Math.random() * 0.5 + 0.1}
                 />
             ))}
 
