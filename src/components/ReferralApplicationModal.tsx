@@ -144,9 +144,32 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
 
                     {/* Resume Selection */}
                     <div>
-                        <label className="block text-sm font-semibold text-slate-900 mb-3">
-                            选择简历 <span className="text-red-500">*</span>
-                        </label>
+                        <div className="flex items-center justify-between mb-3">
+                            <label className="block text-sm font-semibold text-slate-900">
+                                选择简历 <span className="text-red-500">*</span>
+                            </label>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                            >
+                                {isUploading ? (
+                                    '上传中...'
+                                ) : (
+                                    <>
+                                        <Upload className="w-3.5 h-3.5" />
+                                        上传新简历
+                                    </>
+                                )}
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                                accept=".pdf,.doc,.docx"
+                                className="hidden"
+                            />
+                        </div>
 
                         {isLoadingResumes ? (
                             <div className="text-center py-8 text-slate-500">

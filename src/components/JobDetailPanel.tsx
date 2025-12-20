@@ -109,13 +109,29 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job, showTranslation])
 
     const handleApply = () => {
-        // For referral jobs OR free users OR trusted jobs (for members to see certification), show interceptmodal
-        if (job.canRefer || !isMember || (isMember && job.isTrusted)) {
+        // 1. Referral Jobs: Members go to internal application, Non-members see upsell
+        if (job.canRefer) {
+            if (isMember) {
+                setIsReferralModalOpen(true);
+            } else {
+                setShowApplyInterceptModal(true);
+            }
+            return;
+        }
+
+        // 2. Trusted Jobs: Show certification info (intercept modal)
+        if (job.isTrusted) {
             setShowApplyInterceptModal(true);
             return;
         }
 
-        // Member users on non-referral jobs: direct apply + track
+        // 3. Other Jobs: Non-members see safety check, Members go directly
+        if (!isMember) {
+            setShowApplyInterceptModal(true);
+            return;
+        }
+
+        // Member users on non-referral/non-trusted jobs: direct apply + track
         proceedToApply();
     }
 

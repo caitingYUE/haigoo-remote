@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X, CheckCircle, Crown, ArrowRight, Shield, TrendingUp, Sparkles, Target, CheckCircle2, FileCheck, Building2, MapPin, Users, Star, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Job } from '../types';
@@ -27,7 +28,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
     // Member View for Trusted Company Jobs (Not Referral)
     if (isMember && job.isTrusted) {
-        return (
+        return createPortal(
             <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                 <div
                     className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -143,7 +144,8 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         </button>
                     </div>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     }
 
@@ -238,7 +240,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
     // 官网/第三方岗位 - 免费用户显示审核说明
     if (!isMember) {
-        return (
+        return createPortal(
             <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                 <div
                     className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -336,7 +338,8 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     }
 

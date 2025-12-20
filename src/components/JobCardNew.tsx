@@ -32,15 +32,15 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       return `${currencySymbol}${formatAmount(salary.min)} - ${currencySymbol}${formatAmount(salary.max)}`;
    };
 
-   // Handle company website click
-   const handleCompanyClick = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      // Strict: Only use companyWebsite from backend (trusted_companies)
-      const url = job.companyWebsite;
-      if (url) {
-         window.open(url, '_blank', 'noopener,noreferrer');
-      }
-   };
+   // Handle company website click - DISABLED as per new requirements
+   // const handleCompanyClick = (e: React.MouseEvent) => {
+   //    e.stopPropagation();
+   //    // Strict: Only use companyWebsite from backend (trusted_companies)
+   //    const url = job.companyWebsite;
+   //    if (url) {
+   //       window.open(url, '_blank', 'noopener,noreferrer');
+   //    }
+   // };
 
    if (variant === 'list') {
       const isTranslated = !!job.translations?.title;
