@@ -91,24 +91,24 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         const topY = 160; 
         const bottomY = height - 120;
         const treeHeight = bottomY - topY;
-        const maxTreeWidth = width * 0.85;
+        const maxTreeWidth = width * 0.9; // Slightly wider
 
         let currentY = topY;
         let keywordIndex = 0;
         
+        // Shuffle for randomness on re-renders if needed, but keep stable for now
         // We want a tighter packing. 
-        // We will loop until we run out of space or keywords.
-        // To ensure the tree shape is filled, we might reuse keywords if we run out.
         
         const workingKeywords = [...allKeywords];
         
+        // Loop until we reach the bottom
         while (currentY < bottomY) {
             const progress = (currentY - topY) / treeHeight;
             
-            // Triangle Shape Function (Bell curve or Linear)
-            // Linear triangle: width = progress * maxTreeWidth
-            // Let's allow a minimum width at top so it's not too pointy/empty
-            const currentLineWidth = Math.max(60, progress * maxTreeWidth); 
+            // Triangle Shape: Bell curve-ish or wider triangle
+            // width = minWidth + (maxWidth - minWidth) * progress^0.8
+            // Using power < 1 makes it get wider faster (fat tree)
+            const currentLineWidth = 80 + (maxTreeWidth - 80) * Math.pow(progress, 0.9);
             
             const lineItems: any[] = [];
             let usedWidth = 0;
@@ -116,32 +116,39 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             
             // Try to fill this line
             let attempts = 0;
-            while (usedWidth < currentLineWidth && attempts < 10) {
-                // If we ran out of keywords, recycle top ones with lower weight
+            // Allow more items per line
+            while (usedWidth < currentLineWidth && attempts < 15) {
+                // Recycle keywords if we run out
                 if (keywordIndex >= workingKeywords.length) {
-                    keywordIndex = 0; // Cycle back
+                    keywordIndex = 0; 
+                    // Optional: Shuffle slightly or offset to avoid identical repeating patterns?
+                    // For now, simple cycle is safer.
                 }
 
                 const kw = workingKeywords[keywordIndex];
                 
-                // Dynamic Font Size based on weight and progress (lower items can be bigger)
-                // Base size + Weight bonus
-                const baseSize = 14;
-                const weightBonus = Math.pow(kw.weight, 0.8) * 3;
+                // Dynamic Font Size based on weight
+                // Reduce base size for denser look
+                const baseSize = 10;
+                // Weight is 1-10. 
+                // weightBonus: 1->2, 10->15
+                const weightBonus = Math.pow(kw.weight || 1, 0.7) * 4; 
                 let fontSize = baseSize + weightBonus;
                 
-                // Randomly vary size slightly for organic look
-                fontSize *= (0.9 + Math.random() * 0.2);
+                // Top of tree should have slightly smaller words to fit
+                if (progress < 0.2) fontSize *= 0.8;
 
-                // Estimate text width (approximate char width ~ 0.6em)
-                // Add padding
-                const textWidth = kw.text.length * fontSize * 0.55 + 15;
+                // Random variation
+                fontSize *= (0.85 + Math.random() * 0.3);
 
-                if (usedWidth + textWidth <= currentLineWidth * 1.1) { // Allow slight overflow
-                    // Select random font and color
+                // Estimate text width: char width ~ 0.5em + padding
+                const textWidth = kw.text.length * fontSize * 0.5 + 10;
+
+                // Check if fits (allow slight overflow 10%)
+                if (usedWidth + textWidth <= currentLineWidth * 1.1) { 
                     const font = FONTS[Math.floor(Math.random() * FONTS.length)];
                     const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
-                    const rotation = (Math.random() - 0.5) * 20; // Slight tilt -10 to 10
+                    const rotation = (Math.random() - 0.5) * 20; 
 
                     lineItems.push({ 
                         ...kw, 
@@ -156,32 +163,32 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                     maxFontSizeInLine = Math.max(maxFontSizeInLine, fontSize);
                     keywordIndex++;
                 } else {
-                    // Try next keyword if this one didn't fit? 
-                    // For now, just break to next line to preserve order/weight
+                    // Line is full
                     break; 
                 }
                 attempts++;
             }
 
-            // Layout the line
+            // Layout the line (Center align)
             let currentX = centerX - (usedWidth / 2);
             lineItems.forEach((item) => {
                 items.push({
                     text: item.text,
-                    x: currentX + (item.width / 2), // Center of word
+                    x: currentX + (item.width / 2), 
                     y: currentY,
                     fontSize: item.fontSize,
                     font: item.font,
                     color: item.color,
                     rotation: item.rotation,
-                    delay: items.length * 0.02
+                    delay: items.length * 0.01 // Faster animation
                 });
                 currentX += item.width;
             });
 
             // Advance Y
-            // Tighter spacing: 0.8 of font size
-            currentY += Math.max(20, maxFontSizeInLine * 0.85);
+            // Tighter vertical spacing: 0.75 of font height
+            const lineHeight = Math.max(16, maxFontSizeInLine * 0.75);
+            currentY += lineHeight;
         }
 
         return items;
