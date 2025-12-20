@@ -90,44 +90,40 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         const centerX = width / 2;
         
         // Tree Boundaries
-        const topY = 140; // Just below star
+        const topY = 140; 
         const bottomY = height - 120;
         const treeHeight = bottomY - topY;
         const maxTreeWidth = width * 0.9;
         
-        // 1. Generate a Grid of candidate points inside the tree triangle
-        // This ensures we cover the whole shape uniformly
+        // 1. Generate a Fine-Grained Grid
+        // Decreased step size for higher resolution placement
         const points: {x: number, y: number}[] = [];
-        const stepY = 15; // Vertical density
-        const stepX = 15; // Horizontal density
+        const stepY = 5; // Finer vertical steps (was 15)
+        const stepX = 5; // Finer horizontal steps (was 15)
         
         for (let y = topY; y < bottomY; y += stepY) {
             const progress = (y - topY) / treeHeight;
             // Conical shape width at this Y
-            // Ensure min width at top (60px) so small words fit
             const currentLineWidth = 60 + (maxTreeWidth - 60) * Math.pow(progress, 0.9);
             const halfW = currentLineWidth / 2;
             
             // Scan X row
             for (let x = centerX - halfW; x <= centerX + halfW; x += stepX) {
-                // Add some random jitter to grid points for organic look
+                // Slight jitter for organic feel
                 points.push({
-                    x: x + (Math.random() - 0.5) * 10, 
-                    y: y + (Math.random() - 0.5) * 5
+                    x: x + (Math.random() - 0.5) * 2, 
+                    y: y + (Math.random() - 0.5) * 2
                 });
             }
         }
         
-        // Shuffle points to prevent "scanning lines" artifact, 
-        // BUT prioritize Y (top to bottom) to ensure top fills first?
-        // Actually, for "filling the shape", random access is better for organic cloud, 
-        // but sorting by Y helps prevent empty top.
-        // Let's Sort points by distance from "Tree Axis Top" to fill top-down naturally
-        points.sort((a, b) => a.y - b.y);
+        // Shuffle points randomly to fill space more organically, 
+        // instead of top-down which causes clumping
+        points.sort(() => Math.random() - 0.5);
 
         // Helper: Check collision
         const checkCollision = (rect: any) => {
-            const pad = 2; // Tight padding
+            const pad = 4; // Increased padding for cleaner separation (was 2)
             for (const item of items) {
                 if (rect.x < item.x + item.width + pad &&
                     rect.x + rect.width + pad > item.x &&
@@ -146,18 +142,17 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
 
         let workingKeywords = [...allKeywords];
         
-        // Add LOTS of decorations to fill gaps
+        // Add decorations
         const DECORATIONS = ['★', '✦', '❄', '♥', '•', '✨', '✴', '✶'];
         for(let i=0; i<40; i++) {
              workingKeywords.push({
                  text: DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)],
-                 weight: 1, // Low weight
+                 weight: 1, 
                  isDecoration: true
              } as any);
         }
 
-        // Sort: Big words first, then small words, then decorations
-        // This ensures structure is defined by main keywords
+        // Sort: Big words first
         workingKeywords.sort((a, b) => {
              const wa = (a as any).isDecoration ? 0 : a.weight;
              const wb = (b as any).isDecoration ? 0 : b.weight;
@@ -168,36 +163,28 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         for (const kw of workingKeywords) {
             const isDeco = (kw as any).isDecoration;
             
-            // Styling
             const font = isDeco ? 'Arial' : FONTS[Math.floor(Math.random() * FONTS.length)];
             const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
             
-            // Size: Make big words BIG, small words small
+            // Size
             let fontSize = 12;
             if (!isDeco) {
-                 // Weight 1-10 -> Size 14-48
                  fontSize = 14 + Math.pow(kw.weight, 1.2) * 2.5;
             } else {
                  fontSize = 8 + Math.random() * 8;
             }
 
-            // Measure (approximate if ctx fails, but use ctx)
+            // Measure
             ctx.font = `${fontSize}px ${font}`;
             const metrics = ctx.measureText(kw.text);
             const textWidth = metrics.width;
-            const textHeight = fontSize * 0.8; // Tight bounding box height
+            const textHeight = fontSize * 0.8; 
 
             // Find first point that fits
-            // We iterate through our pre-calculated grid points
             let placed = false;
             
-            // Optimization: Don't check every single point for every word, 
-            // maybe skip some if we fail a lot? No, "300% effort" means check thoroughly.
-            
-            // Try to place at best point
             for (let i = 0; i < points.length; i++) {
                 const p = points[i];
-                // Check if point is already "taken" (optimization)? No, check rect collision.
                 
                 const rect = {
                     x: p.x - textWidth / 2,
@@ -206,11 +193,11 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                     height: textHeight
                 };
                 
-                // Boundary check (Double check: grid is inside, but text width might stick out)
+                // Boundary check
                 const progress = (p.y - topY) / treeHeight;
                 const currentHalfW = (60 + (maxTreeWidth - 60) * Math.pow(progress, 0.9)) / 2;
                 if (p.x - textWidth/2 < centerX - currentHalfW || p.x + textWidth/2 > centerX + currentHalfW) {
-                    continue; // Sticks out horizontally
+                    continue; 
                 }
 
                 if (!checkCollision(rect)) {
@@ -224,22 +211,15 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                         fontSize,
                         font,
                         color,
-                        rotation: isDeco ? Math.random() * 360 : (Math.random() - 0.5) * 20,
+                        // Reduced rotation: Mostly horizontal, slight random tilt
+                        rotation: isDeco ? Math.random() * 360 : (Math.random() - 0.5) * 10, 
                         delay: items.length * 0.005
                     });
                     
-                    // Remove this point and nearby points to speed up future checks?
-                    // Actually, removing just this point is enough to prevent exact overlap, 
-                    // collision check handles the rest.
                     points.splice(i, 1); 
                     placed = true;
                     break;
                 }
-            }
-            
-            // If big word failed to place, maybe retry with smaller font?
-            if (!placed && !isDeco && fontSize > 20) {
-                 // Retry logic could go here, but grid is dense enough usually.
             }
         }
 
@@ -316,8 +296,17 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 2, type: 'spring' }}
                 />
-                <text y={50} textAnchor="middle" fill="#fcd34d" fontSize="16" fontFamily="Cinzel, serif" fontWeight="bold">
-                    {data.star_label}
+                <text 
+                    y={50} 
+                    textAnchor="middle" 
+                    fill="#fcd34d" 
+                    fontSize="16" 
+                    fontFamily="Cinzel, serif" 
+                    fontWeight="bold"
+                    style={{ maxWidth: '200px' }} // Constraint logic below
+                >
+                    {/* Simple truncation for star label if too long */}
+                    {data.star_label.length > 15 ? data.star_label.substring(0, 15) + '...' : data.star_label}
                 </text>
             </g>
 
