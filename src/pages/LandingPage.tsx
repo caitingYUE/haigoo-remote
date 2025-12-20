@@ -9,6 +9,7 @@ import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import HomeCompanyCard from '../components/HomeCompanyCard'
+import ChristmasResumeCTA from '../components/ChristmasResumeCTA'
 import { ArrowRight, TrendingUp, Building2, Zap, Users, Target, Globe, Sparkles, CheckCircle2, Crown, Download } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
@@ -218,6 +219,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       {/* Premium Dark Hero Section */}
       <HomeHero stats={stats} />
+      
+      <ChristmasResumeCTA />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
 

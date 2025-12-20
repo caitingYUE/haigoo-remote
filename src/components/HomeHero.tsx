@@ -50,6 +50,18 @@ interface HomeHeroProps {
 export default function HomeHero({ stats }: HomeHeroProps) {
     const navigate = useNavigate()
     const [searchQuery, setSearchQuery] = useState('')
+    const [isChristmas, setIsChristmas] = useState(false)
+
+    useEffect(() => {
+        const checkDate = () => {
+            const now = new Date()
+            const currentYear = now.getFullYear()
+            const startDate = new Date(`${currentYear}-12-20T00:00:00`)
+            const endDate = new Date(`${currentYear}-12-27T23:59:59`)
+            setIsChristmas(now >= startDate && now <= endDate)
+        }
+        checkDate()
+    }, [])
 
     const handleSearch = () => {
         if (searchQuery.trim()) {
@@ -59,28 +71,41 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
     return (
         <div className="relative bg-white overflow-hidden min-h-[480px] flex items-center justify-center border-b border-slate-100">
-            {/* Abstract Background Effects - Light Theme */}
+            {/* Abstract Background Effects */}
             <div className="absolute inset-0 z-0 pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-100/40 rounded-full blur-3xl -translate-y-1/2"></div>
-                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-100/30 rounded-full blur-3xl translate-y-1/3"></div>
-                {/* <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-multiply"></div> */}
+                {isChristmas ? (
+                    <>
+                        <div className="absolute top-0 left-1/4 w-96 h-96 bg-red-100/50 rounded-full blur-3xl -translate-y-1/2"></div>
+                        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-green-100/40 rounded-full blur-3xl translate-y-1/3"></div>
+                        <div className="absolute top-10 right-10 opacity-20 transform rotate-12">
+                             <Sparkles className="w-24 h-24 text-red-300" />
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-100/40 rounded-full blur-3xl -translate-y-1/2"></div>
+                        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-100/30 rounded-full blur-3xl translate-y-1/3"></div>
+                    </>
+                )}
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
 
                 {/* Badge */}
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-sm">
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${isChristmas ? 'bg-red-50 border-red-100' : 'bg-indigo-50 border-indigo-100'} border mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-sm`}>
                     <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isChristmas ? 'bg-red-400' : 'bg-indigo-400'} opacity-75`}></span>
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${isChristmas ? 'bg-red-500' : 'bg-indigo-500'}`}></span>
                     </span>
-                    <span className="text-xs font-bold text-indigo-700 tracking-wide uppercase">Global Remote Opportunities</span>
+                    <span className={`text-xs font-bold ${isChristmas ? 'text-red-700' : 'text-indigo-700'} tracking-wide uppercase`}>
+                        {isChristmas ? 'Happy Holidays & Global Opportunities' : 'Global Remote Opportunities'}
+                    </span>
                 </div>
 
                 {/* Main Heading */}
                 <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
                     为中国人才打开<br className="md:hidden" />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600"> 全球远程工作 </span>
+                    <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isChristmas ? 'from-red-600 via-green-600 to-red-600' : 'from-indigo-600 via-blue-600 to-cyan-600'}`}> 全球远程工作 </span>
                     入口
                 </h1>
 
