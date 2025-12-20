@@ -134,3 +134,6 @@ ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS employee_count VARCHAR(10
 ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS founded_year VARCHAR(50); -- 成立年份
 ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS specialties JSONB DEFAULT '[]'; -- 领域/专长
 
+-- 2025-02-18: Add missing rating fields
+ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS company_rating VARCHAR(50); -- 企业评分 (e.g. 4.5/5)
+ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS rating_source VARCHAR(100); -- 评分来源 (e.g. Glassdoor, Blind)

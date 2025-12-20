@@ -21,6 +21,8 @@ export interface TrustedCompany {
     employeeCount?: string;
     foundedYear?: string;
     specialties?: string[];
+    companyRating?: string;
+    ratingSource?: string;
     tags?: CompanyTag[];
     industry?: CompanyIndustry;
     isTrusted: boolean;

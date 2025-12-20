@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin } from 'lucide-react'
+import { ArrowLeft, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -182,7 +182,7 @@ export default function CompanyDetailPage() {
                     </div>
 
                     {/* Certified Info (Member Only) */}
-                    {(companyInfo?.employeeCount || companyInfo?.address || companyInfo?.foundedYear || (companyInfo?.specialties && companyInfo.specialties.length > 0)) && (
+                    {(companyInfo?.employeeCount || companyInfo?.address || companyInfo?.foundedYear || (companyInfo?.specialties && companyInfo.specialties.length > 0) || companyInfo?.companyRating) && (
                         <div className="mt-6 bg-white rounded-lg border border-indigo-100 shadow-sm overflow-hidden">
                             <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-white border-b border-indigo-50 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -236,6 +236,24 @@ export default function CompanyDetailPage() {
                                                 </div>
                                             </div>
                                         )}
+                                        {companyInfo.companyRating && (
+                                            <div className="flex items-start gap-3">
+                                                <div className="p-2 bg-slate-50 rounded-lg">
+                                                    <Star className="w-4 h-4 text-slate-500" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs text-slate-500 mb-0.5">企业评分</div>
+                                                    <div className="text-sm text-slate-900 flex items-center gap-2">
+                                                        <span className="font-bold text-amber-500">{companyInfo.companyRating}</span>
+                                                        {companyInfo.ratingSource && (
+                                                            <span className="text-xs text-slate-400 bg-slate-100 px-1.5 rounded">
+                                                                via {companyInfo.ratingSource}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                         {companyInfo.specialties && companyInfo.specialties.length > 0 && (
                                             <div className="flex items-start gap-3 md:col-span-2">
                                                 <div className="p-2 bg-slate-50 rounded-lg">
@@ -264,6 +282,10 @@ export default function CompanyDetailPage() {
                                             <div className="flex items-start gap-3">
                                                 <div className="p-2 bg-slate-50 rounded-lg"><Users className="w-4 h-4 text-slate-500" /></div>
                                                 <div><div className="text-xs text-slate-500">员工人数</div><div className="text-sm text-slate-900">1000-5000</div></div>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className="p-2 bg-slate-50 rounded-lg"><Star className="w-4 h-4 text-slate-500" /></div>
+                                                <div><div className="text-xs text-slate-500">企业评分</div><div className="text-sm text-slate-900">4.8 (via Glassdoor)</div></div>
                                             </div>
                                         </div>
                                         <div className="absolute inset-0 flex items-center justify-center">

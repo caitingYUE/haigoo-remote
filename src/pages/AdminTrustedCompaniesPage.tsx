@@ -810,6 +810,29 @@ export default function AdminTrustedCompaniesPage() {
                                 </div>
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">企业评分</label>
+                                    <input
+                                        type="text"
+                                        value={formData.companyRating || ''}
+                                        onChange={e => setFormData({ ...formData, companyRating: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="e.g. 4.5/5"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">评分来源</label>
+                                    <input
+                                        type="text"
+                                        value={formData.ratingSource || ''}
+                                        onChange={e => setFormData({ ...formData, ratingSource: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="e.g. Glassdoor, Blind"
+                                    />
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">领域/专长 (逗号分隔)</label>
                                 <input
