@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 /**
- * Tree Renderer Component
- * Renders a "Resume Christmas Tree" using SVG based on keywords and weights.
+ * Tree Renderer Component - Word Cloud Edition
+ * Renders a Christmas Tree formed entirely by keywords.
  */
 
 interface Keyword {
@@ -30,472 +30,238 @@ interface TreeRendererProps {
     showDecorations?: boolean;
 }
 
-const THEMES = {
-    engineering: {
-        primary: '#10b981', // Emerald
-        secondary: '#3b82f6', // Blue
-        accent: '#f59e0b', // Amber
-        bg: '#0f172a',    // Dark Slate
-        text: '#ffffff',
-        font: 'Space Mono, monospace'
-    },
-    creative: {
-        primary: '#f472b6', // Pink
-        secondary: '#a78bfa', // Violet
-        accent: '#fcd34d', // Yellow
-        bg: '#ffffff',
-        text: '#374151',
-        font: 'Outfit, sans-serif'
-    },
-    growth: {
-        primary: '#84cc16', // Lime
-        secondary: '#22c55e', // Green
-        accent: '#fbbf24', // Amber
-        bg: '#f0fdf4',
-        text: '#166534',
-        font: 'Inter, sans-serif'
-    },
-    // New Premium Theme
-    magical: {
-        primary: '#d4af37', // Gold
-        secondary: '#c0c0c0', // Silver
-        accent: '#ff4500', // Orange Red
-        bg: '#0a0a1a', // Midnight Blue
-        text: '#ffebcd', // Blanched Almond
-        font: 'Cinzel, serif' // Elegant Serif
-    }
-};
+// Word Cloud Palette
+const PALETTE = [
+    '#fcd34d', // Gold
+    '#fca5a5', // Soft Red
+    '#86efac', // Soft Green
+    '#93c5fd', // Soft Blue
+    '#e2e8f0', // White/Slate
+    '#f0abfc', // Pink
+];
 
-export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, height = 800, showDecorations = true }) => {
-    // Force Magical theme for the "Exquisite" look requested
-    const theme = THEMES.magical;
+const FONTS = [
+    'Great Vibes, cursive',
+    'Cinzel, serif',
+    'Rubik, sans-serif',
+    'Orbitron, sans-serif',
+    'Nunito, sans-serif'
+];
+
+export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, height = 800 }) => {
     
-    // ... keyword processing logic logic same ...
+    // Flatten and Sort Keywords
     const allKeywords = useMemo(() => {
-        return data.layers.flatMap(l => l.keywords).sort((a, b) => b.weight - a.weight);
+        // Boost quantity if low by duplicating nicely (fallback)
+        let kw = data.layers.flatMap(l => l.keywords);
+        if (kw.length < 20) {
+            kw = [...kw, ...kw]; // Double up if too few to form a tree
+        }
+        return kw.sort((a, b) => b.weight - a.weight);
     }, [data]);
 
-    // Generate Background Stars
-    const stars = useMemo(() => {
-        const s = [];
-        for(let i=0; i<80; i++) {
-            s.push({
-                x: Math.random() * width,
-                y: Math.random() * height,
-                r: Math.random() * 1.5,
-                opacity: 0.3 + Math.random() * 0.7,
-                delay: Math.random() * 2
-            });
-        }
-        return s;
-    }, [width, height]);
-
-    // Generate Foliage Layers (The green tree body)
-    const foliageLayers = useMemo(() => {
-        const layers = [];
-        const layerCount = 7;
-        const topY = 120;
-        const bottomY = height - 150;
-        const treeHeight = bottomY - topY;
-        const maxW = width * 0.85;
-
-        for(let i=0; i<layerCount; i++) {
-            const progress = i / (layerCount - 1);
-            const layerY = topY + (progress * treeHeight * 0.9); // Slightly bunch up
-            const layerW = 100 + (progress * (maxW - 100));
-            
-            // Path for a rough triangle/pine layer
-            // We make it slightly curved and jagged
-            const d = `
-                M ${width/2} ${layerY - 40}
-                L ${width/2 + layerW/2} ${layerY + 60}
-                Q ${width/2} ${layerY + 80} ${width/2 - layerW/2} ${layerY + 60}
-                Z
-            `;
-            layers.push({ d, y: layerY, width: layerW, index: i });
-        }
-        return layers;
-    }, [width, height]);
-
-    // Generate Fairy Lights (Catenary curves across layers)
-    const fairyLights = useMemo(() => {
-        if (!showDecorations) return [];
-        const lights = [];
-        const layerCount = 7;
-        const topY = 140;
-        const bottomY = height - 160;
-        const treeHeight = bottomY - topY;
-        const maxW = width * 0.8;
-
-        for(let i=1; i<layerCount; i++) {
-            const progress = i / (layerCount - 1);
-            const y = topY + (progress * treeHeight);
-            const w = 80 + (progress * (maxW - 80));
-            
-            // Curve: Start Left -> Drop Middle -> End Right
-            const startX = width/2 - w/2 + 20;
-            const endX = width/2 + w/2 - 20;
-            const drop = 20 + (progress * 20);
-            
-            const path = `M ${startX} ${y} Q ${width/2} ${y + drop} ${endX} ${y}`;
-            
-            // Bulbs along the path
-            const bulbCount = 8 + Math.floor(progress * 10);
-            for(let j=0; j<bulbCount; j++) {
-                const t = j / (bulbCount - 1);
-                // Approximate position on Quad curve
-                const bx = (1-t)*(1-t)*startX + 2*(1-t)*t*(width/2) + t*t*endX;
-                const by = (1-t)*(1-t)*y + 2*(1-t)*t*(y + drop) + t*t*y;
-                
-                lights.push({
-                    cx: bx,
-                    cy: by,
-                    r: 2,
-                    color: ['#fcd34d', '#f87171', '#60a5fa', '#fff'][Math.floor(Math.random()*4)],
-                    delay: Math.random() * 2
-                });
-            }
-            
-            lights.push({ path, isWire: true });
-        }
-        return lights;
-    }, [width, height, showDecorations]);
-
-    // Generate Positions (Triangle Typesetting / Word Cloud Effect)
+    // Generate Layout: Word Cloud Tree
     const treeItems = useMemo(() => {
         const items: any[] = [];
         const centerX = width / 2;
-        const topY = 130; // Lower start to fit star
-        const bottomY = height - 160; 
+        
+        // Tree Dimensions
+        const topY = 160; 
+        const bottomY = height - 120;
         const treeHeight = bottomY - topY;
-        const maxTreeWidth = width * 0.75; 
-
-        const sortedKeywords = [...allKeywords].sort((a, b) => b.weight - a.weight);
+        const maxTreeWidth = width * 0.85;
 
         let currentY = topY;
         let keywordIndex = 0;
         
-        while (keywordIndex < sortedKeywords.length && currentY < bottomY) {
+        // We want a tighter packing. 
+        // We will loop until we run out of space or keywords.
+        // To ensure the tree shape is filled, we might reuse keywords if we run out.
+        
+        const workingKeywords = [...allKeywords];
+        
+        while (currentY < bottomY) {
             const progress = (currentY - topY) / treeHeight;
-            const currentLineWidth = Math.max(80, progress * maxTreeWidth); 
+            
+            // Triangle Shape Function (Bell curve or Linear)
+            // Linear triangle: width = progress * maxTreeWidth
+            // Let's allow a minimum width at top so it's not too pointy/empty
+            const currentLineWidth = Math.max(60, progress * maxTreeWidth); 
             
             const lineItems: any[] = [];
             let usedWidth = 0;
             let maxFontSizeInLine = 0;
             
-            while (keywordIndex < sortedKeywords.length) {
-                const kw = sortedKeywords[keywordIndex];
-                // Slightly larger font for readability on complex background
-                const fontSize = 14 + Math.pow(kw.weight, 0.75) * 3; 
-                // Estimate width
-                const textWidth = kw.text.length * fontSize * 0.6 + 30; // More padding for signs
+            // Try to fill this line
+            let attempts = 0;
+            while (usedWidth < currentLineWidth && attempts < 10) {
+                // If we ran out of keywords, recycle top ones with lower weight
+                if (keywordIndex >= workingKeywords.length) {
+                    keywordIndex = 0; // Cycle back
+                }
 
-                if (usedWidth + textWidth <= currentLineWidth) {
-                    lineItems.push({ ...kw, fontSize, width: textWidth });
+                const kw = workingKeywords[keywordIndex];
+                
+                // Dynamic Font Size based on weight and progress (lower items can be bigger)
+                // Base size + Weight bonus
+                const baseSize = 14;
+                const weightBonus = Math.pow(kw.weight, 0.8) * 3;
+                let fontSize = baseSize + weightBonus;
+                
+                // Randomly vary size slightly for organic look
+                fontSize *= (0.9 + Math.random() * 0.2);
+
+                // Estimate text width (approximate char width ~ 0.6em)
+                // Add padding
+                const textWidth = kw.text.length * fontSize * 0.55 + 15;
+
+                if (usedWidth + textWidth <= currentLineWidth * 1.1) { // Allow slight overflow
+                    // Select random font and color
+                    const font = FONTS[Math.floor(Math.random() * FONTS.length)];
+                    const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+                    const rotation = (Math.random() - 0.5) * 20; // Slight tilt -10 to 10
+
+                    lineItems.push({ 
+                        ...kw, 
+                        fontSize, 
+                        width: textWidth, 
+                        font, 
+                        color,
+                        rotation 
+                    });
+                    
                     usedWidth += textWidth;
                     maxFontSizeInLine = Math.max(maxFontSizeInLine, fontSize);
                     keywordIndex++;
                 } else {
+                    // Try next keyword if this one didn't fit? 
+                    // For now, just break to next line to preserve order/weight
                     break; 
                 }
+                attempts++;
             }
 
+            // Layout the line
             let currentX = centerX - (usedWidth / 2);
-            lineItems.forEach((item, idx) => {
-                const yJitter = (Math.random() - 0.5) * 8;
-                const rotation = (Math.random() - 0.5) * 10;
-                
-                // Determine style based on weight
-                let type = 'text'; // default
-                if (item.weight > 7) type = 'plaque'; // Wooden sign
-                else if (item.weight > 4) type = 'ornament'; // Round/Tag
-                
+            lineItems.forEach((item) => {
                 items.push({
                     text: item.text,
-                    x: currentX + (item.width / 2),
-                    y: currentY + yJitter,
+                    x: currentX + (item.width / 2), // Center of word
+                    y: currentY,
                     fontSize: item.fontSize,
-                    rotation,
-                    type,
-                    width: item.width,
-                    delay: items.length * 0.05
+                    font: item.font,
+                    color: item.color,
+                    rotation: item.rotation,
+                    delay: items.length * 0.02
                 });
-                
                 currentX += item.width;
             });
 
-            currentY += (maxFontSizeInLine * 1.0) + 15; // More vertical spacing
-            
-            if (lineItems.length === 0) {
-                 currentY += 30;
-                 if(keywordIndex < sortedKeywords.length) keywordIndex++;
-            }
+            // Advance Y
+            // Tighter spacing: 0.8 of font size
+            currentY += Math.max(20, maxFontSizeInLine * 0.85);
         }
 
         return items;
-    }, [allKeywords, width, height, theme]);
+    }, [allKeywords, width, height]);
 
     return (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto shadow-2xl rounded-sm" style={{ backgroundColor: '#0f172a' }}>
+        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto shadow-2xl rounded-sm" style={{ backgroundColor: '#1a1a1a' }}>
             <defs>
-                <filter id="glow-strong">
-                    <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
+                <filter id="glow-text">
+                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
                     <feMerge>
                         <feMergeNode in="coloredBlur" />
                         <feMergeNode in="SourceGraphic" />
                     </feMerge>
                 </filter>
-                <filter id="shadow">
-                    <feDropShadow dx="1" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.5"/>
-                </filter>
-                <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#020617" />
+                <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#0f172a" />
                     <stop offset="100%" stopColor="#1e1b4b" />
                 </linearGradient>
                 <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+                    <stop offset="0%" stopColor="#fff" stopOpacity="0.8" />
                     <stop offset="100%" stopColor="#fff" stopOpacity="0" />
                 </radialGradient>
-                <linearGradient id="foliageGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#064e3b" /> {/* Dark Emerald */}
-                    <stop offset="50%" stopColor="#10b981" /> {/* Emerald */}
-                    <stop offset="100%" stopColor="#064e3b" />
-                </linearGradient>
-                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#fcd34d" />
-                    <stop offset="50%" stopColor="#d97706" />
-                    <stop offset="100%" stopColor="#78350f" />
-                </linearGradient>
-                <linearGradient id="woodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#a16207" />
-                    <stop offset="100%" stopColor="#451a03" />
-                </linearGradient>
             </defs>
 
-            {/* 1. Background Sky */}
-            <rect width={width} height={height} fill="url(#skyGradient)" />
+            {/* 1. Background */}
+            <rect width={width} height={height} fill="url(#bgGradient)" />
             
-            {/* 2. Stars */}
-            {stars.map((s, i) => (
-                <motion.circle
-                    key={`star-${i}`}
-                    cx={s.x}
-                    cy={s.y}
-                    r={s.r}
+            {/* 2. Stars (Background) */}
+            {[...Array(60)].map((_, i) => (
+                <circle
+                    key={`bg-star-${i}`}
+                    cx={Math.random() * width}
+                    cy={Math.random() * height}
+                    r={Math.random() * 1.5}
                     fill="#fff"
-                    opacity={s.opacity}
-                    animate={{ opacity: [s.opacity, s.opacity*0.3, s.opacity] }}
-                    transition={{ duration: 2 + Math.random()*2, repeat: Infinity, delay: s.delay }}
+                    opacity={Math.random() * 0.5 + 0.2}
                 />
             ))}
 
-            {/* 3. Moon (Optional, top left) */}
-            <circle cx="60" cy="60" r="30" fill="url(#starGlow)" opacity="0.1" />
-            <circle cx="50" cy="50" r="25" fill="#e2e8f0" opacity="0.8" filter="url(#glow-strong)" />
-
-            {/* 4. Tree Foliage (Back to Front) */}
-            {foliageLayers.reverse().map((layer, i) => (
-                <motion.path
-                    key={`foliage-${i}`}
-                    d={layer.d}
-                    fill="url(#foliageGradient)"
-                    filter="url(#shadow)"
-                    initial={{ scale: 0, originY: 1 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2 + (i * 0.1), duration: 1, type: 'spring' }}
-                />
-            ))}
-
-            {/* 5. Trunk (Bottom) */}
-            <motion.path
-                d={`M${width/2 - 25} ${height-150} L${width/2 + 25} ${height-150} L${width/2 + 40} ${height-40} L${width/2 - 40} ${height-40} Z`}
-                fill="url(#woodGradient)"
-                filter="url(#shadow)"
-            />
-
-            {/* 6. Fairy Lights Wires */}
-            {fairyLights.filter(l => l.isWire).map((wire: any, i) => (
-                 <path key={`wire-${i}`} d={wire.path} stroke="rgba(255,255,255,0.2)" strokeWidth="1" fill="none" />
-            ))}
-
-            {/* 7. Keywords / Ornaments */}
+            {/* 3. The Word Cloud Tree */}
             {treeItems.map((item, i) => (
-                <motion.g
-                    key={`item-${i}`}
-                    initial={{ scale: 0, opacity: 0, y: item.y + 50 }}
-                    animate={{ scale: 1, opacity: 1, y: item.y }}
-                    transition={{ delay: 1 + item.delay, type: 'spring', stiffness: 150 }}
-                    whileHover={{ scale: 1.1, zIndex: 100 }}
-                    style={{ cursor: 'pointer' }}
+                <motion.text
+                    key={`word-${i}`}
+                    x={item.x}
+                    y={item.y}
+                    textAnchor="middle"
+                    fill={item.color}
+                    fontSize={item.fontSize}
+                    fontFamily={item.font}
+                    transform={`rotate(${item.rotation}, ${item.x}, ${item.y})`}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: item.delay, type: 'spring', stiffness: 200 }}
+                    style={{ 
+                        filter: 'url(#glow-text)',
+                        cursor: 'default'
+                    }}
                 >
-                    {/* Background Plaque/Ornament */}
-                    {item.type === 'plaque' && (
-                        <g filter="url(#shadow)">
-                            <rect 
-                                x={item.x - item.width/2 + 5} 
-                                y={item.y - item.fontSize} 
-                                width={item.width - 10} 
-                                height={item.fontSize * 1.4} 
-                                rx="4" 
-                                fill="url(#woodGradient)" 
-                                stroke="#fcd34d" 
-                                strokeWidth="1"
-                            />
-                            {/* Nails */}
-                            <circle cx={item.x - item.width/2 + 10} cy={item.y - item.fontSize/2} r="1.5" fill="#fcd34d" />
-                            <circle cx={item.x + item.width/2 - 10} cy={item.y - item.fontSize/2} r="1.5" fill="#fcd34d" />
-                        </g>
-                    )}
-                    
-                    {item.type === 'ornament' && (
-                        <g filter="url(#shadow)">
-                            <ellipse 
-                                cx={item.x} 
-                                cy={item.y - item.fontSize*0.3} 
-                                rx={item.width/2} 
-                                ry={item.fontSize} 
-                                fill="rgba(255,255,255,0.9)" 
-                                stroke={theme.accent} 
-                                strokeWidth="2"
-                            />
-                        </g>
-                    )}
-
-                    {/* Text */}
-                    <text
-                        x={item.x}
-                        y={item.y}
-                        textAnchor="middle"
-                        fill={item.type === 'text' ? '#fef3c7' : (item.type === 'plaque' ? '#ffedd5' : '#1e293b')}
-                        fontSize={item.fontSize}
-                        fontWeight="bold"
-                        transform={`rotate(${item.rotation}, ${item.x}, ${item.y})`}
-                        style={{
-                            fontFamily: theme.font,
-                            textShadow: item.type === 'text' ? '0 0 5px rgba(255,215,0,0.5)' : 'none',
-                            filter: item.type === 'text' ? 'url(#glow-strong)' : 'none'
-                        }}
-                    >
-                        {item.text}
-                    </text>
-                </motion.g>
+                    {item.text}
+                </motion.text>
             ))}
 
-            {/* 8. Fairy Lights Bulbs & Ornaments */}
-            {/* Additional 3D Ornaments */}
-            {treeItems.filter(item => item.weight > 6).map((item, i) => (
-                 <motion.circle 
-                    key={`ornament-extra-${i}`}
-                    cx={item.x + (Math.random()-0.5)*40}
-                    cy={item.y + (Math.random()-0.5)*30}
-                    r={Math.min(item.fontSize * 0.6, 12)}
-                    fill={['url(#ornamentGold)', 'url(#ornamentRed)', 'url(#ornamentBlue)'][i % 3]}
-                    filter="url(#shadow)"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 2 + i*0.1 }}
-                 />
-            ))}
-
-            {fairyLights.filter(l => !l.isWire).map((bulb: any, i) => (
-                <motion.circle
-                    key={`bulb-${i}`}
-                    cx={bulb.cx}
-                    cy={bulb.cy}
-                    r={bulb.r * 1.5} // Larger bulbs
-                    fill={bulb.color}
-                    filter="url(#glow-strong)"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.6, 1, 0.6] }}
-                    transition={{ delay: 2 + bulb.delay, duration: 2, repeat: Infinity }}
-                />
-            ))}
-
-            {/* 9. Top Star (Main Role) */}
-            <g transform={`translate(${width / 2}, 90)`}>
-                {/* Glow behind star */}
-                <circle r="50" fill="url(#starGlow)" opacity="0.6" filter="url(#glow-strong)" />
-                
-                {/* 5-Pointed Star Shape */}
+            {/* 4. Top Star */}
+            <g transform={`translate(${width / 2}, 110)`}>
+                <circle r="40" fill="url(#starGlow)" opacity="0.5" />
                 <motion.path
-                    d="M0,-45 L13,-15 L45,-15 L20,5 L30,35 L0,20 L-30,35 L-20,5 L-45,-15 L-13,-15 Z"
-                    fill="url(#goldGradient)"
-                    stroke="#fef3c7"
+                    d="M0,-35 L10,-12 L35,-12 L15,5 L22,30 L0,18 L-22,30 L-15,5 L-35,-12 L-10,-12 Z"
+                    fill="#fcd34d"
+                    stroke="#fff"
                     strokeWidth="2"
-                    filter="url(#shadow)"
                     initial={{ scale: 0, rotate: -180 }}
                     animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: 2.5, type: 'spring' }}
+                    transition={{ delay: 2, type: 'spring' }}
                 />
-                
-                {/* Star Text (Role) */}
-                <motion.text
-                    y={5}
-                    textAnchor="middle"
-                    fill="#78350f"
-                    fontSize="12"
-                    fontWeight="900"
-                    style={{ fontFamily: theme.font }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 3 }}
-                >
-                    {data.star_label.split(' ')[0]} {/* First word usually core role */}
-                </motion.text>
-                 <motion.text
-                    y={18}
-                    textAnchor="middle"
-                    fill="#78350f"
-                    fontSize="10"
-                    fontWeight="bold"
-                    style={{ fontFamily: theme.font }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 3.1 }}
-                >
-                    {data.star_label.split(' ').slice(1).join(' ')}
-                </motion.text>
+                <text y={50} textAnchor="middle" fill="#fcd34d" fontSize="16" fontFamily="Cinzel, serif" fontWeight="bold">
+                    {data.star_label}
+                </text>
             </g>
 
-            {/* 10. Bottom Scroll (Trunk Label / Interpretation Title) */}
-            <g transform={`translate(${width/2}, ${height - 60})`}>
-                <motion.path
-                    d="M-120,0 Q-140,10 -120,20 L120,20 Q140,10 120,0 Q0,-10 -120,0 Z"
-                    fill="#fef3c7" // Parchment color
-                    stroke="#d97706"
-                    strokeWidth="2"
-                    filter="url(#shadow)"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ delay: 3.2 }}
-                />
-                 <motion.text
-                    y={14}
-                    textAnchor="middle"
-                    fill="#78350f"
-                    fontSize="14"
-                    fontStyle="italic"
-                    fontWeight="bold"
-                    style={{ fontFamily: theme.font }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 3.5 }}
-                >
-                    {data.trunk_core_role}
-                </motion.text>
-            </g>
-
-            {/* Watermark */}
-            <text
-                x={width - 20}
-                y={height - 20}
-                textAnchor="end"
-                fill="rgba(255,255,255,0.3)"
-                fontSize="10"
-                style={{ fontFamily: theme.font }}
+            {/* 5. Trunk */}
+            <rect 
+                x={width/2 - 20} 
+                y={height - 130} 
+                width={40} 
+                height={60} 
+                fill="#573a25" 
+                rx="4"
+            />
+            
+            {/* 6. Base/Label */}
+            <text 
+                x={width/2} 
+                y={height - 50} 
+                textAnchor="middle" 
+                fill="#e2e8f0" 
+                fontSize="18" 
+                fontFamily="Great Vibes, cursive"
             >
-                Haigoo Christmas Tree
+                {data.trunk_core_role}
             </text>
+
         </svg>
     );
 };

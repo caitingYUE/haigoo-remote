@@ -5,7 +5,7 @@ import { RotatingQuotes } from '../components/Christmas/RotatingQuotes';
 import { EmailCaptureModal } from '../components/Christmas/EmailCaptureModal';
 import { HappinessCard } from '../components/Christmas/HappinessCard';
 import { ChristmasErrorBoundary } from '../components/Christmas/ChristmasErrorBoundary';
-import { Upload, Sparkles, Share2, Loader2, Download, Wand2, Gift, Trees } from 'lucide-react';
+import { Upload, Sparkles, Share2, Loader2, Download, Wand2, Gift, Trees, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import html2canvas from 'html2canvas';
 
