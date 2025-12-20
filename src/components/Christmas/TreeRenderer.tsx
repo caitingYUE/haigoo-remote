@@ -87,17 +87,17 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         const items: any[] = [];
         const centerX = width / 2;
         
-        // Tree Dimensions
-        const topY = 160; 
-        const bottomY = height - 120;
+        // Tree Dimensions - ADJUSTED FOR TALLER, DENSER TREE
+        const topY = 80;  // Moved up from 160 to fill the empty top space
+        const bottomY = height - 100;
         const treeHeight = bottomY - topY;
-        const maxTreeWidth = width * 0.9; // Slightly wider
+        const maxTreeWidth = width * 0.95; // Wider bottom
 
         let currentY = topY;
         let keywordIndex = 0;
         
-        // Shuffle for randomness on re-renders if needed, but keep stable for now
-        // We want a tighter packing. 
+        // Decorative symbols to mix in
+        const DECORATIONS = ['★', '✦', '❄', '♥', '•', '✨'];
         
         const workingKeywords = [...allKeywords];
         
@@ -105,10 +105,9 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         while (currentY < bottomY) {
             const progress = (currentY - topY) / treeHeight;
             
-            // Triangle Shape: Bell curve-ish or wider triangle
-            // width = minWidth + (maxWidth - minWidth) * progress^0.8
-            // Using power < 1 makes it get wider faster (fat tree)
-            const currentLineWidth = 80 + (maxTreeWidth - 80) * Math.pow(progress, 0.9);
+            // Triangle Shape: Conical
+            // Start very narrow at top
+            const currentLineWidth = 20 + (maxTreeWidth - 20) * progress;
             
             const lineItems: any[] = [];
             let usedWidth = 0;
@@ -117,38 +116,55 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             // Try to fill this line
             let attempts = 0;
             // Allow more items per line
-            while (usedWidth < currentLineWidth && attempts < 15) {
+            while (usedWidth < currentLineWidth && attempts < 20) {
                 // Recycle keywords if we run out
                 if (keywordIndex >= workingKeywords.length) {
                     keywordIndex = 0; 
-                    // Optional: Shuffle slightly or offset to avoid identical repeating patterns?
-                    // For now, simple cycle is safer.
+                }
+
+                // Decision: Add a keyword OR a decoration?
+                // 15% chance to add a decoration if not at the very start of line
+                if (Math.random() < 0.15 && lineItems.length > 0) {
+                    const deco = DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)];
+                    const decoSize = 10 + Math.random() * 8;
+                    const decoColor = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+                    
+                    lineItems.push({
+                        text: deco,
+                        fontSize: decoSize,
+                        width: decoSize * 1.5,
+                        font: 'Arial', // Standard font for symbols
+                        color: decoColor,
+                        rotation: Math.random() * 360,
+                        isDecoration: true
+                    });
+                    usedWidth += decoSize * 1.5;
                 }
 
                 const kw = workingKeywords[keywordIndex];
                 
                 // Dynamic Font Size based on weight
-                // Reduce base size for denser look
-                const baseSize = 10;
-                // Weight is 1-10. 
-                // weightBonus: 1->2, 10->15
-                const weightBonus = Math.pow(kw.weight || 1, 0.7) * 4; 
+                // Base size slightly smaller for density
+                const baseSize = 12;
+                const weightBonus = Math.pow(kw.weight || 1, 0.8) * 3.5; 
                 let fontSize = baseSize + weightBonus;
                 
-                // Top of tree should have slightly smaller words to fit
-                if (progress < 0.2) fontSize *= 0.8;
+                // Scale down at the very top to fit the tip
+                if (progress < 0.1) fontSize *= 0.6;
+                else if (progress < 0.2) fontSize *= 0.8;
 
                 // Random variation
-                fontSize *= (0.85 + Math.random() * 0.3);
+                fontSize *= (0.9 + Math.random() * 0.4);
 
-                // Estimate text width: char width ~ 0.5em + padding
-                const textWidth = kw.text.length * fontSize * 0.5 + 10;
+                // Estimate text width
+                const textWidth = kw.text.length * fontSize * 0.5 + 8;
 
-                // Check if fits (allow slight overflow 10%)
+                // Check if fits
                 if (usedWidth + textWidth <= currentLineWidth * 1.1) { 
                     const font = FONTS[Math.floor(Math.random() * FONTS.length)];
                     const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
-                    const rotation = (Math.random() - 0.5) * 20; 
+                    // More rotation variation for "hand-drawn" messy look
+                    const rotation = (Math.random() - 0.5) * 30; 
 
                     lineItems.push({ 
                         ...kw, 
@@ -156,14 +172,14 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                         width: textWidth, 
                         font, 
                         color,
-                        rotation 
+                        rotation,
+                        isDecoration: false
                     });
                     
                     usedWidth += textWidth;
                     maxFontSizeInLine = Math.max(maxFontSizeInLine, fontSize);
                     keywordIndex++;
                 } else {
-                    // Line is full
                     break; 
                 }
                 attempts++;
@@ -180,14 +196,14 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                     font: item.font,
                     color: item.color,
                     rotation: item.rotation,
-                    delay: items.length * 0.01 // Faster animation
+                    delay: items.length * 0.005 + (progress * 2) // Cascade animation
                 });
                 currentX += item.width;
             });
 
             // Advance Y
-            // Tighter vertical spacing: 0.75 of font height
-            const lineHeight = Math.max(16, maxFontSizeInLine * 0.75);
+            // Very tight spacing
+            const lineHeight = Math.max(12, maxFontSizeInLine * 0.65);
             currentY += lineHeight;
         }
 
