@@ -402,14 +402,24 @@ export default async function handler(req, res) {
         if (neonHelper.isConfigured) {
             try {
                 const userRows = await neonHelper.query(
-                    `SELECT membership_level, membership_expire_at FROM users WHERE user_id = $1`,
+                    `SELECT membership_level, membership_expire_at, member_status, member_expire_at FROM users WHERE user_id = $1`,
                     [decoded.userId]
                 )
                 if (userRows && userRows.length > 0) {
                     const u = userRows[0]
+                    
+                    // Check legacy fields
                     if (u.membership_level && u.membership_level !== 'none') {
                         const expireAt = new Date(u.membership_expire_at)
                         if (expireAt > new Date()) {
+                            isMember = true
+                        }
+                    }
+                    
+                    // Check new fields (member_status)
+                    if (!isMember && u.member_status === 'active') {
+                        const expireAt = u.member_expire_at ? new Date(u.member_expire_at) : null
+                        if (expireAt && expireAt > new Date()) {
                             isMember = true
                         }
                     }

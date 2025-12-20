@@ -187,27 +187,29 @@ export default function CompanyDetailPage() {
                                     </div>
 
                                     {companyInfo?.tags && companyInfo.tags.length > 0 && (
-                                        <SingleLineTags tags={companyInfo.tags} size="sm" />
+                                        <div className="mb-4">
+                                            <SingleLineTags tags={companyInfo.tags} size="sm" />
+                                        </div>
+                                    )}
+
+                                    {/* Company Description - Integrated here */}
+                                    {companyInfo?.description && (
+                                        <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                            {companyInfo.description}
+                                        </div>
                                     )}
                                 </div>
                             </div>
-
-                            {/* Company Description - Moved here */}
-                            {companyInfo?.description && (
-                                <div className="mt-4 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                    {companyInfo.description}
-                                </div>
-                            )}
                         </div>
 
                         {/* Right Column: Certified Info (Sidebar) */}
                         {(companyInfo?.employeeCount || companyInfo?.address || companyInfo?.foundedYear || (companyInfo?.specialties && companyInfo.specialties.length > 0) || companyInfo?.companyRating) && (
                             <div className="lg:w-80 flex-shrink-0">
-                                <div className="bg-slate-50 rounded-xl border border-indigo-100 overflow-hidden">
-                                    <div className="px-4 py-3 bg-indigo-50/50 border-b border-indigo-100 flex items-center justify-between">
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                    <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                                         <div className="flex items-center gap-2">
-                                            <CheckCircle className="w-4 h-4 text-indigo-600" />
-                                            <h2 className="text-sm font-bold text-indigo-900">企业认证信息</h2>
+                                            <Shield className="w-4 h-4 text-indigo-600" />
+                                            <h2 className="text-sm font-bold text-slate-900">企业认证信息</h2>
                                         </div>
                                     </div>
 

@@ -119,6 +119,7 @@ function App() {
                           <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
                           <Route path="/company/:id" element={<CompanyProfilePage />} />
                           <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
+                          <Route path="/verify-email" element={<VerifyEmailPage />} />
                           <Route path="/admin/location-categories" element={
                             <AdminRoute>
                               <AdminLocationPage />
