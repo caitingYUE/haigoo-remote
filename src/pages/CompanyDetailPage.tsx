@@ -13,6 +13,13 @@ export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
     const { user } = useAuth()
+    
+    // Check membership (consistent with other components)
+    const isMember = (
+        (user?.memberStatus === 'active' && (!user.memberExpireAt || new Date(user.memberExpireAt) > new Date())) || 
+        !!user?.roles?.admin
+    );
+
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [jobs, setJobs] = useState<Job[]>([])
     const [loading, setLoading] = useState(true)

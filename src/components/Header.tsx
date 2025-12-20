@@ -15,7 +15,7 @@ export default function Header() {
   const { user, isAuthenticated, logout, token } = useAuth()
   
   // 判断是否为会员
-  const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
+  const isMember = (user?.memberStatus === 'active' && (!user.memberExpireAt || new Date(user.memberExpireAt) > new Date())) || !!user?.roles?.admin;
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
