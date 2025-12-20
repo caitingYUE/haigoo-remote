@@ -346,7 +346,7 @@ export default function Header() {
                 >
                   <button
                     ref={userMenuButtonRef}
-                    className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2"
+                    className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-50 transition-all duration-200 focus:outline-none"
                     onKeyDown={handleUserMenuKeyDown}
                     aria-expanded={isUserMenuOpen}
                     aria-haspopup="menu"
@@ -416,8 +416,8 @@ export default function Header() {
                             </div>
                           )}
                           <div>
-                            <p className="text-sm font-medium text-slate-900">{user?.username || '用户'}</p>
-                            <p className="text-xs text-slate-500">{user?.profile?.title || user?.email}</p>
+                            <p className="text-sm font-medium text-slate-900 truncate max-w-[150px]">{user?.username || '用户'}</p>
+                            <p className="text-xs text-slate-500 truncate max-w-[150px]" title={user?.profile?.title || user?.email}>{user?.profile?.title || user?.email}</p>
                           </div>
                         </div>
                       </div>

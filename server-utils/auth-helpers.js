@@ -84,10 +84,10 @@ export function generateRandomUsername() {
  * @param {string} style - 头像风格 (avataaars, bottts, personas, pixel-art 等)
  * @returns {string} 头像 URL
  */
-export function generateRandomAvatar(seed, style = 'personas') {
+export function generateRandomAvatar(seed, style = 'avataaars-neutral') {
   // DiceBear Avatars API: https://avatars.dicebear.com/
-  // 支持多种风格，这里使用 personas（卡通人物）
-  return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}`
+  // 使用 avataaars-neutral 风格（无性别、抽象、中性）
+  return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}`
 }
 
 /**
