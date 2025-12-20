@@ -123,10 +123,10 @@ export default function CompanyDetailPage() {
                         <span className="text-sm">返回</span>
                     </button>
 
-                    <div className="flex flex-col lg:flex-row gap-8 items-start">
+                    <div className="flex flex-col lg:flex-row gap-6 items-start">
                         {/* Left Column: Identity + Certified Info (Main) */}
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-start gap-6 mb-8">
+                            <div className="flex items-start gap-4 mb-4">
                                 {/* Company Logo */}
                                 {companyInfo?.logo ? (
                                     <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 border border-slate-100 p-2 overflow-hidden">
@@ -162,26 +162,15 @@ export default function CompanyDetailPage() {
                                         )}
                                     </h1>
 
-                                    <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-3">
+                                    <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-2">
                                         {companyInfo?.industry && (
-                                            <div className="flex items-center gap-1.5">
-                                                <Building2 className="w-4 h-4" />
+                                            <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                                                <Building2 className="w-3.5 h-3.5" />
                                                 <span>{companyInfo.industry}</span>
                                             </div>
                                         )}
-                                        {companyInfo?.website && (
-                                            <a
-                                                href={companyInfo.website}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700"
-                                            >
-                                                <Globe className="w-4 h-4" />
-                                                <span>官网</span>
-                                            </a>
-                                        )}
-                                        <div className="flex items-center gap-1.5">
-                                            <Briefcase className="w-4 h-4" />
+                                        <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                                            <Briefcase className="w-3.5 h-3.5" />
                                             <span>{jobs.length} 个在招岗位</span>
                                         </div>
                                     </div>
@@ -194,54 +183,61 @@ export default function CompanyDetailPage() {
                                 </div>
                             </div>
 
-                            {/* Certified Info - Expanded Section (Member Feature) */}
-                            {(companyInfo?.employeeCount || companyInfo?.address || companyInfo?.foundedYear || (companyInfo?.specialties && companyInfo.specialties.length > 0) || companyInfo?.companyRating) && (
-                                <div className="mb-8 relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/30 shadow-sm">
-                                    {/* Member Badge Header */}
-                                    <div className="px-6 py-4 border-b border-indigo-100/50 flex items-center justify-between bg-white/50 backdrop-blur-sm">
-                                        <div className="flex items-center gap-2 text-indigo-700">
-                                            <div className="p-1.5 bg-indigo-100 rounded-lg">
-                                                <Crown className="w-4 h-4" />
-                                            </div>
-                                            <h2 className="font-bold">企业认证信息</h2>
-                                            <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium border border-amber-200">
-                                                会员专属
-                                            </span>
-                                        </div>
+                            {companyInfo?.isTrusted && (
+                                <div className="mt-4 bg-slate-50/50 rounded-xl border border-slate-200/60 overflow-hidden">
+                                    <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100">
+                                        <Shield className="w-4 h-4 text-indigo-600" />
+                                        <h2 className="text-sm font-bold text-slate-900">企业认证信息</h2>
+                                        <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium border border-amber-200 ml-1">
+                                            会员专属
+                                        </span>
                                     </div>
 
-                                    <div className="p-6 relative">
+                                    <div className="p-4 relative">
                                         {user?.memberStatus && user.memberStatus !== 'free' ? (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                                {/* Website - New Position */}
+                                                {companyInfo.website && (
+                                                    <a 
+                                                        href={companyInfo.website}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group"
+                                                    >
+                                                        <div className="p-1.5 bg-indigo-50 rounded-md group-hover:bg-indigo-100 transition-colors">
+                                                            <Globe className="w-4 h-4 text-indigo-600" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="text-[10px] text-slate-500 mb-0.5">官方网站</div>
+                                                            <div className="font-medium text-indigo-600 text-sm truncate">点击访问</div>
+                                                        </div>
+                                                    </a>
+                                                )}
+
                                                 {/* Rating */}
                                                 {companyInfo.companyRating && (
-                                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
-                                                        <div className="mt-1 p-2 bg-amber-50 rounded-lg">
-                                                            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm">
+                                                        <div className="p-1.5 bg-amber-50 rounded-md">
+                                                            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                                                         </div>
                                                         <div>
-                                                            <div className="text-xs text-slate-500 mb-1">企业评分</div>
-                                                            <div className="font-bold text-slate-900 flex items-center gap-2 text-lg">
+                                                            <div className="text-[10px] text-slate-500 mb-0.5">企业评分</div>
+                                                            <div className="font-bold text-slate-900 text-sm">
                                                                 {companyInfo.companyRating}
                                                             </div>
-                                                            {companyInfo.ratingSource && (
-                                                                <div className="text-xs text-slate-400">
-                                                                    via {companyInfo.ratingSource}
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
                                                 
                                                 {/* Address */}
                                                 {companyInfo.address && (
-                                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm md:col-span-2 lg:col-span-1">
-                                                        <div className="mt-1 p-2 bg-indigo-50 rounded-lg">
-                                                            <MapPin className="w-5 h-5 text-indigo-500" />
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm col-span-2 lg:col-span-1">
+                                                        <div className="p-1.5 bg-indigo-50 rounded-md">
+                                                            <MapPin className="w-4 h-4 text-indigo-500" />
                                                         </div>
-                                                        <div>
-                                                            <div className="text-xs text-slate-500 mb-1">总部地址</div>
-                                                            <div className="font-medium text-slate-900 leading-snug">
+                                                        <div className="min-w-0">
+                                                            <div className="text-[10px] text-slate-500 mb-0.5">总部地址</div>
+                                                            <div className="font-medium text-slate-900 text-sm truncate">
                                                                 {companyInfo.address}
                                                             </div>
                                                         </div>
@@ -250,13 +246,13 @@ export default function CompanyDetailPage() {
                                                 
                                                 {/* Employees */}
                                                 {companyInfo.employeeCount && (
-                                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
-                                                        <div className="mt-1 p-2 bg-blue-50 rounded-lg">
-                                                            <Users className="w-5 h-5 text-blue-500" />
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm">
+                                                        <div className="p-1.5 bg-blue-50 rounded-md">
+                                                            <Users className="w-4 h-4 text-blue-500" />
                                                         </div>
                                                         <div>
-                                                            <div className="text-xs text-slate-500 mb-1">员工人数</div>
-                                                            <div className="font-medium text-slate-900">
+                                                            <div className="text-[10px] text-slate-500 mb-0.5">员工人数</div>
+                                                            <div className="font-medium text-slate-900 text-sm">
                                                                 {companyInfo.employeeCount}
                                                             </div>
                                                         </div>
@@ -265,13 +261,13 @@ export default function CompanyDetailPage() {
                                                 
                                                 {/* Founded */}
                                                 {companyInfo.foundedYear && (
-                                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
-                                                        <div className="mt-1 p-2 bg-emerald-50 rounded-lg">
-                                                            <Calendar className="w-5 h-5 text-emerald-500" />
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm">
+                                                        <div className="p-1.5 bg-emerald-50 rounded-md">
+                                                            <Calendar className="w-4 h-4 text-emerald-500" />
                                                         </div>
                                                         <div>
-                                                            <div className="text-xs text-slate-500 mb-1">成立年份</div>
-                                                            <div className="font-medium text-slate-900">
+                                                            <div className="text-[10px] text-slate-500 mb-0.5">成立年份</div>
+                                                            <div className="font-medium text-slate-900 text-sm">
                                                                 {companyInfo.foundedYear}
                                                             </div>
                                                         </div>
@@ -280,11 +276,10 @@ export default function CompanyDetailPage() {
 
                                                 {/* Specialties - Full Width */}
                                                 {companyInfo.specialties && companyInfo.specialties.length > 0 && (
-                                                    <div className="col-span-full pt-4 mt-2 border-t border-indigo-50">
-                                                        <div className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wider">领域专长</div>
+                                                    <div className="col-span-full pt-2 mt-1 border-t border-slate-100">
                                                         <div className="flex flex-wrap gap-2">
                                                             {companyInfo.specialties.map((spec, idx) => (
-                                                                <span key={idx} className="px-3 py-1 bg-white text-slate-700 rounded-lg border border-slate-200 text-sm font-medium shadow-sm">
+                                                                <span key={idx} className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200 text-xs font-medium">
                                                                     {spec}
                                                                 </span>
                                                             ))}
@@ -295,24 +290,24 @@ export default function CompanyDetailPage() {
                                         ) : (
                                             /* Locked State */
                                             <>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 filter blur-[5px] select-none opacity-50 pointer-events-none">
-                                                    <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl"><div className="w-10 h-10 bg-amber-50 rounded-lg"></div><div className="space-y-2"><div className="w-16 h-3 bg-slate-200 rounded"></div><div className="w-12 h-5 bg-slate-200 rounded"></div></div></div>
-                                                    <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl"><div className="w-10 h-10 bg-indigo-50 rounded-lg"></div><div className="space-y-2"><div className="w-16 h-3 bg-slate-200 rounded"></div><div className="w-24 h-5 bg-slate-200 rounded"></div></div></div>
-                                                    <div className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl"><div className="w-10 h-10 bg-blue-50 rounded-lg"></div><div className="space-y-2"><div className="w-16 h-3 bg-slate-200 rounded"></div><div className="w-20 h-5 bg-slate-200 rounded"></div></div></div>
-                                                    <div className="col-span-full h-20 bg-slate-50 rounded-xl"></div>
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-[4px] select-none opacity-60 pointer-events-none">
+                                                    <div className="h-12 bg-white rounded-lg border border-slate-100"></div>
+                                                    <div className="h-12 bg-white rounded-lg border border-slate-100"></div>
+                                                    <div className="h-12 bg-white rounded-lg border border-slate-100"></div>
+                                                    <div className="h-12 bg-white rounded-lg border border-slate-100"></div>
                                                 </div>
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/30 backdrop-blur-[1px] z-10">
-                                                    <div className="bg-white p-6 rounded-2xl shadow-xl border border-indigo-100 text-center max-w-sm mx-auto">
-                                                        <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                            <Crown className="w-6 h-6" />
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/10 backdrop-blur-[1px] z-10">
+                                                    <div className="bg-white/90 p-4 rounded-xl shadow-lg border border-indigo-100 text-center max-w-xs mx-auto backdrop-blur-md">
+                                                        <div className="flex items-center justify-center gap-2 mb-2">
+                                                            <Crown className="w-4 h-4 text-amber-500" />
+                                                            <h3 className="text-sm font-bold text-slate-900">解锁深度认证信息</h3>
                                                         </div>
-                                                        <h3 className="text-lg font-bold text-slate-900 mb-2">解锁企业深度认证信息</h3>
-                                                        <p className="text-slate-500 text-sm mb-6">
-                                                            升级会员即可查看企业评分、薪资范围、面试评价等深度信息
+                                                        <p className="text-slate-500 text-xs mb-3">
+                                                            查看官网、评分、薪资范围等深度信息
                                                         </p>
                                                         <button 
                                                             onClick={() => navigate('/membership')}
-                                                            className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transform transition hover:-translate-y-0.5 active:translate-y-0"
+                                                            className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
                                                         >
                                                             立即解锁
                                                         </button>
@@ -328,11 +323,11 @@ export default function CompanyDetailPage() {
                         {/* Right Column: Description (Sidebar) */}
                         <div className="lg:w-80 flex-shrink-0">
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
-                                <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                                <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
                                     <Info className="w-4 h-4 text-slate-500" />
-                                    <h2 className="font-bold text-slate-900">关于我们</h2>
+                                    <h2 className="font-bold text-slate-900 text-sm">关于我们</h2>
                                 </div>
-                                <div className="p-5">
+                                <div className="p-4">
                                     <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
                                         {companyInfo?.description || '暂无简介'}
                                     </div>
@@ -342,7 +337,7 @@ export default function CompanyDetailPage() {
                     </div>
 
                     {/* Job Listings - Full Width */}
-                    <div className="mt-10 pt-8 border-t border-slate-200/60">
+                    <div className="mt-6 pt-6 border-t border-slate-200/60">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                                 在招岗位
