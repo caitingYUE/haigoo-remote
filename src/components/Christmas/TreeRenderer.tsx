@@ -381,18 +381,33 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 </motion.g>
             ))}
 
-            {/* 8. Fairy Lights Bulbs */}
+            {/* 8. Fairy Lights Bulbs & Ornaments */}
+            {/* Additional 3D Ornaments */}
+            {treeItems.filter(item => item.weight > 6).map((item, i) => (
+                 <motion.circle 
+                    key={`ornament-extra-${i}`}
+                    cx={item.x + (Math.random()-0.5)*40}
+                    cy={item.y + (Math.random()-0.5)*30}
+                    r={Math.min(item.fontSize * 0.6, 12)}
+                    fill={['url(#ornamentGold)', 'url(#ornamentRed)', 'url(#ornamentBlue)'][i % 3]}
+                    filter="url(#shadow)"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 2 + i*0.1 }}
+                 />
+            ))}
+
             {fairyLights.filter(l => !l.isWire).map((bulb: any, i) => (
                 <motion.circle
                     key={`bulb-${i}`}
                     cx={bulb.cx}
                     cy={bulb.cy}
-                    r={bulb.r}
+                    r={bulb.r * 1.5} // Larger bulbs
                     fill={bulb.color}
                     filter="url(#glow-strong)"
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ delay: 2 + bulb.delay, duration: 1.5, repeat: Infinity }}
+                    animate={{ opacity: [0.6, 1, 0.6] }}
+                    transition={{ delay: 2 + bulb.delay, duration: 2, repeat: Infinity }}
                 />
             ))}
 
