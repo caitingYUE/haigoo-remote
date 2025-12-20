@@ -56,7 +56,8 @@ export default function CompanyDetailPage() {
             const trusted = companies.find(c => c.name?.trim().toLowerCase() === norm) ||
                 companies.find(c => c.name && c.name.toLowerCase().includes(norm))
             if (trusted) {
-                setCompanyInfo(trusted)
+                // Ensure isTrusted is true if found in trusted list
+                setCompanyInfo({ ...trusted, isTrusted: true })
             }
 
             // Fetch all jobs from this company
