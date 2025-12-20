@@ -7,6 +7,7 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import JobCardNew from '../components/JobCardNew'
 import { SingleLineTags } from '../components/SingleLineTags'
+import JobDetailModal from '../components/JobDetailModal'
 
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
@@ -16,6 +17,9 @@ export default function CompanyDetailPage() {
     const [jobs, setJobs] = useState<Job[]>([])
     const [loading, setLoading] = useState(true)
     const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
+    const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+    const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
+    const [currentJobIndex, setCurrentJobIndex] = useState(0)
 
     const decodedCompanyName = decodeURIComponent(companyName || '')
 
@@ -99,7 +103,18 @@ export default function CompanyDetailPage() {
     }
 
     const handleJobClick = (job: Job) => {
-        navigate(`/jobs?jobId=${job.id}`)
+        const index = jobs.findIndex(j => j.id === job.id)
+        setSelectedJob(job)
+        setCurrentJobIndex(index !== -1 ? index : 0)
+        setIsJobDetailOpen(true)
+    }
+
+    const handleNavigateJob = (direction: 'prev' | 'next') => {
+        const newIndex = direction === 'prev'
+            ? Math.max(0, currentJobIndex - 1)
+            : Math.min(jobs.length - 1, currentJobIndex + 1)
+        setCurrentJobIndex(newIndex)
+        setSelectedJob(jobs[newIndex])
     }
 
     if (loading) {
@@ -369,6 +384,20 @@ export default function CompanyDetailPage() {
             </div>
 
             {/* Job Listings - Removed from here, moved to main column */}
+
+            {/* Job Detail Modal */}
+            {isJobDetailOpen && selectedJob && (
+                <JobDetailModal
+                    job={selectedJob}
+                    isOpen={isJobDetailOpen}
+                    onClose={() => setIsJobDetailOpen(false)}
+                    onSave={() => toggleSaveJob(selectedJob.id)}
+                    isSaved={savedJobs.has(selectedJob.id)}
+                    jobs={jobs}
+                    currentJobIndex={currentJobIndex}
+                    onNavigateJob={handleNavigateJob}
+                />
+            )}
         </div>
     )
 }
