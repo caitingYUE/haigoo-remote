@@ -397,6 +397,7 @@ export default function CompanyDetailPage() {
                     jobs={jobs}
                     currentJobIndex={currentJobIndex}
                     onNavigateJob={handleNavigateJob}
+                    variant="center"
                 />
             )}
         </div>
