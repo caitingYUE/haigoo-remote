@@ -198,6 +198,7 @@ export default function CompanyDetailPage() {
                                 </div>
                             </div>
 
+                            {/* Always render Certified Info for trusted companies */}
                             {companyInfo?.isTrusted && (
                                 <div className="mt-4 bg-slate-50/50 rounded-xl border border-slate-200/60 overflow-hidden">
                                     <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100">
