@@ -45,6 +45,11 @@ async function startServer() {
         app.all(/^\/api\/data/, async (req, res) => { await dataHandler(req, res); });
         console.log('Data handler imported.');
 
+        console.log('Importing stats handler...');
+        const statsHandler = (await import('./api/stats.js')).default;
+        app.all('/api/stats', async (req, res) => { await statsHandler(req, res); });
+        console.log('Stats handler imported.');
+
         console.log('Importing admin-ops handler...');
         const adminOpsHandler = (await import('./api/admin-ops.js')).default;
         app.all('/api/admin-ops', async (req, res) => { await adminOpsHandler(req, res); });
