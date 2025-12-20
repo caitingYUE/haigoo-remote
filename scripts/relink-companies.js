@@ -2,8 +2,6 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env' });
 dotenv.config({ path: '.env.local' });
 
-import neonHelper from '../server-utils/dal/neon-helper.js';
-
 // Helper to normalize names for comparison
 const normalizeName = (name) => {
     if (!name) return '';
@@ -23,16 +21,20 @@ const normalizeName = (name) => {
 async function relinkCompanies() {
     console.log('🔄 Starting company relinking process...');
     
+    // Dynamic import to ensure env is loaded first
+    const neonHelper = (await import('../server-utils/dal/neon-helper.js')).default;
+    
     if (!neonHelper.isConfigured) {
         console.error('❌ Neon database not configured');
-        process.exit(1);
+        // process.exit(1); // Don't exit, just return to allow debugging
+        return;
     }
 
     try {
         // 1. Fetch all trusted companies
         console.log('📥 Fetching trusted companies...');
         const companies = await neonHelper.query(`
-            SELECT company_id, name, aliases, website 
+            SELECT company_id, name, website 
             FROM trusted_companies 
             ORDER BY name
         `);
@@ -42,26 +44,21 @@ async function relinkCompanies() {
 
         // 2. Process each company
         for (const company of companies) {
-            const aliases = company.aliases || [];
-            const searchTerms = [company.name, ...aliases];
+            // const aliases = company.aliases || [];
+            // const searchTerms = [company.name, ...aliases];
+            
+            // Simplified: Only use company name
+            const searchTerms = [company.name];
             
             // Build normalization matchers
-            const normalizedTerms = searchTerms.map(t => normalizeName(t)).filter(Boolean);
+            // const normalizedTerms = searchTerms.map(t => normalizeName(t)).filter(Boolean);
             
             // Construct SQL for matching
-            // We'll use a direct SQL update for efficiency and accuracy based on normalized names and aliases
-            
-            // 1. Match by normalized aliases/name
-            // We construct a list of ILIKE patterns
-            const patterns = [company.name, ...aliases].map(a => `%${a.trim()}%`);
-            
-            // Safe Update: Set company_id and is_trusted where company matches pattern AND is currently unlinked
-            // We use a broader match here because we want to catch "Alpha Insights" for "AlphaSights"
-            // The aliases table should be the source of truth for these variants.
+            // We'll use a direct SQL update for efficiency and accuracy based on normalized names
             
             let matchCount = 0;
             
-            for (const alias of [company.name, ...aliases]) {
+            for (const alias of searchTerms) {
                 // Skip short aliases to avoid false positives
                 if (alias.length < 3) continue;
                 
