@@ -15,7 +15,14 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying')
   const [message, setMessage] = useState('正在验证您的邮箱...')
 
+  // 添加组件挂载标记，防止React.StrictMode下的双重调用
+  const mounted = React.useRef(false);
+
   useEffect(() => {
+    // 确保只在首次挂载时执行
+    if (mounted.current) return;
+    mounted.current = true;
+
     if (!token || !email) {
       setStatus('error')
       setMessage('验证链接无效，缺少必要参数')
@@ -33,8 +40,17 @@ export default function VerifyEmailPage() {
             navigate('/')
           }, 3000)
         } else {
-          setStatus('error')
-          setMessage(result.error || '验证失败，链接可能已过期')
+          // 如果返回"邮箱已验证"，也视为成功
+          if (result.message === '邮箱已验证') {
+             setStatus('success')
+             setMessage('您的邮箱此前已验证成功')
+             setTimeout(() => {
+                navigate('/')
+             }, 3000)
+          } else {
+             setStatus('error')
+             setMessage(result.error || '验证失败，链接可能已过期')
+          }
         }
       } catch (err) {
         setStatus('error')
