@@ -46,7 +46,7 @@ export default function TrustedCompaniesPage() {
 
             const companiesList = Array.isArray(companiesData) 
                 ? companiesData 
-                : (companiesData?.companies || [])
+                : ((companiesData as any)?.companies || [])
 
             setCompanies(companiesList)
             setAllJobs(jobsData)
