@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
-import { processedJobsService } from '../services/processed-jobs-service'
 import SearchBar from '../components/SearchBar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
@@ -24,61 +23,78 @@ export default function TrustedCompaniesPage() {
     
     // Add missing state variables
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
+    const [filteredCompanies, setFilteredCompanies] = useState<TrustedCompany[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [jobCounts, setJobCounts] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
     const [isNominationModalOpen, setIsNominationModalOpen] = useState(false)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
-    const [allJobs, setAllJobs] = useState<any[]>([])
-
     useEffect(() => {
         loadData()
     }, [])
 
+    // 当搜索或过滤条件变化时，重新加载数据
+    useEffect(() => {
+        if (searchTerm || selectedIndustries.length > 0 || selectedRegions.length > 0) {
+            loadFilteredData()
+        } else {
+            // 如果没有搜索条件，使用初始加载的数据
+            setFilteredCompanies(companies)
+        }
+    }, [searchTerm, selectedIndustries, selectedRegions])
+
     const loadData = async () => {
         try {
             setLoading(true)
-            const [companiesData, jobsData] = await Promise.all([
-                trustedCompaniesService.getAllCompanies(),
-                processedJobsService.getAllProcessedJobs(1000)
-            ])
+            // 使用新的后端联表查询API
+            const result = await trustedCompaniesService.getCompaniesWithJobStats({
+                page: 1,
+                limit: 1000, // 获取足够多的数据
+                sortBy: 'jobCount',
+                sortOrder: 'desc'
+            })
 
-            const companiesList = Array.isArray(companiesData) 
-                ? companiesData 
-                : ((companiesData as any)?.companies || [])
-
+            const companiesList = result.companies || []
             setCompanies(companiesList)
-            setAllJobs(jobsData)
+            setFilteredCompanies(companiesList)
 
-            // Calculate job counts per company
+            // 从后端API返回的数据中提取职位统计信息
             const counts: Record<string, { total: number, categories: Record<string, number> }> = {}
-            const normalize = (name: string) => name?.toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ').trim() || ''
-
             companiesList.forEach((company: TrustedCompany) => {
-                const companyNameNorm = normalize(company.name)
-
-                const companyJobs = jobsData.filter((job: any) => {
-                    if (!job.company) return false
-                    const jobCompanyNorm = normalize(job.company)
-                    return jobCompanyNorm === companyNameNorm || jobCompanyNorm.includes(companyNameNorm) || companyNameNorm.includes(jobCompanyNorm)
-                })
-
-                const categories: Record<string, number> = {}
-                companyJobs.forEach((job: any) => {
-                    const cat = job.category || '其他'
-                    categories[cat] = (categories[cat] || 0) + 1
-                })
-
                 counts[company.id] = {
-                    total: companyJobs.length,
-                    categories
+                    total: company.jobCount || 0,
+                    categories: (company as any).jobCategories || {}
                 }
             })
             setJobCounts(counts)
 
         } catch (error) {
             console.error('Failed to load data:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const loadFilteredData = async () => {
+        try {
+            setLoading(true)
+            // 使用后端API进行搜索和过滤
+            const result = await trustedCompaniesService.getCompaniesWithJobStats({
+                page: 1,
+                limit: 1000,
+                sortBy: 'jobCount',
+                sortOrder: 'desc',
+                search: searchTerm,
+                industry: selectedIndustries.length > 0 ? selectedIndustries[0] : undefined,
+                region: selectedRegions.length > 0 ? selectedRegions[0] : undefined
+            })
+
+            const filteredList = result.companies || []
+            setFilteredCompanies(filteredList)
+
+        } catch (error) {
+            console.error('Failed to load filtered data:', error)
         } finally {
             setLoading(false)
         }
@@ -106,32 +122,6 @@ export default function TrustedCompaniesPage() {
         })
         return Array.from(regions).sort().map(r => ({ label: r, value: r }))
     }, [companies])
-
-    const filteredCompanies = companies.filter(company => {
-        const searchLower = searchTerm.toLowerCase()
-        // Basic company info match
-        const infoMatch =
-            company.name.toLowerCase().includes(searchLower) ||
-            (company.description && company.description.toLowerCase().includes(searchLower)) ||
-            (company.tags && company.tags.some(tag => tag.toLowerCase().includes(searchLower)))
-
-        // Job title match
-        const hasMatchingJobs = allJobs.some(job =>
-            job.company &&
-            company.name &&
-            job.company.toLowerCase().includes(company.name.toLowerCase()) &&
-            job.title &&
-            job.title.toLowerCase().includes(searchLower)
-        )
-
-        // Industry Filter
-        const industryMatch = selectedIndustries.length === 0 || (company.industry && selectedIndustries.includes(company.industry))
-
-        // Region Filter
-        const regionMatch = selectedRegions.length === 0 || (company.address && selectedRegions.some(r => company.address?.includes(r)))
-
-        return (infoMatch || hasMatchingJobs) && industryMatch && regionMatch
-    })
 
     return (
         <div className="min-h-screen bg-slate-50">

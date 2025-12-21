@@ -41,6 +41,10 @@ export interface PaginatedCompaniesResponse {
     totalPages: number;
 }
 
+export interface CompanyWithJobStats extends TrustedCompany {
+    jobCategories?: Record<string, number>;
+}
+
 export interface CompanyMetadata {
     title: string;
     description: string;
@@ -101,6 +105,42 @@ class TrustedCompaniesService {
         } catch (error) {
             console.error('Error fetching trusted companies:', error);
             return [];
+        }
+    }
+
+    // 获取带职位统计信息的公司列表（后端联表查询）
+    async getCompaniesWithJobStats(params: {
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+        industry?: string;
+        search?: string;
+        canRefer?: 'all' | 'yes' | 'no';
+        region?: string;
+    }): Promise<PaginatedCompaniesResponse> {
+        try {
+            const queryParams = new URLSearchParams();
+            queryParams.append('target', 'trusted_companies_with_jobs_info');
+            queryParams.append('_t', Date.now().toString());
+            
+            if (params.page) queryParams.append('page', params.page.toString());
+            if (params.limit) queryParams.append('limit', params.limit.toString());
+            if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+            if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+            if (params.industry && params.industry !== 'all') queryParams.append('industry', params.industry);
+            if (params.search) queryParams.append('search', params.search);
+            if (params.canRefer && params.canRefer !== 'all') queryParams.append('canRefer', params.canRefer);
+            if (params.region) queryParams.append('region', params.region);
+
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
+            if (!response.ok) throw new Error('Failed to fetch companies with job stats');
+            const data = await response.json();
+            
+            return data;
+        } catch (error) {
+            console.error('Error fetching companies with job stats:', error);
+            return { companies: [], total: 0, page: 1, totalPages: 0 };
         }
     }
 
