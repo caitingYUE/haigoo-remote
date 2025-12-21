@@ -214,7 +214,15 @@ export default function CompanyDetailPage() {
 
                             {/* Always render Certified Info for trusted companies */}
                             {companyInfo?.isTrusted && (
-                                <div className="mt-4 bg-slate-50/50 rounded-xl border border-slate-200/60 overflow-hidden">
+                                <div className="mt-4 bg-slate-50/50 rounded-xl border border-slate-200/60 overflow-hidden relative">
+                                    {isMember && (
+                                        <div className="absolute top-0 right-0 z-10">
+                                            <div className="bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg shadow-sm flex items-center gap-1">
+                                                <Crown className="w-3 h-3" />
+                                                会员专属权益已生效
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100">
                                         <Shield className="w-4 h-4 text-indigo-600" />
                                         <h2 className="text-sm font-bold text-slate-900">企业认证信息</h2>
@@ -357,7 +365,7 @@ export default function CompanyDetailPage() {
 
                                                 {/* Overlay */}
                                                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/40 backdrop-blur-[2px]">
-                                                    <div className="text-center p-6">
+                                                    <div className="text-center p-6 w-full max-w-sm">
                                                         <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg shadow-indigo-200">
                                                             <Crown className="w-5 h-5 text-white" />
                                                         </div>
@@ -365,7 +373,7 @@ export default function CompanyDetailPage() {
                                                         <p className="text-slate-500 text-xs mb-4">解锁官网、评分、薪资范围等企业情报</p>
                                                         <button 
                                                             onClick={() => navigate('/membership')}
-                                                            className="inline-flex items-center gap-1.5 px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                                            className="flex items-center justify-center gap-1.5 px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mx-auto w-fit"
                                                         >
                                                             <span>查看详情</span>
                                                             <ArrowRight className="w-3 h-3" />
