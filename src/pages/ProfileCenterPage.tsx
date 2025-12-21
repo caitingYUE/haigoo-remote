@@ -17,7 +17,7 @@ import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subsc
 type TabKey = 'resume' | 'favorites' | 'feedback' | 'recommend' | 'subscriptions' | 'membership'
 
 export default function ProfileCenterPage() {
-  const { user: authUser, token } = useAuth()
+  const { user: authUser, token, isMember } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -473,9 +473,6 @@ export default function ProfileCenterPage() {
     if (analysisSection) {
       analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-
-    // 会员权限检查
-    const isMember = (authUser?.memberStatus === 'active' && authUser.memberExpireAt && new Date(authUser.memberExpireAt) > new Date()) || !!authUser?.roles?.admin;
     
     if (!isMember) {
       setUpgradeSource('ai_resume');
@@ -1361,14 +1358,14 @@ export default function ProfileCenterPage() {
                       </div>
                       <span className="font-bold text-sm tracking-wide text-white/90">会员中心</span>
                     </div>
-                    {((authUser?.memberStatus === 'active' && authUser.memberExpireAt && new Date(authUser.memberExpireAt) > new Date()) || !!authUser?.roles?.admin) && (
+                    {isMember && (
                       <span className="px-2 py-0.5 rounded-full bg-teal-500/20 border border-teal-400/30 text-[10px] font-bold text-teal-200 uppercase">
                         Active
                       </span>
                     )}
                   </div>
 
-                  {((authUser?.memberStatus === 'active' && authUser.memberExpireAt && new Date(authUser.memberExpireAt) > new Date()) || !!authUser?.roles?.admin) ? (
+                  {isMember ? (
                     <div className="space-y-4">
                       <div>
                         <p className="text-xs text-indigo-200 mb-1">当前等级</p>

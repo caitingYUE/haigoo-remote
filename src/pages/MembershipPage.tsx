@@ -27,7 +27,7 @@ import { MembershipApplicationModal } from '../components/MembershipApplicationM
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal';
 
 const MembershipPage: React.FC = () => {
-   const { user, isAuthenticated } = useAuth();
+   const { user, isAuthenticated, isMember } = useAuth();
    const navigate = useNavigate();
    const [plans, setPlans] = useState<Plan[]>([]);
    const [loading, setLoading] = useState(true);
@@ -426,7 +426,7 @@ const MembershipPage: React.FC = () => {
             )}
             
             {/* Case 3: Is Member - Show Dashboard / Benefits */}
-            {isAuthenticated && ((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin) && (
+            {isAuthenticated && ((currentMembership?.isActive) || isMember) && (
                <div className="space-y-8">
                   {/* 1. Member Status & Group */}
                   <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">

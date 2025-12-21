@@ -12,13 +12,8 @@ import JobDetailModal from '../components/JobDetailModal'
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
-    const { user } = useAuth()
-    
-    // Check membership (consistent with other components)
-    const isMember = (
-        (user?.memberStatus === 'active' && (!user.memberExpireAt || new Date(user.memberExpireAt) > new Date())) || 
-        !!user?.roles?.admin
-    );
+    const { user, isMember } = useAuth()
+
 
     // DEBUG: Log user and membership status
     useEffect(() => {
@@ -327,11 +322,16 @@ export default function CompanyDetailPage() {
                                         ) : (
                                             /* Locked State */
                                             <>
-                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-[4px] select-none opacity-60 pointer-events-none">
-                                                    <div className="h-12 bg-white rounded-lg border border-slate-100"></div>
-                                                    <div className="h-12 bg-white rounded-lg border border-slate-100"></div>
-                                                    <div className="h-12 bg-white rounded-lg border border-slate-100"></div>
-                                                    <div className="h-12 bg-white rounded-lg border border-slate-100"></div>
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-[4px] select-none opacity-60 pointer-events-none min-h-[160px]">
+                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
+                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
+                                                    <div className="h-16 bg-white rounded-lg border border-slate-100 col-span-2 lg:col-span-1"></div>
+                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
+                                                    
+                                                    {/* Second Row Simulation */}
+                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
+                                                    <div className="h-16 bg-white rounded-lg border border-slate-100 col-span-2"></div>
+                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
                                                 </div>
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/10 backdrop-blur-[1px] z-10">
                                                     <div className="bg-white/90 p-4 rounded-xl shadow-lg border border-indigo-100 text-center max-w-xs mx-auto backdrop-blur-md">

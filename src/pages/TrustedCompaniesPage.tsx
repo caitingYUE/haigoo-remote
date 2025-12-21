@@ -15,16 +15,7 @@ import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 
 export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
-    const { user } = useAuth()
-    const [companies, setCompanies] = useState<TrustedCompany[]>([])
-    const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState('')
-    const [jobCounts, setJobCounts] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
-    const [isNominationModalOpen, setIsNominationModalOpen] = useState(false)
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-
-    // Check membership (Admin is also a member)
-    const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
+    const { user, isMember } = useAuth()
 
 
     // Filters

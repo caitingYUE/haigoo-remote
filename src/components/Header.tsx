@@ -12,10 +12,8 @@ export default function Header() {
   const [notifications, setNotifications] = useState<any[]>([])
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout, token } = useAuth()
-  
-  // 判断是否为会员
-  const isMember = (user?.memberStatus === 'active' && (!user.memberExpireAt || new Date(user.memberExpireAt) > new Date())) || !!user?.roles?.admin;
+  const { user, isAuthenticated, logout, token, isMember } = useAuth()
+
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)

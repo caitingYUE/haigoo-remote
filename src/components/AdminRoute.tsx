@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, user } = useAuth()
+  const { isAuthenticated, isLoading, isAdmin } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
@@ -13,7 +13,6 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  const isAdmin = !!(user?.roles?.admin || user?.email === 'caitlinyct@gmail.com')
   if (!isAdmin) {
     // Authenticated but not admin -> No Permission
     return <Navigate to="/no-permission" replace />

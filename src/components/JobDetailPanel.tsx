@@ -40,11 +40,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     canNavigateNext = false
 }) => {
     const navigate = useNavigate()
-    const { user } = useAuth()
+    const { user, isMember } = useAuth()
     const sourceType = getJobSourceType(job)
     const isAuthenticated = !!user
-    // Check membership (Admin is also a member)
-    const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
+
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
     const [feedbackAccuracy, setFeedbackAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
     const [feedbackContent, setFeedbackContent] = useState('')

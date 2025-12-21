@@ -17,7 +17,7 @@ import { Job } from '../types'
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const { user, token, isAuthenticated } = useAuth()
+  const { user, token, isAuthenticated, isMember } = useAuth()
   const { showSuccess, showWarning, showError } = useNotificationHelpers()
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
@@ -394,8 +394,6 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               {(() => {
-                const isMember = (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
-
                 if (isMember) {
                   return (
                     <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">

@@ -399,10 +399,6 @@ export default async function handler(req, res) {
 
         // Check Membership Status
         let isMember = false
-        // Admin override
-        if (decoded.admin) {
-            isMember = true
-        }
         
         if (neonHelper.isConfigured) {
             try {
@@ -415,11 +411,8 @@ export default async function handler(req, res) {
                 if (userRows && userRows.length > 0) {
                     const u = userRows[0]
                     
-                    // Check admin role from DB
-                    if (u.roles && u.roles.admin) isMember = true
-                    
                     // Check new fields (member_status)
-                    if (!isMember && u.member_status === 'active') {
+                    if (u.member_status === 'active') {
                         const expireAt = u.member_expire_at ? new Date(u.member_expire_at) : null
                         if (expireAt && expireAt > new Date()) {
                             isMember = true
