@@ -151,31 +151,46 @@ export default function ChristmasPage() {
         ];
         const randomText = shareTexts[Math.floor(Math.random() * shareTexts.length)];
 
-        if (navigator.share && treeRef.current) {
-            try {
-                const canvas = await html2canvas(treeRef.current, { scale: 2, backgroundColor: '#fff7ed', useCORS: true });
-                canvas.toBlob(async (blob) => {
-                    if (blob) {
-                        const file = new File([blob], 'my-christmas-tree.png', { type: 'image/png' });
-                        await navigator.share({
-                            title: '我的职业圣诞树 - Haigoo',
-                            text: randomText,
-                            files: [file]
-                        });
-                    }
-                });
-            } catch (err) {
-                console.error('Share failed:', err);
-                // Fallback to copy text if share fails (or user cancels)
-                navigator.clipboard.writeText(randomText).then(() => alert('分享文案已复制！'));
+        // Force fallback to clipboard if share is not supported OR if it fails
+        // Many browsers don't support file sharing via navigator.share
+        try {
+            if (navigator.share && treeRef.current) {
+                // Try to generate image
+                let file;
+                try {
+                     const canvas = await html2canvas(treeRef.current, { scale: 2, backgroundColor: '#fff7ed', useCORS: true });
+                     const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+                     if (blob) {
+                         file = new File([blob], 'my-christmas-tree.png', { type: 'image/png' });
+                     }
+                } catch (imgErr) {
+                    console.warn('Image generation for share failed, sharing text only', imgErr);
+                }
+
+                // Define share data with explicit type or any to bypass strict check for dynamic property
+                const shareData: any = {
+                    title: '我的职业圣诞树 - Haigoo',
+                    text: randomText
+                };
+
+                // Only add file if generated and supported
+                if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    shareData.files = [file];
+                }
+
+                await navigator.share(shareData);
+            } else {
+                throw new Error('Web Share API not supported');
             }
-        } else {
-            // Fallback for desktop or unsupported browsers
-            navigator.clipboard.writeText(randomText).then(() => {
-                alert('祝福语与链接已复制，快去分享给朋友吧！');
-            }).catch(() => {
-                alert('请截图分享，并访问 haigooremote.com 体验！');
-            });
+        } catch (err) {
+            console.log('Share API unavailable or failed, falling back to clipboard:', err);
+            try {
+                await navigator.clipboard.writeText(randomText);
+                alert('分享文案与链接已复制！快去粘贴分享给朋友吧 🎄');
+            } catch (clipErr) {
+                console.error('Clipboard failed:', clipErr);
+                alert('请手动复制链接分享：\nhttps://haigooremote.com/christmas');
+            }
         }
     };
 
@@ -413,11 +428,6 @@ export default function ChristmasPage() {
                                             <Share2 className="w-5 h-5" />
                                             <span>分享</span>
                                         </button>
-
-                                        <Link to="/campaign/forest" className="px-6 py-3 bg-[#15803d] text-white font-bold rounded-full hover:bg-[#166534] shadow-[0_4px_14px_0_rgba(21,128,61,0.39)] transition-all flex items-center gap-2 hover:-translate-y-1">
-                                            <Trees className="w-5 h-5" />
-                                            <span>参观森林</span>
-                                        </Link>
                                     </div>
                                     
                                     <div className="mt-4 text-center">

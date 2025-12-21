@@ -93,34 +93,52 @@ export default function ChristmasResumeCTA() {
                     {/* Glow Effect behind the tree */}
                     <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/0 to-transparent md:via-white/20 blur-xl rounded-full opacity-60"></div>
 
-                    {/* Spiral Line Decoration - SVG Background */}
-                    <div className="absolute inset-0 z-0 opacity-40">
+                    {/* Spiral Line Decoration - Improved SVG */}
+                    <div className="absolute inset-0 z-0 opacity-50">
                         <svg viewBox="0 0 200 300" className="w-full h-full overflow-visible">
-                            {/* Spiral Path - Conical Tree Shape */}
+                            <defs>
+                                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#fcd34d" />
+                                    <stop offset="100%" stopColor="#b45309" />
+                                </linearGradient>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            
+                            {/* Stylish Tree Outline / Ribbon */}
                             <path
                                 d="M100,30 
-                                   Q110,35 120,40
-                                   Q140,50 100,60
-                                   Q60,70 80,80
-                                   Q110,90 140,100
-                                   Q170,115 100,130
-                                   Q30,145 60,160
-                                   Q100,175 160,190
-                                   Q210,210 100,230
-                                   Q10,250 100,270"
+                                   Q130,40 100,50
+                                   Q70,60 100,70
+                                   Q150,85 100,100
+                                   Q50,115 100,130
+                                   Q170,150 100,170
+                                   Q30,190 100,210
+                                   Q190,230 100,250
+                                   Q10,270 100,290"
                                 fill="none"
-                                stroke="#d4af37"
-                                strokeWidth="2.5"
+                                stroke="url(#goldGradient)"
+                                strokeWidth="3"
                                 strokeLinecap="round"
-                                className="drop-shadow-md"
+                                filter="url(#glow)"
+                                className="drop-shadow-lg"
                             />
-                            {/* Hanging Ornaments on Spiral */}
-                            <circle cx="120" cy="40" r="2.5" fill="#dc2626" />
-                            <circle cx="80" cy="80" r="3" fill="#15803d" />
-                            <circle cx="140" cy="100" r="3.5" fill="#b45309" />
-                            <circle cx="60" cy="160" r="3" fill="#dc2626" />
-                            <circle cx="160" cy="190" r="4" fill="#15803d" />
-                            <circle cx="50" cy="240" r="3.5" fill="#b45309" />
+                            
+                            {/* Ornaments */}
+                            <g className="animate-pulse">
+                                <circle cx="100" cy="50" r="3" fill="#dc2626" />
+                                <circle cx="130" cy="85" r="4" fill="#15803d" />
+                                <circle cx="70" cy="115" r="3" fill="#fbbf24" />
+                                <circle cx="150" cy="150" r="4" fill="#dc2626" />
+                                <circle cx="50" cy="190" r="3" fill="#15803d" />
+                                <circle cx="170" cy="230" r="4" fill="#fbbf24" />
+                                <circle cx="30" cy="270" r="3" fill="#dc2626" />
+                            </g>
                         </svg>
                     </div>
 
