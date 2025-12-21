@@ -37,7 +37,6 @@ const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 
 
 const ChristmasPage = lazyRetry(() => import('./pages/ChristmasPage'), 'ChristmasPage')
-const ChristmasForestPage = lazyRetry(() => import('./pages/ChristmasForestPage'), 'ChristmasForestPage')
 
 function App() {
   console.log('Haigoo Frontend Version: 2025-12-18-Fix-Visuals-v2');
@@ -51,7 +50,6 @@ function App() {
                 <Routes>
                   {/* Public: Christmas Campaign */}
                   <Route path="/christmas" element={<ChristmasPage />} />
-                  <Route path="/christmas/forest" element={<ChristmasForestPage />} />
                   {/* 公开路由：登录和注册 */}
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
