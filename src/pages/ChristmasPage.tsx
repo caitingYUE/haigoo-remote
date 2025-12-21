@@ -18,6 +18,8 @@ const Corner = ({ className }: { className?: string }) => (
     </svg>
 );
 
+import { ChristmasBGM } from '../components/Christmas/ChristmasBGM';
+
 export default function ChristmasPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -33,21 +35,7 @@ export default function ChristmasPage() {
 
     const publishToForest = async () => {
         if (hasPublished || !treeData) return;
-        try {
-            await fetch('/api/campaign/forest', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tree_id: treeData.tree_id || Date.now().toString(),
-                    tree_data: treeData,
-                    star_label: treeData.tree_structure?.star_label || 'Star',
-                    user_nickname: user?.username || 'Guest'
-                })
-            });
-            setHasPublished(true);
-        } catch (err) {
-            console.error('Failed to publish to forest:', err);
-        }
+        // Auto publish removed as forest is removed
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,6 +175,10 @@ export default function ChristmasPage() {
                     opacity: 0.8;
                 }
             `}</style>
+            
+            {/* Background Music */}
+            <ChristmasBGM />
+
             <div className="min-h-screen bg-[#fdfbf7] text-[#1e293b] font-serif relative overflow-x-hidden selection:bg-[#fca5a5] selection:text-white">
                 
                 {/* Warm Snowy Background Layers */}
@@ -195,7 +187,7 @@ export default function ChristmasPage() {
                     <div className="absolute inset-0 bg-gradient-to-b from-[#fff7ed] via-[#fefce8] to-[#e0f2fe] opacity-80"></div>
                     
                     {/* 2. Golden Sunlight Glow (Top Center) */}
-                    <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[120%] h-[60%] bg-[radial-gradient(circle_at_50%_0%,#fef08a,transparent_70%)] opacity-40 blur-3xl"></div>
+                    <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[120%] h-[60%] bg-[radial-gradient(circle_at_50%_0%,#fef08a,transparent_70%)] opacity-40 blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
 
                     {/* 3. Bokeh / Festive Lights (Soft Focus Background) */}
                     <div className="absolute top-[20%] left-[10%] w-72 h-72 bg-red-500/5 rounded-full blur-[80px]"></div>
