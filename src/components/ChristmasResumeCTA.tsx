@@ -93,8 +93,39 @@ export default function ChristmasResumeCTA() {
                     {/* Glow Effect behind the tree */}
                     <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/0 to-transparent md:via-white/20 blur-xl rounded-full opacity-60"></div>
 
+                    {/* Spiral Line Decoration - SVG Background */}
+                    <div className="absolute inset-0 z-0 opacity-40">
+                        <svg viewBox="0 0 200 300" className="w-full h-full overflow-visible">
+                            {/* Spiral Path - Conical Tree Shape */}
+                            <path
+                                d="M100,30 
+                                   Q110,35 120,40
+                                   Q140,50 100,60
+                                   Q60,70 80,80
+                                   Q110,90 140,100
+                                   Q170,115 100,130
+                                   Q30,145 60,160
+                                   Q100,175 160,190
+                                   Q210,210 100,230
+                                   Q10,250 100,270"
+                                fill="none"
+                                stroke="#d4af37"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                className="drop-shadow-md"
+                            />
+                            {/* Hanging Ornaments on Spiral */}
+                            <circle cx="120" cy="40" r="2.5" fill="#dc2626" />
+                            <circle cx="80" cy="80" r="3" fill="#15803d" />
+                            <circle cx="140" cy="100" r="3.5" fill="#b45309" />
+                            <circle cx="60" cy="160" r="3" fill="#dc2626" />
+                            <circle cx="160" cy="190" r="4" fill="#15803d" />
+                            <circle cx="50" cy="240" r="3.5" fill="#b45309" />
+                        </svg>
+                    </div>
+
                     {/* Star */}
-                    <div className="text-amber-400 mb-4 animate-pulse drop-shadow-[0_0_15px_rgba(251,191,36,0.6)] relative z-10 scale-125">
+                    <div className="text-amber-400 mb-2 animate-pulse drop-shadow-[0_0_15px_rgba(251,191,36,0.6)] relative z-10 scale-125">
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                         </svg>
@@ -141,7 +172,7 @@ export default function ChristmasResumeCTA() {
                 </div>
 
                 {/* Decorative Ribbon - 2025 */}
-                <div className="absolute top-[15%] -right-4 md:-right-8 bg-[#dc2626] text-white text-sm font-bold py-1.5 px-12 transform rotate-[15deg] shadow-lg tracking-widest z-40 border-2 border-white/20">
+                <div className="absolute top-[12%] right-0 bg-[#dc2626] text-white text-sm font-bold py-1.5 px-6 transform rotate-[15deg] shadow-lg tracking-widest z-40 border-2 border-white/20 hover:scale-105 transition-transform">
                     2025
                 </div>
 

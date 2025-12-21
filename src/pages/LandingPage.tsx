@@ -224,56 +224,10 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       {/* Premium Dark Hero Section */}
       <HomeHero stats={stats} />
-      
+
+      {/* Christmas Campaign CTA */}
       <ChristmasResumeCTA />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
-
-        {/* Brand Promise Section - "Why Haigoo?" */}
-        <div className="py-24 border-b border-slate-100">
-          <div className="text-center mb-16 max-w-3xl mx-auto">
-            <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm mb-3 block">Why Choose Us</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">
-              不仅仅是找工作，<br />
-              更是开启一种全新的 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">自由生活方式</span>
-            </h2>
-            <p className="text-lg text-slate-500 leading-relaxed">
-              Haigoo 严选全球远程机会，不仅注重薪资回报，更看重企业文化与 Work-Life Balance。
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <Globe className="w-6 h-6 text-white" />,
-                title: "中国可申",
-                desc: "严选全球范围内对中国人才友好的远程企业，无需出海，也可享有全球薪资。",
-                color: "bg-blue-500"
-              },
-              {
-                icon: <Target className="w-6 h-6 text-white" />,
-                title: "精准匹配",
-                desc: "深入了解企业文化和招聘需求，为您推荐价值观契合的团队，拒绝海投无效沟通。",
-                color: "bg-indigo-500"
-              },
-              {
-                icon: <Users className="w-6 h-6 text-white" />,
-                title: "社群链接",
-                desc: "加入高质量远程工作者社群，与优秀的人同行，分享经验，拓展人脉。",
-                color: "bg-purple-500"
-              }
-            ].map((item, index) => (
-              <div key={index} className="group p-8 rounded-3xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300">
-                <div className={`w-14 h-14 ${item.color} rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-200/50 group-hover:scale-110 transition-transform duration-300`}>
-                  {item.icon}
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">{item.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
+      
         {/* Featured Jobs Section */}
         <div id="featured-jobs" className="py-24">
           <div className="flex items-center justify-between mb-12">
@@ -325,8 +279,6 @@ export default function LandingPage() {
             </button>
           </div>
         </div>
-
-        {/* Trusted Companies Section */}
         <div className="py-16 border-t border-slate-100">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -368,6 +320,51 @@ export default function LandingPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Brand Promise Section - "Why Haigoo?" */}
+        <div className="py-24 border-t border-slate-100">
+          <div className="text-center mb-16 max-w-3xl mx-auto">
+            <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm mb-3 block">Why Choose Us</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">
+              不仅仅是找工作，<br />
+              更是开启一种全新的 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">自由生活方式</span>
+            </h2>
+            <p className="text-lg text-slate-500 leading-relaxed">
+              Haigoo 严选全球远程机会，不仅注重薪资回报，更看重企业文化与 Work-Life Balance。
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <Globe className="w-6 h-6 text-white" />,
+                title: "中国可申",
+                desc: "严选全球范围内对中国人才友好的远程企业，无需出海，也可享有全球薪资。",
+                color: "bg-blue-500"
+              },
+              {
+                icon: <Target className="w-6 h-6 text-white" />,
+                title: "精准匹配",
+                desc: "深入了解企业文化和招聘需求，为您推荐价值观契合的团队，拒绝海投无效沟通。",
+                color: "bg-indigo-500"
+              },
+              {
+                icon: <Users className="w-6 h-6 text-white" />,
+                title: "社群链接",
+                desc: "加入高质量远程工作者社群，与优秀的人同行，分享经验，拓展人脉。",
+                color: "bg-purple-500"
+              }
+            ].map((item, index) => (
+              <div key={index} className="group p-8 rounded-3xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300">
+                <div className={`w-14 h-14 ${item.color} rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-200/50 group-hover:scale-110 transition-transform duration-300`}>
+                  {item.icon}
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">{item.title}</h3>
+                <p className="text-slate-600 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Membership CTA Section - Premium Dark Card */}
@@ -485,7 +482,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-      </div>
     </div>
   )
 }
