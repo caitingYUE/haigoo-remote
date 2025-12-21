@@ -23,7 +23,7 @@ export default function ChristmasResumeCTA() {
   if (!isVisible) return null
 
   return (
-    <div className="w-full relative z-20 pointer-events-none" style={{ marginTop: '-80px', marginBottom: '60px' }}>
+    <div className="w-full relative z-20 pointer-events-none" style={{ marginBottom: '60px' }}>
       <style>{`
         @keyframes float-slow {
           0%, 100% { transform: translateY(0); }
@@ -85,7 +85,7 @@ export default function ChristmasResumeCTA() {
         </div>
 
         {/* Right Visual - Floating Tree (Breaks out of container) */}
-        <div className="absolute md:-top-[100px] md:right-12 bottom-8 left-0 right-0 md:left-auto w-full md:w-[380px] flex justify-center md:block pointer-events-none z-30">
+        <div className="absolute md:-top-[140px] md:right-12 bottom-8 left-0 right-0 md:left-auto w-full md:w-[380px] flex justify-center md:block pointer-events-none z-30">
             <div className="relative w-[280px] md:w-full aspect-[3/4] md:aspect-auto md:h-[500px] transform transition-transform duration-700 hover:scale-105">
                 
                 {/* Tree Container - Transparent Background */}
