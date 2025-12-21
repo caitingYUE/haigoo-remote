@@ -75,6 +75,7 @@ class TrustedCompaniesService {
     }): Promise<any> {
         try {
             const queryParams = new URLSearchParams();
+            queryParams.append('target', 'companies'); // Explicitly target companies endpoint
             queryParams.append('_t', Date.now().toString());
             
             if (params) {
@@ -117,7 +118,7 @@ class TrustedCompaniesService {
 
     async saveCompany(company: Partial<TrustedCompany>): Promise<boolean> {
         try {
-            const response = await fetch(this.API_BASE, {
+            const response = await fetch(`${this.API_BASE}?target=companies`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
