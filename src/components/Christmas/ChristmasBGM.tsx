@@ -7,9 +7,8 @@ export const ChristmasBGM = () => {
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Warm, healing Christmas instrumental (Royalty Free)
-    // Source: Jingle Bells (Upbeat & Warm) - Public Domain / Creative Commons
-    // Using a reliable CDN source for Jingle Bells Instrumental
-    const AUDIO_URL = "https://cdn.pixabay.com/download/audio/2022/12/01/audio_1c2b803274.mp3"; 
+    // Source: Local Jingle Bells (Upbeat & Warm)
+    const AUDIO_URL = "/jingle-bells.mp3"; 
 
     useEffect(() => {
         // Auto-play attempt on mount

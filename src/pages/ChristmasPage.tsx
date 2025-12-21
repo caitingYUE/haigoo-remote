@@ -268,9 +268,9 @@ export default function ChristmasPage() {
                                         <Wand2 className="w-10 h-10 text-[#dc2626]" />
                                     </div>
                                     <h2 className="text-2xl font-bold text-[#7f1d1d] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>
-                                        Create Your Winter Magic
+                                        开启你的冬日魔法
                                     </h2>
-                                    <p className="text-slate-600">Upload your resume to grow your tree</p>
+                                    <p className="text-slate-600">上传简历，让职业经历生长成树</p>
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-6">
@@ -278,15 +278,15 @@ export default function ChristmasPage() {
                                         <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
                                         <div className="h-full border-2 border-dashed border-red-200 hover:border-[#dc2626] rounded-xl p-6 flex flex-col items-center justify-center transition-all bg-red-50/30 hover:bg-red-50/50">
                                             <Upload className="w-8 h-8 text-red-400 mb-3 group-hover/upload:text-[#dc2626] transition-colors" />
-                                            <span className="text-sm font-medium text-slate-700">Upload Resume</span>
-                                            <span className="text-xs text-slate-500 mt-1">PDF, DOCX, TXT</span>
+                                            <span className="text-sm font-medium text-slate-700">上传简历文件</span>
+                                            <span className="text-xs text-slate-500 mt-1">支持 PDF, DOCX, TXT</span>
                                         </div>
                                     </label>
 
                                     <div className="relative">
                                         <div className="h-full border-2 border-slate-200 hover:border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50/30 hover:bg-slate-50/50 transition-colors">
                                             <textarea 
-                                                placeholder="Or paste your resume content here..."
+                                                placeholder="或者在这里直接粘贴简历内容..."
                                                 className="w-full h-24 bg-transparent border-none resize-none text-sm text-slate-700 focus:ring-0 placeholder-slate-400 text-center"
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter' && e.metaKey) {
@@ -297,7 +297,7 @@ export default function ChristmasPage() {
                                                     if (e.target.value.length > 50) handleTextSubmit(e.target.value);
                                                 }}
                                             />
-                                            <div className="mt-2 text-xs text-slate-400">Paste & Click Outside</div>
+                                            <div className="mt-2 text-xs text-slate-400">粘贴后点击外部即可生成</div>
                                         </div>
                                     </div>
                                 </div>

@@ -23,7 +23,7 @@ export default function ChristmasResumeCTA() {
   if (!isVisible) return null
 
   return (
-    <div className="w-full relative overflow-hidden -mt-16 mb-16 z-20">
+    <div className="w-full relative z-20 pointer-events-none" style={{ marginTop: '-200px', marginBottom: '40px' }}>
        {/* Background Snow Animation (CSS-only simple version) */}
        <div className="absolute inset-0 pointer-events-none opacity-30 z-0">
           <div className="absolute top-0 left-1/4 w-2 h-2 bg-red-200 rounded-full animate-ping"></div>
@@ -32,7 +32,7 @@ export default function ChristmasResumeCTA() {
           <div className="absolute top-10 right-10 text-green-200 animate-spin-slow">❄</div>
        </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
         <div className="relative overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-red-900/10 border border-red-50 group hover:border-red-100 transition-all duration-500">
           {/* Decorative Gradient Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#fff1f2] via-[#fff] to-[#fef2f2] opacity-80"></div>
