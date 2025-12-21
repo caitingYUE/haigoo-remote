@@ -50,7 +50,7 @@ export default function TrustedCompaniesPage() {
             // 使用新的后端联表查询API
             const result = await trustedCompaniesService.getCompaniesWithJobStats({
                 page: 1,
-                limit: 1000, // 获取足够多的数据
+                limit: 50,
                 sortBy: 'jobCount',
                 sortOrder: 'desc'
             })
