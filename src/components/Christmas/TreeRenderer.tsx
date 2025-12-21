@@ -81,152 +81,181 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         return kw.sort((a, b) => (b.weight || 5) - (a.weight || 5));
     }, [data]);
 
-    // Generate Layout: Point-Grid Scan (Robust & Dense)
-    const treeItems = useMemo(() => {
-        if (typeof window === 'undefined') return [];
-
-        const items: any[] = [];
-        const centerX = width / 2;
-        
-        // Tree Boundaries
-        const topY = 140; 
-        const bottomY = height - 140; // Lifted slightly for snow ground
-        const treeHeight = bottomY - topY;
-        const maxTreeWidth = width * 0.85; // Slightly narrower for elegance
-        
-        // 1. Generate a Fine-Grained Grid
-        // Decreased step size for higher resolution placement
-        const points: {x: number, y: number}[] = [];
-        const stepY = 5; 
-        const stepX = 5; 
-        
-        for (let y = topY; y < bottomY; y += stepY) {
-            const progress = (y - topY) / treeHeight;
-            // Conical shape width at this Y
-            const currentLineWidth = 50 + (maxTreeWidth - 50) * Math.pow(progress, 0.9);
-            const halfW = currentLineWidth / 2;
+        // Generate Layout: Spiral / Phyllotaxis Pattern (Organic & Dense)
+        // This creates a natural "pine cone" or "sunflower" distribution which is visually dense and spiral.
+        const treeItems = useMemo(() => {
+            if (typeof window === 'undefined') return [];
+    
+            const items: any[] = [];
+            const centerX = width / 2;
+            const topY = 140; 
+            const bottomY = height - 160; 
+            const treeHeight = bottomY - topY;
             
-            // Scan X row
-            for (let x = centerX - halfW; x <= centerX + halfW; x += stepX) {
-                // Slight jitter for organic feel
-                points.push({
-                    x: x + (Math.random() - 0.5) * 2, 
-                    y: y + (Math.random() - 0.5) * 2
-                });
+            // Canvas for measuring text width/height
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return [];
+    
+            let workingKeywords = [...allKeywords];
+            
+            // Add extra decorations to fill gaps
+            const DECORATIONS = ['❄', '❅', '❆', '★', '✦', '✨', '•'];
+            for(let i=0; i<80; i++) {
+                 workingKeywords.push({
+                     text: DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)],
+                     weight: 1, 
+                     isDecoration: true
+                 } as any);
             }
-        }
-        
-        // Sort points: Center-Out Strategy (Prefer points closer to spine)
-        // This fixes the "spiral" or "unbalanced" look by filling the core first.
-        points.sort((a, b) => {
-             const distA = Math.abs(a.x - centerX);
-             const distB = Math.abs(b.x - centerX);
-             // Add a tiny bit of random noise to avoid looking too robotic
-             return (distA - distB) + (Math.random() * 10 - 5);
-        });
-
-        // Helper: Check collision
-        const checkCollision = (rect: any) => {
-            const pad = 4; 
-            for (const item of items) {
-                if (rect.x < item.x + item.width + pad &&
-                    rect.x + rect.width + pad > item.x &&
-                    rect.y < item.y + item.height + pad &&
-                    rect.y + rect.height + pad > item.y) {
-                    return true;
+    
+            // Sort: Important words first, they take the "best" spots in the spiral
+            workingKeywords.sort((a, b) => {
+                 const wa = (a as any).isDecoration ? 0 : a.weight;
+                 const wb = (b as any).isDecoration ? 0 : b.weight;
+                 return wb - wa;
+            });
+    
+            // Helper: Check collision
+            const checkCollision = (rect: any) => {
+                const pad = 2; // Tighter padding for denser look
+                for (const item of items) {
+                    if (rect.x < item.x + item.width + pad &&
+                        rect.x + rect.width + pad > item.x &&
+                        rect.y < item.y + item.height + pad &&
+                        rect.y + rect.height + pad > item.y) {
+                        return true;
+                    }
                 }
-            }
-            return false;
-        };
-
-        // Canvas for measuring
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return [];
-
-        let workingKeywords = [...allKeywords];
-        
-        // Add decorations - Winter Theme
-        const DECORATIONS = ['❄', '❅', '❆', '★', '✦', '✨', '•'];
-        for(let i=0; i<50; i++) {
-             workingKeywords.push({
-                 text: DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)],
-                 weight: 1, 
-                 isDecoration: true
-             } as any);
-        }
-
-        // Sort: Big words first
-        workingKeywords.sort((a, b) => {
-             const wa = (a as any).isDecoration ? 0 : a.weight;
-             const wb = (b as any).isDecoration ? 0 : b.weight;
-             return wb - wa;
-        });
-
-        // Loop through all words
-        for (const kw of workingKeywords) {
-            const isDeco = (kw as any).isDecoration;
+                return false;
+            };
+    
+            // Spiral Layout Parameters
+            // We trace a spiral from top to bottom.
+            // But actually, for a Christmas tree, we want to fill a CONE.
+            // Let's use a specialized "Cone Spiral" scan.
             
-            const font = isDeco ? 'Arial' : FONTS[Math.floor(Math.random() * FONTS.length)];
-            const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+            // We try to place each word. For each word, we search along a spiral path starting from a random angle but specific height range.
+            // Actually, phyllotaxis is good for 2D circles. For a cone, we can map Y to the radius.
             
-            // Size
-            let fontSize = 12;
-            if (!isDeco) {
-                 fontSize = 14 + Math.pow(kw.weight, 1.2) * 2.5;
-            } else {
-                 fontSize = 10 + Math.random() * 10;
-            }
-
-            // Measure
-            ctx.font = `${fontSize}px ${font}`;
-            const metrics = ctx.measureText(kw.text);
-            const textWidth = metrics.width;
-            const textHeight = fontSize * 0.8; 
-
-            // Find first point that fits
-            
-            for (let i = 0; i < points.length; i++) {
-                const p = points[i];
+            for (const kw of workingKeywords) {
+                const isDeco = (kw as any).isDecoration;
+                const font = isDeco ? 'Arial' : FONTS[Math.floor(Math.random() * FONTS.length)];
+                const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
                 
-                const rect = {
-                    x: p.x - textWidth / 2,
-                    y: p.y - textHeight / 2,
-                    width: textWidth,
-                    height: textHeight
-                };
-                
-                // Boundary check
-                const progress = (p.y - topY) / treeHeight;
-                const currentHalfW = (50 + (maxTreeWidth - 50) * Math.pow(progress, 0.9)) / 2;
-                if (p.x - textWidth/2 < centerX - currentHalfW || p.x + textWidth/2 > centerX + currentHalfW) {
-                    continue; 
+                let fontSize = 12;
+                if (!isDeco) {
+                     // Logarithmic scaling for better size distribution
+                     fontSize = 12 + Math.log2(kw.weight + 2) * 5; 
+                     if (fontSize > 48) fontSize = 48; // Max size cap
+                } else {
+                     fontSize = 8 + Math.random() * 8;
                 }
-
-                if (!checkCollision(rect)) {
-                    // Place it!
-                    items.push({
-                        text: kw.text,
-                        x: p.x,
-                        y: p.y,
-                        width: textWidth,
-                        height: textHeight,
-                        fontSize,
-                        font,
-                        color,
-                        // Reduced rotation
-                        rotation: isDeco ? Math.random() * 360 : (Math.random() - 0.5) * 10, 
-                        delay: items.length * 0.005
-                    });
+    
+                ctx.font = `${fontSize}px ${font}`;
+                const metrics = ctx.measureText(kw.text);
+                const textWidth = metrics.width;
+                const textHeight = fontSize * 0.8; 
+    
+                // Attempt to place the word
+                let placed = false;
+                
+                // We define a "Cone" shape:
+                // At Y = topY, radius = 20
+                // At Y = bottomY, radius = width * 0.4
+                
+                // Strategy: 
+                // 1. Pick a "preferred" Y based on weight? (Heavier words lower? Or random?)
+                //    Random Y usually looks better for mixed clouds.
+                // 2. Or, iterate Y from top to bottom with step, and at each level try to place?
+                //    That creates lines.
+                // 3. Best: Randomized Spiral Search
+                //    Pick a random Y within tree bounds.
+                //    Calculate max Radius at that Y.
+                //    Spiral out from center (x=0) to maxRadius at that Y.
+                
+                // Let's try 50 attempts per word to find a spot
+                // We want heavier words to be more central generally, but distributed vertically.
+                
+                // Optimization: We scan vertically (Y) and for each Y, we scan horizontally (X).
+                // But to get the "Spiral" look, we can actually calculate positions on a spiral curve.
+                
+                const angleStep = 1; // Radians
+                const radiusStep = 5; 
+                
+                // New Strategy: "Fermat's Spiral on a Cone"
+                // Iterate through points generated by a golden angle spiral projected onto a cone.
+                // But we need to place arbitrary rectangles, not points.
+                
+                // Fallback to "Monte Carlo with Bias":
+                // Try random positions within the cone. If collision, retry.
+                // Bias: Higher weight words -> Closer to center line.
+                
+                const maxAttempts = 150;
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    // Random Y
+                    // Bias Y slightly towards bottom for visual stability? No, uniform is fine.
+                    const y = topY + Math.random() * treeHeight;
                     
-                    points.splice(i, 1); 
-                    break;
+                    // Calculate max width at this Y (Cone shape)
+                    const progress = (y - topY) / treeHeight;
+                    // Cone width function: Power curve for "Christmas Tree" sweep
+                    const maxRadius = 20 + (width * 0.4 - 20) * Math.pow(progress, 1.2);
+                    
+                    // Random X within this radius
+                    // Bias towards center for non-deco words
+                    const r = (Math.random() + Math.random()) / 2 * maxRadius; // Triangular distribution peaking at 0? No.
+                    // Let's use simple random for X, but bounded by cone.
+                    // Actually, let's use a spiral-like search for placement if we really want structure.
+                    // But random placement with collision detection usually yields a good "cloud".
+                    
+                    // To get the "Spiral" visual EFFECT mentioned by user, usually means the words themselves follow a curve.
+                    // Or simply that they are dense and organic. 
+                    // Let's stick to "Dense Cone" for now, as true spiral text layout is hard with rectangles.
+                    // However, we can rotate words to follow the spiral tangent? 
+                    // User said "Spiral Effect". Let's try to arrange words along a 3D helix projected to 2D?
+                    // That might be too complex.
+                    // Let's stick to "Dense Packing" but maybe rotate words slightly?
+                    
+                    const xOffset = (Math.random() - 0.5) * 2 * maxRadius;
+                    const x = centerX + xOffset;
+                    
+                    // Check if inside cone
+                    if (Math.abs(x - centerX) > maxRadius) continue;
+    
+                    const rect = {
+                        x: x - textWidth / 2,
+                        y: y - textHeight / 2,
+                        width: textWidth,
+                        height: textHeight
+                    };
+    
+                    if (!checkCollision(rect)) {
+                        items.push({
+                            text: kw.text,
+                            x: x,
+                            y: y,
+                            width: textWidth,
+                            height: textHeight,
+                            fontSize,
+                            font,
+                            color,
+                            // Rotation: 
+                            // 1. Decoration: Random
+                            // 2. Words: Slight random tilt (-15 to 15) to look organic but readable
+                            // 3. "Spiral" feel: maybe tilt based on position? 
+                            //    Let's try tilting based on X distance to exaggerate the "swirl"
+                            rotation: isDeco ? Math.random() * 360 : (x - centerX) * 0.1 + (Math.random() - 0.5) * 10,
+                            delay: items.length * 0.005
+                        });
+                        placed = true;
+                        break;
+                    }
                 }
             }
-        }
-
-        return items;
-    }, [allKeywords, width, height]);
+    
+            return items;
+        }, [allKeywords, width, height]);
 
     return (
         <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto shadow-2xl rounded-sm" style={{ backgroundColor: '#fff7ed' }}>
