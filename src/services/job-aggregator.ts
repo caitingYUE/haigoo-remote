@@ -1,8 +1,6 @@
-import { Job, JobCategory, JobFilter, JobStats, SyncStatus, AdminDashboardData } from '../types/rss-types';
+import { Job, JobCategory, JobFilter, SyncStatus } from '../types/rss-types';
 import { rssService, RSSFeedItem, ParsedRSSData } from './rss-service';
 import { translationMappingService } from './translation-mapping-service';
-import { getStorageAdapter } from './storage-factory';
-import { CloudStorageAdapter } from './cloud-storage-adapter';
 import { recommendationHistoryService } from './recommendation-history-service';
 import { Job as PageJob } from '../types';
 import { processedJobsService } from './processed-jobs-service';
@@ -10,7 +8,6 @@ import { CompanyService } from './company-service';
 
 class JobAggregator {
   private jobs: Job[] = [];
-  private storageAdapter: CloudStorageAdapter | null = null;
   private syncStatus: SyncStatus = {
     isRunning: false,
     lastSync: null,
@@ -23,14 +20,6 @@ class JobAggregator {
     updatedJobs: 0,
     errors: []
   };
-
-  constructor() {
-    // 初始化时从存储加载数据
-    this.initializeStorage();
-    // 启动时立即加载存储的数据
-    this.loadJobsFromStorage();
-    console.log('JobAggregator 初始化完成');
-  }
 
   /**
    * 将RSS Job转换为Page Job格式（用于推荐历史）
@@ -152,65 +141,6 @@ class JobAggregator {
       remoteLocationRestriction: rssJob.remoteLocationRestriction,
       isFeatured: rssJob.isFeatured
     };
-  }
-
-  /**
-   * 初始化存储适配器
-   */
-  private async initializeStorage(): Promise<void> {
-    try {
-      this.storageAdapter = await getStorageAdapter();
-      await this.loadJobsFromStorage();
-    } catch (error) {
-      console.error('初始化存储失败:', error);
-    }
-  }
-
-  /**
-   * 从存储加载职位数据
-   */
-  private async loadJobsFromStorage(): Promise<void> {
-    try {
-      if (this.storageAdapter) {
-        const storedJobs = await this.storageAdapter.loadJobs();
-        if (storedJobs && storedJobs.length > 0) {
-          this.jobs = storedJobs;
-          console.log(`从存储加载了 ${storedJobs.length} 个职位数据`);
-        } else {
-          console.log('存储中没有找到职位数据');
-        }
-
-        // 更新同步状态
-        const lastSync = await this.storageAdapter.getLastSyncTime();
-        if (lastSync) {
-          this.syncStatus.lastSync = lastSync;
-        }
-      } else {
-        console.log('存储适配器未初始化，无法加载数据');
-      }
-    } catch (error) {
-      console.error('从存储加载数据失败:', error);
-      // 即使加载失败，也不要清空现有数据
-    }
-  }
-
-  /**
-   * 保存职位数据到存储
-   */
-  private async saveJobsToStorage(): Promise<void> {
-    try {
-      if (this.storageAdapter && this.jobs.length > 0) {
-        await this.storageAdapter.saveJobs(this.jobs);
-        console.log(`成功保存 ${this.jobs.length} 个职位到存储`);
-      } else if (!this.storageAdapter) {
-        console.warn('存储适配器未初始化，无法保存数据');
-      } else {
-        console.log('没有职位数据需要保存');
-      }
-    } catch (error) {
-      console.error('保存职位数据到存储失败:', error);
-      // 保存失败不应该影响内存中的数据
-    }
   }
 
   /**
@@ -816,9 +746,6 @@ class JobAggregator {
         }
       }
 
-      // 保存数据到存储
-      await this.saveJobsToStorage();
-
       // 生成并保存今日推荐到历史记录
       if (this.jobs.length > 0) {
         try {
@@ -853,10 +780,6 @@ class JobAggregator {
       console.log(`同步完成。新增 ${this.syncStatus.newJobsAdded} 个职位，更新 ${this.syncStatus.updatedJobs} 个职位，总共处理 ${this.syncStatus.totalJobsProcessed} 个职位`);
       console.log(`当前总职位数: ${this.jobs.length}`);
 
-      // 更新同步状态中的最后同步时间
-      if (this.storageAdapter) {
-        await this.storageAdapter.saveJobs(this.jobs);
-      }
       // 通过后端API将岗位写入KV，确保生产环境使用真实数据
       try {
         await this.persistProcessedJobsToAPI();
@@ -935,69 +858,6 @@ class JobAggregator {
   }
 
   /**
-   * 从API刷新职位数据（获取服务端处理后的最新数据）
-   */
-  async refreshJobsFromAPI(): Promise<Job[]> {
-    try {
-      console.log('正在从服务端API刷新职位数据...');
-      // 获取所有处理后的职位数据（默认限制为1000条，可根据需要调整）
-      const processedJobs = await processedJobsService.getAllProcessedJobs(1000);
-
-      if (processedJobs && processedJobs.length > 0) {
-        // 转换类型: ProcessedJob -> RSSJob
-        const jobs: Job[] = processedJobs.map(job => ({
-          id: job.id,
-          title: job.title,
-          company: job.company || 'Unknown Company',
-          location: job.location,
-          description: job.description || '',
-          url: job.sourceUrl || '#',
-          companyWebsite: job.companyWebsite,
-          publishedAt: job.publishedAt,
-          source: job.source,
-          category: (job.category as JobCategory) || '其他',
-          salary: job.salary ? `${job.salary.min}-${job.salary.max} ${job.salary.currency}` : undefined,
-          jobType: (job.type as any) || 'full-time',
-          experienceLevel: job.experienceLevel || 'Entry',
-          remoteLocationRestriction: job.remoteLocationRestriction,
-          tags: job.skills || [],
-          requirements: job.requirements || [],
-          benefits: job.benefits || [], // Fix: benefits map correctly
-          isRemote: job.isRemote || false,
-          status: 'active',
-          createdAt: job.publishedAt,
-          updatedAt: new Date().toISOString(),
-          region: job.region,
-
-          // Sync Fields
-          companyIndustry: job.companyIndustry,
-          companyTags: job.companyTags,
-          companyLogo: job.logo,
-          companyDescription: job.companyDescription,
-          companyId: job.companyId
-        }));
-
-        // 更新内存中的数据
-        this.jobs = jobs;
-
-        // 同时更新本地存储，以便下次加载
-        if (this.storageAdapter) {
-          await this.storageAdapter.saveJobs(jobs);
-        }
-
-        console.log(`成功从API刷新了 ${jobs.length} 个职位数据`);
-        return jobs;
-      } else {
-        console.warn('API返回的职位数据为空');
-        return this.jobs;
-      }
-    } catch (error) {
-      console.error('刷新职位数据失败:', error);
-      return this.jobs;
-    }
-  }
-
-  /**
    * 获取所有岗位
    */
   getJobs(filter?: JobFilter): Job[] {
@@ -1046,58 +906,10 @@ class JobAggregator {
   }
 
   /**
-   * 获取岗位统计信息
-   */
-  getJobStats(): JobStats {
-    const activeJobs = this.jobs.filter(job => job.status === 'active');
-    const recentlyAdded = this.jobs.filter(job =>
-      new Date(job.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-    ).length;
-
-    const byCategory: Record<JobCategory, number> = {} as Record<JobCategory, number>;
-    const bySource: Record<string, number> = {};
-    const byJobType: Record<Job['jobType'], number> = {} as Record<Job['jobType'], number>;
-    const byExperienceLevel: Record<Job['experienceLevel'], number> = {} as Record<Job['experienceLevel'], number>;
-
-    activeJobs.forEach(job => {
-      byCategory[job.category] = (byCategory[job.category] || 0) + 1;
-      bySource[job.source] = (bySource[job.source] || 0) + 1;
-      byJobType[job.jobType] = (byJobType[job.jobType] || 0) + 1;
-      byExperienceLevel[job.experienceLevel] = (byExperienceLevel[job.experienceLevel] || 0) + 1;
-    });
-
-    return {
-      total: this.jobs.length,
-      byCategory,
-      bySource,
-      byJobType,
-      byExperienceLevel,
-      recentlyAdded,
-      activeJobs: activeJobs.length
-    };
-  }
-
-  /**
    * 获取同步状态
    */
   getSyncStatus(): SyncStatus {
     return { ...this.syncStatus };
-  }
-
-  /**
-   * 获取管理后台数据
-   */
-  getAdminDashboardData(filter?: JobFilter): AdminDashboardData {
-    console.log(`获取管理后台数据，当前职位数量: ${this.jobs.length}`);
-    const filteredJobs = this.getJobs(filter);
-    console.log(`过滤后职位数量: ${filteredJobs.length}`);
-
-    return {
-      jobs: filteredJobs,
-      stats: this.getJobStats(),
-      syncStatus: this.getSyncStatus(),
-      sources: rssService.getRSSSources()
-    };
   }
 
   /**
@@ -1108,7 +920,6 @@ class JobAggregator {
     if (jobIndex !== -1) {
       this.jobs[jobIndex].status = status;
       this.jobs[jobIndex].updatedAt = new Date().toISOString();
-      await this.saveJobsToStorage(); // Save to local/cloud adapter
 
       // Also persist to API for server consistency
       this.syncJobToAPI(this.jobs[jobIndex]).catch(err => console.error('Failed to sync job status to API:', err));
@@ -1125,7 +936,6 @@ class JobAggregator {
     const index = this.jobs.findIndex(job => job.id === jobId);
     if (index !== -1) {
       this.jobs.splice(index, 1);
-      this.saveJobsToStorage();
 
       // Also delete from API
       fetch(`/api/data/processed-jobs?id=${jobId}`, { method: 'DELETE' })
@@ -1143,7 +953,6 @@ class JobAggregator {
     const job = this.jobs.find(j => j.id === jobId);
     if (job) {
       job.isFeatured = isFeatured;
-      await this.saveJobsToStorage();
 
       // Persist to API
       this.syncJobToAPI(job).catch(err => console.error('Failed to sync featured status to API:', err));
@@ -1168,7 +977,6 @@ class JobAggregator {
       if (data.hiddenFields !== undefined) job.hiddenFields = data.hiddenFields;
       
       job.updatedAt = new Date().toISOString();
-      await this.saveJobsToStorage();
 
       // Persist to API
       this.syncJobToAPI(job).catch(err => console.error('Failed to sync internal data to API:', err));
@@ -1236,50 +1044,6 @@ class JobAggregator {
     }
   }
 
-  /**
-   * 清除所有数据
-   */
-  async clearAllData(): Promise<void> {
-    try {
-      console.log('开始清除所有数据...');
-
-      // 清空内存中的数据
-      this.jobs = [];
-
-      // 重置同步状态
-      this.syncStatus = {
-        isRunning: false,
-        lastSync: null,
-        nextSync: null,
-        totalSources: 0,
-        successfulSources: 0,
-        failedSources: 0,
-        totalJobsProcessed: 0,
-        newJobsAdded: 0,
-        updatedJobs: 0,
-        errors: []
-      };
-
-      // 清除存储中的数据
-      if (this.storageAdapter) {
-        await this.storageAdapter.clearAllData();
-        console.log('存储数据已清除');
-      }
-
-      // 清除服务端数据库中的数据
-      try {
-        await processedJobsService.clearAllJobs();
-        console.log('服务端数据库数据已清除');
-      } catch (e) {
-        console.error('清除服务端数据库失败 (但这不影响本地清除):', e);
-      }
-
-      console.log('所有数据清除完成');
-    } catch (error) {
-      console.error('清除数据失败:', error);
-      throw error;
-    }
-  }
 }
 
 export const jobAggregator = new JobAggregator();

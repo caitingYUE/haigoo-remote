@@ -249,6 +249,7 @@ export interface JobStats {
   byExperienceLevel: Record<Job['experienceLevel'], number>;
   recentlyAdded: number; // 最近24小时新增
   activeJobs: number;
+  lastSync: Date | null;
 }
 
 export interface SyncStatus {

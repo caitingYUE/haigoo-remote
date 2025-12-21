@@ -59,7 +59,6 @@ const AdminTeamPage: React.FC = () => {
   // 主要状态管理
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState<JobStats | null>(null);
-  const [syncStatus, _setSyncStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [_selectedJobs, _setSelectedJobs] = useState<string[]>([]);
@@ -113,7 +112,8 @@ const AdminTeamPage: React.FC = () => {
           byCategory: statsData.byCategory || {},
           bySource: statsData.bySource || {},
           byJobType: statsData.byJobType || {},
-          byExperienceLevel: statsData.byExperienceLevel || {}
+          byExperienceLevel: statsData.byExperienceLevel || {},
+          lastSync: statsData.lastSync ? new Date(statsData.lastSync) : null
         });
       } else {
         console.error('获取统计数据失败:', statsResponse.status);
@@ -265,7 +265,7 @@ const AdminTeamPage: React.FC = () => {
           </div>
           <div className="stat-content">
             <h3>最后同步</h3>
-            <p className="stat-number">{syncStatus?.lastSync ? new Date(syncStatus.lastSync).toLocaleTimeString() : '--'}</p>
+            <p className="stat-number">{stats?.lastSync ? new Date(stats.lastSync).toLocaleTimeString() : '--'}</p>
             <span className="stat-change">自动同步</span>
           </div>
         </div>
