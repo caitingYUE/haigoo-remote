@@ -26,12 +26,20 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    const formatSalary = (salary: Job['salary']) => {
       if (!salary || (salary.min === 0 && salary.max === 0)) return '薪资Open';
       const formatAmount = (amount: number) => {
+         // Safety check: if amount is null/undefined/NaN, return '0' or empty string
+         if (amount === null || amount === undefined || isNaN(amount)) return '0';
+         
          if (amount >= 1000) return `${(amount / 1000).toFixed(0)}k`;
          return amount.toString();
       };
       const currencySymbol = salary.currency === 'CNY' ? '¥' : salary.currency === 'USD' ? '$' : salary.currency;
-      if (salary.min === salary.max) return `${currencySymbol}${formatAmount(salary.min)}`;
-      return `${currencySymbol}${formatAmount(salary.min)} - ${currencySymbol}${formatAmount(salary.max)}`;
+      
+      // Safety checks for min/max
+      const min = salary.min || 0;
+      const max = salary.max || 0;
+      
+      if (min === max) return `${currencySymbol}${formatAmount(min)}`;
+      return `${currencySymbol}${formatAmount(min)} - ${currencySymbol}${formatAmount(max)}`;
    };
 
    // Handle company website click
