@@ -401,6 +401,20 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 </text>
             </g>
 
+            {/* 8. Footer Watermark */}
+            <text 
+                x={width/2} 
+                y={height - 20} 
+                textAnchor="middle" 
+                fill="#b45309" 
+                fontSize="12" 
+                fontFamily="Cinzel, serif" 
+                opacity="0.6"
+                letterSpacing="3"
+            >
+                HAIGOO.IO
+            </text>
+
         </svg>
     );
 };

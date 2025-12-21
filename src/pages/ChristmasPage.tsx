@@ -98,13 +98,17 @@ export default function ChristmasPage() {
         setShowEmailModal(true);
     };
 
-    const handleEmailSubmit = async (email: string) => {
+    const handleEmailSubmit = async (email: string, allowResume: boolean) => {
         if (email) {
             try {
                 await fetch('/api/campaign/christmas?action=lead', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, tree_id: treeData?.tree_id || Date.now() })
+                    body: JSON.stringify({ 
+                        email, 
+                        tree_id: treeData?.tree_id || Date.now(),
+                        allow_resume_storage: allowResume 
+                    })
                 });
             } catch (err) {
                 console.error('Failed to save email:', err);
@@ -139,6 +143,14 @@ export default function ChristmasPage() {
     };
 
     const handleShare = async () => {
+        const shareTexts = [
+            "2025，我的职业关键词是成长与突破！来 Haigoo 生成你的专属圣诞树吧 🎄✨ https://haigoo.io/christmas",
+            "用一棵树记录我的职场高光时刻！Haigoo 远程工作社区，祝大家新年快乐 🎁 https://haigoo.io/christmas",
+            "这是我的职业圣诞树，每一片叶子都是努力的见证。快来领取你的新年祝福！🌟 https://haigoo.io/christmas",
+            "Work Remote, Live Better. 在 Haigoo 发现全球远程机会，顺便种了一棵树 🌲 https://haigoo.io/christmas"
+        ];
+        const randomText = shareTexts[Math.floor(Math.random() * shareTexts.length)];
+
         if (navigator.share && treeRef.current) {
             try {
                 const canvas = await html2canvas(treeRef.current, { scale: 2, backgroundColor: '#fff7ed', useCORS: true });
@@ -147,16 +159,23 @@ export default function ChristmasPage() {
                         const file = new File([blob], 'my-christmas-tree.png', { type: 'image/png' });
                         await navigator.share({
                             title: '我的职业圣诞树 - Haigoo',
-                            text: '看看我的职业成长树！',
+                            text: randomText,
                             files: [file]
                         });
                     }
                 });
             } catch (err) {
                 console.error('Share failed:', err);
+                // Fallback to copy text if share fails (or user cancels)
+                navigator.clipboard.writeText(randomText).then(() => alert('分享文案已复制！'));
             }
         } else {
-            alert('请使用浏览器自带分享功能，或截图分享');
+            // Fallback for desktop or unsupported browsers
+            navigator.clipboard.writeText(randomText).then(() => {
+                alert('祝福语与链接已复制，快去分享给朋友吧！');
+            }).catch(() => {
+                alert('请截图分享，并访问 haigoo.io 体验！');
+            });
         }
     };
 

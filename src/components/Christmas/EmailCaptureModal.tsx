@@ -4,11 +4,12 @@ import { X, Mail, Sparkles } from 'lucide-react';
 interface EmailCaptureModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (email: string) => void;
+    onSubmit: (email: string, allowResume: boolean) => void;
 }
 
 export const EmailCaptureModal: React.FC<EmailCaptureModalProps> = ({ isOpen, onClose, onSubmit }) => {
     const [email, setEmail] = useState('');
+    const [allowResume, setAllowResume] = useState(true);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -27,7 +28,7 @@ export const EmailCaptureModal: React.FC<EmailCaptureModalProps> = ({ isOpen, on
 
         setIsSubmitting(true);
         try {
-            await onSubmit(email);
+            await onSubmit(email, allowResume);
             onClose();
         } catch (err: any) {
             setError(err.message || '提交失败，请重试');
@@ -37,7 +38,7 @@ export const EmailCaptureModal: React.FC<EmailCaptureModalProps> = ({ isOpen, on
     };
 
     const handleSkip = () => {
-        onSubmit(''); // Empty email = skip
+        onSubmit('', allowResume); // Empty email = skip
         onClose();
     };
 
@@ -59,10 +60,10 @@ export const EmailCaptureModal: React.FC<EmailCaptureModalProps> = ({ isOpen, on
 
                 {/* Title */}
                 <h2 className="text-2xl font-bold text-slate-900 text-center mb-2">
-                    留下邮箱，获取高清图
+                    留下邮箱，开启远程之旅
                 </h2>
                 <p className="text-slate-600 text-center mb-6 text-sm">
-                    我们会将您的职业圣诞树发送到邮箱，同时不定期分享远程工作机会
+                    我们会将您的职业圣诞树发送到邮箱，同时为您关注全球远程工作机会
                 </p>
 
                 {/* Form */}
@@ -84,12 +85,24 @@ export const EmailCaptureModal: React.FC<EmailCaptureModalProps> = ({ isOpen, on
                         )}
                     </div>
 
+                    <label className="flex items-start gap-2 cursor-pointer group">
+                        <input 
+                            type="checkbox" 
+                            checked={allowResume}
+                            onChange={(e) => setAllowResume(e.target.checked)}
+                            className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-slate-600 group-hover:text-slate-800 transition-colors">
+                            同时上传简历到 Haigoo 人才库，获取更多精准远程机会推荐
+                        </span>
+                    </label>
+
                     <button
                         type="submit"
                         disabled={isSubmitting}
                         className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? '提交中...' : '获取高清图'}
+                        {isSubmitting ? '提交中...' : '开启旅程'}
                     </button>
 
                     <button
