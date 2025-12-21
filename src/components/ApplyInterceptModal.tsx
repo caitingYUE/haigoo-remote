@@ -240,6 +240,8 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
     // 官网/第三方岗位 - 免费用户显示审核说明
     if (!isMember) {
+        const sourceType = getJobSourceType(job);
+
         // 如果是第三方可信平台（如 LinkedIn, Indeed 等），显示简化的跳转提示
         if (sourceType === 'trusted_platform') {
             return createPortal(
