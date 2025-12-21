@@ -36,7 +36,7 @@ export default function AdminBugReportsPage() {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('/api/bug-reports', {
+            const res = await fetch('/api/admin-ops?action=bug_report', {
                 headers: {
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 }
@@ -58,7 +58,7 @@ export default function AdminBugReportsPage() {
         setLoadingImage(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`/api/bug-reports?id=${id}`, {
+            const res = await fetch(`/api/admin-ops?action=bug_report&id=${id}`, {
                 headers: {
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 }
@@ -81,7 +81,7 @@ export default function AdminBugReportsPage() {
         setUpdatingId(id);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('/api/bug-reports', {
+            const res = await fetch('/api/admin-ops?action=bug_report', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

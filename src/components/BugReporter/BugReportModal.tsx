@@ -124,7 +124,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
         try {
             const token = localStorage.getItem('token'); // Or get from AuthContext if available
             
-            const res = await fetch('/api/bug-reports', {
+            const res = await fetch('/api/admin-ops?action=bug_report', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

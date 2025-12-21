@@ -5,6 +5,7 @@ import { extractToken, verifyToken } from '../server-utils/auth-helpers.js';
 import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js';
 import { systemSettingsService } from '../lib/services/system-settings-service.js';
 import subscriptionsHandler from '../lib/api-handlers/subscriptions.js';
+import bugReportsHandler from '../lib/api-handlers/bug-reports.js';
 
 async function checkUserData(req, res) {
     try {
@@ -299,6 +300,12 @@ export default async function handler(req, res) {
 
     if (action === 'subscriptions') {
         return await subscriptionsHandler(req, res);
+    }
+
+    if (action === 'bug_report') {
+        // Bug reports have their own permission handling (POST is public, others are admin/owner)
+        // So we dispatch directly to the handler
+        return await bugReportsHandler(req, res);
     }
 
     // Verify Admin Access

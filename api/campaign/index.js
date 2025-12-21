@@ -6,6 +6,9 @@ import path from 'path';
 import os from 'os';
 import fs from 'fs/promises';
 import neonHelper from '../../server-utils/dal/neon-helper.js';
+import Busboy from 'busboy';
+import { saveUserResume } from '../../server-utils/resume-storage.js';
+import { extractToken, verifyToken } from '../../server-utils/auth-helpers.js';
 
 const require = createRequire(import.meta.url);
 
@@ -49,8 +52,6 @@ async function loadDependencies() {
     }
 }
 
-import Busboy from 'busboy';
-
 // Helper: Parse Multipart Body with Busboy
 async function parseMultipartWithBusboy(req) {
     return new Promise((resolve, reject) => {
@@ -81,65 +82,114 @@ async function parseMultipartWithBusboy(req) {
     });
 }
 
-import { saveUserResume } from '../../server-utils/resume-storage.js';
-import { extractToken, verifyToken } from '../../server-utils/auth-helpers.js';
+// Forest Handler Logic
+async function handleForest(req, res) {
+    if (!neonHelper.isConfigured) {
+        return res.status(503).json({ error: 'Database not configured' });
+    }
 
-// Python Parser Helper
-async function parseWithPython(filePath) {
-    // ... existing python logic ...
-    return new Promise((resolve, reject) => {
-        // Adjust path: api/campaign/christmas.js -> ../../server-utils/resume-parser.py
-        const pythonScript = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../server-utils/resume-parser.py');
-        console.log(`[Christmas] Spawning python: ${pythonScript} ${filePath}`);
+    // GET: Fetch forest trees (paginated)
+    if (req.method === 'GET') {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 12;
+        const offset = (page - 1) * limit;
 
-        const pythonProcess = spawn('python3', [pythonScript, filePath]);
+        try {
+            const trees = await neonHelper.query(`
+                SELECT id, tree_id, tree_data, star_label, user_nickname, created_at, likes
+                FROM campaign_forest
+                WHERE is_public = true
+                ORDER BY created_at DESC
+                LIMIT $1 OFFSET $2
+            `, [limit, offset]);
 
-        const timeout = setTimeout(() => {
-            console.warn('[Christmas] Python parsing timed out, killing process...');
-            pythonProcess.kill();
-            resolve(null);
-        }, 8000); // 8s timeout
+            // Get total count for pagination
+            const countResult = await neonHelper.query(`
+                SELECT COUNT(*) as total FROM campaign_forest WHERE is_public = true
+            `);
+            const total = parseInt(countResult[0]?.total || '0');
 
-        let stdout = '';
-        let stderr = '';
+            return res.status(200).json({
+                success: true,
+                data: trees,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            });
+        } catch (error) {
+            console.error('[Forest API] Fetch error:', error);
+            return res.status(500).json({ error: 'Failed to fetch forest' });
+        }
+    }
 
-        pythonProcess.stdout.on('data', (data) => stdout += data.toString());
-        pythonProcess.stderr.on('data', (data) => stderr += data.toString());
+    // POST: Plant a tree (Publish)
+    if (req.method === 'POST') {
+        // Since we disabled bodyParser globally, we need to parse JSON manually for this specific route if it's JSON
+        let body = {};
+        if (req.headers['content-type']?.includes('application/json')) {
+             body = await parseJsonBody(req);
+        } else {
+             // Should verify if req.body is already populated (it won't be due to config)
+             body = req.body || {}; 
+        }
 
-        pythonProcess.on('close', (code) => {
-            clearTimeout(timeout);
-            if (code !== 0 && code !== null) {
-                console.error(`[Christmas] Python exited with code ${code}: ${stderr}`);
-                return resolve(null);
+        const { tree_id, tree_data, star_label, user_nickname } = body;
+
+        if (!tree_id || !tree_data) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        try {
+            // Check if already exists
+            const existing = await neonHelper.query(`
+                SELECT id FROM campaign_forest WHERE tree_id = $1
+            `, [tree_id]);
+
+            if (existing.length > 0) {
+                return res.status(409).json({ error: 'Tree already planted' });
             }
-            try {
-                const result = JSON.parse(stdout);
-                resolve(result);
-            } catch (e) {
-                console.error(`[Christmas] Failed to parse Python output: ${stdout}`);
-                resolve(null);
-            }
-        });
-        pythonProcess.on('error', (err) => {
-            clearTimeout(timeout);
-            console.error('[Christmas] Failed to start Python process:', err);
-            resolve(null);
-        });
-    });
+
+            // Create table if not exists (Lazy migration)
+            await neonHelper.query(`
+                CREATE TABLE IF NOT EXISTS campaign_forest (
+                    id SERIAL PRIMARY KEY,
+                    tree_id VARCHAR(255) UNIQUE NOT NULL,
+                    tree_data JSONB NOT NULL,
+                    star_label VARCHAR(100),
+                    user_nickname VARCHAR(100) DEFAULT 'Anonymous',
+                    is_public BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    likes INTEGER DEFAULT 0
+                )
+            `);
+
+            // Insert
+            await neonHelper.query(`
+                INSERT INTO campaign_forest (tree_id, tree_data, star_label, user_nickname, is_public)
+                VALUES ($1, $2, $3, $4, true)
+                ON CONFLICT DO NOTHING
+            `, [tree_id, JSON.stringify(tree_data), star_label || 'Christmas Star', user_nickname || 'Anonymous']);
+
+            return res.status(201).json({ success: true, message: 'Tree planted successfully' });
+        } catch (error) {
+            console.error('[Forest API] Plant error:', error);
+            return res.status(500).json({ error: 'Failed to plant tree' });
+        }
+    }
+
+    return res.status(405).json({ error: 'Method not allowed' });
 }
 
-
-export default async function handler(req, res) {
-    // CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+// Christmas Handler Logic
+async function handleChristmas(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-    // Route: /api/campaign/christmas?action=lead (Email capture)
+    
+    // Route: Lead capture
     if (req.url?.includes('action=lead')) {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
         try {
             const body = await parseJsonBody(req);
             const { email, tree_id } = body;
@@ -172,7 +222,6 @@ export default async function handler(req, res) {
                     console.log(`[ChristmasLead] Saved email: ${email}`);
                 } catch (dbErr) {
                     console.error('[ChristmasLead] DB error:', dbErr);
-                    // Non-blocking - continue even if DB fails
                 }
             }
 
@@ -185,6 +234,8 @@ export default async function handler(req, res) {
     }
 
     // Main Route: Tree Generation
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
     let tempFilePath = null;
 
     try {
@@ -223,17 +274,6 @@ export default async function handler(req, res) {
             const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
             console.log(`[Christmas] Parsed file with Busboy: ${safeFilename} (orig: ${filename}), size: ${buffer.length}`);
 
-            // Log Magic Bytes for debugging
-            if (buffer.length > 4) {
-                const magic = buffer.slice(0, 4).toString('hex');
-                console.log(`[Christmas] File magic bytes: ${magic}`);
-            }
-
-            // Optimization: Skip unsupported Python on serverless
-            // const tempDir = os.tmpdir();
-            // tempFilePath = path.join(tempDir, `christmas-${Date.now()}-${safeFilename}`);
-            // await fs.writeFile(tempFilePath, buffer);
-
             // 3. Node.js Parsing (Primary method now)
             await loadDependencies();
             const ext = path.extname(safeFilename).toLowerCase().replace('.', '');
@@ -262,9 +302,6 @@ export default async function handler(req, res) {
                         const result = await mammoth.extractRawText({ buffer });
                         text = result.value;
                         console.log(`[Christmas] DOCX parsed text length: ${text?.length}`);
-                        if (result.messages && result.messages.length > 0) {
-                            console.log('[Christmas] Mammoth messages:', result.messages);
-                        }
                     } catch (docxErr) {
                         console.error('[Christmas] DOCX Parse Error:', docxErr);
                         throw new Error('Word文档解析失败，可能是格式复杂。请尝试粘贴文本。');
@@ -320,11 +357,6 @@ export default async function handler(req, res) {
             text = body.text || '';
         }
 
-        // Clean up temp file
-        if (tempFilePath) {
-            try { await fs.unlink(tempFilePath); } catch (e) { }
-        }
-
         console.log(`[Christmas] Final Text length: ${text?.length}`);
 
         if (!text || text.trim().length < 50) {
@@ -342,11 +374,7 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('[ChristmasAPI] Error:', error);
-        if (tempFilePath) {
-            try { await fs.unlink(tempFilePath); } catch (e) { }
-        }
 
-        // Return 400 for validation errors, 500 for actual crashes
         // Return 400 for validation errors, 500 for actual crashes
         if (error.message.includes('无法识别简历内容') ||
             error.message.includes('too short') ||
@@ -361,4 +389,26 @@ export default async function handler(req, res) {
 
         return res.status(500).json({ success: false, error: error.message || 'Internal Server Error' });
     }
+}
+
+
+export default async function handler(req, res) {
+    // CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
+    // Dispatch based on 'type' query parameter or URL
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const type = url.searchParams.get('type');
+    
+    // Forest: type=forest OR /api/campaign/forest (if rewrite didn't work but we merge manually)
+    if (type === 'forest') {
+        return await handleForest(req, res);
+    }
+    
+    // Christmas: default or type=christmas
+    return await handleChristmas(req, res);
 }

@@ -76,10 +76,20 @@ async function startServer() {
         app.all('/api/process-image', async (req, res) => { await imagesHandler(req, res); });
         console.log('Images handler imported.');
 
-        console.log('Importing bug reports handler...');
-        const bugReportsHandler = (await import('./api/bug-reports.js')).default;
-        app.all('/api/bug-reports', async (req, res) => { await bugReportsHandler(req, res); });
-        console.log('Bug reports handler imported.');
+        console.log('Importing bug reports handler (merged into admin-ops)...');
+        // const bugReportsHandler = (await import('./api/bug-reports.js')).default;
+        // app.all('/api/bug-reports', async (req, res) => { await bugReportsHandler(req, res); });
+        console.log('Bug reports handled by admin-ops.');
+
+        console.log('Importing campaign handlers...');
+        // Merged handler
+        const campaignHandler = (await import('./api/campaign/index.js')).default;
+        app.all('/api/campaign', async (req, res) => { await campaignHandler(req, res); });
+        // Keep old routes for compatibility if needed (but now we updated frontend)
+        app.all('/api/campaign/christmas', async (req, res) => { req.query.type = 'christmas'; await campaignHandler(req, res); });
+        app.all('/api/campaign/forest', async (req, res) => { req.query.type = 'forest'; await campaignHandler(req, res); });
+
+        console.log('Campaign handlers imported.');
 
         console.log('Importing cron handlers...');
         const crawlTrustedJobsHandler = (await import('./lib/cron-handlers/crawl-trusted-jobs.js')).default;

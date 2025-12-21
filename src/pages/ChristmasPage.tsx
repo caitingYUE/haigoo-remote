@@ -49,7 +49,7 @@ export default function ChristmasPage() {
         formData.append('file', file);
 
         try {
-            const res = await fetch('/api/campaign/christmas', {
+            const res = await fetch('/api/campaign?type=christmas', {
                 method: 'POST',
                 body: formData,
             });
@@ -76,7 +76,7 @@ export default function ChristmasPage() {
         setError('');
 
         try {
-            const res = await fetch('/api/campaign/christmas', {
+            const res = await fetch('/api/campaign?type=christmas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text })
@@ -101,7 +101,7 @@ export default function ChristmasPage() {
     const handleEmailSubmit = async (email: string, allowResume: boolean) => {
         if (email) {
             try {
-                await fetch('/api/campaign/christmas?action=lead', {
+                await fetch('/api/campaign?type=christmas&action=lead', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
