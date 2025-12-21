@@ -23,7 +23,19 @@ export default function ChristmasResumeCTA() {
   if (!isVisible) return null
 
   return (
-    <div className="w-full relative z-20 pointer-events-none" style={{ marginTop: '-200px', marginBottom: '40px' }}>
+    <div className="w-full relative z-20 pointer-events-none" style={{ marginTop: '-80px', marginBottom: '60px' }}>
+      <style>{`
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float-slow {
+          animation: float-slow 4s ease-in-out infinite;
+        }
+        .animate-spin-slow {
+          animation: spin 8s linear infinite;
+        }
+      `}</style>
        {/* Background Snow Animation (CSS-only simple version) */}
        <div className="absolute inset-0 pointer-events-none opacity-30 z-0">
           <div className="absolute top-0 left-1/4 w-2 h-2 bg-red-200 rounded-full animate-ping"></div>
@@ -32,15 +44,16 @@ export default function ChristmasResumeCTA() {
           <div className="absolute top-10 right-10 text-green-200 animate-spin-slow">❄</div>
        </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto relative">
+        {/* The Card Background & Left Content */}
         <div className="relative overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-red-900/10 border border-red-50 group hover:border-red-100 transition-all duration-500">
           {/* Decorative Gradient Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#fff1f2] via-[#fff] to-[#fef2f2] opacity-80"></div>
           
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between p-8 md:p-12 gap-10">
+          <div className="relative z-10 flex flex-col md:flex-row items-center p-8 md:p-12 gap-10 min-h-[320px]">
             
             {/* Left Content */}
-            <div className="flex-1 text-center md:text-left z-10">
+            <div className="flex-1 text-center md:text-left z-10 md:max-w-[60%]">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full text-xs font-bold uppercase tracking-wider mb-5 border border-red-100 shadow-sm">
                 <Sparkles className="w-3 h-3" />
                 <span>Limited Holiday Special</span>
@@ -66,81 +79,82 @@ export default function ChristmasResumeCTA() {
               </button>
             </div>
 
-            {/* Right Visual - Refined Tree Visual */}
-            <div className="relative w-full max-w-[280px] md:max-w-[320px] flex-shrink-0 perspective-1000 group/card">
-                {/* Card Container */}
-                <div className="relative aspect-[3/4] bg-[#fffaf5] rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border-[6px] border-white transform rotate-2 transition-transform duration-700 group-hover/card:rotate-0 group-hover/card:scale-105 group-hover/card:shadow-[0_25px_60px_-12px_rgba(220,38,38,0.15)]">
-                    {/* Inner Texture */}
-                    <div className="absolute inset-0 opacity-40 bg-[url('https://www.transparenttextures.com/patterns/snow.png')] mix-blend-multiply"></div>
-                    
-                    {/* The Tree Visual */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-                        {/* Star */}
-                        <div className="text-amber-400 mb-3 animate-pulse drop-shadow-sm">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                        </div>
-                        
-                        {/* Word Cloud Simulation - Improved Typography */}
-                        <div className="flex flex-col items-center gap-1.5 w-full transform scale-95">
-                            <div className="text-[#b91c1c] font-serif font-bold text-2xl opacity-90 tracking-wide" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>Leadership</div>
-                            
-                            <div className="flex gap-2 items-center">
-                                <span className="text-[#15803d] font-sans font-bold text-sm">Strategy</span>
-                                <span className="text-[#b45309] font-serif font-bold text-lg">Growth</span>
-                            </div>
-                            
-                            <div className="flex gap-3 items-center">
-                                <span className="text-[#334155] font-sans text-xs opacity-60">Design</span>
-                                <span className="text-[#dc2626] font-bold text-xl">Product</span>
-                                <span className="text-[#15803d] font-sans text-xs">Agile</span>
-                            </div>
-                            
-                            <div className="flex gap-2 items-center">
-                                <span className="text-[#b45309] font-serif text-sm italic">Vision</span>
-                                <span className="text-[#15803d] font-bold text-lg">Coding</span>
-                                <span className="text-[#dc2626] text-xs font-bold">React</span>
-                            </div>
-                            
-                             <div className="flex gap-3 items-center">
-                                <span className="text-[#334155] text-xs tracking-wider">TEAM</span>
-                                <span className="text-[#b45309] font-bold text-base">Communication</span>
-                                <span className="text-[#15803d] text-sm">Remote</span>
-                            </div>
-                            
-                             <div className="flex gap-2 items-center">
-                                <span className="text-[#dc2626] font-serif text-sm">Creativity</span>
-                                <span className="text-[#334155] text-[10px]">SQL</span>
-                            </div>
-                        </div>
-
-                        {/* Trunk */}
-                        <div className="w-8 h-10 bg-[#5d4037] rounded-sm mt-5 shadow-inner opacity-90"></div>
-                        
-                        {/* Footer Quote */}
-                        <div className="absolute bottom-6 w-full text-center px-4">
-                            <p className="text-[10px] text-slate-400 font-serif italic border-t border-slate-100 pt-3">"A unique winter tale of your career..."</p>
-                        </div>
-                    </div>
-
-                    {/* Decorative Ribbon - Updated Year */}
-                    <div className="absolute top-5 -right-9 bg-[#dc2626] text-white text-[10px] font-bold py-1 px-10 transform rotate-45 shadow-md tracking-widest z-20">
-                        2025
-                    </div>
-                </div>
-
-                {/* Floating Elements */}
-                <div className="absolute -bottom-6 -left-6 bg-white p-3.5 rounded-full shadow-xl animate-bounce delay-700 z-30 border border-slate-50">
-                    <span className="text-2xl filter drop-shadow-sm">🎁</span>
-                </div>
-                <div className="absolute top-1/2 -right-10 text-amber-300 animate-spin-slow opacity-80 filter blur-[1px]">
-                    <Sparkles size={40} />
-                </div>
-            </div>
-
+            {/* Placeholder for layout balance on mobile */}
+            <div className="md:hidden w-full h-64"></div> 
           </div>
         </div>
+
+        {/* Right Visual - Floating Tree (Breaks out of container) */}
+        <div className="absolute md:-top-[100px] md:right-12 bottom-8 left-0 right-0 md:left-auto w-full md:w-[380px] flex justify-center md:block pointer-events-none z-30">
+            <div className="relative w-[280px] md:w-full aspect-[3/4] md:aspect-auto md:h-[500px] transform transition-transform duration-700 hover:scale-105">
+                
+                {/* Tree Container - Transparent Background */}
+                <div className="absolute inset-0 flex flex-col items-center justify-end md:justify-center p-6 pb-0 md:pb-6">
+                    {/* Glow Effect behind the tree */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/0 to-transparent md:via-white/20 blur-xl rounded-full opacity-60"></div>
+
+                    {/* Star */}
+                    <div className="text-amber-400 mb-4 animate-pulse drop-shadow-[0_0_15px_rgba(251,191,36,0.6)] relative z-10 scale-125">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                    </div>
+                    
+                    {/* Word Cloud Simulation - Enhanced Visibility */}
+                    <div className="flex flex-col items-center gap-3 w-full relative z-10 filter drop-shadow-sm">
+                        <div className="text-[#b91c1c] font-serif font-bold text-3xl opacity-90 tracking-wide animate-float-slow" style={{ animationDelay: '0s' }}>Leadership</div>
+                        
+                        <div className="flex gap-4 items-center">
+                            <span className="text-[#15803d] font-sans font-bold text-lg animate-float-slow" style={{ animationDelay: '1s' }}>Strategy</span>
+                            <span className="text-[#b45309] font-serif font-bold text-2xl animate-float-slow" style={{ animationDelay: '0.5s' }}>Growth</span>
+                        </div>
+                        
+                        <div className="flex gap-4 items-center">
+                            <span className="text-[#334155] font-sans text-sm font-medium opacity-80">Design</span>
+                            <span className="text-[#dc2626] font-bold text-2xl animate-pulse">Product</span>
+                            <span className="text-[#15803d] font-sans text-sm font-bold">Agile</span>
+                        </div>
+                        
+                        <div className="flex gap-3 items-center">
+                            <span className="text-[#b45309] font-serif text-lg italic">Vision</span>
+                            <span className="text-[#15803d] font-bold text-xl">Coding</span>
+                            <span className="text-[#dc2626] text-sm font-bold">React</span>
+                        </div>
+                        
+                         <div className="flex gap-4 items-center">
+                            <span className="text-[#334155] text-sm tracking-wider font-semibold">TEAM</span>
+                            <span className="text-[#b45309] font-bold text-xl">Communication</span>
+                            <span className="text-[#15803d] text-base font-medium">Remote</span>
+                        </div>
+                        
+                         <div className="flex gap-3 items-center">
+                            <span className="text-[#dc2626] font-serif text-lg">Creativity</span>
+                            <span className="text-[#334155] text-xs font-bold bg-white/50 px-2 py-0.5 rounded-full">SQL</span>
+                        </div>
+                    </div>
+
+                    {/* Trunk */}
+                    <div className="w-10 h-14 bg-[#5d4037] rounded-sm mt-6 shadow-xl relative z-10">
+                        <div className="absolute inset-0 bg-black/10 rounded-sm"></div>
+                    </div>
+                    
+                </div>
+
+                {/* Decorative Ribbon - 2025 */}
+                <div className="absolute top-[15%] -right-4 md:-right-8 bg-[#dc2626] text-white text-sm font-bold py-1.5 px-12 transform rotate-[15deg] shadow-lg tracking-widest z-40 border-2 border-white/20">
+                    2025
+                </div>
+
+                {/* Floating Gifts/Elements */}
+                <div className="absolute bottom-[10%] -left-4 bg-white p-4 rounded-2xl shadow-xl animate-bounce delay-700 z-40 border border-slate-50 rotate-[-10deg]">
+                    <span className="text-3xl filter drop-shadow-sm">🎁</span>
+                </div>
+                <div className="absolute top-[20%] -left-8 text-amber-300 animate-spin-slow opacity-90 filter blur-[0.5px]">
+                    <Sparkles size={48} />
+                </div>
+            </div>
+        </div>
+
       </div>
     </div>
   )
