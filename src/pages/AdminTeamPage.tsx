@@ -113,9 +113,22 @@ const AdminTeamPage: React.FC = () => {
       const rssJobs = await jobAggregator.refreshJobsFromAPI();
       setJobs(rssJobs);
 
-      // 加载统计数据
-      const data = jobAggregator.getAdminDashboardData(filter);
-      setStats(data.stats);
+      // 从后端接口获取统计数据
+      const statsResponse = await fetch('/api/data/processed-jobs?action=stats');
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats({
+          total: statsData.totalJobs || 0,
+          activeJobs: statsData.activeJobs || 0,
+          recentlyAdded: statsData.recentlyAdded || 0,
+          byCategory: statsData.byCategory || {},
+          bySource: statsData.bySource || {},
+          byJobType: statsData.byJobType || {},
+          byExperienceLevel: statsData.byExperienceLevel || {}
+        });
+      } else {
+        console.error('获取统计数据失败:', statsResponse.status);
+      }
 
       // 加载RSS源配置
       const sources = rssService.getRSSSources();
@@ -158,7 +171,7 @@ const AdminTeamPage: React.FC = () => {
         }
       });
 
-    
+
       if (res.ok) {
         const data = await res.json();
         setResumes(data.data || []);
@@ -284,7 +297,7 @@ const AdminTeamPage: React.FC = () => {
           <h2>快速操作</h2>
         </div>
         <div className="card-content">
-            <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-4">
             <button
               onClick={() => handleExport('processed')}
               className="btn-secondary"
@@ -293,21 +306,21 @@ const AdminTeamPage: React.FC = () => {
               导出数据
             </button>
 
-              <button
-                onClick={() => setShowRSSForm(true)}
-                className="btn-secondary"
-              >
-                <Plus className="w-4 h-4" />
-                添加RSS源
-              </button>
-              <button
-                onClick={handleSync}
-                className="btn-primary"
-                disabled={syncing}
-              >
-                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                同步RSS数据
-              </button>
+            <button
+              onClick={() => setShowRSSForm(true)}
+              className="btn-secondary"
+            >
+              <Plus className="w-4 h-4" />
+              添加RSS源
+            </button>
+            <button
+              onClick={handleSync}
+              className="btn-primary"
+              disabled={syncing}
+            >
+              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+              同步RSS数据
+            </button>
           </div>
         </div>
       </div>
@@ -391,7 +404,7 @@ const AdminTeamPage: React.FC = () => {
     <AdminFeedbackList />
   );
 
-  
+
 
   // 删除简历
   const handleDeleteResume = async (id: string) => {
