@@ -18,7 +18,6 @@ import {
   Info,
   Loader,
   Plus,
-  Save,
   X,
   BarChart3,
   PieChart,
@@ -32,7 +31,7 @@ import {
   FileText,
   Mail
 } from 'lucide-react';
-import { Job, JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
+import { JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
 import DataManagementTabs from '../components/DataManagementTabs';
@@ -47,6 +46,7 @@ import AdminSystemSettings from '../components/admin/AdminSystemSettings';
 import CronTestControl from '../components/CronTestControl';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
+import { processedJobsService } from '../services/processed-jobs-service';
 
 // 扩展RSSSource接口以包含管理所需的字段
 interface ExtendedRSSSource extends RSSSource {
@@ -58,7 +58,6 @@ interface ExtendedRSSSource extends RSSSource {
 const AdminTeamPage: React.FC = () => {
   // 主要状态管理
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [_jobs, setJobs] = useState<Job[]>([]);
   const [stats, setStats] = useState<JobStats | null>(null);
   const [syncStatus, _setSyncStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,11 +87,6 @@ const AdminTeamPage: React.FC = () => {
     category: ''
   });
 
-  // 数据管理状态
-  const [rawJobs, setRawJobs] = useState<any[]>([]);
-  const [processedJobs, setProcessedJobs] = useState<any[]>([]);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
   // 侧边栏折叠状态
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -106,13 +100,8 @@ const AdminTeamPage: React.FC = () => {
 
   // 加载数据
   const loadData = useCallback(async () => {
-    console.log('开始加载管理后台数据...');
     setLoading(true);
     try {
-      // 优先从API刷新最新数据
-      const rssJobs = await jobAggregator.refreshJobsFromAPI();
-      setJobs(rssJobs);
-
       // 从后端接口获取统计数据
       const statsResponse = await fetch('/api/data/processed-jobs?action=stats');
       if (statsResponse.ok) {
@@ -140,15 +129,6 @@ const AdminTeamPage: React.FC = () => {
         lastSync: new Date()
       }));
       setRssSources(extendedSources);
-
-      // 加载原始和处理后的数据
-      setRawJobs(rssJobs);
-      setProcessedJobs(rssJobs);
-
-      console.log('数据加载完成:', {
-        jobsCount: rssJobs.length,
-        sourcesCount: sources.length
-      });
     } catch (error) {
       console.error('加载数据失败:', error);
     } finally {
@@ -207,9 +187,9 @@ const AdminTeamPage: React.FC = () => {
   };
 
   // 导出数据
-  const handleExport = (type: 'raw' | 'processed') => {
-    const data = type === 'raw' ? rawJobs : processedJobs;
-    const dataStr = JSON.stringify(data, null, 2);
+  const handleExport = async (type: 'raw' | 'processed') => {
+    const processedJobs = await processedJobsService.getAllProcessedJobs(1000);
+    const dataStr = JSON.stringify(processedJobs, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
@@ -723,7 +703,7 @@ const AdminTeamPage: React.FC = () => {
   ];
 
   return (
-    <div className={`admin-panel ${isDarkMode ? 'dark' : ''}`}>
+    <div className={`admin-panel`}>
       {/* 侧边栏导航 */}
       <aside className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div>
