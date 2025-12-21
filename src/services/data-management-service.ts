@@ -326,50 +326,40 @@ export class DataManagementService {
     dateRange?: { start: Date; end: Date };
   }): Promise<PaginatedResult<RawRSSData>> {
     try {
-      if (!this.storageAdapter) {
-        await this.initializeStorage();
-      }
+      // 构建查询参数
+      const queryParams = new URLSearchParams();
+      queryParams.append('page', page.toString());
+      queryParams.append('limit', pageSize.toString());
 
-      const allRawData = await this.loadRawData();
-
-      // 应用过滤器
-      let filteredData = allRawData;
-
-      if (filters?.source) {
-        filteredData = filteredData.filter(item => item.source === filters.source);
-      }
-
-      if (filters?.category) {
-        filteredData = filteredData.filter(item => item.category === filters.category);
-      }
-
-      if (filters?.status) {
-        filteredData = filteredData.filter(item => item.status === filters.status);
-      }
-
+      // 添加过滤器参数
+      if (filters?.source) queryParams.append('source', filters.source);
+      if (filters?.category) queryParams.append('category', filters.category);
+      if (filters?.status) queryParams.append('status', filters.status);
+      
+      // 处理日期范围
       if (filters?.dateRange) {
-        filteredData = filteredData.filter(item => {
-          const itemDate = new Date(item.fetchedAt);
-          return itemDate >= filters.dateRange!.start && itemDate <= filters.dateRange!.end;
-        });
+        queryParams.append('dateFrom', filters.dateRange.start.toISOString().split('T')[0]);
+        queryParams.append('dateTo', filters.dateRange.end.toISOString().split('T')[0]);
       }
 
-      // 按获取时间排序（最新的在前）
-      filteredData.sort((a, b) => new Date(b.fetchedAt).getTime() - new Date(a.fetchedAt).getTime());
+      // 添加时间戳避免缓存
+      queryParams.append('_t', Date.now().toString());
 
-      // 分页
-      const total = filteredData.length;
-      const totalPages = Math.ceil(total / pageSize);
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedData = filteredData.slice(startIndex, endIndex);
+      // 调用后端API进行真正的分页查询
+      const resp = await fetch(`/api/data/raw-rss?${queryParams.toString()}`);
+      if (!resp.ok) {
+        throw new Error(`GET /api/data/raw-rss failed: ${resp.status}`);
+      }
 
+      const result = await resp.json();
+      
+      // 转换后端API返回的数据格式为前端期望的格式
       return {
-        data: paginatedData,
-        total,
-        page,
-        pageSize,
-        totalPages
+        data: result.items || [],
+        total: result.total || 0,
+        page: result.page || page,
+        pageSize: result.pageSize || pageSize,
+        totalPages: result.totalPages || 0
       };
     } catch (error) {
       console.error('获取原始数据失败:', error);
