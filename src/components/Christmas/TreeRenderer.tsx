@@ -18,6 +18,7 @@ interface TreeLayer {
 
 interface TreeData {
     trunk_core_role: string;
+    top_title?: string;
     layers: TreeLayer[];
     star_label: string;
     style: 'engineering' | 'creative' | 'growth';
@@ -81,14 +82,14 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
         return kw.sort((a, b) => (b.weight || 5) - (a.weight || 5));
     }, [data]);
 
-        // Generate Layout: Spiral / Phyllotaxis Pattern (Organic & Dense)
-        // This creates a natural "pine cone" or "sunflower" distribution which is visually dense and spiral.
+        // Generate Layout: 3D Helix Spiral on Cone
+        // This creates a uniform, beautiful spiral effect that looks like a tinsel wrapped around a tree.
         const treeItems = useMemo(() => {
             if (typeof window === 'undefined') return [];
     
             const items: any[] = [];
             const centerX = width / 2;
-            const topY = 140; 
+            const topY = 160; 
             const bottomY = height - 160; 
             const treeHeight = bottomY - topY;
             
@@ -99,9 +100,9 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
     
             let workingKeywords = [...allKeywords];
             
-            // Add extra decorations to fill gaps
+            // Add extra decorations to fill gaps - Reduced count to avoid clutter
             const DECORATIONS = ['❄', '❅', '❆', '★', '✦', '✨', '•'];
-            for(let i=0; i<80; i++) {
+            for(let i=0; i<40; i++) {
                  workingKeywords.push({
                      text: DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)],
                      weight: 1, 
@@ -109,35 +110,59 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                  } as any);
             }
     
-            // Sort: Important words first, they take the "best" spots in the spiral
+            // Sort: Important words first
             workingKeywords.sort((a, b) => {
                  const wa = (a as any).isDecoration ? 0 : a.weight;
                  const wb = (b as any).isDecoration ? 0 : b.weight;
                  return wb - wa;
             });
     
-            // Helper: Check collision
+            // Spatial Grid for Collision Detection
+            const gridSize = 20;
+            const gridWidth = Math.ceil(width / gridSize);
+            const gridHeight = Math.ceil(height / gridSize);
+            const grid = new Array(gridWidth * gridHeight).fill(false);
+
             const checkCollision = (rect: any) => {
-                const pad = 2; // Tighter padding for denser look
-                for (const item of items) {
-                    if (rect.x < item.x + item.width + pad &&
-                        rect.x + rect.width + pad > item.x &&
-                        rect.y < item.y + item.height + pad &&
-                        rect.y + rect.height + pad > item.y) {
-                        return true;
+                const startX = Math.floor(rect.x / gridSize);
+                const endX = Math.floor((rect.x + rect.width) / gridSize);
+                const startY = Math.floor(rect.y / gridSize);
+                const endY = Math.floor((rect.y + rect.height) / gridSize);
+
+                if (startX < 0 || endX >= gridWidth || startY < 0 || endY >= gridHeight) return true; // Out of bounds
+
+                for (let y = startY; y <= endY; y++) {
+                    for (let x = startX; x <= endX; x++) {
+                        if (grid[y * gridWidth + x]) return true;
                     }
                 }
                 return false;
             };
+
+            const markOccupied = (rect: any) => {
+                const startX = Math.floor(rect.x / gridSize);
+                const endX = Math.floor((rect.x + rect.width) / gridSize);
+                const startY = Math.floor(rect.y / gridSize);
+                const endY = Math.floor((rect.y + rect.height) / gridSize);
+
+                for (let y = startY; y <= endY; y++) {
+                    for (let x = startX; x <= endX; x++) {
+                         if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
+                             grid[y * gridWidth + x] = true;
+                         }
+                    }
+                }
+            };
     
-            // Spiral Layout Parameters
-            // We trace a spiral from top to bottom.
-            // But actually, for a Christmas tree, we want to fill a CONE.
-            // Let's use a specialized "Cone Spiral" scan.
+            // Spiral Parameters
+            const totalWords = workingKeywords.length;
+            const spirals = 6; // Number of turns around the tree
+            const angleStep = (Math.PI * 2 * spirals) / totalWords;
             
-            // We try to place each word. For each word, we search along a spiral path starting from a random angle but specific height range.
-            // Actually, phyllotaxis is good for 2D circles. For a cone, we can map Y to the radius.
-            
+            let currentAngle = 0;
+            let currentY = topY;
+            const yStep = treeHeight / totalWords;
+
             for (const kw of workingKeywords) {
                 const isDeco = (kw as any).isDecoration;
                 const font = isDeco ? 'Arial' : FONTS[Math.floor(Math.random() * FONTS.length)];
@@ -145,11 +170,11 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 
                 let fontSize = 12;
                 if (!isDeco) {
-                     // Logarithmic scaling for better size distribution
-                     fontSize = 12 + Math.log2(kw.weight + 2) * 5; 
-                     if (fontSize > 48) fontSize = 48; // Max size cap
+                     // Logarithmic scaling
+                     fontSize = 12 + Math.log2(kw.weight + 2) * 4; 
+                     if (fontSize > 40) fontSize = 40; 
                 } else {
-                     fontSize = 8 + Math.random() * 8;
+                     fontSize = 10 + Math.random() * 8;
                 }
     
                 ctx.font = `${fontSize}px ${font}`;
@@ -157,72 +182,35 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 const textWidth = metrics.width;
                 const textHeight = fontSize * 0.8; 
     
-                // Attempt to place the word
+                // Try to place along the spiral
+                // We add some jitter to Y and Angle to make it look organic but structured
                 let placed = false;
                 
-                // We define a "Cone" shape:
-                // At Y = topY, radius = 20
-                // At Y = bottomY, radius = width * 0.4
-                
-                // Strategy: 
-                // 1. Pick a "preferred" Y based on weight? (Heavier words lower? Or random?)
-                //    Random Y usually looks better for mixed clouds.
-                // 2. Or, iterate Y from top to bottom with step, and at each level try to place?
-                //    That creates lines.
-                // 3. Best: Randomized Spiral Search
-                //    Pick a random Y within tree bounds.
-                //    Calculate max Radius at that Y.
-                //    Spiral out from center (x=0) to maxRadius at that Y.
-                
-                // Let's try 50 attempts per word to find a spot
-                // We want heavier words to be more central generally, but distributed vertically.
-                
-                // Optimization: We scan vertically (Y) and for each Y, we scan horizontally (X).
-                // But to get the "Spiral" look, we can actually calculate positions on a spiral curve.
-                
-                const angleStep = 1; // Radians
-                const radiusStep = 5; 
-                
-                // New Strategy: "Fermat's Spiral on a Cone"
-                // Iterate through points generated by a golden angle spiral projected onto a cone.
-                // But we need to place arbitrary rectangles, not points.
-                
-                // Fallback to "Monte Carlo with Bias":
-                // Try random positions within the cone. If collision, retry.
-                // Bias: Higher weight words -> Closer to center line.
-                
-                const maxAttempts = 150;
-                for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                    // Random Y
-                    // Bias Y slightly towards bottom for visual stability? No, uniform is fine.
-                    const y = topY + Math.random() * treeHeight;
+                // Try 20 attempts around the ideal spiral spot
+                for (let attempt = 0; attempt < 20; attempt++) {
+                    const jitterAngle = (Math.random() - 0.5) * 1.0; // +/- 0.5 radian
+                    const jitterY = (Math.random() - 0.5) * 30; // +/- 15px vertically
                     
-                    // Calculate max width at this Y (Cone shape)
-                    const progress = (y - topY) / treeHeight;
-                    // Cone width function: Power curve for "Christmas Tree" sweep
-                    const maxRadius = 20 + (width * 0.4 - 20) * Math.pow(progress, 1.2);
+                    const theta = currentAngle + jitterAngle;
+                    const yPos = currentY + jitterY;
                     
-                    // Random X within this radius
-                    // Bias towards center for non-deco words
-                    const r = (Math.random() + Math.random()) / 2 * maxRadius; // Triangular distribution peaking at 0? No.
-                    // Let's use simple random for X, but bounded by cone.
-                    // Actually, let's use a spiral-like search for placement if we really want structure.
-                    // But random placement with collision detection usually yields a good "cloud".
+                    // Cone Radius at this Y
+                    const progress = Math.max(0, Math.min(1, (yPos - topY) / treeHeight));
+                    const coneRadius = 20 + (width * 0.35) * Math.pow(progress, 1.1); // Slightly wider at bottom
                     
-                    // To get the "Spiral" visual EFFECT mentioned by user, usually means the words themselves follow a curve.
-                    // Or simply that they are dense and organic. 
-                    // Let's stick to "Dense Cone" for now, as true spiral text layout is hard with rectangles.
-                    // However, we can rotate words to follow the spiral tangent? 
-                    // User said "Spiral Effect". Let's try to arrange words along a 3D helix projected to 2D?
-                    // That might be too complex.
-                    // Let's stick to "Dense Packing" but maybe rotate words slightly?
+                    // Project 3D Helix to 2D
+                    // x = r * cos(theta)
+                    // z = r * sin(theta) -> affects scale/brightness/z-index, but here just X position
+                    // Actually, we want a " Ribbon" effect.
+                    // X = centerX + cos(theta) * radius
                     
-                    const xOffset = (Math.random() - 0.5) * 2 * maxRadius;
-                    const x = centerX + xOffset;
+                    const x = centerX + Math.cos(theta) * coneRadius;
+                    const y = yPos + Math.sin(theta) * 10; // Slight tilt
                     
-                    // Check if inside cone
-                    if (Math.abs(x - centerX) > maxRadius) continue;
-    
+                    // Boundary check (Padding 20px)
+                    if (x - textWidth/2 < 20 || x + textWidth/2 > width - 20) continue;
+                    if (y - textHeight/2 < topY - 20 || y + textHeight/2 > bottomY + 20) continue;
+
                     const rect = {
                         x: x - textWidth / 2,
                         y: y - textHeight / 2,
@@ -240,18 +228,21 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                             fontSize,
                             font,
                             color,
-                            // Rotation: 
-                            // 1. Decoration: Random
-                            // 2. Words: Slight random tilt (-15 to 15) to look organic but readable
-                            // 3. "Spiral" feel: maybe tilt based on position? 
-                            //    Let's try tilting based on X distance to exaggerate the "swirl"
-                            rotation: isDeco ? Math.random() * 360 : (x - centerX) * 0.1 + (Math.random() - 0.5) * 10,
-                            delay: items.length * 0.005
+                            // Rotate slightly to follow the spiral tangent?
+                            // Tangent angle is approx theta + PI/2
+                            // But text should be readable. Let's keep it mostly horizontal with slight random tilt.
+                            rotation: (Math.random() - 0.5) * 10,
+                            delay: items.length * 0.01
                         });
+                        markOccupied(rect);
                         placed = true;
                         break;
                     }
                 }
+                
+                // Advance the spiral "cursor" regardless of placement success (to maintain flow)
+                currentAngle += angleStep;
+                currentY += yStep;
             }
     
             return items;
@@ -369,6 +360,18 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
 
             {/* 6. Top Star */}
             <g transform={`translate(${width / 2}, 110)`}>
+                {/* Arc Path for Title */}
+                <path id="titleArc" d="M -100,20 Q 0,-30 100,20" fill="none" />
+                
+                {/* Top Title (Curved) */}
+                {data.top_title && (
+                    <text textAnchor="middle" fontSize="16" fontFamily="Cinzel, serif" fontWeight="bold" fill="#b45309" dy="-5">
+                         <textPath href="#titleArc" startOffset="50%" textAnchor="middle">
+                            {data.top_title}
+                         </textPath>
+                    </text>
+                )}
+
                 <circle r="40" fill="url(#starGlow)" opacity="0.5" />
                 <motion.path
                     d="M0,-35 L10,-12 L35,-12 L15,5 L22,30 L0,18 L-22,30 L-15,5 L-35,-12 L-10,-12 Z"
@@ -379,32 +382,24 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 2, type: 'spring' }}
                 />
-                <text 
-                    y={50} 
-                    textAnchor="middle" 
-                    fill="#fcd34d" 
-                    fontSize="16" 
-                    fontFamily="Cinzel, serif" 
-                    fontWeight="bold"
-                    style={{ maxWidth: '200px' }} // Constraint logic below
-                >
-                    {/* Simple truncation for star label if too long */}
-                    {data.star_label.length > 15 ? data.star_label.substring(0, 15) + '...' : data.star_label}
-                </text>
             </g>
             
-            {/* 7. Base/Label */}
-            <text 
-                x={width/2} 
-                y={height - 50} 
-                textAnchor="middle" 
-                fill="#1e293b" 
-                fontSize="20" 
-                fontWeight="bold"
-                fontFamily="Great Vibes, cursive"
-            >
-                {data.trunk_core_role}
-            </text>
+            {/* 7. Base/Label (Trunk) */}
+            <g transform={`translate(${width/2}, ${height - 100})`}>
+                {/* Vertical Text on Trunk */}
+                 <text 
+                    x="0" 
+                    y="20" 
+                    textAnchor="middle" 
+                    fill="rgba(255,255,255,0.9)" 
+                    fontSize="14" 
+                    fontWeight="bold"
+                    fontFamily="Cinzel, serif"
+                    style={{ writingMode: 'vertical-rl', textOrientation: 'upright', letterSpacing: '2px' }}
+                >
+                    {data.trunk_core_role}
+                </text>
+            </g>
 
         </svg>
     );
