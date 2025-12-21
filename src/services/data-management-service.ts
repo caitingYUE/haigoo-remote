@@ -401,93 +401,43 @@ export class DataManagementService {
     dateRange?: { start: Date; end: Date };
   }): Promise<PaginatedResult<ProcessedJobData>> {
     try {
-      if (!this.storageAdapter) {
-        await this.initializeStorage();
-      }
+      // 构建查询参数
+      const queryParams = new URLSearchParams();
+      queryParams.append('page', page.toString());
+      queryParams.append('limit', pageSize.toString());
 
-      const allProcessedJobs = await this.loadProcessedJobs();
-
-      // 应用过滤器
-      let filteredJobs = allProcessedJobs;
-
-      if (filters?.id) {
-        filteredJobs = filteredJobs.filter(job => job.id === filters.id);
-      }
-
-      if (filters?.category) {
-        filteredJobs = filteredJobs.filter(job => job.category === filters.category);
-      }
-
-      if (filters?.source) {
-        filteredJobs = filteredJobs.filter(job => job.source === filters.source);
-      }
-
-      if (filters?.experienceLevel) {
-        filteredJobs = filteredJobs.filter(job => job.experienceLevel === filters.experienceLevel);
-      }
-
-      if (filters?.isManuallyEdited !== undefined) {
-        filteredJobs = filteredJobs.filter(job => job.isManuallyEdited === filters.isManuallyEdited);
-      }
-
-      if (filters?.isFeatured !== undefined) {
-        filteredJobs = filteredJobs.filter(job => job.isFeatured === filters.isFeatured);
-      }
-
-      if (filters?.company) {
-        filteredJobs = filteredJobs.filter(job =>
-          job.company.toLowerCase().includes(filters.company!.toLowerCase())
-        );
-      }
-
-      // 关键词搜索：支持岗位名称/公司/描述/地点/标签
-      if (filters?.search && filters.search.trim().length > 0) {
-        const kw = filters.search.toLowerCase().trim();
-        filteredJobs = filteredJobs.filter(job => {
-          const inTitle = job.title?.toLowerCase().includes(kw);
-          const inCompany = job.company?.toLowerCase().includes(kw);
-          const inDesc = job.description?.toLowerCase().includes(kw);
-          const inLocation = job.location?.toLowerCase().includes(kw);
-          const inTags = Array.isArray(job.tags) && job.tags.some(t => t.toLowerCase().includes(kw));
-          return inTitle || inCompany || inDesc || inLocation || inTags;
-        });
-      }
-
-      if (filters?.isRemote !== undefined) {
-        filteredJobs = filteredJobs.filter(job => job.isRemote === filters.isRemote);
-      }
-
-      if (filters?.tags && filters.tags.length > 0) {
-        filteredJobs = filteredJobs.filter(job =>
-          filters.tags!.some(tag =>
-            job.tags.some(jobTag => jobTag.toLowerCase().includes(tag.toLowerCase()))
-          )
-        );
-      }
-
+      // 添加过滤器参数
+      if (filters?.id) queryParams.append('id', filters.id);
+      if (filters?.category) queryParams.append('category', filters.category);
+      if (filters?.source) queryParams.append('source', filters.source);
+      if (filters?.company) queryParams.append('company', filters.company);
+      if (filters?.search) queryParams.append('search', filters.search);
+      if (filters?.isRemote !== undefined) queryParams.append('isRemote', filters.isRemote.toString());
+      
+      // 处理日期范围
       if (filters?.dateRange) {
-        filteredJobs = filteredJobs.filter(job => {
-          const jobDate = new Date(job.publishedAt);
-          return jobDate >= filters.dateRange!.start && jobDate <= filters.dateRange!.end;
-        });
+        queryParams.append('dateFrom', filters.dateRange.start.toISOString().split('T')[0]);
+        queryParams.append('dateTo', filters.dateRange.end.toISOString().split('T')[0]);
       }
 
-      // 按发布时间排序（最新的在前）
-      filteredJobs.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+      // 添加时间戳避免缓存
+      queryParams.append('_t', Date.now().toString());
 
-      // 分页
-      const total = filteredJobs.length;
-      const totalPages = Math.ceil(total / pageSize);
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedData = filteredJobs.slice(startIndex, endIndex);
+      // 调用后端API进行真正的分页查询
+      const resp = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`);
+      if (!resp.ok) {
+        throw new Error(`GET /api/data/processed-jobs failed: ${resp.status}`);
+      }
 
+      const result = await resp.json();
+      
+      // 转换后端API返回的数据格式为前端期望的格式
       return {
-        data: paginatedData,
-        total,
-        page,
-        pageSize,
-        totalPages
+        data: result.jobs || [],
+        total: result.total || 0,
+        page: result.page || page,
+        pageSize: result.pageSize || pageSize,
+        totalPages: result.totalPages || 0
       };
     } catch (error) {
       console.error('获取处理后数据失败:', error);
