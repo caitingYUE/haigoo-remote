@@ -22,6 +22,7 @@ interface TreeData {
     layers: TreeLayer[];
     star_label: string;
     style: 'engineering' | 'creative' | 'growth';
+    growth_stages?: { year: string; keyword: string }[];
 }
 
 interface TreeRendererProps {
@@ -324,6 +325,69 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                     opacity="0.1"
                 />
             </g>
+
+            {/* --- Growth Highlights (Vertical Axis) --- */}
+            {data.growth_stages && data.growth_stages.length > 0 && (
+                <g>
+                    {data.growth_stages.map((stage, index) => {
+                        // Distribute vertically along the tree center
+                        // Bottom (Oldest) -> Top (Newest)
+                        const total = data.growth_stages!.length;
+                        const stepY = (height - 300) / (total + 1); 
+                        const y = (height - 180) - (index + 1) * stepY; // Start from bottom
+                        const x = width / 2;
+                        
+                        // Alternating side offset for readability
+                        const xOffset = (index % 2 === 0 ? -1 : 1) * (40 + Math.random() * 20);
+
+                        return (
+                            <g key={`stage-${index}`} className="animate-in fade-in zoom-in duration-1000 delay-500">
+                                {/* Connecting Line to Center */}
+                                <path 
+                                    d={`M${x} ${y} Q ${x + xOffset * 0.5} ${y + 10} ${x + xOffset} ${y}`} 
+                                    fill="none" 
+                                    stroke="#b45309" 
+                                    strokeWidth="1" 
+                                    strokeDasharray="4 4" 
+                                    opacity="0.4"
+                                />
+                                
+                                {/* Stage Dot */}
+                                <circle cx={x + xOffset} cy={y} r="4" fill="#dc2626" opacity="0.8">
+                                    <animate attributeName="r" values="4;5;4" dur="3s" repeatCount="indefinite" />
+                                </circle>
+
+                                {/* Year Label */}
+                                <text 
+                                    x={x + xOffset + (index % 2 === 0 ? -10 : 10)} 
+                                    y={y - 8} 
+                                    textAnchor={index % 2 === 0 ? "end" : "start"}
+                                    fontSize="10" 
+                                    fontFamily="Cinzel, serif" 
+                                    fill="#b45309"
+                                    fontStyle="italic"
+                                >
+                                    {stage.year}
+                                </text>
+
+                                {/* Keyword Label (Highlight) */}
+                                <text 
+                                    x={x + xOffset + (index % 2 === 0 ? -10 : 10)} 
+                                    y={y + 12} 
+                                    textAnchor={index % 2 === 0 ? "end" : "start"}
+                                    fontSize="14" 
+                                    fontFamily="Cinzel, serif" 
+                                    fontWeight="bold"
+                                    fill="#15803d"
+                                    style={{ filter: 'url(#glow-text)' }}
+                                >
+                                    {stage.keyword}
+                                </text>
+                            </g>
+                        );
+                    })}
+                </g>
+            )}
 
             {/* 4. Trunk (Planted in snow) */}
             <rect 

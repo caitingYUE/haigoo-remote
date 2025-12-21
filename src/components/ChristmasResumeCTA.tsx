@@ -94,7 +94,7 @@ export default function ChristmasResumeCTA() {
                     <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/0 to-transparent md:via-white/20 blur-xl rounded-full opacity-60"></div>
 
                     {/* Spiral Line Decoration - Improved SVG */}
-                    <div className="absolute inset-0 z-0 opacity-50">
+                    <div className="absolute inset-0 z-0 opacity-60">
                         <svg viewBox="0 0 200 300" className="w-full h-full overflow-visible">
                             <defs>
                                 <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -110,34 +110,38 @@ export default function ChristmasResumeCTA() {
                                 </filter>
                             </defs>
                             
-                            {/* Stylish Tree Outline / Ribbon */}
+                            {/* Stylish Tree Outline - More organic branches */}
                             <path
-                                d="M100,30 
-                                   Q130,40 100,50
-                                   Q70,60 100,70
-                                   Q150,85 100,100
-                                   Q50,115 100,130
-                                   Q170,150 100,170
-                                   Q30,190 100,210
-                                   Q190,230 100,250
-                                   Q10,270 100,290"
+                                d="M100,20 
+                                   C100,20 120,40 100,50
+                                   C80,60 110,70 100,80
+                                   C130,90 80,100 100,110
+                                   C60,120 140,130 100,140
+                                   C150,150 70,160 100,170
+                                   C50,180 160,190 100,200
+                                   C170,210 60,220 100,230
+                                   C40,240 180,250 100,270"
                                 fill="none"
                                 stroke="url(#goldGradient)"
-                                strokeWidth="3"
+                                strokeWidth="1.5"
                                 strokeLinecap="round"
                                 filter="url(#glow)"
                                 className="drop-shadow-lg"
+                                opacity="0.8"
                             />
                             
-                            {/* Ornaments */}
+                            {/* Floating Particles/Ornaments */}
                             <g className="animate-pulse">
-                                <circle cx="100" cy="50" r="3" fill="#dc2626" />
-                                <circle cx="130" cy="85" r="4" fill="#15803d" />
-                                <circle cx="70" cy="115" r="3" fill="#fbbf24" />
-                                <circle cx="150" cy="150" r="4" fill="#dc2626" />
-                                <circle cx="50" cy="190" r="3" fill="#15803d" />
-                                <circle cx="170" cy="230" r="4" fill="#fbbf24" />
-                                <circle cx="30" cy="270" r="3" fill="#dc2626" />
+                                <circle cx="100" cy="50" r="2" fill="#dc2626" opacity="0.8" />
+                                <circle cx="120" cy="90" r="3" fill="#15803d" opacity="0.8" />
+                                <circle cx="80" cy="130" r="2" fill="#fbbf24" opacity="0.8" />
+                                <circle cx="130" cy="170" r="3" fill="#dc2626" opacity="0.8" />
+                                <circle cx="70" cy="210" r="2" fill="#15803d" opacity="0.8" />
+                                <circle cx="140" cy="250" r="3" fill="#fbbf24" opacity="0.8" />
+                                
+                                <text x="90" y="40" fontSize="8" fill="#b45309" fontFamily="serif">★</text>
+                                <text x="130" y="110" fontSize="10" fill="#dc2626" fontFamily="serif">❄</text>
+                                <text x="60" y="180" fontSize="8" fill="#15803d" fontFamily="serif">✦</text>
                             </g>
                         </svg>
                     </div>
