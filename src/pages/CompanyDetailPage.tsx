@@ -9,10 +9,13 @@ import JobCardNew from '../components/JobCardNew'
 import { SingleLineTags } from '../components/SingleLineTags'
 import JobDetailModal from '../components/JobDetailModal'
 
+import { LocationTooltip } from '../components/LocationTooltip'
+
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
     const { user, isMember } = useAuth()
+    const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
 
     // DEBUG: Log user and membership status
@@ -271,16 +274,33 @@ export default function CompanyDetailPage() {
                                                 
                                                 {/* Address */}
                                                 {companyInfo.address && (
-                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm col-span-2 lg:col-span-1">
-                                                        <div className="p-1.5 bg-indigo-50 rounded-md">
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm col-span-2 lg:col-span-1 relative">
+                                                        <div 
+                                                            className="p-1.5 bg-indigo-50 rounded-md cursor-help hover:bg-indigo-100 transition-colors"
+                                                            onMouseEnter={() => setShowLocationTooltip(true)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setShowLocationTooltip(!showLocationTooltip);
+                                                            }}
+                                                        >
                                                             <MapPin className="w-4 h-4 text-indigo-500" />
                                                         </div>
-                                                        <div className="min-w-0">
+                                                        <div className="min-w-0 flex-1">
                                                             <div className="text-[10px] text-slate-500 mb-0.5">总部地址</div>
-                                                            <div className="font-medium text-slate-900 text-sm truncate">
+                                                            <div className="font-medium text-slate-900 text-sm truncate" title={companyInfo.address}>
                                                                 {companyInfo.address}
                                                             </div>
                                                         </div>
+                                                        
+                                                        {/* Location Tooltip */}
+                                                        {showLocationTooltip && (
+                                                            <div className="absolute top-full left-0 mt-2 z-50">
+                                                                <LocationTooltip 
+                                                                    location={companyInfo.address} 
+                                                                    onClose={() => setShowLocationTooltip(false)} 
+                                                                />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                                 
@@ -329,32 +349,32 @@ export default function CompanyDetailPage() {
                                             </div>
                                         ) : (
                                             /* Locked State - Optimized Visual */
-                                            <div className="relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30">
+                                            <div className="relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30 min-h-[300px]">
                                                 {/* Simulated Content Layer (Blurred) */}
-                                                <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-sm opacity-60 select-none pointer-events-none">
+                                                <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-sm opacity-60 select-none pointer-events-none h-full">
                                                      {/* Use real-looking fake data for better blur effect */}
-                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100">
+                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
                                                         <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
                                                         <div className="space-y-1.5 flex-1">
                                                             <div className="h-2 w-12 bg-slate-100 rounded"></div>
                                                             <div className="h-3 w-20 bg-slate-200 rounded"></div>
                                                         </div>
                                                      </div>
-                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100">
+                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
                                                         <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
                                                         <div className="space-y-1.5 flex-1">
                                                             <div className="h-2 w-12 bg-slate-100 rounded"></div>
                                                             <div className="h-3 w-16 bg-slate-200 rounded"></div>
                                                         </div>
                                                      </div>
-                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 col-span-2 lg:col-span-1">
+                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 col-span-2 lg:col-span-1 h-16">
                                                         <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
                                                         <div className="space-y-1.5 flex-1">
                                                             <div className="h-2 w-12 bg-slate-100 rounded"></div>
                                                             <div className="h-3 w-24 bg-slate-200 rounded"></div>
                                                         </div>
                                                      </div>
-                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100">
+                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
                                                         <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
                                                         <div className="space-y-1.5 flex-1">
                                                             <div className="h-2 w-12 bg-slate-100 rounded"></div>
@@ -365,12 +385,12 @@ export default function CompanyDetailPage() {
 
                                                 {/* Overlay */}
                                                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/40 backdrop-blur-[2px]">
-                                                    <div className="text-center p-6 w-full max-w-sm">
-                                                        <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg shadow-indigo-200">
+                                                    <div className="text-center p-4 w-full max-w-sm">
+                                                        <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg shadow-indigo-200">
                                                             <Crown className="w-5 h-5 text-white" />
                                                         </div>
-                                                        <h3 className="text-base font-bold text-slate-900 mb-1">会员专属深度信息</h3>
-                                                        <p className="text-slate-500 text-xs mb-4">解锁官网、评分、薪资范围等企业情报</p>
+                                                        <h3 className="text-sm font-bold text-slate-900 mb-1">会员专属深度信息</h3>
+                                                        <p className="text-slate-500 text-xs mb-3">解锁官网、评分、薪资范围等企业情报</p>
                                                         <button 
                                                             onClick={() => navigate('/membership')}
                                                             className="flex items-center justify-center gap-1.5 px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mx-auto w-fit"
