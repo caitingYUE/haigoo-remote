@@ -435,3 +435,6 @@ CREATE TABLE bug_reports (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 2025-12-21: jobs表的company_id加索引，因为常用来跟 company 表关联查询
+CREATE INDEX idx_jobs_company_id ON jobs (company_id);
