@@ -38,6 +38,7 @@ const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 
 const ChristmasPage = lazyRetry(() => import('./pages/ChristmasPage'), 'ChristmasPage')
 const AdminBugReportsPage = lazy(() => import('./pages/AdminBugReportsPage'))
+const BugLeaderboardPage = lazy(() => import('./pages/BugLeaderboardPage'))
 
 import { BugReportButton } from './components/BugReporter/BugReportButton'
 

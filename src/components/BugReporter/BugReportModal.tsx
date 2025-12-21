@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Loader2, AlertCircle, CheckCircle, Camera } from 'lucide-react';
+import { X, Upload, Loader2, AlertCircle, CheckCircle, Camera, Trophy } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import html2canvas from 'html2canvas';
 
@@ -54,6 +54,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
     const { user } = useAuth();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [contactInfo, setContactInfo] = useState('');
     const [image, setImage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -145,6 +146,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
                     onClose();
                     setTitle('');
                     setDescription('');
+                    setContactInfo('');
                     setImage(null);
                     setStatus('idle');
                 }, 2000);
@@ -169,7 +171,13 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
                 className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] transition-opacity duration-300"
             >
                 <div className="p-4 border-b flex justify-between items-center bg-slate-50">
-                    <h3 className="font-bold text-lg text-slate-800">提交反馈 / Bug</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="font-bold text-lg text-slate-800">提交反馈 / Bug</h3>
+                        <a href="/bug-leaderboard" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:underline flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded-full">
+                            <Trophy className="w-3 h-3" />
+                            贡献榜
+                        </a>
+                    </div>
                     <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full transition-colors">
                         <X className="w-5 h-5 text-slate-500" />
                     </button>
@@ -221,6 +229,19 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
                                 placeholder="请详细描述复现步骤、期望结果等..."
                                 rows={4}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                联系方式 (可选)
+                            </label>
+                            <input
+                                type="text"
+                                value={contactInfo}
+                                onChange={(e) => setContactInfo(e.target.value)}
+                                placeholder="邮箱或微信号，方便我们联系您"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                             />
                         </div>
 

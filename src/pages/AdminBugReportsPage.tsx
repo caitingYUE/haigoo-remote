@@ -15,6 +15,9 @@ interface BugReport {
     status: 'open' | 'in_progress' | 'resolved' | 'closed';
     created_at: string;
     updated_at: string;
+    contact_info?: string;
+    admin_reply?: string;
+    replied_at?: string;
 }
 
 export default function AdminBugReportsPage() {
@@ -24,6 +27,11 @@ export default function AdminBugReportsPage() {
     const [error, setError] = useState('');
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     
+    // Reply State
+    const [replyingId, setReplyingId] = useState<number | null>(null);
+    const [replyContent, setReplyContent] = useState('');
+    const [isSendingReply, setIsSendingReply] = useState(false);
+
     // Image Preview Modal State
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [loadingImage, setLoadingImage] = useState(false);
@@ -102,6 +110,35 @@ export default function AdminBugReportsPage() {
         }
     };
 
+    const submitReply = async () => {
+        if (!replyingId || !replyContent.trim()) return;
+        setIsSendingReply(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/admin-ops?action=bug_report', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ id: replyingId, replyContent })
+            });
+            const json = await res.json();
+            if (json.success) {
+                setBugs(bugs.map(b => b.id === replyingId ? { ...b, admin_reply: replyContent, replied_at: new Date().toISOString() } : b));
+                setReplyingId(null);
+                setReplyContent('');
+                // alert('Reply sent successfully!');
+            } else {
+                alert(json.error || 'Failed to send reply');
+            }
+        } catch (err) {
+            alert('Failed to send reply');
+        } finally {
+            setIsSendingReply(false);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'open': return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold">Open</span>;
@@ -172,11 +209,19 @@ export default function AdminBugReportsPage() {
                                             <td className="p-4 text-sm text-slate-700">
                                                 {bug.user_nickname}
                                                 <div className="text-xs text-slate-400">{bug.user_id ? 'Member' : 'Anonymous'}</div>
+                                                {bug.contact_info && (
+                                                    <div className="text-xs text-indigo-600 mt-1 select-all">{bug.contact_info}</div>
+                                                )}
                                             </td>
                                             <td className="p-4 text-sm text-slate-500">
                                                 {new Date(bug.created_at).toLocaleDateString()}
+                                                {bug.admin_reply && (
+                                                    <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                                        <CheckCircle className="w-3 h-3" /> Replied
+                                                    </div>
+                                                )}
                                             </td>
-                                            <td className="p-4">
+                                            <td className="p-4 flex items-center gap-2">
                                                 <select
                                                     value={bug.status}
                                                     onChange={(e) => updateStatus(bug.id, e.target.value)}
@@ -188,7 +233,18 @@ export default function AdminBugReportsPage() {
                                                     <option value="resolved">Resolved</option>
                                                     <option value="closed">Closed</option>
                                                 </select>
-                                                {updatingId === bug.id && <Loader2 className="w-4 h-4 animate-spin inline ml-2 text-slate-400" />}
+                                                {updatingId === bug.id && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+                                                
+                                                <button
+                                                    onClick={() => {
+                                                        setReplyingId(bug.id);
+                                                        setReplyContent(bug.admin_reply || '');
+                                                    }}
+                                                    className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                    title="Reply"
+                                                >
+                                                    <MessageSquare className="w-4 h-4" />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -220,6 +276,41 @@ export default function AdminBugReportsPage() {
                             <X className="w-5 h-5" />
                         </button>
                         <img src={previewImage} alt="Bug Screenshot" className="max-w-full h-auto rounded" />
+                    </div>
+                </div>
+            )}
+
+            {/* Reply Modal */}
+            {replyingId && (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200"
+                    onClick={() => setReplyingId(null)}
+                >
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-slate-900 mb-4">Reply to User</h3>
+                        <textarea
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            placeholder="Enter your reply here..."
+                            rows={4}
+                            className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 outline-none mb-4 resize-none"
+                        />
+                        <div className="flex justify-end gap-3">
+                            <button 
+                                onClick={() => setReplyingId(null)}
+                                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={submitReply}
+                                disabled={isSendingReply}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isSendingReply && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Send Reply
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
