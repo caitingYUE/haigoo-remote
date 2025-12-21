@@ -14,6 +14,8 @@ interface ApplyInterceptModalProps {
     onProceedToApply: () => void;
 }
 
+import { getJobSourceType } from '../utils/job-source-helper';
+
 export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     isOpen,
     onClose,
@@ -27,7 +29,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     if (!isOpen) return null;
 
     // Member View for Trusted Company Jobs (Not Referral)
-    if (isMember && job.isTrusted) {
+    if (isMember && (job.isTrusted || job.sourceType === 'trusted')) {
         return createPortal(
             <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                 <div

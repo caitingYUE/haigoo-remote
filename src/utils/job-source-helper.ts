@@ -4,7 +4,7 @@ export type JobSourceType = 'referral' | 'official' | 'trusted_platform' | 'unkn
 
 export const getJobSourceType = (job: Job): JobSourceType => {
     if (job.canRefer) return 'referral';
-    if (job.isTrusted) return 'official';
+    if (job.isTrusted || job.sourceType === 'trusted') return 'official';
     // If it has a source type of rss/third-party OR has a source string but isn't trusted/referral
     if (job.sourceType === 'rss' || job.sourceType === 'third-party' || (job.source && !job.isTrusted && !job.canRefer)) {
         return 'trusted_platform';
