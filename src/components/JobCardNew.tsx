@@ -295,6 +295,9 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
                   // Fallback to summary
                   if (job.summary) {
+                     // Safety check for summary
+                     if (typeof job.summary !== 'string') return '';
+                     
                      return job.summary.length > 200
                         ? job.summary.substring(0, 200) + '...'
                         : job.summary

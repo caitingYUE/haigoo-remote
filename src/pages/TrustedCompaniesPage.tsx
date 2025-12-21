@@ -21,6 +21,14 @@ export default function TrustedCompaniesPage() {
     // Filters
     const [selectedIndustries, setSelectedIndustries] = useState<string[]>([])
     const [selectedRegions, setSelectedRegions] = useState<string[]>([])
+    
+    // Add missing state variables
+    const [companies, setCompanies] = useState<TrustedCompany[]>([])
+    const [loading, setLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [jobCounts, setJobCounts] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
+    const [isNominationModalOpen, setIsNominationModalOpen] = useState(false)
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
     const [allJobs, setAllJobs] = useState<any[]>([])
 

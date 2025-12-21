@@ -1370,14 +1370,14 @@ export default function ProfileCenterPage() {
                       <div>
                         <p className="text-xs text-indigo-200 mb-1">当前等级</p>
                         <p className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                          {(authUser.membershipLevel === 'club_go' || !authUser.membershipLevel) ? 'Haigoo Member' : 'Haigoo Member'}
+                          {(authUser?.membershipLevel === 'club_go' || !authUser?.membershipLevel) ? 'Haigoo Member' : 'Haigoo Member'}
                           <CheckCircle className="w-4 h-4 text-teal-300" />
                         </p>
                       </div>
                       <div>
                         <p className="text-xs text-indigo-200 mb-1">有效期至</p>
                         <p className="text-sm font-medium text-white/80 font-mono">
-                          {authUser.memberExpireAt ? new Date(authUser.memberExpireAt).toLocaleDateString() : '永久有效'}
+                          {authUser?.memberExpireAt ? new Date(authUser.memberExpireAt).toLocaleDateString() : '永久有效'}
                         </p>
                       </div>
                       <button
