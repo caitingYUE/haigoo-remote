@@ -363,7 +363,7 @@ export default function LandingPage() {
                   key={company.id}
                   company={company}
                   jobStats={companyJobStats[company.name]}
-                  onClick={() => navigate(`/company/${company.id}`)}
+                  onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
                 />
               ))}
             </div>

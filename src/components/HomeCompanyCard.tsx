@@ -80,10 +80,6 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                         <div title="可内推">
                             <MemberBadge variant="referral" size="sm" className="shadow-sm border-0" />
                         </div>
-                    ) : company.isTrusted ? (
-                        <div title="已验证">
-                            <MemberBadge variant="verified" size="sm" className="shadow-sm border-0" />
-                        </div>
                     ) : null}
                 </div>
             </div>
@@ -116,13 +112,14 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                 <div className="pt-4 border-t border-slate-50 flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 text-slate-600">
                         <Briefcase className="w-4 h-4 text-indigo-500" />
-                        {topCategories.length > 0 ? (
-                            <span className="font-medium text-xs">
-                                {topCategories.map(([cat, count]) => `${cat} ${count}`).join('   ')}
-                            </span>
-                        ) : (
-                            <span className="text-slate-400 text-xs">暂无在招岗位</span>
-                        )}
+                        <span className="font-medium text-xs">
+                            {company.jobCount || 0} 个在招职位
+                            {topCategories.length > 0 && (
+                                <span className="text-slate-400 font-normal ml-1">
+                                    · {topCategories.map(([cat]) => cat).join('/')}
+                                </span>
+                            )}
+                        </span>
                     </div>
                     <span className="text-xs text-indigo-600 font-medium group-hover:translate-x-1 transition-transform">
                         查看岗位 &rarr;
