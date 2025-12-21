@@ -70,7 +70,9 @@ export default function AdminCompanyManagementPage() {
                 let list: Company[] = data.companies || [];
 
                 try {
-                    const trustedList = await trustedCompaniesService.getAllCompanies();
+                    const trustedData = await trustedCompaniesService.getAllCompanies();
+                    const trustedList = Array.isArray(trustedData) ? trustedData : ((trustedData as any)?.companies || []);
+                    
                     const normalize = (name: string) => name.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[,._\-]/g, '');
                     const trustedMap = new Map<string, TrustedCompany>();
                     trustedList.forEach((tc: TrustedCompany) => trustedMap.set(normalize(tc.name), tc));

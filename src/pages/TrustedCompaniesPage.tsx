@@ -44,14 +44,18 @@ export default function TrustedCompaniesPage() {
                 processedJobsService.getAllProcessedJobs(1000)
             ])
 
-            setCompanies(companiesData)
+            const companiesList = Array.isArray(companiesData) 
+                ? companiesData 
+                : (companiesData?.companies || [])
+
+            setCompanies(companiesList)
             setAllJobs(jobsData)
 
             // Calculate job counts per company
             const counts: Record<string, { total: number, categories: Record<string, number> }> = {}
             const normalize = (name: string) => name?.toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ').trim() || ''
 
-            companiesData.forEach((company: TrustedCompany) => {
+            companiesList.forEach((company: TrustedCompany) => {
                 const companyNameNorm = normalize(company.name)
 
                 const companyJobs = jobsData.filter((job: any) => {
