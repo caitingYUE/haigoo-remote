@@ -240,6 +240,65 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
     // 官网/第三方岗位 - 免费用户显示审核说明
     if (!isMember) {
+        // 如果是第三方可信平台（如 LinkedIn, Indeed 等），显示简化的跳转提示
+        if (sourceType === 'trusted_platform') {
+            return createPortal(
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+                    <div
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                        onClick={onClose}
+                    />
+
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="bg-slate-50 p-6 border-b border-slate-100 text-center">
+                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-4">
+                                <ExternalLink className="w-6 h-6 text-indigo-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-1">
+                                即将前往第三方平台
+                            </h3>
+                            <p className="text-sm text-slate-500">
+                                该岗位发布于合作招聘平台
+                            </p>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-100">
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                        <p className="font-medium text-slate-900 text-sm mb-1">Haigoo 已验证</p>
+                                        <p className="text-xs text-slate-600 leading-relaxed">
+                                            我们已确认该平台及岗位的真实性。跳转后您可能需要注册或登录该平台账号。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    onClose();
+                                    onProceedToApply();
+                                }}
+                                className="w-full py-3 px-6 bg-slate-900 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2"
+                            >
+                                继续前往申请 <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            );
+        }
+
+        // 默认情况（官网/企业直投）：显示完整的风险评估引导
         return createPortal(
             <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                 <div

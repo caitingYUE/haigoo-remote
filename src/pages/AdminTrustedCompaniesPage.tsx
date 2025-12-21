@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
     Building2, Search, Plus, Edit2, Trash2,
     ExternalLink, X, Loader2,
-    Wand2, DownloadCloud, Upload, Image as ImageIcon, RefreshCw
+    Wand2, DownloadCloud, Upload, Image as ImageIcon, RefreshCw,
+    Users, MapPin, Star, Calendar
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -446,6 +447,8 @@ export default function AdminTrustedCompaniesPage() {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">规模/地址</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">评分/成立</th>
                                 <th
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
                                     onClick={() => handleSort('jobCount')}
