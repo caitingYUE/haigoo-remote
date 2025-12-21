@@ -54,70 +54,84 @@ export const EmailCaptureModal: React.FC<EmailCaptureModalProps> = ({ isOpen, on
                 </button>
 
                 {/* Icon */}
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#dc2626] to-[#b91c1c] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red-100">
                     <Sparkles className="w-8 h-8 text-white" />
                 </div>
 
                 {/* Title */}
-                <h2 className="text-2xl font-bold text-slate-900 text-center mb-2">
-                    留下邮箱，开启远程之旅
+                <h2 className="text-2xl font-bold text-slate-900 text-center mb-3" style={{ fontFamily: 'Cinzel, serif' }}>
+                    不错过任何一个远程机会
                 </h2>
-                <p className="text-slate-600 text-center mb-6 text-sm">
-                    我们会将您的职业圣诞树发送到邮箱，同时为您关注全球远程工作机会
+                <p className="text-slate-600 text-center mb-8 text-sm leading-relaxed px-4">
+                    留下邮箱，当有匹配您背景的优质远程工作时，我们会第一时间通知您。
+                    <br/>
+                    <span className="text-xs text-slate-400 block mt-2">（无需担心打扰，只推荐真正的好机会）</span>
                 </p>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <div className="relative group">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#dc2626] transition-colors" />
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="your@email.com"
-                                className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                placeholder="请输入您的邮箱地址..."
+                                className="w-full pl-10 pr-4 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-100 focus:border-[#dc2626] transition-all bg-slate-50 hover:bg-white"
                                 disabled={isSubmitting}
                             />
                         </div>
                         {error && (
-                            <p className="text-red-500 text-sm mt-2">{error}</p>
+                            <p className="text-red-500 text-xs mt-2 ml-1 flex items-center gap-1">
+                                <span>⚠️</span> {error}
+                            </p>
                         )}
                     </div>
 
-                    <label className="flex items-start gap-2 cursor-pointer group">
-                        <input 
-                            type="checkbox" 
-                            checked={allowResume}
-                            onChange={(e) => setAllowResume(e.target.checked)}
-                            className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-slate-600 group-hover:text-slate-800 transition-colors">
-                            同时上传简历到 Haigoo 人才库，获取更多精准远程机会推荐
+                    <label className="flex items-start gap-3 cursor-pointer group p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                        <div className="relative flex items-center">
+                            <input 
+                                type="checkbox" 
+                                checked={allowResume}
+                                onChange={(e) => setAllowResume(e.target.checked)}
+                                className="w-5 h-5 border-2 border-slate-300 rounded text-[#dc2626] focus:ring-[#dc2626] transition-all cursor-pointer"
+                            />
+                        </div>
+                        <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors leading-tight pt-0.5">
+                            同时加入 Haigoo 人才库，优先获取高薪远程职位的内推机会
                         </span>
                     </label>
 
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-[#dc2626] hover:bg-[#b91c1c] text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-red-200 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                     >
-                        {isSubmitting ? '提交中...' : '开启旅程'}
+                        {isSubmitting ? (
+                            <>
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                提交中...
+                            </>
+                        ) : '确认提交 & 下载'}
                     </button>
 
                     <button
                         type="button"
                         onClick={handleSkip}
-                        className="w-full text-slate-500 hover:text-slate-700 text-sm font-medium transition-colors"
+                        className="w-full text-slate-400 hover:text-slate-600 text-xs transition-colors py-2"
                     >
-                        暂不留邮箱，直接下载
+                        暂不留邮箱，直接下载图片
                     </button>
                 </form>
 
                 {/* Privacy Note */}
-                <p className="text-xs text-slate-400 text-center mt-4">
-                    我们尊重您的隐私，不会将邮箱用于其他用途
-                </p>
+                <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+                    <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        您的信息将被严格保密，仅用于工作推荐
+                    </p>
+                </div>
             </div>
         </div>
     );

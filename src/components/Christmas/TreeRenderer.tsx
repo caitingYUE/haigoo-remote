@@ -444,18 +444,31 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 </text>
             </g>
 
-            {/* 8. Footer Watermark */}
+            {/* 8. Footer Watermark - Left & Right */}
             <text 
-                x={width/2} 
-                y={height - 20} 
-                textAnchor="middle" 
+                x={20} 
+                y={height - 15} 
+                textAnchor="start" 
                 fill="#b45309" 
                 fontSize="12" 
                 fontFamily="Cinzel, serif" 
                 opacity="0.6"
-                letterSpacing="3"
+                letterSpacing="1"
             >
                 haigooremote.com
+            </text>
+
+            <text 
+                x={width - 20} 
+                y={height - 15} 
+                textAnchor="end" 
+                fill="#b45309" 
+                fontSize="12" 
+                fontFamily="Cinzel, serif" 
+                opacity="0.6"
+                letterSpacing="1"
+            >
+                Haigoo Remote Club
             </text>
 
         </svg>

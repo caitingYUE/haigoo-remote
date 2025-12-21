@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { TreeRenderer } from '../components/Christmas/TreeRenderer';
 import { RotatingQuotes } from '../components/Christmas/RotatingQuotes';
+import { ShareCopyModal } from '../components/Christmas/ShareCopyModal';
 import { EmailCaptureModal } from '../components/Christmas/EmailCaptureModal';
 import { HappinessCard } from '../components/Christmas/HappinessCard';
 import { ChristmasErrorBoundary } from '../components/Christmas/ChristmasErrorBoundary';
@@ -31,6 +32,8 @@ export default function ChristmasPage() {
     const [hasPublished, setHasPublished] = useState(false);
     const [showEmailModal, setShowEmailModal] = useState(false);
     const [showHappinessCard, setShowHappinessCard] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [shareContent, setShareContent] = useState('');
     const treeRef = useRef<HTMLDivElement>(null);
 
     const publishToForest = async () => {
@@ -150,48 +153,9 @@ export default function ChristmasPage() {
             "Work Remote, Live Better. 在 Haigoo 发现全球远程机会，顺便种了一棵树 🌲 https://haigooremote.com/christmas"
         ];
         const randomText = shareTexts[Math.floor(Math.random() * shareTexts.length)];
-
-        // Force fallback to clipboard if share is not supported OR if it fails
-        // Many browsers don't support file sharing via navigator.share
-        try {
-            if (navigator.share && treeRef.current) {
-                // Try to generate image
-                let file;
-                try {
-                     const canvas = await html2canvas(treeRef.current, { scale: 2, backgroundColor: '#fff7ed', useCORS: true });
-                     const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
-                     if (blob) {
-                         file = new File([blob], 'my-christmas-tree.png', { type: 'image/png' });
-                     }
-                } catch (imgErr) {
-                    console.warn('Image generation for share failed, sharing text only', imgErr);
-                }
-
-                // Define share data with explicit type or any to bypass strict check for dynamic property
-                const shareData: any = {
-                    title: '我的职业圣诞树 - Haigoo',
-                    text: randomText
-                };
-
-                // Only add file if generated and supported
-                if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    shareData.files = [file];
-                }
-
-                await navigator.share(shareData);
-            } else {
-                throw new Error('Web Share API not supported');
-            }
-        } catch (err) {
-            console.log('Share API unavailable or failed, falling back to clipboard:', err);
-            try {
-                await navigator.clipboard.writeText(randomText);
-                alert('分享文案与链接已复制！快去粘贴分享给朋友吧 🎄');
-            } catch (clipErr) {
-                console.error('Clipboard failed:', clipErr);
-                alert('请手动复制链接分享：\nhttps://haigooremote.com/christmas');
-            }
-        }
+        
+        setShareContent(randomText);
+        setShowShareModal(true);
     };
 
     return (
@@ -454,6 +418,12 @@ export default function ChristmasPage() {
                         isOpen={showEmailModal} 
                         onClose={() => setShowEmailModal(false)} 
                         onSubmit={handleEmailSubmit} 
+                    />
+
+                    <ShareCopyModal
+                        isOpen={showShareModal}
+                        onClose={() => setShowShareModal(false)}
+                        content={shareContent}
                     />
                     
                     {showHappinessCard && (
