@@ -331,32 +331,42 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                                     opacity="0.4"
                                 />
                                 
-                                {/* Stage Dot */}
-                                <circle cx={x + xOffset} cy={y} r="4" fill="#dc2626" opacity="0.8">
-                                    <animate attributeName="r" values="4;5;4" dur="3s" repeatCount="indefinite" />
-                                </circle>
+                                {/* Stage Node - Gift Box / Glowing Orb */}
+                                <g transform={`translate(${x + xOffset}, ${y})`}>
+                                    {/* Halo Effect */}
+                                    <circle r="12" fill="url(#starGlow)" opacity="0.6">
+                                        <animate attributeName="opacity" values="0.6;0.3;0.6" dur="3s" repeatCount="indefinite" />
+                                        <animate attributeName="r" values="12;15;12" dur="3s" repeatCount="indefinite" />
+                                    </circle>
+                                    
+                                    {/* Gift Box Icon */}
+                                    <rect x="-6" y="-6" width="12" height="12" rx="1" fill="#dc2626" />
+                                    <rect x="-2" y="-6" width="4" height="12" fill="#fcd34d" />
+                                    <rect x="-6" y="-2" width="12" height="4" fill="#fcd34d" />
+                                </g>
 
                                 {/* Label (Stage) */}
                                 <text 
-                                    x={x + xOffset + (index % 2 === 0 ? -10 : 10)} 
+                                    x={x + xOffset + (index % 2 === 0 ? -15 : 15)} 
                                     y={y - 8} 
                                     textAnchor={index % 2 === 0 ? "end" : "start"}
-                                    fontSize="10" 
+                                    fontSize="11" 
                                     fontFamily="Cinzel, serif" 
                                     fill="#b45309"
                                     fontStyle="italic"
+                                    fontWeight="bold"
                                 >
                                     {stage.label}
                                 </text>
 
                                 {/* Keyword Label (Highlight) */}
                                 <text 
-                                    x={x + xOffset + (index % 2 === 0 ? -10 : 10)} 
+                                    x={x + xOffset + (index % 2 === 0 ? -15 : 15)} 
                                     y={y + 12} 
                                     textAnchor={index % 2 === 0 ? "end" : "start"}
-                                    fontSize="14" 
+                                    fontSize="16" 
                                     fontFamily="Cinzel, serif" 
-                                    fontWeight="bold"
+                                    fontWeight="black"
                                     fill="#15803d"
                                     style={{ filter: 'url(#glow-text)' }}
                                 >
