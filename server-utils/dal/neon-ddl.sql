@@ -79,6 +79,19 @@ CREATE TABLE subscriptions (
   UNIQUE(channel, identifier)
 );
 
+-- bug_reports - 存储Bug提报信息
+CREATE TABLE bug_reports (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255),
+  user_nickname VARCHAR(255),
+  title VARCHAR(500) NOT NULL,
+  description TEXT,
+  image_url TEXT, -- Store Base64 data or URL
+  status VARCHAR(50) DEFAULT 'open', -- open, in_progress, resolved, closed
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- resumes - 存储简历信息
 CREATE TABLE resumes (
   id SERIAL PRIMARY KEY,

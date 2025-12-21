@@ -37,6 +37,9 @@ const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 
 
 const ChristmasPage = lazyRetry(() => import('./pages/ChristmasPage'), 'ChristmasPage')
+const AdminBugReportsPage = lazy(() => import('./pages/AdminBugReportsPage'))
+
+import { BugReportButton } from './components/BugReporter/BugReportButton'
 
 function App() {
   console.log('Haigoo Frontend Version: 2025-12-18-Fix-Visuals-v2');
@@ -46,6 +49,7 @@ function App() {
         <AppProvider>
           <NotificationProvider>
             <GlobalVerificationGuard>
+              <BugReportButton />
               <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
                 <Routes>
                   {/* Public: Christmas Campaign */}
@@ -95,6 +99,13 @@ function App() {
                   <Route path="/admin_team" element={
                     <AdminRoute>
                       <AdminTeamPage />
+                    </AdminRoute>
+                  } />
+
+                  {/* Bug Reports Management */}
+                  <Route path="/admin/bug-reports" element={
+                    <AdminRoute>
+                      <AdminBugReportsPage />
                     </AdminRoute>
                   } />
 

@@ -294,6 +294,14 @@ const AdminTeamPage: React.FC = () => {
               添加RSS源
             </button>
             <button
+              onClick={() => window.location.href = '/admin/bug-reports'}
+              className="btn-secondary"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Bug反馈管理
+            </button>
+
+            <button
               onClick={handleSync}
               className="btn-primary"
               disabled={syncing}

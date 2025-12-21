@@ -412,7 +412,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 opacity="0.6"
                 letterSpacing="3"
             >
-                HAIGOO.IO
+                haigooremote.com
             </text>
 
         </svg>

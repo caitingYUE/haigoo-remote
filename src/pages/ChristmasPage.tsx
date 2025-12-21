@@ -144,10 +144,10 @@ export default function ChristmasPage() {
 
     const handleShare = async () => {
         const shareTexts = [
-            "2025，我的职业关键词是成长与突破！来 Haigoo 生成你的专属圣诞树吧 🎄✨ https://haigoo.io/christmas",
-            "用一棵树记录我的职场高光时刻！Haigoo 远程工作社区，祝大家新年快乐 🎁 https://haigoo.io/christmas",
-            "这是我的职业圣诞树，每一片叶子都是努力的见证。快来领取你的新年祝福！🌟 https://haigoo.io/christmas",
-            "Work Remote, Live Better. 在 Haigoo 发现全球远程机会，顺便种了一棵树 🌲 https://haigoo.io/christmas"
+            "2025，我的职业关键词是成长与突破！来 Haigoo 生成你的专属圣诞树吧 🎄✨ https://haigooremote.com/christmas",
+            "用一棵树记录我的职场高光时刻！Haigoo 远程工作社区，祝大家新年快乐 🎁 https://haigooremote.com/christmas",
+            "这是我的职业圣诞树，每一片叶子都是努力的见证。快来领取你的新年祝福！🌟 https://haigooremote.com/christmas",
+            "Work Remote, Live Better. 在 Haigoo 发现全球远程机会，顺便种了一棵树 🌲 https://haigooremote.com/christmas"
         ];
         const randomText = shareTexts[Math.floor(Math.random() * shareTexts.length)];
 
@@ -174,7 +174,7 @@ export default function ChristmasPage() {
             navigator.clipboard.writeText(randomText).then(() => {
                 alert('祝福语与链接已复制，快去分享给朋友吧！');
             }).catch(() => {
-                alert('请截图分享，并访问 haigoo.io 体验！');
+                alert('请截图分享，并访问 haigooremote.com 体验！');
             });
         }
     };
@@ -236,22 +236,7 @@ export default function ChristmasPage() {
 
                 <div className="relative z-10 w-full max-w-6xl mx-auto px-4 py-8 md:py-16 flex flex-col items-center">
                     
-                    {/* Header Nav */}
-                    <div className="w-full flex justify-between items-center mb-8 absolute top-4 px-4 md:px-0 max-w-6xl">
-                         <Link to="/" className="flex items-center gap-2 text-slate-600 hover:text-[#dc2626] transition-colors group">
-                            <div className="p-2 bg-white/80 rounded-full shadow-sm group-hover:shadow-md transition-all">
-                                <ArrowLeft className="w-5 h-5" />
-                            </div>
-                            <span className="font-medium hidden md:inline">Back to Home</span>
-                         </Link>
-                         
-                         <Link to="/jobs" className="flex items-center gap-2 text-slate-600 hover:text-[#dc2626] transition-colors group">
-                            <span className="font-medium hidden md:inline">Explore Remote Jobs</span>
-                            <div className="p-2 bg-white/80 rounded-full shadow-sm group-hover:shadow-md transition-all">
-                                <Briefcase className="w-5 h-5" />
-                            </div>
-                         </Link>
-                    </div>
+
 
                     {/* Header */}
                     <div className="text-center mb-16 relative">

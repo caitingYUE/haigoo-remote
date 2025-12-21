@@ -76,6 +76,11 @@ async function startServer() {
         app.all('/api/process-image', async (req, res) => { await imagesHandler(req, res); });
         console.log('Images handler imported.');
 
+        console.log('Importing bug reports handler...');
+        const bugReportsHandler = (await import('./api/bug-reports.js')).default;
+        app.all('/api/bug-reports', async (req, res) => { await bugReportsHandler(req, res); });
+        console.log('Bug reports handler imported.');
+
         console.log('Importing cron handlers...');
         const crawlTrustedJobsHandler = (await import('./lib/cron-handlers/crawl-trusted-jobs.js')).default;
         // sync-jobs usually refers to translate-jobs in this context or process-rss
