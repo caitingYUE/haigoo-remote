@@ -1,9 +1,7 @@
 import { ClassificationService } from './classification-service';
-import { Job, JobStats, SyncStatus, RSSSource, SyncError, JobCategory } from '../types/rss-types';
-import { RSSFeedItem, ParsedRSSData, rssService } from './rss-service';
+import { Job, SyncStatus, RSSSource, SyncError, JobCategory } from '../types/rss-types';
+import { RSSFeedItem, rssService } from './rss-service';
 import { CompanyService } from './company-service';
-import { getStorageAdapter } from './storage-factory';
-import { CloudStorageAdapter } from './cloud-storage-adapter';
 
 // 原始RSS数据接口
 export interface RawRSSData {
@@ -61,26 +59,8 @@ export interface PaginatedResult<T> {
 }
 
 export class DataManagementService {
-  private storageAdapter: CloudStorageAdapter | null = null;
 
-  private readonly STATS_KEY = 'haigoo:data_stats';
   private readonly RETENTION_DAYS = 7;
-  private readonly MAX_STORAGE_SIZE = 20 * 1024 * 1024; // 20MB
-
-  constructor() {
-    this.initializeStorage();
-  }
-
-  private async initializeStorage(): Promise<void> {
-    try {
-      this.storageAdapter = await getStorageAdapter({
-        provider: 'vercel-kv',
-        maxDays: this.RETENTION_DAYS
-      });
-    } catch (error) {
-      console.error('Failed to initialize storage adapter:', error);
-    }
-  }
 
   /**
    * 同步所有RSS源数据
@@ -141,9 +121,6 @@ export class DataManagementService {
 
       // 清理过期数据
       await this.cleanupOldData();
-
-      // 更新统计信息
-      await this.updateStorageStats();
 
       syncStatus.isRunning = false;
       syncStatus.nextSync = new Date(Date.now() + 60 * 60 * 1000); // 1小时后
@@ -672,26 +649,6 @@ export class DataManagementService {
       }
     } catch (error) {
       console.error('清理过期数据失败:', error);
-    }
-  }
-
-  /**
-   * 更新存储统计信息
-   */
-  private async updateStorageStats(): Promise<void> {
-    try {
-      const stats = await this.getStorageStats();
-
-      if (this.storageAdapter) {
-        // 这里可以保存统计信息到存储
-        console.log('📊 存储统计:', {
-          原始数据: stats.totalRawData,
-          处理后数据: stats.totalProcessedJobs,
-          存储大小: `${(stats.storageSize / 1024 / 1024).toFixed(2)}MB`
-        });
-      }
-    } catch (error) {
-      console.error('更新存储统计失败:', error);
     }
   }
 
