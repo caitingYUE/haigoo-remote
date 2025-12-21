@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
     Building2, Search, Plus, Edit2, Trash2,
     ExternalLink, X, Loader2,
-    Wand2, DownloadCloud, Upload, Image as ImageIcon
+    Wand2, DownloadCloud, Upload, Image as ImageIcon, RefreshCw
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
