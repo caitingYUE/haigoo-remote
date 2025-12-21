@@ -228,6 +228,7 @@ export default function LandingPage() {
       {/* Christmas Campaign CTA */}
       <ChristmasResumeCTA />
       
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Featured Jobs Section */}
         <div id="featured-jobs" className="py-24">
           <div className="flex items-center justify-between mb-12">
@@ -481,7 +482,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-
+      </div>
     </div>
   )
 }

@@ -236,7 +236,18 @@ export default function ChristmasPage() {
 
                 <div className="relative z-10 w-full max-w-6xl mx-auto px-4 py-8 md:py-16 flex flex-col items-center">
                     
-
+                    {/* Navigation Buttons */}
+                    <div className="w-full flex justify-between items-center mb-8 px-4">
+                        <Link to="/" className="inline-flex items-center gap-2 text-slate-600 hover:text-[#dc2626] transition-colors font-medium bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm border border-white/60 shadow-sm hover:shadow-md">
+                            <ArrowLeft className="w-4 h-4" />
+                            <span>返回首页</span>
+                        </Link>
+                        
+                        <Link to="/jobs" className="inline-flex items-center gap-2 text-slate-600 hover:text-[#15803d] transition-colors font-medium bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm border border-white/60 shadow-sm hover:shadow-md">
+                            <Briefcase className="w-4 h-4" />
+                            <span>找远程工作</span>
+                        </Link>
+                    </div>
 
                     {/* Header */}
                     <div className="text-center mb-16 relative">
