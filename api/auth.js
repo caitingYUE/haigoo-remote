@@ -398,8 +398,8 @@ async function handleVerifyEmail(req, res) {
   // 使用统一的更新函数更新邮箱验证状态
   const { success } = await updateUser(user.user_id, {
     emailVerified: true,
-    verificationToken: undefined,
-    verificationExpires: undefined
+    verificationToken: null,
+    verificationExpires: null
   })
   
   if (!success) {

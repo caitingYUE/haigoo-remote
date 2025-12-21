@@ -8,9 +8,10 @@ interface GlobalVerificationGuardProps {
 }
 
 export default function GlobalVerificationGuard({ children }: GlobalVerificationGuardProps) {
-  const { user, logout, sendVerificationEmail } = useAuth()
+  const { user, logout, sendVerificationEmail, refreshUser } = useAuth()
   const location = useLocation()
   const [isResending, setIsResending] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [message, setMessage] = useState('')
 
   // 白名单路由，不需要验证即可访问
@@ -125,11 +126,16 @@ export default function GlobalVerificationGuard({ children }: GlobalVerification
             </button>
             
             <button
-              onClick={() => window.location.reload()}
+              onClick={async () => {
+                if (isRefreshing) return
+                setIsRefreshing(true)
+                await refreshUser()
+                setIsRefreshing(false)
+              }}
               className="w-full py-3 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
             >
-              <RefreshCw className="w-4 h-4" />
-              我已验证，刷新页面
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? '刷新中...' : '我已验证，刷新状态'}
             </button>
 
             <button

@@ -354,7 +354,10 @@ const userHelper = {
                 targetRole,
                 phone,
                 bio,
-                lastLoginAt
+                lastLoginAt,
+                emailVerified,
+                verificationToken,
+                verificationExpires
             } = updates || {}
 
             const { isAdmin = false } = options
@@ -367,6 +370,21 @@ const userHelper = {
 
             // 构建更新字段（使用下划线命名）
             const updateFields = { updated_at: new Date().toISOString() }
+
+            // 邮箱验证状态更新
+            if (emailVerified === true || emailVerified === false) {
+                updateFields.email_verified = emailVerified
+            }
+
+            // 验证令牌更新
+            if (verificationToken !== undefined) {
+                updateFields.verification_token = verificationToken
+            }
+
+            // 验证过期时间更新
+            if (verificationExpires !== undefined) {
+                updateFields.verification_expires = verificationExpires
+            }
 
             // 基本字段更新（所有用户都可以更新）
             if (typeof username === 'string' && username.trim()) {
