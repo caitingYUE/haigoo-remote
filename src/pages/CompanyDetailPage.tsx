@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star, Shield, Crown, Info } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star, Shield, Crown, Info } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -320,37 +320,59 @@ export default function CompanyDetailPage() {
                                                 )}
                                             </div>
                                         ) : (
-                                            /* Locked State */
-                                            <>
-                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-[4px] select-none opacity-60 pointer-events-none min-h-[160px]">
-                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
-                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
-                                                    <div className="h-16 bg-white rounded-lg border border-slate-100 col-span-2 lg:col-span-1"></div>
-                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
-                                                    
-                                                    {/* Second Row Simulation */}
-                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
-                                                    <div className="h-16 bg-white rounded-lg border border-slate-100 col-span-2"></div>
-                                                    <div className="h-16 bg-white rounded-lg border border-slate-100"></div>
-                                                </div>
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/10 backdrop-blur-[1px] z-10">
-                                                    <div className="bg-white/90 p-4 rounded-xl shadow-lg border border-indigo-100 text-center max-w-xs mx-auto backdrop-blur-md">
-                                                        <div className="flex items-center justify-center gap-2 mb-2">
-                                                            <Crown className="w-4 h-4 text-amber-500" />
-                                                            <h3 className="text-sm font-bold text-slate-900">解锁深度认证信息</h3>
+                                            /* Locked State - Optimized Visual */
+                                            <div className="relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30">
+                                                {/* Simulated Content Layer (Blurred) */}
+                                                <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-sm opacity-60 select-none pointer-events-none">
+                                                     {/* Use real-looking fake data for better blur effect */}
+                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100">
+                                                        <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
+                                                        <div className="space-y-1.5 flex-1">
+                                                            <div className="h-2 w-12 bg-slate-100 rounded"></div>
+                                                            <div className="h-3 w-20 bg-slate-200 rounded"></div>
                                                         </div>
-                                                        <p className="text-slate-500 text-xs mb-3">
-                                                            查看官网、评分、薪资范围等深度信息
-                                                        </p>
+                                                     </div>
+                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100">
+                                                        <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
+                                                        <div className="space-y-1.5 flex-1">
+                                                            <div className="h-2 w-12 bg-slate-100 rounded"></div>
+                                                            <div className="h-3 w-16 bg-slate-200 rounded"></div>
+                                                        </div>
+                                                     </div>
+                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 col-span-2 lg:col-span-1">
+                                                        <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
+                                                        <div className="space-y-1.5 flex-1">
+                                                            <div className="h-2 w-12 bg-slate-100 rounded"></div>
+                                                            <div className="h-3 w-24 bg-slate-200 rounded"></div>
+                                                        </div>
+                                                     </div>
+                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100">
+                                                        <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
+                                                        <div className="space-y-1.5 flex-1">
+                                                            <div className="h-2 w-12 bg-slate-100 rounded"></div>
+                                                            <div className="h-3 w-14 bg-slate-200 rounded"></div>
+                                                        </div>
+                                                     </div>
+                                                </div>
+
+                                                {/* Overlay */}
+                                                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/40 backdrop-blur-[2px]">
+                                                    <div className="text-center p-6">
+                                                        <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg shadow-indigo-200">
+                                                            <Crown className="w-5 h-5 text-white" />
+                                                        </div>
+                                                        <h3 className="text-base font-bold text-slate-900 mb-1">会员专属深度信息</h3>
+                                                        <p className="text-slate-500 text-xs mb-4">解锁官网、评分、薪资范围等企业情报</p>
                                                         <button 
                                                             onClick={() => navigate('/membership')}
-                                                            className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
+                                                            className="inline-flex items-center gap-1.5 px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                                                         >
-                                                            立即解锁
+                                                            <span>查看详情</span>
+                                                            <ArrowRight className="w-3 h-3" />
                                                         </button>
                                                     </div>
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                 </div>

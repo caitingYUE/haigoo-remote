@@ -260,7 +260,7 @@ const MembershipPage: React.FC = () => {
                </p>
 
                {/* Current Status Card (if member) */}
-               {((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin) && (
+               {((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date())) && (
                   <div className="inline-flex items-center gap-4 bg-white/10 border border-white/20 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl">
                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-lg">
                         <Check className="w-5 h-5 text-white" />
@@ -520,19 +520,19 @@ const MembershipPage: React.FC = () => {
                         </button>
                      </div>
                      
-                     <div className="grid md:grid-cols-3 gap-6">
+                     <div className="flex flex-col gap-4">
                         {recommendedJobs.length > 0 ? (
                            recommendedJobs.map(job => (
                               <JobCardNew 
                                  key={job.id} 
                                  job={job} 
-                                 variant="grid"
+                                 variant="list"
                                  matchScore={job.matchScore || undefined}
                                  onClick={() => navigate(`/jobs?jobId=${job.id}`)}
                               />
                            ))
                         ) : (
-                           <div className="col-span-3 text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
+                           <div className="w-full text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
                               <Loader2 className="w-8 h-8 text-slate-300 animate-spin mx-auto mb-2" />
                               <p className="text-slate-500">正在为您生成推荐...</p>
                            </div>
