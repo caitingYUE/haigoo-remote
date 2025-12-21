@@ -225,6 +225,23 @@ export default function ChristmasPage() {
 
                 <div className="relative z-10 w-full max-w-6xl mx-auto px-4 py-8 md:py-16 flex flex-col items-center">
                     
+                    {/* Header Nav */}
+                    <div className="w-full flex justify-between items-center mb-8 absolute top-4 px-4 md:px-0 max-w-6xl">
+                         <Link to="/" className="flex items-center gap-2 text-slate-600 hover:text-[#dc2626] transition-colors group">
+                            <div className="p-2 bg-white/80 rounded-full shadow-sm group-hover:shadow-md transition-all">
+                                <ArrowLeft className="w-5 h-5" />
+                            </div>
+                            <span className="font-medium hidden md:inline">Back to Home</span>
+                         </Link>
+                         
+                         <Link to="/jobs" className="flex items-center gap-2 text-slate-600 hover:text-[#dc2626] transition-colors group">
+                            <span className="font-medium hidden md:inline">Explore Remote Jobs</span>
+                            <div className="p-2 bg-white/80 rounded-full shadow-sm group-hover:shadow-md transition-all">
+                                <Briefcase className="w-5 h-5" />
+                            </div>
+                         </Link>
+                    </div>
+
                     {/* Header */}
                     <div className="text-center mb-16 relative">
                         {/* Title Decoration */}
@@ -307,7 +324,14 @@ export default function ChristmasPage() {
                             <h3 className="text-2xl font-bold text-[#7f1d1d] mb-2" style={{ fontFamily: 'Cinzel, serif' }}>
                                 Gathering Snowflakes...
                             </h3>
-                            <p className="text-slate-600 animate-pulse">Planting your career seeds</p>
+                            <p className="text-slate-600 animate-pulse mb-4">Planting your career seeds</p>
+                            
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 rounded-full border border-red-100 shadow-sm">
+                                <Loader2 className="w-4 h-4 text-[#dc2626] animate-spin" />
+                                <span className="text-sm font-medium text-slate-500">
+                                    预计需要 30-60 秒，请耐心等待...
+                                </span>
+                            </div>
                         </div>
                     )}
 
