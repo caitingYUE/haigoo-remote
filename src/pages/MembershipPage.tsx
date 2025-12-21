@@ -198,8 +198,11 @@ const MembershipPage: React.FC = () => {
          
          if (isMember) {
             try {
-               // Reuse processed jobs service to get featured/recommended jobs
-               const { jobs } = await processedJobsService.getProcessedJobs(1, 3, { isFeatured: true });
+               // Get Member Exclusive Referral Jobs sorted by Relevance
+               const { jobs } = await processedJobsService.getProcessedJobs(1, 3, { 
+                  sourceFilter: 'referral',
+                  sortBy: 'relevance'
+               });
                setRecommendedJobs(jobs);
             } catch (error) {
                console.error('Failed to fetch recommended jobs:', error);
@@ -280,6 +283,24 @@ const MembershipPage: React.FC = () => {
                               <Download className="w-3 h-3" />
                               证书
                            </button>
+                        </p>
+                     </div>
+                  </div>
+               )}
+
+               {/* Pending Status Card (if application is pending) */}
+               {!((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date())) && applicationStatus === 'pending' && (
+                  <div className="inline-flex items-center gap-4 bg-white/10 border border-white/20 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+                        <Loader2 className="w-5 h-5 text-white animate-spin" />
+                     </div>
+                     <div className="text-left">
+                        <p className="text-[10px] text-white/60 uppercase font-bold tracking-wider">Current Status</p>
+                        <p className="font-bold text-white text-base flex items-center gap-3">
+                           Haigoo Member
+                           <span className="text-xs font-normal text-amber-100 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-400/30">
+                              Under Review
+                           </span>
                         </p>
                      </div>
                   </div>

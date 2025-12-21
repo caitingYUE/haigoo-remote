@@ -67,6 +67,13 @@ class ProcessedJobsService {
         params.append('sourceFilter', filters.sourceFilter)
       }
 
+      // 🔍 Personalized Match Score Handling
+      // If sorting by relevance and user is logged in (has token), use the match score endpoint
+      const token = localStorage.getItem('haigoo_auth_token');
+      if (filters.sortBy === 'relevance' && token) {
+        params.append('action', 'jobs_with_match_score');
+      }
+
       if (filters.tags && filters.tags.length > 0) {
         filters.tags.forEach(tag => params.append('tags', tag))
       }
@@ -82,7 +89,15 @@ class ProcessedJobsService {
 
       let response: Response | null = null
       try {
-        response = await fetch(`${this.baseUrl}/data/processed-jobs?${params}`, { signal: controller.signal })
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        response = await fetch(`${this.baseUrl}/data/processed-jobs?${params}`, { 
+          headers,
+          signal: controller.signal 
+        })
       } catch (e) {
         console.warn('[processed-jobs-service] 本地API请求失败，尝试回退到预发环境', e)
       } finally {
@@ -146,7 +161,8 @@ class ProcessedJobsService {
         status: job.status,
         isRemote: job.isRemote,
         category: job.category,
-        recommendationScore: 0,
+        recommendationScore: job.matchScore || job.match_score || 0,
+        matchScore: job.matchScore || job.match_score || 0,
         // 🆕 保留翻译字段，让前端组件可以使用
         translations: job.translations || undefined,
         isTranslated: job.isTranslated || false,
