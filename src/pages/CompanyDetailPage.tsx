@@ -49,16 +49,27 @@ export default function CompanyDetailPage() {
         setLoading(true)
         try {
             // Try to get trusted company info first
-            const companies = await trustedCompaniesService.getAllCompanies()
+            const companiesData = await trustedCompaniesService.getAllCompanies()
+            const companies = Array.isArray(companiesData) ? companiesData : ((companiesData as any)?.companies || [])
+            
             const norm = decodedCompanyName.trim().toLowerCase()
-            const trusted = companies.find(c => c.name?.trim().toLowerCase() === norm) ||
-                companies.find(c => c.name && c.name.toLowerCase().includes(norm))
+            const trusted = companies.find((c: TrustedCompany) => c.name?.trim().toLowerCase() === norm) ||
+                companies.find((c: TrustedCompany) => c.name && c.name.toLowerCase().includes(norm))
+            
+            // Set company info whether found or not (if not found, companyInfo will be null/undefined)
+            // But if found, ensure we set it.
             if (trusted) {
                 // Ensure isTrusted is true if found in trusted list
                 setCompanyInfo({ ...trusted, isTrusted: true })
+            } else {
+                 // Try to fallback to fetching via ID if URL param was ID? 
+                 // But here we rely on name. If name fails, we might need to handle ID.
             }
 
-            // Fetch all jobs from this company
+            // Fetch all jobs from this company using EXACT MATCH if possible or fuzzy
+            // Use 'company' param which usually does partial match in backend.
+            // But we want to filter more strictly to avoid "Alpha" matching "AlphaSights" if not intended.
+            // Let's fetch and then filter client side if needed, or rely on service.
             const response = await processedJobsService.getProcessedJobs(1, 100, { company: decodedCompanyName })
             setJobs(response.jobs)
         } catch (error) {

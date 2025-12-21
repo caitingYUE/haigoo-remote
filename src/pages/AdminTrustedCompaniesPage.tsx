@@ -349,6 +349,26 @@ export default function AdminTrustedCompaniesPage() {
         loadCompanies()
     }
 
+    const handleSyncData = async () => {
+        if (!confirm('确定要同步所有岗位数据并重新计算企业岗位数量吗？这可能需要几分钟。')) return
+        try {
+            setLoading(true)
+            const response = await fetch('/api/data/trusted-companies?action=sync-jobs')
+            const data = await response.json()
+            if (data.success) {
+                alert(data.message)
+                loadCompanies()
+            } else {
+                alert('同步失败: ' + (data.error || '未知错误'))
+            }
+        } catch (error) {
+            console.error('Sync failed:', error)
+            alert('同步请求失败')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return (
         <div className="p-6 max-w-[1600px] mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -357,6 +377,13 @@ export default function AdminTrustedCompaniesPage() {
                     可信企业管理
                 </h1>
                 <div className="flex gap-3">
+                    <button
+                        onClick={handleSyncData}
+                        className="px-4 py-2 bg-white text-indigo-600 border border-indigo-600 rounded hover:bg-indigo-50 flex items-center gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        同步数据
+                    </button>
                     <button
                         onClick={handleAdd}
                         className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2"

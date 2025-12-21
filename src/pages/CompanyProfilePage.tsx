@@ -30,7 +30,11 @@ export default function CompanyProfilePage() {
             // 2. Fetch Related Jobs (Filter by company name)
             // Note: This is a simple client-side filter. ideally backend should support filtering by company ID if linked.
             // For now we match by name.
-            const allJobs = await processedJobsService.getAllProcessedJobs(1000) // Fetch enough jobs
+            // const allJobs = await processedJobsService.getAllProcessedJobs(1000) // Fetch enough jobs
+            // Use specific company filter query to backend
+            const jobsResponse = await processedJobsService.getProcessedJobs(1, 100, { company: companyData?.name });
+            const allJobs = jobsResponse.jobs;
+            
             const relatedJobs = allJobs.filter(job => {
                 // Check by ID first (more accurate for trusted companies)
                 if (job.companyId && job.companyId === companyId) return true
@@ -118,13 +122,8 @@ export default function CompanyProfilePage() {
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                                 <h1 className="text-3xl font-bold text-slate-900">{company.name}</h1>
-                                {company.isTrusted && (
-                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-medium border border-green-100">
-                                        <CheckCircle className="w-4 h-4" />
-                                        已审核
-                                    </span>
-                                )}
-                                {company.canRefer && (
+                            {/* Removed deprecated 'Verified' tag */}
+                            {company.canRefer && (
                                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-100">
                                         可内推
                                     </span>

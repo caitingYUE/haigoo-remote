@@ -139,14 +139,19 @@ export default function LandingPage() {
           console.error('Failed to fetch stats:', e)
         }
 
-        const [jobs, companies, featuredResp] = await Promise.all([
-          processedJobsService.getAllProcessedJobs(1000), // Fetch more jobs (up to 1000) for better company stats sorting
+        const [jobs, companiesData, featuredResp] = await Promise.all([
+          // processedJobsService.getAllProcessedJobs(1000), // Fetch more jobs (up to 1000) for better company stats sorting
+          // Optimize: Only fetch necessary jobs for stats or use backend stats
+          processedJobsService.getProcessedJobs(1, 100, { sortBy: 'recent' }),
           trustedCompaniesService.getAllCompanies(),
           processedJobsService.getProcessedJobs(1, 6, { isFeatured: true, sortBy: 'recent' })
         ])
+        
+        const companies = Array.isArray(companiesData) ? companiesData : ((companiesData as any)?.companies || [])
+        const recentJobs = jobs.jobs || [];
 
         // Filter for domestic jobs (reuse logic)
-        const domesticJobs = jobs.filter(job => {
+        const domesticJobs = recentJobs.filter(job => {
           const loc = (job.location || '').toLowerCase()
           const tags = (job.skills || []).map(t => t.toLowerCase())
           const pool = new Set([loc, ...tags])
@@ -168,12 +173,12 @@ export default function LandingPage() {
         const normalize = (name: string) => name?.toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ').trim() || ''
 
         // Use all jobs for stats, not just domestic
-        jobs.forEach(job => {
+        recentJobs.forEach(job => {
           if (!job.company) return
           const jobCompanyNorm = normalize(job.company)
 
           // Find matching trusted company
-          const company = companies.find(c => {
+          const company = companies.find((c: TrustedCompany) => {
             const cName = normalize(c.name)
             return cName === jobCompanyNorm || cName.includes(jobCompanyNorm) || jobCompanyNorm.includes(cName)
           })
