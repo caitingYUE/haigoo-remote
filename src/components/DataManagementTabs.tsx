@@ -744,7 +744,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-20 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位级别</th>
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业名称</th>
               {/* <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业行业</th> - 重复，已删除 */}
-              <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业标签</th>
+              {/* <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业标签</th> - 用户要求删除 */}
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位类型</th>
               <th className="w-32 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域限制</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域分类</th>
@@ -866,17 +866,17 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   )}
                 </td>
 
-                {/* 企业行业 */}
-                <td className="px-3 py-2">
+                {/* 企业行业 - 已删除 */}
+                {/* <td className="px-3 py-2">
                   <Tooltip content={job.companyIndustry || '未分类'} maxLines={1} clampChildren={false}>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800">
                       {job.companyIndustry || '未分类'}
                     </span>
                   </Tooltip>
-                </td>
+                </td> */}
 
-                {/* 企业标签 */}
-                <td className="px-3 py-2">
+                {/* 企业标签 - 已删除 */}
+                {/* <td className="px-3 py-2">
                   <Tooltip content={job.companyTags?.join(', ') || '无标签'} maxLines={2} clampChildren={false}>
                     <div className="flex flex-wrap gap-1">
                       {job.companyTags?.slice(0, 2).map((tag: string, index: number) => (
@@ -891,7 +891,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       )}
                     </div>
                   </Tooltip>
-                </td>
+                </td> */}
 
                 {/* 岗位类型 */}
                 <td className="px-3 py-2">
