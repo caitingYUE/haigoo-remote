@@ -47,6 +47,10 @@ const neonHelper = {
         if (!sql) return null
 
         try {
+            // Check if sql is a function (HTTP mode) or object (WebSocket/Pool mode)
+            if (typeof sql === 'function') {
+                return await sql(query, params)
+            }
             return await sql.query(query, params)
         } catch (error) {
             console.error('[Neon/PostgreSQL] Query error:', error.message)
@@ -69,13 +73,19 @@ const neonHelper = {
         const sql = createNeonClient()
         if (!sql) throw new Error('Failed to create database client')
 
+        // Create a wrapper to ensure compatibility with both sql() and sql.query() usage
+        const sqlWrapper = typeof sql === 'function' ? Object.assign(
+            (query, params) => sql(query, params),
+            { query: (query, params) => sql(query, params) }
+        ) : sql
+
         try {
             // HTTP 模式下无法使用 BEGIN/COMMIT 跨请求事务
             // 暂时直接执行回调，依靠业务逻辑保证一致性或接受非原子性
             // console.warn('[Neon/PostgreSQL] Transaction is simulated in HTTP mode (non-atomic).')
             
             // 执行事务回调
-            const result = await callback(sql)
+            const result = await callback(sqlWrapper)
             return result
         } catch (error) {
             console.error('[Neon/PostgreSQL] Transaction simulation error:', error.message)
