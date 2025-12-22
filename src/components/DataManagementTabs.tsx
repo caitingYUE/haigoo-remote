@@ -809,7 +809,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
 
                 {/* 3. 行业 */}
-                <td className="px-3 py-2 w-28">
+                <td className="px-3 py-2 w-28 truncate">
                   <Tooltip content={job.industry || '-'} maxLines={1} clampChildren={false}>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800 truncate">
                       {job.industry || '-'}
@@ -818,7 +818,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
 
                 {/* 4. 岗位级别 */}
-                <td className="px-3 py-2 w-20">
+                <td className="px-3 py-2 w-20 truncate">
                   <Tooltip content={
                     job.experienceLevel === 'Entry' ? '初级' :
                       job.experienceLevel === 'Mid' ? '中级' :
@@ -843,7 +843,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
 
                 {/* 5. 企业名称 */}
-                <td className="px-3 py-2 w-40">
+                <td className="px-3 py-2 w-40 truncate">
                   <Tooltip content={job.company} maxLines={3}>
                     <div className="flex items-center gap-1">
                       <Building className="w-3 h-3 text-slate-400 flex-shrink-0" />
@@ -864,7 +864,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
 
                 {/* 6. 岗位类型 */}
-                <td className="px-3 py-2 w-24">
+                <td className="px-3 py-2 w-24 truncate">
                   {(() => {
                     const normalizeJobType = (type: string | undefined): string => {
                       if (!type) return '未定义';
@@ -895,7 +895,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
 
                 {/* 7. 区域限制 (对应 DB location) */}
-                <td className="px-3 py-2 w-32">
+                <td className="px-3 py-2 w-32 truncate">
                   <Tooltip content={job.location || '不限地点'} maxLines={3} clampChildren={false}>
                     <div className="flex items-center gap-1">
                       <MapPin className="w-2 h-2 text-slate-400 flex-shrink-0" />
@@ -907,7 +907,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
 
                 {/* 8. 区域分类 (对应 DB region) */}
-                <td className="px-3 py-2 w-24">
+                <td className="px-3 py-2 w-24 truncate">
                   {(() => {
                     const r = job.region;
                     const label = r === 'domestic' ? '国内' : r === 'overseas' ? '海外' : '未分类';
@@ -927,7 +927,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
 
                 {/* 9. 技能标签 (对应 DB tags) */}
-                <td className="px-3 py-2 w-40">
+                <td className="px-3 py-2 w-40 truncate">
                   <Tooltip content={job.tags?.join(', ') || '无标签'} maxLines={2} clampChildren={false}>
                     <div className="flex flex-wrap gap-1">
                       {job.tags?.slice(0, 2).map((tag, index) => (
