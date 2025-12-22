@@ -204,7 +204,7 @@ export default function AdminTrustedCompaniesPage() {
         }
 
         try {
-            const response = await fetch(`/api/data/trusted-companies?action=crawl&url=${encodeURIComponent(formData.linkedin)}&translate=true`);
+            const response = await fetch(`/api/data?resource=companies&action=crawl&url=${encodeURIComponent(formData.linkedin)}&translate=true`);
             const data = await response.json();
 
             if (data.error) {

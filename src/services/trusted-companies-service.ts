@@ -190,13 +190,27 @@ class TrustedCompaniesService {
             queryParams.append('resource', 'companies');
             queryParams.append('target', 'companies');
 
+            // Map frontend fields to backend expected fields
+            const payload = {
+                ...company,
+                // Ensure ID is passed if it exists
+                id: company.id,
+                // Ensure boolean flags are boolean
+                isTrusted: true, // Force trusted for manual saves
+                canRefer: !!company.canRefer,
+                // Map frontend url to website if needed (though backend handles both)
+                url: company.website, 
+                careersPage: company.careersPage,
+                linkedin: company.linkedin
+            };
+
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 },
-                body: JSON.stringify(company)
+                body: JSON.stringify(payload)
             });
             return response.ok;
         } catch (error) {
