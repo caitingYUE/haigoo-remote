@@ -13,6 +13,7 @@ interface Application {
   status: string;
   updatedAt: string;
   notes: string;
+  applicationSource?: string;
 }
 
 export default function MyApplicationsPage() {
