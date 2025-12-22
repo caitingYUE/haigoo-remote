@@ -94,7 +94,9 @@ class ProcessedJobsService {
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        response = await fetch(`${this.baseUrl}/admin/jobs?${params}`, { 
+        // Use legacy API path for jobs
+        params.append('resource', 'processed-jobs');
+        response = await fetch(`${this.baseUrl}/data?${params}`, { 
           headers,
           signal: controller.signal 
         })
