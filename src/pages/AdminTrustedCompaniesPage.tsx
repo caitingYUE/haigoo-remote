@@ -3,8 +3,7 @@ import {
     Building2, Search, Plus, Edit2, Trash2,
     ExternalLink, X, Loader2,
     Wand2, DownloadCloud, Upload, Image as ImageIcon, RefreshCw,
-    Users, MapPin, Star, Calendar,
-    Globe, Briefcase, Linkedin
+    Users, MapPin, Star, Calendar
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -36,7 +35,6 @@ export default function AdminTrustedCompaniesPage() {
     const [autoFilling, setAutoFilling] = useState(false)
     const [analyzingId, setAnalyzingId] = useState<string | null>(null)
     const [filterCanRefer, setFilterCanRefer] = useState<'all' | 'yes' | 'no'>('all')
-    const [sourceFilter, setSourceFilter] = useState<'all' | 'manual' | 'rss'>('all')
 
     // Cover image upload & crop
     const [coverSource, setCoverSource] = useState<string>('')
@@ -409,15 +407,6 @@ export default function AdminTrustedCompaniesPage() {
                     />
                 </div>
                 <select
-                    value={sourceFilter}
-                    onChange={e => setSourceFilter(e.target.value as any)}
-                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm min-w-[120px]"
-                >
-                    <option value="all">所有来源</option>
-                    <option value="manual">手动添加</option>
-                    <option value="rss">RSS聚合</option>
-                </select>
-                <select
                     value={industryFilter}
                     onChange={(e) => {
                         setIndustryFilter(e.target.value)
@@ -452,13 +441,13 @@ export default function AdminTrustedCompaniesPage() {
                     <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
+                <div className="bg-white rounded-lg shadow overflow-hidden overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">来源</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">规模/地址</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">评分/成立</th>
                                 <th
@@ -519,6 +508,15 @@ export default function AdminTrustedCompaniesPage() {
                                             {company.industry || '未分类'}
                                         </span>
                                     </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                            company.source === 'manual' ? 'bg-green-100 text-green-800' : 
+                                            company.source === 'rss' ? 'bg-yellow-100 text-yellow-800' : 
+                                            'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {company.source || 'unknown'}
+                                        </span>
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         <div className="flex flex-col">
                                             <span>{company.employeeCount || '-'}</span>
@@ -548,17 +546,17 @@ export default function AdminTrustedCompaniesPage() {
                                         <div className="flex gap-2">
                                             {company.website && (
                                                 <a href={company.website} target="_blank" rel="noreferrer" title="官网" className="text-gray-400 hover:text-indigo-600">
-                                                    <Globe />
+                                                    <GlobeIcon />
                                                 </a>
                                             )}
                                             {company.careersPage && (
                                                 <a href={company.careersPage} target="_blank" rel="noreferrer" title="招聘主页" className="text-gray-400 hover:text-indigo-600">
-                                                    <Briefcase />
+                                                    <BriefcaseIcon />
                                                 </a>
                                             )}
                                             {company.linkedin && (
                                                 <a href={company.linkedin} target="_blank" rel="noreferrer" title="LinkedIn" className="text-gray-400 hover:text-indigo-600">
-                                                    <Linkedin />
+                                                    <LinkedinIcon />
                                                 </a>
                                             )}
                                         </div>
@@ -599,7 +597,6 @@ export default function AdminTrustedCompaniesPage() {
                             ))}
                         </tbody>
                     </table>
-                    </div>
                 </div>
             )}
 
@@ -1013,5 +1010,34 @@ export default function AdminTrustedCompaniesPage() {
                 </div>
             )}
         </div>
+    )
+}
+
+function GlobeIcon() {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+    )
+}
+
+function BriefcaseIcon() {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+        </svg>
+    )
+}
+
+function LinkedinIcon() {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+            <rect x="2" y="9" width="4" height="12"></rect>
+            <circle cx="4" cy="4" r="2"></circle>
+        </svg>
     )
 }
