@@ -155,7 +155,8 @@ const neonHelper = {
                 
                 // Fallback: Just call it. If it fails, we catch it below.
                 return await sql(query, params)
-            }
+        }
+    } catch (error) {
             // Check for specific driver error "This function can now be called only when using the neon driver"
             // This suggests a mix-up between tagged template usage and function call usage in newer versions
             if (error.message && error.message.includes('only when using the neon driver')) {
