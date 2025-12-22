@@ -153,8 +153,8 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
     // 内推岗位且为免费用户 - 显示会员升级引导
     if (job.canRefer && !isMember) {
-        return (
-            <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+        return createPortal(
+            <div className="fixed inset-0 z-[2200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                 <div
                     className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
                     onClick={onClose}
@@ -169,50 +169,50 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     </button>
 
                     {/* Header Gradient */}
-                    <div className="h-48 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="h-40 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
                         {/* Decorative elements */}
                         <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
                         <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-400/20 rounded-full blur-[40px] animate-pulse"></div>
                         <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-teal-400/20 rounded-full blur-[40px] animate-pulse delay-700"></div>
                         
                         <div className="relative z-10 bg-white/10 p-4 rounded-full backdrop-blur-md shadow-2xl border border-white/20 ring-1 ring-white/10">
-                            <Crown className="w-12 h-12 text-white/90" />
+                            <Crown className="w-10 h-10 text-white/90" />
                         </div>
                     </div>
 
                     {/* Body */}
-                    <div className="p-8 pt-10 text-center -mt-6 relative z-10 bg-white rounded-t-3xl">
-                        <div className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold uppercase tracking-wide rounded-full mb-4">
+                    <div className="p-6 pt-8 text-center -mt-6 relative z-10 bg-white rounded-t-3xl">
+                        <div className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold uppercase tracking-wide rounded-full mb-3">
                             <Target className="w-3.5 h-3.5" />
                             内推专属
                         </div>
 
-                        <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">
                             解锁内推直达通道
                         </h3>
 
-                        <p className="text-slate-600 mb-6 leading-relaxed">
+                        <p className="text-sm text-slate-600 mb-5 leading-relaxed px-4">
                             该岗位支持 Haigoo 特邀会员专属内推，简历直达 HR 邮箱，面试机会提升 3 倍。
                         </p>
 
-                        <div className="bg-slate-50 rounded-xl p-4 mb-8 text-left space-y-3 border border-slate-100">
+                        <div className="bg-slate-50 rounded-xl p-3 mb-6 text-left space-y-2.5 border border-slate-100">
                             <div className="flex items-center gap-3">
                                 <div className="bg-green-100 p-1 rounded-full">
                                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
-                                <span className="text-sm font-medium text-slate-700">内推成功率提升 300%</span>
+                                <span className="text-xs font-medium text-slate-700">内推成功率提升 300%</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="bg-green-100 p-1 rounded-full">
                                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
-                                <span className="text-sm font-medium text-slate-700">简历直达 Hiring Manager</span>
+                                <span className="text-xs font-medium text-slate-700">简历直达 Hiring Manager</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="bg-green-100 p-1 rounded-full">
                                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
-                                <span className="text-sm font-medium text-slate-700">内推简历优化1V1评估</span>
+                                <span className="text-xs font-medium text-slate-700">内推简历优化1V1评估</span>
                             </div>
                         </div>
 
@@ -222,21 +222,22 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                     onClose();
                                     navigate('/membership');
                                 }}
-                                className="w-full py-3.5 px-6 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200/50 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                                className="w-full py-3 px-6 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200/50 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 text-sm"
                             >
                                 立即成为 Haigoo Member <ArrowRight className="w-4 h-4" />
                             </button>
 
                             <button
                                 onClick={onClose}
-                                className="w-full py-3 px-6 text-slate-500 font-medium hover:text-slate-800 transition-colors text-sm"
+                                className="w-full py-2 px-6 text-slate-400 font-medium hover:text-slate-600 transition-colors text-xs"
                             >
                                 暂不需要，谢谢
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     }
 
