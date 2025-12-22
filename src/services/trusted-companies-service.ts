@@ -56,7 +56,7 @@ export interface CompanyMetadata {
 }
 
 class TrustedCompaniesService {
-    private API_BASE = '/api/admin/companies';
+    private API_BASE = '/api/data';
 
     async getAllCompanies(): Promise<TrustedCompany[]>;
     async getAllCompanies(params: {
