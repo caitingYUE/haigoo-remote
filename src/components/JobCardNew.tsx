@@ -64,35 +64,8 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   : 'border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-0.5'
                } ${className || ''}`}
          >
-            {/* Corner Tag */}
-            <div className="absolute top-0 right-0 z-20 flex flex-col items-end">
-               {sourceType === 'referral' ? (
-                  <div
-                     className="px-3 py-1.5 rounded-bl-xl rounded-tr-2xl text-white shadow-md flex items-center gap-1.5 bg-indigo-600 text-xs font-bold tracking-wide whitespace-nowrap"
-                     title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）"
-                  >
-                     <Target className="w-3.5 h-3.5" />
-                     <span>Haigoo 内推</span>
-                  </div>
-               ) : sourceType === 'official' ? (
-                  <div
-                     className="px-3 py-1.5 rounded-bl-xl rounded-tr-2xl text-white shadow-md flex items-center gap-1.5 bg-orange-500 text-xs font-bold tracking-wide whitespace-nowrap"
-                     title="通过公司官网直接投递，Haigoo 已人工核实企业真实性"
-                  >
-                     <Sparkles className="w-3.5 h-3.5" />
-                     <span>企业官网岗位</span>
-                  </div>
-               ) : sourceType === 'trusted_platform' ? (
-                  <div
-                     className="px-3 py-1.5 rounded-bl-xl rounded-tr-2xl text-white shadow-md flex items-center gap-1.5 bg-cyan-600 text-xs font-bold tracking-wide whitespace-nowrap"
-                     title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请"
-                  >
-                     <Check className="w-3.5 h-3.5" />
-                     <span>可信平台投递</span>
-                  </div>
-               ) : null}
-            </div>
-
+            {/* Corner Tag Removed - Moved to Badges */}
+            
             <div className="flex flex-col sm:flex-row gap-5 sm:items-center">
                <div className="flex gap-5 flex-1">
                   {/* Company Logo */}
@@ -271,12 +244,22 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      </div>
 
                      {/* Source Tag Inline */}
-                     <div className="flex items-center gap-2 mt-0.5">
-                        {sourceType === 'referral' && <MemberBadge variant="referral" size="sm" />}
-                        {sourceType === 'official' && <MemberBadge variant="verified" size="sm" />}
+                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {sourceType === 'referral' && (
+                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200" title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）">
+                              <Target className="w-3 h-3" />
+                              Haigoo 内推
+                           </div>
+                        )}
+                        {sourceType === 'official' && (
+                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200" title="通过公司官网直接投递，Haigoo 已人工核实企业真实性">
+                              <Sparkles className="w-3 h-3" />
+                              企业官网岗位
+                           </div>
+                        )}
                         {sourceType === 'trusted_platform' && (
-                           <div className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-700 border border-cyan-200" title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请">
+                              <Check className="w-3 h-3" />
                               可信平台投递
                            </div>
                         )}

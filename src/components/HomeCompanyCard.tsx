@@ -1,5 +1,5 @@
 import React from 'react'
-import { Building2, Briefcase, CheckCircle, Clock } from 'lucide-react'
+import { Building2, Briefcase, CheckCircle, Clock, Target } from 'lucide-react'
 import { TrustedCompany } from '../services/trusted-companies-service'
 import { MemberBadge } from './MemberBadge'
 

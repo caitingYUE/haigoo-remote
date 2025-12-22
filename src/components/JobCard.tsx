@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { MapPin, Award, Bookmark } from 'lucide-react';
+import { MapPin, Award, Bookmark, Sparkles, Check, Target } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { stripMarkdown } from '../utils/text-formatter';
 // 移除语义标签行：不再使用 JobTags/tagUtils，仅保留描述下的处理后技能标签
 import { SingleLineTags } from './SingleLineTags';
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
+import { getJobSourceType } from '../utils/job-source-helper';
 
 interface JobCardProps {
   job: Job;
