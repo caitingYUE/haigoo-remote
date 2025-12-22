@@ -750,27 +750,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <Plus className="w-4 h-4" />
               新增职位
             </button>
-            <button
-              onClick={async () => {
-                if (!confirm('确定要清除所有职位数据吗？\n\n此操作不可撤销，将删除所有处理后的职位数据！')) return;
-                try {
-                  setLoading(true);
-                  // Clear processed jobs data
-                  await dataManagementService.clearAllProcessedJobs();
-                  showSuccess('清除成功', '所有职位数据已清除');
-                  await loadProcessedData();
-                } catch (error) {
-                  console.error('清除失败:', error);
-                  showError('清除失败', '请稍后重试');
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              清除数据
-            </button>
           </div>
         </div>
       </div>
@@ -782,6 +761,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <tr>
               <th className="w-56 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位名称</th>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位分类</th>
+              <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">行业</th>
               <th className="w-20 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位级别</th>
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业名称</th>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业行业</th>
@@ -838,6 +818,15 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                                     'bg-slate-100 text-slate-800'
                       }`}>
                       {job.category || '未分类'}
+                    </span>
+                  </Tooltip>
+                </td>
+
+                {/* 行业 */}
+                <td className="px-3 py-2">
+                  <Tooltip content={job.industry || '-'} maxLines={1} clampChildren={false}>
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800">
+                      {job.industry || '-'}
                     </span>
                   </Tooltip>
                 </td>

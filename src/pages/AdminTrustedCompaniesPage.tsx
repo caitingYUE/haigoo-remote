@@ -3,7 +3,8 @@ import {
     Building2, Search, Plus, Edit2, Trash2,
     ExternalLink, X, Loader2,
     Wand2, DownloadCloud, Upload, Image as ImageIcon, RefreshCw,
-    Users, MapPin, Star, Calendar
+    Users, MapPin, Star, Calendar,
+    Globe as GlobeIcon, Briefcase as BriefcaseIcon, Linkedin as LinkedinIcon
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -442,8 +443,9 @@ export default function AdminTrustedCompaniesPage() {
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
@@ -588,7 +590,8 @@ export default function AdminTrustedCompaniesPage() {
                         </tbody>
                     </table>
                 </div>
-            )}
+            </div>
+        )}
 
             {!loading && (
                 <div className="mt-4 flex justify-between items-center">

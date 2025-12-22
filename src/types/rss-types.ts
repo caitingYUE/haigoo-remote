@@ -30,6 +30,7 @@ export interface Job {
 
   // New Company Sync Fields
   companyIndustry?: string;
+  industry?: string;
   companyTags?: string[];
   companyLogo?: string;
   companyDescription?: string;
