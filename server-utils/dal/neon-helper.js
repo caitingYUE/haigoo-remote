@@ -93,7 +93,9 @@ const neonHelper = {
         // Create a wrapper to ensure compatibility with both sql() and sql.query() usage
         let sqlWrapper = sql
         if (typeof sql === 'function') {
+            // If sql is a function (Neon HTTP), wrapper should be callable
             sqlWrapper = (q, p) => sql(q, p)
+            // AND we must polyfill .query for legacy code relying on it
             sqlWrapper.query = (q, p) => sql(q, p)
         }
 
