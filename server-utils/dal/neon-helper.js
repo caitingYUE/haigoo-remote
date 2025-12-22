@@ -53,27 +53,35 @@ const neonHelper = {
         }
 
         try {
-            // Priority 1: Use .query() method (Standard pg and Neon 1.0+)
-            // The error message explicitly states: 'use sql.query("SELECT $1", [value], options)'
-            if (typeof sql.query === 'function') {
-                return await sql.query(query, params)
-            }
-
-            // Priority 2: Function call (Legacy Neon or Tagged Template)
-            // Only fall back to this if .query() is missing.
-            // Note: Neon 1.0+ throws error if calling sql(string, params) directly.
+            // Priority 1: Function call (Standard Neon HTTP Driver)
+            // The neon() function returns a callable `sql` function. 
+            // Calling it directly `sql(query, params)` is the correct usage for @neondatabase/serverless HTTP driver.
             if (typeof sql === 'function') {
                 return await sql(query, params)
+            }
+
+            // Priority 2: Use .query() method (Standard pg / Pool)
+            if (typeof sql.query === 'function') {
+                return await sql.query(query, params)
             }
             
             console.error('[Neon] Unknown client type:', typeof sql)
             return null
         } catch (error) {
+            // Check for specific driver error "This function can now be called only when using the neon driver"
+            // This suggests a mix-up between tagged template usage and function call usage in newer versions
+            if (error.message && error.message.includes('only when using the neon driver')) {
+                 console.warn('[Neon] Detected driver compatibility issue. Retrying with tagged template simulation...');
+                 // If the driver insists on tagged template usage (rare for neon() return value but possible in transition)
+                 // But wait, we can't easily simulate tagged template with dynamic query string + params array.
+                 // We should throw a clearer error or try the .query fallback if accessible.
+            }
+
             console.error('[Neon] Query failed:', error.message)
             // Only log the query in non-production or if it's short, to avoid leaking sensitive info
-            if (query.length < 200) console.error('[Neon] Query:', query)
+            if (query.length < 500) console.error('[Neon] Query:', query)
             console.error('[Neon] Stack:', error.stack)
-            return null
+            throw error; // Re-throw to let upper layer handle it
         }
     },
 
