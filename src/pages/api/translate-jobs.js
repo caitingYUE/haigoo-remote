@@ -4,8 +4,9 @@
  */
 
 // 🔧 FIX: 直接导入，不使用动态导入
-const { translateJobs } = require('../../lib/services/translation-service.cjs')
-const { getAllJobs, saveAllJobs, writeJobsToNeon } = require('../../lib/api-handlers/processed-jobs.js')
+// Adjusted import path for src/pages/api location
+const { translateJobs } = require('../../../lib/services/translation-service.cjs')
+const { getAllJobs, saveAllJobs, writeJobsToNeon } = require('../../../lib/api-handlers/processed-jobs.js')
 
 export default async function handler(req, res) {
     // Only allow POST
@@ -98,46 +99,31 @@ export default async function handler(req, res) {
                 console.log(`[translate-jobs API] ✅ 保存成功`)
             } catch (saveError) {
                 console.error(`[translate-jobs API] ❌ 保存失败:`, saveError)
-                console.error(`[translate-jobs API] 错误详情:`, saveError.stack)
-
-                // 尝试备用方法
-                try {
-                    console.log(`[translate-jobs API] 尝试备用方法 saveAllJobs...`)
-                    await saveAllJobs(toSave)
-                    console.log(`[translate-jobs API] ✅ 备用方法保存成功`)
-                } catch (backupError) {
-                    console.error(`[translate-jobs API] ❌ 备用方法也失败:`, backupError)
-                    return res.status(500).json({
-                        success: false,
-                        error: 'Failed to save translations',
-                        message: saveError.message,
-                        details: saveError.stack,
-                        backupError: backupError.message
-                    })
-                }
+                return res.status(500).json({
+                    success: false,
+                    error: 'Database save failed',
+                    message: saveError.message,
+                    details: saveError.stack
+                })
             }
         }
 
-        // 返回成功
-        console.log(`[translate-jobs API] ========== 翻译完成 ==========`)
         return res.status(200).json({
             success: true,
             translated: successCount,
             skipped: alreadyTranslated,
             failed: failCount,
             totalPages,
-            currentPage: page,
-            message: `Translated ${successCount} jobs on page ${page}/${totalPages}`
+            message: `Translated ${successCount} jobs, ${failCount} failed, ${alreadyTranslated} skipped`
         })
 
-    } catch (error) {
-        console.error('[translate-jobs API] ❌ 未知错误:', error)
-        console.error('[translate-jobs API] 错误堆栈:', error.stack)
+    } catch (e) {
+        console.error(`[translate-jobs API] 🔥 严重错误:`, e)
         return res.status(500).json({
             success: false,
-            error: 'Translation failed',
-            message: error.message,
-            details: error.stack
+            error: 'Internal Server Error',
+            message: e.message,
+            details: e.stack
         })
     }
 }
