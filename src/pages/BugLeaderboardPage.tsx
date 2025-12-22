@@ -87,31 +87,31 @@ export default function BugLeaderboardPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-700 p-8">
+        <div className="min-h-screen bg-slate-50 p-8">
             <div className="max-w-5xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                        <Trophy className="w-8 h-8 text-yellow-400" />
+                    <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+                        <Trophy className="w-8 h-8 text-yellow-500" />
                         Bug Hunter Hall of Fame
                     </h1>
-                    <Link to="/" className="text-indigo-100 hover:text-white font-medium flex items-center gap-1 transition-colors">
+                    <Link to="/" className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 transition-colors">
                         Back to Home
                     </Link>
                 </div>
 
                 {loading ? (
                     <div className="text-center py-12">
-                        <Loader2 className="w-8 h-8 animate-spin mx-auto text-white" />
+                        <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
                     </div>
                 ) : error ? (
-                    <div className="bg-red-500/10 border border-red-200/20 text-red-100 p-4 rounded-lg text-center backdrop-blur-sm">
+                    <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center border border-red-100">
                         {error}
                     </div>
                 ) : (
-                    <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden border border-white/20">
-                        <div className="p-6 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-b border-indigo-100">
-                            <h2 className="text-xl font-bold text-slate-800">Top Contributors</h2>
-                            <p className="text-slate-600 mt-1 text-sm">Thank you to everyone helping improve Haigoo!</p>
+                    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
+                        <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+                            <h2 className="text-xl font-bold">Top Contributors</h2>
+                            <p className="opacity-90 mt-1 text-sm">Thank you to everyone helping improve Haigoo!</p>
                         </div>
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 border-b border-slate-100">
