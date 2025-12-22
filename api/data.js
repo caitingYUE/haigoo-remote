@@ -16,6 +16,12 @@ export default async function handler(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const path = url.pathname;
 
+    // Ensure req.query is populated from URL params (Fix for missing limits/filters)
+    if (!req.query) req.query = {};
+    for (const [key, value] of url.searchParams) {
+        req.query[key] = value;
+    }
+
     console.log('[API:Data] Request Path (Legacy):', path);
     
     // Dispatch based on path or query

@@ -221,6 +221,11 @@ const MembershipPage: React.FC = () => {
                    finalJobs = [...finalJobs, ...newJobs];
                }
 
+               // Strict limit enforcement to ensure UI consistency
+               if (finalJobs.length > 6) {
+                   finalJobs = finalJobs.slice(0, 6);
+               }
+
                setRecommendedJobs(finalJobs);
             } catch (error) {
                console.error('Failed to fetch recommended jobs:', error);
