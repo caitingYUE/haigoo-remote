@@ -53,13 +53,17 @@ const neonHelper = {
         }
 
         try {
-            // Neon serverless driver returns a function `sql(query, params)`
-            if (typeof sql === 'function') {
-                return await sql(query, params)
-            }
-            // Standard pg driver returns an object with `query` method
+            // Priority 1: Use .query() method (Standard pg and Neon 1.0+)
+            // The error message explicitly states: 'use sql.query("SELECT $1", [value], options)'
             if (typeof sql.query === 'function') {
                 return await sql.query(query, params)
+            }
+
+            // Priority 2: Function call (Legacy Neon or Tagged Template)
+            // Only fall back to this if .query() is missing.
+            // Note: Neon 1.0+ throws error if calling sql(string, params) directly.
+            if (typeof sql === 'function') {
+                return await sql(query, params)
             }
             
             console.error('[Neon] Unknown client type:', typeof sql)
