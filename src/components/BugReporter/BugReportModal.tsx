@@ -18,6 +18,42 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
     const [errorMessage, setErrorMessage] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Handle paste event
+    React.useEffect(() => {
+        if (!isOpen) return;
+
+        const handlePaste = (e: ClipboardEvent) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                            setErrorMessage('图片大小不能超过 5MB');
+                            return;
+                        }
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            setImage(reader.result as string);
+                            setErrorMessage('');
+                        };
+                        reader.readAsDataURL(file);
+                        // Prevent default paste behavior if it's an image
+                        e.preventDefault(); 
+                    }
+                    break;
+                }
+            }
+        };
+
+        document.addEventListener('paste', handlePaste);
+        return () => {
+            document.removeEventListener('paste', handlePaste);
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,7 +221,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
                                 ) : (
                                     <div className="flex items-center gap-2 text-slate-400">
                                         <Upload className="w-4 h-4" />
-                                        <span className="text-xs">点击上传图片</span>
+                                        <span className="text-xs">点击上传或粘贴图片</span>
                                     </div>
                                 )}
                                 <input 

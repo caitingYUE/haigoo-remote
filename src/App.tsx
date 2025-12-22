@@ -138,6 +138,7 @@ function App() {
                           <Route path="/remote-experience" element={<RemoteExperiencePage />} />
                           <Route path="/membership" element={<MembershipPage />} />
                           <Route path="/join-club-application" element={<JoinClubApplicationPage />} />
+                          <Route path="/bug-leaderboard" element={<BugLeaderboardPage />} />
 
                           {/* 需要登录的页面 */}
                           <Route path="/profile" element={
