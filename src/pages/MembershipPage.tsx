@@ -198,12 +198,30 @@ const MembershipPage: React.FC = () => {
          
          if (isMember) {
             try {
-               // Get Member Exclusive Referral Jobs sorted by Relevance
-               const { jobs } = await processedJobsService.getProcessedJobs(1, 3, { 
+               // 1. Get Member Exclusive Referral Jobs sorted by Relevance (High Priority)
+               const referralRes = await processedJobsService.getProcessedJobs(1, 6, { 
                   sourceFilter: 'referral',
                   sortBy: 'relevance'
                });
-               setRecommendedJobs(jobs);
+
+               let finalJobs = referralRes.jobs;
+
+               // 2. If less than 6, fill with Trusted Jobs (Fallback)
+               if (finalJobs.length < 6) {
+                   const needed = 6 - finalJobs.length;
+                   const trustedRes = await processedJobsService.getProcessedJobs(1, needed, {
+                       sourceFilter: 'trusted',
+                       sortBy: 'relevance'
+                   });
+                   
+                   // Avoid duplicates
+                   const existingIds = new Set(finalJobs.map(j => j.id));
+                   const newJobs = trustedRes.jobs.filter(j => !existingIds.has(j.id));
+                   
+                   finalJobs = [...finalJobs, ...newJobs];
+               }
+
+               setRecommendedJobs(finalJobs);
             } catch (error) {
                console.error('Failed to fetch recommended jobs:', error);
             }
@@ -495,10 +513,10 @@ const MembershipPage: React.FC = () => {
                               
                               <div className="mt-6 flex gap-3">
                                  <button 
-                                    onClick={() => navigate('/jobs?region=domestic')}
+                                    onClick={() => navigate('/jobs')}
                                     className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors inline-flex items-center gap-2 shadow-lg shadow-slate-200"
                                  >
-                                    浏览内推岗位
+                                    直通全站岗位
                                     <ArrowRight className="w-4 h-4" />
                                  </button>
                               </div>
@@ -511,9 +529,9 @@ const MembershipPage: React.FC = () => {
                                  会员专属服务群
                               </h3>
                               <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-3">
-                                 {/* Placeholder QR Code */}
+                                 {/* Feishu Group QR */}
                                  <img 
-                                    src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=HaigooMemberGroup" 
+                                    src="/feishu.png" 
                                     alt="Feishu Group QR" 
                                     className="w-32 h-32 object-contain rounded-lg"
                                  />
