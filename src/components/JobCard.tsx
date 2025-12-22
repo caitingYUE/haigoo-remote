@@ -18,6 +18,7 @@ interface JobCardProps {
 }
 
 export default function JobCard({ job, onSave, isSaved, onClick, isActive, variant = 'default' }: JobCardProps) {
+  const sourceType = getJobSourceType(job);
 
   // 不再生成语义标签，仅保留处理后数据的技能标签展示
 
@@ -272,12 +273,27 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
               </span>
             )}
 
-            {job.isTrusted && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100">
-                <Award className="w-3 h-3 mr-0.5" />
-                认证
-              </span>
-            )}
+            {/* Source Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {sourceType === 'referral' && (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200" title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）">
+                  <Target className="w-3 h-3" />
+                  Haigoo 内推
+                </div>
+              )}
+              {sourceType === 'official' && (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200" title="通过公司官网直接投递，Haigoo 已人工核实企业真实性">
+                  <Sparkles className="w-3 h-3" />
+                  企业官网岗位
+                </div>
+              )}
+              {sourceType === 'trusted_platform' && (
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-700 border border-cyan-200" title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请">
+                  <Check className="w-3 h-3" />
+                  可信平台投递
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

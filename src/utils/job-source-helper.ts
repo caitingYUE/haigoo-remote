@@ -6,14 +6,11 @@ export const getJobSourceType = (job: Job): JobSourceType => {
     if (job.canRefer) return 'referral';
     // 官网直投：jobs.is_trusted = true 或 jobs.source_type = 'official'
     if (job.isTrusted || job.sourceType === 'official') return 'official';
-    // 第三方投递：jobs.source_type = 'trusted' (可信平台)
-    if (job.sourceType === 'trusted') return 'trusted_platform';
     
-    // Fallback logic for legacy/unknown data
-    if (job.sourceType === 'rss' || job.sourceType === 'third-party' || (job.source && !job.isTrusted && !job.canRefer)) {
-        return 'trusted_platform';
-    }
-    return 'unknown';
+    // Default to trusted_platform for all other cases
+    // This ensures every job has a tag, as requested by the user ("All became empty")
+    // Previously strict logic caused tags to disappear for jobs with missing source metadata
+    return 'trusted_platform';
 };
 
 export const getJobSourceLabel = (type: JobSourceType): string => {
