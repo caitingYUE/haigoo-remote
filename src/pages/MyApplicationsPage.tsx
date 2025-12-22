@@ -141,9 +141,13 @@ export default function MyApplicationsPage() {
                           {app.jobTitle || '未知职位'}
                         </h3>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          app.interactionType === 'referral' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
+                          (app.applicationSource === 'referral' || app.interactionType === 'referral') ? 'bg-purple-100 text-purple-700' :
+                          app.applicationSource === 'official' ? 'bg-orange-100 text-orange-700' :
+                          'bg-slate-100 text-slate-600'
                         }`}>
-                          {app.interactionType === 'referral' ? '内推' : '直申'}
+                          { (app.applicationSource === 'referral' || app.interactionType === 'referral') ? '内推' :
+                            app.applicationSource === 'official' ? '官网直投' :
+                            '第三方投递'}
                         </span>
                       </div>
                       <div className="text-sm text-slate-600 mb-2">{app.company}</div>

@@ -141,10 +141,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (url) {
             window.open(url, '_blank', 'noopener,noreferrer');
 
-            // For members, auto-record the application
-            if (isMember) {
+            // For authenticated users, auto-record the application
+            if (isAuthenticated) {
                 try {
                     const token = localStorage.getItem('haigoo_auth_token');
+                    
+                    // Determine application source
+                    let appSource = 'third_party';
+                    if (sourceType === 'official') appSource = 'official';
+                    else if (sourceType === 'referral') appSource = 'referral';
+                    
                     await fetch('/api/user-profile?action=record_interaction', {
                         method: 'POST',
                         headers: {
@@ -154,7 +160,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         body: JSON.stringify({
                             jobId: job.id,
                             type: 'apply_redirect',
-                            notes: ''
+                            notes: '',
+                            source: appSource
                         })
                     });
                     showSuccess('已为你记录申请，可在「我的投递」查看');
