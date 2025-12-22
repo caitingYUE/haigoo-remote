@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Crown, Check, ArrowRight, Zap, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MembershipApplicationModal } from './MembershipApplicationModal';
@@ -45,7 +46,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
     }
   }[triggerSource];
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div 
@@ -131,6 +132,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

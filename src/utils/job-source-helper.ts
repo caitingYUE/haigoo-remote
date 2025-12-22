@@ -4,8 +4,12 @@ export type JobSourceType = 'referral' | 'official' | 'trusted_platform' | 'unkn
 
 export const getJobSourceType = (job: Job): JobSourceType => {
     if (job.canRefer) return 'referral';
-    if (job.isTrusted || job.sourceType === 'trusted') return 'official';
-    // If it has a source type of rss/third-party OR has a source string but isn't trusted/referral
+    // 官网直投：jobs.is_trusted = true 或 jobs.source_type = 'official'
+    if (job.isTrusted || job.sourceType === 'official') return 'official';
+    // 第三方投递：jobs.source_type = 'trusted' (可信平台)
+    if (job.sourceType === 'trusted') return 'trusted_platform';
+    
+    // Fallback logic for legacy/unknown data
     if (job.sourceType === 'rss' || job.sourceType === 'third-party' || (job.source && !job.isTrusted && !job.canRefer)) {
         return 'trusted_platform';
     }

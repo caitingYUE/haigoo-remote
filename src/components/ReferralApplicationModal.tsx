@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, FileText, Upload, Send, Clock, CheckCircle } from 'lucide-react';
 import { Job } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -162,7 +163,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -348,6 +349,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

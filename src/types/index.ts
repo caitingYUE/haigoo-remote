@@ -46,7 +46,7 @@ export interface Job {
   translatedAt?: string
   // Trusted Company Fields
   companyId?: string
-  sourceType?: 'trusted' | 'rss' | 'third-party' | 'club-referral'
+  sourceType?: 'trusted' | 'rss' | 'third-party' | 'club-referral' | 'official'
   isTrusted?: boolean
   canRefer?: boolean
 
