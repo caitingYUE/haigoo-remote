@@ -268,3 +268,19 @@ ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS founded_year VARCHAR(50);
 ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS specialties JSONB DEFAULT '[]';
 ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS company_rating VARCHAR(50);
 ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS rating_source VARCHAR(100);
+
+-- bug_reports - 存储用户Bug反馈
+CREATE TABLE bug_reports (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255),
+  user_nickname VARCHAR(255),
+  title VARCHAR(500) NOT NULL,
+  description TEXT,
+  image_url TEXT,
+  status VARCHAR(50) DEFAULT 'open',
+  contact_info VARCHAR(255),
+  admin_reply TEXT,
+  replied_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
