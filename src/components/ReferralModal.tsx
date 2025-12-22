@@ -93,10 +93,10 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, j
   return createPortal(
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
           <h3 className="font-bold text-slate-900">内推申请</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="w-5 h-5" />
@@ -104,7 +104,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, j
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
           {success ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -137,7 +137,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, j
                     </a>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                  <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
                     {resumes.map(resume => (
                       <div 
                         key={resume.id || resume.resume_id}
@@ -183,27 +183,32 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, j
                   {error}
                 </div>
               )}
-
-              <button
-                onClick={handleSubmit}
-                disabled={loading || resumes.length === 0}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    提交中...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    确认提交内推申请
-                  </>
-                )}
-              </button>
             </div>
           )}
         </div>
+
+        {/* Footer */}
+        {!success && (
+          <div className="p-6 pt-0 bg-white flex-shrink-0">
+            <button
+              onClick={handleSubmit}
+              disabled={loading || resumes.length === 0}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  提交中...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  确认提交内推申请
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>,
     document.body

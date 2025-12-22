@@ -170,7 +170,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                 onClick={onClose}
             />
 
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-10"
@@ -179,7 +179,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                 </button>
 
                 {/* Header */}
-                <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 p-6 text-white relative overflow-hidden">
+                <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 p-6 text-white relative overflow-hidden flex-shrink-0">
                     {/* Decorative background elements */}
                     <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
                     
@@ -187,7 +187,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                         <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
                             <Send className="w-6 h-6" />
                         </div>
-                        <h2 className="text-2xl font-bold">申请内推</h2>
+                        <h2 className="text-xl font-bold">申请内推</h2>
                     </div>
                     <p className="relative z-10 text-indigo-100 text-sm">
                         填写以下信息，我们将在 <strong>3个工作日内</strong> 审核您的申请
@@ -195,7 +195,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                 </div>
 
                 {/* Body */}
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                     {/* Job Info */}
                     <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                         <h3 className="font-bold text-slate-900 mb-1">{job.title}</h3>
@@ -256,11 +256,11 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                                 </button>
                             </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-2">
                                 {resumes.map((resume) => (
                                     <label
                                         key={resume.id}
-                                        className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all hover:border-indigo-300 ${selectedResumeId === resume.id
+                                        className={`flex items-start gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all hover:border-indigo-300 ${selectedResumeId === resume.id
                                                 ? 'border-indigo-600 bg-indigo-50'
                                                 : 'border-slate-200 bg-white'
                                             }`}
@@ -276,7 +276,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                                 <FileText className="w-4 h-4 text-indigo-600" />
-                                                <span className="font-medium text-slate-900">{resume.fileName}</span>
+                                                <span className="font-medium text-slate-900 text-sm">{resume.fileName}</span>
                                             </div>
                                             <p className="text-xs text-slate-500 mt-1">
                                                 上传时间: {new Date(resume.createdAt).toLocaleDateString('zh-CN')}
@@ -301,7 +301,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="例如: 特别感兴趣该岗位的某个方向，或者您认为自己特别适合的理由..."
                             className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent resize-none text-sm"
-                            rows={4}
+                            rows={3}
                             maxLength={500}
                         />
                         <p className="text-xs text-slate-500 mt-1 text-right">
@@ -319,34 +319,34 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                             </p>
                         </div>
                     </div>
+                </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 pt-2">
-                        <button
-                            onClick={onClose}
-                            className="flex-1 py-3 px-6 border-2 border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors"
-                            disabled={isSubmitting}
-                        >
-                            取消
-                        </button>
-                        <button
-                            onClick={handleSubmit}
-                            disabled={isSubmitting || !selectedResumeId || resumes.length === 0}
-                            className="flex-1 py-3 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    提交中...
-                                </>
-                            ) : (
-                                <>
-                                    <Send className="w-5 h-5" />
-                                    提交申请
-                                </>
-                            )}
-                        </button>
-                    </div>
+                {/* Footer / Action Buttons */}
+                <div className="p-6 pt-0 flex gap-3 flex-shrink-0 bg-white">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-3 px-6 border-2 border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                        disabled={isSubmitting}
+                    >
+                        取消
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || !selectedResumeId || resumes.length === 0}
+                        className="flex-1 py-3 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        {isSubmitting ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                提交中...
+                            </>
+                        ) : (
+                            <>
+                                <Send className="w-5 h-5" />
+                                提交申请
+                            </>
+                        )}
+                    </button>
                 </div>
             </div>
         </div>,
