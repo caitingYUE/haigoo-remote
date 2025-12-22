@@ -426,74 +426,39 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
 
             {/* 6. Top Star */}
             <g transform={`translate(${width / 2}, 110)`}>
-                {/* Arc Path for Title */}
-                <path id="titleArc" d="M -100,20 Q 0,-30 100,20" fill="none" />
+                {/* Arc Path for Title - Adjusted for better visibility */}
+                <path id="titleArc" d="M -120,30 Q 0,-40 120,30" fill="none" />
                 
-                {/* Top Title (Curved) */}
+                {/* Star Glow - Enhanced */}
+                <circle r="50" fill="url(#starGlow)" opacity="0.8" />
+                
+                {/* Star Shape */}
+                <motion.path
+                    d="M0,-35 L10,-12 L35,-12 L15,5 L22,30 L0,18 L-22,30 L-15,5 L-35,-12 L-10,-12 Z"
+                    fill="#fbbf24"
+                    stroke="#fff"
+                    strokeWidth="3"
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 2, type: 'spring' }}
+                    style={{ filter: 'drop-shadow(0 0 10px rgba(251, 191, 36, 0.6))' }}
+                />
+
+                {/* Top Title (Curved) - Enhanced Visibility */}
                 {data.top_title && (
-                    <text textAnchor="middle" fontSize="16" fontFamily="Cinzel, serif" fontWeight="bold" fill={currentPalette[3]} dy="-5">
-                         <textPath href="#titleArc" startOffset="50%" textAnchor="middle">
+                    <text dy="-15" textAnchor="middle">
+                         <textPath href="#titleArc" startOffset="50%" textAnchor="middle" fill="#92400e" fontSize="24" fontFamily="Cinzel, serif" fontWeight="900" letterSpacing="2px">
                             {data.top_title}
                          </textPath>
                     </text>
                 )}
-
-                <circle r="40" fill="url(#starGlow)" opacity="0.5" />
-                <motion.path
-                    d="M0,-35 L10,-12 L35,-12 L15,5 L22,30 L0,18 L-22,30 L-15,5 L-35,-12 L-10,-12 Z"
-                    fill="#fcd34d"
-                    stroke="#fff"
-                    strokeWidth="2"
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: 2, type: 'spring' }}
-                />
             </g>
             
-            {/* 7. Base/Label (Trunk) - NO NUMBERS allowed in extraction */}
+            {/* 7. Base/Label (Trunk) - NO TEXT allowed */}
             <g transform={`translate(${width/2}, ${height - 120})`}>
-                {/* Vertical Text on Trunk */}
-                 <text 
-                    x="0" 
-                    y="20" 
-                    textAnchor="middle" 
-                    fill="rgba(255,255,255,0.9)" 
-                    fontSize="14" 
-                    fontWeight="bold"
-                    fontFamily="Cinzel, serif"
-                    style={{ writingMode: 'vertical-rl', textOrientation: 'upright', letterSpacing: '2px' }}
-                >
-                    {data.trunk_core_role}
-                </text>
+                {/* No text on trunk as requested */}
             </g>
-
-            {/* 8. Footer Watermark - Left & Right - Adjusted Position */}
-            <text 
-                x={20} 
-                y={height - 20} 
-                textAnchor="start" 
-                fill="#b45309" 
-                fontSize="12" 
-                fontFamily="Cinzel, serif" 
-                opacity="0.6"
-                letterSpacing="1"
-            >
-                haigooremote.com
-            </text>
-
-            <text 
-                x={width - 20} 
-                y={height - 20} 
-                textAnchor="end" 
-                fill="#b45309" 
-                fontSize="12" 
-                fontFamily="Cinzel, serif" 
-                opacity="0.6"
-                letterSpacing="1"
-            >
-                Haigoo Remote Club
-            </text>
-
+ 
         </svg>
     );
 };

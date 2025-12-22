@@ -329,32 +329,60 @@ export default function ChristmasPage() {
                                 {/* The Tree Frame */}
                                 <div className="relative mx-auto lg:mx-0 max-w-2xl w-full">
                                     {/* Ornate Frame - Warm Wood / Gold */}
-                                    <div className="relative bg-white p-4 md:p-8 rounded-sm shadow-2xl border-[8px] border-[#78350f]"
+                                    <div className="relative bg-white p-2 md:p-6 rounded-lg shadow-2xl border-[4px] border-[#78350f]"
                                          style={{ 
                                              boxShadow: '0 0 0 1px #50250a, 0 0 0 4px #d4af37, 0 20px 60px rgba(185,28,28,0.15)',
-                                             backgroundImage: 'url("https://www.transparenttextures.com/patterns/wood-pattern.png")'
+                                             backgroundImage: 'url("https://www.transparenttextures.com/patterns/wood-pattern.png")',
+                                             backgroundSize: '200px 200px'
                                          }}>
-                                        {/* Tree Container - needs to match TreeRenderer BG (which we will set to transparent or matching gradient) */}
-                                        <div ref={treeRef} className="bg-gradient-to-b from-[#fff7ed] to-[#eff6ff] relative overflow-hidden rounded-sm flex flex-col">
+                                        {/* Tree Container - Seamless background */}
+                                        <div ref={treeRef} className="relative overflow-hidden rounded-sm flex flex-col" style={{ backgroundColor: '#fff7ed' }}>
                                             
                                             {/* Tree */}
                                             <TreeRenderer data={treeData.tree_structure || treeData} width={600} height={800} />
                                             
                                             {/* AI Interpretation Section */}
                                             {treeData.interpretation && (
-                                                <div className="px-8 pb-12 pt-4 relative z-10 text-center bg-gradient-to-t from-white/90 to-transparent -mt-20">
-                                                    <div className="w-full h-px bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent mb-6"></div>
+                                                <div className="px-8 pb-8 pt-12 relative z-10 text-left -mt-32">
+                                                    {/* Glass effect card with white transparent background */}
+                                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-md border-t border-white/60 shadow-[0_-8px_32px_rgba(0,0,0,0.05)]"></div>
                                                     
-                                                    <div className="space-y-4 font-serif">
-                                                        <p className="text-[#b45309] text-lg italic font-bold">
-                                                            "{treeData.interpretation.personality}"
-                                                        </p>
-                                                        <p className="text-slate-700 text-sm leading-relaxed">
-                                                            {treeData.interpretation.uniqueness}
-                                                        </p>
-                                                        <p className="text-[#dc2626] text-sm mt-4 font-medium">
-                                                            ✨ {treeData.interpretation.future_wish}
-                                                        </p>
+                                                    <div className="relative z-10 max-w-lg mx-auto">
+                                                        {/* Greeting Header */}
+                                                        <div className="mb-6">
+                                                            <h3 className="font-serif text-[#b45309] text-2xl italic font-bold">
+                                                                Dear {treeData.tree_structure?.trunk_core_role || 'Friend'},
+                                                            </h3>
+                                                        </div>
+
+                                                        {/* Content Body */}
+                                                        <div className="space-y-4 font-serif">
+                                                            <p className="text-slate-800 text-base leading-relaxed font-medium">
+                                                                "{treeData.interpretation.personality}"
+                                                            </p>
+                                                            <p className="text-slate-600 text-sm leading-relaxed font-light italic">
+                                                                {treeData.interpretation.uniqueness}
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Footer Wish & Signature */}
+                                                        <div className="mt-8 pt-6 border-t border-[#b45309]/10 flex flex-col gap-4">
+                                                            <div className="flex justify-between items-center">
+                                                                <p className="text-[#dc2626] text-sm font-bold flex items-center gap-2 uppercase tracking-wide">
+                                                                    <Sparkles className="w-4 h-4 text-yellow-500 fill-yellow-500" /> 
+                                                                    {treeData.interpretation.future_wish}
+                                                                </p>
+                                                                <span className="font-serif text-[#b45309] text-base italic font-bold">
+                                                                    — Haigoo
+                                                                </span>
+                                                            </div>
+                                                            
+                                                            {/* Watermark moved here for seamless bottom */}
+                                                            <div className="flex justify-between items-center text-[10px] text-[#b45309]/60 uppercase tracking-widest font-sans pt-2">
+                                                                <span>haigooremote.com</span>
+                                                                <span>Haigoo Remote Club</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
