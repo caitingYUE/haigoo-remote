@@ -146,22 +146,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     loadCategories();
   }, [activeTab]);
 
-  const computeRegion = useCallback((job: ProcessedJobData): 'domestic' | 'overseas' | undefined => {
-    if (job.region) return job.region as 'domestic' | 'overseas';
-    const norm = (v: string) => (v || '').toLowerCase();
-    const loc = norm(job.location || '');
-    const restriction = norm(job.remoteLocationRestriction || '');
-    const tags = (job.tags || []).map(t => norm(t));
-    const pool = new Set([loc, restriction, ...tags]);
-    const hit = (keys: string[]) => (keys || []).some(k => pool.has(norm(k)) || loc.includes(norm(k)) || restriction.includes(norm(k)));
-    const globalHit = hit(locationCategories.globalKeywords) || /anywhere|everywhere|worldwide|global|不限地点|remote anywhere/.test(loc + ' ' + restriction);
-    const domesticHit = hit(locationCategories.domesticKeywords) || /(china|cn|中国|北京|上海|深圳|杭州|广州)/i.test(loc);
-    const overseasHit = hit(locationCategories.overseasKeywords) || /(usa|united states|europe|eu|uk|canada|australia|新加坡|日本|韩国)/i.test(loc);
-    if (globalHit) return undefined;
-    if (domesticHit) return 'domestic';
-    if (overseasHit) return 'overseas';
-    return undefined;
-  }, [locationCategories]);
+  // 区域分类逻辑：直接使用后端返回的字段，不做前端重算
+  // const computeRegion = ... (removed)
 
   // 加载存储统计
   const loadStorageStats = useCallback(async () => {
@@ -713,18 +699,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <option value="消费生活">消费生活</option>
             </select>
 
-            <select
+            {/* 来源筛选：改为输入框以支持任意来源 */}
+            <input
+              type="text"
+              placeholder="来源 (e.g. WeWorkRemotely)"
               value={processedDataFilters.source || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, source: e.target.value || undefined })}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">所有来源</option>
-              <option value="WeWorkRemotely">WeWorkRemotely (可信平台投递)</option>
-              <option value="Remotive">Remotive (可信平台投递)</option>
-              <option value="Himalayas">Himalayas (可信平台投递)</option>
-              <option value="NoDesk">NoDesk (可信平台投递)</option>
-              <option value="Manual">手动录入 (企业官网岗位)</option>
-            </select>
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-40"
+            />
 
             <input
               type="text"
@@ -764,7 +746,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">行业</th>
               <th className="w-20 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位级别</th>
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业名称</th>
-              <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业行业</th>
+              {/* <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业行业</th> - 重复，已删除 */}
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业标签</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位类型</th>
               <th className="w-32 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域限制</th>
@@ -778,8 +760,18 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {processedData.map((job) => (
-              <tr key={job.id} className="hover:bg-slate-50">
+            {processedData.length === 0 ? (
+              <tr>
+                <td colSpan={15} className="px-6 py-12 text-center text-slate-500">
+                  <div className="flex flex-col items-center gap-2">
+                    <Database className="w-8 h-8 text-slate-300" />
+                    <p>暂无数据</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              processedData.map((job) => (
+                <tr key={job.id} className="hover:bg-slate-50">
                 {/* 岗位名称 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.title} maxLines={3}>
@@ -1066,7 +1058,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   </div>
                 </td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>
