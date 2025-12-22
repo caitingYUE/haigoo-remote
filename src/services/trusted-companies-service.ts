@@ -96,15 +96,33 @@ class TrustedCompaniesService {
             if (!response.ok) throw new Error('Failed to fetch companies');
             const data = await response.json();
             
+            // Check for success flag in standard API response wrapper
+            if (data.success === false) {
+                 throw new Error(data.error || 'Failed to fetch companies');
+            }
+
+            // Handle both wrapped response ({ success: true, companies: [...] }) and direct response
+            const responseData = data.success && data.companies ? data : data;
+            
             // If paginated response
-            if (data.total !== undefined) {
-                return data;
+            if (responseData.total !== undefined) {
+                return responseData;
             }
             
-            return data.companies || [];
+            // If array wrapped in object
+            if (responseData.companies && Array.isArray(responseData.companies)) {
+                return responseData.companies;
+            }
+
+            // If direct array
+            if (Array.isArray(responseData)) {
+                return responseData;
+            }
+
+            return [];
         } catch (error) {
             console.error('Error fetching trusted companies:', error);
-            return [];
+            throw error;
         }
     }
 
