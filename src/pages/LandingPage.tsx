@@ -130,7 +130,7 @@ export default function LandingPage() {
           const statsData = await statsResp.json()
           if (statsData.success && statsData.stats) {
             setStats({
-              totalJobs: statsData.stats.domesticJobs || statsData.stats.totalJobs,
+              totalJobs: statsData.stats.totalJobs, // Use global total to match daily jobs
               companiesCount: statsData.stats.companiesCount,
               dailyJobs: statsData.stats.dailyJobs || 0
             })
