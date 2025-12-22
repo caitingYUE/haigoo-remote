@@ -61,7 +61,8 @@ export default function AdminTrustedCompaniesPage() {
                 sortOrder,
                 industry: industryFilter,
                 search: searchTerm,
-                canRefer: filterCanRefer
+                canRefer: filterCanRefer,
+                isTrusted: 'yes' // Explicitly request trusted companies (manually added or verified)
             })
             if (Array.isArray(data)) {
                 setCompanies(data)

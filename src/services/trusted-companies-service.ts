@@ -67,6 +67,7 @@ class TrustedCompaniesService {
         industry?: string;
         search?: string;
         canRefer?: 'all' | 'yes' | 'no';
+        isTrusted?: 'all' | 'yes' | 'no';
     }): Promise<PaginatedCompaniesResponse | TrustedCompany[]>;
     async getAllCompanies(params?: {
         page?: number;
@@ -76,6 +77,7 @@ class TrustedCompaniesService {
         industry?: string;
         search?: string;
         canRefer?: 'all' | 'yes' | 'no';
+        isTrusted?: 'all' | 'yes' | 'no';
     }): Promise<any> {
         try {
             const queryParams = new URLSearchParams();
@@ -91,6 +93,7 @@ class TrustedCompaniesService {
                 if (params.industry && params.industry !== 'all') queryParams.append('industry', params.industry);
                 if (params.search) queryParams.append('search', params.search);
                 if (params.canRefer && params.canRefer !== 'all') queryParams.append('canRefer', params.canRefer);
+                if (params.isTrusted && params.isTrusted !== 'all') queryParams.append('isTrusted', params.isTrusted);
             }
 
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
