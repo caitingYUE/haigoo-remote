@@ -508,13 +508,25 @@ export default function AdminTrustedCompaniesPage() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <div className="flex flex-col">
+                                            <span>{company.employeeCount || '-'}</span>
+                                            <span className="text-xs text-gray-400 truncate max-w-[150px]" title={company.address}>{company.address || '-'}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <div className="flex flex-col">
+                                            <span>{company.companyRating ? `⭐ ${company.companyRating}` : '-'}</span>
+                                            <span className="text-xs text-gray-400">{company.foundedYear ? `${company.foundedYear}年成立` : '-'}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         {company.jobCount ?? 0}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {company.lastCrawledAt ? (
+                                        {company.updatedAt ? (
                                             <div className="flex flex-col">
-                                                <span>{new Date(company.lastCrawledAt).toLocaleDateString()}</span>
-                                                <span className="text-xs text-gray-400">{new Date(company.lastCrawledAt).toLocaleTimeString()}</span>
+                                                <span>{new Date(company.updatedAt).toLocaleDateString()}</span>
+                                                <span className="text-xs text-gray-400">{new Date(company.updatedAt).toLocaleTimeString()}</span>
                                             </div>
                                         ) : (
                                             <span className="text-gray-400">-</span>
