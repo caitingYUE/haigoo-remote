@@ -41,21 +41,34 @@ const neonHelper = {
      * @returns {Promise<Object|null>} 查询结果，失败返回 null
      */
     async query(query, params = []) {
-        if (!DATABASE_CONFIGURED) return null
+        if (!DATABASE_CONFIGURED) {
+            console.error('[Neon] Database URL is not configured!')
+            return null
+        }
 
         const sql = createNeonClient()
-        if (!sql) return null
+        if (!sql) {
+            console.error('[Neon] Failed to create SQL client')
+            return null
+        }
 
         try {
-            // Check if sql is a function (HTTP mode) or object (WebSocket/Pool mode)
+            // Neon serverless driver returns a function `sql(query, params)`
             if (typeof sql === 'function') {
                 return await sql(query, params)
             }
-            return await sql.query(query, params)
+            // Standard pg driver returns an object with `query` method
+            if (typeof sql.query === 'function') {
+                return await sql.query(query, params)
+            }
+            
+            console.error('[Neon] Unknown client type:', typeof sql)
+            return null
         } catch (error) {
-            console.error('[Neon/PostgreSQL] Query error:', error.message)
-            console.error('[Neon/PostgreSQL] Query:', query)
-            console.error('[Neon/PostgreSQL] Error stack:', error.stack)
+            console.error('[Neon] Query failed:', error.message)
+            // Only log the query in non-production or if it's short, to avoid leaking sensitive info
+            if (query.length < 200) console.error('[Neon] Query:', query)
+            console.error('[Neon] Stack:', error.stack)
             return null
         }
     },
@@ -74,10 +87,11 @@ const neonHelper = {
         if (!sql) throw new Error('Failed to create database client')
 
         // Create a wrapper to ensure compatibility with both sql() and sql.query() usage
-        const sqlWrapper = typeof sql === 'function' ? Object.assign(
-            (query, params) => sql(query, params),
-            { query: (query, params) => sql(query, params) }
-        ) : sql
+        let sqlWrapper = sql
+        if (typeof sql === 'function') {
+            sqlWrapper = (q, p) => sql(q, p)
+            sqlWrapper.query = (q, p) => sql(q, p)
+        }
 
         try {
             // HTTP 模式下无法使用 BEGIN/COMMIT 跨请求事务
@@ -88,8 +102,8 @@ const neonHelper = {
             const result = await callback(sqlWrapper)
             return result
         } catch (error) {
-            console.error('[Neon/PostgreSQL] Transaction simulation error:', error.message)
-            console.error('[Neon/PostgreSQL] Error stack:', error.stack)
+            console.error('[Neon] Transaction failed:', error.message)
+            console.error('[Neon] Stack:', error.stack)
             throw error
         }
     },
