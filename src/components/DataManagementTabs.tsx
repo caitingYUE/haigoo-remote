@@ -146,9 +146,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     loadCategories();
   }, [activeTab]);
 
-  // 区域分类逻辑：直接使用后端返回的字段，不做前端重算
-  // const computeRegion = ... (removed)
-
   // 加载存储统计
   const loadStorageStats = useCallback(async () => {
     try {
@@ -929,11 +926,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
                 {/* 区域限制 */}
                 <td className="px-3 py-2">
-                  <Tooltip content={job.remoteLocationRestriction || job.location || '不限地点'} maxLines={3} clampChildren={false}>
+                  <Tooltip content={job.location || '不限地点'} maxLines={3} clampChildren={false}>
                     <div className="flex items-center gap-1">
                       <MapPin className="w-2 h-2 text-slate-400 flex-shrink-0" />
                       <span className="text-xs text-slate-600">
-                        {job.remoteLocationRestriction || job.location || '不限地点'}
+                        {job.location || '不限地点'}
                       </span>
                     </div>
                   </Tooltip>
@@ -941,12 +938,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 {/* 区域分类 */}
                 <td className="px-3 py-2">
                   {(() => {
-                    const r = computeRegion(job);
+                    const r = job.region;
                     const label = r === 'domestic' ? '国内' : r === 'overseas' ? '海外' : '未分类';
                     const cls = r === 'domestic'
                       ? 'bg-indigo-100 text-indigo-800'
                       : r === 'overseas'
-                        ? 'bg-indigo-100 text-indigo-800'
+                        ? 'bg-blue-100 text-blue-800'
                         : 'bg-slate-100 text-slate-800';
                     return (
                       <Tooltip content={label} maxLines={1} clampChildren={false}>
