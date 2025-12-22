@@ -1,8 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+// @ts-ignore
 import processedJobsHandler from '../../../../lib/api-handlers/processed-jobs.js';
+// @ts-ignore
 import { verifyToken, extractToken } from '../../../../server-utils/auth-helpers.js';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: any, res: any) {
     // 权限校验 (管理员权限)
     // 暂时简单校验 token，后续可以接入更完善的 RBAC
     const token = extractToken(req);

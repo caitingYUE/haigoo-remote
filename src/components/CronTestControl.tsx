@@ -105,35 +105,41 @@ const CronTestControl: React.FC = () => {
         }
         return `任务完成：翻译 ${data.stats?.translatedJobs || 0}，跳过 ${data.stats?.skippedJobs || 0}，失败 ${data.stats?.failedJobs || 0}`;
       
-      // Translate Jobs 消息类型
+      // 通用/共享消息类型
       case 'total':
         return `共 ${data.totalJobs} 个岗位，分 ${data.totalPages} 页处理`;
       case 'page_start':
         return `开始处理第 ${data.page}/${data.totalPages} 页`;
       case 'page_stats':
-        return `第 ${data.page} 页：${data.untranslated} 个待翻译，${data.alreadyTranslated} 个已翻译`;
+        return `第 ${data.page} 页：${data.updatedCount || data.untranslated || 0} 个项目需要处理`;
+      case 'page_complete':
+        return `第 ${data.page} 页处理完成`;
+      case 'save_start':
+        return `开始保存${data.page ? `第 ${data.page} 页` : ''}数据`;
+      case 'save_complete':
+        return `保存完成：共保存 ${data.savedCount} 个记录`;
+      case 'scan_complete':
+        return `扫描完成：${data.totalJobs || 0} 个岗位，${data.totalCompanies || 0} 个可信公司`;
+      case 'processing_start':
+        return `开始处理第 ${data.page} 页`;
+      case 'processing_complete':
+        return `处理完成：更新 ${data.updatedCount}，可信 ${data.trustedCount}，AI ${data.aiClassifiedCount}`;
+      
+      // Translate Jobs 特有
       case 'page_translated':
         return `第 ${data.page} 页翻译完成：成功 ${data.successCount}，失败 ${data.failCount}`;
       case 'page_saved':
         return `第 ${data.page} 页保存完成：${data.savedCount} 个记录`;
       case 'page_error':
         return `第 ${data.page} 页处理失败：${data.error}`;
-      case 'page_complete':
-        return `第 ${data.page} 页处理完成`;
-      case 'complete':
-        return `任务完成：翻译 ${data.stats?.translatedJobs || 0}，跳过 ${data.stats?.skippedJobs || 0}，失败 ${data.stats?.failedJobs || 0}`;
-
-      // Fetch RSS 消息类型
+      
+      // Fetch RSS 特有
       case 'fetch_start':
         return '开始抓取RSS源';
       case 'fetch_complete':
         return `RSS抓取完成，共获取 ${data.fetchedCount} 个项目`;
-      case 'save_start':
-        return '开始保存项目到数据库';
-      case 'save_complete':
-        return `保存完成，共保存 ${data.savedCount} 个唯一项目`;
 
-      // Process RSS 消息类型
+      // Process RSS 特有
       case 'batch_start':
         return `开始处理第 ${data.batchNumber} 批次`;
       case 'read_complete':
@@ -146,10 +152,6 @@ const CronTestControl: React.FC = () => {
         return `项目丰富化完成: ${data.descriptionLength} 字符`;
       case 'item_enrich_failed':
         return `项目丰富化失败: ${data.error}`;
-      case 'save_start':
-        return '开始保存处理后的岗位数据';
-      case 'save_complete':
-        return `保存完成: ${data.savedCount} 个岗位数据`;
       case 'status_update_start':
         return '开始更新原始数据状态';
       case 'status_update_complete':
@@ -157,37 +159,17 @@ const CronTestControl: React.FC = () => {
       case 'batch_complete':
         return `第 ${data.batchNumber} 批次完成: 处理 ${data.processedCount} 个，丰富化 ${data.enrichedCount} 个`;
 
-      // Enrich Companies 消息类型
-      case 'total':
-        return `共 ${data.totalJobs} 个岗位，分 ${data.totalPages} 页处理`;
-      case 'scan_complete':
-        return `扫描完成：${data.totalJobs} 个岗位，${data.totalCompanies} 个可信公司`;
-      case 'page_start':
-        return `开始处理第 ${data.page}/${data.totalPages} 页`;
-      case 'page_stats':
-        return `第 ${data.page} 页：${data.updatedCount} 个岗位需要更新`;
+      // Enrich Companies 特有
       case 'page_skip':
         return `第 ${data.page} 页跳过：${data.reason}`;
-      case 'page_complete':
-        return `第 ${data.page} 页处理完成`;
-      case 'processing_start':
-        return `开始处理第 ${data.page} 页 ${data.totalJobs} 个岗位的公司信息`;
       case 'job_updated':
-        return `${data.message}`;
-      case 'processing_complete':
         return `${data.message}`;
       case 'no_updates':
         return '没有需要更新的岗位数据';
-      case 'save_start':
-        return `开始保存第 ${data.page} 页更新后的岗位数据`;
-      case 'save_complete':
-        return `第 ${data.page} 页保存完成：共保存 ${data.savedCount} 个岗位数据`;
 
-      // Crawl Trusted Jobs 消息类型
+      // Crawl Trusted Jobs 特有
       case 'no_companies':
         return '没有找到需要爬取的公司';
-      case 'scan_complete':
-        return `扫描完成：找到 ${data.totalCompanies} 个可信公司`;
       case 'target_selected':
         return `选择 ${data.targetCount} 个公司进行爬取（共 ${data.totalCompanies} 个）`;
       case 'crawl_start':

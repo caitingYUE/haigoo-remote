@@ -1,8 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+// @ts-ignore
 import trustedCompaniesHandler from '../../../../lib/api-handlers/trusted-companies.js';
+// @ts-ignore
 import { verifyToken, extractToken } from '../../../../server-utils/auth-helpers.js';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: any, res: any) {
     const token = extractToken(req);
     const user = await verifyToken(token);
     
