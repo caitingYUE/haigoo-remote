@@ -1,354 +1,336 @@
-import { useState, useEffect } from 'react'
-import { Check, X, Clock, Eye, MoreHorizontal, MessageSquare, ExternalLink, Trash2, Download } from 'lucide-react'
+
+import React, { useState, useEffect } from 'react'
+import { 
+    Search, Filter, CheckCircle, XCircle, Clock, 
+    MoreHorizontal, FileText, ExternalLink, 
+    MessageSquare, Briefcase, Building2, Globe
+} from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
-import { SUPER_ADMIN_EMAILS } from '../config/admin'
 
 interface Application {
-  id: number
-  user_id: string
-  experience: string
-  career_ideal: string
-  portfolio: string
-  expectations: string
-  contribution: string
-  contact: string
-  contact_type: string
-  status: 'pending' | 'approved' | 'rejected' | 'contacted'
-  created_at: string
+    id: number
+    user_id: string
+    userNickname: string
+    userEmail: string
+    job_id: string
+    jobTitle: string
+    company: string
+    interaction_type: string
+    status: string
+    updated_at: string
+    created_at: string
+    notes: string
+    resume_id: string
+    resumeName: string
+    resumeSize: number
+    sourceType: string
 }
 
+type TabType = 'referral' | 'official' | 'trusted_platform'
+
 export default function AdminApplicationsPage() {
-  const { token, user } = useAuth()
-  const { showSuccess, showError } = useNotificationHelpers()
-  const [applications, setApplications] = useState<Application[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedApp, setSelectedApp] = useState<Application | null>(null)
-  const isSuperAdmin = user?.email && SUPER_ADMIN_EMAILS.includes(user.email)
+    const { token } = useAuth()
+    const { showSuccess, showError } = useNotificationHelpers()
+    
+    const [activeTab, setActiveTab] = useState<TabType>('referral')
+    const [applications, setApplications] = useState<Application[]>([])
+    const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [stats, setStats] = useState({ referral_count: 0, official_count: 0, platform_count: 0 })
 
-  useEffect(() => {
-    fetchApplications()
-  }, [])
+    useEffect(() => {
+        fetchApplications()
+        fetchStats()
+    }, [activeTab, page, search])
 
-  const fetchApplications = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/admin-ops?action=list_applications', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+    const fetchStats = async () => {
+        try {
+            const res = await fetch('/api/admin-applications?action=stats', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            const data = await res.json()
+            if (data.success) {
+                setStats(data.stats)
+            }
+        } catch (e) {
+            console.error('Failed to fetch stats', e)
         }
-      })
-      const data = await response.json()
-      if (data.success && Array.isArray(data.applications)) {
-        setApplications(data.applications)
-      } else {
-        // Silently handle error or set empty array if table doesn't exist yet
-        console.warn('Failed to fetch applications or invalid format:', data.error)
-        setApplications([])
-      }
-    } catch (error) {
-      console.error('Failed to fetch applications:', error)
-      setApplications([])
-    } finally {
-      setIsLoading(false)
     }
-  }
 
-  const handleUpdateStatus = async (id: number, status: string) => {
-    try {
-      const response = await fetch('/api/admin-ops?action=update_application_status', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ id, status })
-      })
-      const data = await response.json()
-      if (data.success) {
-        showSuccess('状态更新成功')
-        setApplications(apps => apps.map(app => 
-          app.id === id ? { ...app, status: status as any } : app
-        ))
-        if (selectedApp && selectedApp.id === id) {
-            setSelectedApp(prev => prev ? { ...prev, status: status as any } : null)
+    const fetchApplications = async () => {
+        setLoading(true)
+        try {
+            const params = new URLSearchParams({
+                type: activeTab,
+                page: page.toString(),
+                limit: '20',
+                search
+            })
+            const res = await fetch(`/api/admin-applications?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            const data = await res.json()
+            if (data.success) {
+                setApplications(data.data)
+                setTotalPages(data.pagination.totalPages)
+            }
+        } catch (e) {
+            console.error('Failed to fetch applications', e)
+            showError('获取数据失败', '网络错误')
+        } finally {
+            setLoading(false)
         }
-      } else {
-        showError('更新失败', data.error)
-      }
-    } catch (error) {
-      showError('操作失败', '网络错误')
     }
-  }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'bg-green-100 text-green-700 border-green-200'
-      case 'rejected': return 'bg-red-100 text-red-700 border-red-200'
-      case 'contacted': return 'bg-blue-100 text-blue-700 border-blue-200'
-      default: return 'bg-yellow-100 text-yellow-700 border-yellow-200'
-    }
-  }
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'approved': return '已通过'
-      case 'rejected': return '已拒绝'
-      case 'contacted': return '已联系'
-      default: return '待处理'
-    }
-  }
-
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('确定要删除这条申请记录吗？此操作不可恢复。')) return;
-    
-    try {
-        const response = await fetch('/api/admin-ops?action=delete_application', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ id })
-        });
-        const data = await response.json();
-        if (data.success) {
-            showSuccess('删除成功');
-            setApplications(prev => prev.filter(app => app.id !== id));
-            if (selectedApp && selectedApp.id === id) setSelectedApp(null);
-        } else {
-            showError('删除失败', data.error);
+    const handleUpdateStatus = async (id: number, status: string, notes?: string) => {
+        try {
+            const res = await fetch('/api/admin-applications?action=update_status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id, status, notes })
+            })
+            const data = await res.json()
+            if (data.success) {
+                showSuccess('状态更新成功')
+                fetchApplications() // Refresh to reflect changes
+            } else {
+                showError('更新失败', data.error)
+            }
+        } catch (e) {
+            showError('操作失败', '网络错误')
         }
-    } catch (e) {
-        showError('操作失败', '网络错误');
     }
-  }
 
-  const handleExport = () => {
-    if (applications.length === 0) {
-        showError('暂无数据可导出');
-        return;
+    const getStatusBadge = (status: string) => {
+        const styles: Record<string, string> = {
+            'pending': 'bg-yellow-100 text-yellow-800',
+            'applied': 'bg-blue-100 text-blue-800',
+            'reviewed': 'bg-indigo-100 text-indigo-800',
+            'referred': 'bg-purple-100 text-purple-800',
+            'interviewing': 'bg-orange-100 text-orange-800',
+            'success': 'bg-green-100 text-green-800',
+            'rejected': 'bg-red-100 text-red-800',
+            'failed': 'bg-red-50 text-red-900',
+            'offer': 'bg-green-100 text-green-800'
+        }
+        
+        const labels: Record<string, string> = {
+            'pending': '待处理',
+            'applied': '已申请',
+            'reviewed': '简历已阅',
+            'referred': '已内推',
+            'interviewing': '面试中',
+            'success': '内推成功',
+            'rejected': '已拒绝',
+            'failed': '内推失败',
+            'offer': '已录用'
+        }
+
+        return (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
+                {labels[status] || status}
+            </span>
+        )
     }
-    
-    // Convert to CSV
-    const headers = ['ID', 'User ID', 'Experience', 'Career Ideal', 'Portfolio', 'Expectations', 'Contribution', 'Contact', 'Contact Type', 'Status', 'Created At'];
-    const rows = applications.map(app => [
-        app.id,
-        app.user_id || '',
-        `"${(app.experience || '').replace(/"/g, '""')}"`,
-        `"${(app.career_ideal || '').replace(/"/g, '""')}"`,
-        `"${(app.portfolio || '').replace(/"/g, '""')}"`,
-        `"${(app.expectations || '').replace(/"/g, '""')}"`,
-        `"${(app.contribution || '').replace(/"/g, '""')}"`,
-        `"${(app.contact || '').replace(/"/g, '""')}"`,
-        app.contact_type,
-        app.status,
-        new Date(app.created_at).toLocaleString()
-    ]);
-    
-    const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
-    ].join('\n');
-    
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `member_applications_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">会员申请管理</h1>
-        <div className="flex gap-2">
-            {isSuperAdmin && (
-                <button 
-                    onClick={handleExport}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
-                    title="导出 CSV"
+    return (
+        <div className="p-6 max-w-[1600px] mx-auto">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                    <Briefcase className="w-6 h-6" />
+                    申请管理
+                </h1>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 mb-6 border-b border-gray-200">
+                <button
+                    onClick={() => { setActiveTab('referral'); setPage(1); }}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+                        activeTab === 'referral' 
+                        ? 'border-indigo-600 text-indigo-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
                 >
-                    <Download className="w-5 h-5" />
+                    <Briefcase className="w-4 h-4" />
+                    内推申请
+                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                        {stats.referral_count}
+                    </span>
                 </button>
+                <button
+                    onClick={() => { setActiveTab('official'); setPage(1); }}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+                        activeTab === 'official' 
+                        ? 'border-indigo-600 text-indigo-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                    <Building2 className="w-4 h-4" />
+                    企业官网
+                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                        {stats.official_count}
+                    </span>
+                </button>
+                <button
+                    onClick={() => { setActiveTab('trusted_platform'); setPage(1); }}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+                        activeTab === 'trusted_platform' 
+                        ? 'border-indigo-600 text-indigo-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                    <Globe className="w-4 h-4" />
+                    三方平台
+                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                        {stats.platform_count}
+                    </span>
+                </button>
+            </div>
+
+            {/* Search */}
+            <div className="mb-6 flex gap-4">
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="搜索用户、公司、岗位..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申请用户</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位/公司</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                            {activeTab === 'referral' && (
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">简历/备注</th>
+                            )}
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {loading ? (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                    加载中...
+                                </td>
+                            </tr>
+                        ) : applications.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                    暂无申请记录
+                                </td>
+                            </tr>
+                        ) : (
+                            applications.map((app) => (
+                                <tr key={app.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-gray-900">{app.userNickname || '未知用户'}</span>
+                                            <span className="text-xs text-gray-500">{app.userEmail}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-gray-900">{app.jobTitle}</span>
+                                            <span className="text-sm text-gray-500">{app.company}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {getStatusBadge(app.status)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div className="flex flex-col">
+                                            <span>{new Date(app.updated_at).toLocaleDateString()}</span>
+                                            <span className="text-xs text-gray-400">{new Date(app.updated_at).toLocaleTimeString()}</span>
+                                        </div>
+                                    </td>
+                                    {activeTab === 'referral' && (
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                {app.resumeName && (
+                                                    <a 
+                                                        href={`/api/resumes/${app.resume_id}/download`} 
+                                                        target="_blank" 
+                                                        className="text-indigo-600 hover:underline text-sm flex items-center gap-1"
+                                                    >
+                                                        <FileText className="w-3 h-3" />
+                                                        {app.resumeName}
+                                                    </a>
+                                                )}
+                                                {app.notes && (
+                                                    <p className="text-xs text-gray-500 bg-gray-50 p-1 rounded">
+                                                        "{app.notes}"
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </td>
+                                    )}
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        {activeTab === 'referral' ? (
+                                            <select
+                                                value={app.status}
+                                                onChange={(e) => handleUpdateStatus(app.id, e.target.value)}
+                                                className="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                            >
+                                                <option value="applied">已申请</option>
+                                                <option value="reviewed">简历已阅</option>
+                                                <option value="referred">已内推</option>
+                                                <option value="interviewing">面试中</option>
+                                                <option value="success">内推成功</option>
+                                                <option value="failed">内推失败</option>
+                                                <option value="rejected">已拒绝</option>
+                                            </select>
+                                        ) : (
+                                            <span className="text-gray-400 text-xs">
+                                                用户手动更新
+                                            </span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination */}
+            {!loading && totalPages > 1 && (
+                <div className="mt-4 flex justify-end gap-2">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        上一页
+                    </button>
+                    <span className="px-3 py-1 text-gray-500">
+                        {page} / {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        下一页
+                    </button>
+                </div>
             )}
-            <button onClick={fetchApplications} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                <Clock className="w-5 h-5 text-slate-500" />
-            </button>
         </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {isLoading ? (
-          <div className="p-12 text-center text-slate-500">加载中...</div>
-        ) : applications.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">暂无申请记录</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-4 font-semibold text-slate-700">申请时间</th>
-                  <th className="px-6 py-4 font-semibold text-slate-700">联系方式</th>
-                  <th className="px-6 py-4 font-semibold text-slate-700">职业背景</th>
-                  <th className="px-6 py-4 font-semibold text-slate-700">状态</th>
-                  <th className="px-6 py-4 font-semibold text-slate-700 text-right">操作</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {applications.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
-                      {new Date(app.created_at).toLocaleDateString()} <br/>
-                      <span className="text-xs text-slate-400">{new Date(app.created_at).toLocaleTimeString()}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{app.contact}</div>
-                      <div className="text-xs text-slate-500 capitalize">{app.contact_type}</div>
-                    </td>
-                    <td className="px-6 py-4 max-w-xs">
-                      <div className="truncate text-slate-700" title={app.experience}>{app.experience}</div>
-                      <div className="text-xs text-slate-500 mt-1 truncate" title={app.career_ideal}>{app.career_ideal}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(app.status)}`}>
-                        {getStatusLabel(app.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {isSuperAdmin && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(app.id); }}
-                          className="text-red-600 hover:text-red-700 font-medium text-sm mr-4"
-                        >
-                          删除
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setSelectedApp(app)}
-                        className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
-                      >
-                        查看详情
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Detail Modal */}
-      {selectedApp && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
-              <h2 className="text-xl font-bold text-slate-900">申请详情 #{selectedApp.id}</h2>
-              <button
-                onClick={() => setSelectedApp(null)}
-                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-slate-500" />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              {/* Status Actions */}
-              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedApp.status)}`}>
-                    当前状态：{getStatusLabel(selectedApp.status)}
-                </span>
-                <div className="flex gap-2">
-                    {selectedApp.status !== 'contacted' && (
-                        <button 
-                            onClick={() => handleUpdateStatus(selectedApp.id, 'contacted')}
-                            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-                        >
-                            标记已联系
-                        </button>
-                    )}
-                    {selectedApp.status === 'pending' && (
-                        <>
-                            <button 
-                                onClick={() => handleUpdateStatus(selectedApp.id, 'approved')}
-                                className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
-                            >
-                                通过
-                            </button>
-                            <button 
-                                onClick={() => handleUpdateStatus(selectedApp.id, 'rejected')}
-                                className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700"
-                            >
-                                拒绝
-                            </button>
-                        </>
-                    )}
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="grid grid-cols-1 gap-6">
-                <div>
-                    <label className="text-sm font-medium text-slate-500 block mb-1">职业经历</label>
-                    <div className="p-4 bg-slate-50 rounded-xl text-slate-800 whitespace-pre-wrap leading-relaxed border border-slate-100">
-                        {selectedApp.experience}
-                    </div>
-                </div>
-                
-                <div>
-                    <label className="text-sm font-medium text-slate-500 block mb-1">职业理想</label>
-                    <div className="p-4 bg-slate-50 rounded-xl text-slate-800 whitespace-pre-wrap leading-relaxed border border-slate-100">
-                        {selectedApp.career_ideal}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="text-sm font-medium text-slate-500 block mb-1">期望获得</label>
-                        <div className="p-4 bg-slate-50 rounded-xl text-slate-800 whitespace-pre-wrap leading-relaxed border border-slate-100 h-full">
-                            {selectedApp.expectations}
-                        </div>
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-slate-500 block mb-1">能带来什么</label>
-                        <div className="p-4 bg-slate-50 rounded-xl text-slate-800 whitespace-pre-wrap leading-relaxed border border-slate-100 h-full">
-                            {selectedApp.contribution}
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium text-slate-500 block mb-1">代表作品 / 链接</label>
-                    {selectedApp.portfolio ? (
-                        <a 
-                            href={selectedApp.portfolio.startsWith('http') ? selectedApp.portfolio : `https://${selectedApp.portfolio}`} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="flex items-center gap-2 p-3 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors w-fit"
-                        >
-                            <ExternalLink className="w-4 h-4" />
-                            {selectedApp.portfolio}
-                        </a>
-                    ) : (
-                        <div className="text-slate-400 italic">未提供</div>
-                    )}
-                </div>
-
-                <div className="border-t border-slate-100 pt-4">
-                    <label className="text-sm font-medium text-slate-500 block mb-1">联系方式 ({selectedApp.contact_type})</label>
-                    <div className="text-lg font-bold text-slate-900 select-all">
-                        {selectedApp.contact}
-                    </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+    )
 }

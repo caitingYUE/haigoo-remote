@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download, Briefcase } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -11,10 +11,11 @@ import JobDetailModal from '../components/JobDetailModal'
 import { MembershipApplicationModal } from '../components/MembershipApplicationModal'
 import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
+import MyApplicationsTab from '../components/MyApplicationsTab'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
-type TabKey = 'resume' | 'favorites' | 'feedback' | 'recommend' | 'subscriptions' | 'membership'
+type TabKey = 'resume' | 'favorites' | 'applications' | 'feedback' | 'recommend' | 'subscriptions' | 'membership'
 
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember } = useAuth()
@@ -24,7 +25,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['resume', 'favorites', 'feedback', 'recommend', 'subscriptions', 'membership'].includes(t) ? t : 'resume'
+    return t && ['resume', 'favorites', 'applications', 'feedback', 'recommend', 'subscriptions', 'membership'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -1427,6 +1428,7 @@ export default function ProfileCenterPage() {
                 {[
                   { id: 'resume', label: '我的简历', icon: FileText },
                   { id: 'favorites', label: '我的收藏', icon: Heart },
+                  { id: 'applications', label: '我的申请', icon: Briefcase },
                   { id: 'subscriptions', label: '订阅管理', icon: Bell },
                   { id: 'recommend', label: '我要推荐', icon: ThumbsUp },
                   { id: 'feedback', label: '我要反馈', icon: MessageSquare }
@@ -1460,7 +1462,13 @@ export default function ProfileCenterPage() {
           {/* Main Content Area */}
           <main className="flex-1 min-w-0">
             <div className="transition-all duration-300">
-              {tab === 'resume' ? <ResumeTab /> : tab === 'favorites' ? <FavoritesTab /> : tab === 'feedback' ? <FeedbackTab /> : tab === 'subscriptions' ? <SubscriptionsTab /> : <RecommendTab />}
+              {tab === 'resume' && <ResumeTab />}
+              {tab === 'favorites' && <FavoritesTab />}
+              {tab === 'applications' && <MyApplicationsTab />}
+              {tab === 'feedback' && <FeedbackTab />}
+              {tab === 'subscriptions' && <SubscriptionsTab />}
+              {tab === 'recommend' && <RecommendTab />}
+              {tab === 'membership' && <ResumeTab />}
             </div>
             {isJobDetailOpen && selectedJob && (
               <JobDetailModal
