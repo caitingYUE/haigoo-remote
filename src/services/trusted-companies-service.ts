@@ -143,7 +143,8 @@ class TrustedCompaniesService {
     }): Promise<PaginatedCompaniesResponse> {
         try {
             const queryParams = new URLSearchParams();
-            queryParams.append('target', 'trusted_companies_with_jobs_info');
+            queryParams.append('resource', 'companies'); // Match api/data.js routing
+            queryParams.append('target', 'trusted_companies_with_jobs_info'); // Specific handler action
             queryParams.append('_t', Date.now().toString());
             
             if (params.page) queryParams.append('page', params.page.toString());
@@ -168,7 +169,12 @@ class TrustedCompaniesService {
 
     async getCompanyById(id: string): Promise<TrustedCompany | null> {
         try {
-            const response = await fetch(`${this.API_BASE}?id=${id}`);
+            const queryParams = new URLSearchParams();
+            queryParams.append('resource', 'companies'); // Match api/data.js routing
+            queryParams.append('target', 'companies'); // Specific handler action (optional but safe)
+            queryParams.append('id', id);
+            
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch company');
             const data = await response.json();
             return data.company || null;
@@ -180,7 +186,11 @@ class TrustedCompaniesService {
 
     async saveCompany(company: Partial<TrustedCompany>): Promise<boolean> {
         try {
-            const response = await fetch(`${this.API_BASE}?target=companies`, {
+            const queryParams = new URLSearchParams();
+            queryParams.append('resource', 'companies');
+            queryParams.append('target', 'companies');
+
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -197,7 +207,11 @@ class TrustedCompaniesService {
 
     async deleteCompany(id: string): Promise<boolean> {
         try {
-            const response = await fetch(`${this.API_BASE}?id=${id}`, {
+            const queryParams = new URLSearchParams();
+            queryParams.append('resource', 'companies');
+            queryParams.append('id', id);
+            
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
