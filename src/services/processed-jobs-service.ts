@@ -94,7 +94,7 @@ class ProcessedJobsService {
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        response = await fetch(`${this.baseUrl}/data/processed-jobs?${params}`, { 
+        response = await fetch(`${this.baseUrl}/admin/jobs?${params}`, { 
           headers,
           signal: controller.signal 
         })
@@ -122,15 +122,8 @@ class ProcessedJobsService {
         data = await response.json()
       } else {
         const text = await response.text()
-        console.warn('Processed jobs API返回非JSON，使用安全回退。content-type:', contentType)
-        // 返回占位结构，避免页面崩溃
-        data = {
-          jobs: [],
-          total: 0,
-          page: page,
-          pageSize: limit,
-          totalPages: 0
-        }
+        console.error('Processed jobs API返回非JSON，内容预览:', text.substring(0, 200))
+        throw new Error(`API返回格式错误 (content-type: ${contentType}). 请检查后端日志。`)
       }
 
       // 转换后端数据格式为前端Job类型

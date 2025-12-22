@@ -6,11 +6,17 @@ import publicMembersHandler from '../lib/api-handlers/public-members.js';
 import statsHandler from '../lib/api-handlers/stats.js';
 
 export default async function handler(req, res) {
+    // ⚠️ Deprecated: This handler is being phased out.
+    // New endpoints:
+    // - /api/admin/jobs (Processed Jobs)
+    // - /api/admin/companies (Trusted Companies & Tags)
+    // - /api/admin/raw-rss (Raw RSS - TODO)
+    // - /api/admin/stats (Stats - TODO)
+
     const url = new URL(req.url, `http://${req.headers.host}`);
     const path = url.pathname;
 
-    console.log('[API:Data] Request Path:', path);
-    console.log('[API:Data] Request Query:', req.query);
+    console.log('[API:Data] Request Path (Legacy):', path);
     
     // Dispatch based on path or query
     // /api/data/processed-jobs
@@ -45,5 +51,5 @@ export default async function handler(req, res) {
     if (resource === 'companies' || resource === 'tags' || resource?.startsWith('trusted-companies')) return await trustedCompaniesHandler(req, res);
     if (resource === 'stats') return await statsHandler(req, res);
 
-    return res.status(404).json({ error: 'Data resource not found' });
+    return res.status(404).json({ error: 'Data resource not found (Legacy API)' });
 }

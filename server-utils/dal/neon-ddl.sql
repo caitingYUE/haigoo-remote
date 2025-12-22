@@ -55,8 +55,8 @@ CREATE TABLE jobs (
   is_translated BOOLEAN DEFAULT false,
   translated_at TIMESTAMP,
   company_id VARCHAR(255),
-  source_type VARCHAR(50) DEFAULT 'rss',
-  is_trusted BOOLEAN DEFAULT false,
+  source_type VARCHAR(50) DEFAULT 'rss', -- 'official' (Trusted Company Crawler), 'trusted' (Curated Platforms), 'rss' (Third-party)
+  is_trusted BOOLEAN DEFAULT false, -- true if linked to Trusted Company (Official), false if just Curated (Trusted Platform)
   can_refer BOOLEAN DEFAULT false,
   company_logo VARCHAR(2000),
   company_website VARCHAR(2000),
@@ -449,3 +449,8 @@ ALTER TABLE user_job_interactions ADD COLUMN IF NOT EXISTS application_source VA
 
 -- 2025-12-22: Ensure is_featured column exists in jobs table
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
+
+-- 2025-12-22: Add index for trusted_companies name to optimize sync-jobs JOIN performance
+-- Note: Using lower case index to support case-insensitive matching
+CREATE INDEX IF NOT EXISTS idx_trusted_companies_name_lower ON trusted_companies (lower(name));
+CREATE INDEX IF NOT EXISTS idx_jobs_company_lower ON jobs (lower(company));
