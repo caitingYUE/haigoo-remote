@@ -146,11 +146,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 try {
                     const token = localStorage.getItem('haigoo_auth_token');
                     
-                    // Determine application source
-                    let appSource = 'third_party';
-                    if (sourceType === 'official') appSource = 'official';
-                    else if (sourceType === 'referral') appSource = 'referral';
-                    
                     await fetch('/api/user-profile?action=record_interaction', {
                         method: 'POST',
                         headers: {
@@ -160,8 +155,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         body: JSON.stringify({
                             jobId: job.id,
                             type: 'apply_redirect',
-                            notes: '',
-                            source: appSource
+                            notes: ''
                         })
                     });
                     showSuccess('已为你记录申请，可在「我的投递」查看');

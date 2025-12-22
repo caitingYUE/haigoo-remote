@@ -443,6 +443,3 @@ CREATE INDEX idx_jobs_company_id ON jobs (company_id);
 ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS admin_reply TEXT;
 ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS replied_at TIMESTAMP;
 ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS contact_info TEXT;
-
--- 2025-12-22: Add application_source to user_job_interactions
-ALTER TABLE user_job_interactions ADD COLUMN IF NOT EXISTS application_source VARCHAR(50);
