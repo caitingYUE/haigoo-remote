@@ -110,8 +110,8 @@ export default function BugLeaderboardPage() {
                 ) : (
                     <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
                         <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-                            <h2 className="text-xl font-bold">Top Contributors</h2>
-                            <p className="opacity-90 mt-1 text-sm">Thank you to everyone helping improve Haigoo!</p>
+                            <h2 className="text-xl font-bold text-white">Top Contributors</h2>
+                            <p className="opacity-90 mt-1 text-sm text-indigo-50">Thank you to everyone helping improve Haigoo!</p>
                         </div>
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 border-b border-slate-100">
