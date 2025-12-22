@@ -96,6 +96,7 @@ class ProcessedJobsService {
         
         // Use legacy API path for jobs
         params.append('resource', 'processed-jobs');
+        // params.append('target', 'processed-jobs'); // Not needed for api/data.js routing
         response = await fetch(`${this.baseUrl}/data?${params}`, { 
           headers,
           signal: controller.signal 

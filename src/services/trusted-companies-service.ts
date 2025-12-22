@@ -79,8 +79,8 @@ class TrustedCompaniesService {
     }): Promise<any> {
         try {
             const queryParams = new URLSearchParams();
-            queryParams.append('resource', 'companies'); // Correct resource for legacy data API
-            queryParams.append('target', 'companies'); // Explicitly target companies endpoint
+            queryParams.append('resource', 'companies'); // Match api/data.js logic
+            // queryParams.append('target', 'companies'); // Remove target param as api/data.js handles routing via resource
             queryParams.append('_t', Date.now().toString());
             
             if (params) {
