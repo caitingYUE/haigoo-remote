@@ -696,7 +696,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <option value="消费生活">消费生活</option>
             </select>
 
-            {/* 来源筛选：改为输入框以支持任意来源 */}
+            {/* 来源筛选 */}
             <input
               type="text"
               placeholder="来源 (e.g. WeWorkRemotely)"
@@ -747,7 +747,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-32 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域限制</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域分类</th>
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">技能标签</th>
-              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">语言要求</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">发布日期</th>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位来源</th>
               <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">精选</th>
@@ -757,7 +756,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           <tbody className="bg-white divide-y divide-gray-200">
             {processedData.length === 0 ? (
               <tr>
-                <td colSpan={15} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={13} className="px-6 py-12 text-center text-slate-500">
                   <div className="flex flex-col items-center gap-2">
                     <Database className="w-8 h-8 text-slate-300" />
                     <p>暂无数据</p>
@@ -767,7 +766,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             ) : (
               processedData.map((job) => (
                 <tr key={job.id} className="hover:bg-slate-50">
-                {/* 岗位名称 */}
+                {/* 1. 岗位名称 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.title} maxLines={3}>
                     <div className="flex flex-col gap-1">
@@ -791,7 +790,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   )}
                 </td>
 
-                {/* 岗位分类 */}
+                {/* 2. 岗位分类 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.category || '未分类'} maxLines={1} clampChildren={false}>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${job.category === '前端开发' ? 'bg-indigo-100 text-indigo-800' :
@@ -809,7 +808,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   </Tooltip>
                 </td>
 
-                {/* 行业 */}
+                {/* 3. 行业 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.industry || '-'} maxLines={1} clampChildren={false}>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800">
@@ -818,7 +817,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   </Tooltip>
                 </td>
 
-                {/* 岗位级别 */}
+                {/* 4. 岗位级别 */}
                 <td className="px-3 py-2">
                   <Tooltip content={
                     job.experienceLevel === 'Entry' ? '初级' :
@@ -843,7 +842,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   </Tooltip>
                 </td>
 
-                {/* 企业名称 */}
+                {/* 5. 企业名称 */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.company} maxLines={3}>
                     <div className="flex items-center gap-1">
@@ -864,7 +863,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   )}
                 </td>
 
-                {/* 岗位类型 */}
+                {/* 6. 岗位类型 */}
                 <td className="px-3 py-2">
                   {(() => {
                     const normalizeJobType = (type: string | undefined): string => {
@@ -895,7 +894,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   })()}
                 </td>
 
-                {/* 区域限制 */}
+                {/* 7. 区域限制 (对应 DB location) */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.location || '不限地点'} maxLines={3} clampChildren={false}>
                     <div className="flex items-center gap-1">
@@ -906,7 +905,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </div>
                   </Tooltip>
                 </td>
-                {/* 区域分类 */}
+
+                {/* 8. 区域分类 (对应 DB region) */}
                 <td className="px-3 py-2">
                   {(() => {
                     const r = job.region;
@@ -926,7 +926,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   })()}
                 </td>
 
-                {/* 技能标签 */}
+                {/* 9. 技能标签 (对应 DB tags) */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.tags?.join(', ') || '无标签'} maxLines={2} clampChildren={false}>
                     <div className="flex flex-wrap gap-1">
@@ -944,16 +944,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   </Tooltip>
                 </td>
 
-                {/* 语言要求 */}
-                <td className="px-3 py-2">
-                  <Tooltip content="英语" maxLines={1}>
-                    <span className="text-xs text-slate-600">
-                      英语
-                    </span>
-                  </Tooltip>
-                </td>
-
-                {/* 发布日期 */}
+                {/* 10. 发布日期 (对应 DB published_at) */}
                 <td className="px-3 py-2 text-xs text-slate-500">
                   <Tooltip content={new Date(job.publishedAt).toLocaleDateString()} maxLines={1} clampChildren={false}>
                     <div className="flex items-center gap-1">
@@ -965,7 +956,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   </Tooltip>
                 </td>
 
-                {/* 岗位来源 */}
+                {/* 11. 岗位来源 (对应 DB source) */}
                 <td className="px-3 py-2">
                   <Tooltip content={job.source} maxLines={1} clampChildren={false}>
                     <div className="flex flex-col gap-1">
@@ -985,7 +976,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   </Tooltip>
                 </td>
 
-                {/* 精选状态 */}
+                {/* 12. 精选 (对应 DB is_featured) */}
                 <td className="px-3 py-2">
                   <button
                     onClick={() => handleToggleFeatured(job.id, !!job.isFeatured)}
@@ -999,37 +990,39 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   </button>
                 </td>
 
-                {/* 操作 */}
+                {/* 13. 操作 */}
                 <td className="px-3 py-2">
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleEditJob(job)}
-                      className="text-indigo-600 hover:text-indigo-800 text-xs p-1 hover:bg-indigo-50 rounded transition-colors"
-                      title="编辑"
-                    >
-                      <Edit3 className="w-3 h-3" />
-                    </button>
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleViewDetail(job)}
-                      className="text-slate-600 hover:text-slate-800 text-xs p-1 hover:bg-slate-50 rounded transition-colors"
-                      title="详情"
+                      className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                      title="查看详情"
                     >
-                      <Eye className="w-3 h-3" />
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleEditJob(job)}
+                      className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                      title="编辑"
+                    >
+                      <Edit3 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteJob(job.id)}
-                      className="text-red-600 hover:text-red-800 text-xs p-1 hover:bg-red-50 rounded transition-colors"
+                      className="p-1 text-slate-400 hover:text-red-600 transition-colors"
                       title="删除"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
-              </tr>
-            )))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
 
       {/* 分页 */}
       <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
