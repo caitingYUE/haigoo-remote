@@ -240,17 +240,21 @@ class TrustedCompaniesService {
 
     async fetchMetadata(url: string): Promise<CompanyMetadata | null> {
         try {
-            const response = await fetch(`${this.API_BASE}?action=crawl`, {
-                method: 'POST',
+            const queryParams = new URLSearchParams();
+            queryParams.append('resource', 'companies');
+            queryParams.append('action', 'crawl');
+            queryParams.append('url', url);
+            queryParams.append('translate', 'true'); // Optional: auto-translate description
+
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
+                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
-                },
-                body: JSON.stringify({ url })
+                }
             });
             if (!response.ok) throw new Error('Failed to fetch metadata');
             const data = await response.json();
-            return data.metadata || null;
+            return data || null; // Backend returns flat object, not wrapped in metadata
         } catch (error) {
             console.error('Error fetching metadata:', error);
             return null;
@@ -259,7 +263,14 @@ class TrustedCompaniesService {
 
     async crawlJobs(companyId: string, fetchDetails: boolean = false, maxDetails: number = 10): Promise<{ success: boolean; count?: number; error?: string }> {
         try {
-            const response = await fetch(`${this.API_BASE}?action=crawl-jobs&id=${companyId}&fetchDetails=${fetchDetails}&maxDetails=${maxDetails}`, {
+            const queryParams = new URLSearchParams();
+            queryParams.append('resource', 'companies');
+            queryParams.append('action', 'crawl-jobs');
+            queryParams.append('id', companyId);
+            queryParams.append('fetchDetails', String(fetchDetails));
+            queryParams.append('maxDetails', String(maxDetails));
+
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
@@ -276,8 +287,12 @@ class TrustedCompaniesService {
 
     async syncJobsToProduction(): Promise<{ success: boolean; count?: number; error?: string }> {
         try {
-            const response = await fetch(`${this.API_BASE}?action=sync-jobs`, {
-                method: 'GET',
+            const queryParams = new URLSearchParams();
+            queryParams.append('resource', 'companies');
+            queryParams.append('action', 'sync-jobs');
+
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
+                method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 }
