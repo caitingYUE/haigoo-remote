@@ -32,15 +32,12 @@ interface TreeRendererProps {
     showDecorations?: boolean;
 }
 
-// Word Cloud Palette - Warmer, Christmas Theme (Day/Warm Mode)
-const PALETTE = [
-    '#dc2626', // Santa Red
-    '#15803d', // Cedar Green
-    '#b45309', // Deep Gold/Bronze
-    '#f59e0b', // Bright Gold
-    '#1e293b', // Dark Slate (Contrast)
-    '#7f1d1d', // Deep Burgundy
-];
+// Palettes based on Style
+const PALETTES = {
+    engineering: ['#0369a1', '#0ea5e9', '#0284c7', '#2563eb', '#475569', '#334155'], // Blue/Tech/Slate
+    creative: ['#be185d', '#db2777', '#7c3aed', '#9333ea', '#ea580c', '#d97706'], // Pink/Purple/Orange
+    growth: ['#dc2626', '#15803d', '#166534', '#b45309', '#f59e0b', '#991b1b'] // Red/Green/Gold (Classic)
+};
 
 const FONTS = [
     'Great Vibes, cursive',
@@ -52,6 +49,9 @@ const FONTS = [
 
 export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, height = 800 }) => {
     
+    // Select Palette
+    const currentPalette = PALETTES[data.style] || PALETTES['growth'];
+
     // Flatten and Sort Keywords
     const allKeywords = useMemo(() => {
         // Boost quantity if low by duplicating nicely (fallback)
@@ -90,7 +90,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             const items: any[] = [];
             const centerX = width / 2;
             const topY = 160; 
-            const bottomY = height - 160; 
+            const bottomY = height - 180; // Moved up slightly to make room for footer
             const treeHeight = bottomY - topY;
             
             // Canvas for measuring text
@@ -124,7 +124,6 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             const grid = new Array(gridWidth * gridHeight).fill(false);
 
             const checkCollision = (rect: any) => {
-                // ... same collision logic ...
                 const startX = Math.floor(rect.x / gridSize);
                 const endX = Math.floor((rect.x + rect.width) / gridSize);
                 const startY = Math.floor(rect.y / gridSize);
@@ -162,12 +161,19 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             for (const kw of workingKeywords) {
                 const isDeco = (kw as any).isDecoration;
                 const font = isDeco ? 'Arial' : FONTS[Math.floor(Math.random() * FONTS.length)];
-                const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+                const color = currentPalette[Math.floor(Math.random() * currentPalette.length)];
                 
                 let fontSize = 12;
                 if (!isDeco) {
-                     fontSize = 14 + Math.pow(kw.weight, 1.5) * 1.5; // Exponential sizing for impact
-                     if (fontSize > 48) fontSize = 48; 
+                     // Enlarge core keywords significantly
+                     // Top 3 keywords get special sizing
+                     const rank = allKeywords.indexOf(kw as any);
+                     if (rank < 3) {
+                         fontSize = 36 + (2 - rank) * 6; // 36, 42, 48
+                     } else {
+                         fontSize = 14 + Math.pow(kw.weight, 1.5) * 1.5; 
+                         if (fontSize > 32) fontSize = 32; 
+                     }
                 } else {
                      fontSize = 8 + Math.random() * 8;
                 }
@@ -179,22 +185,29 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
     
                 let placed = false;
                 
-                // Attempt placement
-                // Try random positions within the cone
-                // Cone defined by: x = center +/- (radius at y)
-                
                 const attempts = 50;
                 for (let i = 0; i < attempts; i++) {
-                    // Random Y (biased slightly towards bottom for stability, or uniform?)
-                    // Let's use uniform Y distribution for now
+                    // Random Y (biased slightly towards bottom for stability)
                     const yPos = topY + Math.random() * treeHeight;
                     
                     // Cone width at this Y
                     const progress = (yPos - topY) / treeHeight;
-                    const maxRadius = 20 + (width * 0.4) * progress; // Cone gets wider
+                    
+                    // Different shapes based on style
+                    let maxRadius = 0;
+                    if (data.style === 'engineering') {
+                        // Sharp Triangle
+                        maxRadius = 20 + (width * 0.4) * progress; 
+                    } else if (data.style === 'creative') {
+                        // Bushy / Rounder
+                        maxRadius = 30 + (width * 0.45) * Math.sin(progress * Math.PI * 0.8);
+                    } else {
+                        // Standard Pine
+                        maxRadius = 20 + (width * 0.4) * progress; 
+                    }
                     
                     // Random X within cone, biased towards center for heavy words
-                    const bias = isDeco ? 1 : Math.max(0.2, 1 - (kw.weight / 10)); // Heavy words stick to center (0.2), light words spread (1)
+                    const bias = isDeco ? 1 : Math.max(0.1, 1 - (kw.weight / 10)); 
                     const xOffset = (Math.random() - 0.5) * 2 * maxRadius * bias;
                     const xPos = centerX + xOffset;
 
@@ -226,7 +239,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             }
     
             return items;
-        }, [allKeywords, width, height]);
+        }, [allKeywords, width, height, data.style, currentPalette]);
 
     return (
         <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto shadow-2xl rounded-sm" style={{ backgroundColor: '#fff7ed' }}>
@@ -313,7 +326,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                         // Bottom (Oldest) -> Top (Newest)
                         const total = data.growth_stages!.length;
                         const stepY = (height - 300) / (total + 1); 
-                        const y = (height - 180) - (index + 1) * stepY; // Start from bottom
+                        const y = (height - 200) - (index + 1) * stepY; // Start from bottom
                         const x = width / 2;
                         
                         // Alternating side offset for readability
@@ -325,7 +338,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                                 <path 
                                     d={`M${x} ${y} Q ${x + xOffset * 0.5} ${y + 10} ${x + xOffset} ${y}`} 
                                     fill="none" 
-                                    stroke="#b45309" 
+                                    stroke={currentPalette[2]} 
                                     strokeWidth="1" 
                                     strokeDasharray="4 4" 
                                     opacity="0.4"
@@ -340,7 +353,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                                     </circle>
                                     
                                     {/* Gift Box Icon */}
-                                    <rect x="-6" y="-6" width="12" height="12" rx="1" fill="#dc2626" />
+                                    <rect x="-6" y="-6" width="12" height="12" rx="1" fill={currentPalette[0]} />
                                     <rect x="-2" y="-6" width="4" height="12" fill="#fcd34d" />
                                     <rect x="-6" y="-2" width="12" height="4" fill="#fcd34d" />
                                 </g>
@@ -352,7 +365,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                                     textAnchor={index % 2 === 0 ? "end" : "start"}
                                     fontSize="11" 
                                     fontFamily="Cinzel, serif" 
-                                    fill="#b45309"
+                                    fill={currentPalette[3]}
                                     fontStyle="italic"
                                     fontWeight="bold"
                                 >
@@ -367,7 +380,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                                     fontSize="16" 
                                     fontFamily="Cinzel, serif" 
                                     fontWeight="black"
-                                    fill="#15803d"
+                                    fill={currentPalette[1]}
                                     style={{ filter: 'url(#glow-text)' }}
                                 >
                                     {stage.keyword}
@@ -381,9 +394,9 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             {/* 4. Trunk (Planted in snow) */}
             <rect 
                 x={width/2 - 15} 
-                y={height - 140} 
+                y={height - 160} 
                 width={30} 
-                height={80} 
+                height={100} 
                 fill="#3f2e26" 
                 rx="4"
             />
@@ -418,7 +431,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 
                 {/* Top Title (Curved) */}
                 {data.top_title && (
-                    <text textAnchor="middle" fontSize="16" fontFamily="Cinzel, serif" fontWeight="bold" fill="#b45309" dy="-5">
+                    <text textAnchor="middle" fontSize="16" fontFamily="Cinzel, serif" fontWeight="bold" fill={currentPalette[3]} dy="-5">
                          <textPath href="#titleArc" startOffset="50%" textAnchor="middle">
                             {data.top_title}
                          </textPath>
@@ -437,8 +450,8 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 />
             </g>
             
-            {/* 7. Base/Label (Trunk) */}
-            <g transform={`translate(${width/2}, ${height - 100})`}>
+            {/* 7. Base/Label (Trunk) - NO NUMBERS allowed in extraction */}
+            <g transform={`translate(${width/2}, ${height - 120})`}>
                 {/* Vertical Text on Trunk */}
                  <text 
                     x="0" 
@@ -454,10 +467,10 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
                 </text>
             </g>
 
-            {/* 8. Footer Watermark - Left & Right */}
+            {/* 8. Footer Watermark - Left & Right - Adjusted Position */}
             <text 
                 x={20} 
-                y={height - 15} 
+                y={height - 20} 
                 textAnchor="start" 
                 fill="#b45309" 
                 fontSize="12" 
@@ -470,7 +483,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
 
             <text 
                 x={width - 20} 
-                y={height - 15} 
+                y={height - 20} 
                 textAnchor="end" 
                 fill="#b45309" 
                 fontSize="12" 

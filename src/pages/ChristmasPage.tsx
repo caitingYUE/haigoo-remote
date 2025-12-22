@@ -359,10 +359,7 @@ export default function ChristmasPage() {
                                                 </div>
                                             )}
 
-                                            {/* Branding Watermark */}
-                                            <div className="absolute bottom-2 right-4 text-slate-400 font-serif text-xs tracking-widest uppercase z-10">
-                                                Haigoo · Christmas
-                                            </div>
+
                                         </div>
                                     </div>
 
