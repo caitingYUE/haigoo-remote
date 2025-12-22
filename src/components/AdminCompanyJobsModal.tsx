@@ -60,13 +60,24 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
         }
     };
 
-    const handleDeleteJob = async (_jobId: string) => {
+    const handleDeleteJob = async (jobId: string) => {
         if (!confirm('确定要删除这个职位吗？')) return;
-        // Note: Currently no direct delete API for single job in processed-jobs, 
-        // usually we rely on re-sync or specific delete endpoint. 
-        // For now, we might need to implement a delete action in processed-jobs API or just hide it.
-        // Assuming we add a delete action later or use a generic data management endpoint.
-        alert('暂不支持直接删除单个职位，请通过重新抓取或数据管理页面操作。');
+        
+        try {
+            const res = await fetch(`/api/data/processed-jobs?id=${encodeURIComponent(jobId)}`, {
+                method: 'DELETE'
+            });
+            
+            if (res.ok) {
+                setJobs(prev => prev.filter(j => j.id !== jobId));
+            } else {
+                const data = await res.json();
+                alert(`删除失败: ${data.error || res.statusText}`);
+            }
+        } catch (error) {
+            console.error('Delete job error:', error);
+            alert('删除请求失败');
+        }
     };
 
     const filteredJobs = jobs.filter(job =>

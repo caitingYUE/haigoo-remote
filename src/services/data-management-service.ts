@@ -486,14 +486,14 @@ export class DataManagementService {
    */
   async deleteProcessedJob(jobId: string): Promise<boolean> {
     try {
-      const allJobs = await this.loadProcessedJobs();
-      const filteredJobs = allJobs.filter(job => job.id !== jobId);
+      const resp = await fetch(`/api/data/processed-jobs?id=${encodeURIComponent(jobId)}`, {
+        method: 'DELETE'
+      });
 
-      if (filteredJobs.length === allJobs.length) {
-        return false; // 未找到要删除的职位
+      if (!resp.ok) {
+        throw new Error(`DELETE failed: ${resp.status}`);
       }
 
-      await this.saveProcessedJobs(filteredJobs);
       return true;
     } catch (error) {
       console.error('删除职位失败:', error);

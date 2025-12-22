@@ -28,7 +28,6 @@ export interface TrustedCompany {
     industry?: CompanyIndustry;
     isTrusted: boolean;
     canRefer: boolean;
-    source?: string;
     jobCount?: number;
     lastCrawledAt?: string; // New field
     createdAt: string;
@@ -68,7 +67,6 @@ class TrustedCompaniesService {
         industry?: string;
         search?: string;
         canRefer?: 'all' | 'yes' | 'no';
-        source?: string;
     }): Promise<PaginatedCompaniesResponse | TrustedCompany[]>;
     async getAllCompanies(params?: {
         page?: number;
@@ -78,7 +76,6 @@ class TrustedCompaniesService {
         industry?: string;
         search?: string;
         canRefer?: 'all' | 'yes' | 'no';
-        source?: string;
     }): Promise<any> {
         try {
             const queryParams = new URLSearchParams();
@@ -93,7 +90,6 @@ class TrustedCompaniesService {
                 if (params.industry && params.industry !== 'all') queryParams.append('industry', params.industry);
                 if (params.search) queryParams.append('search', params.search);
                 if (params.canRefer && params.canRefer !== 'all') queryParams.append('canRefer', params.canRefer);
-                if (params.source && params.source !== 'all') queryParams.append('source', params.source);
             }
 
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);

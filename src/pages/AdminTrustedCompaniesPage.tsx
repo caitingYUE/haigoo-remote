@@ -441,13 +441,12 @@ export default function AdminTrustedCompaniesPage() {
                     <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden overflow-x-auto">
+                <div className="bg-white rounded-lg shadow overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">来源</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">规模/地址</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">评分/成立</th>
                                 <th
@@ -506,15 +505,6 @@ export default function AdminTrustedCompaniesPage() {
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                             {company.industry || '未分类'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                            company.source === 'manual' ? 'bg-green-100 text-green-800' : 
-                                            company.source === 'rss' ? 'bg-yellow-100 text-yellow-800' : 
-                                            'bg-gray-100 text-gray-800'
-                                        }`}>
-                                            {company.source || 'unknown'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">

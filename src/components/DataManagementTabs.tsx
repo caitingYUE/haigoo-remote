@@ -237,10 +237,16 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     }
 
     try {
-      await dataManagementService.deleteProcessedJob(jobId);
-      await loadProcessedData();
+      const success = await dataManagementService.deleteProcessedJob(jobId);
+      if (success) {
+        showSuccess('删除成功', '职位已删除');
+        await loadProcessedData();
+      } else {
+        showError('删除失败', '删除操作未成功，请检查网络或日志');
+      }
     } catch (error) {
       console.error('删除职位失败:', error);
+      showError('删除失败', '发生未知错误');
     }
   };
 

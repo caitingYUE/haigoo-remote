@@ -17,7 +17,7 @@ interface Company {
     logo?: string;
     industry?: string;
     tags?: string[];
-    source: string;
+    // source: string; // Removed source field
     jobCount: number;
     createdAt: string;
     updatedAt: string;
@@ -53,52 +53,67 @@ export default function AdminCompanyManagementPage() {
     const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
     const [jobSearchTerm, setJobSearchTerm] = useState('');
 
+    // Load companies ONLY from trusted_companies database table
     const loadCompanies = useCallback(async () => {
         try {
             setLoading(true);
-            const params = new URLSearchParams({
-                page: page.toString(),
-                pageSize: pageSize.toString(),
-                ...(searchQuery && { search: searchQuery }),
-                ...(industryFilter && { industry: industryFilter })
-            });
+            const params = {
+                page,
+                limit: pageSize,
+                search: searchQuery,
+                industry: industryFilter
+            };
 
-            const response = await fetch(`/api/data/trusted-companies?target=companies&${params}`);
-            const data = await response.json();
-
-            if (data.success) {
-                let list: Company[] = data.companies || [];
-
-                try {
-                    const trustedData = await trustedCompaniesService.getAllCompanies();
-                    const trustedList = Array.isArray(trustedData) ? trustedData : ((trustedData as any)?.companies || []);
-                    
-                    const normalize = (name: string) => name.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[,._\-]/g, '');
-                    const trustedMap = new Map<string, TrustedCompany>();
-                    trustedList.forEach((tc: TrustedCompany) => trustedMap.set(normalize(tc.name), tc));
-
-                    list = list.map((c: Company) => {
-                        const tc = trustedMap.get(normalize(c.name));
-                        if (!tc) return c;
-                        return {
-                            ...c,
-                            url: c.url || tc.website || tc.careersPage || c.url,
-                            logo: c.logo || tc.logo || c.logo,
-                            description: c.description || tc.description || c.description,
-                            tags: Array.from(new Set([...(c.tags || []), ...(tc.tags || [])])),
-                            linkedin: tc.linkedin,
-                            address: tc.address,
-                            employeeCount: tc.employeeCount,
-                            foundedYear: tc.foundedYear,
-                            specialties: tc.specialties
-                        };
-                    });
-                } catch (e) {
-                    console.warn('合并可信企业信息失败:', e);
-                }
-
-                setCompanies(list);
-                setTotal(data.total || 0);
+            const data = await trustedCompaniesService.getAllCompanies(params);
+            
+            if (Array.isArray(data)) {
+                // Handle array response (should match Company interface)
+                const list = data.map(tc => ({
+                    id: tc.id,
+                    name: tc.name,
+                    url: tc.website,
+                    description: tc.description,
+                    logo: tc.logo,
+                    industry: tc.industry,
+                    tags: tc.tags,
+                    // source: 'database', // Removed source field
+                    jobCount: tc.jobCount || 0,
+                    createdAt: tc.createdAt,
+                    updatedAt: tc.updatedAt,
+                    isTrusted: tc.isTrusted,
+                    translations: (tc as any).translations,
+                    linkedin: tc.linkedin,
+                    address: tc.address,
+                    employeeCount: tc.employeeCount,
+                    foundedYear: tc.foundedYear,
+                    specialties: tc.specialties
+                }));
+                setCompanies(list as any);
+                setTotal(data.length);
+            } else {
+                // Handle paginated response
+                const list = data.companies.map(tc => ({
+                    id: tc.id,
+                    name: tc.name,
+                    url: tc.website,
+                    description: tc.description,
+                    logo: tc.logo,
+                    industry: tc.industry,
+                    tags: tc.tags,
+                    // source: 'database', // Removed source field
+                    jobCount: tc.jobCount || 0,
+                    createdAt: tc.createdAt,
+                    updatedAt: tc.updatedAt,
+                    isTrusted: tc.isTrusted,
+                    translations: (tc as any).translations,
+                    linkedin: tc.linkedin,
+                    address: tc.address,
+                    employeeCount: tc.employeeCount,
+                    foundedYear: tc.foundedYear,
+                    specialties: tc.specialties
+                }));
+                setCompanies(list as any);
+                setTotal(data.total);
             }
         } catch (error) {
             console.error('Failed to load companies:', error);
