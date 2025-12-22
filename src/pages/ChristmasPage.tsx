@@ -351,7 +351,7 @@ export default function ChristmasPage() {
                                                         {/* Greeting Header */}
                                                         <div className="mb-6">
                                                             <h3 className="font-serif text-[#b45309] text-2xl italic font-bold">
-                                                                Dear {treeData.tree_structure?.trunk_core_role || 'Friend'},
+                                                                Dear Friend,
                                                             </h3>
                                                         </div>
 
