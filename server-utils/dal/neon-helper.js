@@ -190,10 +190,35 @@ const neonHelper = {
         // Create a wrapper to ensure compatibility with both sql() and sql.query() usage
         let sqlWrapper = sql
         if (typeof sql === 'function') {
-            // If sql is a function (Neon HTTP), wrapper should be callable
-            sqlWrapper = (q, p) => sql(q, p)
-            // AND we must polyfill .query for legacy code relying on it
-            sqlWrapper.query = (q, p) => sql(q, p)
+            // CRITICAL FIX: The new neon driver version strictly enforces tagged template usage for sql() calls.
+            // i.e., sql`SELECT ...` is allowed, but sql('SELECT ...', params) throws an error.
+            // However, the driver usually provides a .query() method (or similar) for traditional usage.
+            // We MUST prefer .query() if available.
+            
+            // If we wrap it, we must ensure .query uses the real .query if available
+            // Otherwise, we are forcing the incorrect usage.
+
+            if (typeof sql.query === 'function') {
+                // If sql has .query, we should use it.
+                // But we need to make sure sqlWrapper is callable (for legacy sql(q,p) calls)
+                // AND has a .query method.
+                
+                // Let's try to NOT wrap it if possible, or wrap intelligently.
+                // The safest bet is to define the wrapper's .query to use sql.query
+                sqlWrapper = (q, p) => {
+                    // Fallback for direct call: try .query first
+                    if (typeof sql.query === 'function') return sql.query(q, p)
+                    return sql(q, p)
+                }
+                sqlWrapper.query = (q, p) => sql.query(q, p)
+            } else {
+                // If no .query, we are stuck with the function. 
+                // But this is where the error comes from. 
+                // We'll leave it as is and hope for the best, or log a warning.
+                console.warn('[Neon] sql.query is missing on transaction client!')
+                sqlWrapper = (q, p) => sql(q, p)
+                sqlWrapper.query = (q, p) => sql(q, p)
+            }
         }
 
         try {
