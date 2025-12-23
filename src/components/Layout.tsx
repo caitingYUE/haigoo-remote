@@ -49,7 +49,7 @@ export default function Layout({ children }: LayoutProps) {
                 <div className="flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
                     <span className="font-medium">
-                        请尽快验证您的邮箱，否则注册 24 小时后将无法登录。
+                        当前账号 <strong>{user?.email}</strong> 尚未验证。请尽快验证您的邮箱，否则注册 24 小时后将无法登录。
                     </span>
                 </div>
                 <div className="flex items-center gap-4">

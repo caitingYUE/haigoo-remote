@@ -190,12 +190,12 @@ export function sanitizeUser(user) {
 }
 
 /**
- * 生成验证码到期时间（15分钟后）
+ * 生成验证码到期时间（24小时后）
  * @returns {string} ISO 时间字符串
  */
 export function generateVerificationExpiry() {
   const expiry = new Date()
-  expiry.setMinutes(expiry.getMinutes() + 15) // 15 分钟有效
+  expiry.setHours(expiry.getHours() + 24) // 24 小时有效
   return expiry.toISOString()
 }
 

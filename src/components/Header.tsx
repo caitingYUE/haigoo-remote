@@ -188,14 +188,18 @@ export default function Header() {
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
                 className="h-12 w-auto"
-                style={{ imageRendering: '-webkit-optimize-contrast' }}
+                style={{ 
+                  imageRendering: '-webkit-optimize-contrast',
+                  transform: 'translateZ(0)',
+                  backfaceVisibility: 'hidden'
+                }}
               />
-              <span className="ml-3 text-[#1A365D] font-semibold text-lg">海狗远程俱乐部</span>
-              {showBeta && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm ring-1 ring-white/20 animate-pulse">
-                  内测中
+              <span className="ml-3 text-[#1A365D] font-semibold text-lg flex items-center gap-2">
+                海狗远程俱乐部
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm ring-1 ring-white/20">
+                  内测版
                 </span>
-              )}
+              </span>
             </Link>
           </div>
 
