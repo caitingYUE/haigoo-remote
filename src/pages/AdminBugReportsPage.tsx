@@ -46,10 +46,14 @@ export default function AdminBugReportsPage() {
     const fetchBugs = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
+            // Get token from useAuth or fallback to localStorage
+            const authToken = token || localStorage.getItem('haigoo_auth_token') || localStorage.getItem('token');
+            console.log('[AdminBugReports] Fetching bugs with token:', authToken ? 'Yes' : 'No');
+            
             const res = await fetch('/api/admin-ops?action=bug_report', {
                 headers: {
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    'Content-Type': 'application/json',
+                    ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
                 }
             });
             const json = await res.json();
