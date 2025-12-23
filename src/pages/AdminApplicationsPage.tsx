@@ -129,12 +129,15 @@ export default function AdminApplicationsPage() {
             'success': '内推成功',
             'rejected': '已拒绝',
             'failed': '内推失败',
-            'offer': '已录用'
+            'offer': '已录用',
+            'redirected': '已跳转'
         }
 
+        const displayStatus = status || 'redirected';
+
         return (
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
-                {labels[status] || status}
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[displayStatus] || 'bg-gray-100 text-gray-800'}`}>
+                {labels[displayStatus] || displayStatus}
             </span>
         )
     }

@@ -52,6 +52,30 @@ export default function AdminCompanyManagementPage() {
     const [editForm, setEditForm] = useState<Partial<Company>>({});
     const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
     const [jobSearchTerm, setJobSearchTerm] = useState('');
+    
+    // Tag Config State
+    const [tagConfig, setTagConfig] = useState<{
+        jobCategories: string[];
+        companyIndustries: string[];
+        companyTags: string[];
+    }>({ jobCategories: [], companyIndustries: [], companyTags: [] });
+
+    // Load tag configuration
+    const loadTagConfig = async () => {
+        try {
+            const response = await fetch('/api/data/trusted-companies?target=tags');
+            const data = await response.json();
+            if (data.success && data.config) {
+                setTagConfig(data.config);
+            }
+        } catch (error) {
+            console.error('Failed to load tag config:', error);
+        }
+    };
+
+    useEffect(() => {
+        loadTagConfig();
+    }, []);
 
     // Load companies ONLY from trusted_companies database table
     const loadCompanies = useCallback(async () => {
@@ -465,12 +489,20 @@ export default function AdminCompanyManagementPage() {
                     className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                 >
                     <option value="">所有行业</option>
-                    <option value="互联网">互联网</option>
-                    <option value="金融">金融</option>
-                    <option value="医疗健康">医疗健康</option>
-                    <option value="教育">教育</option>
-                    <option value="制造业">制造业</option>
-                    <option value="其他">其他</option>
+                    {tagConfig.companyIndustries.length > 0 ? (
+                        tagConfig.companyIndustries.map(industry => (
+                            <option key={industry} value={industry}>{industry}</option>
+                        ))
+                    ) : (
+                        <>
+                            <option value="互联网">互联网</option>
+                            <option value="金融">金融</option>
+                            <option value="医疗健康">医疗健康</option>
+                            <option value="教育">教育</option>
+                            <option value="制造业">制造业</option>
+                            <option value="其他">其他</option>
+                        </>
+                    )}
                 </select>
             </div>
 
@@ -622,12 +654,20 @@ export default function AdminCompanyManagementPage() {
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     >
                                         <option value="">选择行业</option>
-                                        <option value="互联网">互联网</option>
-                                        <option value="金融">金融</option>
-                                        <option value="医疗健康">医疗健康</option>
-                                        <option value="教育">教育</option>
-                                        <option value="制造业">制造业</option>
-                                        <option value="其他">其他</option>
+                                        {tagConfig.companyIndustries.length > 0 ? (
+                                            tagConfig.companyIndustries.map(industry => (
+                                                <option key={industry} value={industry}>{industry}</option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option value="互联网">互联网</option>
+                                                <option value="金融">金融</option>
+                                                <option value="医疗健康">医疗健康</option>
+                                                <option value="教育">教育</option>
+                                                <option value="制造业">制造业</option>
+                                                <option value="其他">其他</option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
                                 <div>
@@ -729,12 +769,44 @@ export default function AdminCompanyManagementPage() {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">标签 (逗号分隔)</label>
-                                <input
+                                <div className="space-y-2">
+                                    <input
                                         type="text"
                                         value={typeof editForm.tags === 'string' ? editForm.tags : (editForm.tags || []).join(', ')}
                                         onChange={e => setEditForm({ ...editForm, tags: e.target.value as any })}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="例如: SaaS, AI, B2B"
                                     />
+                                    {tagConfig.companyTags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                            <span className="text-xs text-gray-500 flex items-center">推荐标签:</span>
+                                            {tagConfig.companyTags.map(tag => (
+                                                <button
+                                                    key={tag}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const rawTags = editForm.tags as any;
+                                                        let currentTags: string[] = [];
+                                                        
+                                                        if (Array.isArray(rawTags)) {
+                                                            currentTags = rawTags;
+                                                        } else if (typeof rawTags === 'string') {
+                                                            currentTags = rawTags.split(',').map((t: string) => t.trim()).filter(Boolean);
+                                                        }
+                                                        
+                                                        if (!currentTags.includes(tag)) {
+                                                            const newTags = [...currentTags, tag].join(', ');
+                                                            setEditForm({ ...editForm, tags: newTags as any });
+                                                        }
+                                                    }}
+                                                    className="px-2 py-0.5 bg-gray-100 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 text-xs rounded transition-colors"
+                                                >
+                                                    + {tag}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

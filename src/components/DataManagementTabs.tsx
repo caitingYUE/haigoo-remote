@@ -37,6 +37,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [locationCategories, setLocationCategories] = useState<{ domesticKeywords: string[]; overseasKeywords: string[]; globalKeywords: string[] }>({ domesticKeywords: [], overseasKeywords: [], globalKeywords: [] });
   // Dynamic categories from backend
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
 
   // 存储统计状态
   const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
@@ -136,11 +137,16 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       try {
         const response = await fetch('/api/data/trusted-companies?target=tags');
         const data = await response.json();
-        if (data.success && data.config?.jobCategories) {
-          setAvailableCategories(data.config.jobCategories);
+        if (data.success && data.config) {
+          if (data.config.jobCategories) {
+            setAvailableCategories(data.config.jobCategories);
+          }
+          if (data.config.companyTags) {
+            setAvailableTags(data.config.companyTags);
+          }
         }
       } catch (error) {
-        console.error('Failed to load job categories:', error);
+        console.error('Failed to load job categories/tags:', error);
       }
     };
     loadCategories();
@@ -1210,6 +1216,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         <EditJobModal
           job={editingJob}
           availableCategories={availableCategories}
+          availableTags={availableTags}
           onSave={handleSaveEdit}
           onClose={() => {
             setShowEditModal(false);
@@ -1250,7 +1257,8 @@ const EditJobModal: React.FC<{
   hasPrev?: boolean;
   hasNext?: boolean;
   availableCategories?: string[];
-}> = ({ job, onSave, onClose, onNavigate, hasPrev, hasNext, availableCategories = [] }) => {
+  availableTags?: string[];
+}> = ({ job, onSave, onClose, onNavigate, hasPrev, hasNext, availableCategories = [], availableTags = [] }) => {
   const [formData, setFormData] = useState({
     title: job.title,
     company: job.company,
@@ -1483,13 +1491,36 @@ const EditJobModal: React.FC<{
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">技能标签（用逗号分隔）</label>
-              <input
-                type="text"
-                value={formData.tags}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="例如: React, TypeScript, Node.js"
-              />
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="例如: React, TypeScript, Node.js"
+                />
+                {availableTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    <span className="text-xs text-slate-500 flex items-center">推荐标签:</span>
+                    {availableTags.map(tag => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                          const currentTags = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
+                          if (!currentTags.includes(tag)) {
+                            const newTags = [...currentTags, tag].join(', ');
+                            setFormData({ ...formData, tags: newTags });
+                          }
+                        }}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 text-xs rounded transition-colors"
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="md:col-span-2">

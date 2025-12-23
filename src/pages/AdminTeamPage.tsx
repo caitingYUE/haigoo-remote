@@ -40,6 +40,7 @@ import AdminCompanyManagementPage from './AdminCompanyManagementPage';
 import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
 import AdminTagManagementPage from './AdminTagManagementPage';
 import AdminApplicationsPage from './AdminApplicationsPage';
+import AdminMemberApplicationsPage from './AdminMemberApplicationsPage';
 import AdminFeedbackList from '../components/AdminFeedbackList';
 import { SubscriptionsTable } from '../components/SubscriptionsTable';
 import AdminSystemSettings from '../components/admin/AdminSystemSettings';
@@ -704,7 +705,8 @@ const AdminTeamPage: React.FC = () => {
     { id: 'resumes', label: '简历数据', icon: FileText },
     { id: 'subscriptions', label: '订阅管理', icon: Mail },
     { id: 'users', label: '用户管理', icon: Users },
-    { id: 'applications', label: '会员申请', icon: FileText },
+    { id: 'job-applications', label: '岗位申请', icon: Briefcase },
+    { id: 'member-applications', label: '会员申请', icon: FileText },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'settings', label: '系统设置', icon: Settings }
@@ -805,7 +807,8 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'subscriptions' && <SubscriptionsTable />}
               {activeTab === 'users' && <UserManagementPage />}
-              {activeTab === 'applications' && <AdminApplicationsPage />}
+              {activeTab === 'job-applications' && <AdminApplicationsPage />}
+              {activeTab === 'member-applications' && <AdminMemberApplicationsPage />}
               {activeTab === 'companies' && <AdminCompanyManagementPage />}
               {activeTab === 'trusted-companies' && <AdminTrustedCompaniesPage />}
               {activeTab === 'tag-management' && <AdminTagManagementPage />}
