@@ -48,7 +48,7 @@ export default function UserManagementPage() {
     newThisWeek: 0
   })
   const { token } = useAuth()
-  const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
+  const SUPER_ADMIN_EMAIL = 'admin@example.com'
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editUsername, setEditUsername] = useState('')
   const [editAdmin, setEditAdmin] = useState(false)

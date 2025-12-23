@@ -18,15 +18,11 @@ export default function CompanyDetailPage() {
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
 
-    // DEBUG: Log user and membership status
+    // DEBUG: Log user and membership status (removed for privacy)
     useEffect(() => {
-        if (user) {
-            console.log('[CompanyDetail] User:', user.email);
-            console.log('[CompanyDetail] MemberStatus:', user.memberStatus);
-            console.log('[CompanyDetail] ExpireAt:', user.memberExpireAt);
-            console.log('[CompanyDetail] IsAdmin:', !!user.roles?.admin);
-            console.log('[CompanyDetail] Calculated isMember:', isMember);
-        }
+        // if (user) {
+        //     console.log('[CompanyDetail] User ID:', user.user_id);
+        // }
     }, [user, isMember]);
 
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
