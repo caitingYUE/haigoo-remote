@@ -79,30 +79,29 @@ export function generateRandomUsername() {
 }
 
 /**
- * 生成随机头像 URL (使用 DiceBear Avatars API)
- * @param {string} seed - 用于生成头像的种子
- * @param {string} style - 头像风格 (默认为 null，会自动在 privacy-friendly 风格中选择)
+ * 生成随机头像 URL (使用本地头像库)
+ * @param {string} seed - 用于生成头像的种子 (如果不提供则完全随机)
+ * @param {string} style - (已废弃，保留兼容性)
  * @returns {string} 头像 URL
  */
 export function generateRandomAvatar(seed, style = null) {
-  // DiceBear Avatars API: https://avatars.dicebear.com/
-  // 默认使用去性别化、隐私友好的风格：
-  // 1. initials (字母头像 - 简洁美观)
-  // 2. bottts (可爱机器人 - 中性可爱)
-  // 3. fun-emoji (可爱表情 - 趣味中性)
-  // 4. shapes (抽象图形 - 艺术感)
+  // 本地头像文件：user_icon1.png ~ user_icon15.png
+  const TOTAL_ICONS = 15;
   
-  if (!style) {
-    // 根据 seed 确定性选择一种风格
-    const styles = ['initials', 'bottts', 'fun-emoji', 'shapes'];
+  let index;
+  if (seed) {
+    // 根据 seed 确定性选择
     let hash = 0;
     for (let i = 0; i < seed.length; i++) {
       hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
-    style = styles[Math.abs(hash) % styles.length];
+    index = (Math.abs(hash) % TOTAL_ICONS) + 1;
+  } else {
+    // 完全随机
+    index = Math.floor(Math.random() * TOTAL_ICONS) + 1;
   }
 
-  return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}`
+  return `/avatars/user_icon${index}.png`
 }
 
 /**

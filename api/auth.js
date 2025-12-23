@@ -253,10 +253,9 @@ async function handleGoogleLogin(req, res) {
     if (user.auth_provider !== 'google') {
     return res.status(400).json({ success: false, error: `该邮箱已使用 ${user.auth_provider} 方式注册` })
   }
-    // 使用统一的更新函数更新最后登录时间和头像
+    // 使用统一的更新函数更新最后登录时间 (不再覆盖头像，保持 Haigoo 系列头像)
     await updateUser(user.user_id, { 
-      lastLoginAt: true,
-      avatar: googleUser.picture 
+      lastLoginAt: true
     })
   } else {
     const userId = crypto.randomUUID()
@@ -264,7 +263,8 @@ async function handleGoogleLogin(req, res) {
       user_id: userId,
       email: googleUser.email,
       username: googleUser.name || generateRandomUsername(),
-      avatar: googleUser.picture || generateRandomAvatar(userId, 'personas'),
+      // 统一使用 Haigoo 系列头像
+      avatar: generateRandomAvatar(userId),
       auth_provider: 'google',
       google_id: googleUser.googleId,
       email_verified: googleUser.emailVerified,
