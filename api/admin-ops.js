@@ -89,5 +89,23 @@ export default async function handler(req, res) {
         return res.status(501).json({ success: false, error: 'Check User endpoint not implemented in consolidated handler' })
     }
 
+    // Diagnose Bug Reports Table
+    if (action === 'check-bugs') {
+         const token = extractToken(req)
+         if (!token || !verifyToken(token)) return res.status(401).json({ error: 'Unauthorized' })
+         
+         try {
+             const countRes = await neonHelper.query('SELECT COUNT(*) as count FROM bug_reports')
+             const sampleRes = await neonHelper.query('SELECT * FROM bug_reports ORDER BY created_at DESC LIMIT 5')
+             return res.status(200).json({ 
+                 success: true, 
+                 count: countRes[0]?.count, 
+                 sample: sampleRes 
+             })
+         } catch (e) {
+             return res.status(500).json({ success: false, error: e.message })
+         }
+    }
+
     return res.status(404).json({ error: `Unknown admin action: ${action}` })
 }

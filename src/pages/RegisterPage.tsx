@@ -149,7 +149,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src={logoSvg} alt="Haigoo" className="h-12 mx-auto mb-4" />
+          <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-slate-900">创建账户</h1>
           <p className="text-slate-600 mt-2">开启您的远程工作之旅</p>
         </div>
