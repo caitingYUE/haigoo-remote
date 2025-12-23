@@ -38,8 +38,10 @@ export default function AdminBugReportsPage() {
     const [loadingImage, setLoadingImage] = useState(false);
 
     useEffect(() => {
-        fetchBugs();
-    }, []);
+        if (token) {
+            fetchBugs();
+        }
+    }, [token]);
 
     const fetchBugs = async () => {
         setLoading(true);
