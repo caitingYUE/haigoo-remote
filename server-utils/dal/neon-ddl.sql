@@ -309,3 +309,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS member_status VARCHAR(50) DEFAULT 'fr
 ALTER TABLE users ADD COLUMN IF NOT EXISTS member_expire_at TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS member_since TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS member_display_id VARCHAR(50);
+
+-- 2025-12-24 修复 bug_reports 表缺失 contact_info 字段的问题
+-- 原因：线上数据库可能创建于 contact_info 字段添加到 DDL 之前，导致插入失败
+ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS contact_info VARCHAR(255);
