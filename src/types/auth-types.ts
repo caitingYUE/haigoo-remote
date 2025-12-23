@@ -149,7 +149,7 @@ export interface AuthContextState {
 // 随机头像生成选项
 export interface AvatarOptions {
   seed: string // 用于生成随机头像的种子
-  style: 'adventurer' | 'avataaars' | 'bottts' | 'personas' | 'pixel-art' // DiceBear 风格
+  style: 'initials' | 'bottts' | 'fun-emoji' | 'adventurer' | 'avataaars' | 'personas' | 'pixel-art' // DiceBear 风格
   size?: number // 尺寸
 }
 
