@@ -284,3 +284,22 @@ CREATE TABLE bug_reports (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- club_applications - 存储会员申请信息 (Missing in previous DDL)
+CREATE TABLE IF NOT EXISTS club_applications (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255),
+  experience TEXT,
+  career_ideal TEXT,
+  portfolio TEXT,
+  expectations TEXT,
+  contribution TEXT,
+  contact TEXT,
+  contact_type VARCHAR(50) DEFAULT 'wechat',
+  status VARCHAR(50) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2025-12-23 修复 club_applications 缺少 updated_at 字段的问题
+ALTER TABLE club_applications ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;

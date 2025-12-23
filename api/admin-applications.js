@@ -64,8 +64,9 @@ export default async function handler(req, res) {
              // Member Application Update
              if (type === 'member') {
                  if (!id) return res.status(400).json({ success: false, error: 'Missing ID' });
+                 // FIX: Removed updated_at update as column might be missing in DB
                  await neonHelper.query(
-                     'UPDATE club_applications SET status = $1, updated_at = NOW() WHERE id = $2',
+                     'UPDATE club_applications SET status = $1 WHERE id = $2',
                      [status, id]
                  );
                  return res.status(200).json({ success: true });
