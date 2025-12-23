@@ -166,9 +166,19 @@ export default function AdminBugReportsPage() {
                         <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
                     </div>
                 ) : error ? (
-                    <div className="bg-red-50 text-red-600 p-4 rounded-lg flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5" />
-                        {error}
+                    <div className="bg-red-50 text-red-600 p-4 rounded-lg flex flex-col items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5" />
+                            {error}
+                        </div>
+                        <button 
+                            onClick={handleRepair}
+                            disabled={repairing}
+                            className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
+                        >
+                            {repairing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                            Attempt Auto-Repair Database
+                        </button>
                     </div>
                 ) : (
                     <div className="bg-white rounded-xl shadow-sm overflow-hidden">

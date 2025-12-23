@@ -107,5 +107,20 @@ export default async function handler(req, res) {
          }
     }
 
+    // Repair Bug Reports Table Schema
+    if (action === 'repair_bug_table') {
+        const token = extractToken(req)
+        if (!token || !verifyToken(token)) return res.status(401).json({ error: 'Unauthorized' })
+
+        try {
+            await neonHelper.query('ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS contact_info VARCHAR(255)')
+            await neonHelper.query('ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS admin_reply TEXT')
+            await neonHelper.query('ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS replied_at TIMESTAMP')
+            return res.status(200).json({ success: true, message: 'Schema repaired successfully' })
+        } catch (e) {
+            return res.status(500).json({ success: false, error: e.message })
+        }
+    }
+
     return res.status(404).json({ error: `Unknown admin action: ${action}` })
 }

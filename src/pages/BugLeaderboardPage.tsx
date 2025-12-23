@@ -12,6 +12,7 @@ interface LeaderboardEntry {
 interface UserBug {
     id: number;
     title: string;
+    description?: string;
     status: 'open' | 'in_progress' | 'resolved' | 'closed';
     created_at: string;
     admin_reply?: string;
@@ -200,7 +201,10 @@ export default function BugLeaderboardPage() {
                                                     </span>
                                                 </div>
                                             </div>
-                                            <h4 className="font-medium text-slate-800 mb-2">{bug.title}</h4>
+                                            <h4 className="font-medium text-slate-800 mb-1">{bug.title}</h4>
+                                            {bug.description && (
+                                                <p className="text-sm text-slate-600 mb-2 line-clamp-2">{bug.description}</p>
+                                            )}
                                             
                                             {bug.admin_reply && (
                                                 <div className="mt-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-sm">
