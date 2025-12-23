@@ -85,26 +85,51 @@ export default function AdminMemberApplicationsPage() {
     }
 
     const handleUpdateStatus = async (id: number, status: string) => {
-        const actionText = status === 'approved' ? '通过' : '拒绝';
-        const confirmMsg = status === 'approved' 
-            ? `确定要通过此申请吗？\n\n用户将升级为【Haigoo会员】，有效期默认设置为 1 年。`
-            : `确定要拒绝此申请吗？`;
+        if (status === 'approved') {
+            setSelectedAppId(id);
+            // Default dates: Start = Today, End = Today + 1 Year
+            const start = new Date();
+            const end = new Date();
+            end.setFullYear(end.getFullYear() + 1);
+            
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(end.toISOString().split('T')[0]);
+            setShowApprovalModal(true);
+            return;
+        }
 
+        const confirmMsg = `确定要拒绝此申请吗？`;
         if (!confirm(confirmMsg)) return;
 
+        await submitStatusUpdate(id, status);
+    }
+
+    const handleConfirmApproval = async () => {
+        if (!selectedAppId) return;
+        await submitStatusUpdate(selectedAppId, 'approved', startDate, endDate);
+        setShowApprovalModal(false);
+    }
+
+    const submitStatusUpdate = async (id: number, status: string, start?: string, end?: string) => {
         try {
-                const params = new URLSearchParams({
-                    action: 'update_status',
-                    type: 'member'
-                });
-                const res = await fetch(`/api/admin-applications?${params}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ id, status, type: 'member' })
-                })
+            const params = new URLSearchParams({
+                action: 'update_status',
+                type: 'member'
+            });
+            const body: any = { id, status, type: 'member' };
+            if (start && end) {
+                body.startDate = start;
+                body.endDate = end;
+            }
+
+            const res = await fetch(`/api/admin-applications?${params}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(body)
+            })
             const data = await res.json()
             if (data.success) {
                 showSuccess('状态更新成功')
