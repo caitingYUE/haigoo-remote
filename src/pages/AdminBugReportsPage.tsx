@@ -21,7 +21,7 @@ interface BugReport {
 }
 
 export default function AdminBugReportsPage() {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const [bugs, setBugs] = useState<BugReport[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -114,7 +114,6 @@ export default function AdminBugReportsPage() {
         if (!replyingId || !replyContent.trim()) return;
         setIsSendingReply(true);
         try {
-            const token = localStorage.getItem('token');
             const res = await fetch('/api/admin-ops?action=bug_report', {
                 method: 'PATCH',
                 headers: {

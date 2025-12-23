@@ -8,7 +8,7 @@ interface BugReportModalProps {
 }
 
 export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose }) => {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [contactInfo, setContactInfo] = useState('');
@@ -79,8 +79,6 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({ isOpen, onClose 
         setErrorMessage('');
 
         try {
-            const token = localStorage.getItem('token');
-            
             const res = await fetch('/api/admin-ops?action=bug_report', {
                 method: 'POST',
                 headers: {
