@@ -2,9 +2,9 @@ import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown } from 'lucide-reac
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import logoSvg from '../assets/logo.svg'
+import logoPng from '../assets/logo.png'
 
-const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || logoSvg
+const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || logoPng
 const BETA_END_DATE = new Date('2025-01-24').getTime()
 
 export default function Header() {
@@ -189,7 +189,6 @@ export default function Header() {
                 alt="Haigoo - 海外远程工作助手"
                 className="h-12 w-auto"
                 style={{ 
-                  imageRendering: '-webkit-optimize-contrast',
                   transform: 'translateZ(0)',
                   backfaceVisibility: 'hidden'
                 }}

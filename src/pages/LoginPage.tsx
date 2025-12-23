@@ -132,7 +132,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src={logoSvg} alt="Haigoo" className="h-12 mx-auto mb-4" />
+          <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-slate-900">欢迎回来</h1>
           <p className="text-slate-600 mt-2">登录您的 Haigoo 账户</p>
         </div>
