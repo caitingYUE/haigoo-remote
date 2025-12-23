@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Loader2, CheckCircle, XCircle, AlertCircle, MessageSquare, X } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertCircle, MessageSquare, X, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface BugReport {
@@ -27,6 +27,15 @@ export default function AdminBugReportsPage() {
     const [error, setError] = useState('');
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     const [repairing, setRepairing] = useState(false);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+
+    // Pagination State
+    const [pagination, setPagination] = useState({
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 1
+    });
     
     // Reply State
     const [replyingId, setReplyingId] = useState<number | null>(null);
@@ -43,14 +52,14 @@ export default function AdminBugReportsPage() {
         }
     }, [token]);
 
-    const fetchBugs = async () => {
+    const fetchBugs = async (page = 1) => {
         setLoading(true);
         try {
             // Get token from useAuth or fallback to localStorage
             const authToken = token || localStorage.getItem('haigoo_auth_token') || localStorage.getItem('token');
             console.log('[AdminBugReports] Fetching bugs with token:', authToken ? 'Yes' : 'No');
             
-            const res = await fetch('/api/admin-ops?action=bug_report', {
+            const res = await fetch(`/api/admin-ops?action=bug_report&page=${page}&limit=${pagination.limit}`, {
                 headers: {
                     'Content-Type': 'application/json',
                     ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
@@ -59,6 +68,9 @@ export default function AdminBugReportsPage() {
             const json = await res.json();
             if (json.success) {
                 setBugs(json.data);
+                if (json.pagination) {
+                    setPagination(json.pagination);
+                }
             } else {
                 throw new Error(json.error || 'Failed to fetch bugs');
             }
@@ -89,6 +101,30 @@ export default function AdminBugReportsPage() {
             alert('Repair request failed');
         } finally {
             setRepairing(false);
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this bug report? This action cannot be undone.')) return;
+        setDeletingId(id);
+        try {
+            const authToken = token || localStorage.getItem('haigoo_auth_token') || localStorage.getItem('token');
+            const res = await fetch(`/api/admin-ops?action=bug_report&id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                }
+            });
+            const json = await res.json();
+            if (json.success) {
+                setBugs(bugs.filter(b => b.id !== id));
+            } else {
+                alert(json.error || 'Failed to delete bug report');
+            }
+        } catch (err) {
+            alert('Failed to delete bug report');
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -284,6 +320,14 @@ export default function AdminBugReportsPage() {
                                                 >
                                                     <MessageSquare className="w-4 h-4" />
                                                 </button>
+                                                <button
+                                                    onClick={() => handleDelete(bug.id)}
+                                                    disabled={deletingId === bug.id}
+                                                    className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                    title="Delete"
+                                                >
+                                                    {deletingId === bug.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -297,6 +341,29 @@ export default function AdminBugReportsPage() {
                                 </tbody>
                             </table>
                         </div>
+                        
+                        {/* Pagination Controls */}
+                        {pagination.totalPages > 1 && (
+                            <div className="flex justify-center items-center gap-4 p-4 border-t border-slate-200">
+                                <button
+                                    onClick={() => fetchBugs(pagination.page - 1)}
+                                    disabled={pagination.page <= 1}
+                                    className="px-3 py-1 text-sm border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-sm text-slate-600">
+                                    Page {pagination.page} of {pagination.totalPages}
+                                </span>
+                                <button
+                                    onClick={() => fetchBugs(pagination.page + 1)}
+                                    disabled={pagination.page >= pagination.totalPages}
+                                    className="px-3 py-1 text-sm border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

@@ -103,8 +103,8 @@ function App() {
                     </AdminRoute>
                   } />
 
-                  {/* Bug Reports Management */}
-                  <Route path="/admin/bug-reports" element={
+                  {/* Bug Reports Management - Now under admin_team path structure */}
+                  <Route path="/admin_team/bug-reports" element={
                     <AdminRoute>
                       <AdminBugReportsPage />
                     </AdminRoute>
