@@ -250,8 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token])
 
   // Calculate derived permissions
-  // Hardcoded admins for fallback, should be synced with DB roles
-  const isAdmin = !!(user?.roles?.admin || user?.email === 'caitlinyct@gmail.com' || user?.email === 'mrzhangzy1996@gmail.com')
+  const isAdmin = !!(user?.roles?.admin || user?.email === 'caitlinyct@gmail.com')
   const isSuperAdmin = user?.email === 'caitlinyct@gmail.com' || user?.email === 'mrzhangzy1996@gmail.com'
   const isMember = user?.memberStatus === 'active' && (!user.memberExpireAt || new Date(user.memberExpireAt) > new Date())
 
