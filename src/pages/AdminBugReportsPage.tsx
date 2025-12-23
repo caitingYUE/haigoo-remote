@@ -25,8 +25,8 @@ export default function AdminBugReportsPage() {
     const [bugs, setBugs] = useState<BugReport[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [repairing, setRepairing] = useState(false);
     const [updatingId, setUpdatingId] = useState<number | null>(null);
+    const [repairing, setRepairing] = useState(false);
     
     // Reply State
     const [replyingId, setReplyingId] = useState<number | null>(null);
@@ -62,8 +62,6 @@ export default function AdminBugReportsPage() {
             setLoading(false);
         }
     };
-
-    const [repairing, setRepairing] = useState(false);
 
     const handleRepair = async () => {
         setRepairing(true);
