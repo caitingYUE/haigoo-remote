@@ -51,6 +51,7 @@ export default function AdminTrustedCompaniesPage() {
         loadCompanies()
     }, [page, sortBy, sortOrder, industryFilter, filterCanRefer])
 
+    // Load companies ONLY from trusted_companies database table
     const loadCompanies = async () => {
         try {
             setLoading(true)
@@ -79,6 +80,23 @@ export default function AdminTrustedCompaniesPage() {
             setLoading(false)
         }
     }
+
+    const [industries, setIndustries] = useState<string[]>([])
+
+    useEffect(() => {
+        const loadTagConfig = async () => {
+            try {
+                const response = await fetch('/api/data/trusted-companies?target=tags')
+                const data = await response.json()
+                if (data.success && data.config?.companyIndustries) {
+                    setIndustries(data.config.companyIndustries)
+                }
+            } catch (error) {
+                console.error('Failed to load tag config:', error)
+            }
+        }
+        loadTagConfig()
+    }, [])
 
     const handleSort = (field: string) => {
         if (sortBy === field) {
@@ -340,11 +358,6 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
-    const industries: CompanyIndustry[] = [
-        '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
-        '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
-        '硬件/物联网', '消费生活', '其他'
-    ]
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()

@@ -132,7 +132,8 @@ export type CompanyIndustry =
   | '企业服务/SaaS'
   | '硬件/物联网'
   | '消费生活'
-  | '其他';
+  | '其他'
+  | string;
 
 // 公司标签
 export type CompanyTag =
