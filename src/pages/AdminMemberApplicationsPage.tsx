@@ -35,6 +35,12 @@ export default function AdminMemberApplicationsPage() {
     const [totalPages, setTotalPages] = useState(1)
     const [stats, setStats] = useState({ member_count: 0 })
 
+    // Approval Modal State
+    const [showApprovalModal, setShowApprovalModal] = useState(false)
+    const [selectedAppId, setSelectedAppId] = useState<number | null>(null)
+    const [startDate, setStartDate] = useState('')
+    const [endDate, setEndDate] = useState('')
+
     useEffect(() => {
         fetchApplications()
         fetchStats()
@@ -311,6 +317,63 @@ export default function AdminMemberApplicationsPage() {
                     >
                         下一页
                     </button>
+                </div>
+            )}
+
+            {/* Approval Modal */}
+            {showApprovalModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            审批通过 - 设置会员有效期
+                        </h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    生效日期 (Start Date)
+                                </label>
+                                <input 
+                                    type="date" 
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    失效日期 (End Date)
+                                </label>
+                                <input 
+                                    type="date" 
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+
+                            <div className="bg-blue-50 p-3 rounded-md text-sm text-blue-700">
+                                提示：通过后系统将自动发送站内信通知用户。
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowApprovalModal(false)}
+                                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                            >
+                                取消
+                            </button>
+                            <button
+                                onClick={handleConfirmApproval}
+                                className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 shadow-sm"
+                            >
+                                确认通过
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

@@ -286,9 +286,11 @@ export default function Header() {
                     <Bell className="h-6 w-6" aria-hidden="true" />
                     {unreadCount > 0 && (
                       <span
-                        className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-400"
+                        className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold border-2 border-white"
                         aria-hidden="true"
-                      ></span>
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
                     )}
                   </button>
 

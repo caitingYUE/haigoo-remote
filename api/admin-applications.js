@@ -59,44 +59,57 @@ export default async function handler(req, res) {
         
         // === 2. Update Status ===
         if (action === 'update_status' && req.method === 'POST') {
-             const { id, status, userId, jobId, interactionType } = req.body;
+             const { id, status, userId, jobId, interactionType, startDate, endDate } = req.body;
 
              // Member Application Update
              if (type === 'member') {
                  if (!id) return res.status(400).json({ success: false, error: 'Missing ID' });
                  
                  // 1. Update application status
-                 // FIX: Removed updated_at update as column might be missing in DB
                  await neonHelper.query(
                      'UPDATE club_applications SET status = $1 WHERE id = $2',
                      [status, id]
                  );
 
-                 // 2. Sync to Users table
-                 if (status === 'approved') {
-                     // Get user_id from application
-                     const appRes = await neonHelper.query('SELECT user_id FROM club_applications WHERE id = $1', [id]);
-                     const userId = appRes[0]?.user_id;
-                     
-                     if (userId) {
-                         // Default to 1 year membership
-                         const expireDate = new Date();
-                         expireDate.setFullYear(expireDate.getFullYear() + 1);
+                 // Get user_id from application
+                 const appRes = await neonHelper.query('SELECT user_id FROM club_applications WHERE id = $1', [id]);
+                 const targetUserId = appRes[0]?.user_id;
+
+                 // 2. Sync to Users table & Send Notification
+                 if (targetUserId) {
+                     let notifTitle = '';
+                     let notifContent = '';
+
+                     if (status === 'approved') {
+                         // Use provided dates or default to 1 year
+                         const start = startDate ? new Date(startDate) : new Date();
+                         const end = endDate ? new Date(endDate) : new Date(new Date().setFullYear(new Date().getFullYear() + 1));
                          
                          await neonHelper.query(
                              `UPDATE users 
                               SET member_status = 'active', 
                                   member_expire_at = $1, 
-                                  member_since = COALESCE(member_since, NOW()) 
-                              WHERE user_id = $2`,
-                             [expireDate.toISOString(), userId]
+                                  member_since = $2
+                              WHERE user_id = $3`,
+                             [end.toISOString(), start.toISOString(), targetUserId]
                          );
-                         console.log(`[Admin] Auto-upgraded user ${userId} to active member (expires ${expireDate.toISOString()})`);
+                         console.log(`[Admin] Upgraded user ${targetUserId} to active member (${start.toISOString()} - ${end.toISOString()})`);
+                         
+                         notifTitle = '会员申请已通过';
+                         notifContent = `恭喜！您的会员申请已通过审核。\n有效期：${start.toLocaleDateString()} 至 ${end.toLocaleDateString()}。`;
+                     } else if (status === 'rejected') {
+                         notifTitle = '会员申请未通过';
+                         notifContent = '很遗憾，您的会员申请未通过审核。您可以完善资料后再次申请。';
                      }
-                 } else if (status === 'rejected') {
-                     // Optionally revert user status if needed, but usually we just leave it as is (free)
-                     // If they were already a member, we probably shouldn't downgrade them just because a new application was rejected?
-                     // Assuming application is for *new* membership.
+
+                     // 3. Insert Notification
+                     if (notifTitle) {
+                         await neonHelper.query(
+                             `INSERT INTO notifications (user_id, type, title, content, is_read, created_at)
+                              VALUES ($1, 'system', $2, $3, false, NOW())`,
+                             [targetUserId, notifTitle, notifContent]
+                         );
+                     }
                  }
 
                  return res.status(200).json({ success: true });
@@ -116,6 +129,24 @@ export default async function handler(req, res) {
                  );
                  return res.status(200).json({ success: true });
              }
+        }
+
+        // === 4. Delete Application ===
+        if (action === 'delete_application' && req.method === 'DELETE') {
+            const { id } = req.query;
+            if (!id) return res.status(400).json({ success: false, error: 'Missing ID' });
+
+            if (type === 'member') {
+                await neonHelper.query('DELETE FROM club_applications WHERE id = $1', [id]);
+                return res.status(200).json({ success: true });
+            }
+            
+            if (type === 'referral') {
+                await neonHelper.query('DELETE FROM user_job_interactions WHERE id = $1', [id]);
+                return res.status(200).json({ success: true });
+            }
+
+            return res.status(400).json({ success: false, error: 'Invalid type' });
         }
 
         // === 3. List Applications ===
