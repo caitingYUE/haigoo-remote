@@ -3,13 +3,16 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import logoSvg from '../assets/logo.svg'
+
 const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || logoSvg
+const BETA_END_DATE = new Date('2025-01-24').getTime()
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
+  const [showBeta, setShowBeta] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isAuthenticated, logout, token, isMember } = useAuth()
@@ -178,15 +181,21 @@ export default function Header() {
           <div className="flex items-center">
             <Link
               to="/"
-              className="flex-shrink-0 flex items-center focus:outline-none rounded-lg transition-all duration-200 hover:scale-110 no-underline hover:no-underline"
+              className="flex-shrink-0 flex items-center focus:outline-none rounded-lg transition-all duration-200 hover:scale-105 no-underline hover:no-underline"
               aria-label="Haigoo 首页"
             >
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
                 className="h-12 w-auto"
+                style={{ imageRendering: '-webkit-optimize-contrast' }}
               />
               <span className="ml-3 text-[#1A365D] font-semibold text-lg">海狗远程俱乐部</span>
+              {showBeta && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm ring-1 ring-white/20 animate-pulse">
+                  内测中
+                </span>
+              )}
             </Link>
           </div>
 
