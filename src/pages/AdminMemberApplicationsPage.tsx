@@ -82,14 +82,18 @@ export default function AdminMemberApplicationsPage() {
         if (!confirm(`确定要将此申请标记为 ${status === 'approved' ? '通过' : '拒绝'} 吗？`)) return;
 
         try {
-            const res = await fetch('/api/admin-applications?action=update_status', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ id, status, type: 'member' })
-            })
+                const params = new URLSearchParams({
+                    action: 'update_status',
+                    type: 'member'
+                });
+                const res = await fetch(`/api/admin-applications?${params}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id, status, type: 'member' })
+                })
             const data = await res.json()
             if (data.success) {
                 showSuccess('状态更新成功')

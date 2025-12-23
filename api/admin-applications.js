@@ -142,9 +142,9 @@ export default async function handler(req, res) {
                 pagination: { total, page: parseInt(page), totalPages: Math.ceil(total / limit) } 
              });
         } else if (type === 'official') {
-             // Official (apply_redirect + is_trusted=true)
+             // Official (apply_redirect + is_trusted=true) - Aggregated by Job
              const countRes = await neonHelper.query(`
-                SELECT COUNT(*) as total 
+                SELECT COUNT(DISTINCT uji.job_id) as total 
                 FROM user_job_interactions uji
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
                 WHERE uji.interaction_type = 'apply_redirect' AND j.is_trusted = true
@@ -152,13 +152,18 @@ export default async function handler(req, res) {
              const total = parseInt(countRes[0]?.total || 0);
 
              listQuery = `
-                SELECT uji.*, u.email, u.username, u.avatar,
-                       j.title as job_title, j.company as job_company, j.job_id
+                SELECT 
+                    j.job_id, j.title as job_title, j.company as job_company,
+                    COUNT(*) as total_applications,
+                    0 as pending_interview,
+                    0 as interviewing,
+                    0 as success,
+                    MAX(uji.updated_at) as updated_at
                 FROM user_job_interactions uji
-                LEFT JOIN users u ON uji.user_id = u.user_id
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
                 WHERE uji.interaction_type = 'apply_redirect' AND j.is_trusted = true
-                ORDER BY uji.updated_at DESC
+                GROUP BY j.job_id, j.title, j.company
+                ORDER BY MAX(uji.updated_at) DESC
                 LIMIT $1 OFFSET $2
              `;
              
@@ -170,9 +175,9 @@ export default async function handler(req, res) {
                 pagination: { total, page: parseInt(page), totalPages: Math.ceil(total / limit) } 
              });
         } else if (type === 'trusted_platform') {
-             // Platform (apply_redirect + is_trusted=false)
+             // Platform (apply_redirect + is_trusted=false) - Aggregated by Job
              const countRes = await neonHelper.query(`
-                SELECT COUNT(*) as total 
+                SELECT COUNT(DISTINCT uji.job_id) as total 
                 FROM user_job_interactions uji
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
                 WHERE uji.interaction_type = 'apply_redirect' AND (j.is_trusted = false OR j.is_trusted IS NULL)
@@ -180,13 +185,18 @@ export default async function handler(req, res) {
              const total = parseInt(countRes[0]?.total || 0);
 
              listQuery = `
-                SELECT uji.*, u.email, u.username, u.avatar,
-                       j.title as job_title, j.company as job_company, j.job_id
+                SELECT 
+                    j.job_id, j.title as job_title, j.company as job_company,
+                    COUNT(*) as total_applications,
+                    0 as pending_interview,
+                    0 as interviewing,
+                    0 as success,
+                    MAX(uji.updated_at) as updated_at
                 FROM user_job_interactions uji
-                LEFT JOIN users u ON uji.user_id = u.user_id
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
                 WHERE uji.interaction_type = 'apply_redirect' AND (j.is_trusted = false OR j.is_trusted IS NULL)
-                ORDER BY uji.updated_at DESC
+                GROUP BY j.job_id, j.title, j.company
+                ORDER BY MAX(uji.updated_at) DESC
                 LIMIT $1 OFFSET $2
              `;
              

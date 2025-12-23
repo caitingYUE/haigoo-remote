@@ -25,6 +25,11 @@ interface Application {
     resumeName: string
     resumeSize: number
     sourceType: string
+    // Official/Platform Aggregated Stats
+    total_applications?: number
+    pending_interview?: number
+    interviewing?: number
+    success?: number
 }
 
 type TabType = 'referral' | 'official' | 'trusted_platform'
@@ -34,6 +39,7 @@ export default function AdminApplicationsPage() {
     const { showSuccess, showError } = useNotificationHelpers()
     
     const [activeTab, setActiveTab] = useState<TabType>('referral')
+    // applications can be individual (referral) or aggregated (official/platform)
     const [applications, setApplications] = useState<Application[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
@@ -216,10 +222,18 @@ export default function AdminApplicationsPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申请用户</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位/公司</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {activeTab === 'referral' ? '申请用户' : '岗位信息'}
+                            </th>
+                            {activeTab === 'referral' && (
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位/公司</th>
+                            )}
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {activeTab === 'referral' ? '状态' : '统计数据 (总申请/待面试/面试中/已录用)'}
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {activeTab === 'referral' ? '时间' : '最后更新'}
+                            </th>
                             {activeTab === 'referral' && (
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">简历/备注</th>
                             )}
@@ -240,22 +254,48 @@ export default function AdminApplicationsPage() {
                                 </td>
                             </tr>
                         ) : (
-                            applications.map((app) => (
-                                <tr key={app.id} className="hover:bg-gray-50">
+                            applications.map((app, idx) => (
+                                <tr key={app.id || idx} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-gray-900">{app.userNickname || '未知用户'}</span>
-                                            <span className="text-xs text-gray-500">{app.userEmail}</span>
-                                        </div>
+                                        {activeTab === 'referral' ? (
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-gray-900">{app.userNickname || '未知用户'}</span>
+                                                <span className="text-xs text-gray-500">{app.userEmail}</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-gray-900">{app.jobTitle}</span>
+                                                <span className="text-sm text-gray-500">{app.company}</span>
+                                            </div>
+                                        )}
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-gray-900">{app.jobTitle}</span>
-                                            <span className="text-sm text-gray-500">{app.company}</span>
-                                        </div>
-                                    </td>
+                                    {activeTab === 'referral' && (
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-gray-900">{app.jobTitle}</span>
+                                                <span className="text-sm text-gray-500">{app.company}</span>
+                                            </div>
+                                        </td>
+                                    )}
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        {getStatusBadge(app.status)}
+                                        {activeTab === 'referral' ? (
+                                            getStatusBadge(app.status)
+                                        ) : (
+                                            <div className="flex gap-2 text-sm">
+                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md" title="总申请">
+                                                    {app.total_applications || 0}
+                                                </span>
+                                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md" title="待面试">
+                                                    {app.pending_interview || 0}
+                                                </span>
+                                                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md" title="面试中">
+                                                    {app.interviewing || 0}
+                                                </span>
+                                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md" title="已录用">
+                                                    {app.success || 0}
+                                                </span>
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <div className="flex flex-col">
@@ -300,9 +340,12 @@ export default function AdminApplicationsPage() {
                                                 <option value="rejected">已拒绝</option>
                                             </select>
                                         ) : (
-                                            <span className="text-gray-400 text-xs">
-                                                用户手动更新
-                                            </span>
+                                            <button
+                                                className="text-indigo-600 hover:text-indigo-900 text-xs"
+                                                onClick={() => alert('此功能正在开发中：手动更新该岗位的统计数据')}
+                                            >
+                                                更新统计
+                                            </button>
                                         )}
                                     </td>
                                 </tr>
