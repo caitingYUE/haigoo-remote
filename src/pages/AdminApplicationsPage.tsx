@@ -12,10 +12,14 @@ interface Application {
     id: number
     user_id: string
     userNickname: string
+    username?: string
     userEmail: string
+    email?: string
     job_id: string
     jobTitle: string
+    job_title?: string
     company: string
+    job_company?: string
     interaction_type: string
     status: string
     updated_at: string
@@ -23,6 +27,7 @@ interface Application {
     notes: string
     resume_id: string
     resumeName: string
+    resume_name?: string
     resumeSize: number
     sourceType: string
     // Official/Platform Aggregated Stats
@@ -259,21 +264,24 @@ export default function AdminApplicationsPage() {
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {activeTab === 'referral' ? (
                                             <div className="flex flex-col">
-                                                <span className="font-medium text-gray-900">{app.userNickname || '未知用户'}</span>
-                                                <span className="text-xs text-gray-500">{app.userEmail}</span>
+                                                <span className="font-medium text-gray-900">{app.username || app.userNickname || '未知用户'}</span>
+                                                <span className="text-xs text-gray-500">{app.email || app.userEmail}</span>
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-gray-900">{app.jobTitle}</span>
-                                                <span className="text-sm text-gray-500">{app.company}</span>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium text-gray-900">{app.job_title || app.jobTitle}</span>
+                                                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-mono">ID: {app.job_id}</span>
+                                                </div>
+                                                <span className="text-sm text-gray-500">{app.job_company || app.company}</span>
                                             </div>
                                         )}
                                     </td>
                                     {activeTab === 'referral' && (
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="font-medium text-gray-900">{app.jobTitle}</span>
-                                                <span className="text-sm text-gray-500">{app.company}</span>
+                                                <span className="font-medium text-gray-900">{app.job_title || app.jobTitle}</span>
+                                                <span className="text-sm text-gray-500">{app.job_company || app.company}</span>
                                             </div>
                                         </td>
                                     )}
@@ -306,14 +314,14 @@ export default function AdminApplicationsPage() {
                                     {activeTab === 'referral' && (
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1">
-                                                {app.resumeName && (
+                                                {(app.resume_name || app.resumeName) && (
                                                     <a 
                                                         href={`/api/resumes/${app.resume_id}/download`} 
                                                         target="_blank" 
                                                         className="text-indigo-600 hover:underline text-sm flex items-center gap-1"
                                                     >
                                                         <FileText className="w-3 h-3" />
-                                                        {app.resumeName}
+                                                        {app.resume_name || app.resumeName}
                                                     </a>
                                                 )}
                                                 {app.notes && (

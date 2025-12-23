@@ -79,7 +79,12 @@ export default function AdminMemberApplicationsPage() {
     }
 
     const handleUpdateStatus = async (id: number, status: string) => {
-        if (!confirm(`确定要将此申请标记为 ${status === 'approved' ? '通过' : '拒绝'} 吗？`)) return;
+        const actionText = status === 'approved' ? '通过' : '拒绝';
+        const confirmMsg = status === 'approved' 
+            ? `确定要通过此申请吗？\n\n用户将升级为【Haigoo会员】，有效期默认设置为 1 年。`
+            : `确定要拒绝此申请吗？`;
+
+        if (!confirm(confirmMsg)) return;
 
         try {
                 const params = new URLSearchParams({

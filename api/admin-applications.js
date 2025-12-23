@@ -64,11 +64,41 @@ export default async function handler(req, res) {
              // Member Application Update
              if (type === 'member') {
                  if (!id) return res.status(400).json({ success: false, error: 'Missing ID' });
+                 
+                 // 1. Update application status
                  // FIX: Removed updated_at update as column might be missing in DB
                  await neonHelper.query(
                      'UPDATE club_applications SET status = $1 WHERE id = $2',
                      [status, id]
                  );
+
+                 // 2. Sync to Users table
+                 if (status === 'approved') {
+                     // Get user_id from application
+                     const appRes = await neonHelper.query('SELECT user_id FROM club_applications WHERE id = $1', [id]);
+                     const userId = appRes[0]?.user_id;
+                     
+                     if (userId) {
+                         // Default to 1 year membership
+                         const expireDate = new Date();
+                         expireDate.setFullYear(expireDate.getFullYear() + 1);
+                         
+                         await neonHelper.query(
+                             `UPDATE users 
+                              SET member_status = 'active', 
+                                  member_expire_at = $1, 
+                                  member_since = COALESCE(member_since, NOW()) 
+                              WHERE user_id = $2`,
+                             [expireDate.toISOString(), userId]
+                         );
+                         console.log(`[Admin] Auto-upgraded user ${userId} to active member (expires ${expireDate.toISOString()})`);
+                     }
+                 } else if (status === 'rejected') {
+                     // Optionally revert user status if needed, but usually we just leave it as is (free)
+                     // If they were already a member, we probably shouldn't downgrade them just because a new application was rejected?
+                     // Assuming application is for *new* membership.
+                 }
+
                  return res.status(200).json({ success: true });
              }
              

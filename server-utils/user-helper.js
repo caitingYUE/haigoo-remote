@@ -449,8 +449,8 @@ const userHelper = {
                 
                 // Member System Updates
                 if (updates.memberStatus) updateFields.member_status = updates.memberStatus
-                if (updates.memberExpireAt) updateFields.member_expire_at = updates.memberExpireAt
-                if (updates.memberSince) updateFields.member_since = updates.memberSince
+                if (updates.memberExpireAt !== undefined) updateFields.member_expire_at = updates.memberExpireAt
+                if (updates.memberSince !== undefined) updateFields.member_since = updates.memberSince
 
                 if (roles && typeof roles === 'object') {
                     // 超级管理员不可更改权限

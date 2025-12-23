@@ -303,3 +303,9 @@ CREATE TABLE IF NOT EXISTS club_applications (
 
 -- 2025-12-23 修复 club_applications 缺少 updated_at 字段的问题
 ALTER TABLE club_applications ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- 2025-12-23 补充 users 表的会员相关字段
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_status VARCHAR(50) DEFAULT 'free';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_expire_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_since TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS member_display_id VARCHAR(50);
