@@ -40,7 +40,7 @@ interface Application {
 type TabType = 'referral' | 'official' | 'trusted_platform'
 
 export default function AdminApplicationsPage() {
-    const { token } = useAuth()
+    const { token, isSuperAdmin } = useAuth()
     const { showSuccess, showError } = useNotificationHelpers()
     
     const [activeTab, setActiveTab] = useState<TabType>('referral')
@@ -93,6 +93,34 @@ export default function AdminApplicationsPage() {
             showError('获取数据失败', '网络错误')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleDeleteApplication = async (id: number) => {
+        if (!confirm('确定要删除此申请记录吗？此操作不可撤销。')) return;
+
+        try {
+            const params = new URLSearchParams({
+                action: 'delete_application',
+                id: id.toString(),
+                type: 'referral' // Currently assumes referral, can be expanded if needed
+            });
+            const res = await fetch(`/api/admin-applications?${params}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            const data = await res.json()
+            if (data.success) {
+                showSuccess('删除成功')
+                fetchApplications()
+                fetchStats()
+            } else {
+                showError('删除失败', data.error)
+            }
+        } catch (e) {
+            showError('操作失败', '网络错误')
         }
     }
 
@@ -333,28 +361,38 @@ export default function AdminApplicationsPage() {
                                         </td>
                                     )}
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        {activeTab === 'referral' ? (
-                                            <select
-                                                value={app.status}
-                                                onChange={(e) => handleUpdateStatus(app.id, e.target.value)}
-                                                className="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                            >
-                                                <option value="applied">已申请</option>
-                                                <option value="reviewed">简历已阅</option>
-                                                <option value="referred">已内推</option>
-                                                <option value="interviewing">面试中</option>
-                                                <option value="success">内推成功</option>
-                                                <option value="failed">内推失败</option>
-                                                <option value="rejected">已拒绝</option>
-                                            </select>
-                                        ) : (
-                                            <button
-                                                className="text-indigo-600 hover:text-indigo-900 text-xs"
-                                                onClick={() => alert('此功能正在开发中：手动更新该岗位的统计数据')}
-                                            >
-                                                更新统计
-                                            </button>
-                                        )}
+                                        <div className="flex flex-col gap-2 justify-end">
+                                            {activeTab === 'referral' ? (
+                                                <select
+                                                    value={app.status}
+                                                    onChange={(e) => handleUpdateStatus(app.id, e.target.value)}
+                                                    className="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                >
+                                                    <option value="applied">已申请</option>
+                                                    <option value="reviewed">简历已阅</option>
+                                                    <option value="referred">已内推</option>
+                                                    <option value="interviewing">面试中</option>
+                                                    <option value="success">内推成功</option>
+                                                    <option value="failed">内推失败</option>
+                                                    <option value="rejected">已拒绝</option>
+                                                </select>
+                                            ) : (
+                                                <button
+                                                    className="text-indigo-600 hover:text-indigo-900 text-xs"
+                                                    onClick={() => alert('此功能正在开发中：手动更新该岗位的统计数据')}
+                                                >
+                                                    更新统计
+                                                </button>
+                                            )}
+                                            {activeTab === 'referral' && isSuperAdmin && (
+                                                <button
+                                                    onClick={() => handleDeleteApplication(app.id)}
+                                                    className="text-gray-400 hover:text-red-600 text-xs self-end"
+                                                >
+                                                    删除记录
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))

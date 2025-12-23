@@ -26,7 +26,7 @@ interface MemberApplication {
 }
 
 export default function AdminMemberApplicationsPage() {
-    const { token } = useAuth()
+    const { token, isSuperAdmin } = useAuth()
     const { showSuccess, showError } = useNotificationHelpers()
     
     const [applications, setApplications] = useState<MemberApplication[]>([])
@@ -106,6 +106,34 @@ export default function AdminMemberApplicationsPage() {
                 fetchStats()
             } else {
                 showError('更新失败', data.error)
+            }
+        } catch (e) {
+            showError('操作失败', '网络错误')
+        }
+    }
+
+    const handleDeleteApplication = async (id: number) => {
+        if (!confirm('确定要删除此申请记录吗？此操作不可撤销。')) return;
+
+        try {
+            const params = new URLSearchParams({
+                action: 'delete_application',
+                id: id.toString(),
+                type: 'member'
+            });
+            const res = await fetch(`/api/admin-applications?${params}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            const data = await res.json()
+            if (data.success) {
+                showSuccess('删除成功')
+                fetchApplications()
+                fetchStats()
+            } else {
+                showError('删除失败', data.error)
             }
         } catch (e) {
             showError('操作失败', '网络错误')
@@ -226,25 +254,35 @@ export default function AdminMemberApplicationsPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        {app.status === 'pending' && (
-                                            <div className="flex justify-end gap-2">
+                                        <div className="flex flex-col gap-2 justify-end">
+                                            {app.status === 'pending' && (
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleUpdateStatus(app.id, 'approved')}
+                                                        className="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded border border-green-200 hover:bg-green-100 transition-colors"
+                                                    >
+                                                        通过
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleUpdateStatus(app.id, 'rejected')}
+                                                        className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded border border-red-200 hover:bg-red-100 transition-colors"
+                                                    >
+                                                        拒绝
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {app.status !== 'pending' && (
+                                                <span className="text-gray-400 text-xs">已处理</span>
+                                            )}
+                                            {isSuperAdmin && (
                                                 <button
-                                                    onClick={() => handleUpdateStatus(app.id, 'approved')}
-                                                    className="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded border border-green-200 hover:bg-green-100 transition-colors"
+                                                    onClick={() => handleDeleteApplication(app.id)}
+                                                    className="text-gray-400 hover:text-red-600 text-xs self-end"
                                                 >
-                                                    通过
+                                                    删除记录
                                                 </button>
-                                                <button
-                                                    onClick={() => handleUpdateStatus(app.id, 'rejected')}
-                                                    className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded border border-red-200 hover:bg-red-100 transition-colors"
-                                                >
-                                                    拒绝
-                                                </button>
-                                            </div>
-                                        )}
-                                        {app.status !== 'pending' && (
-                                            <span className="text-gray-400 text-xs">已处理</span>
-                                        )}
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))

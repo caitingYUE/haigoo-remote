@@ -11,6 +11,7 @@ interface AuthContextValue {
   token: string | null
   isAuthenticated: boolean
   isAdmin: boolean
+  isSuperAdmin: boolean
   isMember: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<AuthResponse>
@@ -250,6 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Calculate derived permissions
   const isAdmin = !!(user?.roles?.admin || user?.email === 'caitlinyct@gmail.com')
+  const isSuperAdmin = user?.email === 'caitlinyct@gmail.com' || user?.email === 'mrzhangzy1996@gmail.com'
   const isMember = user?.memberStatus === 'active' && (!user.memberExpireAt || new Date(user.memberExpireAt) > new Date())
 
   const value: AuthContextValue = {
@@ -257,6 +259,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token,
     isAuthenticated: !!token && !!user,
     isAdmin,
+    isSuperAdmin,
     isMember,
     isLoading,
     login,

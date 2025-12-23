@@ -47,8 +47,9 @@ export default function UserManagementPage() {
     newToday: 0,
     newThisWeek: 0
   })
-  const { token } = useAuth()
-  const SUPER_ADMIN_EMAIL = 'admin@example.com'
+  const { token, isSuperAdmin } = useAuth()
+  const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
+  const SUPER_ADMIN_EMAIL_2 = 'mrzhangzy1996@gmail.com'
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editUsername, setEditUsername] = useState('')
   const [editAdmin, setEditAdmin] = useState(false)
@@ -486,35 +487,35 @@ export default function UserManagementPage() {
                         <div className="flex items-center gap-2">
                           {user.status === 'active' ? (
                             <button
-                              disabled={updatingId === user.user_id}
+                              disabled={updatingId === user.user_id || !isSuperAdmin}
                               onClick={() => updateUserStatus(user.user_id, 'suspended')}
-                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.user_id ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.user_id || !isSuperAdmin ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'
                                 }`}
                             >
                               <Ban className="w-4 h-4" /> 停用
                             </button>
                           ) : (
                             <button
-                              disabled={updatingId === user.user_id}
+                              disabled={updatingId === user.user_id || !isSuperAdmin}
                               onClick={() => updateUserStatus(user.user_id, 'active')}
-                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.user_id ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-green-50 border-green-200 text-green-600'
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 transition-colors ${updatingId === user.user_id || !isSuperAdmin ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-green-50 border-green-200 text-green-600'
                                 }`}
                             >
                               <CheckCircle className="w-4 h-4" /> 启用
                             </button>
                           )}
                           <button
-                            disabled={updatingId === user.user_id}
+                            disabled={updatingId === user.user_id || !isSuperAdmin}
                             onClick={() => openEdit(user)}
-                            className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-slate-50"
+                            className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 ${updatingId === user.user_id || !isSuperAdmin ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-slate-50'}`}
                           >
                             <Eye className="w-4 h-4" /> 编辑
                           </button>
-                          {user.email !== SUPER_ADMIN_EMAIL && (
+                          {user.email !== SUPER_ADMIN_EMAIL && user.email !== SUPER_ADMIN_EMAIL_2 && (
                             <button
-                              disabled={updatingId === user.user_id}
+                              disabled={updatingId === user.user_id || !isSuperAdmin}
                               onClick={() => deleteUser(user.user_id)}
-                              className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-red-50 border-red-200 text-red-600"
+                              className={`px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 ${updatingId === user.user_id || !isSuperAdmin ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'hover:bg-red-50 border-red-200 text-red-600'}`}
                             >
                               <XCircle className="w-4 h-4" /> 删除
                             </button>
@@ -549,8 +550,8 @@ export default function UserManagementPage() {
                 />
               </div>
               <label className="inline-flex items-center gap-2">
-                <input type="checkbox" disabled={editingUser?.email === SUPER_ADMIN_EMAIL} checked={editAdmin} onChange={(e) => setEditAdmin(e.target.checked)} />
-                <span>{editingUser?.email === SUPER_ADMIN_EMAIL ? '超级管理员（不可更改）' : '管理员权限'}</span>
+                <input type="checkbox" disabled={editingUser?.email === SUPER_ADMIN_EMAIL || editingUser?.email === SUPER_ADMIN_EMAIL_2 || !isSuperAdmin} checked={editAdmin} onChange={(e) => setEditAdmin(e.target.checked)} />
+                <span>{(editingUser?.email === SUPER_ADMIN_EMAIL || editingUser?.email === SUPER_ADMIN_EMAIL_2) ? '超级管理员（不可更改）' : '管理员权限'}</span>
               </label>
 
               <div>
@@ -677,7 +678,9 @@ export default function UserManagementPage() {
             </div>
             <div className="mt-6 flex justify-end gap-2">
               <button onClick={() => setEditingUser(null)} className="px-4 py-2 border rounded-lg">取消</button>
-              <button onClick={saveEdit} className="px-4 py-2 bg-violet-600 text-white rounded-lg">保存</button>
+              {isSuperAdmin && (
+                <button onClick={saveEdit} className="px-4 py-2 bg-violet-600 text-white rounded-lg">保存</button>
+              )}
             </div>
           </div>
         </div>

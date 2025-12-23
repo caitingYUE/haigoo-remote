@@ -8,6 +8,7 @@ import { extractToken, verifyToken } from './auth-helpers.js'
 
 // 超级管理员邮箱
 const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
+const SUPER_ADMIN_EMAIL_2 = 'mrzhangzy1996@gmail.com'
 
 /**
  * 用户管理器
@@ -501,9 +502,26 @@ const userHelper = {
             const user = await this.getUserById(userId)
             if (!user) return false
 
-            return !!(user.roles?.admin || user.email === SUPER_ADMIN_EMAIL)
+            return !!(user.roles?.admin || user.email === SUPER_ADMIN_EMAIL || user.email === SUPER_ADMIN_EMAIL_2)
         } catch (error) {
             console.error('[user-helper] Error checking admin status:', error.message)
+            return false
+        }
+    },
+
+    /**
+     * 验证用户是否为超级管理员
+     * @param {string} userId - 用户ID
+     * @returns {Promise<boolean>} 是否为超级管理员
+     */
+    async isSuperAdmin(userId) {
+        try {
+            const user = await this.getUserById(userId)
+            if (!user) return false
+
+            return user.email === SUPER_ADMIN_EMAIL || user.email === SUPER_ADMIN_EMAIL_2
+        } catch (error) {
+            console.error('[user-helper] Error checking super admin status:', error.message)
             return false
         }
     },
@@ -571,3 +589,4 @@ export const deleteUserById = (userId) => userHelper.deleteUserById(userId)
 export const getUserByEmail = (email) => userHelper.getUserByEmail(email)
 export const isEmailTaken = (email) => userHelper.isEmailTaken(email)
 export const updateUser = (userId, updates) => userHelper.updateUser(userId, updates)
+export const isSuperAdmin = (userId) => userHelper.isSuperAdmin(userId)
