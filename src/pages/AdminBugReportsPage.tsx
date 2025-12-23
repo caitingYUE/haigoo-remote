@@ -62,6 +62,29 @@ export default function AdminBugReportsPage() {
         }
     };
 
+    const handleRepair = async () => {
+        setRepairing(true);
+        try {
+            const res = await fetch('/api/admin-ops?action=repair_bug_table', {
+                method: 'POST',
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
+            });
+            const json = await res.json();
+            if (json.success) {
+                alert('Database schema repaired! Refreshing...');
+                fetchBugs();
+            } else {
+                alert('Repair failed: ' + json.error);
+            }
+        } catch (err) {
+            alert('Repair request failed');
+        } finally {
+            setRepairing(false);
+        }
+    };
+
     const fetchBugDetail = async (id: number) => {
         setLoadingImage(true);
         try {
