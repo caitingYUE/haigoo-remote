@@ -25,21 +25,49 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
     
-    // Check for chunk loading failure
-    if (error.message && (
-        error.message.includes('Failed to fetch dynamically imported module') ||
-        error.message.includes('Importing a module script failed') ||
-        error.name === 'ChunkLoadError'
-    )) {
-        console.log('Chunk load error detected, reloading page...');
-        // Only reload if we haven't just reloaded (prevent infinite loops)
-        const lastReload = sessionStorage.getItem('chunk_reload_timestamp');
+    // Auto-retry logic for page robustness
+    try {
+        const MAX_RETRIES = 2; // Maximum auto-retries
+        const RETRY_WINDOW_MS = 60 * 1000; // 1 minute window
+        
         const now = Date.now();
-        if (!lastReload || (now - parseInt(lastReload)) > 10000) {
-             sessionStorage.setItem('chunk_reload_timestamp', now.toString());
-             window.location.reload();
-             return;
+        let retryData = { count: 0, firstError: now };
+        
+        try {
+            const saved = sessionStorage.getItem('crash_retry_data');
+            if (saved) {
+                retryData = JSON.parse(saved);
+            }
+        } catch (e) {
+            // Ignore parse errors
         }
+
+        // Reset if outside window
+        if (now - retryData.firstError > RETRY_WINDOW_MS) {
+            retryData = { count: 0, firstError: now };
+        }
+
+        // Specific handling for ChunkLoadError (always try to reload at least once if not in loop)
+        const isChunkError = error.message && (
+            error.message.includes('Failed to fetch dynamically imported module') ||
+            error.message.includes('Importing a module script failed') ||
+            error.name === 'ChunkLoadError'
+        );
+
+        if (retryData.count < MAX_RETRIES || (isChunkError && retryData.count < MAX_RETRIES + 1)) {
+            console.log(`Auto-recovering from crash (attempt ${retryData.count + 1})...`);
+            retryData.count++;
+            sessionStorage.setItem('crash_retry_data', JSON.stringify(retryData));
+            
+            // Allow a brief moment for logs to flush if using a service, then reload
+            // Using a slight delay can also help with race conditions in some cases
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
+            return;
+        }
+    } catch (e) {
+        console.error('Failed to execute auto-retry logic', e);
     }
     
     // 安全地处理错误信息，避免 RangeError
@@ -53,6 +81,12 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
+    // User manually retrying, clear the auto-retry counter
+    try {
+        sessionStorage.removeItem('crash_retry_data');
+    } catch (e) {
+        // ignore
+    }
     this.setState({ hasError: false, error: undefined, errorInfo: undefined })
   }
 
