@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Building2, Briefcase, CheckCircle, Clock, Target } from 'lucide-react'
 import { TrustedCompany } from '../services/trusted-companies-service'
+import { trustedCompaniesService } from '../services/trusted-companies-service'
 import { MemberBadge } from './MemberBadge'
 
 interface HomeCompanyCardProps {
@@ -13,6 +14,10 @@ interface HomeCompanyCardProps {
 }
 
 export default function HomeCompanyCard({ company, jobStats, onClick }: HomeCompanyCardProps) {
+    const [coverImage, setCoverImage] = useState<string>('')
+    const [isLoadingCover, setIsLoadingCover] = useState(false)
+    const [hasLoadedCover, setHasLoadedCover] = useState(false)
+
     // Generate a consistent gradient based on company name length
     const getGradient = (name: string) => {
         const gradients = [
@@ -25,6 +30,29 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
         const index = name.length % gradients.length
         return gradients[index]
     }
+
+    // 异步加载cover image
+    useEffect(() => {
+        // 只有当company.id存在且cover image尚未加载时才进行加载
+        if (company.id && !hasLoadedCover && !isLoadingCover) {
+            setIsLoadingCover(true)
+            
+            trustedCompaniesService.getCompanyCoverImage(company.id)
+                .then(result => {
+                    if (result && result.coverImage) {
+                        setCoverImage(result.coverImage)
+                    }
+                    setHasLoadedCover(true)
+                })
+                .catch(error => {
+                    console.error('Failed to load cover image for company:', company.name, error)
+                    setHasLoadedCover(true)
+                })
+                .finally(() => {
+                    setIsLoadingCover(false)
+                })
+        }
+    }, [company.id, hasLoadedCover, isLoadingCover])
 
     const formatDate = (dateString: string) => {
         if (!dateString) return ''
@@ -50,9 +78,9 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
         >
             {/* Cover Area - 16:9 Aspect Ratio */}
             <div className="relative w-full pt-[56.25%] overflow-hidden bg-slate-50">
-                {company.coverImage ? (
+                {coverImage ? (
                     <img
-                        src={company.coverImage}
+                        src={coverImage}
                         alt={`${company.name} cover`}
                         loading="lazy"
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"

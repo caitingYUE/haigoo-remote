@@ -152,6 +152,27 @@ class TrustedCompaniesService {
         }
     }
 
+    // 获取单个企业的cover image
+    async getCompanyCoverImage(companyId: string): Promise<{ coverImage: string } | null> {
+        try {
+            const queryParams = new URLSearchParams();
+            queryParams.append('resource', 'companies');
+            queryParams.append('action', 'cover_image');
+            queryParams.append('company_id', companyId);
+            
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
+            if (!response.ok) throw new Error('Failed to fetch cover image');
+            const data = await response.json();
+            
+            return {
+                coverImage: data.coverImage || ''
+            };
+        } catch (error) {
+            console.error('Error fetching cover image:', error);
+            return null;
+        }
+    }
+
     // 获取带职位统计信息的公司列表（后端联表查询）
     async getCompaniesWithJobStats(params: {
         page?: number;
