@@ -295,7 +295,7 @@ const AdminTeamPage: React.FC = () => {
               添加RSS源
             </button>
             <button
-              onClick={() => window.location.href = '/admin/bug-reports'}
+              onClick={() => window.location.href = '/admin_team/bug-reports'}
               className="btn-secondary"
             >
               <MessageSquare className="w-4 h-4" />
