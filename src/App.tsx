@@ -7,6 +7,7 @@ import { AppProvider } from './contexts/AppContext'
 import { AuthProvider } from './contexts/AuthContext'
 import NotificationProvider from './components/NotificationSystem'
 import ErrorBoundary from './components/ErrorBoundary'
+import ChunkLoadErrorBoundary from './components/ChunkLoadErrorBoundary'
 import GlobalVerificationGuard from './components/GlobalVerificationGuard'
 import { lazyRetry } from './utils/lazyRetry'
 
@@ -62,11 +63,12 @@ function PageViewTracker() {
 function App() {
   console.log('Haigoo Frontend Version: 2025-12-18-Fix-Visuals-v2');
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <AppProvider>
-          <NotificationProvider>
-            <GlobalVerificationGuard>
+    <ChunkLoadErrorBoundary>
+      <ErrorBoundary>
+        <AuthProvider>
+          <AppProvider>
+            <NotificationProvider>
+              <GlobalVerificationGuard>
               <BugReportButton />
               <PageViewTracker />
               <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
@@ -175,11 +177,12 @@ function App() {
                   } />
                 </Routes>
               </Suspense>
-            </GlobalVerificationGuard>
-          </NotificationProvider>
-        </AppProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+              </GlobalVerificationGuard>
+            </NotificationProvider>
+          </AppProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </ChunkLoadErrorBoundary>
   )
 }
 
