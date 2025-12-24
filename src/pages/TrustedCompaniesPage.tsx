@@ -35,61 +35,85 @@ export default function TrustedCompaniesPage() {
     const [isNominationModalOpen, setIsNominationModalOpen] = useState(false)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
     
+    // Pagination State
+    const [page, setPage] = useState(1)
+    const [hasMore, setHasMore] = useState(false)
+    const PAGE_SIZE = 24 // Increased batch size
+
     // Dynamic job categories for filter (matching tag_config)
     const jobCategoryOptions = useMemo(() => {
         return availableJobCategories.map(c => ({ label: c, value: c }));
     }, [availableJobCategories]);
 
     useEffect(() => {
-        loadData()
+        // Initial load
+        loadFilteredData(1, true)
     }, [])
 
-    // 当搜索或过滤条件变化时，重新加载数据
+    // 当搜索或过滤条件变化时，重新加载数据 (reset to page 1)
     useEffect(() => {
-        if (searchTerm || selectedIndustries.length > 0 || selectedJobCategories.length > 0) {
-            loadFilteredData()
-        } else {
-            // 如果没有搜索条件，使用初始加载的数据
-            // But initial data might be stale if we fetched it differently.
-            // Actually, loadData fetches page 1 with defaults.
-            // We should just reload with defaults if cleared.
-            loadFilteredData()
-        }
+        // Skip first render as it is handled by initial load
+        // But since we use same function, we can just call it.
+        // We need a ref to track if it's initial render if we want to avoid double fetch?
+        // Actually, initial state is empty, so loadFilteredData(1) is fine.
+        // But useEffect [] runs once.
+        // Let's just use this effect for updates.
+        // For initial load, we can rely on this effect if we set initial states correctly.
+        // However, we want to debounce search.
+        
+        const timer = setTimeout(() => {
+            loadFilteredData(1, true)
+        }, 300)
+        return () => clearTimeout(timer)
     }, [searchTerm, selectedIndustries, selectedJobCategories])
 
-    const loadData = async () => {
+    const loadFilteredData = async (pageNum: number, isReset: boolean = false) => {
         try {
             setLoading(true)
-            // 使用新的后端联表查询API
             const result = await trustedCompaniesService.getCompaniesWithJobStats({
-                page: 1,
-                limit: 50,
-                sortBy: 'updatedAt', // Default sort
+                page: pageNum,
+                limit: PAGE_SIZE,
+                sortBy: 'updatedAt',
                 sortOrder: 'desc',
-                minJobs: 1 // Filter for companies with at least 1 job
+                search: searchTerm,
+                industry: selectedIndustries.length > 0 ? selectedIndustries[0] : undefined,
+                jobCategories: selectedJobCategories,
+                minJobs: 1
             })
 
-            const companiesList = result.companies || []
-            setCompanies(companiesList)
-            setFilteredCompanies(companiesList)
+            const newList = result.companies || []
             
-            // Set total active jobs count
+            if (isReset) {
+                setCompanies(newList) // Keep track of base list if needed, but filteredCompanies is what we show
+                setFilteredCompanies(newList)
+                setPage(1)
+            } else {
+                setFilteredCompanies(prev => [...prev, ...newList])
+                setPage(pageNum)
+            }
+            
+            // Calculate hasMore
+            const total = result.total || 0
+            const currentCount = isReset ? newList.length : filteredCompanies.length + newList.length
+            // Or simpler:
+            setHasMore(pageNum < (result.totalPages || 0))
+
             setTotalActiveJobs(result.totalActiveJobs || 0)
-            
-            // Set available categories (only if provided, otherwise keep existing or fallback)
-            if (result.availableCategories && result.availableCategories.length > 0) {
+
+            if (result.availableCategories) {
                 setAvailableJobCategories(result.availableCategories);
             }
 
-            // 从后端API返回的数据中提取职位统计信息
-            const counts: Record<string, { total: number, categories: Record<string, number> }> = {}
-            companiesList.forEach((company: TrustedCompany) => {
-                counts[company.id] = {
+            // Update job counts map
+            const newCounts: Record<string, { total: number, categories: Record<string, number> }> = {}
+            newList.forEach((company: TrustedCompany) => {
+                newCounts[company.id] = {
                     total: company.jobCount || 0,
                     categories: (company as any).jobCategories || {}
                 }
             })
-            setJobCounts(counts)
+            
+            setJobCounts(prev => isReset ? newCounts : { ...prev, ...newCounts })
 
         } catch (error) {
             console.error('Failed to load data:', error)
@@ -98,61 +122,24 @@ export default function TrustedCompaniesPage() {
         }
     }
 
-    const loadFilteredData = async () => {
-        try {
-            setLoading(true)
-            // 使用后端API进行搜索和过滤
-            const result = await trustedCompaniesService.getCompaniesWithJobStats({
-                page: 1,
-                limit: 1000,
-                sortBy: 'updatedAt', // Default sort
-                sortOrder: 'desc',
-                search: searchTerm,
-                industry: selectedIndustries.length > 0 ? selectedIndustries[0] : undefined,
-                jobCategories: selectedJobCategories, // Pass selected categories
-                minJobs: 1 // Filter for companies with at least 1 job
-            })
-
-            const filteredList = result.companies || []
-            setFilteredCompanies(filteredList)
-            
-            // Set total active jobs count
-            setTotalActiveJobs(result.totalActiveJobs || 0)
-
-            // Update available categories if returned
-            if (result.availableCategories) {
-                setAvailableJobCategories(result.availableCategories);
-            }
-
-            // Update job counts for filtered results too
-             const counts: Record<string, { total: number, categories: Record<string, number> }> = {}
-            filteredList.forEach((company: TrustedCompany) => {
-                counts[company.id] = {
-                    total: company.jobCount || 0,
-                    categories: (company as any).jobCategories || {}
-                }
-            })
-            setJobCounts(counts)
-
-        } catch (error) {
-            console.error('Failed to load filtered data:', error)
-        } finally {
-            setLoading(false)
+    const handleLoadMore = () => {
+        if (!loading && hasMore) {
+            loadFilteredData(page + 1, false)
         }
     }
 
-    // Derived Filter Options
+    // Derived Filter Options (Static list or from loaded data? Better static or from config)
     const industryOptions = useMemo(() => {
+        // We can accumulate industries from loaded companies, but that might be incomplete.
+        // For now, let's stick to what we have or fetch config.
+        // Let's use the ones from the current list + maybe a hardcoded popular list.
         const industries = new Set<string>()
-        // Use all companies or just filtered? 
-        // Better to use all initial loaded companies to populate options, or hardcode common industries.
-        // For now, using loaded companies is fine but might be limited if page 1 doesn't have all.
-        // Ideally we fetch config.
-        companies.forEach(c => {
+        filteredCompanies.forEach(c => {
             if (c.industry) industries.add(c.industry)
         })
         return Array.from(industries).sort().map(i => ({ label: i, value: i }))
-    }, [companies])
+    }, [filteredCompanies])
+
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -235,7 +222,7 @@ export default function TrustedCompaniesPage() {
                     </span>
                 </div>
 
-                {loading ? (
+                {loading && filteredCompanies.length === 0 ? (
                     <div className="flex justify-center py-20">
                         <LoadingSpinner />
                     </div>
@@ -244,16 +231,41 @@ export default function TrustedCompaniesPage() {
                         No companies found matching your search.
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredCompanies.map(company => (
-                            <HomeCompanyCard
-                                key={company.id}
-                                company={company}
-                                jobStats={jobCounts[company.id]}
-                                onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredCompanies.map(company => (
+                                <HomeCompanyCard
+                                    key={company.id}
+                                    company={company}
+                                    jobStats={jobCounts[company.id]}
+                                    onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
+                                />
+                            ))}
+                        </div>
+                        
+                        {/* Load More Button */}
+                        {hasMore && (
+                            <div className="mt-12 flex justify-center">
+                                <button
+                                    onClick={handleLoadMore}
+                                    disabled={loading}
+                                    className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-indigo-200 transition-all duration-200 flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-slate-400 border-t-indigo-600 rounded-full animate-spin"></div>
+                                            加载中...
+                                        </>
+                                    ) : (
+                                        <>
+                                            加载更多
+                                            <Building className="w-4 h-4" />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
             {/* Modals */}
