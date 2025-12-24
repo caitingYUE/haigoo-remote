@@ -36,7 +36,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
         // 只有当company.id存在且cover image尚未加载时才进行加载
         if (company.id && !hasLoadedCover && !isLoadingCover) {
             setIsLoadingCover(true)
-            
+
             trustedCompaniesService.getCompanyCoverImage(company.id)
                 .then(result => {
                     if (result && result.coverImage) {
@@ -78,30 +78,32 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
         >
             {/* Cover Area - 16:9 Aspect Ratio */}
             <div className="relative w-full pt-[56.25%] overflow-hidden bg-slate-50">
-                {coverImage ? (
-                    <img
-                        src={coverImage}
-                        alt={`${company.name} cover`}
-                        loading="lazy"
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                ) : company.logo ? (
-                    <div className="absolute inset-0 bg-white flex items-center justify-center p-8">
+                {!isLoadingCover && (
+                    coverImage ? (
                         <img
-                            src={company.logo}
-                            alt={`${company.name} logo`}
+                            src={coverImage}
+                            alt={`${company.name} cover`}
                             loading="lazy"
-                            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
-                    </div>
-                ) : (
-                    <div className={`absolute inset-0 bg-gradient-to-r ${getGradient(company.name)}`}>
-                        <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
-                        {/* Fallback Icon if absolutely no image */}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                            <Building2 className="w-16 h-16 text-slate-400" />
+                    ) : company.logo ? (
+                        <div className="absolute inset-0 bg-white flex items-center justify-center p-8">
+                            <img
+                                src={company.logo}
+                                alt={`${company.name} logo`}
+                                loading="lazy"
+                                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                            />
                         </div>
-                    </div>
+                    ) : (
+                        <div className={`absolute inset-0 bg-gradient-to-r ${getGradient(company.name)}`}>
+                            <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
+                            {/* Fallback Icon if absolutely no image */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                                <Building2 className="w-16 h-16 text-slate-400" />
+                            </div>
+                        </div>
+                    )
                 )}
 
                 {/* Badges Overlay */}
