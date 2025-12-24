@@ -219,6 +219,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const handleSave = () => {
+        if (!isAuthenticated) {
+            if (window.confirm('登录后可以收藏职位\n\n是否前往登录？')) {
+                navigate('/login')
+            }
+            return
+        }
+
         trackingService.track('click_save_job', {
             job_id: job.id,
             action: isSaved ? 'unsave' : 'save'

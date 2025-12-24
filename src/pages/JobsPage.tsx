@@ -359,7 +359,18 @@ export default function JobsPage() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ jobId })
       })
-      if (!resp.ok) throw new Error('收藏接口失败')
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}))
+        if (resp.status === 403 && data.upgradeRequired) {
+          if (window.confirm('普通用户最多收藏5个职位，升级会员解锁无限收藏。\n\n是否前往升级？')) {
+            navigate('/membership')
+          }
+          throw new Error('Upgrade required') // Throw to trigger rollback
+        }
+        throw new Error('收藏接口失败')
+      }
+
       const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
       if (r.ok) {
         const d = await r.json()
