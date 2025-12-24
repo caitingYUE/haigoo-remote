@@ -225,6 +225,57 @@ class ProcessedJobsService {
     }
   }
 
+  async getFeaturedHomeJobs(): Promise<Job[]> {
+    try {
+      const params = new URLSearchParams({
+        resource: 'processed-jobs',
+        action: 'featured_home',
+        _t: Date.now().toString()
+      })
+      
+      const response = await fetch(`${this.baseUrl}/data?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch featured jobs')
+      
+      const data = await response.json()
+      
+      return data.jobs.map((job: any) => ({
+        id: job.id,
+        title: job.title,
+        company: job.company,
+        logo: job.logo || job.trusted_logo, // Use trusted logo if available
+        location: job.location,
+        region: job.region,
+        type: this.mapJobType(job.jobType),
+        salary: job.salary ? {
+          min: 0,
+          max: 0,
+          currency: 'USD',
+          display: job.salary
+        } : undefined,
+        description: job.description,
+        requirements: job.requirements || [],
+        responsibilities: [],
+        benefits: job.benefits || [],
+        skills: job.tags || [],
+        publishedAt: job.publishedAt,
+        source: job.source,
+        sourceUrl: job.url,
+        tags: job.tags || [],
+        status: job.status,
+        isRemote: job.isRemote,
+        category: job.category,
+        isTrusted: job.isTrusted,
+        canRefer: job.canRefer,
+        isFeatured: job.isFeatured,
+        companyIndustry: job.companyIndustry,
+        companyWebsite: job.companyWebsite || job.trusted_website // Use trusted website if available
+      }))
+    } catch (error) {
+      console.error('获取首页精选职位失败:', error)
+      return []
+    }
+  }
+
   async getRecommendedJobs(limit: number = 6): Promise<Job[]> {
     try {
       const response = await this.getProcessedJobs(1, limit, { status: 'active' })

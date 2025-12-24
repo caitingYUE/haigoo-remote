@@ -139,78 +139,14 @@ export default function LandingPage() {
           console.error('Failed to fetch stats:', e)
         }
 
-        const [jobs, companiesData, featuredResp] = await Promise.all([
-          // processedJobsService.getAllProcessedJobs(1000), // Fetch more jobs (up to 1000) for better company stats sorting
-          // Optimize: Only fetch necessary jobs for stats or use backend stats
-          processedJobsService.getProcessedJobs(1, 100, { sortBy: 'recent' }),
-          trustedCompaniesService.getAllCompanies(),
-          processedJobsService.getProcessedJobs(1, 6, { isFeatured: true, sortBy: 'recent' })
+        const [featuredJobsData, featuredCompaniesData] = await Promise.all([
+          processedJobsService.getFeaturedHomeJobs(),
+          trustedCompaniesService.getFeaturedCompanies()
         ])
         
-        const companies = Array.isArray(companiesData) ? companiesData : ((companiesData as any)?.companies || [])
-        const recentJobs = jobs.jobs || [];
-
-        // Filter for domestic jobs (reuse logic)
-        const domesticJobs = recentJobs.filter(job => {
-          const loc = (job.location || '').toLowerCase()
-          const tags = (job.skills || []).map(t => t.toLowerCase())
-          const pool = new Set([loc, ...tags])
-
-          const domesticKeywords = ['china', '中国', 'cn', 'apac', 'asia', 'east asia', 'greater china', 'utc+8', 'gmt+8', 'beijing', 'shanghai', 'shenzhen', 'guangzhou', 'hangzhou', 'chongqing', 'chengdu', 'nanjing', '不限地点']
-          const globalKeywords = ['anywhere', 'everywhere', 'worldwide', 'global', '不限地点']
-          const overseasKeywords = ['usa', 'united states', 'us', 'uk', 'england', 'britain', 'canada', 'mexico', 'brazil', 'europe', 'eu', 'emea', 'germany', 'france', 'spain', 'italy', 'australia', 'new zealand']
-
-          const hit = (keys: string[]) => keys.some(k => pool.has(k) || loc.includes(k))
-          const globalHit = hit(globalKeywords) || /anywhere|everywhere|worldwide|不限地点/.test(loc)
-          const domesticHit = hit(domesticKeywords)
-          const overseasHit = hit(overseasKeywords)
-
-          return domesticHit || (globalHit && !overseasHit)
-        })
-
-        // Calculate Job Stats per Company
-        const statsMap: Record<string, { total: number, categories: Record<string, number> }> = {}
-        const normalize = (name: string) => name?.toLowerCase().replace(/[,.]/g, '').replace(/\s+/g, ' ').trim() || ''
-
-        // Use all jobs for stats, not just domestic
-        recentJobs.forEach(job => {
-          if (!job.company) return
-          const jobCompanyNorm = normalize(job.company)
-
-          // Find matching trusted company
-          const company = companies.find((c: TrustedCompany) => {
-            const cName = normalize(c.name)
-            return cName === jobCompanyNorm || cName.includes(jobCompanyNorm) || jobCompanyNorm.includes(cName)
-          })
-
-          if (company) {
-            if (!statsMap[company.name]) {
-              statsMap[company.name] = { total: 0, categories: {} }
-            }
-            statsMap[company.name].total++
-            const cat = job.category || '其他'
-            statsMap[company.name].categories[cat] = (statsMap[company.name].categories[cat] || 0) + 1
-          }
-        })
-        setCompanyJobStats(statsMap)
-
-        // Filter for featured jobs
-        if (featuredResp && featuredResp.jobs && featuredResp.jobs.length > 0) {
-          setFeaturedJobs(featuredResp.jobs)
-        } else {
-          const featured = domesticJobs.filter(job => job.isFeatured === true)
-          setFeaturedJobs(featured.slice(0, 6))
-        }
-
-        // Sort companies by total active jobs (using database count)
-        const sortedCompanies = [...companies]
-          .filter(c => (c.jobCount || 0) > 0) // Only show companies with > 0 jobs
-          .sort((a, b) => {
-            return (b.jobCount || 0) - (a.jobCount || 0)
-          })
-
-        // Set trusted companies (top 6)
-        setTrustedCompanies(sortedCompanies.slice(0, 6))
+        setFeaturedJobs(featuredJobsData)
+        setTrustedCompanies(featuredCompaniesData.companies)
+        setCompanyJobStats(featuredCompaniesData.stats)
 
       } catch (error) {
         console.error('Failed to load data:', error)

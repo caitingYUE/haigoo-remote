@@ -132,6 +132,26 @@ class TrustedCompaniesService {
         }
     }
 
+    async getFeaturedCompanies(): Promise<{ companies: TrustedCompany[], stats: Record<string, { total: number, categories: Record<string, number> }> }> {
+        try {
+            const queryParams = new URLSearchParams();
+            queryParams.append('resource', 'companies');
+            queryParams.append('action', 'featured_home');
+            
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
+            if (!response.ok) throw new Error('Failed to fetch featured companies');
+            const data = await response.json();
+            
+            return {
+                companies: data.companies || [],
+                stats: data.stats || {}
+            };
+        } catch (error) {
+            console.error('Error fetching featured companies:', error);
+            return { companies: [], stats: {} };
+        }
+    }
+
     // 获取带职位统计信息的公司列表（后端联表查询）
     async getCompaniesWithJobStats(params: {
         page?: number;
