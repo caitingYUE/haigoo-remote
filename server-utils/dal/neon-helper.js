@@ -394,51 +394,6 @@ const neonHelper = {
     },
 
     /**
-     * 创建表（serverless 模式）
-     * @param {string} table - 表名
-     * @param {Object} schema - 表结构定义
-     * @returns {Promise<boolean>} 是否创建成功
-     */
-    async createTable(table, schema) {
-        if (!DATABASE_CONFIGURED) return false
-
-        try {
-            const columns = Object.entries(schema).map(([name, type]) => {
-                return `${name} ${type}`
-            }).join(', ')
-
-            const query = `CREATE TABLE IF NOT EXISTS ${table} (${columns})`
-            const sql = createNeonClient()
-            await sql.query(query)
-            return true
-        } catch (error) {
-            console.error('[Neon/PostgreSQL] Create table error:', error.message)
-            console.error('[Neon/PostgreSQL] Error stack:', error.stack)
-            return false
-        }
-    },
-
-    /**
-     * 删除表（serverless 模式）
-     * @param {string} table - 表名
-     * @returns {Promise<boolean>} 是否删除成功
-     */
-    async dropTable(table) {
-        if (!DATABASE_CONFIGURED) return false
-
-        try {
-            const query = `DROP TABLE IF EXISTS ${table}`
-            const sql = createNeonClient()
-            await sql.query(query)
-            return true
-        } catch (error) {
-            console.error('[Neon/PostgreSQL] Drop table error:', error.message)
-            console.error('[Neon/PostgreSQL] Error stack:', error.stack)
-            return false
-        }
-    },
-
-    /**
      * 检查表是否存在（serverless 模式）
      * @param {string} table - 表名
      * @returns {Promise<boolean|null>} 表是否存在，失败返回 null
