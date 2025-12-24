@@ -646,8 +646,15 @@ export class DataManagementService {
   private async cleanupOldData(): Promise<void> {
     try {
       console.log('🧹 开始清理过期数据 (调用后端API)...');
+      
+      // 获取当前所有 RSS 源名称，限制清理范围仅为 RSS 数据
+      // 这样可以保护 Crawler 数据和手动上传的数据不被误删
+      const sources = rssService.getRSSSources().map(s => s.name);
+
       const resp = await fetch(`/api/data/processed-jobs?action=cleanup&days=${this.RETENTION_DAYS}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sources })
       });
       
       const result = await resp.json();

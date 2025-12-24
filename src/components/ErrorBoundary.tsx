@@ -25,6 +25,23 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
     
+    // Check for chunk loading failure
+    if (error.message && (
+        error.message.includes('Failed to fetch dynamically imported module') ||
+        error.message.includes('Importing a module script failed') ||
+        error.name === 'ChunkLoadError'
+    )) {
+        console.log('Chunk load error detected, reloading page...');
+        // Only reload if we haven't just reloaded (prevent infinite loops)
+        const lastReload = sessionStorage.getItem('chunk_reload_timestamp');
+        const now = Date.now();
+        if (!lastReload || (now - parseInt(lastReload)) > 10000) {
+             sessionStorage.setItem('chunk_reload_timestamp', now.toString());
+             window.location.reload();
+             return;
+        }
+    }
+    
     // 安全地处理错误信息，避免 RangeError
     try {
       this.setState({ error, errorInfo })

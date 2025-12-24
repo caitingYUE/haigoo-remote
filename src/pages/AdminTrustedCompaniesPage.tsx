@@ -36,6 +36,10 @@ export default function AdminTrustedCompaniesPage() {
     const [autoFilling, setAutoFilling] = useState(false)
     const [analyzingId, setAnalyzingId] = useState<string | null>(null)
     const [filterCanRefer, setFilterCanRefer] = useState<'all' | 'yes' | 'no'>('all')
+    
+    // Batch crawl state
+    const [batchCrawling, setBatchCrawling] = useState(false)
+    const [batchProgress, setBatchProgress] = useState('')
 
     // Cover image upload & crop
     const [coverSource, setCoverSource] = useState<string>('')
@@ -385,6 +389,51 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
+    const handleBatchCrawl = async () => {
+        if (batchCrawling) return
+        if (!companies.length) {
+            alert('当前列表无企业')
+            return
+        }
+        if (!confirm(`确定要批量抓取当前页的 ${companies.length} 家企业的岗位吗？这可能需要较长时间。`)) return
+
+        setBatchCrawling(true)
+        setBatchProgress('初始化...')
+
+        let successCount = 0
+        let failCount = 0
+
+        try {
+            for (let i = 0; i < companies.length; i++) {
+                const company = companies[i]
+                setBatchProgress(`正在抓取 (${i + 1}/${companies.length}): ${company.name}`)
+                
+                try {
+                    // Reuse existing service method with default options (force=true, limit=10)
+                    const result = await trustedCompaniesService.crawlJobs(company.id, true, 10)
+                    if (result.success) {
+                        successCount++
+                    } else {
+                        failCount++
+                        console.error(`Failed to crawl ${company.name}:`, result.error)
+                    }
+                } catch (err) {
+                    failCount++
+                    console.error(`Error crawling ${company.name}:`, err)
+                }
+            }
+            
+            alert(`批量抓取完成！成功: ${successCount}, 失败: ${failCount}`)
+            loadCompanies() // Reload to update counts
+        } catch (error) {
+            console.error('Batch crawl failed:', error)
+            alert('批量抓取过程中断')
+        } finally {
+            setBatchCrawling(false)
+            setBatchProgress('')
+        }
+    }
+
     return (
         <div className="p-6 max-w-[1600px] mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -393,6 +442,18 @@ export default function AdminTrustedCompaniesPage() {
                     可信企业管理
                 </h1>
                 <div className="flex gap-3">
+                    <button
+                        onClick={handleBatchCrawl}
+                        disabled={batchCrawling || loading}
+                        className="px-4 py-2 bg-white text-indigo-600 border border-indigo-600 rounded hover:bg-indigo-50 flex items-center gap-2 disabled:opacity-50"
+                    >
+                        {batchCrawling ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <DownloadCloud className="w-4 h-4" />
+                        )}
+                        {batchCrawling ? '抓取中...' : '爬取本页岗位'}
+                    </button>
                     <button
                         onClick={handleSyncData}
                         className="px-4 py-2 bg-white text-indigo-600 border border-indigo-600 rounded hover:bg-indigo-50 flex items-center gap-2"
@@ -409,6 +470,13 @@ export default function AdminTrustedCompaniesPage() {
                     </button>
                 </div>
             </div>
+
+            {batchCrawling && (
+                <div className="mb-6 p-4 bg-blue-50 text-blue-700 rounded-lg flex items-center gap-3 border border-blue-200">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="font-medium">{batchProgress}</span>
+                </div>
+            )}
 
             <form onSubmit={handleSearch} className="mb-6 flex flex-wrap gap-3 items-center">
                 <div className="relative flex-1 min-w-[260px]">
