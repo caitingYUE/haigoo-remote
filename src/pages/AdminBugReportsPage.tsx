@@ -154,12 +154,12 @@ export default function AdminBugReportsPage() {
     const updateStatus = async (id: number, newStatus: string) => {
         setUpdatingId(id);
         try {
-            const token = localStorage.getItem('token');
+            const authToken = token || localStorage.getItem('haigoo_auth_token') || localStorage.getItem('token');
             const res = await fetch('/api/admin-ops?action=bug_report', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
                 },
                 body: JSON.stringify({ id, status: newStatus })
             });
@@ -180,11 +180,12 @@ export default function AdminBugReportsPage() {
         if (!replyingId || !replyContent.trim()) return;
         setIsSendingReply(true);
         try {
+            const authToken = token || localStorage.getItem('haigoo_auth_token') || localStorage.getItem('token');
             const res = await fetch('/api/admin-ops?action=bug_report', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
                 },
                 body: JSON.stringify({ id: replyingId, replyContent })
             });
