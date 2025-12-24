@@ -195,10 +195,9 @@ export default function TrustedCompaniesPage() {
             {/* Company Grid */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Active Jobs Hint */}
-                <div className="mb-6 text-center">
-                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-full border border-indigo-100 shadow-sm">
-                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        仅展示当前正在招聘中的企业（岗位数量：<span className="font-bold">{totalActiveJobs > 0 ? totalActiveJobs.toLocaleString() : '-'}</span> 个）
+                <div className="mb-8 text-left">
+                    <span className="text-sm text-slate-400">
+                        * 仅展示当前正在招聘中的企业
                     </span>
                 </div>
 
