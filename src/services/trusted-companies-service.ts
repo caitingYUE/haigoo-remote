@@ -37,6 +37,7 @@ export interface TrustedCompany {
 export interface PaginatedCompaniesResponse {
     companies: TrustedCompany[];
     total: number;
+    totalActiveJobs?: number;
     page: number;
     totalPages: number;
 }
@@ -165,7 +166,7 @@ class TrustedCompaniesService {
             return data;
         } catch (error) {
             console.error('Error fetching companies with job stats:', error);
-            return { companies: [], total: 0, page: 1, totalPages: 0 };
+            return { companies: [], total: 0, totalActiveJobs: 0, page: 1, totalPages: 0 };
         }
     }
 
