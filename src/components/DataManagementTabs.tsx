@@ -5,7 +5,7 @@ import {
   Filter,
   Briefcase, BarChart3, Loader, Edit3, Eye, Link as LinkIcon,
   MapPin, Calendar, Server, Star, ExternalLink, Info, Plus, Building, X,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, HelpCircle
 } from 'lucide-react';
 import { JobCategory } from '../types/rss-types';
 import { dataManagementService, RawRSSData, ProcessedJobData, StorageStats } from '../services/data-management-service';
@@ -1182,7 +1182,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             </div>
           )}
           {activeTab === 'processed' && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <Tooltip content="此操作将：1. 同步最新的RSS订阅源数据；2. 对全库（含爬虫抓取）的所有职位数据进行重新清洗（地点提取、薪资解析、分类打标等）；3. 清理过期的历史数据。不会删除爬虫数据。" maxLines={10} clampChildren={false}>
+                <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+              </Tooltip>
               <button
                 onClick={handleRefreshProcessedOnly}
                 disabled={syncing}

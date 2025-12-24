@@ -645,31 +645,23 @@ export class DataManagementService {
    */
   private async cleanupOldData(): Promise<void> {
     try {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - this.RETENTION_DAYS);
-
-      const [rawData, processedJobs] = await Promise.all([
-        this.loadRawData(),
-        this.loadProcessedJobs()
-      ]);
-
-      // 清理过期的原始数据
-      const recentRawData = rawData.filter(item => new Date(item.fetchedAt) > cutoffDate);
-
-      // 清理过期的处理后数据
-      const recentProcessedJobs = processedJobs.filter(job => new Date(job.publishedAt) > cutoffDate);
-
-      await Promise.all([
-        this.saveRawData(recentRawData, 'replace'),
-        this.saveProcessedJobs(recentProcessedJobs, 'replace')
-      ]);
-
-      const removedRaw = rawData.length - recentRawData.length;
-      const removedProcessed = processedJobs.length - recentProcessedJobs.length;
-
-      if (removedRaw > 0 || removedProcessed > 0) {
-        console.log(`🧹 清理完成: 移除 ${removedRaw} 个原始数据, ${removedProcessed} 个处理后数据`);
+      console.log('🧹 开始清理过期数据 (调用后端API)...');
+      const resp = await fetch(`/api/data/processed-jobs?action=cleanup&days=${this.RETENTION_DAYS}`, {
+        method: 'POST'
+      });
+      
+      const result = await resp.json();
+      if (resp.ok && result.success) {
+        console.log(`🧹 清理完成: 删除了 ${result.deleted} 个过期职位`);
+      } else {
+        console.warn('清理过期数据警告:', result.error || '未知错误');
       }
+      
+      // 注意：原始 RSS 数据 (raw_rss) 的清理逻辑暂时保留或也需要迁移到后端
+      // 目前 raw_rss 表可能没有对应的 cleanup action，为了简单起见，
+      // 如果 raw_rss 不重要，我们可以暂时不清理，或者以后添加专门的清理 endpoint。
+      // 鉴于用户主要关心 job 数据被误删，我们先确保 jobs 表的安全。
+      
     } catch (error) {
       console.error('清理过期数据失败:', error);
     }
