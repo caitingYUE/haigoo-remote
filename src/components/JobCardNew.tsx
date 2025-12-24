@@ -264,8 +264,24 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   </div>
                   <div className="flex flex-col gap-1.5">
                      <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                        <span>{job.translations?.company || job.company}</span>
-                     </div>
+                     <span className="truncate max-w-[150px]" title={job.translations?.company || job.company}>
+                        {job.translations?.company || job.company}
+                     </span>
+                     <span className="text-slate-300">|</span>
+                     <span className="flex items-center truncate max-w-[150px]" title={job.translations?.location || job.location}>
+                        {job.isRemote && <Globe className="w-3 h-3 mr-1 text-indigo-500" />}
+                        {/* Display extracted location logic */}
+                        {(job.translations?.location || job.location) === 'Remote' 
+                           ? (job.isRemote ? '远程' : 'Remote') 
+                           : (job.translations?.location || job.location)}
+                     </span>
+                     {job.type && (
+                        <>
+                           <span className="text-slate-300">|</span>
+                           <span className="whitespace-nowrap">{job.type === 'full-time' ? '全职' : job.type}</span>
+                        </>
+                     )}
+                  </div>
 
                      {/* Source Tag Inline */}
                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">

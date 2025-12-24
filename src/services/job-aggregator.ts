@@ -495,21 +495,32 @@ class JobAggregator {
     const category = this.categorizeJob(item.title, item.description, sourceCategory);
     const now = new Date().toISOString();
     const tags = this.extractTags(item.title, item.description, item.skills);
-    const region = await this.determineJobRegion(item.location || '', tags);
+    
+    // Enhanced location extraction: Title > Item Location > Description
+    let extractedLocation = item.location;
+    if (!extractedLocation || extractedLocation === 'Remote') {
+       extractedLocation = this.extractLocationFromText(item.title) || this.extractLocationFromText(item.description) || 'Remote';
+    }
+    
+    // Determine region based on enhanced location
+    const region = await this.determineJobRegion(extractedLocation, tags);
     const companyWebsite = CompanyService.extractCompanyUrlFromDescription(item.description || '');
+
+    // Enhanced Salary Extraction
+    const extractedSalary = this.extractSalary(item.salary, item.title, item.description);
 
     return {
       id,
       title: item.title,
       company: item.company || this.extractCompanyFromDescription(item.description),
-      location: item.location || 'Remote',
+      location: extractedLocation,
       description: item.description,
       url: item.link,
       companyWebsite,
       publishedAt: item.pubDate || now,
       source,
       category,
-      salary: item.salary,
+      salary: extractedSalary, // Use enhanced salary
       jobType: (item.jobType as Job['jobType']) || 'full-time',
       experienceLevel: item.experienceLevel || this.determineExperienceLevel(item.title, item.description),
       remoteLocationRestriction: item.remoteLocationRestriction,
@@ -523,6 +534,62 @@ class JobAggregator {
       region
     };
   }
+
+  /**
+   * Extract location from text using regex patterns
+   * Priority: Parentheses > Common Formats
+   */
+  private extractLocationFromText(text: string): string | null {
+    if (!text) return null;
+    
+    // 1. Check for locations in parentheses/brackets e.g., "Software Engineer (UK)", "[China]"
+    const parenMatches = text.match(/[\(\[\{](.*?)[\)\]\}]/g);
+    if (parenMatches) {
+        for (const match of parenMatches) {
+            const content = match.slice(1, -1).trim();
+            // Filter out non-location terms
+            if (!/remote|contract|full-time|part-time|senior|junior/i.test(content) && content.length > 2 && content.length < 30) {
+                 return content;
+            }
+        }
+    }
+
+    // 2. Common "Location:" pattern in description
+    const locPattern = /(?:Location|Based in|Remote form|Remote in):\s*([^\n\.<]+)/i;
+    const locMatch = text.match(locPattern);
+    if (locMatch && locMatch[1]) {
+        return locMatch[1].trim();
+    }
+
+    return null;
+  }
+
+  /**
+   * Enhanced salary extraction
+   */
+  private extractSalary(salaryStr?: string, title?: string, desc?: string): string | undefined {
+      // 1. Try existing salary field
+      if (salaryStr && salaryStr !== 'Open' && salaryStr !== '面议') return salaryStr;
+
+      // 2. Try to extract from Title or Description
+      const text = `${title || ''} ${desc || ''}`;
+      
+      // Patterns for salary: $100k-$150k, $100,000 - $150,000, 15k-25k RMB
+      const salaryPatterns = [
+          /(\$\d{2,3}k\s*-\s*\$\d{2,3}k)/i,
+          /(\$\d{1,3}(?:,\d{3})*\s*-\s*\$\d{1,3}(?:,\d{3})*)/i,
+          /(\d{2,3}k\s*-\s*\d{2,3}k)/i,
+          /(\d{1,3}(?:,\d{3})*\s*-\s*\d{1,3}(?:,\d{3})*\s*(?:USD|EUR|GBP|CNY|RMB))/i
+      ];
+
+      for (const pattern of salaryPatterns) {
+          const match = text.match(pattern);
+          if (match) return match[0];
+      }
+
+      return salaryStr; // Return original if nothing found (likely undefined or 'Open')
+  }
+
 
   /**
    * 备用转换方法（当AI解析失败时使用）
