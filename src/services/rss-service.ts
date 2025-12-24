@@ -775,8 +775,14 @@ class RSSService {
       cleaned = cleaned.replace(new RegExp(entity, 'g'), char);
     });
 
+    // 预处理标题标签，转换为Markdown加粗并强制换行，以便后续分段识别
+    cleaned = cleaned.replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n\n**$1**\n\n');
+
+    // 预处理列表项，转换为Markdown列表
+    cleaned = cleaned.replace(/<li[^>]*>(.*?)<\/li>/gi, '\n- $1');
+
     // 保留段落结构，将块级元素转换为换行
-    cleaned = cleaned.replace(/<\/?(p|div|br|h[1-6]|li|ul|ol)[^>]*>/gi, '\n');
+    cleaned = cleaned.replace(/<\/?(p|div|br|ul|ol)[^>]*>/gi, '\n');
 
     // 保留重要的格式标签，转换为文本标记
     cleaned = cleaned.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
@@ -792,17 +798,20 @@ class RSSService {
     cleaned = cleaned.replace(/[ \t]+/g, ' '); // 合并空格和制表符
     cleaned = cleaned.trim();
 
-    // 增加描述长度限制到2000字符
-    if (cleaned.length > 2000) {
+    // 增加描述长度限制到8000字符
+    if (cleaned.length > 8000) {
       // 尝试在句子结束处截断
-      const truncated = cleaned.substring(0, 1997);
+      const truncated = cleaned.substring(0, 7997);
       const lastSentenceEnd = Math.max(
-        truncated.lastIndexOf('.'),
-        truncated.lastIndexOf('!'),
-        truncated.lastIndexOf('?')
+        truncated.lastIndexOf('. '),
+        truncated.lastIndexOf('! '),
+        truncated.lastIndexOf('? '),
+        truncated.lastIndexOf('。'),
+        truncated.lastIndexOf('！'),
+        truncated.lastIndexOf('？')
       );
-
-      if (lastSentenceEnd > 1500) {
+      
+      if (lastSentenceEnd > 7000) {
         cleaned = truncated.substring(0, lastSentenceEnd + 1) + '...';
       } else {
         cleaned = truncated + '...';

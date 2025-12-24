@@ -36,6 +36,8 @@ import { trackingService } from '../services/tracking-service'
 //   { label: '全球', value: 'Worldwide' }
 // ];
 
+import { MobileRestricted } from '../components/MobileRestricted'
+
 export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -611,6 +613,7 @@ export default function JobsPage() {
 
 
   return (
+    <MobileRestricted allowContinue={true}>
     <div
       className="h-full bg-slate-50 flex flex-col"
       role="main"
@@ -803,5 +806,6 @@ export default function JobsPage() {
         industryOptions={industryOptions.map(opt => opt.label)}
       />
     </div>
+    </MobileRestricted>
   )
 }

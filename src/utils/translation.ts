@@ -235,11 +235,12 @@ export const segmentJobDescription = (description: string) => {
 
   // 增强分段标记识别，支持Markdown加粗格式
   const strongSectionMarkers = [
-    /^(\*\*)?(Job Description|职位描述|工作内容|关于职位)(\*\*)?[:：]?/im,
-    /^(\*\*)?(Requirements|Qualifications|任职要求|职位要求|资格要求|技能要求)(\*\*)?[:：]?/im,
-    /^(\*\*)?(Responsibilities|Key Responsibilities|职责|岗位职责|工作职责|您的主要职责是)(\*\*)?[:：]?/im,
-    /^(\*\*)?(Benefits|What We Offer|福利|薪资福利|我们提供|待遇)(\*\*)?[:：]?/im,
-    /^(\*\*)?(About (Us|the Company)|关于我们|公司介绍)(\*\*)?[:：]?/im
+    /^(\*\*)?(Job Description|职位描述|工作内容|关于职位|The Role|About the Role)(\*\*)?[:：]?/im,
+    /^(\*\*)?(Requirements|Qualifications|任职要求|职位要求|资格要求|技能要求|What you need|What we are looking for|You bring|Your Profile)(\*\*)?[:：]?/im,
+    /^(\*\*)?(Responsibilities|Key Responsibilities|职责|岗位职责|工作职责|您的主要职责是|What you will do|Your Role)(\*\*)?[:：]?/im,
+    /^(\*\*)?(Benefits|What We Offer|福利|薪资福利|我们提供|待遇|Perks|Why join us)(\*\*)?[:：]?/im,
+    /^(\*\*)?(About (Us|the Company)|关于我们|公司介绍|Who we are)(\*\*)?[:：]?/im,
+    /^(\*\*)?(How to Apply|Application Process|申请方式)(\*\*)?[:：]?/im
   ];
 
   let currentSection = '';
@@ -256,6 +257,7 @@ export const segmentJobDescription = (description: string) => {
     for (const marker of strongSectionMarkers) {
       // 匹配标记，且该段落长度较短（通常标题不会太长）
       if (marker.test(trimmed) && trimmed.length < 100) {
+        foundMarker = true;
         // 保存之前的段落
         if (currentSection) {
           naturalSections.push({
@@ -268,18 +270,33 @@ export const segmentJobDescription = (description: string) => {
         // 提取纯文本标题（去除**和冒号）
         currentTitle = trimmed.replace(/\*\*/g, '').split(/[:：]/)[0].trim();
         // 如果标题提取后为空，回退到原始值
-        if (!currentTitle) currentTitle = trimmed;
+        if (!currentTitle) currentTitle = trimmed.replace(/\*\*/g, '').trim();
         
-        currentSection = ''; // 标题行本身不作为内容的一部分，或者作为下一段的开始？
-        // 通常标题行下面是内容。如果标题行包含内容（不仅仅是标题），应该保留。
-        // 但这里的逻辑是检测到标题行就开始新section。
-        // 如果trimmed仅仅是标题，currentSection置空。
-        // 如果trimmed包含标题和内容（虽然很少见，因为按换行分割了），应该处理。
-        
-        // 简单起见，假设标题单独一行。如果标题行很长，我们已经在上面的 if (trimmed.length < 100) 过滤了，不会被识别为标题。
-        
-        foundMarker = true;
+        currentSection = ''; 
         break;
+      }
+    }
+
+    // 隐式标题检测（即使没有匹配关键字）
+    if (!foundMarker) {
+      const isShort = trimmed.length < 60;
+      const endsWithColon = /[:：]$/.test(trimmed);
+      const isBold = /^\*\*.*\*\*[:：]?$/.test(trimmed);
+      const isUppercase = /^[A-Z\s&]+[:：]?$/.test(trimmed) && trimmed.length > 3;
+      const isBulletPoint = /^[-•*]\s/.test(trimmed) || /^\d+[\.)]\s/.test(trimmed);
+
+      // 如果是短行，不是列表项，且满足（以冒号结尾 OR 整体加粗 OR 全大写），则视为标题
+      if (isShort && !isBulletPoint && (endsWithColon || isBold || isUppercase)) {
+         foundMarker = true;
+         if (currentSection) {
+            naturalSections.push({
+              title: currentTitle,
+              content: currentSection.trim()
+            });
+         }
+         currentTitle = trimmed.replace(/\*\*/g, '').replace(/[:：]$/, '').trim();
+         if (!currentTitle) currentTitle = '其他信息';
+         currentSection = '';
       }
     }
 

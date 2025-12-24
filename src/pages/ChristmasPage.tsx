@@ -21,6 +21,7 @@ const Corner = ({ className }: { className?: string }) => (
 );
 
 import { ChristmasBGM } from '../components/Christmas/ChristmasBGM';
+import { MobileRestricted } from '../components/MobileRestricted';
 
 export default function ChristmasPage() {
     const { user, token } = useAuth();
@@ -186,7 +187,8 @@ export default function ChristmasPage() {
     };
 
     return (
-        <ChristmasErrorBoundary>
+        <MobileRestricted allowContinue={true}>
+            <div className="christmas-page-container">
             <style>{`
                 @keyframes snow {
                     0% { transform: translateY(-10px); }
@@ -483,6 +485,7 @@ export default function ChristmasPage() {
                     )}
                 </div>
             </div>
-        </ChristmasErrorBoundary>
+            </div>
+        </MobileRestricted>
     );
 }
