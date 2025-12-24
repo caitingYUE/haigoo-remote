@@ -129,7 +129,7 @@ export const EmailCaptureModal: React.FC<EmailCaptureModalProps> = ({ isOpen, on
                 <div className="mt-6 pt-4 border-t border-slate-100 text-center">
                     <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        您的信息将被严格保密，仅用于工作推荐
+                        您的信息将被严格保密，仅用于工作推荐，我们承诺不会公开展示您的任何隐私信息
                     </p>
                 </div>
             </div>

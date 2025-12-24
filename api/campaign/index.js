@@ -192,7 +192,7 @@ async function handleChristmas(req, res) {
         if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
         try {
             const body = await parseJsonBody(req);
-            const { email, tree_id } = body;
+            const { email, tree_id, allow_resume_storage, is_registered, user_id, source } = body;
 
             if (!email || !email.includes('@')) {
                 return res.status(400).json({ success: false, error: 'Invalid email' });
@@ -201,25 +201,28 @@ async function handleChristmas(req, res) {
             // Save to database (create table if needed)
             if (neonHelper.isConfigured) {
                 try {
-                    // Create table if not exists
+                    // Create table if not exists (Update schema to include user info)
                     await neonHelper.query(`
                         CREATE TABLE IF NOT EXISTS campaign_leads (
                             id SERIAL PRIMARY KEY,
                             email VARCHAR(255) NOT NULL,
                             tree_id VARCHAR(255),
                             source VARCHAR(50) DEFAULT 'christmas_download',
+                            user_id VARCHAR(255),
+                            is_registered BOOLEAN DEFAULT false,
+                            allow_resume_storage BOOLEAN DEFAULT false,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )
                     `);
 
-                    // Insert lead
+                    // Insert lead with enhanced info
                     await neonHelper.query(`
-                        INSERT INTO campaign_leads (email, tree_id, source)
-                        VALUES ($1, $2, $3)
+                        INSERT INTO campaign_leads (email, tree_id, source, user_id, is_registered, allow_resume_storage)
+                        VALUES ($1, $2, $3, $4, $5, $6)
                         ON CONFLICT DO NOTHING
-                    `, [email, tree_id || null, 'christmas_download']);
+                    `, [email, tree_id || null, source || 'christmas_download', user_id || null, !!is_registered, !!allow_resume_storage]);
 
-                    console.log(`[ChristmasLead] Saved email: ${email}`);
+                    console.log(`[ChristmasLead] Saved lead: ${email}, UserID: ${user_id}, AllowResume: ${allow_resume_storage}`);
                 } catch (dbErr) {
                     console.error('[ChristmasLead] DB error:', dbErr);
                 }
@@ -328,28 +331,46 @@ async function handleChristmas(req, res) {
                 throw parseErr; // Re-throw to be caught by main handler
             }
 
-            // --- Persistence Logic ---
-            if (userId && text && text.length > 50) {
+            // 4. Save Resume (If successful)
+            // If user logged in, associate with them. If not, maybe save temporarily or associate with Lead ID.
+            // Actually, we should save it if it's a valid file upload
+            if (buffer && buffer.length > 0) {
+                // Determine user ID to associate (Authenticated User OR Temporary Lead ID)
+                const storageUserId = userId || `anon_lead_${Date.now()}`;
+                
                 try {
-                    console.log(`[Christmas] Saving resume for user: ${userId} (Anonymous: ${isAnonymous})`);
-                    const saveResult = await saveUserResume(userId, {
-                        fileName: filename,
-                        size: buffer.length,
-                        fileType: path.extname(filename).toLowerCase().replace('.', ''),
-                        contentText: text,
-                        fileContent: buffer, // Save actual file
-                        metadata: {
-                            source: 'christmas_campaign',
-                            user_type: isAnonymous ? 'lead' : 'registered',
-                            is_lead: isAnonymous
-                        },
-                        parseStatus: 'success'
-                    });
-                    console.log(`[Christmas] Resume saved: ${saveResult.success}`);
+                    // Use server-utils/resume-storage.js to save
+                    // We need to construct a file object-like structure or modify saveUserResume to accept buffer
+                    // Looking at saveUserResume signature: (userId, file)
+                    // file needs: buffer, originalname, mimetype
+                    
+                    const fileObj = {
+                        buffer: buffer,
+                        originalname: safeFilename,
+                        mimetype: contentType // This is request content type, not file. Busboy gives mime.
+                        // Wait, busboy info has mimetype. We didn't capture it in parseMultipartWithBusboy.
+                        // Let's assume generic or detect from ext.
+                    };
+                    
+                    // Since we can't easily get mimetype from our simplified busboy wrapper without modifying it,
+                    // let's just pass a mock one based on extension.
+                    const mimeMap = { 'pdf': 'application/pdf', 'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'txt': 'text/plain' };
+                    fileObj.mimetype = mimeMap[ext] || 'application/octet-stream';
+
+                    console.log(`[Christmas] Saving resume for user: ${storageUserId}`);
+                    const savedUrl = await saveUserResume(storageUserId, fileObj);
+                    console.log(`[Christmas] Resume saved at: ${savedUrl}`);
+                    
+                    // We might want to store this URL in the tree data or session for later "Lead Capture" association
+                    // For now, it's saved in storage.
                 } catch (saveErr) {
-                    console.error('[Christmas] Save failed:', saveErr);
+                    console.error('[Christmas] Failed to save resume file:', saveErr);
+                    // Don't fail the whole request, just log
                 }
             }
+
+            // 5. Generate Tree
+            console.log('[Christmas] Generating tree...');
         }
         else {
             // JSON Paste flow

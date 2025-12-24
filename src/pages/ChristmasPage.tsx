@@ -104,13 +104,22 @@ export default function ChristmasPage() {
     const handleEmailSubmit = async (email: string, allowResume: boolean) => {
         if (email) {
             try {
+                // Determine user ID if available, or generate a fingerprint/ID if not
+                const userId = user?.user_id || null;
+                
                 await fetch('/api/campaign?type=christmas&action=lead', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    },
                     body: JSON.stringify({ 
                         email, 
                         tree_id: treeData?.tree_id || Date.now(),
-                        allow_resume_storage: allowResume 
+                        allow_resume_storage: allowResume,
+                        is_registered: !!user,
+                        user_id: userId,
+                        source: 'christmas_campaign_page'
                     })
                 });
             } catch (err) {
