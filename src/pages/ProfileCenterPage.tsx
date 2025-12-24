@@ -19,7 +19,7 @@ import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subsc
 type TabKey = 'resume' | 'favorites' | 'applications' | 'feedback' | 'recommend' | 'subscriptions' | 'membership' | 'settings'
 
 export default function ProfileCenterPage() {
-  const { user: authUser, token, isMember } = useAuth()
+  const { user: authUser, token, isMember, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
