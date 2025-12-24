@@ -330,3 +330,15 @@ CREATE TABLE IF NOT EXISTS rss_sources (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 2025-12-24 新增 analytics_events 表，用于全链路数据埋点
+CREATE TABLE IF NOT EXISTS analytics_events (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255),
+  anonymous_id VARCHAR(255),
+  event_name VARCHAR(255) NOT NULL,
+  properties JSONB,
+  url TEXT,
+  referrer TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
