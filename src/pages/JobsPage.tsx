@@ -12,6 +12,7 @@ import { extractLocations } from '../utils/locationHelper'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { JobTrackingModal, JobPreferences } from '../components/JobTrackingModal'
+import { trackingService } from '../services/tracking-service'
 
 // Industry Options
 // const INDUSTRY_OPTIONS = [
@@ -290,6 +291,25 @@ export default function JobsPage() {
 
   useEffect(() => {
     loadJobsWithFilters(1, false)
+    
+    // Track search or filter change
+    if (searchTerm) {
+        trackingService.track('search_job', { keyword: searchTerm })
+    }
+    
+    // Track filter usage (if any filter is active)
+    const activeFilters = Object.entries(filters).filter(([key, value]) => {
+        if (Array.isArray(value)) return value.length > 0
+        if (typeof value === 'boolean') return value
+        return false
+    })
+    
+    if (activeFilters.length > 0) {
+        trackingService.track('filter_job', { 
+            filters: activeFilters.map(f => f[0]),
+            filter_count: activeFilters.length
+        })
+    }
   }, [searchTerm, filters, isAuthenticated, token, sortBy])
 
   // 滚动监听 - 自动加载更多

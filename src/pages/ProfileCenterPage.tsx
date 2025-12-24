@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download, Briefcase } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { usePageCache } from '../hooks/usePageCache'
@@ -356,6 +357,13 @@ export default function ProfileCenterPage() {
     showSuccess('开始上传简历...', '正在后台解析文件')
 
     try {
+      // Track upload start
+      trackingService.track('upload_resume', { 
+        source: 'personal_center', 
+        file_type: file.type,
+        file_size: file.size
+      })
+
       // 2. 调用 API 上传并解析
       const parsed = await parseResumeFileEnhanced(file)
 
@@ -553,6 +561,12 @@ export default function ProfileCenterPage() {
         setResumeScore(result.data.score || 0)
         setAiSuggestions(result.data.suggestions || [])
         showSuccess('简历分析完成！', `您的简历得分：${result.data.score || 0}%`)
+        
+        trackingService.track('analyze_resume', { 
+          resume_id: resumeIdToAnalyze,
+          score: result.data.score,
+          suggestion_count: result.data.suggestions?.length || 0
+        })
       } else {
         console.error('[ProfileCenter] Analysis failed:', result);
         if (result.limitReached) {
@@ -618,6 +632,8 @@ export default function ProfileCenterPage() {
         setResumeScore(0)
         setAiSuggestions([])
         showSuccess('简历已删除')
+        
+        trackingService.track('delete_resume', { resume_id: latestResume.id })
       } else {
         throw new Error('删除失败')
       }

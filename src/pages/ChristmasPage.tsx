@@ -8,6 +8,7 @@ import { HappinessCard } from '../components/Christmas/HappinessCard';
 import { ChristmasErrorBoundary } from '../components/Christmas/ChristmasErrorBoundary';
 import { Upload, Sparkles, Share2, Loader2, Download, Wand2, Gift, Trees, ShieldCheck, ArrowLeft, Briefcase } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { trackingService } from '../services/tracking-service';
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 
@@ -51,6 +52,12 @@ export default function ChristmasPage() {
         const formData = new FormData();
         formData.append('file', file);
 
+        trackingService.track('upload_resume', { 
+            source: 'christmas_tree', 
+            file_type: file.type,
+            file_size: file.size
+        });
+
         try {
             const res = await fetch('/api/campaign?type=christmas', {
                 method: 'POST',
@@ -64,6 +71,7 @@ export default function ChristmasPage() {
             setStep('result');
             // Auto-publish when generated successfully
             publishToForest();
+            trackingService.track('christmas_tree_generated', { type: 'text' });
         } catch (err: any) {
             setError(err.message);
             setStep('upload');
@@ -78,6 +86,12 @@ export default function ChristmasPage() {
         setStep('processing');
         setError('');
 
+        trackingService.track('upload_resume', { 
+            source: 'christmas_tree', 
+            type: 'text_input',
+            text_length: text.length
+        });
+
         try {
             const res = await fetch('/api/campaign?type=christmas', {
                 method: 'POST',
@@ -91,6 +105,7 @@ export default function ChristmasPage() {
             setStep('result');
             // Auto-publish when generated successfully
             publishToForest();
+            trackingService.track('christmas_tree_generated', { type: 'file' });
         } catch (err: any) {
             setError(err.message);
             setStep('upload');
@@ -146,6 +161,8 @@ export default function ChristmasPage() {
             link.download = `haigoo-magic-tree-${Date.now()}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
+            
+            trackingService.track('download_christmas_tree');
         } catch (err) {
             console.error('Download failed:', err);
             alert('下载失败，请重试');
@@ -165,6 +182,7 @@ export default function ChristmasPage() {
         
         setShareContent(randomText);
         setShowShareModal(true);
+        trackingService.track('click_share_christmas_tree');
     };
 
     return (

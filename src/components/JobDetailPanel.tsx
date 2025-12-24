@@ -15,6 +15,7 @@ import { RiskRatingDisplay } from './RiskRatingDisplay'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { useNotificationHelpers } from './NotificationSystem'
 import { getJobSourceType } from '../utils/job-source-helper'
+import { trackingService } from '../services/tracking-service'
 
 interface JobDetailPanelProps {
     job: Job
@@ -70,6 +71,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         
         // Reset translation state - Auto-enable for members
         setShowTranslation(isMember)
+
+        // Track view job detail
+        if (job?.id) {
+            trackingService.track('view_job_detail', {
+                job_id: job.id,
+                job_title: job.title,
+                company: job.company,
+                source: sourceType
+            })
+        }
     }, [job?.id, isMember])
 
     useEffect(() => {
@@ -138,6 +149,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const proceedToApply = async () => {
         const url = job.url || job.sourceUrl;
+        
+        trackingService.track('click_apply', {
+            job_id: job.id,
+            job_title: job.title,
+            company: job.company,
+            apply_method: url ? 'external_link' : 'internal_apply'
+        });
+
         if (url) {
             window.open(url, '_blank', 'noopener,noreferrer');
 
@@ -173,6 +192,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const handleShare = async () => {
+        trackingService.track('share_job', {
+            job_id: job.id,
+            method: navigator.share ? 'native_share' : 'clipboard'
+        });
+
         try {
             if (navigator.share) {
                 await navigator.share({
@@ -189,6 +213,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const handleSave = () => {
+        trackingService.track('click_save_job', {
+            job_id: job.id,
+            action: isSaved ? 'unsave' : 'save'
+        })
         onSave?.(job.id)
     }
 

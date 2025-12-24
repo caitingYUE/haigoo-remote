@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, FileText, Upload, Send, Clock, CheckCircle } from 'lucide-react';
 import { Job } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { trackingService } from '../services/tracking-service';
 
 interface ReferralApplicationModalProps {
     isOpen: boolean;
@@ -57,6 +58,12 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
         const formData = new FormData();
         formData.append('resume', file);
         formData.append('metadata', JSON.stringify({ source: 'job_application' }));
+
+        trackingService.track('upload_resume', { 
+            source: 'job_application', 
+            file_type: file.type,
+            file_size: file.size
+        });
 
         try {
             const response = await fetch('/api/resumes', {
@@ -151,6 +158,11 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
             if (response.ok) {
                 onSubmitSuccess();
                 onClose();
+                trackingService.track('submit_referral', { 
+                    job_id: job.id, 
+                    resume_id: selectedResumeId,
+                    has_notes: !!notes
+                });
             } else {
                 throw new Error('提交失败');
             }

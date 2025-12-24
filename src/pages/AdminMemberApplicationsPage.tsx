@@ -48,7 +48,7 @@ export default function AdminMemberApplicationsPage() {
 
     const fetchStats = async () => {
         try {
-            const res = await fetch('/api/admin-applications?action=stats', {
+            const res = await fetch('/api/admin-ops?action=application_stats', {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             const data = await res.json()
@@ -64,11 +64,12 @@ export default function AdminMemberApplicationsPage() {
         setLoading(true)
         try {
             const params = new URLSearchParams({
+                action: 'application_list',
                 type: 'member',
                 page: page.toString(),
                 limit: '20'
             })
-            const res = await fetch(`/api/admin-applications?${params}`, {
+            const res = await fetch(`/api/admin-ops?${params}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             const data = await res.json()
@@ -113,7 +114,7 @@ export default function AdminMemberApplicationsPage() {
     const submitStatusUpdate = async (id: number, status: string, start?: string, end?: string) => {
         try {
             const params = new URLSearchParams({
-                action: 'update_status',
+                action: 'application_update_status',
                 type: 'member'
             });
             const body: any = { id, status, type: 'member' };
@@ -122,7 +123,7 @@ export default function AdminMemberApplicationsPage() {
                 body.endDate = end;
             }
 
-            const res = await fetch(`/api/admin-applications?${params}`, {
+            const res = await fetch(`/api/admin-ops?${params}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

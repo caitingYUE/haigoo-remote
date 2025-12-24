@@ -75,12 +75,13 @@ export default function AdminApplicationsPage() {
         setLoading(true)
         try {
             const params = new URLSearchParams({
+                action: 'application_list',
                 type: activeTab,
                 page: page.toString(),
                 limit: '20',
                 search
             })
-            const res = await fetch(`/api/admin-applications?${params}`, {
+            const res = await fetch(`/api/admin-ops?${params}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             const data = await res.json()
@@ -101,11 +102,11 @@ export default function AdminApplicationsPage() {
 
         try {
             const params = new URLSearchParams({
-                action: 'delete_application',
+                action: 'application_delete',
                 id: id.toString(),
                 type: 'referral' // Currently assumes referral, can be expanded if needed
             });
-            const res = await fetch(`/api/admin-applications?${params}`, {
+            const res = await fetch(`/api/admin-ops?${params}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`

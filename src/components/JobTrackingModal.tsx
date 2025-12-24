@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Mail, MessageCircle, Upload, FileText, CheckCircle, AlertCircle, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 
 export interface JobPreferences {
@@ -236,6 +237,13 @@ export function JobTrackingModal({
         setUploadError(null)
 
         try {
+            // Track upload
+            trackingService.track('upload_resume', { 
+                source: 'job_tracking', 
+                file_type: file.type,
+                file_size: file.size
+            })
+
             // 1. Upload to server to track source
             if (token) {
                 const formData = new FormData()

@@ -48,7 +48,7 @@ class RSSService {
   async refreshSources(): Promise<RSSSource[]> {
     try {
       const token = localStorage.getItem('haigoo_auth_token');
-      const res = await fetch('/api/rss-sources', {
+      const res = await fetch('/api/admin-ops?action=rss_sources', {
         headers: {
           'Authorization': `Bearer ${token || ''}`
         }
@@ -85,7 +85,7 @@ class RSSService {
   async addRSSSource(source: RSSSource): Promise<void> {
     try {
       const token = localStorage.getItem('haigoo_auth_token');
-      const res = await fetch('/api/rss-sources', {
+      const res = await fetch('/api/admin-ops?action=rss_sources', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

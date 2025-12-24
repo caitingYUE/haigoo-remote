@@ -44,8 +44,20 @@
       "destination": "/api/admin-ops?action=migrate"
     },
     {
+      "source": "/api/applications",
+      "destination": "/api/users?resource=applications"
+    },
+    {
+      "source": "/api/resumes",
+      "destination": "/api/users?resource=resumes"
+    },
+    {
+      "source": "/api/job-matching",
+      "destination": "/api/users?resource=job-matching"
+    },
+    {
       "source": "/api/parse-resume-new",
-      "destination": "/api/resumes"
+      "destination": "/api/users?resource=resumes"
     },
     {
       "source": "/api/stats",

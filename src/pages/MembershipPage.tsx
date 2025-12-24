@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import JobCardNew from '../components/JobCardNew';
 import { processedJobsService } from '../services/processed-jobs-service';
+import { trackingService } from '../services/tracking-service';
 
 interface Plan {
    id: string;
@@ -69,6 +70,7 @@ const MembershipPage: React.FC = () => {
          fetchStatus();
          fetchApplicationStatus();
       }
+      trackingService.track('view_membership_page');
    }, [isAuthenticated]);
 
    const fetchApplicationStatus = async () => {
@@ -104,6 +106,10 @@ const MembershipPage: React.FC = () => {
          if (data.success) {
              setSubmitSuccess(true);
              setApplicationStatus('pending');
+             trackingService.track('submit_membership_application', {
+                 nickname: formData.nickname,
+                 career_ideal_length: formData.career_ideal.length
+             });
          } else {
              setError(data.error || '提交失败');
          }
@@ -148,6 +154,11 @@ const MembershipPage: React.FC = () => {
       setSelectedPlan(plan);
       // Beta Phase: Show Application Modal instead of direct payment
       setShowApplicationModal(true);
+      trackingService.track('click_subscribe', {
+          plan_id: plan.id,
+          plan_name: plan.name,
+          price: plan.price
+      });
    };
 
    const handleCreatePayment = async () => {
@@ -164,6 +175,11 @@ const MembershipPage: React.FC = () => {
          if (res.data.success) {
             setPaymentInfo(res.data.paymentInfo);
             setCurrentPaymentId(res.data.paymentId);
+            trackingService.track('initiate_payment', {
+                plan_id: selectedPlan.id,
+                payment_method: paymentMethod,
+                amount: selectedPlan.price
+            });
          }
       } catch (error) {
          console.error('Payment creation failed', error);
@@ -175,6 +191,9 @@ const MembershipPage: React.FC = () => {
       setShowPaymentModal(false);
       alert('感谢您的支付！请等待管理员确认开通，或联系客服加快处理。');
       fetchStatus(); // Refresh status
+      trackingService.track('complete_payment_client_claim', {
+          plan_id: selectedPlan?.id
+      });
    };
 
    // Development helper to auto-confirm

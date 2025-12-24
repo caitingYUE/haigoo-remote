@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import type { User, AuthResponse } from '../types/auth-types'
+import { trackingService } from '../services/tracking-service'
 
 interface AuthContextValue {
   user: User | null
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
+    trackingService.reset()
     console.log('[AuthContext] User logged out')
   }, [])
 
@@ -72,6 +74,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsedUser = JSON.parse(storedUser)
         setToken(storedToken)
         setUser(parsedUser)
+        // Identify user for tracking
+        if (parsedUser.id || parsedUser.user_id) {
+          trackingService.identify(parsedUser.user_id || parsedUser.id)
+        }
         // 验证 token 并刷新用户信息
         refreshUserSilently(storedToken)
       } catch (error) {
@@ -124,6 +130,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user)
         localStorage.setItem(TOKEN_KEY, data.token)
         localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+        
+        // Tracking
+        trackingService.identify(data.user.user_id || data.user.id)
+        trackingService.track('login_success', { method: 'email' })
       }
 
       return data

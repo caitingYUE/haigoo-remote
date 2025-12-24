@@ -41,6 +41,23 @@ const AdminBugReportsPage = lazy(() => import('./pages/AdminBugReportsPage'))
 const BugLeaderboardPage = lazy(() => import('./pages/BugLeaderboardPage'))
 
 import { BugReportButton } from './components/BugReporter/BugReportButton'
+import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+import { trackingService } from './services/tracking-service'
+
+// Page view tracker component
+function PageViewTracker() {
+  const location = useLocation()
+
+  useEffect(() => {
+    trackingService.pageView({
+      path: location.pathname,
+      search: location.search
+    })
+  }, [location])
+
+  return null
+}
 
 function App() {
   console.log('Haigoo Frontend Version: 2025-12-18-Fix-Visuals-v2');
@@ -51,6 +68,7 @@ function App() {
           <NotificationProvider>
             <GlobalVerificationGuard>
               <BugReportButton />
+              <PageViewTracker />
               <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
                 <Routes>
                   {/* Public: Christmas Campaign */}
