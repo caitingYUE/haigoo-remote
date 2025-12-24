@@ -138,15 +138,23 @@ export async function saveUserResume(userId, resumeData) {
         // 先删除该用户的旧简历
         await neonHelper.query('DELETE FROM resumes WHERE user_id = $1', [userId])
         
-        // 插入新简历
-        const newResume = {
-            ...resumeData,
+        // 兼容处理：传入的是 Buffer 还是预处理好的对象
+        let newResume = {
+            id: resumeData.id || `resume_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             userId,
+            fileName: resumeData.fileName || resumeData.originalname || 'unknown_file',
+            size: resumeData.size || (resumeData.buffer ? resumeData.buffer.length : 0),
+            fileType: resumeData.fileType || (resumeData.mimetype ? resumeData.mimetype.split('/').pop() : 'unknown'),
             updatedAt: new Date().toISOString(),
-            id: resumeData.id || `resume_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+            parseStatus: resumeData.parseStatus || 'pending',
+            parseResult: resumeData.parseResult || null,
+            parseError: resumeData.parseError || null,
+            contentText: resumeData.contentText || null,
+            metadata: resumeData.metadata || {}
         }
-        
-        const fileContent = resumeData.fileContent || null
+
+        // 如果传入了 buffer，则保存文件内容
+        let fileContent = resumeData.fileContent || (resumeData.buffer ? resumeData.buffer : null)
 
         await neonHelper.query(`
             INSERT INTO resumes (
@@ -160,11 +168,11 @@ export async function saveUserResume(userId, resumeData) {
             newResume.fileName,
             newResume.size,
             newResume.fileType,
-            newResume.parseStatus || 'pending',
-            newResume.parseResult || null,
-            newResume.parseError || null,
-            newResume.contentText || null,
-            newResume.metadata || {},
+            newResume.parseStatus,
+            newResume.parseResult,
+            newResume.parseError,
+            newResume.contentText,
+            newResume.metadata,
             fileContent
         ])
         

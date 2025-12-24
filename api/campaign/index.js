@@ -358,8 +358,9 @@ async function handleChristmas(req, res) {
                     fileObj.mimetype = mimeMap[ext] || 'application/octet-stream';
 
                     console.log(`[Christmas] Saving resume for user: ${storageUserId}`);
+                    // Pass storageUserId which might be a real user ID or a lead ID
                     const savedUrl = await saveUserResume(storageUserId, fileObj);
-                    console.log(`[Christmas] Resume saved at: ${savedUrl}`);
+                    console.log(`[Christmas] Resume saved result:`, savedUrl);
                     
                     // We might want to store this URL in the tree data or session for later "Lead Capture" association
                     // For now, it's saved in storage.
