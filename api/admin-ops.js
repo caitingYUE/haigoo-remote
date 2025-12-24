@@ -122,5 +122,20 @@ export default async function handler(req, res) {
         }
     }
 
+    // Repair Campaign Leads Table Schema
+    if (action === 'repair_campaign_leads') {
+        const token = extractToken(req)
+        if (!token || !verifyToken(token)) return res.status(401).json({ error: 'Unauthorized' })
+
+        try {
+            await neonHelper.query('ALTER TABLE campaign_leads ADD COLUMN IF NOT EXISTS user_id VARCHAR(255)')
+            await neonHelper.query('ALTER TABLE campaign_leads ADD COLUMN IF NOT EXISTS is_registered BOOLEAN DEFAULT false')
+            await neonHelper.query('ALTER TABLE campaign_leads ADD COLUMN IF NOT EXISTS allow_resume_storage BOOLEAN DEFAULT false')
+            return res.status(200).json({ success: true, message: 'Campaign leads schema repaired successfully' })
+        } catch (e) {
+            return res.status(500).json({ success: false, error: e.message })
+        }
+    }
+
     return res.status(404).json({ error: `Unknown admin action: ${action}` })
 }

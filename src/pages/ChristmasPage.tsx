@@ -22,7 +22,7 @@ const Corner = ({ className }: { className?: string }) => (
 import { ChristmasBGM } from '../components/Christmas/ChristmasBGM';
 
 export default function ChristmasPage() {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const navigate = useNavigate();
     
     const [step, setStep] = useState<'upload' | 'processing' | 'result'>('upload');
