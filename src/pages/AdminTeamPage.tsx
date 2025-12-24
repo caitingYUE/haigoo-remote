@@ -50,6 +50,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { processedJobsService } from '../services/processed-jobs-service';
 
 import AdminTrackingManagement from '../components/admin/AdminTrackingManagement';
+import AdminTrackingDashboard from '../components/admin/AdminTrackingDashboard';
 
 // 扩展RSSSource接口以包含管理所需的字段
 interface ExtendedRSSSource extends RSSSource {
@@ -878,6 +879,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'job-applications', label: '岗位申请', icon: Briefcase },
     { id: 'member-applications', label: '会员申请', icon: FileText },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
+    { id: 'core-metrics', label: '核心看板', icon: Activity }, // New Tab
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'settings', label: '系统设置', icon: Settings },
     { id: 'tracking', label: '埋点管理', icon: Activity }
@@ -984,6 +986,7 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'trusted-companies' && <AdminTrustedCompaniesPage />}
               {activeTab === 'tag-management' && <AdminTagManagementPage />}
               {activeTab === 'analytics' && renderAnalytics()}
+              {activeTab === 'core-metrics' && <AdminTrackingDashboard />}
               {activeTab === 'feedback' && renderFeedbackList()}
               {activeTab === 'settings' && renderSettings()}
               {activeTab === 'tracking' && <AdminTrackingManagement />}
