@@ -119,6 +119,29 @@ export class DataManagementService {
 
       await Promise.all(syncPromises);
 
+      // 触发服务端全量职位数据重新解析（地点/薪资增强）
+      // 这将涵盖 RSS 职位以及 Crawler 职位
+      if (!skipProcessing) {
+        try {
+          console.log('触发服务端全量职位数据重新解析（地点/薪资增强）...');
+          const reprocessResp = await fetch('/api/data/processed-jobs?action=reprocess', { method: 'POST' });
+          const reprocessResult = await reprocessResp.json();
+          console.log('全量职位重新解析完成:', reprocessResult);
+          if (reprocessResult.updated > 0) {
+            // 注意：这里可能会重复计算更新数，但作为统计参考是可以的
+            syncStatus.updatedJobs += reprocessResult.updated;
+          }
+        } catch (e) {
+          console.error('全量职位重新解析失败:', e);
+          syncStatus.errors.push({
+            source: 'System',
+            url: '',
+            error: `全量重解析失败: ${e instanceof Error ? e.message : String(e)}`,
+            timestamp: new Date()
+          });
+        }
+      }
+
       // 清理过期数据
       await this.cleanupOldData();
 
