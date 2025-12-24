@@ -22,6 +22,7 @@ export async function getResumes() {
                 ai_score, ai_suggestions, last_analyzed_at
             FROM resumes 
             ORDER BY created_at DESC
+            LIMIT 50
         `)
         
         if (result && result.length > 0) {

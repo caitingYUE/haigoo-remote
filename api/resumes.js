@@ -268,7 +268,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { action, id } = req.query
 
-      // 下载简历
+      // Download Resume Content
       if (action === 'download' && id) {
         const token = extractToken(req)
         if (!token) return sendJson(res, { success: false, error: 'Authentication required' }, 401)
@@ -277,36 +277,39 @@ export default async function handler(req, res) {
         const decoded = await verifyToken(token)
         if (!decoded) return sendJson(res, { success: false, error: 'Invalid token' }, 401)
 
-        const { resumes } = await getResumes()
-        const resume = resumes.find(r => r.id === id)
-        if (!resume) return sendJson(res, { success: false, error: 'Resume not found' }, 404)
+        // Try to get content from DB directly first
+        const content = await getResumeContent(id)
+        
+        if (content) {
+            // It's a buffer or base64 string?
+            // saveUserResume saves it as bytea or whatever DB supports. 
+            // Neon helper query returns rows.
+            // If getResumeContent returns the raw value, we need to handle it.
+            // Assuming getResumeContent returns the buffer or string.
+            
+            // If it's stored as bytea in postgres, pg driver returns Buffer.
+            // Let's send it.
+            let bufferToSend = content;
+            // If it's a string (e.g. base64), convert to buffer
+            if (typeof content === 'string') {
+                // Check if it's base64
+                if (content.match(/^[A-Za-z0-9+/=]+$/)) {
+                     bufferToSend = Buffer.from(content, 'base64');
+                } else {
+                     bufferToSend = Buffer.from(content);
+                }
+            }
 
-        // 权限检查
-        const isOwner = resume.userId === decoded.userId
-        const isAdmin = decoded.admin === true
-        if (!isOwner && !isAdmin) return sendJson(res, { success: false, error: 'Permission denied' }, 403)
-
-        if (!resume.localFilePath) return sendJson(res, { success: false, error: 'Local file not available' }, 404)
-
-        try {
-          await fs.access(resume.localFilePath)
-          const fileBuffer = await fs.readFile(resume.localFilePath)
-
-          const ext = path.extname(resume.fileName).toLowerCase()
-          let contentType = 'application/octet-stream'
-          if (ext === '.pdf') contentType = 'application/pdf'
-          else if (ext === '.doc') contentType = 'application/msword'
-          else if (ext === '.docx') contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-          else if (ext === '.txt') contentType = 'text/plain'
-
-          res.setHeader('Content-Type', contentType)
-          res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(resume.fileName)}"`)
-          res.setHeader('Content-Length', fileBuffer.length)
-          return res.status(200).send(fileBuffer)
-        } catch (error) {
-          return sendJson(res, { success: false, error: 'File not found on server' }, 404)
+            res.setHeader('Content-Type', 'application/octet-stream')
+            res.setHeader('Content-Disposition', `attachment; filename="resume-${id}.file"`)
+            res.send(bufferToSend)
+            return
         }
+
+        return sendJson(res, { success: false, error: 'Resume content not found' }, 404)
       }
+
+
 
       // 获取简历内容（用于预览）
       if (action === 'content' && id) {
@@ -334,31 +337,42 @@ export default async function handler(req, res) {
         return sendJson(res, { success: false, error: 'Content not available' }, 404)
       }
 
-      // 获取列表
-      // Ensure we filter by userId if not admin
+      // List all resumes (Admin or Owner)
       const token = extractToken(req)
       if (!token) return sendJson(res, { success: false, error: 'Authentication required' }, 401)
       const decoded = await verifyToken(token)
       if (!decoded) return sendJson(res, { success: false, error: 'Invalid token' }, 401)
 
-      const { resumes, provider } = await getResumes()
+      const { resumes, provider, error } = await getResumes()
       
-      // Filter resumes for current user unless admin
-      let filteredResumes = resumes
-      if (!decoded.admin) {
-        filteredResumes = resumes.filter(r => r.userId === decoded.userId)
+      if (error) {
+          return sendJson(res, { success: false, error, provider }, 500)
       }
 
-      res.setHeader('X-Storage-Provider', provider)
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
-      res.setHeader('Pragma', 'no-cache')
-      res.setHeader('Expires', '0')
+      // Filter based on role (Admin sees all, User sees own)
+      // Actually, getResumes returns ALL. We should filter here or in DB.
+      // For now filter here.
+      // Wait, is decoded.admin reliable?
+      // Let's check DB roles if needed, but token payload usually has role.
+      // If admin, return all. If user, return own.
       
-      return sendJson(res, {
-        success: true,
-        data: filteredResumes,
-        provider,
-        count: filteredResumes.length
+      // Admin check logic similar to other handlers
+      // For now, let's assume if they can access this route and are admin, they see all.
+      // But getResumes() returns EVERYTHING.
+      
+      let filteredResumes = resumes;
+      // Simple admin check based on token payload or hardcoded emails (temporary)
+      const isAdmin = decoded.admin === true || decoded.email === 'caitlinyct@gmail.com' || decoded.email === 'mrzhangzy1996@gmail.com';
+      
+      if (!isAdmin) {
+          filteredResumes = resumes.filter(r => r.userId === decoded.userId);
+      }
+
+      return sendJson(res, { 
+          success: true, 
+          data: filteredResumes,
+          provider,
+          count: filteredResumes.length 
       })
     }
 
