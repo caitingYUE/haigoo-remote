@@ -31,7 +31,7 @@ interface DashboardData {
 }
 
 export default function AdminTrackingDashboard() {
-  const { getToken } = useAuth();
+  const { token } = useAuth();
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('week');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -39,7 +39,6 @@ export default function AdminTrackingDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const token = await getToken();
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 

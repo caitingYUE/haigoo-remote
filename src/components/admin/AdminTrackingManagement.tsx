@@ -153,6 +153,8 @@ const AdminTrackingManagement: React.FC = () => {
             ]}
           />
         </div>
+      </div>
+    </div>
       )}
     </div>
   );
