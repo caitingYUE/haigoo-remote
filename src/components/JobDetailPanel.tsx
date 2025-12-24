@@ -308,7 +308,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     return (
         <div className="flex flex-col bg-white">
             {/* Header */}
-            <header className="flex-shrink-0 border-b border-slate-100 bg-white/50 backdrop-blur-md px-6 py-5 ss-premium-header">
+            <header className="flex-shrink-0 border-b border-slate-100 bg-white/50 backdrop-blur-md px-6 py-5 ss-premium-header relative z-20">
                 <div className="flex items-start justify-between mb-4">
                     <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex-1 pr-6 leading-tight tracking-tight">
                         {displayText(job.title, job.translations?.title)}
