@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   BarChart2, 
   Map, 
@@ -10,13 +10,48 @@ import {
   User,
   ShoppingBag,
   Search,
-  Share2
+  Share2,
+  LayoutDashboard,
+  PenTool
 } from 'lucide-react';
+import AdminTrackingDashboard from './AdminTrackingDashboard';
 
 const AdminTrackingManagement: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'design'>('dashboard');
+
   return (
-    <div className="space-y-8">
-      {/* Header & Overview */}
+    <div className="space-y-6">
+      {/* Tab Navigation */}
+      <div className="flex border-b border-slate-200 mb-6">
+        <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-6 py-3 flex items-center gap-2 font-medium text-sm transition-colors border-b-2 ${
+                activeTab === 'dashboard'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+        >
+            <LayoutDashboard className="w-4 h-4" />
+            数据看板
+        </button>
+        <button
+            onClick={() => setActiveTab('design')}
+            className={`px-6 py-3 flex items-center gap-2 font-medium text-sm transition-colors border-b-2 ${
+                activeTab === 'design'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+        >
+            <PenTool className="w-4 h-4" />
+            埋点设计
+        </button>
+      </div>
+
+      {activeTab === 'dashboard' ? (
+        <AdminTrackingDashboard />
+      ) : (
+        <div className="space-y-8">
+          {/* Header & Overview */}
       <div className="card">
         <div className="card-header">
           <div className="flex items-center gap-3">
@@ -120,6 +155,7 @@ const AdminTrackingManagement: React.FC = () => {
 
         </div>
       </div>
+      )}
     </div>
   );
 };
