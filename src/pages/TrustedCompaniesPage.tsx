@@ -38,7 +38,7 @@ export default function TrustedCompaniesPage() {
     // Pagination State
     const [page, setPage] = useState(1)
     const [hasMore, setHasMore] = useState(false)
-    const PAGE_SIZE = 24 // Increased batch size
+    const PAGE_SIZE = 12 // Reduced initial batch size for faster paint
 
     // Dynamic job categories for filter (matching tag_config)
     const jobCategoryOptions = useMemo(() => {
@@ -223,8 +223,25 @@ export default function TrustedCompaniesPage() {
                 </div>
 
                 {loading && filteredCompanies.length === 0 ? (
-                    <div className="flex justify-center py-20">
-                        <LoadingSpinner />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="bg-white rounded-xl border border-slate-100 overflow-hidden h-[340px] animate-pulse">
+                                <div className="h-[56%] bg-slate-200" />
+                                <div className="p-5 space-y-3">
+                                    <div className="flex justify-between items-start">
+                                        <div className="h-6 bg-slate-200 rounded w-1/2" />
+                                        <div className="h-5 bg-slate-200 rounded w-16" />
+                                    </div>
+                                    <div className="h-4 bg-slate-200 rounded w-1/3" />
+                                    <div className="h-4 bg-slate-200 rounded w-full" />
+                                    <div className="h-4 bg-slate-200 rounded w-2/3" />
+                                    <div className="pt-4 mt-2 border-t border-slate-50 flex justify-between">
+                                        <div className="h-4 bg-slate-200 rounded w-1/3" />
+                                        <div className="h-4 bg-slate-200 rounded w-1/4" />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : filteredCompanies.length === 0 ? (
                     <div className="text-center py-20 text-slate-500">

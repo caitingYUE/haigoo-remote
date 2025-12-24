@@ -54,6 +54,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                     <img
                         src={company.coverImage}
                         alt={`${company.name} cover`}
+                        loading="lazy"
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                 ) : company.logo ? (
@@ -61,6 +62,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                         <img
                             src={company.logo}
                             alt={`${company.name} logo`}
+                            loading="lazy"
                             className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                         />
                     </div>
