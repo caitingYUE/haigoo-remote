@@ -6,7 +6,7 @@ import { ShareCopyModal } from '../components/Christmas/ShareCopyModal';
 import { EmailCaptureModal } from '../components/Christmas/EmailCaptureModal';
 import { HappinessCard } from '../components/Christmas/HappinessCard';
 import { ChristmasErrorBoundary } from '../components/Christmas/ChristmasErrorBoundary';
-import { Upload, Sparkles, Share2, Loader2, Download, Wand2, Gift, Trees, ShieldCheck, ArrowLeft, Briefcase } from 'lucide-react';
+import { Upload, Sparkles, Share2, Loader2, Download, Wand2, Gift, Trees, ShieldCheck, ArrowLeft, Briefcase, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { trackingService } from '../services/tracking-service';
 import { useNavigate } from 'react-router-dom';
@@ -38,6 +38,25 @@ export default function ChristmasPage() {
     const [shareContent, setShareContent] = useState('');
     const treeRef = useRef<HTMLDivElement>(null);
 
+    const [existingResume, setExistingResume] = useState<any>(null);
+
+    React.useEffect(() => {
+        if (user && token) {
+            fetch('/api/resumes', { headers: { Authorization: `Bearer ${token}` } })
+                .then(res => res.json())
+                .then(data => {
+                     if (data.data && data.data.length > 0) {
+                         // Find the most recent valid resume with content
+                         const validResume = data.data.find((r: any) => r.contentText && r.contentText.length > 50);
+                         if (validResume) {
+                             setExistingResume(validResume);
+                         }
+                     }
+                })
+                .catch(err => console.error(err));
+        }
+    }, [user, token]);
+
     const publishToForest = async () => {
         if (hasPublished || !treeData) return;
         // Auto publish removed as forest is removed
@@ -60,8 +79,14 @@ export default function ChristmasPage() {
         });
 
         try {
+            const headers: Record<string, string> = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const res = await fetch('/api/campaign?type=christmas', {
                 method: 'POST',
+                headers,
                 body: formData,
             });
 
@@ -94,9 +119,14 @@ export default function ChristmasPage() {
         });
 
         try {
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const res = await fetch('/api/campaign?type=christmas', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ text })
             });
             const json = await res.json();
