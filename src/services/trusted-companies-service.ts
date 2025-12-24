@@ -140,6 +140,7 @@ class TrustedCompaniesService {
         search?: string;
         canRefer?: 'all' | 'yes' | 'no';
         region?: string;
+        minJobs?: number;
     }): Promise<PaginatedCompaniesResponse> {
         try {
             const queryParams = new URLSearchParams();
@@ -155,6 +156,7 @@ class TrustedCompaniesService {
             if (params.search) queryParams.append('search', params.search);
             if (params.canRefer && params.canRefer !== 'all') queryParams.append('canRefer', params.canRefer);
             if (params.region) queryParams.append('region', params.region);
+            if (params.minJobs !== undefined) queryParams.append('minJobs', params.minJobs.toString());
 
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch companies with job stats');

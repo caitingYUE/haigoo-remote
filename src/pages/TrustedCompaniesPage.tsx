@@ -5,6 +5,7 @@ import { trustedCompaniesService, TrustedCompany } from '../services/trusted-com
 import SearchBar from '../components/SearchBar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
+import SingleSelectDropdown from '../components/SingleSelectDropdown'
 import HomeCompanyCard from '../components/HomeCompanyCard'
 import { TrustedStandardsBanner } from '../components/TrustedStandardsBanner'
 import { CompanyNominationBanner } from '../components/CompanyNominationBanner'
@@ -52,10 +53,11 @@ export default function TrustedCompaniesPage() {
                 page: 1,
                 limit: 50,
                 sortBy: sortBy,
-                sortOrder: 'desc'
+                sortOrder: 'desc',
+                minJobs: 1 // Filter for companies with at least 1 job
             })
 
-            const companiesList = (result.companies || []).filter(c => (c.jobCount || 0) > 0)
+            const companiesList = result.companies || []
             setCompanies(companiesList)
             setFilteredCompanies(companiesList)
 
@@ -86,10 +88,11 @@ export default function TrustedCompaniesPage() {
                 sortBy: sortBy,
                 sortOrder: 'desc',
                 search: searchTerm,
-                industry: selectedIndustries.length > 0 ? selectedIndustries[0] : undefined
+                industry: selectedIndustries.length > 0 ? selectedIndustries[0] : undefined,
+                minJobs: 1 // Filter for companies with at least 1 job
             })
 
-            const filteredList = (result.companies || []).filter(c => (c.jobCount || 0) > 0)
+            const filteredList = result.companies || []
             setFilteredCompanies(filteredList)
 
         } catch (error) {
@@ -149,17 +152,15 @@ export default function TrustedCompaniesPage() {
                                 />
                                 
                                 {/* Sorting Dropdown */}
-                                <div className="relative inline-block text-left">
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value as 'jobCount' | 'createdAt')}
-                                        className="h-11 pl-4 pr-10 text-sm font-medium bg-white border border-slate-200 rounded-xl hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all appearance-none cursor-pointer text-slate-700"
-                                        style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
-                                    >
-                                        <option value="jobCount">最多岗位</option>
-                                        <option value="createdAt">最新加入</option>
-                                    </select>
-                                </div>
+                                <SingleSelectDropdown
+                                    label="排序"
+                                    options={[
+                                        { label: '最多岗位', value: 'jobCount' },
+                                        { label: '最新加入', value: 'createdAt' }
+                                    ]}
+                                    selected={sortBy}
+                                    onChange={(val) => setSortBy(val as 'jobCount' | 'createdAt')}
+                                />
 
                                 {selectedIndustries.length > 0 && (
                                     <button
