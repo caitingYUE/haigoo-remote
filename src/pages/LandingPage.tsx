@@ -29,6 +29,8 @@ export default function LandingPage() {
   const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<{ totalJobs: number | null, companiesCount: number | null, dailyJobs: number | null }>({ totalJobs: null, companiesCount: null, dailyJobs: null })
+  const [jobsLoading, setJobsLoading] = useState(true)
+  const [companiesLoading, setCompaniesLoading] = useState(true)
 
   const toggleSaveJob = async (jobId: string) => {
     if (!isAuthenticated || !token) {
@@ -139,18 +141,34 @@ export default function LandingPage() {
           console.error('Failed to fetch stats:', e)
         }
 
-        const [featuredJobsData, featuredCompaniesData] = await Promise.all([
-          processedJobsService.getFeaturedHomeJobs(),
-          trustedCompaniesService.getFeaturedCompanies()
-        ])
-        
-        setFeaturedJobs(featuredJobsData)
-        setTrustedCompanies(featuredCompaniesData.companies)
-        setCompanyJobStats(featuredCompaniesData.stats)
+        // 2. 并行发起所有数据请求，但各自独立处理结果
+        // 精选岗位数据
+        processedJobsService.getFeaturedHomeJobs()
+          .then(featuredJobsData => {
+            setFeaturedJobs(featuredJobsData)
+            setJobsLoading(false)
+          })
+          .catch(error => {
+            console.error('Failed to load featured jobs:', error)
+            setJobsLoading(false)
+          })
+
+        // 精选企业数据
+        trustedCompaniesService.getFeaturedCompanies()
+          .then(featuredCompaniesData => {
+            setTrustedCompanies(featuredCompaniesData.companies)
+            setCompanyJobStats(featuredCompaniesData.stats)
+            setCompaniesLoading(false)
+          })
+          .catch(error => {
+            console.error('Failed to load featured companies:', error)
+            setCompaniesLoading(false)
+          })
 
       } catch (error) {
         console.error('Failed to load data:', error)
       } finally {
+        // 设置整体loading为false，让页面可以开始渲染
         setLoading(false)
       }
     }
@@ -183,7 +201,7 @@ export default function LandingPage() {
             </button>
           </div>
 
-          {loading ? (
+          {jobsLoading ? (
             <div className="flex justify-center py-20">
               <div className="relative">
                 <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
@@ -235,7 +253,7 @@ export default function LandingPage() {
             </button>
           </div>
 
-          {loading ? (
+          {companiesLoading ? (
             <div className="flex justify-center py-20">
               <div className="relative">
                 <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
