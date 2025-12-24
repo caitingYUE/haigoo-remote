@@ -20,7 +20,9 @@ export default function TrustedCompaniesPage() {
 
     // Filters
     const [selectedIndustries, setSelectedIndustries] = useState<string[]>([])
-    const [sortBy, setSortBy] = useState<'jobCount' | 'createdAt'>('jobCount')
+    // Removed sortBy state as we now default to backend sort (updatedAt) and user cannot change it
+    // const [sortBy, setSortBy] = useState<'jobCount' | 'createdAt'>('jobCount')
+    const [selectedJobCategories, setSelectedJobCategories] = useState<string[]>([])
     
     // Add missing state variables
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
@@ -31,6 +33,17 @@ export default function TrustedCompaniesPage() {
     const [totalActiveJobs, setTotalActiveJobs] = useState(0)
     const [isNominationModalOpen, setIsNominationModalOpen] = useState(false)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+    
+    // Hardcoded job categories for filter (matching tag_config)
+    const jobCategoryOptions = [
+        '全栈开发', '前端开发', '后端开发', '移动开发', '算法工程师', '数据开发',
+        '服务器开发', '运维/SRE', '测试/QA', '网络安全', '操作系统/内核', '技术支持',
+        '硬件开发', '架构师', 'CTO/技术管理', '软件开发', '产品经理', '产品设计',
+        '用户研究', '项目管理', 'UI/UX设计', '平面设计', '视觉设计', '数据分析',
+        '数据科学', '商业分析', '运营', '市场营销', '销售', '客户经理', '客户服务',
+        '内容创作', '增长黑客', '人力资源', '招聘', '财务', '法务', '行政', '管理',
+        '教育培训', '咨询', '投资', '其他'
+    ].map(c => ({ label: c, value: c }));
 
     useEffect(() => {
         loadData()
@@ -38,13 +51,16 @@ export default function TrustedCompaniesPage() {
 
     // 当搜索或过滤条件变化时，重新加载数据
     useEffect(() => {
-        if (searchTerm || selectedIndustries.length > 0 || sortBy) {
+        if (searchTerm || selectedIndustries.length > 0 || selectedJobCategories.length > 0) {
             loadFilteredData()
         } else {
             // 如果没有搜索条件，使用初始加载的数据
-            setFilteredCompanies(companies.filter(c => (c.jobCount || 0) > 0))
+            // But initial data might be stale if we fetched it differently.
+            // Actually, loadData fetches page 1 with defaults.
+            // We should just reload with defaults if cleared.
+            loadFilteredData()
         }
-    }, [searchTerm, selectedIndustries, sortBy])
+    }, [searchTerm, selectedIndustries, selectedJobCategories])
 
     const loadData = async () => {
         try {
@@ -53,7 +69,7 @@ export default function TrustedCompaniesPage() {
             const result = await trustedCompaniesService.getCompaniesWithJobStats({
                 page: 1,
                 limit: 50,
-                sortBy: sortBy,
+                sortBy: 'updatedAt', // Default sort
                 sortOrder: 'desc',
                 minJobs: 1 // Filter for companies with at least 1 job
             })
@@ -89,10 +105,11 @@ export default function TrustedCompaniesPage() {
             const result = await trustedCompaniesService.getCompaniesWithJobStats({
                 page: 1,
                 limit: 1000,
-                sortBy: sortBy,
+                sortBy: 'updatedAt', // Default sort
                 sortOrder: 'desc',
                 search: searchTerm,
                 industry: selectedIndustries.length > 0 ? selectedIndustries[0] : undefined,
+                jobCategories: selectedJobCategories, // Pass selected categories
                 minJobs: 1 // Filter for companies with at least 1 job
             })
 
@@ -101,6 +118,16 @@ export default function TrustedCompaniesPage() {
             
             // Set total active jobs count
             setTotalActiveJobs(result.totalActiveJobs || 0)
+
+            // Update job counts for filtered results too
+             const counts: Record<string, { total: number, categories: Record<string, number> }> = {}
+            filteredList.forEach((company: TrustedCompany) => {
+                counts[company.id] = {
+                    total: company.jobCount || 0,
+                    categories: (company as any).jobCategories || {}
+                }
+            })
+            setJobCounts(counts)
 
         } catch (error) {
             console.error('Failed to load filtered data:', error)
@@ -112,6 +139,10 @@ export default function TrustedCompaniesPage() {
     // Derived Filter Options
     const industryOptions = useMemo(() => {
         const industries = new Set<string>()
+        // Use all companies or just filtered? 
+        // Better to use all initial loaded companies to populate options, or hardcode common industries.
+        // For now, using loaded companies is fine but might be limited if page 1 doesn't have all.
+        // Ideally we fetch config.
         companies.forEach(c => {
             if (c.industry) industries.add(c.industry)
         })
@@ -158,20 +189,17 @@ export default function TrustedCompaniesPage() {
                                     onChange={setSelectedIndustries}
                                 />
                                 
-                                {/* Sorting Dropdown */}
-                                <SingleSelectDropdown
-                                    label="排序"
-                                    options={[
-                                        { label: '最多岗位', value: 'jobCount' },
-                                        { label: '最新加入', value: 'createdAt' }
-                                    ]}
-                                    selected={sortBy}
-                                    onChange={(val) => setSortBy(val as 'jobCount' | 'createdAt')}
+                                {/* Replaced Sorting with Job Category Filter */}
+                                <MultiSelectDropdown
+                                    label="在招岗位"
+                                    options={jobCategoryOptions}
+                                    selected={selectedJobCategories}
+                                    onChange={setSelectedJobCategories}
                                 />
 
-                                {selectedIndustries.length > 0 && (
+                                {(selectedIndustries.length > 0 || selectedJobCategories.length > 0) && (
                                     <button
-                                        onClick={() => { setSelectedIndustries([]); }}
+                                        onClick={() => { setSelectedIndustries([]); setSelectedJobCategories([]); }}
                                         className="px-4 h-11 flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors whitespace-nowrap"
                                     >
                                         重置

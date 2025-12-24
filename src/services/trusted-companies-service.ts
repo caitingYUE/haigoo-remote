@@ -142,6 +142,7 @@ class TrustedCompaniesService {
         canRefer?: 'all' | 'yes' | 'no';
         region?: string;
         minJobs?: number;
+        jobCategories?: string[]; // Added new filter
     }): Promise<PaginatedCompaniesResponse> {
         try {
             const queryParams = new URLSearchParams();
@@ -158,6 +159,15 @@ class TrustedCompaniesService {
             if (params.canRefer && params.canRefer !== 'all') queryParams.append('canRefer', params.canRefer);
             if (params.region) queryParams.append('region', params.region);
             if (params.minJobs !== undefined) queryParams.append('minJobs', params.minJobs.toString());
+            if (params.jobCategories && params.jobCategories.length > 0) {
+                // Pass as comma-separated string or multiple params? Backend supports both if logic is robust.
+                // The backend implementation I wrote handles comma-separated string if passed as `jobCategories`.
+                // URLSearchParams handles arrays by appending multiple keys if we loop, or we can join.
+                // My backend implementation `typeof jobCategories === 'string' ? jobCategories.split(',')` handles joined string.
+                // And `Array.isArray(jobCategories)` handles multiple keys if express/next parses them.
+                // Let's use comma-separated for safety with URLSearchParams standard behavior usually being one key.
+                queryParams.append('jobCategories', params.jobCategories.join(','));
+            }
 
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch companies with job stats');
