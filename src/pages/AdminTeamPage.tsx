@@ -92,10 +92,16 @@ const AdminTeamPage: React.FC = () => {
 
   // 简历管理状态
   const [resumes, setResumes] = useState<any[]>([]);
-  const [userMap, setUserMap] = useState<Record<string, string>>({});
+  const [userMap, setUserMap] = useState<Record<string, any>>({}); // Store full user object
   const [resumeSearchTerm, setResumeSearchTerm] = useState('');
   const [resumeLoading, setResumeLoading] = useState(false);
   const [storageProvider, setStorageProvider] = useState<string>('');
+  
+  // 简历筛选状态
+  const [resumeSourceFilter, setResumeSourceFilter] = useState<string>('all');
+  const [resumeUserTypeFilter, setResumeUserTypeFilter] = useState<string>('all');
+  const [resumeTalentPoolFilter, setResumeTalentPoolFilter] = useState<string>('all');
+  const [resumeSort, setResumeSort] = useState<'newest' | 'oldest'>('newest');
 
   const { user, logout } = useAuth();
 
@@ -167,7 +173,6 @@ const AdminTeamPage: React.FC = () => {
         }
       });
 
-
       if (res.ok) {
         const data = await res.json();
         const rawResumes = data.data || [];
@@ -206,9 +211,9 @@ const AdminTeamPage: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.users)) {
-            const map: Record<string, string> = {};
+            const map: Record<string, any> = {};
             data.users.forEach((u: any) => {
-                map[u.id] = u.username || u.email || 'Unknown';
+                map[u.id] = u; // Store full user object
             });
             setUserMap(map);
         }
@@ -511,12 +516,38 @@ const AdminTeamPage: React.FC = () => {
 
   // 渲染简历库
   const renderResumeLibrary = () => {
-    const filteredResumes = resumes.filter(resume => {
+    // 1. Filter
+    let filteredResumes = resumes.filter(resume => {
+      // Search
       const term = resumeSearchTerm.toLowerCase();
-      // Search by filename or user ID
       const fileName = resume.fileName?.toLowerCase() || '';
       const userId = resume.userId?.toLowerCase() || '';
-      return fileName.includes(term) || userId.includes(term);
+      const email = (resume.metadata?.email || userMap[resume.userId]?.email || '').toLowerCase();
+      const matchesSearch = fileName.includes(term) || userId.includes(term) || email.includes(term);
+
+      // Filters
+      const matchesSource = resumeSourceFilter === 'all' || 
+        (resumeSourceFilter === 'christmas' && resume.source === 'christmas_tree') ||
+        (resumeSourceFilter === 'personal' && resume.source === 'personal_center') ||
+        (resumeSourceFilter === 'application' && resume.source === 'job_application') ||
+        (resumeSourceFilter === 'unknown' && !resume.source);
+
+      const matchesUserType = resumeUserTypeFilter === 'all' || 
+        (resumeUserTypeFilter === 'lead' && resume.userType === 'Lead') ||
+        (resumeUserTypeFilter === 'registered' && resume.userType === 'Registered');
+
+      const matchesTalentPool = resumeTalentPoolFilter === 'all' || 
+        (resumeTalentPoolFilter === 'yes' && resume.metadata?.joinTalentPool === true) ||
+        (resumeTalentPoolFilter === 'no' && resume.metadata?.joinTalentPool !== true);
+
+      return matchesSearch && matchesSource && matchesUserType && matchesTalentPool;
+    });
+
+    // 2. Sort
+    filteredResumes.sort((a, b) => {
+      const dateA = new Date(a.uploadedAt).getTime();
+      const dateB = new Date(b.uploadedAt).getTime();
+      return resumeSort === 'newest' ? dateB - dateA : dateA - dateB;
     });
 
     const formatSize = (bytes: number) => {
@@ -534,57 +565,104 @@ const AdminTeamPage: React.FC = () => {
       }
     };
 
-    const getSourceLabel = (source: string) => {
-      switch (source) {
-        case 'christmas_tree': return '圣诞树活动';
-        case 'personal_center': return '个人中心';
-        case 'job_application': return '职位申请';
-        default: return source || '未知来源';
-      }
+    const getSourceLabel = (source: string, userType: string) => {
+      if (source === 'christmas_tree') return <span className="status-badge high">圣诞树活动</span>;
+      if (source === 'personal_center') return <span className="status-badge medium">个人中心</span>;
+      if (source === 'job_application') return <span className="status-badge low">职位申请</span>;
+      
+      // Inference fallback
+      if (userType === 'Registered') return <span className="status-badge medium">个人中心(推测)</span>;
+      
+      return <span className="status-badge text-slate-500 bg-slate-100">未知来源</span>;
     };
 
     return (
       <div className="space-y-6">
         <div className="card">
-          <div className="card-header">
-            <h2>简历数据</h2>
-            <div className="flex space-x-2">
-              <button
-                onClick={handleClearResumes}
-                className="px-4 py-2 bg-white border border-slate-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center text-sm font-medium"
-                disabled={resumeLoading || resumes.length === 0}
+          <div className="card-header flex-col items-start gap-4">
+            <div className="flex w-full justify-between items-center">
+              <h2>简历数据</h2>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleClearResumes}
+                  className="px-4 py-2 bg-white border border-slate-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center text-sm font-medium"
+                  disabled={resumeLoading || resumes.length === 0}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  清空所有
+                </button>
+                <button
+                  onClick={fetchResumes}
+                  className="btn-primary"
+                  disabled={resumeLoading}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${resumeLoading ? 'animate-spin' : ''}`} />
+                  刷新列表
+                </button>
+              </div>
+            </div>
+            
+            {/* 筛选工具栏 */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+              {/* 搜索 */}
+              <div className="md:col-span-2">
+                <div className="flex items-center bg-white rounded-md px-3 py-2 border border-slate-300">
+                  <Search className="w-4 h-4 text-slate-400 mr-2" />
+                  <input
+                    type="text"
+                    placeholder="搜索文件名/ID/邮箱..."
+                    className="bg-transparent border-none focus:ring-0 w-full text-sm p-0"
+                    value={resumeSearchTerm}
+                    onChange={(e) => setResumeSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* 来源筛选 */}
+              <select 
+                className="form-select text-sm py-2"
+                value={resumeSourceFilter}
+                onChange={(e) => setResumeSourceFilter(e.target.value)}
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                清空所有
-              </button>
-              <button
-                onClick={fetchResumes}
-                className="btn-primary"
-                disabled={resumeLoading}
+                <option value="all">所有来源</option>
+                <option value="christmas">圣诞树活动</option>
+                <option value="personal">个人中心</option>
+                <option value="application">职位申请</option>
+                <option value="unknown">未知</option>
+              </select>
+
+              {/* 用户类型筛选 */}
+              <select 
+                className="form-select text-sm py-2"
+                value={resumeUserTypeFilter}
+                onChange={(e) => setResumeUserTypeFilter(e.target.value)}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${resumeLoading ? 'animate-spin' : ''}`} />
-                刷新列表
-              </button>
+                <option value="all">所有用户类型</option>
+                <option value="lead">潜在用户 (Lead)</option>
+                <option value="registered">注册用户</option>
+              </select>
+
+              {/* 排序 */}
+              <select 
+                className="form-select text-sm py-2"
+                value={resumeSort}
+                onChange={(e) => setResumeSort(e.target.value as 'newest' | 'oldest')}
+              >
+                <option value="newest">最新上传</option>
+                <option value="oldest">最早上传</option>
+              </select>
             </div>
           </div>
+
           <div className="card-content">
-            {/* 搜索栏和统计 */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center bg-slate-100 rounded-lg px-3 py-2 flex-1 max-w-md">
-                <Search className="w-5 h-5 text-slate-400 mr-2" />
-                <input
-                  type="text"
-                  placeholder="搜索文件名或用户ID..."
-                  className="bg-transparent border-none focus:ring-0 w-full text-sm"
-                  value={resumeSearchTerm}
-                  onChange={(e) => setResumeSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="text-sm text-slate-500">
-                存储提供者: <span className="font-medium text-slate-900">{storageProvider}</span>
-                <span className="mx-2">|</span>
-                总计: <span className="font-medium text-slate-900">{resumes.length}</span>
-              </div>
+            <div className="flex justify-between items-center mb-4 text-sm text-slate-500">
+               <div>
+                 <span className="mr-4">总计: <span className="font-medium text-slate-900">{resumes.length}</span></span>
+                 <span>筛选结果: <span className="font-medium text-slate-900">{filteredResumes.length}</span></span>
+               </div>
+               <div>
+                 存储提供者: <span className="font-medium text-slate-900">{storageProvider}</span>
+               </div>
             </div>
 
             {/* 简历表格 */}
@@ -592,8 +670,11 @@ const AdminTeamPage: React.FC = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>用户ID/类型</th>
+                    <th>用户ID</th>
+                    <th>用户类型</th>
+                    <th>邮箱</th>
                     <th>简历来源</th>
+                    <th>人才库</th>
                     <th>文件信息</th>
                     <th>上传时间</th>
                     <th>操作</th>
@@ -602,43 +683,60 @@ const AdminTeamPage: React.FC = () => {
                 <tbody>
                   {resumeLoading ? (
                     <tr>
-                      <td colSpan={5} className="text-center py-12">
+                      <td colSpan={8} className="text-center py-12">
                         <Loader className="w-6 h-6 animate-spin mx-auto mb-2" />
                         <p className="text-slate-500">加载中...</p>
                       </td>
                     </tr>
                   ) : filteredResumes.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center py-12">
-                        <p className="text-slate-500">暂无简历数据</p>
+                      <td colSpan={8} className="text-center py-12">
+                        <p className="text-slate-500">暂无符合条件的简历数据</p>
                       </td>
                     </tr>
                   ) : (
-                    filteredResumes.map((resume) => (
+                    filteredResumes.map((resume) => {
+                      const userObj = userMap[resume.userId];
+                      const displayEmail = resume.metadata?.email || userObj?.email || '无邮箱';
+                      const isTalentPool = resume.metadata?.joinTalentPool === true;
+                      
+                      return (
                       <tr key={resume.id}>
-                        <td>
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
-                              <Users className="w-5 h-5 text-indigo-600" />
+                        <td className="font-mono text-xs text-slate-500">
+                          {resume.userId ? (
+                            <div title={resume.userId}>
+                              {resume.userId.slice(0, 8)}...
                             </div>
-                            <div>
-                              <div className="font-medium text-slate-900">
-                                {userMap[resume.userId] || '未知用户'}
-                              </div>
-                              <div className="text-sm text-slate-500">
-                                {resume.userId ? `ID: ${resume.userId.slice(0, 8)}...` : '无ID'} • {resume.userType === 'Lead' ? '潜在' : '注册'}
-                              </div>
-                            </div>
-                          </div>
+                          ) : '无ID'}
                         </td>
                         <td>
-                          <span className="status-badge medium">
-                            {getSourceLabel(resume.source)}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            resume.userType === 'Lead' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {resume.userType === 'Lead' ? '潜在' : '注册'}
                           </span>
                         </td>
+                        <td className="text-sm text-slate-700">
+                          {displayEmail}
+                        </td>
                         <td>
-                          <div className="text-sm text-slate-900">{resume.fileName}</div>
-                          <div className="text-sm text-slate-500">{formatSize(resume.size)}</div>
+                          {getSourceLabel(resume.source, resume.userType)}
+                        </td>
+                        <td>
+                          {isTalentPool ? (
+                            <span className="text-green-600 flex items-center text-xs font-medium">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              已加入
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs">-</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="text-sm font-medium text-slate-900 truncate max-w-[200px]" title={resume.fileName}>
+                            {resume.fileName}
+                          </div>
+                          <div className="text-xs text-slate-500">{formatSize(resume.size)}</div>
                         </td>
                         <td className="text-sm text-slate-500">
                           {formatDate(resume.uploadedAt)}
@@ -652,15 +750,13 @@ const AdminTeamPage: React.FC = () => {
                             >
                               <Eye className="w-4 h-4" />
                             </button>
-                            {resume.localFilePath && (
-                              <button
+                            <button
                                 onClick={() => window.open(`/api/resumes?action=download&id=${resume.id}`, '_blank')}
                                 className="action-btn"
-                                title="下载原文件"
+                                title="下载"
                               >
                                 <Download className="w-4 h-4" />
                               </button>
-                            )}
                             <button
                               onClick={() => handleDeleteResume(resume.id)}
                               className="action-btn danger"
@@ -671,7 +767,7 @@ const AdminTeamPage: React.FC = () => {
                           </div>
                         </td>
                       </tr>
-                    ))
+                    )})
                   )}
                 </tbody>
               </table>
