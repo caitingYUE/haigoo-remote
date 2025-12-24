@@ -11,7 +11,9 @@ import {
   Activity,
   CreditCard,
   FileText,
-  Heart
+  Heart,
+  HelpCircle,
+  UserCheck as UserCheckIcon
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -35,6 +37,7 @@ export default function AdminTrackingDashboard() {
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('week');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -110,9 +113,33 @@ export default function AdminTrackingDashboard() {
     <div className="space-y-6">
       {/* Controls */}
       <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
             <Activity className="w-5 h-5 text-indigo-600" />
             <h2 className="font-bold text-slate-800">核心数据看板</h2>
+            <div className="relative ml-1">
+                <button 
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                    className="text-slate-400 hover:text-indigo-600 transition-colors"
+                >
+                    <HelpCircle className="w-4 h-4" />
+                </button>
+                
+                {showTooltip && (
+                    <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-slate-200 p-4 z-50 text-xs text-slate-600 leading-relaxed">
+                        <h4 className="font-bold text-slate-800 mb-2">指标统计口径说明</h4>
+                        <ul className="space-y-1.5 list-disc pl-4">
+                            <li><span className="font-medium text-slate-700">活跃用户 (UV):</span> 选定周期内访问的去重设备数 (Anonymous ID)。</li>
+                            <li><span className="font-medium text-slate-700">浏览访问:</span> 访问首页或着陆页的用户数。</li>
+                            <li><span className="font-medium text-slate-700">激活/注册:</span> 完成注册流程的用户数。</li>
+                            <li><span className="font-medium text-slate-700">浏览岗位:</span> 进入岗位详情页的访问量。</li>
+                            <li><span className="font-medium text-slate-700">投递转化:</span> 点击申请按钮的用户比例。</li>
+                            <li><span className="font-medium text-slate-700">会员申请:</span> 提交会员申请表单的用户比例。</li>
+                            <li><span className="font-medium text-slate-700">次日留存:</span> 昨日访问用户中，今日再次访问的比例。</li>
+                        </ul>
+                    </div>
+                )}
+            </div>
         </div>
         <div className="flex bg-slate-100 p-1 rounded-lg">
             {(['day', 'week', 'month'] as const).map(p => (
