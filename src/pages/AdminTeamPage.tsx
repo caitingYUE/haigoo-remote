@@ -99,6 +99,9 @@ const AdminTeamPage: React.FC = () => {
 
   const { user, logout } = useAuth();
 
+  // 简历详情模态框状态
+  const [selectedResume, setSelectedResume] = useState<any | null>(null);
+
   // 修复乱码的辅助函数
   const fixEncoding = (str: string) => {
     try {
@@ -132,12 +135,13 @@ const AdminTeamPage: React.FC = () => {
       }
 
       // 加载RSS源配置
+      await rssService.refreshSources();
       const sources = rssService.getRSSSources();
       // 转换为ExtendedRSSSource格式
       const extendedSources: ExtendedRSSSource[] = sources.map((source, index) => ({
         ...source,
-        id: index + 1,
-        isActive: true,
+        id: source.id || index + 1,
+        isActive: source.isActive ?? true,
         lastSync: new Date()
       }));
       setRssSources(extendedSources);
@@ -248,25 +252,40 @@ const AdminTeamPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // 添加RSS源
-  const handleAddRSSSource = async () => {
+  // 保存RSS源 (添加或更新)
+  const handleSaveRSSSource = async () => {
     try {
-      rssService.addRSSSource(rssFormData);
+      if (editingRSSSource) {
+        const sources = rssService.getRSSSources();
+        const index = sources.findIndex(s => s.id === editingRSSSource.id);
+        if (index !== -1) {
+             await rssService.updateRSSSource(index, { ...rssFormData, isActive: (editingRSSSource as ExtendedRSSSource).isActive });
+        }
+      } else {
+        await rssService.addRSSSource(rssFormData);
+      }
       setShowRSSForm(false);
+      setEditingRSSSource(null);
       setRssFormData({ name: '', url: '', category: '' });
       await loadData();
     } catch (error) {
-      console.error('添加RSS源失败:', error);
+      console.error('保存RSS源失败:', error);
+      alert('保存失败: ' + error);
     }
   };
 
   // 删除RSS源
   const handleDeleteRSSSource = async (sourceId: number) => {
     try {
-      rssService.deleteRSSSource(sourceId - 1); // 转换为数组索引
-      await loadData();
+      const sources = rssService.getRSSSources();
+      const index = sources.findIndex(s => s.id === sourceId);
+      if (index !== -1) {
+          await rssService.deleteRSSSource(index);
+          await loadData();
+      }
     } catch (error) {
       console.error('删除RSS源失败:', error);
+      alert('删除失败: ' + error);
     }
   };
 
@@ -627,16 +646,7 @@ const AdminTeamPage: React.FC = () => {
                         <td>
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => {
-                                alert(JSON.stringify({
-                                    fileName: resume.fileName,
-                                    size: resume.size,
-                                    uploadedAt: resume.uploadedAt,
-                                    source: resume.source,
-                                    userId: resume.userId,
-                                    metadata: resume.metadata
-                                }, null, 2));
-                              }}
+                              onClick={() => setSelectedResume(resume)}
                               className="action-btn"
                               title="查看详情"
                             >
@@ -882,6 +892,112 @@ const AdminTeamPage: React.FC = () => {
       {/* 定时任务测试控件 */}
       <CronTestControl />
 
+      {/* 简历详情模态框 */}
+      {selectedResume && (
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedResume(null);
+            }
+          }}
+        >
+          <div className="modal" style={{ maxWidth: '800px', width: '90%' }}>
+            <div className="modal-header">
+              <h3>简历详情</h3>
+              <button
+                onClick={() => setSelectedResume(null)}
+                className="modal-close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="modal-content">
+              <div className="space-y-6">
+                {/* 基本信息 */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-slate-500">文件名</label>
+                    <div className="font-medium">{selectedResume.fileName}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-500">文件大小</label>
+                    <div className="font-medium">{selectedResume.size ? (selectedResume.size / 1024).toFixed(1) + ' KB' : '未知'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-500">上传时间</label>
+                    <div className="font-medium">{new Date(selectedResume.uploadedAt).toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-500">来源</label>
+                    <div className="font-medium">
+                      {selectedResume.source === 'christmas_tree' ? '圣诞树活动' :
+                       selectedResume.source === 'personal_center' ? '个人中心' :
+                       selectedResume.source === 'job_application' ? '职位申请' :
+                       selectedResume.source || '未知'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-500">用户ID</label>
+                    <div className="font-medium text-xs font-mono bg-slate-100 p-1 rounded">{selectedResume.userId || '无'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-500">用户类型</label>
+                    <div className="font-medium">{selectedResume.userType === 'Lead' ? '潜在用户' : '注册用户'}</div>
+                  </div>
+                </div>
+
+                {/* 原始元数据 */}
+                <div>
+                  <label className="text-sm text-slate-500 mb-2 block">原始元数据 (Metadata)</label>
+                  <pre className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto text-xs font-mono max-h-60">
+                    {JSON.stringify(selectedResume.metadata || {}, null, 2)}
+                  </pre>
+                </div>
+
+                {/* 解析结果 (如果有) */}
+                {selectedResume.parseResult && (
+                  <div>
+                    <label className="text-sm text-slate-500 mb-2 block">解析结果 (Parse Result - 已弃用)</label>
+                    <pre className="bg-slate-100 text-slate-700 p-4 rounded-lg overflow-x-auto text-xs font-mono max-h-60">
+                      {JSON.stringify(selectedResume.parseResult, null, 2)}
+                    </pre>
+                  </div>
+                )}
+                
+                {/* 原始文本预览 (如果存在) */}
+                {selectedResume.contentText && (
+                   <div>
+                    <label className="text-sm text-slate-500 mb-2 block">文本内容预览 (前500字符)</label>
+                    <div className="bg-slate-50 p-4 rounded-lg text-xs text-slate-600 border border-slate-200 whitespace-pre-wrap font-mono">
+                      {selectedResume.contentText.slice(0, 500)}
+                      {selectedResume.contentText.length > 500 && '...'}
+                    </div>
+                   </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setSelectedResume(null)}
+                className="btn-secondary"
+              >
+                关闭
+              </button>
+              {selectedResume.id && (
+                <button
+                    onClick={() => window.open(`/api/resumes?action=download&id=${selectedResume.id}`, '_blank')}
+                    className="btn-primary"
+                >
+                    <Download className="w-4 h-4 mr-2" />
+                    下载原文件
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* RSS表单模态框 */}
       {showRSSForm && (
         <div
@@ -957,7 +1073,7 @@ const AdminTeamPage: React.FC = () => {
                 取消
               </button>
               <button
-                onClick={handleAddRSSSource}
+                onClick={handleSaveRSSSource}
                 className="btn-primary"
                 disabled={!rssFormData.name || !rssFormData.url}
               >

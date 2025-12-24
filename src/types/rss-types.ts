@@ -1,7 +1,9 @@
 export interface RSSSource {
+  id?: number;
   name: string;
   category: string;
   url: string;
+  isActive?: boolean;
 }
 
 export interface Job {

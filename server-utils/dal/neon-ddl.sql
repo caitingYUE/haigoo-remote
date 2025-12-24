@@ -318,3 +318,15 @@ ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS contact_info VARCHAR(255);
 -- 原因：Vercel日志显示 column "admin_reply" does not exist
 ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS admin_reply TEXT;
 ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS replied_at TIMESTAMP;
+
+-- 2025-12-24 新增 rss_sources 表，用于动态管理 RSS 源
+CREATE TABLE IF NOT EXISTS rss_sources (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  url VARCHAR(2000) NOT NULL,
+  category VARCHAR(100) DEFAULT '其他',
+  is_active BOOLEAN DEFAULT true,
+  last_sync_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
