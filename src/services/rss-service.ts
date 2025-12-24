@@ -75,10 +75,7 @@ class RSSService {
     // { name: 'RealWorkFromAnywhere', category: '全部', url: 'https://www.realworkfromanywhere.com/rss.xml' },
 
     // Himalayas
-    { name: 'Himalayas', category: '全部', url: 'https://himalayas.app/jobs/rss' },
-
-    // NoDesk - 更新为正确的RSS源
-    { name: 'NoDesk', category: '全部', url: 'https://nodesk.substack.com/feed' }
+    { name: 'Himalayas', category: '全部', url: 'https://himalayas.app/jobs/rss' }
   ];
 
   constructor() {
@@ -530,8 +527,6 @@ class RSSService {
         return this.parseHimalayas(item, title, description);
       case 'jobscollider':
         return this.parseJobsCollider(item, title, description);
-      case 'nodesk':
-        return this.parseNoDesk(item, title, description);
       default:
         return this.parseGeneric(item, title, description);
     }
