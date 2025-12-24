@@ -99,7 +99,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   if (!job || !isOpen) return null
   return createPortal(
     <div
-      className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[1000] flex items-stretch ${
+      className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[1000] flex items-stretch cursor-pointer ${
         variant === 'center' ? 'justify-center items-center p-4 md:p-8' : 'justify-end'
       }`}
       role="dialog"

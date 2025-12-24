@@ -50,7 +50,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-pointer" 
         onClick={onClose}
       />
 

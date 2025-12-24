@@ -55,7 +55,7 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
   return (
     <div className="fixed inset-0 z-[2200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity cursor-pointer" 
         onClick={onClose}
       />
 

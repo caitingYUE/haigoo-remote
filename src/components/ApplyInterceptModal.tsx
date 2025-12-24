@@ -33,7 +33,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
         return createPortal(
             <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                 <div
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-pointer"
                     onClick={onClose}
                 />
 
@@ -156,7 +156,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
         return createPortal(
             <div className="fixed inset-0 z-[2200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                 <div
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-pointer"
                     onClick={onClose}
                 />
 
@@ -250,7 +250,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
             return createPortal(
                 <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                     <div
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-pointer"
                         onClick={onClose}
                     />
 
@@ -307,7 +307,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
         return createPortal(
             <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                 <div
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-pointer"
                     onClick={onClose}
                 />
 
