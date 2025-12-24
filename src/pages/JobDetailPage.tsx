@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Share2, AlertCircle, Check } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Share2, AlertCircle } from 'lucide-react'
 import { Job } from '../types'
 import { JobDetailPanel } from '../components/JobDetailPanel'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
-import { trackingService } from '../services/tracking-service'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -115,13 +114,6 @@ export default function JobDetailPage() {
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">无法加载职位</h2>
           <p className="text-slate-500 mb-6">{error || '职位可能已过期或被删除'}</p>
-          
-          {countdown !== null && (
-             <p className="text-sm text-slate-400 mb-6">
-                将在 {countdown} 秒后自动返回职位列表...
-             </p>
-          )}
-
           <button 
             onClick={() => navigate('/jobs')}
             className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
@@ -141,27 +133,19 @@ export default function JobDetailPage() {
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>
         <div className="font-semibold text-slate-900 truncate max-w-[200px]">{job.title}</div>
-        <button onClick={handleShare} className="p-2 -mr-2 hover:bg-slate-50 rounded-full text-slate-600 relative">
-          {showCopied ? <Check className="w-5 h-5 text-green-600" /> : <Share2 className="w-5 h-5" />}
+        <button className="p-2 -mr-2 hover:bg-slate-50 rounded-full">
+          <Share2 className="w-5 h-5 text-slate-600" />
         </button>
       </div>
 
       <div className="max-w-5xl mx-auto p-4 lg:p-8">
-        <div className="lg:mb-6 hidden lg:flex items-center justify-between">
+        <div className="lg:mb-6 hidden lg:block">
           <button 
             onClick={() => navigate('/jobs')}
             className="flex items-center text-slate-500 hover:text-indigo-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             返回职位列表
-          </button>
-          
-          <button 
-            onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 hover:border-indigo-200 hover:shadow-sm transition-all text-sm font-medium"
-          >
-            {showCopied ? <Check className="w-4 h-4 text-green-600" /> : <Share2 className="w-4 h-4" />}
-            {showCopied ? '已复制链接' : '分享职位'}
           </button>
         </div>
 

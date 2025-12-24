@@ -222,22 +222,9 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] cursor-pointer overflow-visible ${className || ''}`}
       >
          {/* Top Decoration removed as requested to move tags inline */}
-         {/* Share Button (Top Right) */}
-         <div className="absolute top-4 right-4 z-10">
-            <button
-               onClick={handleShare}
-               className="p-2 rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
-               title="分享职位"
-            >
-               {showCopied ? (
-                  <span className="text-xs font-bold text-green-600 flex items-center gap-1 bg-white px-2 py-1 rounded-full shadow-sm border border-green-100">
-                     <Check className="w-3 h-3" /> 已复制
-                  </span>
-               ) : (
-                  <Share2 className="w-5 h-5" />
-               )}
-            </button>
-         </div>
+         {/* <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
+            ...
+         </div> */}
 
          <div className="flex flex-col h-full">
             {/* Header Section */}
