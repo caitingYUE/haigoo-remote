@@ -31,19 +31,14 @@ export default function TrustedCompaniesPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [jobCounts, setJobCounts] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
     const [totalActiveJobs, setTotalActiveJobs] = useState(0)
+    const [availableJobCategories, setAvailableJobCategories] = useState<string[]>([]) // New State
     const [isNominationModalOpen, setIsNominationModalOpen] = useState(false)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
     
-    // Hardcoded job categories for filter (matching tag_config)
-    const jobCategoryOptions = [
-        '全栈开发', '前端开发', '后端开发', '移动开发', '算法工程师', '数据开发',
-        '服务器开发', '运维/SRE', '测试/QA', '网络安全', '操作系统/内核', '技术支持',
-        '硬件开发', '架构师', 'CTO/技术管理', '软件开发', '产品经理', '产品设计',
-        '用户研究', '项目管理', 'UI/UX设计', '平面设计', '视觉设计', '数据分析',
-        '数据科学', '商业分析', '运营', '市场营销', '销售', '客户经理', '客户服务',
-        '内容创作', '增长黑客', '人力资源', '招聘', '财务', '法务', '行政', '管理',
-        '教育培训', '咨询', '投资', '其他'
-    ].map(c => ({ label: c, value: c }));
+    // Dynamic job categories for filter (matching tag_config)
+    const jobCategoryOptions = useMemo(() => {
+        return availableJobCategories.map(c => ({ label: c, value: c }));
+    }, [availableJobCategories]);
 
     useEffect(() => {
         loadData()
@@ -80,6 +75,11 @@ export default function TrustedCompaniesPage() {
             
             // Set total active jobs count
             setTotalActiveJobs(result.totalActiveJobs || 0)
+            
+            // Set available categories (only if provided, otherwise keep existing or fallback)
+            if (result.availableCategories && result.availableCategories.length > 0) {
+                setAvailableJobCategories(result.availableCategories);
+            }
 
             // 从后端API返回的数据中提取职位统计信息
             const counts: Record<string, { total: number, categories: Record<string, number> }> = {}
@@ -119,6 +119,11 @@ export default function TrustedCompaniesPage() {
             // Set total active jobs count
             setTotalActiveJobs(result.totalActiveJobs || 0)
 
+            // Update available categories if returned
+            if (result.availableCategories) {
+                setAvailableJobCategories(result.availableCategories);
+            }
+
             // Update job counts for filtered results too
              const counts: Record<string, { total: number, categories: Record<string, number> }> = {}
             filteredList.forEach((company: TrustedCompany) => {
@@ -152,8 +157,9 @@ export default function TrustedCompaniesPage() {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Hero Section */}
-            <div className="relative bg-white overflow-hidden py-8 sm:py-12">
-                <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="relative bg-white pt-8 sm:pt-12 pb-20">
+                {/* Background Decoration - contained to avoid overflow issues affecting dropdowns */}
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50/80 via-white to-transparent opacity-70"></div>
                 </div>
 

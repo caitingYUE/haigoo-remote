@@ -38,6 +38,7 @@ export interface PaginatedCompaniesResponse {
     companies: TrustedCompany[];
     total: number;
     totalActiveJobs?: number;
+    availableCategories?: string[]; // New field
     page: number;
     totalPages: number;
 }
