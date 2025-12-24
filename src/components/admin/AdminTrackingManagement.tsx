@@ -152,9 +152,7 @@ const AdminTrackingManagement: React.FC = () => {
               { id: 'payment_success', name: '支付成功', desc: '会员支付成功回调', params: 'order_id, amount, plan' }
             ]}
           />
-
         </div>
-      </div>
       )}
     </div>
   );
