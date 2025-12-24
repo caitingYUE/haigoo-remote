@@ -92,11 +92,22 @@ const AdminTeamPage: React.FC = () => {
 
   // 简历管理状态
   const [resumes, setResumes] = useState<any[]>([]);
+  const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [resumeSearchTerm, setResumeSearchTerm] = useState('');
   const [resumeLoading, setResumeLoading] = useState(false);
   const [storageProvider, setStorageProvider] = useState<string>('');
 
   const { user, logout } = useAuth();
+
+  // 修复乱码的辅助函数
+  const fixEncoding = (str: string) => {
+    try {
+      // 尝试将 Latin1 编码的字符串转换为 UTF-8
+      return decodeURIComponent(escape(str));
+    } catch (e) {
+      return str;
+    }
+  };
 
   // 加载数据
   const loadData = useCallback(async () => {
@@ -155,7 +166,19 @@ const AdminTeamPage: React.FC = () => {
 
       if (res.ok) {
         const data = await res.json();
-        setResumes(data.data || []);
+        const rawResumes = data.data || [];
+        // 处理数据：修复乱码，补充字段
+        const processedResumes = rawResumes.map((resume: any) => ({
+            ...resume,
+            fileName: fixEncoding(resume.fileName),
+            source: resume.metadata?.source || 'unknown',
+            // 如果 user_id 存在，尝试关联用户昵称（这里需要后端支持，暂时用 user_id 代替）
+            // 可以通过 user_id 判断是 registered 还是 lead
+            userType: resume.userId?.startsWith('lead_') || resume.userId?.startsWith('anon_') ? 'Lead' : 'Registered',
+            uploadedAt: resume.createdAt || resume.uploadedAt || new Date().toISOString()
+        }));
+        
+        setResumes(processedResumes);
         setStorageProvider(data.provider || 'unknown');
       } else {
         console.error('Failed to fetch resumes');
@@ -167,12 +190,37 @@ const AdminTeamPage: React.FC = () => {
     }
   }, []);
 
+  // 获取用户映射表
+  const fetchUsersMap = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('haigoo_auth_token');
+      const res = await fetch('/api/users', {
+        headers: {
+            'Authorization': `Bearer ${token || ''}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.users)) {
+            const map: Record<string, string> = {};
+            data.users.forEach((u: any) => {
+                map[u.id] = u.username || u.email || 'Unknown';
+            });
+            setUserMap(map);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch users map', e);
+    }
+  }, []);
+
   // 加载简历数据当切换到简历库标签时
   useEffect(() => {
     if (activeTab === 'resumes') {
       fetchResumes();
+      fetchUsersMap();
     }
-  }, [activeTab, fetchResumes]);
+  }, [activeTab, fetchResumes, fetchUsersMap]);
 
   // 同步RSS数据
   const handleSync = async () => {
@@ -446,10 +494,10 @@ const AdminTeamPage: React.FC = () => {
   const renderResumeLibrary = () => {
     const filteredResumes = resumes.filter(resume => {
       const term = resumeSearchTerm.toLowerCase();
-      const name = resume.parsedData?.name?.toLowerCase() || '';
-      const email = resume.parsedData?.email?.toLowerCase() || '';
+      // Search by filename or user ID
       const fileName = resume.fileName?.toLowerCase() || '';
-      return name.includes(term) || email.includes(term) || fileName.includes(term);
+      const userId = resume.userId?.toLowerCase() || '';
+      return fileName.includes(term) || userId.includes(term);
     });
 
     const formatSize = (bytes: number) => {
@@ -459,7 +507,21 @@ const AdminTeamPage: React.FC = () => {
     };
 
     const formatDate = (dateStr: string) => {
-      return new Date(dateStr).toLocaleString('zh-CN');
+      if (!dateStr) return '未知时间';
+      try {
+        return new Date(dateStr).toLocaleString('zh-CN');
+      } catch (e) {
+        return dateStr;
+      }
+    };
+
+    const getSourceLabel = (source: string) => {
+      switch (source) {
+        case 'christmas_tree': return '圣诞树活动';
+        case 'personal_center': return '个人中心';
+        case 'job_application': return '职位申请';
+        default: return source || '未知来源';
+      }
     };
 
     return (
@@ -493,7 +555,7 @@ const AdminTeamPage: React.FC = () => {
                 <Search className="w-5 h-5 text-slate-400 mr-2" />
                 <input
                   type="text"
-                  placeholder="搜索姓名、邮箱或文件名..."
+                  placeholder="搜索文件名或用户ID..."
                   className="bg-transparent border-none focus:ring-0 w-full text-sm"
                   value={resumeSearchTerm}
                   onChange={(e) => setResumeSearchTerm(e.target.value)}
@@ -511,9 +573,9 @@ const AdminTeamPage: React.FC = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>候选人</th>
+                    <th>用户ID/类型</th>
+                    <th>简历来源</th>
                     <th>文件信息</th>
-                    <th>解析状态</th>
                     <th>上传时间</th>
                     <th>操作</th>
                   </tr>
@@ -542,32 +604,22 @@ const AdminTeamPage: React.FC = () => {
                             </div>
                             <div>
                               <div className="font-medium text-slate-900">
-                                {resume.parsedData?.name || '未知姓名'}
+                                {userMap[resume.userId] || '未知用户'}
                               </div>
                               <div className="text-sm text-slate-500">
-                                {resume.parsedData?.email || '无邮箱'}
+                                {resume.userId ? `ID: ${resume.userId.slice(0, 8)}...` : '无ID'} • {resume.userType === 'Lead' ? '潜在' : '注册'}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td>
-                          <div className="text-sm text-slate-900">{resume.fileName}</div>
-                          <div className="text-sm text-slate-500">{formatSize(resume.size)}</div>
+                          <span className="status-badge medium">
+                            {getSourceLabel(resume.source)}
+                          </span>
                         </td>
                         <td>
-                          {resume.parseStatus === 'success' ? (
-                            <span className="status-badge high">
-                              <CheckCircle className="w-3 h-3 mr-1" /> 解析成功
-                            </span>
-                          ) : resume.parseStatus === 'partial' ? (
-                            <span className="status-badge medium">
-                              <AlertCircle className="w-3 h-3 mr-1" /> 部分解析
-                            </span>
-                          ) : (
-                            <span className="status-badge low">
-                              <XCircle className="w-3 h-3 mr-1" /> 解析失败
-                            </span>
-                          )}
+                          <div className="text-sm text-slate-900">{resume.fileName}</div>
+                          <div className="text-sm text-slate-500">{formatSize(resume.size)}</div>
                         </td>
                         <td className="text-sm text-slate-500">
                           {formatDate(resume.uploadedAt)}
@@ -576,7 +628,14 @@ const AdminTeamPage: React.FC = () => {
                           <div className="flex space-x-2">
                             <button
                               onClick={() => {
-                                alert(JSON.stringify(resume.parsedData, null, 2));
+                                alert(JSON.stringify({
+                                    fileName: resume.fileName,
+                                    size: resume.size,
+                                    uploadedAt: resume.uploadedAt,
+                                    source: resume.source,
+                                    userId: resume.userId,
+                                    metadata: resume.metadata
+                                }, null, 2));
                               }}
                               className="action-btn"
                               title="查看详情"
