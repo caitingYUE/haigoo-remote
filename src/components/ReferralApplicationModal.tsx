@@ -56,6 +56,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
         setIsUploading(true);
         const formData = new FormData();
         formData.append('resume', file);
+        formData.append('metadata', JSON.stringify({ source: 'job_application' }));
 
         try {
             const response = await fetch('/api/resumes', {

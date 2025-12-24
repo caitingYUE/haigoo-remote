@@ -49,6 +49,8 @@ import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
 import { processedJobsService } from '../services/processed-jobs-service';
 
+import AdminTrackingManagement from '../components/admin/AdminTrackingManagement';
+
 // 扩展RSSSource接口以包含管理所需的字段
 interface ExtendedRSSSource extends RSSSource {
   id: number;
@@ -142,7 +144,10 @@ const AdminTeamPage: React.FC = () => {
 
       // 加载RSS源配置
       await rssService.refreshSources();
+      // Ensure we get the latest sources after refresh
       const sources = rssService.getRSSSources();
+      console.log('Loaded RSS Sources:', sources);
+      
       // 转换为ExtendedRSSSource格式
       const extendedSources: ExtendedRSSSource[] = sources.map((source, index) => ({
         ...source,
@@ -874,7 +879,8 @@ const AdminTeamPage: React.FC = () => {
     { id: 'member-applications', label: '会员申请', icon: FileText },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
-    { id: 'settings', label: '系统设置', icon: Settings }
+    { id: 'settings', label: '系统设置', icon: Settings },
+    { id: 'tracking', label: '埋点管理', icon: Activity }
   ];
 
   return (
@@ -980,6 +986,7 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'analytics' && renderAnalytics()}
               {activeTab === 'feedback' && renderFeedbackList()}
               {activeTab === 'settings' && renderSettings()}
+              {activeTab === 'tracking' && <AdminTrackingManagement />}
             </div>
           )}
         </div>
@@ -1051,15 +1058,7 @@ const AdminTeamPage: React.FC = () => {
                   </pre>
                 </div>
 
-                {/* 解析结果 (如果有) */}
-                {selectedResume.parseResult && (
-                  <div>
-                    <label className="text-sm text-slate-500 mb-2 block">解析结果 (Parse Result - 已弃用)</label>
-                    <pre className="bg-slate-100 text-slate-700 p-4 rounded-lg overflow-x-auto text-xs font-mono max-h-60">
-                      {JSON.stringify(selectedResume.parseResult, null, 2)}
-                    </pre>
-                  </div>
-                )}
+                {/* 解析结果 (如果有) - 已弃用，不再展示 */}
                 
                 {/* 原始文本预览 (如果存在) */}
                 {selectedResume.contentText && (

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Mail, MessageCircle, Upload, FileText, CheckCircle, AlertCircle, Sparkles } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 
 export interface JobPreferences {
@@ -23,7 +24,7 @@ interface JobTrackingModalProps {
     industryOptions: string[]
 }
 
-const DEFAULT_PREFERENCES: JobPreferences = {
+export const DEFAULT_PREFERENCES: JobPreferences = {
     jobTypes: [],
     industries: [],
     locations: [],
@@ -214,6 +215,7 @@ export function JobTrackingModal({
     const [isUploading, setIsUploading] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const { token } = useAuth()
 
     useEffect(() => {
         if (initialPreferences) {
@@ -234,11 +236,29 @@ export function JobTrackingModal({
         setUploadError(null)
 
         try {
+            // 1. Upload to server to track source
+            if (token) {
+                const formData = new FormData()
+                formData.append('resume', file)
+                formData.append('metadata', JSON.stringify({ source: 'job_tracking' }))
+
+                const resp = await fetch('/api/resumes', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: formData
+                })
+                
+                if (!resp.ok) {
+                    console.warn('Background upload failed, but proceeding with local parse')
+                }
+            }
+
+            // 2. Local parse for immediate UI feedback (optional but good for UX)
             // 调用统一的简历解析/上传服务
-            const result = await parseResumeFileEnhanced(file)
+            await parseResumeFileEnhanced(file)
             
-            // 只要 API 调用没有抛出异常，通常意味着文件已处理
-            // 即使解析失败，我们也认为文件已上传（参考 ProfileCenterPage 逻辑）
             setPreferences(prev => ({ ...prev, resumeName: file.name }))
             
         } catch (error) {

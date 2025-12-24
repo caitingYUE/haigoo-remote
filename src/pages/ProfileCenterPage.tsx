@@ -383,7 +383,7 @@ export default function ProfileCenterPage() {
                 parseStatus: 'success',
                 parseResult: parsed,
                 // Ensure we pass metadata
-                metadata: { source: 'local_parse_fallback' }
+                metadata: { source: 'personal_center' }
               }],
               mode: 'append'
             })
