@@ -21,6 +21,8 @@ interface AuthContextValue {
   logout: () => void
   verifyEmail: (email: string, token: string) => Promise<AuthResponse>
   sendVerificationEmail: (email: string) => Promise<{ success: boolean; message?: string }>
+  requestPasswordReset: (email: string) => Promise<AuthResponse>
+  resetPassword: (token: string, newPassword: string, email: string) => Promise<AuthResponse>
   updateProfile: (updates: Partial<User['profile']>) => Promise<boolean>
   refreshUser: () => Promise<void>
 }
@@ -158,6 +160,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user)
         localStorage.setItem(TOKEN_KEY, data.token)
         localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+
+        // Tracking
+        trackingService.identify(data.user.user_id || data.user.id)
+
+        // Check if new user (created within last 30 seconds)
+        const createdAt = new Date(data.user.created_at).getTime()
+        const isNewUser = (Date.now() - createdAt) < 30000
+        
+        if (isNewUser) {
+             trackingService.track('signup_success', { method: 'google' })
+        }
+        trackingService.track('login_success', { method: 'google' })
       }
 
       return data
@@ -182,6 +196,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user)
         localStorage.setItem(TOKEN_KEY, data.token)
         localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+
+        // Tracking
+        trackingService.identify(data.user.user_id || data.user.id)
+        trackingService.track('signup_success', { method: 'email' })
+        trackingService.track('login_success', { method: 'email' })
       }
 
       return data
@@ -228,6 +247,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('[AuthContext] Send verification email failed:', error)
       return { success: false, message: '网络错误，请稍后重试' }
+    }
+  }, [])
+
+  // 请求重置密码
+  const requestPasswordReset = useCallback(async (email: string): Promise<AuthResponse> => {
+    try {
+      const response = await fetch(`${API_BASE}?action=request-password-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('[AuthContext] Request password reset failed:', error)
+      return { success: false, error: '网络错误，请稍后重试' }
+    }
+  }, [])
+
+  // 重置密码
+  const resetPassword = useCallback(async (token: string, newPassword: string, email: string): Promise<AuthResponse> => {
+    try {
+      const response = await fetch(`${API_BASE}?action=reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword, email })
+      })
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('[AuthContext] Reset password failed:', error)
+      return { success: false, error: '网络错误，请稍后重试' }
     }
   }, [])
 
@@ -278,6 +329,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     verifyEmail,
     sendVerificationEmail,
+    requestPasswordReset,
+    resetPassword,
     updateProfile,
     refreshUser
   }

@@ -188,9 +188,25 @@ const userHelper = {
 
             // 如果删除成功，清理相关数据
             if (success) {
-                // 删除用户收藏
+                // 删除用户关联数据
+                // 1. 核心业务数据
                 await neonHelper.delete('favorites', { user_id: userId })
-                console.log(`[user-helper] Deleted user and related data: ${userId}`)
+                await neonHelper.delete('resumes', { user_id: userId })
+                await neonHelper.delete('subscriptions', { user_id: userId })
+                
+                // 2. 互动数据
+                await neonHelper.delete('feedbacks', { user_id: userId })
+                await neonHelper.delete('recommendations', { user_id: userId })
+                await neonHelper.delete('bug_reports', { user_id: userId })
+                
+                // 3. 会员与支付数据
+                await neonHelper.delete('club_applications', { user_id: userId })
+                await neonHelper.delete('payment_records', { user_id: userId })
+                
+                // 4. 分析数据
+                await neonHelper.delete('analytics_events', { user_id: userId })
+
+                console.log(`[user-helper] Deleted user and all related data: ${userId}`)
             } else {
                 console.log(`[user-helper] Failed to delete user: ${userId}`)
             }

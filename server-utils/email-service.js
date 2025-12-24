@@ -99,41 +99,36 @@ export async function sendVerificationEmail(to, username, token) {
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-    .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-    .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+    .header { text-align: center; margin-bottom: 30px; }
+    .logo { height: 40px; margin-bottom: 10px; }
+    .button { display: inline-block; background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+    .footer { margin-top: 40px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+    .link { color: #7c3aed; word-break: break-all; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>欢迎加入 Haigoo！</h1>
+      <h2>验证您的邮箱地址</h2>
     </div>
-    <div class="content">
-      <p>Hi <strong>${username}</strong>，</p>
-      <p>感谢您注册 Haigoo 远程工作助手！</p>
-      <p>请点击下方按钮验证您的邮箱地址：</p>
-      <center>
-        <a href="${verificationLink}" class="button">验证邮箱</a>
-      </center>
-      <p>或者复制以下链接到浏览器中打开：</p>
-      <p style="word-break: break-all; color: #667eea;">${verificationLink}</p>
-      <p><strong>注意：</strong>此验证链接将在 15 分钟后过期。</p>
-      <p>如果您没有注册 Haigoo 账户，请忽略此邮件。</p>
+    <p>亲爱的 ${username}，</p>
+    <p>感谢您注册 Haigoo！请点击下方按钮验证您的邮箱地址：</p>
+    <div style="text-align: center;">
+      <a href="${verificationLink}" class="button">验证邮箱</a>
     </div>
+    <p>或者复制以下链接到浏览器打开：</p>
+    <p><a href="${verificationLink}" class="link">${verificationLink}</a></p>
+    <p>此链接将在 24 小时后失效。</p>
     <div class="footer">
       <p>&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
-      <p>Go Higher with Haigoo</p>
     </div>
   </div>
 </body>
 </html>
-  `.trim()
-
-  return sendEmail(to, subject, html)
+  `
+  return await sendEmail(to, subject, html)
 }
 
 /**
@@ -144,7 +139,8 @@ export async function sendVerificationEmail(to, username, token) {
  * @returns {Promise<boolean>} 是否发送成功
  */
 export async function sendPasswordResetEmail(to, username, token) {
-  const resetLink = `${process.env.SITE_URL || 'http://localhost:3000'}/reset-password?token=${token}&email=${encodeURIComponent(to)}`
+  const siteUrl = (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
+  const resetLink = `${siteUrl}/reset-password?token=${token}&email=${encodeURIComponent(to)}`
   
   const subject = '重置您的 Haigoo 密码'
   const html = `
@@ -153,41 +149,36 @@ export async function sendPasswordResetEmail(to, username, token) {
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-    .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-    .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+    .header { text-align: center; margin-bottom: 30px; }
+    .button { display: inline-block; background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+    .footer { margin-top: 40px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+    .link { color: #7c3aed; word-break: break-all; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>重置密码</h1>
+      <h2>重置密码</h2>
     </div>
-    <div class="content">
-      <p>Hi <strong>${username}</strong>，</p>
-      <p>我们收到了您重置 Haigoo 账户密码的请求。</p>
-      <p>请点击下方按钮重置密码：</p>
-      <center>
-        <a href="${resetLink}" class="button">重置密码</a>
-      </center>
-      <p>或者复制以下链接到浏览器中打开：</p>
-      <p style="word-break: break-all; color: #667eea;">${resetLink}</p>
-      <p><strong>注意：</strong>此重置链接将在 15 分钟后过期。</p>
-      <p>如果您没有请求重置密码，请忽略此邮件，您的密码不会被更改。</p>
+    <p>亲爱的 ${username}，</p>
+    <p>我们收到了您重置密码的请求。如果您没有发起此请求，请忽略此邮件。</p>
+    <p>请点击下方按钮重置您的密码：</p>
+    <div style="text-align: center;">
+      <a href="${resetLink}" class="button">重置密码</a>
     </div>
+    <p>或者复制以下链接到浏览器打开：</p>
+    <p><a href="${resetLink}" class="link">${resetLink}</a></p>
+    <p>此链接将在 1 小时后失效。</p>
     <div class="footer">
       <p>&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
-      <p>Go Higher with Haigoo</p>
     </div>
   </div>
 </body>
 </html>
-  `.trim()
-
-  return sendEmail(to, subject, html)
+  `
+  return await sendEmail(to, subject, html)
 }
 
 /**

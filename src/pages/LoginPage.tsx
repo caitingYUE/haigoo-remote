@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import logoPng from '../assets/logo.png'
 
@@ -14,7 +15,9 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [errorCode, setErrorCode] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   
   const { login, loginWithGoogle } = useAuth()
@@ -144,6 +147,13 @@ export default function LoginPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                 {error}
+                {errorCode === 'USER_NOT_FOUND' && (
+                  <div className="mt-2">
+                    <Link to="/register" className="text-red-700 font-bold underline hover:text-red-800">
+                      前往注册 &rarr;
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
@@ -165,18 +175,39 @@ export default function LoginPage() {
 
             {/* 密码 */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
-                密码
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
-                placeholder="••••••••"
-              />
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                  密码
+                </label>
+                <Link 
+                  to="/forgot-password" 
+                  className="text-xs text-violet-600 hover:text-violet-700 font-medium"
+                >
+                  忘记密码？
+                </Link>
+              </div>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all pr-10"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* 登录按钮 */}

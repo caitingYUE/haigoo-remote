@@ -16,6 +16,8 @@ const JobsPage = lazy(() => import('./pages/JobsPage'))
 const RemoteExperiencePage = lazy(() => import('./pages/RemoteExperiencePage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'))
 const AdminLocationPage = lazy(() => import('./pages/AdminLocationPage'))
 const AdminPanel = lazy(() => import('./components/AdminPanel'))
@@ -78,6 +80,8 @@ function App() {
                   {/* 公开路由：登录和注册 */}
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/no-permission" element={<NoPermissionPage />} />
                   <Route path="/unsubscribe" element={<UnsubscribePage />} />
 

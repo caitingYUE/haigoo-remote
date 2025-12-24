@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download, Briefcase } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download, Briefcase, Settings } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -16,7 +16,7 @@ import MyApplicationsTab from '../components/MyApplicationsTab'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
-type TabKey = 'resume' | 'favorites' | 'applications' | 'feedback' | 'recommend' | 'subscriptions' | 'membership'
+type TabKey = 'resume' | 'favorites' | 'applications' | 'feedback' | 'recommend' | 'subscriptions' | 'membership' | 'settings'
 
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember } = useAuth()
@@ -26,7 +26,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['resume', 'favorites', 'applications', 'feedback', 'recommend', 'subscriptions', 'membership'].includes(t) ? t : 'resume'
+    return t && ['resume', 'favorites', 'applications', 'feedback', 'recommend', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -1332,6 +1332,82 @@ export default function ProfileCenterPage() {
     )
   }
 
+  const SettingsTab = () => {
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    const handleDeleteAccount = async () => {
+      if (!confirm('确定要永久删除账号吗？所有数据（简历、收藏、订阅等）将无法恢复。')) return
+      if (!confirm('再次确认：此操作不可撤销，确定要删除吗？')) return
+
+      try {
+        setIsDeleting(true)
+        const res = await fetch('/api/user-profile?action=delete_account', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        const data = await res.json()
+
+        if (res.ok && data.success) {
+          showSuccess('账号已永久删除')
+          // Logout and redirect
+          logout()
+          navigate('/')
+        } else {
+          throw new Error(data.error || '删除失败')
+        }
+      } catch (error) {
+        showError('删除失败', error instanceof Error ? error.message : '无法删除账号，请稍后重试')
+      } finally {
+        setIsDeleting(false)
+      }
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">账号设置</h2>
+            <p className="text-slate-500 mt-1">管理您的账号安全与隐私。</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="space-y-8">
+            {/* Danger Zone */}
+            <div>
+              <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">
+                <Trash2 className="w-5 h-5" />
+                危险区域
+              </h3>
+              <div className="bg-red-50 border border-red-100 rounded-xl p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900 mb-1">删除账号</h4>
+                    <p className="text-sm text-slate-600">
+                      永久删除您的账号及所有相关数据（简历、收藏、订阅记录等）。
+                      <br />
+                      <span className="text-red-600 font-medium">此操作无法撤销。</span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting}
+                    className="px-5 py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all font-medium shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDeleting ? '正在删除...' : '删除账号'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -1485,6 +1561,7 @@ export default function ProfileCenterPage() {
               {tab === 'subscriptions' && <SubscriptionsTab />}
               {tab === 'recommend' && <RecommendTab />}
               {tab === 'membership' && <ResumeTab />}
+              {tab === 'settings' && <SettingsTab />}
             </div>
             {isJobDetailOpen && selectedJob && (
               <JobDetailModal

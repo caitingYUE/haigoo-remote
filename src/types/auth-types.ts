@@ -109,6 +109,7 @@ export interface AuthResponse {
   token?: string // JWT token
   user?: Partial<User> // 用户信息（不含敏感数据）
   error?: string
+  code?: string // 错误代码 (e.g., USER_NOT_FOUND)
   message?: string
 }
 

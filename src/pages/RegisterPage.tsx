@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import logoPng from '../assets/logo.png'
 
@@ -130,8 +131,8 @@ export default function RegisterPage() {
     try {
       const result = await register(email, password, username || undefined)
       if (result.success) {
-        // 注册成功，跳转到首页
-        navigate('/', { replace: true })
+        // 注册成功，显示提示模态框
+        setShowSuccessModal(true)
       } else {
         setError(result.error || '注册失败')
       }
