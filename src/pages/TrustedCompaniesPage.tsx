@@ -19,7 +19,7 @@ export default function TrustedCompaniesPage() {
 
     // Filters
     const [selectedIndustries, setSelectedIndustries] = useState<string[]>([])
-    const [selectedRegions, setSelectedRegions] = useState<string[]>([])
+    const [sortBy, setSortBy] = useState<'jobCount' | 'createdAt'>('jobCount')
     
     // Add missing state variables
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
@@ -36,13 +36,13 @@ export default function TrustedCompaniesPage() {
 
     // 当搜索或过滤条件变化时，重新加载数据
     useEffect(() => {
-        if (searchTerm || selectedIndustries.length > 0 || selectedRegions.length > 0) {
+        if (searchTerm || selectedIndustries.length > 0 || sortBy) {
             loadFilteredData()
         } else {
             // 如果没有搜索条件，使用初始加载的数据
-            setFilteredCompanies(companies)
+            setFilteredCompanies(companies.filter(c => (c.jobCount || 0) > 0))
         }
-    }, [searchTerm, selectedIndustries, selectedRegions])
+    }, [searchTerm, selectedIndustries, sortBy])
 
     const loadData = async () => {
         try {
@@ -51,11 +51,11 @@ export default function TrustedCompaniesPage() {
             const result = await trustedCompaniesService.getCompaniesWithJobStats({
                 page: 1,
                 limit: 50,
-                sortBy: 'jobCount',
+                sortBy: sortBy,
                 sortOrder: 'desc'
             })
 
-            const companiesList = result.companies || []
+            const companiesList = (result.companies || []).filter(c => (c.jobCount || 0) > 0)
             setCompanies(companiesList)
             setFilteredCompanies(companiesList)
 
@@ -83,14 +83,13 @@ export default function TrustedCompaniesPage() {
             const result = await trustedCompaniesService.getCompaniesWithJobStats({
                 page: 1,
                 limit: 1000,
-                sortBy: 'jobCount',
+                sortBy: sortBy,
                 sortOrder: 'desc',
                 search: searchTerm,
-                industry: selectedIndustries.length > 0 ? selectedIndustries[0] : undefined,
-                region: selectedRegions.length > 0 ? selectedRegions[0] : undefined
+                industry: selectedIndustries.length > 0 ? selectedIndustries[0] : undefined
             })
 
-            const filteredList = result.companies || []
+            const filteredList = (result.companies || []).filter(c => (c.jobCount || 0) > 0)
             setFilteredCompanies(filteredList)
 
         } catch (error) {
@@ -107,20 +106,6 @@ export default function TrustedCompaniesPage() {
             if (c.industry) industries.add(c.industry)
         })
         return Array.from(industries).sort().map(i => ({ label: i, value: i }))
-    }, [companies])
-
-    const regionOptions = useMemo(() => {
-        const regions = new Set<string>()
-        companies.forEach(c => {
-            if (c.address) {
-                // Extract country or city from address if possible, or just use full address
-                // Simple strategy: split by comma and take the last part as Country/Region
-                const parts = c.address.split(',')
-                const region = parts[parts.length - 1].trim()
-                if (region) regions.add(region)
-            }
-        })
-        return Array.from(regions).sort().map(r => ({ label: r, value: r }))
     }, [companies])
 
     return (
@@ -155,22 +140,30 @@ export default function TrustedCompaniesPage() {
                                     className="w-full bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500 rounded-xl h-11 text-slate-900 placeholder-slate-400"
                                 />
                             </div>
-                            <div className="flex gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 px-1 md:px-0">
+                            <div className="flex gap-2 overflow-visible pb-2 md:pb-0 px-1 md:px-0 relative z-20">
                                 <MultiSelectDropdown
                                     label="行业"
                                     options={industryOptions}
                                     selected={selectedIndustries}
                                     onChange={setSelectedIndustries}
                                 />
-                                <MultiSelectDropdown
-                                    label="地区"
-                                    options={regionOptions}
-                                    selected={selectedRegions}
-                                    onChange={setSelectedRegions}
-                                />
-                                {(selectedIndustries.length > 0 || selectedRegions.length > 0) && (
+                                
+                                {/* Sorting Dropdown */}
+                                <div className="relative inline-block text-left">
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value as 'jobCount' | 'createdAt')}
+                                        className="h-11 pl-4 pr-10 text-sm font-medium bg-white border border-slate-200 rounded-xl hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all appearance-none cursor-pointer text-slate-700"
+                                        style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em` }}
+                                    >
+                                        <option value="jobCount">最多岗位</option>
+                                        <option value="createdAt">最新加入</option>
+                                    </select>
+                                </div>
+
+                                {selectedIndustries.length > 0 && (
                                     <button
-                                        onClick={() => { setSelectedIndustries([]); setSelectedRegions([]); }}
+                                        onClick={() => { setSelectedIndustries([]); }}
                                         className="px-4 h-11 flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors whitespace-nowrap"
                                     >
                                         重置

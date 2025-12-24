@@ -192,13 +192,19 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const handleShare = async () => {
+        const canShare = typeof navigator.share === 'function' && navigator.canShare && navigator.canShare({
+            title: 'test',
+            text: 'test',
+            url: window.location.href
+        });
+
         trackingService.track('share_job', {
             job_id: job.id,
-            method: navigator.share ? 'native_share' : 'clipboard'
+            method: canShare ? 'native_share' : 'clipboard'
         });
 
         try {
-            if (navigator.share) {
+            if (canShare) {
                 await navigator.share({
                     title: `${job.title} - ${job.company || ''}`,
                     text: `查看这个职位：${job.title} at ${job.company || ''}`,

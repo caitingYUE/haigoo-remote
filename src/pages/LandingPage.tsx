@@ -203,9 +203,11 @@ export default function LandingPage() {
         }
 
         // Sort companies by total active jobs (using database count)
-        const sortedCompanies = [...companies].sort((a, b) => {
-          return (b.jobCount || 0) - (a.jobCount || 0)
-        })
+        const sortedCompanies = [...companies]
+          .filter(c => (c.jobCount || 0) > 0) // Only show companies with > 0 jobs
+          .sort((a, b) => {
+            return (b.jobCount || 0) - (a.jobCount || 0)
+          })
 
         // Set trusted companies (top 6)
         setTrustedCompanies(sortedCompanies.slice(0, 6))
