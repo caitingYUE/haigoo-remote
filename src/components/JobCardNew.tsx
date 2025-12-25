@@ -1,11 +1,12 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Briefcase, Globe, ChevronRight, Sparkles, Check, Target } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { stripMarkdown } from '../utils/text-formatter';
 import { MemberBadge } from './MemberBadge';
 import { getJobSourceType } from '../utils/job-source-helper';
+import { trackingService } from '../services/tracking-service';
 
 
 interface JobCardNewProps {

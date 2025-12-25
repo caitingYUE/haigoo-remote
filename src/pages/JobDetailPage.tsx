@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Share2, AlertCircle } from 'lucide-react'
 import { Job } from '../types'
 import { JobDetailPanel } from '../components/JobDetailPanel'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
+import { trackingService } from '../services/tracking-service'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { token, isAuthenticated } = useAuth()
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
