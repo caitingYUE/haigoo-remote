@@ -7,6 +7,7 @@ import { JobDetailPanel } from '../components/JobDetailPanel'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trackingService } from '../services/tracking-service'
+import { ShareJobModal } from '../components/ShareJobModal'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -21,6 +22,7 @@ export default function JobDetailPage() {
   const [isSaved, setIsSaved] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [showCopied, setShowCopied] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   // Track visit source
   useEffect(() => {
@@ -209,6 +211,17 @@ export default function JobDetailPage() {
             showCloseButton={false}
           />
         </div>
+
+        {/* Share Modal */}
+        {job && (
+          <ShareJobModal 
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            jobId={job.id}
+            jobTitle={job.translations?.title || job.title}
+            companyName={job.translations?.company || job.company || ''}
+          />
+        )}
       </div>
     </div>
   )

@@ -16,6 +16,7 @@ import { trustedCompaniesService, TrustedCompany } from '../services/trusted-com
 import { useNotificationHelpers } from './NotificationSystem'
 import { getJobSourceType } from '../utils/job-source-helper'
 import { trackingService } from '../services/tracking-service'
+import { ShareJobModal } from './ShareJobModal'
 
 interface JobDetailPanelProps {
     job: Job
@@ -60,6 +61,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
     const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
     const [showApplyInterceptModal, setShowApplyInterceptModal] = useState(false)
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false)
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
 
     useEffect(() => {
@@ -191,31 +193,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         showSuccess('申请已提交，请耐心等待审核');
     }
 
-    const handleShare = async () => {
-        const canShare = typeof navigator.share === 'function' && navigator.canShare && navigator.canShare({
-            title: 'test',
-            text: 'test',
-            url: window.location.href
-        });
-
-        trackingService.track('share_job', {
+    const handleShare = () => {
+        setIsShareModalOpen(true)
+        trackingService.track('click_share_button', {
             job_id: job.id,
-            method: canShare ? 'native_share' : 'clipboard'
+            from: 'detail_panel'
         });
-
-        try {
-            if (canShare) {
-                await navigator.share({
-                    title: `${job.title} - ${job.company || ''}`,
-                    text: `查看这个职位：${job.title} at ${job.company || ''}`,
-                    url: window.location.href
-                })
-            } else {
-                await navigator.clipboard.writeText(window.location.href)
-            }
-        } catch (error) {
-            console.error('分享失败:', error)
-        }
     }
 
     const handleSave = () => {
@@ -729,6 +712,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 onClose={() => setIsReferralModalOpen(false)}
                 job={job}
                 onSubmitSuccess={handleReferralSuccess}
+            />
+            {/* Share Modal */}
+            <ShareJobModal 
+                isOpen={isShareModalOpen} 
+                onClose={() => setIsShareModalOpen(false)} 
+                jobId={job.id}
+                jobTitle={job.translations?.title || job.title}
+                companyName={job.translations?.company || job.company || ''}
             />
         </div >
     )
