@@ -757,7 +757,10 @@ const AdminTeamPage: React.FC = () => {
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
-                                onClick={() => window.open(`/api/resumes?action=download&id=${resume.id}`, '_blank')}
+                                onClick={() => {
+                                  const token = localStorage.getItem('haigoo_auth_token');
+                                  window.open(`/api/resumes?action=download&id=${resume.id}&token=${token}`, '_blank');
+                                }}
                                 className="action-btn"
                                 title="下载"
                               >
@@ -1084,7 +1087,10 @@ const AdminTeamPage: React.FC = () => {
               </button>
               {selectedResume.id && (
                 <button
-                    onClick={() => window.open(`/api/resumes?action=download&id=${selectedResume.id}`, '_blank')}
+                    onClick={() => {
+                      const token = localStorage.getItem('haigoo_auth_token');
+                      window.open(`/api/resumes?action=download&id=${selectedResume.id}&token=${token}`, '_blank');
+                    }}
                     className="btn-primary"
                 >
                     <Download className="w-4 h-4 mr-2" />
