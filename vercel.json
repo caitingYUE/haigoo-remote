@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/daily-enrich",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/rotate-featured",
+      "schedule": "0 3 * * *"
     }
   ],
   "rewrites": [

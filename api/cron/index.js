@@ -42,6 +42,10 @@ export default async function handler(req, res) {
         const { default: streamCrawlTrustedJobsHandler } = await import('../../lib/cron-handlers/stream-crawl-trusted-jobs.js');
         return await streamCrawlTrustedJobsHandler(req, res);
       }
+      case 'rotate-featured': {
+        const { default: rotateFeaturedHandler } = await import('../../lib/cron-handlers/rotate-featured.js');
+        return await rotateFeaturedHandler(req, res);
+      }
       case 'daily-digest': {
         const { sendDailyDigests } = await import('../../lib/cron-handlers/daily-digest.js');
         return await sendDailyDigests(res);
