@@ -100,13 +100,33 @@ export default async function handler(req, res) {
                      const start = startDate ? new Date(startDate) : new Date();
                      const end = endDate ? new Date(endDate) : new Date(new Date().setFullYear(new Date().getFullYear() + 1));
                      
+                     // Generate Member ID
+                     let memberDisplayId = null;
+                     
+                     try {
+                         // Check existing
+                         const userRes = await neonHelper.query('SELECT member_display_id FROM users WHERE user_id = $1', [targetUserId]);
+                         memberDisplayId = userRes[0]?.member_display_id;
+                         
+                         if (!memberDisplayId) {
+                             await neonHelper.query(`CREATE SEQUENCE IF NOT EXISTS member_id_seq START 1`);
+                             const seqRes = await neonHelper.query("SELECT nextval('member_id_seq') as id");
+                             memberDisplayId = seqRes[0]?.id;
+                         }
+                     } catch (e) {
+                         console.error('Failed to generate member ID during approval:', e);
+                         // Fallback random if sequence fails (should not happen)
+                         if (!memberDisplayId) memberDisplayId = Math.floor(Math.random() * 100000) + 900000;
+                     }
+
                      await neonHelper.query(
                          `UPDATE users 
                           SET member_status = 'active', 
                               member_expire_at = $1, 
-                              member_since = $2
-                          WHERE user_id = $3`,
-                         [end.toISOString(), start.toISOString(), targetUserId]
+                              member_since = $2,
+                              member_display_id = $3
+                          WHERE user_id = $4`,
+                         [end.toISOString(), start.toISOString(), memberDisplayId, targetUserId]
                      );
                  } else if (status === 'rejected') {
                      // Optionally update user status if needed

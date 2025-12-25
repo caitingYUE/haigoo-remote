@@ -102,6 +102,7 @@ const userHelper = {
                 if (user.member_status) user.memberStatus = user.member_status
                 if (user.member_expire_at) user.memberExpireAt = user.member_expire_at
                 if (user.member_since) user.memberSince = user.member_since
+                if (user.member_display_id) user.memberDisplayId = user.member_display_id
             }
 
             return user
@@ -313,23 +314,18 @@ const userHelper = {
         try {
             if (!neonHelper.isConfigured) return null
 
-            // 获取用户信息
-            const userResult = await neonHelper.query(`
-        SELECT user_id, email, username, status, roles, createdAt, updatedAt 
-        FROM users 
-        WHERE user_id = $1
-      `, [userId])
-
-            const user = userResult?.[0]
+            // Use getUserById to ensure consistent field mapping
+            const user = await this.getUserById(userId)
             if (!user) return null
 
             // 获取用户收藏的职位
             try {
-                const favResult = await neonHelper.select('favorites', { userId })
-                const favorites = favResult?.[0] || []
+                // Note: favorites table uses user_id, but select helper expects keys to match column names
+                const favResult = await neonHelper.select('favorites', { user_id: userId })
+                const favorites = favResult || []
                 return {
                     ...user,
-                    favorites: favorites.map(fav => fav.jobId),
+                    favorites: favorites.map(fav => fav.job_id || fav.jobId),
                     favoritesCount: favorites.length
                 }
             } catch (e) {
