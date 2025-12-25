@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trackingService } from '../services/tracking-service'
 import { ShareJobModal } from '../components/ShareJobModal'
+import { decodeJobId } from '../utils/share-link-helper'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -38,8 +39,9 @@ export default function JobDetailPage() {
       if (!id) return
       setLoading(true)
       try {
+        const resolvedId = decodeJobId(id);
         // Fetch job details
-        const resp = await fetch(`/api/data/processed-jobs?id=${id}`)
+        const resp = await fetch(`/api/data/processed-jobs?id=${resolvedId}`)
         if (!resp.ok) throw new Error('职位不存在或已下线')
         const data = await resp.json()
         if (data.jobs && data.jobs.length > 0) {
@@ -51,7 +53,7 @@ export default function JobDetailPage() {
              startRedirectCountdown()
           } else {
              setJob(fetchedJob)
-             trackingService.track('view_job_detail', { jobId: id, title: fetchedJob.title })
+             trackingService.track('view_job_detail', { jobId: resolvedId, title: fetchedJob.title })
           }
         } else {
           setError('职位不存在或已下线')
@@ -84,15 +86,8 @@ export default function JobDetailPage() {
   }, [countdown, navigate])
 
   const handleShare = () => {
-    const shareUrl = window.location.href.split('?')[0] + '?source=share';
-    navigator.clipboard.writeText(shareUrl).then(() => {
-        setShowCopied(true);
-        setTimeout(() => setShowCopied(false), 2000);
-        showSuccess('链接已复制', '快去分享给朋友吧');
-        trackingService.track('share_job', { jobId: id, from: 'detail_page' });
-    }).catch(() => {
-        showError('复制失败', '请手动复制链接');
-    });
+    setIsShareModalOpen(true);
+    trackingService.track('click_share_button', { jobId: id, from: 'detail_page_mobile' });
   }
 
   // Check if saved

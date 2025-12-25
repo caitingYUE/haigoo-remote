@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Copy, Check, Share2 } from 'lucide-react';
 import { trackingService } from '../services/tracking-service';
 
+import { getShareLink } from '../utils/share-link-helper';
+
 interface ShareJobModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,7 +23,7 @@ export const ShareJobModal: React.FC<ShareJobModalProps> = ({
   
   if (!isOpen) return null;
 
-  const shareUrl = `${window.location.origin}/job/${jobId}?source=share`;
+  const shareUrl = getShareLink(jobId);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl).then(() => {
