@@ -20,6 +20,19 @@ interface JobCardNewProps {
 export default function JobCardNew({ job, onClick, matchScore, className, variant = 'grid', isActive = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    const sourceType = getJobSourceType(job);
+   const [showCopied, setShowCopied] = useState(false);
+
+   const handleShare = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const shareUrl = `${window.location.origin}/job/${job.id}?source=share`;
+      navigator.clipboard.writeText(shareUrl).then(() => {
+         setShowCopied(true);
+         setTimeout(() => setShowCopied(false), 2000);
+         trackingService.track('share_job', { jobId: job.id, from: 'card' });
+      }).catch(err => {
+         console.error('Failed to copy:', err);
+      });
+   };
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 

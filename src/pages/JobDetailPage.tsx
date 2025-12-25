@@ -17,6 +17,17 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSaved, setIsSaved] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const [showCopied, setShowCopied] = useState(false)
+
+  // Track visit source
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const source = params.get('source')
+    if (source === 'share' && id) {
+      trackingService.track('visit_via_share', { jobId: id })
+    }
+  }, [location.search, id])
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -28,9 +39,19 @@ export default function JobDetailPage() {
         if (!resp.ok) throw new Error('职位不存在或已下线')
         const data = await resp.json()
         if (data.jobs && data.jobs.length > 0) {
-          setJob(data.jobs[0])
+          const fetchedJob = data.jobs[0]
+          
+          // Check validity
+          if (fetchedJob.status === 'closed' || fetchedJob.status === 'expired') {
+             setError('该职位已停止招聘')
+             startRedirectCountdown()
+          } else {
+             setJob(fetchedJob)
+             trackingService.track('view_job_detail', { jobId: id, title: fetchedJob.title })
+          }
         } else {
           setError('职位不存在或已下线')
+          startRedirectCountdown()
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载失败')
@@ -41,6 +62,34 @@ export default function JobDetailPage() {
 
     fetchJob()
   }, [id])
+
+  const startRedirectCountdown = () => {
+    setCountdown(5)
+  }
+
+  // Handle countdown
+  useEffect(() => {
+    if (countdown === null) return
+    
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+      return () => clearTimeout(timer)
+    } else {
+      navigate('/jobs')
+    }
+  }, [countdown, navigate])
+
+  const handleShare = () => {
+    const shareUrl = window.location.href.split('?')[0] + '?source=share';
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        setShowCopied(true);
+        setTimeout(() => setShowCopied(false), 2000);
+        showSuccess('链接已复制', '快去分享给朋友吧');
+        trackingService.track('share_job', { jobId: id, from: 'detail_page' });
+    }).catch(() => {
+        showError('复制失败', '请手动复制链接');
+    });
+  }
 
   // Check if saved
   useEffect(() => {
