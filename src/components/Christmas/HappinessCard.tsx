@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Gift, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Gift, X, Download, Loader2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import cardsData from '../../data/happiness-cards.json';
 
 interface HappinessCardProps {
@@ -9,6 +10,8 @@ interface HappinessCardProps {
 export const HappinessCard: React.FC<HappinessCardProps> = ({ onClose }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [card, setCard] = useState<{ id: number, quote: string, author: string } | null>(null);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const cardRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Pick a random card
@@ -22,6 +25,38 @@ export const HappinessCard: React.FC<HappinessCardProps> = ({ onClose }) => {
 
     const handleOpen = () => {
         setIsOpen(true);
+    };
+
+    const handleDownload = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!cardRef.current || isDownloading) return;
+
+        setIsDownloading(true);
+        try {
+            // Wait a bit for any images/fonts to settle
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const canvas = await html2canvas(cardRef.current, {
+                useCORS: true,
+                scale: 2, // Higher quality
+                backgroundColor: '#fffcf5',
+                logging: false,
+                ignoreElements: (element) => {
+                    return element.classList.contains('no-print');
+                }
+            });
+
+            const link = document.createElement('a');
+            link.download = `Haigoo-2026-Blessing-${new Date().getTime()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Failed to download card:', error);
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
     if (!card) return null;
@@ -40,20 +75,37 @@ export const HappinessCard: React.FC<HappinessCardProps> = ({ onClose }) => {
                     >
                         <Gift className="w-20 h-20 text-yellow-200 animate-bounce mb-4" />
                         <p className="text-yellow-100 font-bold text-xl tracking-wider">点击拆开你的新年祝福</p>
-                        <p className="text-yellow-200/60 text-sm mt-2">Haigoo 治愈卡片</p>
+                        <p className="text-yellow-200/60 text-sm mt-2">Haigoo 祝福卡片</p>
 
                         <div className="absolute inset-0 border-[8px] border-dashed border-white/20 rounded-xl pointer-events-none"></div>
                     </div>
                 ) : (
                     // Opened Card State
-                    <div className="relative w-full h-full bg-[#fffcf5] rounded-xl shadow-2xl overflow-hidden animate-in zoom-in duration-500 rotate-1 border-8 border-white">
-                        {/* Close Button */}
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10 p-1 bg-white/50 rounded-full"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
+                    <div 
+                        ref={cardRef}
+                        className="relative w-full h-full bg-[#fffcf5] rounded-xl shadow-2xl overflow-hidden animate-in zoom-in duration-500 rotate-1 border-8 border-white"
+                    >
+                        {/* Action Buttons - Hidden during capture */}
+                        <div className="absolute top-4 right-4 z-20 flex gap-2 no-print">
+                            <button
+                                onClick={handleDownload}
+                                disabled={isDownloading}
+                                className="text-slate-400 hover:text-slate-600 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm transition-colors"
+                                title="下载卡片"
+                            >
+                                {isDownloading ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <Download className="w-5 h-5" />
+                                )}
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="text-slate-400 hover:text-slate-600 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
 
                         {/* Content */}
                         <div className="absolute inset-0 p-8 flex flex-col justify-between bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]">
@@ -65,7 +117,7 @@ export const HappinessCard: React.FC<HappinessCardProps> = ({ onClose }) => {
                             </div>
 
                             {/* Quote */}
-                            <div className="flex-1 flex items-center justify-center">
+                            <div className="flex-1 flex items-center justify-center py-4">
                                 <p className="text-slate-700 text-xl md:text-2xl leading-relaxed font-serif text-center italic">
                                     "{card.quote}"
                                 </p>
@@ -73,10 +125,13 @@ export const HappinessCard: React.FC<HappinessCardProps> = ({ onClose }) => {
 
                             {/* Footer */}
                             <div className="text-center pt-6 border-t-2 border-red-100">
-                                <div className="w-12 h-12 bg-red-100 rounded-full mx-auto flex items-center justify-center mb-2">
-                                    <span className="text-2xl">🎄</span>
+                                <div className="w-10 h-10 bg-red-50 rounded-full mx-auto flex items-center justify-center mb-2 text-red-500">
+                                    <span className="text-xl">✨</span>
                                 </div>
-                                <p className="text-slate-500 font-medium text-sm">———— {card.author}</p>
+                                <p className="text-slate-500 font-medium text-sm mb-4">———— {card.author}</p>
+                                <p className="text-slate-300 text-[10px] uppercase tracking-widest font-sans">
+                                    Haigooremote.com
+                                </p>
                             </div>
 
                             {/* Decor */}
