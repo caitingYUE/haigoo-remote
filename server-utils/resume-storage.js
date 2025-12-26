@@ -72,35 +72,35 @@ export async function saveResumes(resumes) {
         // 使用事务批量保存
         const savedIds = []
         await neonHelper.transaction(async (sql) => {
-            // 先清空现有数据 (Wait, this clears ALL data for ALL users? NO! saveResumes is dangerous if it clears everything!)
-            // Original code: await sql.query('DELETE FROM resumes') -> THIS DELETES EVERYTHING!
-            // We must fix this logic. saveResumes should probably be user-scoped or we should rely on saveUserResume.
-            // However, assuming this is how it was, let's just capture IDs.
-            // But wait, if I use this for a single user upload, I don't want to delete everyone else's resumes!
-            
-            // NOTE: The previous implementation of saveResumes cleared the table. 
-            // If this function is used for admin bulk restore, that's fine.
-            // If it's used for user upload, it's catastrophic.
-            // Let's check usage. It's used in api/resumes.js POST handler.
-            // If mode === 'append', it fetches existing resumes and appends.
-            // getResumes fetches ALL resumes? No, getResumes fetches from DB.
-            // If getResumes returns all resumes in DB, then 'append' mode re-saves everyone.
-            // This is very inefficient but "safe" in terms of data loss (except for race conditions).
-            
-            // Let's stick to the request: return IDs.
-            
-            await sql.query('DELETE FROM resumes')
-            
-            // 批量插入新数据
+            // 批量插入或更新数据
             for (const resume of limitedResumes) {
                 const rId = resume.id || `resume_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
                 savedIds.push(rId)
+                
+                // 检查是否存在 (由于 neon 驱动限制，这里简单处理)
+                // 最好使用 ON CONFLICT (resume_id) DO UPDATE
+                // 注意：file_content 在这里如果传入了需要处理，但通常批量保存不包含大文件内容
+                
                 await sql.query(`
                     INSERT INTO resumes (
                         resume_id, user_id, file_name, file_size, file_type,
                         parse_status, parse_result, parse_error, content_text, metadata,
-                        ai_score, ai_suggestions, last_analyzed_at
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                        ai_score, ai_suggestions, last_analyzed_at, updated_at
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+                    ON CONFLICT (resume_id) DO UPDATE SET
+                        user_id = EXCLUDED.user_id,
+                        file_name = EXCLUDED.file_name,
+                        file_size = EXCLUDED.file_size,
+                        file_type = EXCLUDED.file_type,
+                        parse_status = EXCLUDED.parse_status,
+                        parse_result = EXCLUDED.parse_result,
+                        parse_error = EXCLUDED.parse_error,
+                        content_text = EXCLUDED.content_text,
+                        metadata = EXCLUDED.metadata,
+                        ai_score = EXCLUDED.ai_score,
+                        ai_suggestions = EXCLUDED.ai_suggestions,
+                        last_analyzed_at = EXCLUDED.last_analyzed_at,
+                        updated_at = NOW()
                 `, [
                     rId,
                     resume.userId,
