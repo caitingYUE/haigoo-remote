@@ -181,8 +181,8 @@ export default function LandingPage() {
       {/* Premium Dark Hero Section */}
       <HomeHero stats={stats} />
 
-      {/* Christmas Campaign CTA */}
-      <ChristmasResumeCTA />
+      {/* New Year Blessing Section */}
+      <NewYearBlessingSection />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Featured Jobs Section */}

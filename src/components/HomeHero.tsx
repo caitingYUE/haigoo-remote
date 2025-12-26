@@ -54,11 +54,8 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
     useEffect(() => {
         const checkDate = () => {
-            const now = new Date()
-            const currentYear = now.getFullYear()
-            const startDate = new Date(`${currentYear}-12-20T00:00:00`)
-            const endDate = new Date(`${currentYear}-12-27T23:59:59`)
-            setIsChristmas(now >= startDate && now <= endDate)
+            // Force New Year Mode until March 2026 as requested
+            setIsChristmas(true) // Reusing 'isChristmas' state for 'New Year' visual mode (Red/Gold)
         }
         checkDate()
     }, [])
@@ -100,14 +97,14 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         <span className={`relative inline-flex rounded-full h-2 w-2 ${isChristmas ? 'bg-red-500' : 'bg-indigo-500'}`}></span>
                     </span>
                     <span className={`text-xs font-bold ${isChristmas ? 'text-red-700' : 'text-indigo-700'} tracking-wide uppercase`}>
-                        {isChristmas ? 'Happy Holidays & Global Opportunities' : 'Global Remote Opportunities'}
+                        {isChristmas ? 'Happy New Year 2026 & Global Opportunities' : 'Global Remote Opportunities'}
                     </span>
                 </div>
 
                 {/* Main Heading */}
                 <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
                     为中国人才打开<br className="md:hidden" />
-                    <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isChristmas ? 'from-red-600 via-green-600 to-red-600' : 'from-indigo-600 via-blue-600 to-cyan-600'}`}> 全球远程工作 </span>
+                    <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isChristmas ? 'from-red-600 via-amber-500 to-red-600' : 'from-indigo-600 via-blue-600 to-cyan-600'}`}> 全球远程工作 </span>
                     入口
                 </h1>
 
