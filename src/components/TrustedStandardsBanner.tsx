@@ -56,7 +56,9 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-bold text-slate-900 text-base">Haigoo 俱乐部认证企业</h4>
+              <h4 className="font-bold text-slate-900 text-base">
+                {context === 'company' ? 'Haigoo 俱乐部认证企业' : 'Haigoo 俱乐部已认证'}
+              </h4>
               <span className="px-2 py-0.5 bg-white/60 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100 whitespace-nowrap">Verified</span>
             </div>
             {isMember && (
