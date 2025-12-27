@@ -184,13 +184,6 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
             />
 
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-10"
-                >
-                    <X className="w-5 h-5" />
-                </button>
-
                 {/* Header */}
                 <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 p-6 text-white relative overflow-hidden flex-shrink-0">
                     {/* Decorative background elements */}
@@ -200,12 +193,20 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                         <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
                             <Send className="w-6 h-6" />
                         </div>
-                        <h2 className="text-xl font-bold">申请内推</h2>
+                        <h2 className="text-xl font-bold text-white">申请内推</h2>
                     </div>
                     <p className="relative z-10 text-indigo-100 text-sm">
                         填写以下信息，我们将在 <strong>3个工作日内</strong> 审核您的申请
                     </p>
                 </div>
+
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-50"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
 
                 {/* Body */}
                 <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
