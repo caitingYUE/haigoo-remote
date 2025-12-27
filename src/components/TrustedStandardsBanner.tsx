@@ -27,8 +27,8 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
         : 'Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业，让你放心探索远程工作世界。';
     }
     return isExpanded
-      ? '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，符合以下 5 项标准：'
-      : '该岗位由合作企业官方直接发布，经过 Haigoo 严格审核，信息真实可靠，您可以放心投递。';
+      ? '该岗位由企业官方直接发布，经过 Haigoo 严格审核，符合以下 5 项标准：'
+      : '该岗位由企业官方直接发布，经过 Haigoo 严格审核，信息真实可靠，您可以放心投递。';
   };
 
   const handleToggle = () => {
