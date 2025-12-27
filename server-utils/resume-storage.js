@@ -6,24 +6,32 @@
 
 import neonHelper from './dal/neon-helper.js'
 
-// 获取所有简历
-export async function getResumes() {
+// 获取简历列表 (支持按用户筛选)
+export async function getResumes(userId = null) {
     if (!neonHelper.isConfigured) {
         return { resumes: [], provider: 'none' }
     }
 
     try {
-        // Exclude file_content to avoid large payload
-        const result = await neonHelper.query(`
+        let query = `
             SELECT 
                 resume_id, user_id, file_name, file_size, file_type,
                 parse_status, parse_result, parse_error, content_text, 
                 metadata, created_at, updated_at,
                 ai_score, ai_suggestions, last_analyzed_at
             FROM resumes 
-            ORDER BY created_at DESC
-            LIMIT 50
-        `)
+        `
+        
+        const params = []
+        if (userId) {
+            query += ` WHERE user_id = $1 `
+            params.push(userId)
+        }
+
+        query += ` ORDER BY created_at DESC LIMIT 50`
+
+        // Exclude file_content to avoid large payload
+        const result = await neonHelper.query(query, params)
         
         if (result && result.length > 0) {
             const resumes = result.map(row => ({
