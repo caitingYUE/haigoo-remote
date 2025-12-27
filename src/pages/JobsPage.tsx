@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Search, SortAsc, Sparkles, Briefcase, Zap } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -13,6 +13,7 @@ import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { JobTrackingModal, JobPreferences } from '../components/JobTrackingModal'
 import { trackingService } from '../services/tracking-service'
+import { useDebounce } from '../hooks/useDebounce'
 
 // Industry Options
 // const INDUSTRY_OPTIONS = [
@@ -45,6 +46,10 @@ export default function JobsPage() {
 
   const [searchTerm, setSearchTerm] = useState('')
   const searchTermRef = useRef(searchTerm)
+  // P0 Fix: Debounce search term to reduce API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
+  // P0 Fix: AbortController ref for canceling pending requests
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     searchTermRef.current = searchTerm
@@ -184,7 +189,14 @@ export default function JobsPage() {
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
   // 加载岗位数据（使用新的后端API，支持筛选和分页）
-  const loadJobsWithFilters = async (page = 1, loadMore = false) => {
+  const loadJobsWithFilters = useCallback(async (page = 1, loadMore = false) => {
+    // P0 Fix: Cancel any pending request before starting a new one
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    abortControllerRef.current = new AbortController()
+    const signal = abortControllerRef.current.signal
+
     try {
       if (loadMore) {
         setLoadingMore(true)
@@ -205,7 +217,7 @@ export default function JobsPage() {
 
       queryParams.append('page', page.toString())
       queryParams.append('pageSize', pageSize.toString())
-      
+
       // Explicitly handle sortBy
       if (sortBy === 'recent') {
         queryParams.append('sortBy', 'recent')
@@ -227,14 +239,15 @@ export default function JobsPage() {
       if (filters.isNew) queryParams.append('isNew', 'true')
 
       let response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        signal // P0 Fix: Pass abort signal
       })
 
       // 自动降级处理：如果带分数的接口返回 401 (Unauthorized) 或 500 (Server Error)，尝试降级为普通接口
       if (!response.ok && shouldUseMatchScore) {
         console.warn(`[JobsPage] Failed to fetch matched jobs (status ${response.status}), falling back to standard list`)
         queryParams.delete('action') // 移除 action 参数，回退到默认列表
-        response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`)
+        response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`, { signal })
       }
 
       if (!response.ok) {
@@ -279,6 +292,11 @@ export default function JobsPage() {
       setLoadingStage('idle')
       console.log(`✅ 获取到 ${data.jobs?.length || 0} 个岗位（第${page}页，后端筛选和排序）`)
     } catch (error) {
+      // P0 Fix: Ignore AbortError (request was intentionally canceled)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('[JobsPage] 请求已取消，开始新的搜索')
+        return
+      }
       setLoadingStage('idle')
       console.error('❌ 加载岗位数据失败:', error)
       showError('加载岗位数据失败，请稍后重试')
@@ -289,7 +307,7 @@ export default function JobsPage() {
         setJobsLoading(false)
       }
     }
-  }
+  }, [token, isAuthenticated, showError, navigate, location.search, pageSize])
 
   // 加载更多数据
   const loadMoreJobs = async () => {
@@ -303,28 +321,29 @@ export default function JobsPage() {
     }
   }
 
+  // P0 Fix: Use debouncedSearchTerm instead of searchTerm to reduce API calls
   useEffect(() => {
     loadJobsWithFilters(1, false)
-    
+
     // Track search or filter change
-    if (searchTerm) {
-        trackingService.track('search_job', { keyword: searchTerm })
+    if (debouncedSearchTerm) {
+      trackingService.track('search_job', { keyword: debouncedSearchTerm })
     }
-    
+
     // Track filter usage (if any filter is active)
     const activeFilters = Object.entries(filters).filter(([key, value]) => {
-        if (Array.isArray(value)) return value.length > 0
-        if (typeof value === 'boolean') return value
-        return false
+      if (Array.isArray(value)) return value.length > 0
+      if (typeof value === 'boolean') return value
+      return false
     })
-    
+
     if (activeFilters.length > 0) {
-        trackingService.track('filter_job', { 
-            filters: activeFilters.map(f => f[0]),
-            filter_count: activeFilters.length
-        })
+      trackingService.track('filter_job', {
+        filters: activeFilters.map(f => f[0]),
+        filter_count: activeFilters.length
+      })
     }
-  }, [searchTerm, filters, isAuthenticated, token, sortBy])
+  }, [debouncedSearchTerm, filters, isAuthenticated, token, sortBy, loadJobsWithFilters])
 
   // 滚动监听 - 自动加载更多
   useEffect(() => {
@@ -499,43 +518,9 @@ export default function JobsPage() {
     return jobs
   }, [jobs])
 
-  // 公司分布逻辑：限制同一公司连续出现不超过2个岗位
-  const distributedJobs = useMemo(() => {
-    if (filteredJobs.length === 0) return []
-
-    const result: Job[] = []
-    const remaining: Job[] = [...filteredJobs]
-
-    const countRecentCompanyJobs = (jobs: Job[], company: string, window: number): number => {
-      const recentJobs = jobs.slice(-window)
-      return recentJobs.filter(j => j.company === company).length
-    }
-
-    while (remaining.length > 0) {
-      let added = false
-
-      // 尝试找到一个不会导致同一公司连续出现3个的岗位
-      for (let i = 0; i < remaining.length; i++) {
-        const job = remaining[i]
-        const company = job.company || 'Unknown'
-        const recentCount = countRecentCompanyJobs(result, company, 2)
-
-        if (recentCount < 2) {
-          result.push(job)
-          remaining.splice(i, 1)
-          added = true
-          break
-        }
-      }
-
-      // 如果无法避免连续出现3个，则添加第一个岗位
-      if (!added && remaining.length > 0) {
-        result.push(remaining.shift()!)
-      }
-    }
-
-    return result
-  }, [filteredJobs])
+  // P1 Fix: Remove duplicate frontend scattering - backend already handles this via scatterJobs()
+  // Simply alias filteredJobs as distributedJobs for backward compatibility
+  const distributedJobs = filteredJobs
 
   // Deep Linking: Sync URL with selectedJob
   useEffect(() => {
@@ -632,13 +617,13 @@ export default function JobsPage() {
 
   return (
     <MobileRestricted allowContinue={true}>
-    <div
-      className="h-full bg-slate-50 flex flex-col"
-      role="main"
-      aria-label="职位搜索页面"
-    >
-      {/* Hero / Header Section - Compact Version for Split View */}
-      {/* Only show on mobile or if needed. For split view, maybe we don't need a huge hero? 
+      <div
+        className="h-full bg-slate-50 flex flex-col"
+        role="main"
+        aria-label="职位搜索页面"
+      >
+        {/* Hero / Header Section - Compact Version for Split View */}
+        {/* Only show on mobile or if needed. For split view, maybe we don't need a huge hero? 
           User said "visual aesthetic harmony". I'll keep a smaller header or just the layout.
           Actually, let's keep the hero but maybe make it less intrusive or part of the page flow.
           For a "JobRight" app-like feel, the hero is usually gone or very small.
@@ -649,181 +634,181 @@ export default function JobsPage() {
           Let's keep a minimal header.
       */}
 
-      <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 gap-6 h-full">
+        <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 gap-6 h-full">
 
-        {/* Top Section: Search & Filters */}
-        <div className="flex-shrink-0 z-50 relative">
-          <JobFilterBar
-            filters={filters}
-            onFilterChange={(newFilters: any) => setFilters((prev: any) => ({ ...prev, ...newFilters }))}
-            categoryOptions={topCategories.map(c => ({ label: c, value: c }))}
-            industryOptions={industryOptions}
-            jobTypeOptions={typeOptions}
-            locationOptions={locationOptions}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            sortBy={sortBy}
-            onSortChange={() => setSortBy(prev => prev === 'recent' ? 'relevance' : 'recent')}
-            onOpenTracking={() => setIsPreferenceModalOpen(true)}
-          />
-        </div>
+          {/* Top Section: Search & Filters */}
+          <div className="flex-shrink-0 z-50 relative">
+            <JobFilterBar
+              filters={filters}
+              onFilterChange={(newFilters: any) => setFilters((prev: any) => ({ ...prev, ...newFilters }))}
+              categoryOptions={topCategories.map(c => ({ label: c, value: c }))}
+              industryOptions={industryOptions}
+              jobTypeOptions={typeOptions}
+              locationOptions={locationOptions}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              sortBy={sortBy}
+              onSortChange={() => setSortBy(prev => prev === 'recent' ? 'relevance' : 'recent')}
+              onOpenTracking={() => setIsPreferenceModalOpen(true)}
+            />
+          </div>
 
-        {/* Main Content Area: Split View */}
-        <div className="flex-1 flex overflow-hidden gap-6 min-h-0">
-          {/* Middle Column: Job List */}
-          <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[55%] xl:w-[55%]' : 'lg:w-[800px] mx-auto'} bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden flex-shrink-0`}>
-            {/* List Header Info */}
-            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center text-xs text-slate-500 font-medium">
-              <span>共找到 {totalJobs || distributedJobs.length} 个相关职位</span>
-              {filters.isTrusted && (
-                <span className="flex items-center gap-1 text-indigo-600">
-                  <Zap className="w-3 h-3 fill-indigo-600" />
-                  已过滤精选企业
-                </span>
-              )}
-            </div>
+          {/* Main Content Area: Split View */}
+          <div className="flex-1 flex overflow-hidden gap-6 min-h-0">
+            {/* Middle Column: Job List */}
+            <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[55%] xl:w-[55%]' : 'lg:w-[800px] mx-auto'} bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden flex-shrink-0`}>
+              {/* List Header Info */}
+              <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center text-xs text-slate-500 font-medium">
+                <span>共找到 {totalJobs || distributedJobs.length} 个相关职位</span>
+                {filters.isTrusted && (
+                  <span className="flex items-center gap-1 text-indigo-600">
+                    <Zap className="w-3 h-3 fill-indigo-600" />
+                    已过滤精选企业
+                  </span>
+                )}
+              </div>
 
-            {/* List Content */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-white overscroll-y-contain">
-              {showLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : distributedJobs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-                    <Search className="w-6 h-6 text-slate-300" />
+              {/* List Content */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-white overscroll-y-contain">
+                {showLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                   </div>
-                  <p className="text-slate-900 font-medium mb-1">未找到相关职位</p>
-                  <button onClick={clearAllFilters} className="text-indigo-600 text-sm hover:underline mb-8">清除筛选</button>
-
-                  {/* Job Tracking Promo for Empty State */}
-                  <div className="w-full max-w-sm bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-indigo-600" />
-                      <span className="font-bold text-slate-900 text-sm">没找到心仪的职位？</span>
+                ) : distributedJobs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                      <Search className="w-6 h-6 text-slate-300" />
                     </div>
-                    <p className="text-xs text-slate-500 text-center">告诉我们您的需求，有合适机会第一时间通知您</p>
-                    <button
-                      onClick={() => setIsPreferenceModalOpen(true)}
-                      className="px-6 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors w-full"
-                    >
-                      开启职位追踪
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  {distributedJobs.map((job, index) => (
-                    <JobCardNew
-                      key={job.id}
-                      job={job}
-                      variant="list"
-                      isActive={selectedJob?.id === job.id}
-                      onClick={() => handleJobSelect(job, index)}
-                      matchScore={job.matchScore}
-                    />
-                  ))}
+                    <p className="text-slate-900 font-medium mb-1">未找到相关职位</p>
+                    <button onClick={clearAllFilters} className="text-indigo-600 text-sm hover:underline mb-8">清除筛选</button>
 
-                  {/* Low Result Count Promo */}
-                  {distributedJobs.length < 5 && (
-                    <div className="mx-4 my-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-indigo-600 flex-shrink-0">
-                          <Sparkles className="w-5 h-5" />
-                        </div>
-                        <div className="text-center sm:text-left">
-                          <h3 className="font-bold text-slate-900 text-sm">没找到心仪的职位？</h3>
-                          <p className="text-xs text-slate-500 mt-0.5">告诉我们您的需求，有合适机会第一时间通知您</p>
-                        </div>
+                    {/* Job Tracking Promo for Empty State */}
+                    <div className="w-full max-w-sm bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-indigo-600" />
+                        <span className="font-bold text-slate-900 text-sm">没找到心仪的职位？</span>
                       </div>
+                      <p className="text-xs text-slate-500 text-center">告诉我们您的需求，有合适机会第一时间通知您</p>
                       <button
                         onClick={() => setIsPreferenceModalOpen(true)}
-                        className="px-4 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors whitespace-nowrap"
+                        className="px-6 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors w-full"
                       >
                         开启职位追踪
                       </button>
                     </div>
-                  )}
-
-                  {/* Load More Trigger */}
-                  <div className="p-4 text-center border-t border-slate-50">
-                    {loadingMore ? (
-                      <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-                        <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                        加载中...
-                      </div>
-                    ) : jobs.length < totalJobs ? (
-                      <button onClick={loadMoreJobs} className="text-xs text-indigo-600 hover:underline font-medium">
-                        加载更多
-                      </button>
-                    ) : (
-                      <span className="text-xs text-slate-400">已加载全部</span>
-                    )}
                   </div>
+                ) : (
+                  <div>
+                    {distributedJobs.map((job, index) => (
+                      <JobCardNew
+                        key={job.id}
+                        job={job}
+                        variant="list"
+                        isActive={selectedJob?.id === job.id}
+                        onClick={() => handleJobSelect(job, index)}
+                        matchScore={job.matchScore}
+                      />
+                    ))}
+
+                    {/* Low Result Count Promo */}
+                    {distributedJobs.length < 5 && (
+                      <div className="mx-4 my-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-indigo-600 flex-shrink-0">
+                            <Sparkles className="w-5 h-5" />
+                          </div>
+                          <div className="text-center sm:text-left">
+                            <h3 className="font-bold text-slate-900 text-sm">没找到心仪的职位？</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">告诉我们您的需求，有合适机会第一时间通知您</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setIsPreferenceModalOpen(true)}
+                          className="px-4 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors whitespace-nowrap"
+                        >
+                          开启职位追踪
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Load More Trigger */}
+                    <div className="p-4 text-center border-t border-slate-50">
+                      {loadingMore ? (
+                        <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                          加载中...
+                        </div>
+                      ) : jobs.length < totalJobs ? (
+                        <button onClick={loadMoreJobs} className="text-xs text-indigo-600 hover:underline font-medium">
+                          加载更多
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-400">已加载全部</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Detail Panel (Desktop Only) */}
+            <div className="hidden lg:flex flex-1 bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden h-full flex-col relative">
+              {selectedJob ? (
+                <div className="h-full overflow-y-auto custom-scrollbar overscroll-y-contain">
+                  <JobDetailPanel
+                    job={selectedJob}
+                    onSave={() => toggleSaveJob(selectedJob.id)}
+                    isSaved={savedJobs.has(selectedJob.id)}
+                    onApply={() => { /* apply logic */ }}
+                    showCloseButton={false}
+                    onNavigateJob={(direction) => {
+                      const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(distributedJobs.length - 1, currentJobIndex + 1)
+                      handleJobSelect(distributedJobs[nextIndex], nextIndex)
+                    }}
+                    canNavigatePrev={currentJobIndex > 0}
+                    canNavigateNext={currentJobIndex < distributedJobs.length - 1}
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-50/30">
+                  <div className="w-20 h-20 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center mb-4">
+                    <Briefcase className="w-10 h-10 text-slate-300" />
+                  </div>
+                  <p className="text-lg font-medium text-slate-500">选择一个职位查看详情</p>
+                  <p className="text-sm text-slate-400 mt-2">点击左侧列表中的职位卡片</p>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Right Column: Detail Panel (Desktop Only) */}
-          <div className="hidden lg:flex flex-1 bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden h-full flex-col relative">
-            {selectedJob ? (
-              <div className="h-full overflow-y-auto custom-scrollbar overscroll-y-contain">
-                <JobDetailPanel
-                  job={selectedJob}
-                  onSave={() => toggleSaveJob(selectedJob.id)}
-                  isSaved={savedJobs.has(selectedJob.id)}
-                  onApply={() => { /* apply logic */ }}
-                  showCloseButton={false}
-                  onNavigateJob={(direction) => {
-                    const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(distributedJobs.length - 1, currentJobIndex + 1)
-                    handleJobSelect(distributedJobs[nextIndex], nextIndex)
-                  }}
-                  canNavigatePrev={currentJobIndex > 0}
-                  canNavigateNext={currentJobIndex < distributedJobs.length - 1}
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-50/30">
-                <div className="w-20 h-20 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center mb-4">
-                  <Briefcase className="w-10 h-10 text-slate-300" />
-                </div>
-                <p className="text-lg font-medium text-slate-500">选择一个职位查看详情</p>
-                <p className="text-sm text-slate-400 mt-2">点击左侧列表中的职位卡片</p>
-              </div>
-            )}
-          </div>
         </div>
-      </div>
 
-      {/* Job Detail Modal (Mobile Only) */}
-      {isJobDetailOpen && selectedJob && (
-        <JobDetailModal
-          job={selectedJob}
-          isOpen={isJobDetailOpen}
-          onClose={() => { setIsJobDetailOpen(false); }}
-          onSave={() => toggleSaveJob(selectedJob.id)}
-          isSaved={savedJobs.has(selectedJob.id)}
-          jobs={distributedJobs}
-          currentJobIndex={currentJobIndex}
-          onNavigateJob={(direction: 'prev' | 'next') => {
-            const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(distributedJobs.length - 1, currentJobIndex + 1)
-            handleJobSelect(distributedJobs[nextIndex], nextIndex)
-          }}
+        {/* Job Detail Modal (Mobile Only) */}
+        {isJobDetailOpen && selectedJob && (
+          <JobDetailModal
+            job={selectedJob}
+            isOpen={isJobDetailOpen}
+            onClose={() => { setIsJobDetailOpen(false); }}
+            onSave={() => toggleSaveJob(selectedJob.id)}
+            isSaved={savedJobs.has(selectedJob.id)}
+            jobs={distributedJobs}
+            currentJobIndex={currentJobIndex}
+            onNavigateJob={(direction: 'prev' | 'next') => {
+              const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(distributedJobs.length - 1, currentJobIndex + 1)
+              handleJobSelect(distributedJobs[nextIndex], nextIndex)
+            }}
+          />
+        )}
+
+        {/* Job Preferences Modal */}
+        <JobTrackingModal
+          isOpen={isPreferenceModalOpen}
+          onClose={() => setIsPreferenceModalOpen(false)}
+          onSave={saveUserPreferences}
+          initialPreferences={userPreferences || undefined}
+          jobTypeOptions={topCategories}
+          industryOptions={industryOptions.map(opt => opt.label)}
         />
-      )}
-
-      {/* Job Preferences Modal */}
-      <JobTrackingModal
-        isOpen={isPreferenceModalOpen}
-        onClose={() => setIsPreferenceModalOpen(false)}
-        onSave={saveUserPreferences}
-        initialPreferences={userPreferences || undefined}
-        jobTypeOptions={topCategories}
-        industryOptions={industryOptions.map(opt => opt.label)}
-      />
-    </div>
+      </div>
     </MobileRestricted>
   )
 }

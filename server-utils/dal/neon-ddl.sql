@@ -483,3 +483,10 @@ CREATE TABLE IF NOT EXISTS analytics_events (
   referrer TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 2025-12-27: P1 性能优化 - 添加岗位列表查询常用索引
+-- Fix: 岗位列表页搜索和排序性能优化
+CREATE INDEX IF NOT EXISTS idx_jobs_published_at ON jobs (published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_region ON jobs (region);
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);
+CREATE INDEX IF NOT EXISTS idx_jobs_is_trusted ON jobs (is_trusted);
