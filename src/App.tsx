@@ -76,7 +76,7 @@ function App() {
               <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
                 <Routes>
                   {/* Public: Christmas Campaign (Deprecated for New Year) */}
-                  {/* <Route path="/christmas" element={<ChristmasPage />} /> */}
+                  <Route path="/christmas" element={<ChristmasPage />} />
                   {/* 公开路由：登录和注册 */}
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
