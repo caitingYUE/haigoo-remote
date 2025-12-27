@@ -173,7 +173,8 @@ const AdminTeamPage: React.FC = () => {
     setResumeLoading(true);
     try {
       const token = localStorage.getItem('haigoo_auth_token');
-      const res = await fetch('/api/resumes', {
+      // Request scope=all_users explicitly for Admin Panel
+      const res = await fetch('/api/resumes?scope=all_users', {
         headers: {
           'Authorization': `Bearer ${token || ''}`
         }
