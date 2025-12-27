@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Search, SortAsc, Sparkles, Briefcase, Zap } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -44,6 +44,12 @@ export default function JobsPage() {
   const { token, isAuthenticated } = useAuth()
 
   const [searchTerm, setSearchTerm] = useState('')
+  const searchTermRef = useRef(searchTerm)
+
+  useEffect(() => {
+    searchTermRef.current = searchTerm
+  }, [searchTerm])
+
 
   // New Filter State Structure
   const [filters, setFilters] = useState(() => {
@@ -256,6 +262,12 @@ export default function JobsPage() {
           // 同步更新URL，保持状态一致
           const params = new URLSearchParams(location.search)
           params.set('jobId', firstJob.id)
+          // Fix: Use ref to get latest search term to avoid race conditions reverting user input
+          if (searchTermRef.current) {
+            params.set('search', searchTermRef.current)
+          } else {
+            params.delete('search')
+          }
           navigate({ search: params.toString() }, { replace: true })
         } else {
           // 移动端或无数据时，清除选中状态
@@ -574,6 +586,12 @@ export default function JobsPage() {
     // Update URL
     const params = new URLSearchParams(location.search)
     params.set('jobId', job.id)
+    // Fix: Ensure search term is synced
+    if (searchTermRef.current) {
+      params.set('search', searchTermRef.current)
+    } else {
+      params.delete('search')
+    }
     navigate({ search: params.toString() }, { replace: true })
 
     // Determine view mode based on screen size

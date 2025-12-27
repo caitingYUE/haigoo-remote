@@ -95,14 +95,8 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   : 'border-slate-100 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5'
                } ${className || ''}`}
          >
-            {/* Share Button (List) */}
-            <button
-               onClick={handleShare}
-               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10"
-               title="分享职位"
-            >
-               <Share2 className="w-4 h-4" />
-            </button>
+            {/* Share Button (List) - Removed */}
+
 
             <div className="flex gap-4 items-start">
                {/* Company Logo */}
