@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Gift, X, Download, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import cardsData from '../../data/happiness-cards.json';
@@ -61,7 +62,8 @@ export const HappinessCard: React.FC<HappinessCardProps> = ({ onClose }) => {
 
     if (!card) return null;
 
-    return (
+    // Use Portal to render directly into document.body to avoid stacking context issues
+    return createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300">
 
             {/* Container with flip effect or scale effect */}
@@ -141,6 +143,7 @@ export const HappinessCard: React.FC<HappinessCardProps> = ({ onClose }) => {
                     </div>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
