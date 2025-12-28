@@ -265,23 +265,29 @@ export default function JobsPage() {
         const newJobs = data.jobs || []
         setJobs(newJobs)
 
-        // 优化交互：筛选/搜索/排序后，自动选中第一个岗位（仅桌面端分栏视图）
+        // 优化交互：仅在没有选中岗位或选中岗位不在列表中时，自动选中第一个
+        // 重要修复：不再每次加载都覆盖用户的选择，防止无限刷新循环
         if (newJobs.length > 0 && window.innerWidth >= 1024) {
-          const firstJob = newJobs[0]
-          setSelectedJob(firstJob)
-          setCurrentJobIndex(0)
-          setShowInlineDetail(true)
-
-          // 同步更新URL，保持状态一致
-          const params = new URLSearchParams(location.search)
-          params.set('jobId', firstJob.id)
-          // Fix: Use ref to get latest search term to avoid race conditions reverting user input
-          if (searchTermRef.current) {
-            params.set('search', searchTermRef.current)
-          } else {
-            params.delete('search')
-          }
-          navigate({ search: params.toString() }, { replace: true })
+          setSelectedJob((prev: Job | null) => {
+            // 如果没有选中岗位，选中第一个
+            if (prev === null) {
+              setCurrentJobIndex(0)
+              setShowInlineDetail(true)
+              return newJobs[0]
+            }
+            // 如果已有选中岗位，检查是否仍在新列表中
+            const stillExists = newJobs.find((j: Job) => j.id === prev.id)
+            if (stillExists) {
+              // 更新索引以防列表顺序变化
+              const newIndex = newJobs.findIndex((j: Job) => j.id === prev.id)
+              setCurrentJobIndex(newIndex >= 0 ? newIndex : 0)
+              return prev // 保持现有选中
+            }
+            // 选中的岗位不在新列表中，选中第一个
+            setCurrentJobIndex(0)
+            setShowInlineDetail(true)
+            return newJobs[0]
+          })
         } else {
           // 移动端或无数据时，清除选中状态
           setSelectedJob(null)
@@ -307,7 +313,9 @@ export default function JobsPage() {
         setJobsLoading(false)
       }
     }
-  }, [token, isAuthenticated, showError, navigate, location.search, pageSize])
+    // 重要修复：移除 navigate 和 location.search 依赖，防止 URL 变化导致无限循环
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, isAuthenticated, showError, pageSize])
 
   // 加载更多数据
   const loadMoreJobs = async () => {
@@ -343,7 +351,9 @@ export default function JobsPage() {
         filter_count: activeFilters.length
       })
     }
-  }, [debouncedSearchTerm, filters, isAuthenticated, token, sortBy, loadJobsWithFilters])
+    // 注意: loadJobsWithFilters 故意不包含在依赖中，因为其内部使用的值已在依赖数组中
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm, filters, isAuthenticated, token, sortBy])
 
   // 滚动监听 - 自动加载更多
   useEffect(() => {
