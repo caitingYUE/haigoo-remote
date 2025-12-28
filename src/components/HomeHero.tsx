@@ -124,9 +124,9 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     </div>
 
                     {/* Main Heading */}
-                    <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 max-w-4xl mx-auto">
-                        为中国人才打开<br className="md:hidden" />
-                        <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isChristmas ? 'from-red-600 via-amber-500 to-red-600' : 'from-indigo-600 via-blue-600 to-cyan-600'}`}> 全球远程工作 </span>
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 max-w-5xl mx-auto whitespace-nowrap">
+                        为中国人才打开
+                        <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isChristmas ? 'from-red-600 via-amber-500 to-red-600' : 'from-indigo-600 via-blue-600 to-cyan-600'}`}>全球远程工作</span>
                         入口
                     </h1>
 
