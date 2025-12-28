@@ -181,8 +181,8 @@ export default function LandingPage() {
       {/* Premium Dark Hero Section */}
       <HomeHero stats={stats} />
 
-      {/* New Year Blessing Section */}
-      <NewYearBlessingSection />
+      {/* New Year Blessing Section (Hidden for now) */}
+      {/* <NewYearBlessingSection /> */}
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Featured Jobs Section */}
