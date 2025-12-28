@@ -11,19 +11,19 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
     const { showSuccess, showError } = useNotificationHelpers();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        name: '',
-        link: '',
+        companyName: '',
+        companyWebsite: '',
         contact: '',
-        description: ''
+        recruitmentNeeds: ''
     });
 
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (!formData.name || !formData.link) {
-            showError('请填写必要信息', '企业名称和官网链接为必填项');
+
+        if (!formData.companyName || !formData.companyWebsite || !formData.contact) {
+            showError('请填写必要信息', '企业名称、官网和联系方式为必填项');
             return;
         }
 
@@ -31,26 +31,31 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
             setLoading(true);
             const token = localStorage.getItem('haigoo_auth_token');
             if (!token) {
-                showError('请先登录', '登录后即可提交企业提名');
-                // Optional: redirect to login
+                showError('请先登录', '登录后即可提交招聘需求');
                 return;
             }
 
-            const res = await fetch('/api/user-profile?action=submit_recommendation', {
+            // Using submit_feedback API but with source=recruitment_request
+            const res = await fetch('/api/user-profile?action=submit_feedback', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    ...formData,
+                    source: 'recruitment_request',
+                    content: `[招聘需求] ${formData.recruitmentNeeds || '无详细描述'}`, // Fallback content for older clients/admins
+                    // Extra fields will be ignored by old API unless we update backend
+                })
             });
 
             const data = await res.json();
 
             if (data.success) {
-                showSuccess('提交成功', '感谢您的提名！我们将尽快审核。');
+                showSuccess('提交成功', '我们已收到由于您的招聘需求，工作人员将尽快与您联系。');
                 onClose();
-                setFormData({ name: '', link: '', contact: '', description: '' });
+                setFormData({ companyName: '', companyWebsite: '', contact: '', recruitmentNeeds: '' });
             } else {
                 showError('提交失败', data.error || '请稍后重试');
             }
@@ -69,10 +74,10 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-900">可信企业提名</h3>
-                        <p className="text-sm text-slate-500">向 Haigoo 推荐优质远程企业</p>
+                        <h3 className="text-lg font-bold text-slate-900">我要招聘</h3>
+                        <p className="text-sm text-slate-500">发布远程岗位，对接全球人才</p>
                     </div>
-                    <button 
+                    <button
                         onClick={onClose}
                         className="p-2 rounded-full hover:bg-slate-200/50 text-slate-400 hover:text-slate-600 transition-colors"
                     >
@@ -91,8 +96,8 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                 <input
                                     type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                    value={formData.companyName}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
                                     placeholder="请输入企业名称"
                                     required
@@ -108,8 +113,8 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                 <input
                                     type="url"
-                                    value={formData.link}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
+                                    value={formData.companyWebsite}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, companyWebsite: e.target.value }))}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
                                     placeholder="https://..."
                                     required
@@ -119,7 +124,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                联系人/联系方式 <span className="text-slate-400 font-normal">(可选)</span>
+                                联系方式 <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -128,22 +133,23 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                     value={formData.contact}
                                     onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
-                                    placeholder="HR 邮箱、LinkedIn 或其他联系方式"
+                                    placeholder="HR 邮箱、微信或电话"
+                                    required
                                 />
                             </div>
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                推荐理由 <span className="text-slate-400 font-normal">(可选)</span>
+                                招聘需求 <span className="text-slate-400 font-normal">(可选)</span>
                             </label>
                             <div className="relative">
                                 <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
                                 <textarea
-                                    value={formData.description}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                                    value={formData.recruitmentNeeds}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, recruitmentNeeds: e.target.value }))}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all min-h-[100px] resize-none"
-                                    placeholder="简述该企业的远程文化、福利等..."
+                                    placeholder="简述需要招聘的岗位、人数或特殊要求..."
                                 />
                             </div>
                         </div>
@@ -162,7 +168,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                 className="px-6 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm shadow-indigo-500/20 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                                提交提名
+                                提交需求
                             </button>
                         </div>
                     </form>

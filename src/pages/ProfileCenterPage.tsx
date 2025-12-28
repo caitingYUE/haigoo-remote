@@ -16,7 +16,7 @@ import MyApplicationsTab from '../components/MyApplicationsTab'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
-type TabKey = 'resume' | 'favorites' | 'applications' | 'feedback' | 'recommend' | 'subscriptions' | 'membership' | 'settings'
+type TabKey = 'resume' | 'favorites' | 'applications' | 'feedback' | 'subscriptions' | 'membership' | 'settings'
 
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember, logout } = useAuth()
@@ -26,7 +26,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['resume', 'favorites', 'applications', 'feedback', 'recommend', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'resume'
+    return t && ['resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -358,8 +358,8 @@ export default function ProfileCenterPage() {
 
     try {
       // Track upload start
-      trackingService.track('upload_resume', { 
-        source: 'personal_center', 
+      trackingService.track('upload_resume', {
+        source: 'personal_center',
         file_type: file.type,
         file_size: file.size
       })
@@ -382,31 +382,31 @@ export default function ProfileCenterPage() {
         if (uploadResult.success) {
           const finalResumeId = uploadResult.id
           console.log('[ProfileCenter] Uploaded resume with ID:', finalResumeId)
-          
+
           if (finalResumeId) {
-             setLatestResume(prev => ({ ...prev!, id: finalResumeId }))
+            setLatestResume(prev => ({ ...prev!, id: finalResumeId }))
           }
-          
+
           // Use server parsed text if available, otherwise fall back to client parse
           const serverText = uploadResult.data?.text || uploadResult.data?.content
           if (serverText && serverText.length > 50) {
-             setResumeText(serverText)
+            setResumeText(serverText)
           } else {
-             // Fallback to client side parsing if server failed to extract text
-             const parsed = await parseResumeFileEnhanced(file)
-             if (parsed && parsed.success && parsed.textContent) {
-                 setResumeText(parsed.textContent)
-                 // Sync text back to server?
-                 // Ideally server parser should work. 
-             }
+            // Fallback to client side parsing if server failed to extract text
+            const parsed = await parseResumeFileEnhanced(file)
+            if (parsed && parsed.success && parsed.textContent) {
+              setResumeText(parsed.textContent)
+              // Sync text back to server?
+              // Ideally server parser should work. 
+            }
           }
 
           showSuccess('简历上传成功！', '您可以点击按钮进行AI深度分析')
         } else {
-           throw new Error(uploadResult.error || 'Upload failed')
+          throw new Error(uploadResult.error || 'Upload failed')
         }
       } else {
-         throw new Error('Upload request failed')
+        throw new Error('Upload request failed')
       }
     } catch (error) {
       console.error('Resume upload error:', error)
@@ -430,7 +430,7 @@ export default function ProfileCenterPage() {
     if (analysisSection) {
       analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-    
+
     if (!isMember) {
       setUpgradeSource('ai_resume');
       setShowUpgradeModal(true);
@@ -509,8 +509,8 @@ export default function ProfileCenterPage() {
         setResumeScore(result.data.score || 0)
         setAiSuggestions(result.data.suggestions || [])
         showSuccess('简历分析完成！', `您的简历得分：${result.data.score || 0}%`)
-        
-        trackingService.track('analyze_resume', { 
+
+        trackingService.track('analyze_resume', {
           resume_id: resumeIdToAnalyze,
           score: result.data.score,
           suggestion_count: result.data.suggestions?.length || 0
@@ -580,7 +580,7 @@ export default function ProfileCenterPage() {
         setResumeScore(0)
         setAiSuggestions([])
         showSuccess('简历已删除')
-        
+
         trackingService.track('delete_resume', { resume_id: latestResume.id })
       } else {
         throw new Error('删除失败')
@@ -1193,92 +1193,6 @@ export default function ProfileCenterPage() {
     )
   }
 
-  const RecommendTab = () => {
-    const [type, setType] = useState<'enterprise' | 'job' | 'user'>('enterprise')
-    const [name, setName] = useState('')
-    const [link, setLink] = useState('')
-    const [description, setDescription] = useState('')
-    const [submitting, setSubmitting] = useState(false)
-    const submit = async () => {
-      if (!name.trim()) { showError('请填写名称'); return }
-      try {
-        setSubmitting(true)
-        const r = await fetch('/api/user-profile?action=submit_recommendation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ type, name, link, description })
-        })
-        const j = await r.json().catch(() => ({ success: false }))
-        if (r.ok && j.success) { showSuccess('推荐已提交'); setName(''); setLink(''); setDescription('') }
-        else { showError('提交失败', j.error || '请稍后重试') }
-      } catch (e) {
-        showError('提交失败', '网络错误')
-      } finally { setSubmitting(false) }
-    }
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">我要推荐</h2>
-            <p className="text-slate-500 mt-1">推荐企业、岗位或优秀用户。</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">推荐类型</label>
-              <select
-                value={type}
-                onChange={e => setType(e.target.value as any)}
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white"
-              >
-                <option value="enterprise">企业</option>
-                <option value="job">岗位</option>
-                <option value="user">用户</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">名称</label>
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                placeholder="例如：GitLab"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">链接（可选）</label>
-              <input
-                value={link}
-                onChange={e => setLink(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                placeholder="https://..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">推荐理由（可选）</label>
-              <textarea
-                rows={4}
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                placeholder="简述推荐原因"
-              />
-            </div>
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={submit}
-                disabled={submitting}
-                className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? '提交中…' : '提交推荐'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   const SettingsTab = () => {
     const [isDeleting, setIsDeleting] = useState(false)
@@ -1470,7 +1384,6 @@ export default function ProfileCenterPage() {
                   { id: 'favorites', label: '我的收藏', icon: Heart },
                   { id: 'applications', label: '我的申请', icon: Briefcase },
                   { id: 'subscriptions', label: '订阅管理', icon: Bell },
-                  { id: 'recommend', label: '我要推荐', icon: ThumbsUp },
                   { id: 'feedback', label: '我要反馈', icon: MessageSquare }
                 ].map((item) => (
                   <button
@@ -1507,7 +1420,6 @@ export default function ProfileCenterPage() {
               {tab === 'applications' && <MyApplicationsTab />}
               {tab === 'feedback' && <FeedbackTab />}
               {tab === 'subscriptions' && <SubscriptionsTab />}
-              {tab === 'recommend' && <RecommendTab />}
               {tab === 'membership' && <ResumeTab />}
               {tab === 'settings' && <SettingsTab />}
             </div>
