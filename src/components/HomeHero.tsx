@@ -199,46 +199,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         </div>
                     </div>
 
-                    {/* Right Content - Daily Humor Card (Floating & Optimized) */}
-                    <div className="hidden 2xl:block absolute right-4 top-1/2 -translate-y-1/2 w-[280px] hover:scale-105 transition-transform duration-500 z-0">
-                        <div className="relative group rotate-2 hover:rotate-0 transition-transform duration-500">
-                            {/* Card Glow Effect - Softer */}
-                            <div className="absolute -inset-4 bg-gradient-to-br from-red-100/50 via-amber-100/30 to-red-100/50 rounded-[2rem] opacity-0 group-hover:opacity-100 blur-xl transition duration-700"></div>
 
-                            {/* Card Content - Glassmorphism */}
-                            <div className="relative bg-white/60 backdrop-blur-md rounded-[1.5rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50 flex flex-col min-h-[280px]">
-                                {/* Header: Date */}
-                                <div className="flex items-center justify-between mb-4 border-b border-slate-100/50 pb-3">
-                                    <div className="flex items-center gap-1.5 text-slate-500/80">
-                                        <Calendar className="w-3.5 h-3.5 text-red-400" />
-                                        <span className="text-xs font-medium tracking-wide font-mono">{todayDateStr.split(' ')[0]}</span>
-                                    </div>
-                                    <div className="px-2 py-0.5 bg-red-50/80 text-red-600/90 text-[10px] font-bold rounded-full border border-red-100/50">
-                                        每日一签
-                                    </div>
-                                </div>
-
-                                {/* Body: Quote */}
-                                <div className="flex-1 flex flex-col justify-center mb-4 text-center">
-                                    <Quote className="w-6 h-6 text-amber-200 mx-auto mb-3 opacity-60" />
-                                    <p className="text-base text-slate-700 font-medium leading-relaxed tracking-wide italic font-serif">
-                                        “{dailyCard?.quote || '新的一年，愿你拒绝内耗，早日发财。'}”
-                                    </p>
-                                </div>
-
-                                {/* Footer: Author */}
-                                <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100/50">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-red-50 to-amber-50 rounded-full flex items-center justify-center text-lg shadow-sm ring-1 ring-white">
-                                        🧧
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">FROM</p>
-                                        <p className="text-xs font-bold text-slate-800">{dailyCard?.author || 'Haigoo'}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                 </div>
             </div>
