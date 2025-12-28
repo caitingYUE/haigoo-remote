@@ -50,6 +50,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     const navigate = useNavigate()
     const [searchQuery, setSearchQuery] = useState('')
     const [isChristmas, setIsChristmas] = useState(false)
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
     // Daily Card Logic
     const dailyCard = useMemo(() => {
@@ -201,6 +202,86 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
 
 
+
+                    {/* Daily Calendar Widget - Non-intrusive Entry Point */}
+                    <div className="absolute top-0 right-4 md:right-0 lg:right-[-20px] z-50 animate-in fade-in zoom-in duration-700 delay-700">
+                        {/* Trigger Button */}
+                        <button
+                            onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                            className="group relative flex flex-col items-center justify-center w-14 h-16 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 overflow-hidden hover:-translate-y-1 transition-all duration-300 hover:shadow-xl"
+                        >
+                            {/* Calendar Header */}
+                            <div className="absolute top-0 w-full h-5 bg-red-500 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 rounded-full bg-white/50 mx-0.5"></div>
+                                <div className="w-1.5 h-1.5 rounded-full bg-white/50 mx-0.5"></div>
+                            </div>
+                            {/* Date Content */}
+                            <span className="mt-2 text-xl font-extrabold text-slate-800 leading-none">{new Date().getDate()}</span>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase()}</span>
+
+                            {/* Tooltip hint */}
+                            <div className="absolute -bottom-8 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-xs font-medium text-slate-400 bg-white px-2 py-1 rounded shadow-sm">
+                                每日一签
+                            </div>
+                        </button>
+
+                        {/* Popover Card (Bubble) */}
+                        {isCalendarOpen && (
+                            <div className="absolute top-full right-0 mt-4 w-[320px] origin-top-right animate-in fade-in zoom-in-95 duration-200 z-50">
+                                <div className="relative bg-white/80 backdrop-blur-xl rounded-[1.5rem] p-6 shadow-[0_20px_50px_rgb(0,0,0,0.1)] border border-white/60">
+                                    {/* Close Button */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setIsCalendarOpen(false); }}
+                                        className="absolute top-4 right-4 p-1 rounded-full hover:bg-slate-100/50 text-slate-400 transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                    </button>
+
+                                    {/* Decoration */}
+                                    <div className="absolute -top-10 -left-10 w-32 h-32 bg-amber-100/50 rounded-full blur-3xl pointer-events-none"></div>
+                                    <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-red-50/50 rounded-full blur-3xl pointer-events-none"></div>
+
+                                    {/* Header */}
+                                    <div className="relative flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+                                                <Calendar className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <div className="text-xs text-slate-500 font-medium">Today's Vibe</div>
+                                                <div className="text-sm font-bold text-slate-800">{todayDateStr.split(' ')[0]}</div>
+                                            </div>
+                                        </div>
+                                        <span className="px-2 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold border border-amber-100/50">
+                                            宜开心
+                                        </span>
+                                    </div>
+
+                                    {/* Quote Content */}
+                                    <div className="relative text-center mb-6 px-2">
+                                        <Quote className="w-8 h-8 text-slate-200 absolute -top-4 -left-2 rotate-180" />
+                                        <p className="text-lg text-slate-800 font-medium leading-relaxed font-serif relative z-10 pt-2">
+                                            {dailyCard?.quote}
+                                        </p>
+                                        <Quote className="w-8 h-8 text-slate-200 absolute -bottom-4 -right-2" />
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="relative flex items-center justify-between pt-4 border-t border-slate-100/60">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] text-white font-bold shadow-sm">
+                                                H
+                                            </div>
+                                            <span className="text-[10px] text-slate-400 font-bold tracking-wide uppercase">From Haigoo</span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 font-medium">
+                                            {dailyCard?.author}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
