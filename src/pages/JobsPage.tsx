@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { Search, SortAsc, Sparkles, Briefcase, Zap } from 'lucide-react'
+import { Search, SortAsc, Sparkles, Briefcase, Zap, AlertTriangle, X } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
@@ -625,6 +625,8 @@ export default function JobsPage() {
   }
 
 
+  const [showMaintenanceNotice, setShowMaintenanceNotice] = useState(true)
+
   return (
     <MobileRestricted allowContinue={true}>
       <div
@@ -632,6 +634,27 @@ export default function JobsPage() {
         role="main"
         aria-label="职位搜索页面"
       >
+        {/* Maintenance Notice Banner */}
+        {showMaintenanceNotice && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 relative z-50 transition-all duration-300 ease-in-out">
+            <div className="max-w-[1600px] mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
+                <p className="text-sm text-amber-800 font-medium">
+                  系统公告：近几天数据库正在升级更新，数据可能会出现短暂抖动或不稳定，敬请谅解。
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowMaintenanceNotice(false)}
+                className="text-amber-500 hover:text-amber-700 transition-colors p-1 rounded-full hover:bg-amber-100"
+                aria-label="关闭通知"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Hero / Header Section - Compact Version for Split View */}
         {/* Only show on mobile or if needed. For split view, maybe we don't need a huge hero? 
           User said "visual aesthetic harmony". I'll keep a smaller header or just the layout.
