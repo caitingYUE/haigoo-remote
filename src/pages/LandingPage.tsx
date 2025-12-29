@@ -32,30 +32,34 @@ export default function LandingPage() {
   const [jobsLoading, setJobsLoading] = useState(true)
   const [companiesLoading, setCompaniesLoading] = useState(true)
 
-  const toggleSaveJob = async (jobId: string) => {
+  const toggleSaveJob = async (job: Job) => {
     if (!isAuthenticated || !token) {
       showWarning('请先登录', '登录后可以收藏职位')
       navigate('/login')
       return
     }
 
-    const isSaved = savedJobs.has(jobId)
+    const isSaved = savedJobs.has(job.id)
     // Optimistic update
     setSavedJobs(prev => {
       const next = new Set(prev)
-      if (isSaved) next.delete(jobId)
-      else next.add(jobId)
+      if (isSaved) next.delete(job.id)
+      else next.add(job.id)
       return next
     })
 
     try {
-      const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}`, {
+      // If saving (adding favorite), we send the full job object to ensure persistence
+      const action = isSaved ? 'favorites_remove' : 'favorites_add'
+      const payload = isSaved ? { jobId: job.id } : { jobId: job.id, job }
+
+      const resp = await fetch(`/api/user-profile?action=${action}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ jobId })
+        body: JSON.stringify(payload)
       })
 
       if (!resp.ok) throw new Error('操作失败')
@@ -67,8 +71,8 @@ export default function LandingPage() {
       // Rollback
       setSavedJobs(prev => {
         const next = new Set(prev)
-        if (isSaved) next.add(jobId)
-        else next.delete(jobId)
+        if (isSaved) next.add(job.id)
+        else next.delete(job.id)
         return next
       })
     }
@@ -183,7 +187,7 @@ export default function LandingPage() {
 
       {/* New Year Blessing Section (Hidden for now) */}
       {/* <NewYearBlessingSection /> */}
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Featured Jobs Section */}
         <div id="featured-jobs" className="py-24">
@@ -329,7 +333,7 @@ export default function LandingPage() {
           {/* Background Effects */}
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
-          
+
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-400/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-400/20 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3 animate-pulse delay-1000"></div>
 
@@ -345,7 +349,7 @@ export default function LandingPage() {
                 Haigoo Member
               </span>
             </h2>
-            
+
             <p className="text-lg text-white/80 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
               解锁企业深度风险评估、内推直达通道、无限收藏夹等专属特权，<br className="hidden md:block" />
               让你的远程求职之路更加顺畅。
@@ -407,14 +411,14 @@ export default function LandingPage() {
           job={selectedJob}
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
-          onSave={selectedJob ? () => toggleSaveJob(selectedJob.id) : undefined}
+          onSave={selectedJob ? () => toggleSaveJob(selectedJob) : undefined}
           isSaved={selectedJob ? savedJobs.has(selectedJob.id) : false}
           jobs={featuredJobs}
           currentJobIndex={selectedJob ? featuredJobs.findIndex(j => j.id === selectedJob.id) : -1}
           onNavigateJob={handleNavigateJob}
           variant="center"
         />
-        
+
         {/* Job Alert Subscription */}
         <div className="mt-32">
           <div className="relative rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-50 overflow-hidden bg-white">
