@@ -585,17 +585,31 @@ class RSSService {
     let salary: string | undefined;
     let jobType: string | undefined;
 
+    // Himalayas 经常在标题中包含公司和地点
+    // 格式: Job Title at Company Name (Location)
+    // 示例: Senior Engineer at Buffer (Remote)
+    const himalayasMatch = title.match(/^(.+?)\s+at\s+(.+?)(?:\s+\((.+?)\))?$/);
+    
+    let cleanTitle = title;
+    if (himalayasMatch) {
+      cleanTitle = himalayasMatch[1].trim();
+      if (!company) company = himalayasMatch[2].trim();
+      if (!location && himalayasMatch[3]) {
+        location = himalayasMatch[3].trim();
+      }
+    }
+
     // 尝试多种方式查找自定义字段
     const allElements = Array.from(item.children);
 
     // 首先尝试直接查找himalayasJobs命名空间字段
     const companyNameEl = item.querySelector('himalayasJobs\\:companyName, companyName');
-    if (companyNameEl) {
+    if (companyNameEl && !company) {
       company = companyNameEl.textContent?.trim();
     }
 
     const locationRestrictionEl = item.querySelector('himalayasJobs\\:locationRestriction, locationRestriction');
-    if (locationRestrictionEl) {
+    if (locationRestrictionEl && !location) {
       location = locationRestrictionEl.textContent?.trim();
     }
 
@@ -640,6 +654,15 @@ class RSSService {
     // 如果没有找到自定义字段，使用传统提取方法
     if (!company) {
       company = this.extractCompany(title, description);
+    }
+
+    // 如果标题中没有地点，尝试从描述中提取
+    // Himalayas描述通常很短，可能只包含 "Company is hiring a Title in Location."
+    if (!location) {
+        const descMatch = description.match(/in\s+([A-Z][a-zA-Z\s,.-]+?)\./);
+        if (descMatch && this.isValidLocation(descMatch[1])) {
+            location = this.cleanLocation(descMatch[1]);
+        }
     }
 
     if (!location) {
@@ -696,13 +719,16 @@ class RSSService {
     }
 
     return {
+      title: cleanTitle, // Add clean title
       company: company || undefined,
       location: location || undefined,
       jobType: jobType || undefined,
       workType: workType,
       experienceLevel: experienceLevel || this.extractExperienceLevel(title, description),
       category: categories.length > 0 ? categories[0] : undefined,
-      salary: salary || undefined
+      salary: salary || undefined,
+      // 标记为需要二次抓取（如果描述太短）
+      needsFullFetch: description.length < 200
     };
   }
 
@@ -941,7 +967,13 @@ class RSSService {
       // 远程工作限制：Remote (Location only)
       /remote\s*\(([^)]+)\)/i,
       // 时区信息：Location timezone
-      /([A-Za-z\s,.-]+?)\s+(?:timezone|time\s+zone|tz)/i
+      /([A-Za-z\s,.-]+?)\s+(?:timezone|time\s+zone|tz)/i,
+      // 特定地点格式：(Location)
+      /\(([A-Z][a-zA-Z\s,]+)\)$/,
+      // 描述中的 "Based in Location"
+      /based\s+in\s+([A-Z][a-zA-Z\s,]+)(?:\.|$)/i,
+      // 描述中的 "Remote form Location"
+      /remote\s+from\s+([A-Z][a-zA-Z\s,]+)(?:\.|$)/i
     ];
 
     // 首先尝试从标题中提取
@@ -1076,6 +1108,14 @@ class RSSService {
       // 欧元薪资
       /(?:salary|pay|compensation|wage|income|earn|earning|earnings)[\s:]*€[\d,]+(?:\s*-\s*€?[\d,]+)?(?:\s*\/?\s*(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly))?/i,
       /€[\d,]+(?:\s*-\s*€?[\d,]+)?\s*(?:\/|\s+)(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly)/i,
+      // 模糊薪资范围 (e.g. 100k - 150k)
+      /\b\d{2,3}k\s*-\s*\d{2,3}k\b/i,
+      // 明确的 USD/EUR/GBP 后缀
+      /\d{1,3}(?:,\d{3})*\s*(?:USD|EUR|GBP|CNY|RMB)\b/i,
+      // 包含 "Salary" 的任何数字范围
+      /salary\s*[:]\s*[^<\n]+?(\$[\d,]+(?:\s*-\s*\$[\d,]+)?)/i,
+      // 描述中的 "Pay: $X - $Y"
+      /pay\s*[:]\s*[^<\n]+?(\$[\d,]+(?:\s*-\s*\$[\d,]+)?)/i,
       // 英镑薪资
       /(?:salary|pay|compensation|wage|income|earn|earning|earnings)[\s:]*£[\d,]+(?:\s*-\s*£?[\d,]+)?(?:\s*\/?\s*(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly))?/i,
       /£[\d,]+(?:\s*-\s*£?[\d,]+)?\s*(?:\/|\s+)(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly)/i
