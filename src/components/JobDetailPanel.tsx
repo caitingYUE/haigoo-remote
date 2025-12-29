@@ -98,6 +98,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const haigooComment = (job as any).haigooComment;
     const hiddenFields = (job as any).hiddenFields;
 
+    const [logoError, setLogoError] = useState(false);
+
+    useEffect(() => {
+        setLogoError(false);
+    }, [job?.id]); // Reset error state when job changes
+
     const jobDescriptionData = useMemo(() => {
         const originalDesc = typeof job?.description === 'string' ? job.description : (job?.description ? String(job.description) : '')
         const translatedDesc = typeof job?.translations?.description === 'string' ? job.translations.description : (job?.translations?.description ? String(job.translations.description) : '')
