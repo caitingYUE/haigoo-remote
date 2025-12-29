@@ -976,26 +976,62 @@ class RSSService {
       /remote\s+from\s+([A-Z][a-zA-Z\s,]+)(?:\.|$)/i
     ];
 
+    let baseLocation = '';
+
     // 首先尝试从标题中提取
     for (const pattern of locationPatterns) {
       const match = title.match(pattern);
       if (match && match[1]) {
         const location = match[1].trim();
         if (this.isValidLocation(location)) {
-          return this.cleanLocation(location);
+          baseLocation = this.cleanLocation(location);
+          break;
         }
       }
     }
 
     // 然后尝试从描述中提取
-    for (const pattern of locationPatterns) {
-      const match = description.match(pattern);
-      if (match && match[1]) {
-        const location = match[1].trim();
-        if (this.isValidLocation(location)) {
-          return this.cleanLocation(location);
+    if (!baseLocation) {
+      for (const pattern of locationPatterns) {
+        const match = description.match(pattern);
+        if (match && match[1]) {
+          const location = match[1].trim();
+          if (this.isValidLocation(location)) {
+            baseLocation = this.cleanLocation(location);
+            break;
+          }
         }
       }
+    }
+
+    // 尝试提取时区信息并附加到地点
+    const timezonePatterns = [
+       /\b(GMT[\+\-]\d{1,2}(?::\d{2})?)\b/i,
+       /\b(UTC[\+\-]\d{1,2}(?::\d{2})?)\b/i,
+       /\b(PST|EST|CST|MST|CET|BST|JST|EDT|PDT|CDT|MDT)\b/i,
+       /\b(Pacific Time|Eastern Time|Central Time|Mountain Time)\b/i
+    ];
+
+    let timezone = '';
+    const text = `${title} ${description}`;
+    for (const pattern of timezonePatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            timezone = match[1];
+            break;
+        }
+    }
+
+    if (baseLocation) {
+        // 如果地点已经包含了时区，就不重复添加
+        if (timezone && !baseLocation.toLowerCase().includes(timezone.toLowerCase())) {
+             return `${baseLocation} (${timezone})`;
+        }
+        return baseLocation;
+    }
+    
+    if (timezone) {
+        return timezone;
     }
 
     // 检查是否包含远程工作关键词
@@ -1118,7 +1154,11 @@ class RSSService {
       /pay\s*[:]\s*[^<\n]+?(\$[\d,]+(?:\s*-\s*\$[\d,]+)?)/i,
       // 英镑薪资
       /(?:salary|pay|compensation|wage|income|earn|earning|earnings)[\s:]*£[\d,]+(?:\s*-\s*£?[\d,]+)?(?:\s*\/?\s*(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly))?/i,
-      /£[\d,]+(?:\s*-\s*£?[\d,]+)?\s*(?:\/|\s+)(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly)/i
+      /£[\d,]+(?:\s*-\s*£?[\d,]+)?\s*(?:\/|\s+)(?:year|yr|annually|annual|month|mo|monthly|hour|hr|hourly)/i,
+      // Compensation: €/USD patterns
+      /Compensation:\s*([€$£]\d+(?:[kK])?(?:\s*-\s*[€$£]?\d+(?:[kK])?)?)/i,
+      /Compensation:\s*([€$£]\d+.*?(?:USD|EUR|GBP|gross|annual|monthly))/i,
+      /Compensation:\s*(\d+(?:[kK])?\s*(?:USD|EUR|GBP|€|\$|£))/i
     ];
 
     const text = `${title} ${description}`;
