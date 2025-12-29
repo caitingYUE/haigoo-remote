@@ -39,6 +39,55 @@ interface SimpleStats {
   sourceDistribution: Record<string, number>;
 }
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div className="error">Something went wrong.</div>;
+    }
+
+    return this.props.children;
+  }
+}
+
+// 安全渲染辅助函数
+const safeString = (val: any): string => {
+    if (val === null || val === undefined) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number') return String(val);
+    if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+    if (typeof val === 'object') {
+        if (val instanceof Promise || (val && typeof val.then === 'function')) {
+            console.error('Detected Promise in data:', val);
+            return '[Loading...]';
+        }
+        try {
+            return JSON.stringify(val);
+        } catch (e) {
+            return '[Object]';
+        }
+    }
+    return String(val);
+};
+
+// 安全的数组处理
+const safeArray = (arr: any): any[] => {
+    if (Array.isArray(arr)) return arr;
+    return [];
+};
+
 export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
   const [activeTab, setActiveTab] = useState<TabType>('raw');
   const [rawJobs, setRawJobs] = useState<RSSJob[]>([]);
@@ -59,26 +108,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
     try {
       // 获取真实 RSS 原始数据
       const rawResponse = await rawJobsService.getRawJobs(1, 100);
-      setRawJobs(rawResponse?.jobs || []);
+      // 防御性处理：确保 rawJobs 是数组且每个元素也是安全的
+      const safeRawJobs = (rawResponse?.jobs || []).map(job => ({
+          ...job,
+          id: safeString(job.id),
+          title: safeString(job.title),
+          company: safeString(job.company),
+          location: safeString(job.location),
+          category: safeString(job.category),
+          jobType: safeString(job.jobType),
+          experienceLevel: safeString(job.experienceLevel),
+          // salary 可能为对象，保留原样但在渲染时处理，或者这里转字符串
+          salary: job.salary, 
+          publishedAt: safeString(job.publishedAt),
+          source: safeString(job.source)
+      }));
+      setRawJobs(safeRawJobs as unknown as RSSJob[]);
 
       // 获取真实处理后数据
       const processedResponse = await processedJobsService.getProcessedJobs(1, 100);
       
       const mappedProcessed: SimpleUnifiedJob[] = (processedResponse?.jobs || []).map(job => ({
-        id: job.id,
-        jobTitle: job.title || '无标题',
-        category: job.category || 'Unknown',
-        level: job.experienceLevel || 'Unknown',
-        companyName: job.company || 'Unknown',
-        industryType: job.companyIndustry || 'Unknown',
+        id: safeString(job.id),
+        jobTitle: safeString(job.title || '无标题'),
+        category: safeString(job.category || 'Unknown'),
+        level: safeString(job.experienceLevel || 'Unknown'),
+        companyName: safeString(job.company || 'Unknown'),
+        industryType: safeString(job.companyIndustry || 'Unknown'),
         jobType: job.type === 'full-time' ? 'FULL_TIME' : 'CONTRACT',
         region: job.region,
-        locationRestriction: job.remoteLocationRestriction || 'NO_RESTRICTION',
-        skillTags: Array.isArray(job.skills) ? job.skills : [],
+        locationRestriction: safeString(job.remoteLocationRestriction || 'NO_RESTRICTION'),
+        skillTags: safeArray(job.skills).map((s: any) => safeString(s)),
         languageRequirements: 'English',
         dataQuality: typeof job.recommendationScore === 'number' ? job.recommendationScore : 80,
-        sourceUrl: job.sourceUrl || job.url || '',
-        publishDate: job.publishedAt || ''
+        sourceUrl: safeString(job.sourceUrl || job.url || ''),
+        publishDate: safeString(job.publishedAt || '')
       }));
       setProcessedJobs(mappedProcessed);
 
@@ -314,9 +378,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
           </div>
 
           {/* 内容区域 */}
-          <div className="tab-content">
-            {renderTabContent()}
-          </div>
+          <ErrorBoundary>
+            <div className="tab-content">
+              {renderTabContent()}
+            </div>
+          </ErrorBoundary>
         </div>
       </main>
     </div>
@@ -388,9 +454,15 @@ const RawJobsTable: React.FC<{ jobs: RSSJob[]; onExport: () => void }> = ({ jobs
                 <td>{job.jobType}</td>
                 <td>{job.experienceLevel}</td>
                 <td>
-                  {typeof job.salary === 'object' && job.salary !== null
-                    ? `${(job.salary as any).min || 0} - ${(job.salary as any).max || 0} ${(job.salary as any).currency || ''}`
-                    : job.salary || '-'}
+                  {(() => {
+                      const val = job.salary as any;
+                      if (!val) return '-';
+                      if (typeof val === 'string') return val;
+                      if (typeof val === 'object') {
+                          return `${val.min || 0} - ${val.max || 0} ${val.currency || ''}`;
+                      }
+                      return String(val);
+                  })()}
                 </td>
                 <td>
                   {(() => {
