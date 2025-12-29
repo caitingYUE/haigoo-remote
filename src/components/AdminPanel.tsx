@@ -59,14 +59,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
     try {
       // 获取真实 RSS 原始数据
       const rawResponse = await rawJobsService.getRawJobs(1, 100);
-      setRawJobs(rawResponse.jobs);
+      setRawJobs(rawResponse?.jobs || []);
 
       // 获取真实处理后数据
       const processedResponse = await processedJobsService.getProcessedJobs(1, 100);
       
-      const mappedProcessed: SimpleUnifiedJob[] = processedResponse.jobs.map(job => ({
+      const mappedProcessed: SimpleUnifiedJob[] = (processedResponse?.jobs || []).map(job => ({
         id: job.id,
-        jobTitle: job.title,
+        jobTitle: job.title || '无标题',
         category: job.category || 'Unknown',
         level: job.experienceLevel || 'Unknown',
         companyName: job.company || 'Unknown',
@@ -74,11 +74,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
         jobType: job.type === 'full-time' ? 'FULL_TIME' : 'CONTRACT',
         region: job.region,
         locationRestriction: job.remoteLocationRestriction || 'NO_RESTRICTION',
-        skillTags: job.skills || [],
+        skillTags: Array.isArray(job.skills) ? job.skills : [],
         languageRequirements: 'English',
-        dataQuality: job.recommendationScore || 80,
+        dataQuality: typeof job.recommendationScore === 'number' ? job.recommendationScore : 80,
         sourceUrl: job.sourceUrl || job.url || '',
-        publishDate: job.publishedAt
+        publishDate: job.publishedAt || ''
       }));
       setProcessedJobs(mappedProcessed);
 
@@ -100,11 +100,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
       });
 
       const simpleStats: SimpleStats = {
-        totalRaw: rawResponse.total,
-        totalProcessed: processedResponse.total,
-        successRate: rawResponse.total > 0 ? (processedResponse.total / rawResponse.total) * 100 : 0,
+        totalRaw: rawResponse?.total || 0,
+        totalProcessed: processedResponse?.total || 0,
+        successRate: (rawResponse?.total || 0) > 0 ? ((processedResponse?.total || 0) / rawResponse.total) * 100 : 0,
         averageQuality: mappedProcessed.length > 0 
-            ? mappedProcessed.reduce((sum, job) => sum + job.dataQuality, 0) / mappedProcessed.length 
+            ? mappedProcessed.reduce((sum, job) => sum + (job.dataQuality || 0), 0) / mappedProcessed.length 
             : 0,
         categoryDistribution: categoryDist,
         sourceDistribution: sourceDist
@@ -392,7 +392,15 @@ const RawJobsTable: React.FC<{ jobs: RSSJob[]; onExport: () => void }> = ({ jobs
                     ? `${(job.salary as any).min || 0} - ${(job.salary as any).max || 0} ${(job.salary as any).currency || ''}`
                     : job.salary || '-'}
                 </td>
-                <td>{new Date(job.publishedAt).toLocaleDateString()}</td>
+                <td>
+                  {(() => {
+                    try {
+                        return job.publishedAt ? new Date(job.publishedAt).toLocaleDateString() : '-'
+                    } catch (e) {
+                        return '-'
+                    }
+                  })()}
+                </td>
                 <td>
                   <a href={job.source} target="_blank" rel="noopener noreferrer">
                     查看原文
