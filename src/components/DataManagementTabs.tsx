@@ -1200,7 +1200,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     💡 建议每天点击一次，持续优化数据库质量。AI 处理成本较高，每次仅处理少量高价值数据。
                   </p>
                 </div>
-              } maxLines={20} clampChildren={false}>
+              } maxLines={20} clampChildren={false} forceShow>
                 <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
               </Tooltip>
               <button
