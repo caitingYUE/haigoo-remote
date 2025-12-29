@@ -47,19 +47,19 @@ export default function CompanyDetailPage() {
             // Try to get trusted company info first
             const companiesData = await trustedCompaniesService.getAllCompanies()
             const companies = Array.isArray(companiesData) ? companiesData : ((companiesData as any)?.companies || [])
-            
+
             const norm = decodedCompanyName.trim().toLowerCase()
             const trusted = companies.find((c: TrustedCompany) => c.name?.trim().toLowerCase() === norm) ||
                 companies.find((c: TrustedCompany) => c.name && c.name.toLowerCase().includes(norm))
-            
+
             // Set company info whether found or not (if not found, companyInfo will be null/undefined)
             // But if found, ensure we set it.
             if (trusted) {
                 // Ensure isTrusted is true if found in trusted list
                 setCompanyInfo({ ...trusted, isTrusted: true })
             } else {
-                 // Try to fallback to fetching via ID if URL param was ID? 
-                 // But here we rely on name. If name fails, we might need to handle ID.
+                // Try to fallback to fetching via ID if URL param was ID? 
+                // But here we rely on name. If name fails, we might need to handle ID.
             }
 
             // Fetch all jobs from this company using EXACT MATCH if possible or fuzzy
@@ -93,7 +93,7 @@ export default function CompanyDetailPage() {
         }
     }
 
-    const toggleSaveJob = async (jobId: string) => {
+    const toggleSaveJob = async (jobId: string, job?: Job) => {
         const token = localStorage.getItem('haigoo_auth_token')
         if (!token) {
             navigate('/login')
@@ -114,7 +114,7 @@ export default function CompanyDetailPage() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ jobId })
+                body: JSON.stringify({ jobId, job })
             })
         } catch (error) {
             // Revert on error
@@ -248,7 +248,7 @@ export default function CompanyDetailPage() {
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                                 {/* Website - New Position */}
                                                 {companyInfo.website && (
-                                                    <a 
+                                                    <a
                                                         href={companyInfo.website}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
@@ -278,11 +278,11 @@ export default function CompanyDetailPage() {
                                                         </div>
                                                     </div>
                                                 )}
-                                                
+
                                                 {/* Address */}
                                                 {companyInfo.address && (
                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm col-span-2 lg:col-span-1 relative">
-                                                        <div 
+                                                        <div
                                                             className="p-1.5 bg-indigo-50 rounded-md cursor-help hover:bg-indigo-100 transition-colors"
                                                             onMouseEnter={() => setShowLocationTooltip(true)}
                                                             onClick={(e) => {
@@ -298,19 +298,19 @@ export default function CompanyDetailPage() {
                                                                 {companyInfo.address}
                                                             </div>
                                                         </div>
-                                                        
+
                                                         {/* Location Tooltip */}
                                                         {showLocationTooltip && (
                                                             <div className="absolute top-full left-0 mt-2 z-50">
-                                                                <LocationTooltip 
-                                                                    location={companyInfo.address} 
-                                                                    onClose={() => setShowLocationTooltip(false)} 
+                                                                <LocationTooltip
+                                                                    location={companyInfo.address}
+                                                                    onClose={() => setShowLocationTooltip(false)}
                                                                 />
                                                             </div>
                                                         )}
                                                     </div>
                                                 )}
-                                                
+
                                                 {/* Employees */}
                                                 {companyInfo.employeeCount && (
                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm">
@@ -325,7 +325,7 @@ export default function CompanyDetailPage() {
                                                         </div>
                                                     </div>
                                                 )}
-                                                
+
                                                 {/* Founded */}
                                                 {companyInfo.foundedYear && (
                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm">
@@ -359,35 +359,35 @@ export default function CompanyDetailPage() {
                                             <div className="relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30 min-h-[300px]">
                                                 {/* Simulated Content Layer (Blurred) */}
                                                 <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-sm opacity-60 select-none pointer-events-none h-full">
-                                                     {/* Use real-looking fake data for better blur effect */}
-                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
+                                                    {/* Use real-looking fake data for better blur effect */}
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
                                                         <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
                                                         <div className="space-y-1.5 flex-1">
                                                             <div className="h-2 w-12 bg-slate-100 rounded"></div>
                                                             <div className="h-3 w-20 bg-slate-200 rounded"></div>
                                                         </div>
-                                                     </div>
-                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
+                                                    </div>
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
                                                         <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
                                                         <div className="space-y-1.5 flex-1">
                                                             <div className="h-2 w-12 bg-slate-100 rounded"></div>
                                                             <div className="h-3 w-16 bg-slate-200 rounded"></div>
                                                         </div>
-                                                     </div>
-                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 col-span-2 lg:col-span-1 h-16">
+                                                    </div>
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 col-span-2 lg:col-span-1 h-16">
                                                         <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
                                                         <div className="space-y-1.5 flex-1">
                                                             <div className="h-2 w-12 bg-slate-100 rounded"></div>
                                                             <div className="h-3 w-24 bg-slate-200 rounded"></div>
                                                         </div>
-                                                     </div>
-                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
+                                                    </div>
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
                                                         <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
                                                         <div className="space-y-1.5 flex-1">
                                                             <div className="h-2 w-12 bg-slate-100 rounded"></div>
                                                             <div className="h-3 w-14 bg-slate-200 rounded"></div>
                                                         </div>
-                                                     </div>
+                                                    </div>
                                                 </div>
 
                                                 {/* Overlay */}
@@ -398,7 +398,7 @@ export default function CompanyDetailPage() {
                                                         </div>
                                                         <h3 className="text-sm font-bold text-slate-900 mb-1">会员专属深度信息</h3>
                                                         <p className="text-slate-500 text-xs mb-3">解锁官网、评分、薪资范围等企业情报</p>
-                                                        <button 
+                                                        <button
                                                             onClick={() => navigate('/membership')}
                                                             className="flex items-center justify-center gap-1.5 px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mx-auto w-fit"
                                                         >
@@ -470,7 +470,7 @@ export default function CompanyDetailPage() {
                     job={selectedJob}
                     isOpen={isJobDetailOpen}
                     onClose={() => setIsJobDetailOpen(false)}
-                    onSave={() => toggleSaveJob(selectedJob.id)}
+                    onSave={() => selectedJob && toggleSaveJob(selectedJob.id, selectedJob)}
                     isSaved={savedJobs.has(selectedJob.id)}
                     jobs={jobs}
                     currentJobIndex={currentJobIndex}

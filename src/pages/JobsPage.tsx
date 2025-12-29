@@ -391,7 +391,7 @@ export default function JobsPage() {
     }
   }, [location.search])
 
-  const toggleSaveJob = async (jobId: string) => {
+  const toggleSaveJob = async (jobId: string, job?: Job) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
     if (!isAuthenticated || !authToken) { showWarning('请先登录', '登录后可以收藏职位'); navigate('/login'); return }
     const isSaved = savedJobs.has(jobId)
@@ -400,7 +400,7 @@ export default function JobsPage() {
       const resp = await fetch(`/api/user-profile?action=${isSaved ? 'favorites_remove' : 'favorites_add'}&jobId=${encodeURIComponent(jobId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ jobId })
+        body: JSON.stringify({ jobId, job })
       })
 
       if (!resp.ok) {
@@ -767,7 +767,7 @@ export default function JobsPage() {
                 <div className="h-full overflow-y-auto custom-scrollbar overscroll-y-contain">
                   <JobDetailPanel
                     job={selectedJob}
-                    onSave={() => toggleSaveJob(selectedJob.id)}
+                    onSave={(id) => selectedJob && toggleSaveJob(id, selectedJob)}
                     isSaved={savedJobs.has(selectedJob.id)}
                     onApply={() => { /* apply logic */ }}
                     showCloseButton={false}
@@ -798,7 +798,7 @@ export default function JobsPage() {
             job={selectedJob}
             isOpen={isJobDetailOpen}
             onClose={() => { setIsJobDetailOpen(false); }}
-            onSave={() => toggleSaveJob(selectedJob.id)}
+            onSave={() => selectedJob && toggleSaveJob(selectedJob.id, selectedJob)}
             isSaved={savedJobs.has(selectedJob.id)}
             jobs={distributedJobs}
             currentJobIndex={currentJobIndex}

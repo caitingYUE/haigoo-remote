@@ -96,7 +96,7 @@ export default function ProfileCenterPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ jobId: job.id })
+        body: JSON.stringify({ jobId: job.id, job })
       })
 
       if (resp.ok) {

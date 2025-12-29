@@ -46,14 +46,14 @@ export default function JobDetailPage() {
         const data = await resp.json()
         if (data.jobs && data.jobs.length > 0) {
           const fetchedJob = data.jobs[0]
-          
+
           // Check validity
           if (fetchedJob.status === 'closed' || fetchedJob.status === 'expired') {
-             setError('该职位已停止招聘')
-             startRedirectCountdown()
+            setError('该职位已停止招聘')
+            startRedirectCountdown()
           } else {
-             setJob(fetchedJob)
-             trackingService.track('view_job_detail', { jobId: resolvedId, title: fetchedJob.title })
+            setJob(fetchedJob)
+            trackingService.track('view_job_detail', { jobId: resolvedId, title: fetchedJob.title })
           }
         } else {
           setError('职位不存在或已下线')
@@ -76,7 +76,7 @@ export default function JobDetailPage() {
   // Handle countdown
   useEffect(() => {
     if (countdown === null) return
-    
+
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
       return () => clearTimeout(timer)
@@ -121,13 +121,13 @@ export default function JobDetailPage() {
       const action = isSaved ? 'favorites_remove' : 'favorites_add'
       const resp = await fetch(`/api/user-profile?action=${action}&jobId=${id}`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ jobId: id })
+        body: JSON.stringify({ jobId: id, job })
       })
-      
+
       if (resp.ok) {
         setIsSaved(!isSaved)
         showSuccess(isSaved ? '已取消收藏' : '收藏成功')
@@ -162,7 +162,7 @@ export default function JobDetailPage() {
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">无法加载职位</h2>
           <p className="text-slate-500 mb-6">{error || '职位可能已过期或被删除'}</p>
-          <button 
+          <button
             onClick={() => navigate('/jobs')}
             className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
           >
@@ -188,7 +188,7 @@ export default function JobDetailPage() {
 
       <div className="max-w-5xl mx-auto p-4 lg:p-8">
         <div className="lg:mb-6 hidden lg:block">
-          <button 
+          <button
             onClick={() => navigate('/jobs')}
             className="flex items-center text-slate-500 hover:text-indigo-600 transition-colors"
           >
@@ -198,7 +198,7 @@ export default function JobDetailPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[600px]">
-          <JobDetailPanel 
+          <JobDetailPanel
             job={job}
             isSaved={isSaved}
             onSave={handleSave}
@@ -209,7 +209,7 @@ export default function JobDetailPage() {
 
         {/* Share Modal */}
         {job && (
-          <ShareJobModal 
+          <ShareJobModal
             isOpen={isShareModalOpen}
             onClose={() => setIsShareModalOpen(false)}
             jobId={job.id}
