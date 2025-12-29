@@ -266,6 +266,8 @@ export interface SyncStatus {
   totalJobsProcessed: number;
   newJobsAdded: number;
   updatedJobs: number;
+  aiUpdatedJobs?: number;
+  regexUpdatedJobs?: number;
   errors: SyncError[];
 }
 

@@ -130,6 +130,9 @@ export class DataManagementService {
           if (reprocessResult.updated > 0) {
             // 注意：这里可能会重复计算更新数，但作为统计参考是可以的
             syncStatus.updatedJobs += reprocessResult.updated;
+            syncStatus.aiUpdatedJobs = (syncStatus.aiUpdatedJobs || 0) + (reprocessResult.ai_updated || 0);
+            const regexUpdates = (reprocessResult.updated || 0) - (reprocessResult.ai_updated || 0);
+            syncStatus.regexUpdatedJobs = (syncStatus.regexUpdatedJobs || 0) + (regexUpdates > 0 ? regexUpdates : 0);
           }
         } catch (e) {
           console.error('全量职位重新解析失败:', e);

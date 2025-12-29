@@ -199,10 +199,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     try {
       setSyncing(true);
       // 强制处理，因为这是在"处理后数据"页签
-      await dataManagementService.syncAllRSSData(false);
+      const syncResult = await dataManagementService.syncAllRSSData(false);
       await loadProcessedData();
       await loadStorageStats();
-      showSuccess('刷新完成', '处理后数据已更新至最新');
+      
+      const aiCount = syncResult.aiUpdatedJobs || 0;
+      const regexCount = syncResult.regexUpdatedJobs || 0;
+      
+      showSuccess('刷新完成', `数据已更新。正则优化: ${regexCount}条, AI深度优化: ${aiCount}条`);
       // 广播全局事件，通知前台页面刷新处理后数据
       try {
         window.dispatchEvent(new Event('processed-jobs-updated'));
@@ -1183,7 +1187,20 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           )}
           {activeTab === 'processed' && (
             <div className="flex gap-2 items-center">
-              <Tooltip content="此操作将：1. 同步最新的RSS订阅源数据；2. 对全库（含爬虫抓取）的所有职位数据进行重新清洗（地点提取、薪资解析、分类打标等）；3. 对于关键信息缺失的职位，尝试调用 AI 模型进行深度补全和 JD 格式化；4. 清理过期的历史数据。不会删除爬虫数据。" maxLines={10} clampChildren={false}>
+              <Tooltip content={
+                <div className="text-left space-y-2">
+                  <p className="font-semibold text-indigo-200">全量数据清洗逻辑：</p>
+                  <ol className="list-decimal list-inside space-y-1 text-xs">
+                    <li><span className="font-medium text-white">同步数据：</span>拉取最新的 RSS 订阅源数据。</li>
+                    <li><span className="font-medium text-white">正则清洗：</span>对全库（含爬虫）最近 200 条职位进行快速正则处理（提取地点、薪资、分类）。</li>
+                    <li><span className="font-medium text-white">AI 深度优化：</span>筛选出 5 个“疑难杂症”职位（地点模糊、无薪资、描述丰富），调用 DeepSeek 大模型进行深度解析和 JD 格式化。</li>
+                    <li><span className="font-medium text-white">数据清理：</span>自动移除过期的历史数据。</li>
+                  </ol>
+                  <p className="text-xs text-slate-400 mt-2 border-t border-slate-600 pt-2">
+                    💡 建议每天点击一次，持续优化数据库质量。AI 处理成本较高，每次仅处理少量高价值数据。
+                  </p>
+                </div>
+              } maxLines={20} clampChildren={false}>
                 <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
               </Tooltip>
               <button
@@ -1592,7 +1609,7 @@ const EditJobModal: React.FC<{
 
 // 悬浮提示组件
 const Tooltip: React.FC<{
-  content: string;
+  content: React.ReactNode;
   children: React.ReactNode;
   maxLines?: number;
   clampChildren?: boolean; // 为包含徽章/图标的内容关闭多行截断
