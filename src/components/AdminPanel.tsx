@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { processedJobsService } from '../services/processed-jobs-service'
+import { rawJobsService } from '../services/raw-jobs-service'
 import { Job as RSSJob } from '../types/rss-types';
 import { dataRetentionService, RetentionStats } from '../services/data-retention-service';
 import { SubscriptionsTable } from './SubscriptionsTable';
@@ -20,7 +21,7 @@ interface SimpleUnifiedJob {
   companyName: string;
   industryType: string;
   jobType: string;
-  region?: 'domestic' | 'overseas';
+  region?: 'domestic' | 'overseas' | 'both';
   locationRestriction: string;
   skillTags: string[];
   languageRequirements: string;
@@ -56,144 +57,55 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
     setError(null);
 
     try {
-      // 模拟RSS原始数据
-      const mockRawJobs: RSSJob[] = [
-        {
-          id: '1',
-          title: 'Senior React Developer',
-          company: 'Tech Corp',
-          location: 'Remote',
-          description: 'We are looking for a senior React developer with 5+ years of experience...',
-          url: 'https://example.com/job/1',
-          requirements: ['React', 'TypeScript', 'Node.js', 'AWS'],
-          salary: '$120,000 - $150,000',
-          publishedAt: '2024-01-15',
-          source: 'https://example.com/job/1',
-          tags: ['React', 'TypeScript', 'Remote'],
-          category: '前端开发',
-          jobType: 'full-time',
-          experienceLevel: 'Senior',
-          benefits: ['Health Insurance', 'Remote Work'],
-          isRemote: true,
-          status: 'active',
-          createdAt: '2024-01-15T10:00:00Z',
-          updatedAt: '2024-01-15T10:00:00Z'
-        },
-        {
-          id: '2',
-          title: '产品经理',
-          company: '创新科技公司',
-          location: '北京',
-          description: '负责产品规划和管理，需要3年以上产品经验...',
-          url: 'https://example.com/job/2',
-          requirements: ['产品管理', '数据分析', '用户研究'],
-          salary: '25万-35万',
-          publishedAt: '2024-01-14',
-          source: 'https://example.com/job/2',
-          tags: ['产品管理', '数据分析'],
-          category: '产品经理',
-          jobType: 'full-time',
-          experienceLevel: 'Mid',
-          benefits: ['五险一金', '年终奖'],
-          isRemote: false,
-          status: 'active',
-          createdAt: '2024-01-14T10:00:00Z',
-          updatedAt: '2024-01-14T10:00:00Z'
-        },
-        {
-          id: '3',
-          title: 'DevOps Engineer - Remote',
-          company: 'Cloud Solutions Inc',
-          location: 'Anywhere',
-          description: 'Join our DevOps team to manage cloud infrastructure and CI/CD pipelines...',
-          url: 'https://example.com/job/3',
-          requirements: ['Docker', 'Kubernetes', 'AWS', 'Jenkins', 'Python'],
-          salary: '$100,000 - $130,000',
-          publishedAt: '2024-01-13',
-          source: 'https://example.com/job/3',
-          tags: ['DevOps', 'AWS', 'Docker'],
-          category: '运维/SRE',
-          jobType: 'full-time',
-          experienceLevel: 'Mid',
-          benefits: ['Stock Options', 'Flexible Hours'],
-          isRemote: true,
-          status: 'active',
-          createdAt: '2024-01-13T10:00:00Z',
-          updatedAt: '2024-01-13T10:00:00Z'
-        }
-      ];
+      // 获取真实 RSS 原始数据
+      const rawResponse = await rawJobsService.getRawJobs(1, 100);
+      setRawJobs(rawResponse.jobs);
 
-      setRawJobs(mockRawJobs);
-
-      // 模拟处理后的统一数据
-      const mockProcessedJobs: SimpleUnifiedJob[] = [
-        {
-          id: '1',
-          jobTitle: 'Senior React Developer',
-          category: 'DEVELOPMENT',
-          level: 'SENIOR',
-          companyName: 'Tech Corp',
-          industryType: 'TECHNOLOGY',
-          jobType: 'FULL_TIME',
-          region: 'overseas',
-          locationRestriction: 'NO_RESTRICTION',
-          skillTags: ['React', 'TypeScript', 'Node.js', 'AWS'],
-          languageRequirements: 'English (Business)',
-          dataQuality: 85,
-          sourceUrl: 'https://example.com/job/1',
-          publishDate: '2024-01-15'
-        },
-        {
-          id: '2',
-          jobTitle: '产品经理',
-          category: 'PRODUCT',
-          level: 'MID',
-          companyName: '创新科技公司',
-          industryType: 'TECHNOLOGY',
-          jobType: 'FULL_TIME',
-          region: 'domestic',
-          locationRestriction: 'SPECIFIC_REGIONS',
-          skillTags: ['产品管理', '数据分析', '用户研究'],
-          languageRequirements: '中文 (母语)',
-          dataQuality: 78,
-          sourceUrl: 'https://example.com/job/2',
-          publishDate: '2024-01-14'
-        },
-        {
-          id: '3',
-          jobTitle: 'DevOps Engineer',
-          category: 'DEVOPS',
-          level: 'MID',
-          companyName: 'Cloud Solutions Inc',
-          industryType: 'TECHNOLOGY',
-          jobType: 'FULL_TIME',
-          region: 'overseas',
-          locationRestriction: 'NO_RESTRICTION',
-          skillTags: ['Docker', 'Kubernetes', 'AWS', 'Jenkins', 'Python'],
-          languageRequirements: 'English (Fluent)',
-          dataQuality: 92,
-          sourceUrl: 'https://example.com/job/3',
-          publishDate: '2024-01-13'
-        }
-      ];
-
-      setProcessedJobs(mockProcessedJobs);
+      // 获取真实处理后数据
+      const processedResponse = await processedJobsService.getProcessedJobs(1, 100);
+      
+      const mappedProcessed: SimpleUnifiedJob[] = processedResponse.jobs.map(job => ({
+        id: job.id,
+        jobTitle: job.title,
+        category: job.category || 'Unknown',
+        level: job.experienceLevel || 'Unknown',
+        companyName: job.company || 'Unknown',
+        industryType: job.companyIndustry || 'Unknown',
+        jobType: job.type === 'full-time' ? 'FULL_TIME' : 'CONTRACT',
+        region: job.region,
+        locationRestriction: job.remoteLocationRestriction || 'NO_RESTRICTION',
+        skillTags: job.skills || [],
+        languageRequirements: 'English',
+        dataQuality: job.recommendationScore || 80,
+        sourceUrl: job.sourceUrl || job.url || '',
+        publishDate: job.publishedAt
+      }));
+      setProcessedJobs(mappedProcessed);
 
       // 生成统计信息
       const categoryDist: Record<string, number> = {};
       const sourceDist: Record<string, number> = {};
 
-      mockProcessedJobs.forEach(job => {
-        categoryDist[job.category] = (categoryDist[job.category] || 0) + 1;
-        const domain = new URL(job.sourceUrl).hostname;
-        sourceDist[domain] = (sourceDist[domain] || 0) + 1;
+      mappedProcessed.forEach(job => {
+        const cat = job.category || 'Unknown';
+        categoryDist[cat] = (categoryDist[cat] || 0) + 1;
+        try {
+            if (job.sourceUrl) {
+                const domain = new URL(job.sourceUrl).hostname;
+                sourceDist[domain] = (sourceDist[domain] || 0) + 1;
+            }
+        } catch (e) {
+            // ignore invalid url
+        }
       });
 
       const simpleStats: SimpleStats = {
-        totalRaw: mockRawJobs.length,
-        totalProcessed: mockProcessedJobs.length,
-        successRate: (mockProcessedJobs.length / mockRawJobs.length) * 100,
-        averageQuality: mockProcessedJobs.reduce((sum, job) => sum + job.dataQuality, 0) / mockProcessedJobs.length,
+        totalRaw: rawResponse.total,
+        totalProcessed: processedResponse.total,
+        successRate: rawResponse.total > 0 ? (processedResponse.total / rawResponse.total) * 100 : 0,
+        averageQuality: mappedProcessed.length > 0 
+            ? mappedProcessed.reduce((sum, job) => sum + job.dataQuality, 0) / mappedProcessed.length 
+            : 0,
         categoryDistribution: categoryDist,
         sourceDistribution: sourceDist
       };
@@ -201,9 +113,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
       setStats(simpleStats);
 
       // 获取数据保留统计
-      const retention = await dataRetentionService.getRetentionStats();
-      setRetentionStats(retention);
+      try {
+        const retention = await dataRetentionService.getRetentionStats();
+        setRetentionStats(retention);
+      } catch (e) {
+        console.warn('Failed to load retention stats', e);
+      }
     } catch (err) {
+      console.error('Load data error:', err);
       setError(err instanceof Error ? err.message : '加载数据失败');
     } finally {
       setLoading(false);
@@ -696,8 +613,8 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
                 </td>
                 <td>
                   <div className="flex items-center gap-2">
-                    <span className={`badge ${job.region === 'domestic' ? 'badge-success' : job.region === 'overseas' ? 'badge-info' : 'badge-default'}`}>
-                      {job.region === 'domestic' ? '国内' : job.region === 'overseas' ? '海外' : '未分类'}
+                    <span className={`badge ${job.region === 'domestic' ? 'badge-success' : job.region === 'overseas' ? 'badge-info' : job.region === 'both' ? 'badge-purple' : 'badge-default'}`}>
+                      {job.region === 'domestic' ? '国内' : job.region === 'overseas' ? '海外' : job.region === 'both' ? '全球' : '未分类'}
                     </span>
                     <button className="action-btn" onClick={() => openRegionDetail(job.id)}>
                       详情

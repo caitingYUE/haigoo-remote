@@ -1294,3 +1294,40 @@
   background: rgba(128, 58, 242, 0.2);
   color: var(--primary);
 }
+
+/* Badge styles for ProcessedJobsTable */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-success {
+  background: rgba(56, 161, 105, 0.1);
+  color: var(--success);
+}
+
+.badge-info {
+  background: rgba(66, 153, 225, 0.1);
+  color: var(--info);
+}
+
+.badge-purple {
+  background: rgba(128, 90, 213, 0.1);
+  color: #805AD5;
+}
+
+.badge-default {
+  background: rgba(160, 174, 192, 0.2);
+  color: #4a5568;
+}
+
+.admin-panel.dark .badge-default {
+  background: rgba(113, 128, 150, 0.2);
+  color: #a0aec0;
+}

@@ -225,13 +225,23 @@ export class DataRetentionService {
 
   // 模拟存储操作 - 实际项目中应该连接到真实的数据库
   private async getRSSJobsFromStorage(): Promise<RSSJob[]> {
-    const stored = localStorage.getItem('rss_jobs');
-    return stored ? JSON.parse(stored) : [];
+    try {
+      const stored = localStorage.getItem('rss_jobs');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      console.warn('Failed to parse rss_jobs from storage', e);
+      return [];
+    }
   }
 
   private async getUnifiedJobsFromStorage(): Promise<UnifiedJob[]> {
-    const stored = localStorage.getItem('unified_jobs');
-    return stored ? JSON.parse(stored) : [];
+    try {
+      const stored = localStorage.getItem('unified_jobs');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      console.warn('Failed to parse unified_jobs from storage', e);
+      return [];
+    }
   }
 
   private async saveRSSJobsToStorage(jobs: RSSJob[]): Promise<void> {
