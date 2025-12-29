@@ -13,6 +13,7 @@ interface DetailedTokenUsage extends TokenUsage {
   translation?: TokenUsage;
   resume_parsing?: TokenUsage;
   job_matching?: TokenUsage;
+  job_processing?: TokenUsage;
   other?: TokenUsage;
 }
 
@@ -211,6 +212,7 @@ export default function AdminSystemSettings() {
             {renderUsageCard('翻译服务', tokenUsage.translation)}
             {renderUsageCard('简历解析', tokenUsage.resume_parsing)}
             {renderUsageCard('职位匹配', tokenUsage.job_matching)}
+            {renderUsageCard('岗位处理', tokenUsage.job_processing)}
             {renderUsageCard('其他', tokenUsage.other)}
           </div>
 

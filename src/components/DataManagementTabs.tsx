@@ -1183,7 +1183,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           )}
           {activeTab === 'processed' && (
             <div className="flex gap-2 items-center">
-              <Tooltip content="此操作将：1. 同步最新的RSS订阅源数据；2. 对全库（含爬虫抓取）的所有职位数据进行重新清洗（地点提取、薪资解析、分类打标等）；3. 清理过期的历史数据。不会删除爬虫数据。" maxLines={10} clampChildren={false}>
+              <Tooltip content="此操作将：1. 同步最新的RSS订阅源数据；2. 对全库（含爬虫抓取）的所有职位数据进行重新清洗（地点提取、薪资解析、分类打标等）；3. 对于关键信息缺失的职位，尝试调用 AI 模型进行深度补全和 JD 格式化；4. 清理过期的历史数据。不会删除爬虫数据。" maxLines={10} clampChildren={false}>
                 <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
               </Tooltip>
               <button
