@@ -387,7 +387,11 @@ const RawJobsTable: React.FC<{ jobs: RSSJob[]; onExport: () => void }> = ({ jobs
                 </td>
                 <td>{job.jobType}</td>
                 <td>{job.experienceLevel}</td>
-                <td>{job.salary}</td>
+                <td>
+                  {typeof job.salary === 'object' && job.salary !== null
+                    ? `${(job.salary as any).min || 0} - ${(job.salary as any).max || 0} ${(job.salary as any).currency || ''}`
+                    : job.salary || '-'}
+                </td>
                 <td>{new Date(job.publishedAt).toLocaleDateString()}</td>
                 <td>
                   <a href={job.source} target="_blank" rel="noopener noreferrer">
@@ -672,7 +676,7 @@ const ProcessedJobsTable: React.FC<{ jobs: SimpleUnifiedJob[]; onExport: () => v
                   <div className="detail-grid">
                     <div><strong>岗位：</strong>{regionDetail.title}</div>
                     <div><strong>企业：</strong>{regionDetail.company}</div>
-                    <div><strong>区域分类：</strong>{regionDetail.region === 'domestic' ? '国内' : regionDetail.region === 'overseas' ? '海外' : '未分类'}</div>
+                    <div><strong>区域分类：</strong>{regionDetail.region === 'domestic' ? '国内' : regionDetail.region === 'overseas' ? '海外' : regionDetail.region === 'both' ? '全球' : '未分类'}</div>
                     <div><strong>地点：</strong>{regionDetail.location || '-'}</div>
                     <div><strong>标签：</strong>{regionDetail.tags.length > 0 ? regionDetail.tags.slice(0, 6).join(' / ') : '-'}</div>
                     <div><strong>命中：</strong>{regionDetail.hits.keywords.length > 0 ? `${regionDetail.hits.type}：${regionDetail.hits.keywords.join(', ')}` : '无直接命中，使用启发式'}</div>
