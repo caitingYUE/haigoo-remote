@@ -21,6 +21,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [activeTab, setActiveTab] = useState<'raw' | 'processed' | 'storage'>('processed');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncStatusText, setSyncStatusText] = useState<string>('');
   const { showSuccess, showError } = useNotificationHelpers();
 
   // 原始数据状态
@@ -1193,7 +1194,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   <ol className="list-decimal list-inside space-y-1 text-xs">
                     <li><span className="font-medium text-white">同步数据：</span>拉取最新的 RSS 订阅源数据。</li>
                     <li><span className="font-medium text-white">正则清洗：</span>对全库（含爬虫）最近 200 条职位进行快速正则处理（提取地点、薪资、分类）。</li>
-                    <li><span className="font-medium text-white">AI 深度优化：</span>筛选出 5 个“疑难杂症”职位（地点模糊、无薪资、描述丰富），调用 DeepSeek 大模型进行深度解析和 JD 格式化。</li>
+                    <li><span className="font-medium text-white">AI 深度优化：</span>筛选出 20 个“疑难杂症”职位（优先处理地点/薪资缺失），调用 DeepSeek/Bailian 大模型进行深度解析和 JD 格式化。</li>
                     <li><span className="font-medium text-white">数据清理：</span>自动移除过期的历史数据。</li>
                   </ol>
                   <p className="text-xs text-slate-400 mt-2 border-t border-slate-600 pt-2">
@@ -1211,6 +1212,9 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? '刷新中...' : '刷新处理后数据'}
               </button>
+              {syncing && syncStatusText && (
+                <span className="text-xs text-indigo-600 animate-pulse hidden md:inline-block">{syncStatusText}</span>
+              )}
             </div>
           )}
           {/* 按需：导出数据按钮已移除 */}

@@ -65,8 +65,9 @@ export class DataManagementService {
   /**
    * 同步所有RSS源数据
    * @param skipProcessing 是否跳过处理步骤（仅拉取原始数据）
+   * @param onStatusUpdate 可选的状态更新回调
    */
-  async syncAllRSSData(skipProcessing: boolean = false): Promise<SyncStatus> {
+  async syncAllRSSData(skipProcessing: boolean = false, onStatusUpdate?: (status: string) => void): Promise<SyncStatus> {
     const syncStatus: SyncStatus = {
       isRunning: true,
       lastSync: new Date(),
@@ -85,12 +86,13 @@ export class DataManagementService {
       syncStatus.totalSources = sources.length;
 
       console.log(`开始同步 ${sources.length} 个RSS源... (跳过处理: ${skipProcessing})`);
+      if (onStatusUpdate) onStatusUpdate(`正在拉取 ${sources.length} 个RSS数据源...`);
 
       // 并发同步所有RSS源
       const syncPromises = sources.map(async (source, index) => {
         try {
           console.log(`[${index + 1}/${sources.length}] 同步 ${source.name} - ${source.category}`);
-
+          
           const rawData = await this.fetchAndStoreRawData(source);
 
           let processedJobs: ProcessedJobData[] = [];
@@ -124,9 +126,12 @@ export class DataManagementService {
       if (!skipProcessing) {
         try {
           console.log('触发服务端全量职位数据重新解析（地点/薪资增强）...');
+          if (onStatusUpdate) onStatusUpdate('正在进行AI深度解析与数据清洗 (可能需要1-2分钟)...');
+          
           const reprocessResp = await fetch('/api/data/processed-jobs?action=reprocess', { method: 'POST' });
           const reprocessResult = await reprocessResp.json();
           console.log('全量职位重新解析完成:', reprocessResult);
+          
           if (reprocessResult.updated > 0) {
             // 注意：这里可能会重复计算更新数，但作为统计参考是可以的
             syncStatus.updatedJobs += reprocessResult.updated;
@@ -146,12 +151,14 @@ export class DataManagementService {
       }
 
       // 清理过期数据
+      if (onStatusUpdate) onStatusUpdate('正在清理过期数据...');
       await this.cleanupOldData();
 
       syncStatus.isRunning = false;
       syncStatus.nextSync = new Date(Date.now() + 60 * 60 * 1000); // 1小时后
 
       console.log(`🎉 同步完成: ${syncStatus.successfulSources}/${syncStatus.totalSources} 成功, ${syncStatus.totalJobsProcessed} 个职位处理`);
+      if (onStatusUpdate) onStatusUpdate('同步完成！');
 
     } catch (error) {
       syncStatus.isRunning = false;
@@ -163,6 +170,7 @@ export class DataManagementService {
       };
       syncStatus.errors.push(syncError);
       console.error('同步过程中发生错误:', error);
+      if (onStatusUpdate) onStatusUpdate('同步失败，请查看控制台日志');
     }
 
     return syncStatus;
