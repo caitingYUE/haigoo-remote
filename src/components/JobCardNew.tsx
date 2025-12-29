@@ -42,7 +42,11 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          if (amount >= 1000) return `${(amount / 1000).toFixed(0)}k`;
          return amount.toString();
       };
-      const currencySymbol = salary.currency === 'CNY' ? '¥' : salary.currency === 'USD' ? '$' : salary.currency;
+      const currencySymbol = salary.currency === 'CNY' ? '¥' : 
+                             salary.currency === 'USD' ? '$' : 
+                             salary.currency === 'EUR' ? '€' : 
+                             salary.currency === 'GBP' ? '£' : 
+                             (salary.currency || '');
       
       // Safety checks for min/max
       const min = salary.min || 0;
