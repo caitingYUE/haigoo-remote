@@ -118,7 +118,12 @@ async function main() {
                         }
                         
                         if (aiResult.salary) {
-                            job.salary = truncateString(aiResult.salary, 200);
+                            let s = aiResult.salary.trim();
+                            // Filter out 0 values
+                            if (s === '0' || s === '0k' || s === '$0' || s.match(/^0\s*-\s*0$/)) {
+                                s = 'Open';
+                            }
+                            job.salary = truncateString(s, 200);
                             changed = true;
                         }
 

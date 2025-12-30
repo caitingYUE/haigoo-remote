@@ -27,7 +27,20 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
     
     // Handle string salary (new format)
     if (typeof salary === 'string') {
-      if (salary === 'null' || salary === 'Open' || salary === 'Competitive' || salary === 'Unspecified') return '薪资面议';
+      if (salary === 'null' || salary === 'Open' || salary === 'Competitive' || salary === 'Unspecified' || salary === '0' || salary === '0-0') return '薪资面议';
+      
+      // Try to parse JSON string (legacy data stored as string)
+      if (salary.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(salary);
+          if (parsed && typeof parsed === 'object') {
+            return formatSalary(parsed); // Recursive call with object
+          }
+        } catch (e) {
+          // ignore error, treat as string
+        }
+      }
+      
       return salary;
     }
 

@@ -390,7 +390,18 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             {(() => {
                                 if (!job.salary) return '薪资面议';
                                 if (typeof job.salary === 'string') {
-                                    if (job.salary === 'null' || job.salary === 'Open' || job.salary === 'Competitive' || job.salary === 'Unspecified') return '薪资面议';
+                                    if (job.salary === 'null' || job.salary === 'Open' || job.salary === 'Competitive' || job.salary === 'Unspecified' || job.salary === '0' || job.salary === '0-0') return '薪资面议';
+                                    
+                                    // Try parse JSON
+                                    if (job.salary.trim().startsWith('{')) {
+                                        try {
+                                            const parsed = JSON.parse(job.salary);
+                                            if (parsed && typeof parsed === 'object' && parsed.min > 0) {
+                                                return `${parsed.currency === 'USD' ? '$' : '¥'}${parsed.min.toLocaleString()} - ${parsed.max.toLocaleString()}`;
+                                            }
+                                        } catch (e) {}
+                                    }
+
                                     return job.salary;
                                 }
                                 if (typeof job.salary === 'object' && job.salary.min > 0) {

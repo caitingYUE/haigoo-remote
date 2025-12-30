@@ -9,7 +9,7 @@ export interface Job {
     min: number
     max: number
     currency: string
-  }
+  } | string
   description?: string  // 可选，避免显示"暂无描述"
   requirements: string[]
   responsibilities: string[]
