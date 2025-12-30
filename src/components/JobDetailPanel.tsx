@@ -387,9 +387,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         <div className="w-1 h-1 rounded-full bg-slate-300"></div>
                         <DollarSign className="w-3.5 h-3.5 text-slate-400" />
                         <span className="font-semibold text-slate-900">
-                            {(job.salary && typeof job.salary === 'object' && job.salary.min > 0)
-                                ? `${job.salary.currency === 'USD' ? '$' : '¥'}${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}`
-                                : '薪资面议'}
+                            {(() => {
+                                if (!job.salary) return '薪资面议';
+                                if (typeof job.salary === 'string') {
+                                    if (job.salary === 'null' || job.salary === 'Open' || job.salary === 'Competitive' || job.salary === 'Unspecified') return '薪资面议';
+                                    return job.salary;
+                                }
+                                if (typeof job.salary === 'object' && job.salary.min > 0) {
+                                    return `${job.salary.currency === 'USD' ? '$' : '¥'}${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}`;
+                                }
+                                return '薪资面议';
+                            })()}
                         </span>
                     </div>
                 </div>

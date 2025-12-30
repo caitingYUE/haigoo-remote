@@ -23,7 +23,16 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
   // 不再生成语义标签，仅保留处理后数据的技能标签展示
 
   const formatSalary = (salary: Job['salary']) => {
-    if (!salary || (salary.min === 0 && salary.max === 0)) return '薪资面议';
+    if (!salary) return '薪资面议';
+    
+    // Handle string salary (new format)
+    if (typeof salary === 'string') {
+      if (salary === 'null' || salary === 'Open' || salary === 'Competitive' || salary === 'Unspecified') return '薪资面议';
+      return salary;
+    }
+
+    // Handle object salary (legacy format)
+    if (salary.min === 0 && salary.max === 0) return '薪资面议';
 
     const formatAmount = (amount: number) => {
       if (amount >= 10000) {
