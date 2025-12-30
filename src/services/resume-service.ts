@@ -4,7 +4,7 @@
  */
 
 import { aiService } from './ai-service'
-import { ALIBABA_BAILIAN_CONFIG, DEEPSEEK_CONFIG } from './config'
+import { ALIBABA_BAILIAN_CONFIG } from './config'
 import type {
   ResumeOptimizationRequest,
   ResumeOptimizationResponse,
@@ -17,22 +17,7 @@ export class ResumeService {
    * 获取AI提供商配置
    */
   private getAIProviderConfig() {
-    // 优先使用阿里百炼（通义千问），因为 DeepSeek 可能不稳定
-    if (ALIBABA_BAILIAN_CONFIG.apiKey) {
-      return {
-        provider: 'bailian' as const,
-        model: ALIBABA_BAILIAN_CONFIG.models.qwen
-      }
-    }
-    
-    if (DEEPSEEK_CONFIG.apiKey) {
-      return {
-        provider: 'deepseek' as const,
-        model: DEEPSEEK_CONFIG.models.chat
-      }
-    }
-
-    // 默认回退
+    // 默认使用阿里百炼（通义千问）
     return {
       provider: 'bailian' as const,
       model: ALIBABA_BAILIAN_CONFIG.models.qwen

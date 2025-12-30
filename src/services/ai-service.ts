@@ -3,7 +3,7 @@
  * 封装与后端AI代理API的交互逻辑
  */
 
-import { ALIBABA_BAILIAN_CONFIG, DEEPSEEK_CONFIG, API_CONFIG } from './config'
+import { ALIBABA_BAILIAN_CONFIG, API_CONFIG } from './config'
 import type {
   BailianRequest,
   BailianResponse,
