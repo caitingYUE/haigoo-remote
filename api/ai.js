@@ -153,23 +153,8 @@ export default async function handler(req, res) {
           input: { messages },
           parameters: parameters || {}
         };
-      } else if (provider === 'deepseek') {
-        apiKey = process.env.VITE_DEEPSEEK_API_KEY;
-        if (!apiKey) {
-          throw new Error('DeepSeek API Key not configured');
-        }
-
-        apiUrl = 'https://api.deepseek.com/chat/completions';
-        headers['Authorization'] = `Bearer ${apiKey}`;
-        
-        requestBody = {
-          model: model || 'deepseek-chat',
-          messages: messages,
-          stream: false,
-          ...parameters
-        };
       } else {
-        throw new Error('Invalid provider');
+        throw new Error('Invalid provider (Only Bailian is supported)');
       }
 
       const response = await fetch(apiUrl, {
@@ -191,20 +176,6 @@ export default async function handler(req, res) {
 
       // Normalize response to Bailian format
       let normalizedData = data;
-      if (provider === 'deepseek') {
-        normalizedData = {
-          output: {
-            text: data.choices?.[0]?.message?.content || '',
-            finish_reason: data.choices?.[0]?.finish_reason || 'stop'
-          },
-          usage: {
-            input_tokens: data.usage?.prompt_tokens || 0,
-            output_tokens: data.usage?.completion_tokens || 0,
-            total_tokens: data.usage?.total_tokens || 0
-          },
-          request_id: data.id
-        };
-      }
 
       return res.status(200).json({
         success: true,
