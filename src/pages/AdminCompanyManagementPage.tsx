@@ -866,7 +866,11 @@ export default function AdminCompanyManagementPage() {
                                                 <div className="text-sm text-gray-500 mt-1 flex gap-3">
                                                     <span>{job.location}</span>
                                                     {job.salary && (
-                                                        <span>{job.salary.min}-{job.salary.max} {job.salary.currency}</span>
+                                                        <span>
+                                                            {typeof job.salary === 'string' 
+                                                                ? job.salary 
+                                                                : `${job.salary.min}-${job.salary.max} ${job.salary.currency}`}
+                                                        </span>
                                                     )}
                                                     <span>{new Date(job.publishedAt).toLocaleDateString()}</span>
                                                 </div>

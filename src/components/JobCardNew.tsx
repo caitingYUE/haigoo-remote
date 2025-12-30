@@ -34,7 +34,27 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
    const formatSalary = (salary: Job['salary']) => {
-      if (!salary || (salary.min === 0 && salary.max === 0)) return '薪资Open';
+      // Handle missing/zero cases
+      if (!salary) return '薪资Open';
+      
+      // Handle string type (New format or legacy string)
+      if (typeof salary === 'string') {
+         if (salary === '0' || salary === 'null' || salary === 'Open' || salary === '0-0') return '薪资Open';
+         // Try parsing JSON string if it looks like one
+         if (salary.trim().startsWith('{')) {
+            try {
+               const parsed = JSON.parse(salary);
+               if (typeof parsed === 'object') return formatSalary(parsed);
+            } catch (e) {
+               // ignore
+            }
+         }
+         return salary;
+      }
+
+      // Handle object type (Legacy format)
+      if (salary.min === 0 && salary.max === 0) return '薪资Open';
+      
       const formatAmount = (amount: number) => {
          // Safety check: if amount is null/undefined/NaN, return '0' or empty string
          if (amount === null || amount === undefined || isNaN(amount)) return '0';
