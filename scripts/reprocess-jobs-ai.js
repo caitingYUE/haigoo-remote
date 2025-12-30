@@ -42,10 +42,10 @@ async function main() {
     }
 
     try {
-        // 1. Fetch Candidates
-        // Select active jobs that have bad data
-        const query = `
-            SELECT * FROM ${JOBS_TABLE} 
+        // 1. Fetch Candidates (IDs only to ensure finite loop)
+        console.log('Fetching candidate IDs...');
+        const idQuery = `
+            SELECT job_id FROM ${JOBS_TABLE} 
             WHERE status = 'active' 
             AND (is_manually_edited IS NOT TRUE)
             AND (
@@ -56,14 +56,13 @@ async function main() {
             )
             AND description IS NOT NULL
             ORDER BY created_at DESC
-            LIMIT 1000
         `;
         
-        console.log('Fetching candidates...');
-        const jobs = await neonHelper.query(query);
-        console.log(`Found ${jobs.length} candidates.`);
+        const idResult = await neonHelper.query(idQuery);
+        const allJobIds = idResult.map(r => r.job_id);
+        console.log(`Found ${allJobIds.length} candidates to process.`);
 
-        if (jobs.length === 0) {
+        if (allJobIds.length === 0) {
             console.log('No jobs need processing.');
             process.exit(0);
         }
@@ -75,12 +74,16 @@ async function main() {
         const failedJobs = [];
 
         // 2. Process in Chunks
-        const chunkSize = 5;
-        for (let i = 0; i < jobs.length; i += chunkSize) {
-            const chunk = jobs.slice(i, i + chunkSize);
-            console.log(`Processing chunk ${i/chunkSize + 1}/${Math.ceil(jobs.length/chunkSize)}...`);
+        const chunkSize = 10; // Increase chunk size slightly
+        for (let i = 0; i < allJobIds.length; i += chunkSize) {
+            const chunkIds = allJobIds.slice(i, i + chunkSize);
+            console.log(`Processing chunk ${Math.floor(i/chunkSize) + 1}/${Math.ceil(allJobIds.length/chunkSize)}...`);
             
-            await Promise.all(chunk.map(async (row) => {
+            // Fetch full data for this chunk
+            const placeholders = chunkIds.map((_, idx) => `$${idx + 1}`).join(',');
+            const jobs = await neonHelper.query(`SELECT * FROM ${JOBS_TABLE} WHERE job_id IN (${placeholders})`, chunkIds);
+
+            await Promise.all(jobs.map(async (row) => {
                 // Map DB row to Job object (simplified)
                 const job = {
                     id: row.job_id,
@@ -142,8 +145,24 @@ async function main() {
 
                 if (aiFailed) {
                     aiFailCount++;
-                    // Fallback Logic (Simplified regex)
-                    // ... (Skip complex regex here for brevity, assume API handles it better or AI will succeed eventually)
+                    // Fallback Logic
+                    const cleanDesc = (job.description || '').replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+                    const combinedText = `${job.title} ${cleanDesc}`;
+                    
+                    const extractedSalary = extractSalary(combinedText);
+                    if (extractedSalary && (!job.salary || job.salary === 'null' || job.salary === 'Open')) {
+                        job.salary = truncateString(extractedSalary, 200);
+                        changed = true;
+                        console.log(`[Fallback] Extracted salary for ${job.id}: ${job.salary}`);
+                    }
+
+                    const extractedLocation = extractLocation(combinedText);
+                    if (extractedLocation && (!job.location || job.location === 'Unspecified' || job.location === 'Remote')) {
+                        job.location = truncateString(extractedLocation, 200);
+                        job.region = classifyRegion(job.location);
+                        changed = true;
+                        console.log(`[Fallback] Extracted location for ${job.id}: ${job.location}`);
+                    }
                 }
 
                 // Source Type Fallback
