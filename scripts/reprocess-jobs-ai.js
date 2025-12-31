@@ -50,7 +50,7 @@ async function main() {
             AND (is_manually_edited IS NOT TRUE)
             AND (
                 location IS NULL OR location = 'Remote' OR location = 'Unspecified' 
-                OR salary IS NULL OR salary = 'null' OR salary = 'Open'
+                OR salary IS NULL OR salary = 'null' OR salary = 'Open' OR salary = 'Competitive' OR salary = '薪资面议'
                 OR category = '其他' OR category = 'Other'
                 OR source_type IS NULL
             )
@@ -74,17 +74,19 @@ async function main() {
         const failedJobs = [];
 
         // 2. Process in Chunks
-        const chunkSize = 10; // Increase chunk size slightly
+        const chunkSize = 3; // Reduce chunk size to avoid timeouts
         for (let i = 0; i < allJobIds.length; i += chunkSize) {
             const chunkIds = allJobIds.slice(i, i + chunkSize);
             console.log(`Processing chunk ${Math.floor(i/chunkSize) + 1}/${Math.ceil(allJobIds.length/chunkSize)}...`);
             
-            // Fetch full data for this chunk
-            const placeholders = chunkIds.map((_, idx) => `$${idx + 1}`).join(',');
-            const jobs = await neonHelper.query(`SELECT * FROM ${JOBS_TABLE} WHERE job_id IN (${placeholders})`, chunkIds);
+            try {
+                // Fetch full data for this chunk
+                const placeholders = chunkIds.map((_, idx) => `$${idx + 1}`).join(',');
+                const jobs = await neonHelper.query(`SELECT * FROM ${JOBS_TABLE} WHERE job_id IN (${placeholders})`, chunkIds);
 
-            await Promise.all(jobs.map(async (row) => {
-                // Map DB row to Job object (simplified)
+                for (const row of jobs) {
+                    try {
+                        // Map DB row to Job object (simplified)
                 const job = {
                     id: row.job_id,
                     title: row.title,
@@ -203,11 +205,20 @@ async function main() {
                 }
                 
                 processedCount++;
-            }));
-            
-            // Rate limit pause
-            await new Promise(r => setTimeout(r, 1000));
-        }
+                // Add delay per job to be nice to API
+                await new Promise(r => setTimeout(r, 500));
+            } catch (e) {
+                console.error(`Error processing job ${row.job_id}:`, e);
+            }
+        } // End for loop
+        
+        // Rate limit pause between chunks
+        await new Promise(r => setTimeout(r, 2000));
+
+    } catch (e) {
+        console.error(`Error processing chunk:`, e);
+    }
+}
 
         console.log('-----------------------------------');
         console.log(`✅ Processed: ${processedCount}`);
