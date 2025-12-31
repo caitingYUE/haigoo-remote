@@ -363,24 +363,25 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             const locText = displayText(job.location || '', job.translations?.location);
                             const isGeneric = /(remote|anywhere|everywhere|worldwide|global|远程|全球)/i.test(locText);
                             return (
-                                <span
-                                    className={`truncate max-w-[150px] ${!isGeneric ? 'cursor-help border-b border-dashed border-slate-300 hover:text-indigo-600 hover:border-indigo-400' : ''}`}
-                                    onClick={(e) => {
-                                        if (!isGeneric) {
+                                <div className="relative">
+                                    <span
+                                        className={`truncate max-w-[150px] inline-block ${!isGeneric ? 'cursor-help border-b border-dashed border-slate-300 hover:text-indigo-600 hover:border-indigo-400' : 'cursor-pointer hover:text-indigo-600'}`}
+                                        onClick={(e) => {
                                             e.stopPropagation();
                                             setShowLocationTooltip(!showLocationTooltip);
-                                        }
-                                    }}
-                                >
-                                    {locText}
-                                </span>
+                                        }}
+                                        title={locText}
+                                    >
+                                        {locText}
+                                    </span>
+                                    {showLocationTooltip && (
+                                        <div className="absolute z-50 mt-2 left-0">
+                                            <LocationTooltip location={job.location || ''} onClose={() => setShowLocationTooltip(false)} />
+                                        </div>
+                                    )}
+                                </div>
                             )
                         })()}
-                        {showLocationTooltip && (
-                            <div className="absolute z-50 mt-8">
-                                <LocationTooltip location={job.location || ''} onClose={() => setShowLocationTooltip(false)} />
-                            </div>
-                        )}
                     </div>
 
                     <div className="flex items-center gap-1.5">

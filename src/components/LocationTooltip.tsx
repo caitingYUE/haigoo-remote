@@ -40,10 +40,16 @@ export function LocationTooltip({ location, onClose }: LocationTooltipProps) {
 
     if (!data) {
         return (
-            <div className="absolute z-50 bg-white rounded-lg shadow-xl p-4 border border-slate-200 w-64 animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex justify-between items-start">
-                    <p className="text-sm text-slate-600">暂无该地点的详细信息</p>
-                    <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600">
+            <div className="absolute z-50 bg-white rounded-lg shadow-xl p-4 border border-slate-200 w-80 animate-in fade-in zoom-in-95 duration-200 left-0">
+                <div className="flex justify-between items-start gap-3">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2 mb-2">
+                            <MapPin className="w-4 h-4 text-indigo-500" />
+                            地点详情
+                        </h3>
+                        <p className="text-sm text-slate-600 break-words">{location}</p>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 flex-shrink-0">
                         <X className="w-3 h-3" />
                     </button>
                 </div>
