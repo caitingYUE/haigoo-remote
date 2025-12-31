@@ -98,7 +98,9 @@ async function main() {
                     source_type: row.source_type,
                     can_refer: row.can_refer,
                     is_trusted: row.is_trusted,
-                    region: row.region
+                    region: row.region,
+                    timezone: row.timezone,
+                    china_friendly: row.china_friendly
                 };
 
                 let changed = false;
@@ -117,6 +119,21 @@ async function main() {
                             job.location = truncateString(aiResult.location, 200);
                             job.region = classifyRegion(job.location);
                             changed = true;
+                        }
+
+                        // Timezone & China Friendly Update
+                        if (aiResult.timezone) {
+                            job.timezone = truncateString(aiResult.timezone, 200);
+                            changed = true;
+                        }
+                        
+                        if (typeof aiResult.chinaFriendly === 'boolean') {
+                            job.china_friendly = aiResult.chinaFriendly;
+                            changed = true;
+                            // If china friendly, force region to include domestic/both if not already
+                            if (job.china_friendly && job.region === 'overseas') {
+                                job.region = 'both';
+                            }
                         }
                         
                         if (aiResult.salary) {
@@ -190,8 +207,10 @@ async function main() {
                             category = $4,
                             tags = $5,
                             source_type = $6,
+                            timezone = $7,
+                            china_friendly = $8,
                             updated_at = NOW()
-                        WHERE job_id = $7
+                        WHERE job_id = $9
                     `, [
                         job.location,
                         job.region,
@@ -199,6 +218,8 @@ async function main() {
                         job.category,
                         JSON.stringify(job.tags),
                         job.source_type,
+                        job.timezone,
+                        job.china_friendly,
                         job.id
                     ]);
                     updatedCount++;

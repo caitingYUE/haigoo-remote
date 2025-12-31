@@ -490,3 +490,7 @@ CREATE INDEX IF NOT EXISTS idx_jobs_published_at ON jobs (published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_region ON jobs (region);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);
 CREATE INDEX IF NOT EXISTS idx_jobs_is_trusted ON jobs (is_trusted);
+
+-- 2025-01-02: 增加时区和中国友好度字段
+-- ALTER TABLE jobs ADD COLUMN timezone VARCHAR(200);
+-- ALTER TABLE jobs ADD COLUMN china_friendly BOOLEAN DEFAULT false;
