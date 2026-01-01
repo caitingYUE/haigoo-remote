@@ -114,6 +114,11 @@ async function main() {
                     const aiResult = await analyzeJobContent(jobForAI);
                     
                     if (aiResult) {
+                        // Update Token Usage
+                        if (aiResult.usage) {
+                            await systemSettingsService.incrementTokenUsage(aiResult.usage, 'job_processing');
+                        }
+
                         // Update Fields
                         if (aiResult.location && aiResult.location !== 'Unspecified') {
                             job.location = truncateString(aiResult.location, 200);
@@ -263,6 +268,10 @@ async function main() {
 
     } catch (e) {
         console.error('Script Error:', e);
+    }
+}
+
+main();
     }
 }
 
