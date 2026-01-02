@@ -161,18 +161,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            Haigoo 内推
                         </div>
                      )}
-                     {sourceType === 'official' && (
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-100 text-orange-700 border border-orange-200" title="通过公司官网直接投递，Haigoo 已人工核实企业真实性">
-                           <Sparkles className="w-3 h-3" />
-                           企业官网岗位
-                        </div>
-                     )}
-                     {sourceType === 'trusted_platform' && (
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-cyan-100 text-cyan-700 border border-cyan-200" title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请">
-                           <Check className="w-3 h-3" />
-                           可信平台投递
-                        </div>
-                     )}
                      
                      {isTranslated && (
                         <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-medium rounded border border-indigo-100 flex-shrink-0">
@@ -347,18 +335,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               Haigoo 内推
                            </div>
                         )}
-                        {/* {sourceType === 'official' && (
-                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200" title="通过公司官网直接投递，Haigoo 已人工核实企业真实性">
-                              <Sparkles className="w-3 h-3" />
-                              企业官网岗位
-                           </div>
-                        )}
-                        {sourceType === 'trusted_platform' && (
-                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-700 border border-cyan-200" title="来自成熟招聘平台，Haigoo 已确认中国候选人可申请">
-                              <Check className="w-3 h-3" />
-                              可信平台投递
-                           </div>
-                        )} */}
                      </div>
                   </div>
                </div>

@@ -307,32 +307,6 @@ export default function JobFilterBar({
           </button>
         )}
 
-        {/* Region Type / Identity */}
-// Removed regionType/Identity filter
-        /* 
-        <FilterDropdown
-          label="身份要求"
-          activeLabel={getRegionLabel()}
-          isActive={(filters.regionType?.length || 0) > 0}
-          isOpen={openDropdown === 'regionType'}
-          onToggle={() => toggleDropdown('regionType')}
-          onClose={() => setOpenDropdown(null)}
-          variant="solid-blue"
-        >
-          <CheckboxItem
-            label="中国居民"
-            checked={filters.regionType?.includes('domestic') || false}
-            onChange={(c) => handleCheckboxChange('regionType', 'domestic', c)}
-            emphasized
-          />
-          <CheckboxItem
-            label="海外居民"
-            checked={filters.regionType?.includes('overseas') || false}
-            onChange={(c) => handleCheckboxChange('regionType', 'overseas', c)}
-          />
-        </FilterDropdown>
-        */
-
         {/* Function Type (Renamed from Category) */}
         <FilterDropdown
           label="职能类型"
