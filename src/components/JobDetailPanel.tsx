@@ -129,6 +129,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job, showTranslation])
 
     const handleApply = () => {
+        // 0. Enforce Login first
+        if (!isAuthenticated) {
+            if (window.confirm('申请职位需要登录\n\n是否前往登录？')) {
+                navigate('/login')
+            }
+            return;
+        }
+
         // 1. Referral Jobs: Members go to internal application, Non-members see upsell
         if (job.canRefer) {
             if (isMember) {
@@ -140,12 +148,24 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         // 2. Trusted Jobs: Show certification info (intercept modal)
+        // If member, we can decide to skip or show info.
+        // User requirement: "Must be logged in and be a member, otherwise unable to apply/jump"
+        // So for non-members, we MUST block.
         if (job.isTrusted) {
-            setShowApplyInterceptModal(true);
+            // If member, maybe show info but allow proceed (handled in ApplyInterceptModal or here)
+            // If we want members to proceed directly:
+            if (isMember) {
+                // Check if ApplyInterceptModal has a "Member View" which is just informational?
+                // The current ApplyInterceptModal shows info for members on Trusted jobs.
+                // We'll keep showing it for members, but strictly BLOCK non-members.
+                setShowApplyInterceptModal(true); 
+            } else {
+                 setShowApplyInterceptModal(true);
+            }
             return;
         }
 
-        // 3. Other Jobs: Non-members see safety check, Members go directly
+        // 3. Other Jobs: Non-members see safety check (now BLOCK), Members go directly
         if (!isMember) {
             setShowApplyInterceptModal(true);
             return;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building } from 'lucide-react'
+import { Building, Crown } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import SearchBar from '../components/SearchBar'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -215,6 +215,55 @@ export default function TrustedCompaniesPage() {
 
             {/* Company Grid */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {!isMember ? (
+                    <div className="flex flex-col items-center justify-center py-16 px-4">
+                        <div className="bg-white rounded-3xl shadow-xl border border-indigo-50 p-8 md:p-12 max-w-3xl w-full text-center relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+                            
+                            <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-amber-100">
+                                <Crown className="w-10 h-10 text-amber-500 fill-amber-500" />
+                            </div>
+                            
+                            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
+                                解锁 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">500+ 精选远程企业</span> 名单
+                            </h2>
+                            
+                            <p className="text-lg text-slate-600 mb-8 max-w-xl mx-auto leading-relaxed">
+                                Haigoo 会员专享特权，查看所有经过人工审核的真实远程企业，
+                                <br className="hidden sm:block" />
+                                获取详细投递渠道与内推机会。
+                            </p>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 max-w-2xl mx-auto">
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <div className="font-bold text-2xl text-slate-900 mb-1">100%</div>
+                                    <div className="text-sm text-slate-500 font-medium">人工审核验证</div>
+                                </div>
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <div className="font-bold text-2xl text-slate-900 mb-1">3x</div>
+                                    <div className="text-sm text-slate-500 font-medium">面试回复率</div>
+                                </div>
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <div className="font-bold text-2xl text-slate-900 mb-1">Direct</div>
+                                    <div className="text-sm text-slate-500 font-medium">直达投递渠道</div>
+                                </div>
+                            </div>
+                            
+                            <button
+                                onClick={() => setShowUpgradeModal(true)}
+                                className="px-10 py-4 bg-slate-900 hover:bg-indigo-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 mx-auto w-full sm:w-auto"
+                            >
+                                <Crown className="w-5 h-5" />
+                                立即升级会员查看
+                            </button>
+                            
+                            <p className="mt-4 text-sm text-slate-400">
+                                30天无理由退款保证 · 安全支付
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                <>
                 {/* Active Jobs Hint */}
                 <div className="mb-8 text-left">
                     <span className="text-sm text-slate-400">
@@ -282,7 +331,7 @@ export default function TrustedCompaniesPage() {
                                 </button>
                             </div>
                         )}
-                    </>
+                </>
                 )}
             </div>
             {/* Modals */}
