@@ -33,6 +33,7 @@ interface JobFilterBarProps {
     jobType: string[];
     salary: string[];
     location: string[];
+    timezone: string[];
     isTrusted: boolean;
     isNew: boolean;
   };
@@ -41,6 +42,7 @@ interface JobFilterBarProps {
   industryOptions: { label: string, value: string }[];
   jobTypeOptions: { label: string, value: string }[];
   locationOptions: { label: string, value: string }[];
+  timezoneOptions: { label: string, value: string }[];
   searchTerm: string;
   onSearchChange: (value: string) => void;
   sortBy: 'recent' | 'relevance';
@@ -189,6 +191,7 @@ export default function JobFilterBar({
   industryOptions,
   jobTypeOptions,
   locationOptions,
+  timezoneOptions,
   searchTerm,
   onSearchChange,
   sortBy,
@@ -251,7 +254,8 @@ export default function JobFilterBar({
       filters.experienceLevel.length +
       filters.salary.length +
       filters.industry.length +
-      filters.location.length;
+      filters.location.length +
+      filters.timezone.length;
     return count > 0 ? `更多筛选 (${count})` : '更多筛选';
   };
 
@@ -259,7 +263,8 @@ export default function JobFilterBar({
     filters.experienceLevel.length > 0 ||
     filters.salary.length > 0 ||
     filters.industry.length > 0 ||
-    filters.location.length > 0;
+    filters.location.length > 0 ||
+    filters.timezone.length > 0;
 
   const clearAllFilters = () => {
     onFilterChange({
@@ -272,6 +277,7 @@ export default function JobFilterBar({
       jobType: [],
       salary: [],
       location: [],
+      timezone: [],
       isTrusted: false,
       isNew: false
     });
@@ -400,6 +406,17 @@ export default function JobFilterBar({
               label={opt.label}
               checked={filters.location.includes(opt.value)}
               onChange={(c) => handleCheckboxChange('location', opt.value, c)}
+            />
+          ))}
+
+          {/* Timezone Section */}
+          <FilterSectionHeader title="时区" />
+          {timezoneOptions.map(opt => (
+            <CheckboxItem
+              key={opt.value}
+              label={opt.label}
+              checked={filters.timezone.includes(opt.value)}
+              onChange={(c) => handleCheckboxChange('timezone', opt.value, c)}
             />
           ))}
         </FilterDropdown>

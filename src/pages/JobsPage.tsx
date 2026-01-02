@@ -72,6 +72,7 @@ export default function JobsPage() {
       sourceType: [] as string[],
       type: [] as string[],
       location: [] as string[],
+      timezone: [] as string[],
       jobType: [] as string[],
       salary: [] as string[],
       isTrusted: false,
@@ -510,6 +511,14 @@ export default function JobsPage() {
     return Array.from(types).sort().map(t => ({ label: t, value: t }))
   }, [canonicalJobs])
 
+  const timezoneOptions = useMemo(() => {
+    const timezones = new Set<string>()
+    canonicalJobs.forEach(j => {
+      if (j.timezone) timezones.add(j.timezone)
+    })
+    return Array.from(timezones).sort().map(tz => ({ label: tz, value: tz }))
+  }, [canonicalJobs])
+
   const topCategories = useMemo(() => {
     const counts: Record<string, number> = {}
     canonicalJobs.forEach(j => {
@@ -619,6 +628,7 @@ export default function JobsPage() {
       location: [],
       jobType: [],
       salary: [],
+      timezone: [],
       isTrusted: false,
       isNew: false
     });
@@ -678,6 +688,7 @@ export default function JobsPage() {
               industryOptions={industryOptions}
               jobTypeOptions={typeOptions}
               locationOptions={locationOptions}
+              timezoneOptions={timezoneOptions}
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               sortBy={sortBy}

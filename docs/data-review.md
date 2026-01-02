@@ -68,3 +68,16 @@ Himalayas 专项修复: 引入 NLP 或通过 title 分割规则提取公司名�
 关键词校验: 在保存前检查抓取内容长度（如 < 500 字符）或是否包含非 JD 关键词（如 "Cookie Policy"），若命中则标记为 Review 或不入库。
 动态渲染支持: 针对 Stripe/AlphaSights 类站点，必须引入 Puppeteer/Playwright。
 数据清洗: 下架所有 Description < 100 字符的 "Trusted" 职位，避免破坏“可信”心智。
+
+5. AI 智能提取复盘 (AI Parsing Review)
+问题描述:
+在抓取部分动态页面或受保护页面时，AI 提取模块（Bailian Parser）返回了错误的提示信息（如 "The provided content does not contain a job description..."），但系统将其误判为有效的职位描述并入库。
+
+案例:
+- Google Search accessibility 提示信息被入库
+- 错误信息长度超过了简单的长度过滤器（> 50 chars），导致校验失效
+
+解决方案:
+1. 优化 AI Prompt: 明确指示 AI 在无法提取时返回特定标识符（"NO_JOB_DESCRIPTION"）。
+2. 代码层拦截: 在接收 AI 响应时，检测特定标识符并强制返回 null。
+3. 校验增强: 在 job-validator.js 中增加针对此类错误提示的正则匹配。

@@ -11,7 +11,11 @@ const { sendEmail } = await import('../server-utils/email-service.js');
 const JOBS_TABLE = 'jobs';
 
 // Location Keywords for Region Classification
-const OVERSEAS_KEYWORDS = ['usa', 'united states', 'uk', 'london', 'europe', 'germany', 'france', 'japan', 'singapore', 'australia', 'canada'];
+const OVERSEAS_KEYWORDS = [
+    'usa', 'united states', 'uk', 'london', 'europe', 'germany', 'france', 'japan', 'singapore', 'australia', 'canada',
+    'san francisco', 'bay area', 'new york', 'seattle', 'boston', 'austin', 'los angeles', 'california', 'texas', 'washington',
+    'united kingdom', 'berlin', 'paris', 'tokyo', 'sydney', 'toronto', 'vancouver'
+];
 const MAINLAND_KEYWORDS = ['china', 'beijing', 'shanghai', 'shenzhen', 'guangzhou', 'hangzhou', 'chengdu'];
 const APAC_KEYWORDS = ['apac', 'asia pacific', 'utc+8', 'gmt+8'];
 
@@ -30,6 +34,44 @@ function classifyRegion(location) {
 function truncateString(str, maxBytes) {
     if (!str) return '';
     return str.length > maxBytes ? str.substring(0, maxBytes) : str;
+}
+
+function extractSalary(text) {
+    if (!text) return null;
+    // Simple regex for salary
+    const salaryPatterns = [
+        /(\$\d{2,3}k\s*-\s*\$\d{2,3}k)/i,
+        /(\$\d{1,3}(?:,\d{3})*\s*-\s*\$\d{1,3}(?:,\d{3})*)/i,
+        /(\d{2,3}k\s*-\s*\d{2,3}k)/i,
+        /(\d{1,3}(?:,\d{3})*\s*-\s*\d{1,3}(?:,\d{3})*\s*(?:USD|EUR|GBP|CNY|RMB))/i
+    ];
+    for (const pattern of salaryPatterns) {
+        const match = text.match(pattern);
+        if (match) return match[0];
+    }
+    return null;
+}
+
+function extractLocation(text) {
+    if (!text) return null;
+    // 1. Check for locations in parentheses/brackets e.g., "Software Engineer (UK)", "[China]"
+    const parenMatches = text.match(/[\(\[\{](.*?)[\)\]\}]/g);
+    if (parenMatches) {
+        for (const match of parenMatches) {
+            const content = match.slice(1, -1).trim();
+            // Filter out non-location terms
+            if (!/remote|contract|full-time|part-time|senior|junior/i.test(content) && content.length > 2 && content.length < 30) {
+                 return content;
+            }
+        }
+    }
+    // 2. Common "Location:" pattern
+    const locPattern = /(?:Location|Based in|Remote form|Remote in):\s*([^\n\.<]+)/i;
+    const locMatch = text.match(locPattern);
+    if (locMatch && locMatch[1]) {
+        return locMatch[1].trim();
+    }
+    return null;
 }
 
 // Main Function
@@ -87,164 +129,159 @@ async function main() {
                 for (const row of jobs) {
                     try {
                         // Map DB row to Job object (simplified)
-                const job = {
-                    id: row.job_id,
-                    title: row.title,
-                    description: row.description,
-                    location: row.location,
-                    salary: row.salary,
-                    category: row.category,
-                    tags: row.tags ? (typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags) : [],
-                    source_type: row.source_type,
-                    can_refer: row.can_refer,
-                    is_trusted: row.is_trusted,
-                    region: row.region,
-                    timezone: row.timezone,
-                    china_friendly: row.china_friendly
-                };
+                        const job = {
+                            id: row.job_id,
+                            title: row.title,
+                            description: row.description,
+                            location: row.location,
+                            salary: row.salary,
+                            category: row.category,
+                            tags: row.tags ? (typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags) : [],
+                            source_type: row.source_type,
+                            can_refer: row.can_refer,
+                            is_trusted: row.is_trusted,
+                            region: row.region,
+                            timezone: row.timezone,
+                            china_friendly: row.china_friendly
+                        };
 
-                let changed = false;
-                let aiFailed = false;
+                        let changed = false;
+                        let aiFailed = false;
 
-                try {
-                    // AI Processing
-                    const cleanDesc = (job.description || '').replace(/<[^>]*>?/gm, '\n').replace(/\s+/g, ' ').trim();
-                    const jobForAI = { ...job, description: cleanDesc };
-                    
-                    const aiResult = await analyzeJobContent(jobForAI);
-                    
-                    if (aiResult) {
-                        // Update Token Usage
-                        if (aiResult.usage) {
-                            await systemSettingsService.incrementTokenUsage(aiResult.usage, 'job_processing');
+                        try {
+                            // AI Processing
+                            const cleanDesc = (job.description || '').replace(/<[^>]*>?/gm, '\n').replace(/\s+/g, ' ').trim();
+                            const jobForAI = { ...job, description: cleanDesc };
+                            
+                            const aiResult = await analyzeJobContent(jobForAI);
+                            
+                            if (aiResult) {
+                                // Update Fields
+                                if (aiResult.location && aiResult.location !== 'Unspecified') {
+                                    job.location = truncateString(aiResult.location, 200);
+                                    job.region = classifyRegion(job.location);
+                                    changed = true;
+                                }
+
+                                // Timezone & China Friendly Update
+                                if (aiResult.timezone) {
+                                    job.timezone = truncateString(aiResult.timezone, 200);
+                                    changed = true;
+                                }
+                                
+                                if (typeof aiResult.chinaFriendly === 'boolean') {
+                                    job.china_friendly = aiResult.chinaFriendly;
+                                    changed = true;
+                                    // If china friendly, force region to include domestic/both if not already
+                                    if (job.china_friendly && job.region === 'overseas') {
+                                        job.region = 'both';
+                                    }
+                                }
+                                
+                                if (aiResult.salary) {
+                                    let s = aiResult.salary.trim();
+                                    // Filter out 0 values
+                                    if (s === '0' || s === '0k' || s === '$0' || s.match(/^0\s*-\s*0$/)) {
+                                        s = 'Open';
+                                    }
+                                    job.salary = truncateString(s, 200);
+                                    changed = true;
+                                }
+
+                                if (aiResult.category && aiResult.category !== '其他') {
+                                    job.category = truncateString(aiResult.category, 100);
+                                    changed = true;
+                                }
+
+                                if (aiResult.tags && Array.isArray(aiResult.tags) && aiResult.tags.length > 0) {
+                                    const newTags = aiResult.tags.map(t => truncateString(t, 50));
+                                    job.tags = [...new Set([...job.tags, ...newTags])].slice(0, 20);
+                                    changed = true;
+                                }
+
+                                aiSuccessCount++;
+                            } else {
+                                aiFailed = true;
+                            }
+                        } catch (e) {
+                            console.error(`AI failed for job ${job.id}:`, e.message);
+                            aiFailed = true;
+                            failedJobs.push({ id: job.id, title: job.title, error: e.message });
                         }
 
-                        // Update Fields
-                        if (aiResult.location && aiResult.location !== 'Unspecified') {
-                            job.location = truncateString(aiResult.location, 200);
-                            job.region = classifyRegion(job.location);
-                            changed = true;
-                        }
+                        if (aiFailed) {
+                            aiFailCount++;
+                            // Fallback Logic
+                            const cleanDesc = (job.description || '').replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+                            const combinedText = `${job.title} ${cleanDesc}`;
+                            
+                            const extractedSalary = extractSalary(combinedText);
+                            if (extractedSalary && (!job.salary || job.salary === 'null' || job.salary === 'Open')) {
+                                job.salary = truncateString(extractedSalary, 200);
+                                changed = true;
+                                console.log(`[Fallback] Extracted salary for ${job.id}: ${job.salary}`);
+                            }
 
-                        // Timezone & China Friendly Update
-                        if (aiResult.timezone) {
-                            job.timezone = truncateString(aiResult.timezone, 200);
-                            changed = true;
-                        }
-                        
-                        if (typeof aiResult.chinaFriendly === 'boolean') {
-                            job.china_friendly = aiResult.chinaFriendly;
-                            changed = true;
-                            // If china friendly, force region to include domestic/both if not already
-                            if (job.china_friendly && job.region === 'overseas') {
-                                job.region = 'both';
+                            const extractedLocation = extractLocation(combinedText);
+                            if (extractedLocation && (!job.location || job.location === 'Unspecified' || job.location === 'Remote')) {
+                                job.location = truncateString(extractedLocation, 200);
+                                job.region = classifyRegion(job.location);
+                                changed = true;
+                                console.log(`[Fallback] Extracted location for ${job.id}: ${job.location}`);
                             }
                         }
+
+                        // Source Type Fallback
+                        if (!job.source_type) {
+                            if (job.can_refer) job.source_type = 'club-referral';
+                            else if (job.is_trusted) job.source_type = 'official';
+                            else job.source_type = 'rss';
+                            changed = true;
+                        }
+
+                        if (changed) {
+                            // Update DB
+                            await neonHelper.query(`
+                                UPDATE ${JOBS_TABLE} SET
+                                    location = $1,
+                                    region = $2,
+                                    salary = $3,
+                                    category = $4,
+                                    tags = $5,
+                                    source_type = $6,
+                                    timezone = $7,
+                                    china_friendly = $8,
+                                    updated_at = NOW()
+                                WHERE job_id = $9
+                            `, [
+                                job.location,
+                                job.region,
+                                job.salary,
+                                job.category,
+                                JSON.stringify(job.tags),
+                                job.source_type,
+                                job.timezone,
+                                job.china_friendly,
+                                job.id
+                            ]);
+                            updatedCount++;
+                        }
                         
-                        if (aiResult.salary) {
-                            let s = aiResult.salary.trim();
-                            // Filter out 0 values
-                            if (s === '0' || s === '0k' || s === '$0' || s.match(/^0\s*-\s*0$/)) {
-                                s = 'Open';
-                            }
-                            job.salary = truncateString(s, 200);
-                            changed = true;
-                        }
-
-                        if (aiResult.category && aiResult.category !== '其他') {
-                            job.category = truncateString(aiResult.category, 100);
-                            changed = true;
-                        }
-
-                        if (aiResult.tags && Array.isArray(aiResult.tags) && aiResult.tags.length > 0) {
-                            const newTags = aiResult.tags.map(t => truncateString(t, 50));
-                            job.tags = [...new Set([...job.tags, ...newTags])].slice(0, 20);
-                            changed = true;
-                        }
-
-                        aiSuccessCount++;
-                    } else {
-                        aiFailed = true;
+                        processedCount++;
+                        // Add delay per job to be nice to API
+                        await new Promise(r => setTimeout(r, 500));
+                    } catch (e) {
+                        console.error(`Error processing job ${row.job_id}:`, e);
                     }
-                } catch (e) {
-                    console.error(`AI failed for job ${job.id}:`, e.message);
-                    aiFailed = true;
-                    failedJobs.push({ id: job.id, title: job.title, error: e.message });
-                }
-
-                if (aiFailed) {
-                    aiFailCount++;
-                    // Fallback Logic
-                    const cleanDesc = (job.description || '').replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
-                    const combinedText = `${job.title} ${cleanDesc}`;
-                    
-                    const extractedSalary = extractSalary(combinedText);
-                    if (extractedSalary && (!job.salary || job.salary === 'null' || job.salary === 'Open')) {
-                        job.salary = truncateString(extractedSalary, 200);
-                        changed = true;
-                        console.log(`[Fallback] Extracted salary for ${job.id}: ${job.salary}`);
-                    }
-
-                    const extractedLocation = extractLocation(combinedText);
-                    if (extractedLocation && (!job.location || job.location === 'Unspecified' || job.location === 'Remote')) {
-                        job.location = truncateString(extractedLocation, 200);
-                        job.region = classifyRegion(job.location);
-                        changed = true;
-                        console.log(`[Fallback] Extracted location for ${job.id}: ${job.location}`);
-                    }
-                }
-
-                // Source Type Fallback
-                if (!job.source_type) {
-                    if (job.can_refer) job.source_type = 'club-referral';
-                    else if (job.is_trusted) job.source_type = 'official';
-                    else job.source_type = 'rss';
-                    changed = true;
-                }
-
-                if (changed) {
-                    // Update DB
-                    await neonHelper.query(`
-                        UPDATE ${JOBS_TABLE} SET
-                            location = $1,
-                            region = $2,
-                            salary = $3,
-                            category = $4,
-                            tags = $5,
-                            source_type = $6,
-                            timezone = $7,
-                            china_friendly = $8,
-                            updated_at = NOW()
-                        WHERE job_id = $9
-                    `, [
-                        job.location,
-                        job.region,
-                        job.salary,
-                        job.category,
-                        JSON.stringify(job.tags),
-                        job.source_type,
-                        job.timezone,
-                        job.china_friendly,
-                        job.id
-                    ]);
-                    updatedCount++;
-                }
+                } // End for loop
                 
-                processedCount++;
-                // Add delay per job to be nice to API
-                await new Promise(r => setTimeout(r, 500));
-            } catch (e) {
-                console.error(`Error processing job ${row.job_id}:`, e);
-            }
-        } // End for loop
-        
-        // Rate limit pause between chunks
-        await new Promise(r => setTimeout(r, 2000));
+                // Rate limit pause between chunks
+                await new Promise(r => setTimeout(r, 2000));
 
-    } catch (e) {
-        console.error(`Error processing chunk:`, e);
-    }
-}
+            } catch (e) {
+                console.error(`Error processing chunk:`, e);
+            }
+        } // End outer for loop
 
         console.log('-----------------------------------');
         console.log(`✅ Processed: ${processedCount}`);
@@ -268,10 +305,6 @@ async function main() {
 
     } catch (e) {
         console.error('Script Error:', e);
-    }
-}
-
-main();
     }
 }
 

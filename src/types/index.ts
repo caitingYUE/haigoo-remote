@@ -65,6 +65,8 @@ export interface Job {
   // Language requirements
   languages?: string[]
 
+  timezone?: string // 时区要求
+
   matchScore?: number
 
   // Haigoo Member Fields

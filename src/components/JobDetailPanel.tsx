@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, Shield, Sparkles, Target, Crown, Lock, CheckCircle2 } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, Shield, Sparkles, Target, Crown, Lock, CheckCircle2, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -383,6 +383,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             )
                         })()}
                     </div>
+
+                    {job.timezone && (
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="truncate max-w-[200px]" title={job.timezone}>
+                                {job.timezone}
+                            </span>
+                        </div>
+                    )}
 
                     <div className="flex items-center gap-1.5">
                         <div className="w-1 h-1 rounded-full bg-slate-300"></div>
