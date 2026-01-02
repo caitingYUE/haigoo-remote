@@ -77,10 +77,10 @@ export default function HomeHero({ stats }: HomeHeroProps) {
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8 lg:gap-16">
                     
                     {/* Left Column: Content */}
-                    <div className="flex-1 text-left max-w-2xl">
+                    <div className="flex-1 text-left max-w-2xl lg:max-w-3xl z-10">
                         {/* Badge */}
                         <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${isChristmas ? 'bg-red-50/80 border-red-100' : 'bg-indigo-50 border-indigo-100'} border mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-sm backdrop-blur-sm`}>
                             <span className="relative flex h-2 w-2">
@@ -93,7 +93,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         </div>
 
                         {/* Main Heading */}
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 whitespace-nowrap">
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
                             WORK YOUR BRAIN,
                             <br className="hidden md:block" />
                             <span className={`text-transparent bg-clip-text ${isChristmas ? 'bg-gradient-to-r from-red-600 via-orange-500 to-amber-500' : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600'}`}>
