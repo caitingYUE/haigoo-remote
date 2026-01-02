@@ -126,19 +126,19 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                     {/* Main Heading */}
                     <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 max-w-5xl mx-auto whitespace-nowrap">
-                        为中国人才打开
-                        <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isChristmas ? 'from-red-600 via-amber-500 to-red-600' : 'from-indigo-600 via-blue-600 to-cyan-600'}`}>全球远程工作</span>
-                        入口
+                        WORK YOUR BRAIN,
+                        <br className="hidden md:block" />
+                        <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isChristmas ? 'from-red-600 via-amber-500 to-red-600' : 'from-indigo-600 via-blue-600 to-cyan-600'}`}>LEAVE YOUR BODY TO BE HAPPY</span>
                     </h1>
 
                     {/* Subtitle */}
                     <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-normal animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200">
-                        连接全球顶尖远程企业，消除信息不对称。不论身在国内还是海外，
-                        <br className="hidden md:block" />让我们助你找到理想的 Work-Life Balance。
+                        连接全球优质远程机会，让工作回归生活。
+                        <br className="hidden md:block" />无论是身在国内还是海外，都能找到属于你的自由工作方式。
                     </p>
 
                     {/* Search Bar */}
-                    <div className="w-full max-w-xl mx-auto mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 relative z-20">
+                    <div className="w-full max-w-xl mx-auto mb-6 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 relative z-20">
                         <div className="relative group">
                             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-200 to-blue-200 rounded-2xl opacity-50 group-hover:opacity-100 transition duration-500 blur-md"></div>
                             <div className="relative bg-white p-2 rounded-2xl border border-slate-100 flex items-center gap-2 shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
