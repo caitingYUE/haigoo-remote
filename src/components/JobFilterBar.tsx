@@ -308,6 +308,8 @@ export default function JobFilterBar({
         )}
 
         {/* Region Type / Identity */}
+// Removed regionType/Identity filter
+        /* 
         <FilterDropdown
           label="身份要求"
           activeLabel={getRegionLabel()}
@@ -329,6 +331,7 @@ export default function JobFilterBar({
             onChange={(c) => handleCheckboxChange('regionType', 'overseas', c)}
           />
         </FilterDropdown>
+        */
 
         {/* Function Type (Renamed from Category) */}
         <FilterDropdown

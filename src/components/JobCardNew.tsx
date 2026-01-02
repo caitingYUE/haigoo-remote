@@ -347,7 +347,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               Haigoo 内推
                            </div>
                         )}
-                        {sourceType === 'official' && (
+                        {/* {sourceType === 'official' && (
                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200" title="通过公司官网直接投递，Haigoo 已人工核实企业真实性">
                               <Sparkles className="w-3 h-3" />
                               企业官网岗位
@@ -358,7 +358,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               <Check className="w-3 h-3" />
                               可信平台投递
                            </div>
-                        )}
+                        )} */}
                      </div>
                   </div>
                </div>
