@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Sparkles, Gift, Briefcase, Building2, Calendar, Quote } from 'lucide-react'
-import { AnimatedNumber } from './AnimatedNumber'
-import { happinessCards } from '../data/happiness-cards'
+import { Search, Sparkles, Gift } from 'lucide-react'
+import happinessCards from '../data/happiness-cards.json'
 import { HappinessCard } from './Christmas/HappinessCard'
 
 interface HomeHeroProps {
@@ -17,7 +16,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     const navigate = useNavigate()
     const [searchQuery, setSearchQuery] = useState('')
     const [isChristmas, setIsChristmas] = useState(false)
-    const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+    const [showHappinessCard, setShowHappinessCard] = useState(false)
 
     // Daily Card Logic
     const dailyCard = useMemo(() => {
