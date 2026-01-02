@@ -163,42 +163,44 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="flex flex-wrap justify-center gap-8 md:gap-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
-                        <div className="flex flex-col items-center group cursor-default">
-                            <div className="flex items-center gap-2 text-slate-500 mb-1 group-hover:text-indigo-600 transition-colors">
-                                <Briefcase className="w-4 h-4" />
-                                <span className="text-sm font-medium">全部岗位</span>
+                    {/* Stats (Hidden temporarily as requested) */}
+                    {stats && (
+                        <div className="flex flex-wrap justify-center gap-8 md:gap-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
+                            <div className="flex flex-col items-center group cursor-default">
+                                <div className="flex items-center gap-2 text-slate-500 mb-1 group-hover:text-indigo-600 transition-colors">
+                                    <Briefcase className="w-4 h-4" />
+                                    <span className="text-sm font-medium">全部岗位</span>
+                                </div>
+                                <span className="text-2xl font-bold text-slate-900 tracking-tight">
+                                    {stats.totalJobs && stats.totalJobs > 0 ? <AnimatedNumber value={stats.totalJobs} /> : "500+"}
+                                </span>
                             </div>
-                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
-                                {stats?.totalJobs && stats.totalJobs > 0 ? <AnimatedNumber value={stats.totalJobs} /> : "500+"}
-                            </span>
-                        </div>
 
-                        <div className="bg-slate-200 w-px h-10 hidden md:block"></div>
+                            <div className="bg-slate-200 w-px h-10 hidden md:block"></div>
 
-                        <div className="flex flex-col items-center group cursor-default">
-                            <div className="flex items-center gap-2 text-slate-500 mb-1 group-hover:text-indigo-600 transition-colors">
-                                <Building2 className="w-4 h-4" />
-                                <span className="text-sm font-medium">精选企业</span>
+                            <div className="flex flex-col items-center group cursor-default">
+                                <div className="flex items-center gap-2 text-slate-500 mb-1 group-hover:text-indigo-600 transition-colors">
+                                    <Building2 className="w-4 h-4" />
+                                    <span className="text-sm font-medium">精选企业</span>
+                                </div>
+                                <span className="text-2xl font-bold text-slate-900 tracking-tight">
+                                    {stats.companiesCount && stats.companiesCount > 0 ? <AnimatedNumber value={stats.companiesCount} /> : "100+"}
+                                </span>
                             </div>
-                            <span className="text-2xl font-bold text-slate-900 tracking-tight">
-                                {stats?.companiesCount && stats.companiesCount > 0 ? <AnimatedNumber value={stats.companiesCount} /> : "100+"}
-                            </span>
-                        </div>
 
-                        <div className="bg-slate-200 w-px h-10 hidden md:block"></div>
+                            <div className="bg-slate-200 w-px h-10 hidden md:block"></div>
 
-                        <div className="flex flex-col items-center group cursor-default">
-                            <div className="flex items-center gap-2 text-slate-500 mb-1 group-hover:text-emerald-600 transition-colors">
-                                <Sparkles className="w-4 h-4" />
-                                <span className="text-sm font-medium">日增岗位</span>
+                            <div className="flex flex-col items-center group cursor-default">
+                                <div className="flex items-center gap-2 text-slate-500 mb-1 group-hover:text-emerald-600 transition-colors">
+                                    <Sparkles className="w-4 h-4" />
+                                    <span className="text-sm font-medium">日增岗位</span>
+                                </div>
+                                <span className="text-2xl font-bold text-emerald-600 tracking-tight">
+                                    {stats.dailyJobs && stats.dailyJobs > 0 ? <>+<AnimatedNumber value={stats.dailyJobs} /></> : "50+"}
+                                </span>
                             </div>
-                            <span className="text-2xl font-bold text-emerald-600 tracking-tight">
-                                {stats?.dailyJobs && stats.dailyJobs > 0 ? <>+<AnimatedNumber value={stats.dailyJobs} /></> : "50+"}
-                            </span>
                         </div>
-                    </div>
+                    )}
 
 
 

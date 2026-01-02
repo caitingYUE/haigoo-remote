@@ -295,7 +295,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
               </span>
             )}
 
-            {/* Source Badges */}
+            {/* Source Badges - Modified: Only show Referral badge as requested */}
             <div className="flex items-center gap-2 flex-wrap">
               {sourceType === 'referral' && (
                 <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200" title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）">
@@ -303,6 +303,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
                   Haigoo 内推
                 </div>
               )}
+              {/* Hidden as requested: Official & Trusted Platform badges
               {sourceType === 'official' && (
                 <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200" title="通过公司官网直接投递，Haigoo 已人工核实企业真实性">
                   <Sparkles className="w-3 h-3" />
@@ -315,6 +316,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
                   可信平台投递
                 </div>
               )}
+              */}
             </div>
           </div>
         </div>

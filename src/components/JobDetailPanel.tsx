@@ -627,7 +627,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </div>
                     </section>
 
-                    {/* Source Label */}
+                    {/* Source Label - Modified: Only show Referral badge as requested */}
                     <div className="flex flex-col items-end pb-4 gap-1">
                         {sourceType === 'referral' ? (
                             <>
@@ -639,7 +639,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     * 由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）
                                 </p>
                             </>
-                        ) : sourceType === 'official' ? (
+                        ) : null}
+                        
+                        {/* Hidden as requested: Official & Trusted Platform badges
+                        : sourceType === 'official' ? (
                             <>
                                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-md border border-orange-100">
                                     <Sparkles className="w-3.5 h-3.5" />
@@ -672,6 +675,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 </p>
                             </>
                         ) : null}
+                        */}
                     </div>
                 </div>
             </main >

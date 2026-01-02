@@ -183,7 +183,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Premium Dark Hero Section */}
-      <HomeHero stats={stats} />
+      <HomeHero stats={undefined} />
 
       {/* New Year Blessing Section (Hidden for now) */}
       {/* <NewYearBlessingSection /> */}

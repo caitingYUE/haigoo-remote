@@ -68,12 +68,6 @@ const SALARY_OPTIONS = [
   { label: '80k以上', value: '80000-999999' }
 ];
 
-const SOURCE_OPTIONS = [
-  { label: '企业官网岗位', value: 'trusted' },
-  { label: 'Haigoo 内推', value: 'club-referral' },
-  { label: '可信平台投递', value: 'rss' }
-];
-
 // --- Components ---
 
 const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, variant = 'default', icon }) => {
