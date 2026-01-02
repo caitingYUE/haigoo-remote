@@ -244,27 +244,27 @@ export default function JobFilterBar({
 
   // Custom label logic for Region/Identity
   const getRegionLabel = () => {
-    if (filters.regionType.includes('domestic')) return '中国居民';
-    if (filters.regionType.includes('overseas')) return '海外居民';
+    if (filters.regionType?.includes('domestic')) return '中国居民';
+    if (filters.regionType?.includes('overseas')) return '海外居民';
     return '身份要求';
   };
 
   const getMoreFiltersCount = () => {
     const count =
-      filters.experienceLevel.length +
-      filters.salary.length +
-      filters.industry.length +
-      filters.location.length +
-      filters.timezone.length;
+      (filters.experienceLevel?.length || 0) +
+      (filters.salary?.length || 0) +
+      (filters.industry?.length || 0) +
+      (filters.location?.length || 0) +
+      (filters.timezone?.length || 0);
     return count > 0 ? `更多筛选 (${count})` : '更多筛选';
   };
 
   const hasMoreFilters =
-    filters.experienceLevel.length > 0 ||
-    filters.salary.length > 0 ||
-    filters.industry.length > 0 ||
-    filters.location.length > 0 ||
-    filters.timezone.length > 0;
+    (filters.experienceLevel?.length || 0) > 0 ||
+    (filters.salary?.length || 0) > 0 ||
+    (filters.industry?.length || 0) > 0 ||
+    (filters.location?.length || 0) > 0 ||
+    (filters.timezone?.length || 0) > 0;
 
   const clearAllFilters = () => {
     onFilterChange({
@@ -303,7 +303,7 @@ export default function JobFilterBar({
       {/* Filter Row */}
       <div className="flex flex-wrap items-center gap-2 flex-1">
         {/* Reset Button */}
-        {(filters.category.length > 0 || filters.experienceLevel.length > 0 || filters.industry.length > 0 || filters.regionType.length > 0 || filters.jobType.length > 0 || filters.salary.length > 0 || filters.location.length > 0 || filters.isTrusted || filters.isNew || searchTerm) && (
+        {((filters.category?.length || 0) > 0 || (filters.experienceLevel?.length || 0) > 0 || (filters.industry?.length || 0) > 0 || (filters.regionType?.length || 0) > 0 || (filters.jobType?.length || 0) > 0 || (filters.salary?.length || 0) > 0 || (filters.location?.length || 0) > 0 || filters.isTrusted || filters.isNew || searchTerm) && (
           <button
             onClick={clearAllFilters}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-700 whitespace-nowrap"
@@ -317,7 +317,7 @@ export default function JobFilterBar({
         <FilterDropdown
           label="身份要求"
           activeLabel={getRegionLabel()}
-          isActive={filters.regionType.length > 0}
+          isActive={(filters.regionType?.length || 0) > 0}
           isOpen={openDropdown === 'regionType'}
           onToggle={() => toggleDropdown('regionType')}
           onClose={() => setOpenDropdown(null)}
@@ -325,13 +325,13 @@ export default function JobFilterBar({
         >
           <CheckboxItem
             label="中国居民"
-            checked={filters.regionType.includes('domestic')}
+            checked={filters.regionType?.includes('domestic') || false}
             onChange={(c) => handleCheckboxChange('regionType', 'domestic', c)}
             emphasized
           />
           <CheckboxItem
             label="海外居民"
-            checked={filters.regionType.includes('overseas')}
+            checked={filters.regionType?.includes('overseas') || false}
             onChange={(c) => handleCheckboxChange('regionType', 'overseas', c)}
           />
         </FilterDropdown>
@@ -340,7 +340,7 @@ export default function JobFilterBar({
         <FilterDropdown
           label="职能类型"
           activeLabel={getCategoryLabel()}
-          isActive={filters.category.length > 0}
+          isActive={(filters.category?.length || 0) > 0}
           isOpen={openDropdown === 'category'}
           onToggle={() => toggleDropdown('category')}
           onClose={() => setOpenDropdown(null)}
@@ -349,7 +349,7 @@ export default function JobFilterBar({
             <CheckboxItem
               key={opt.value}
               label={opt.label}
-              checked={filters.category.includes(opt.value)}
+              checked={filters.category?.includes(opt.value) || false}
               onChange={(c) => handleCheckboxChange('category', opt.value, c)}
             />
           ))}
@@ -371,7 +371,7 @@ export default function JobFilterBar({
             <CheckboxItem
               key={opt.value}
               label={opt.label}
-              checked={filters.experienceLevel.includes(opt.value)}
+              checked={filters.experienceLevel?.includes(opt.value) || false}
               onChange={(c) => handleCheckboxChange('experienceLevel', opt.value, c)}
             />
           ))}
@@ -382,7 +382,7 @@ export default function JobFilterBar({
             <CheckboxItem
               key={opt.value}
               label={opt.label}
-              checked={filters.salary.includes(opt.value)}
+              checked={filters.salary?.includes(opt.value) || false}
               onChange={(c) => handleCheckboxChange('salary', opt.value, c)}
             />
           ))}
@@ -393,7 +393,7 @@ export default function JobFilterBar({
             <CheckboxItem
               key={opt.value}
               label={opt.label}
-              checked={filters.industry.includes(opt.value)}
+              checked={filters.industry?.includes(opt.value) || false}
               onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
             />
           ))}
@@ -404,7 +404,7 @@ export default function JobFilterBar({
             <CheckboxItem
               key={opt.value}
               label={opt.label}
-              checked={filters.location.includes(opt.value)}
+              checked={filters.location?.includes(opt.value) || false}
               onChange={(c) => handleCheckboxChange('location', opt.value, c)}
             />
           ))}
@@ -415,7 +415,7 @@ export default function JobFilterBar({
             <CheckboxItem
               key={opt.value}
               label={opt.label}
-              checked={filters.timezone.includes(opt.value)}
+              checked={filters.timezone?.includes(opt.value) || false}
               onChange={(c) => handleCheckboxChange('timezone', opt.value, c)}
             />
           ))}

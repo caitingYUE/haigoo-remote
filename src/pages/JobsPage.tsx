@@ -58,13 +58,7 @@ export default function JobsPage() {
 
   // New Filter State Structure
   const [filters, setFilters] = useState(() => {
-    try {
-      const saved = localStorage.getItem('haigoo_job_filters')
-      if (saved) return JSON.parse(saved)
-    } catch (e) {
-      console.error('Failed to load filters', e)
-    }
-    return {
+    const defaultFilters = {
       category: [] as string[],
       experienceLevel: [] as string[],
       industry: [] as string[],
@@ -78,6 +72,18 @@ export default function JobsPage() {
       isTrusted: false,
       isNew: false
     }
+
+    try {
+      const saved = localStorage.getItem('haigoo_job_filters')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        // Merge with defaults to ensure all fields exist (especially new ones like timezone)
+        return { ...defaultFilters, ...parsed }
+      }
+    } catch (e) {
+      console.error('Failed to load filters', e)
+    }
+    return defaultFilters
   })
 
   useEffect(() => {
