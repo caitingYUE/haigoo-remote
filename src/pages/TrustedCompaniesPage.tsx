@@ -333,6 +333,8 @@ export default function TrustedCompaniesPage() {
                         )}
                 </>
                 )}
+                </>
+                )}
             </div>
             {/* Modals */}
             <CompanyNominationModal 
