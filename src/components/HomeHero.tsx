@@ -94,17 +94,17 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                         {/* Main Heading */}
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-                            WORK YOUR BRAIN,
+                            全球范围
                             <br className="hidden md:block" />
                             <span className={`text-transparent bg-clip-text ${isChristmas ? 'bg-gradient-to-r from-red-600 via-orange-500 to-amber-500' : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600'}`}>
-                                LEAVE YOUR BODY TO BE HAPPY
+                                精选优质远程工作岗位
                             </span>
                         </h1>
 
                         <p className="text-lg md:text-xl text-slate-600 mb-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 leading-relaxed max-w-lg">
-                            连接全球优质远程机会，让工作回归生活。
+                            人工筛选，真实可申，
                             <br className="hidden md:block" />
-                            无论是身在国内还是海外，都能找到属于你的自由工作方式。
+                            Haigoo帮你收获满意offer
                         </p>
 
                         {/* Search Bar */}
