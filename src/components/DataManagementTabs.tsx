@@ -767,7 +767,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">发布日期</th>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位来源</th>
               <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">精选</th>
-              <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">审核</th>
+              {/* <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">审核</th> */}
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
@@ -1006,6 +1006,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
 
                 {/* 13. 审核 (对应 DB is_approved) */}
+                {/* 
                 <td className="px-3 py-2 w-16 text-center">
                   {(job as any).isApproved ? (
                     <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600" title="已审核通过">
@@ -1017,6 +1018,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     </span>
                   )}
                 </td>
+                */}
 
                 {/* 14. 操作 */}
                 <td className="px-3 py-2 w-24">
@@ -1406,6 +1408,7 @@ const EditJobModal: React.FC<{
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Approval Action Bar */}
+          {/*
           <div className="flex items-center justify-between bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.isApproved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
@@ -1425,12 +1428,6 @@ const EditJobModal: React.FC<{
               onClick={() => {
                 const newStatus = !formData.isApproved;
                 setFormData(prev => ({ ...prev, isApproved: newStatus }));
-                // Optionally auto-save immediately, but let's stick to explicit save for now or trigger save
-                // To match user request "click approve to show online", it should probably save.
-                // But we have a main save button. Let's just update state and let user click save, 
-                // OR make this a distinct action.
-                // The user said "add an Approve button... after approval it can be shown".
-                // Let's make it toggle the state in form, and saving the form persists it.
               }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                 formData.isApproved 
@@ -1441,6 +1438,7 @@ const EditJobModal: React.FC<{
               {formData.isApproved ? '撤销审核' : '通过审核'}
             </button>
           </div>
+          */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
