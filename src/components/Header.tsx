@@ -166,8 +166,7 @@ export default function Header() {
     { id: 'profile-favorites', label: '我的收藏', href: '/profile?tab=favorites' },
     { id: 'profile-subscriptions', label: '订阅管理', href: '/profile?tab=subscriptions' },
     { id: 'membership', label: '会员中心', href: '/membership' },
-    { id: 'profile-feedback', label: '我要反馈', href: '/profile?tab=feedback' },
-    { id: 'profile-recommend', label: '我要推荐', href: '/profile?tab=recommend' }
+    { id: 'profile-feedback', label: '我要反馈', href: '/profile?tab=feedback' }
   ]
 
   return (
