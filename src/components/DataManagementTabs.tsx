@@ -316,7 +316,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       setEditingJob(null);
 
       // 重新加载数据以显示最新状态
-      loadProcessedData();
+      // Use a slight delay to ensure DB write is propagated if reading from secondary or cache
+      setTimeout(() => loadProcessedData(), 500);
     } catch (error) {
       console.error('保存职位失败:', error);
       showError('保存失败', '请重试');
