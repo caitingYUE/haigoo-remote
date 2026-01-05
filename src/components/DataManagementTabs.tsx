@@ -286,6 +286,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
   // 保存编辑
   const handleSaveEdit = async (updatedJob: Partial<ProcessedJobData>) => {
+    console.log('[Frontend] Saving job edit:', updatedJob); // Debug Log
     if (!editingJob) return;
 
     try {

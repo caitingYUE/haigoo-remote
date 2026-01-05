@@ -222,6 +222,8 @@ export interface Job {
   summary?: string;
   // Featured job flag for homepage display
   isFeatured?: boolean;
+  // Approval status for public visibility
+  isApproved?: boolean;
 }
 
 export interface JobFilter {
