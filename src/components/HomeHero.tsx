@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Sparkles, Gift } from 'lucide-react'
+import { Search, Sparkles, Gift, Filter, Globe, Building2 } from 'lucide-react'
 import happinessCards from '../data/happiness-cards.json'
 import { HappinessCard } from './Christmas/HappinessCard'
 
@@ -93,20 +93,40 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         </div>
 
                         {/* Main Heading */}
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 mb-4 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-4 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
                             <span className={`text-transparent bg-clip-text ${isChristmas ? 'bg-gradient-to-r from-red-600 via-orange-500 to-amber-500' : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600'}`}>
-                                精选全球优质远程岗位
+                                为中国求职者精选的
+                                <br className="hidden md:block" />
+                                全球远程岗位
                             </span>
                         </h1>
 
-                        {/* English Slogan */}
-                        <p className="text-sm md:text-base font-bold text-slate-400 tracking-[0.2em] uppercase mb-8 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 font-mono">
-                            Work your brain, leave your body to be happy
+                        {/* Subtitle */}
+                        <p className="text-lg md:text-xl text-slate-600 mb-6 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 font-bold">
+                            只收录国内可申请的岗位｜来源真实｜人工逐条筛选
                         </p>
 
-                        <p className="text-lg md:text-xl text-slate-600 mb-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 leading-relaxed max-w-lg font-medium">
-                            人工筛选 · 真实可申 · 助力拿下满意 Offer
-                        </p>
+                        {/* Highlights List */}
+                        <ul className="space-y-2 mb-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                            <li className="flex items-center gap-2 text-slate-600 font-medium">
+                                <div className={`p-1 rounded-full ${isChristmas ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                                    <Filter className="w-4 h-4" />
+                                </div>
+                                已替你过滤 90% 无效岗位
+                            </li>
+                            <li className="flex items-center gap-2 text-slate-600 font-medium">
+                                <div className={`p-1 rounded-full ${isChristmas ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                                    <Globe className="w-4 h-4" />
+                                </div>
+                                覆盖北美 / 欧洲 / 亚太等全球远程机会
+                            </li>
+                            <li className="flex items-center gap-2 text-slate-600 font-medium">
+                                <div className={`p-1 rounded-full ${isChristmas ? 'bg-amber-100 text-amber-600' : 'bg-cyan-100 text-cyan-600'}`}>
+                                    <Building2 className="w-4 h-4" />
+                                </div>
+                                来自企业官方招聘渠道 / 可靠平台筛选 / 内推合作
+                            </li>
+                        </ul>
 
                         {/* Search Bar */}
                         <div className="w-full max-w-xl animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
