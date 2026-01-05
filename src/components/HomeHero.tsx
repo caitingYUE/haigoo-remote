@@ -134,11 +134,11 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         </div>
                     </div>
 
-                    {/* Right Column: New Year Card */}
+                    {/* Right Column: New Year Card - Reduced Size */}
                     <div className="flex-1 flex justify-center md:justify-end relative z-20">
                          <div 
                             onClick={() => setShowHappinessCard(true)}
-                            className="relative w-[280px] md:w-[320px] aspect-[3/4] transform transition-transform duration-500 hover:scale-105 cursor-pointer group animate-in fade-in slide-in-from-right-10 duration-1000 delay-300"
+                            className="relative w-[220px] md:w-[260px] aspect-[3/4] transform transition-transform duration-500 hover:scale-105 cursor-pointer group animate-in fade-in slide-in-from-right-10 duration-1000 delay-300"
                         >
                             {/* Envelope Visual */}
                             <div className="w-full h-full bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-2xl flex flex-col items-center justify-center border-4 border-yellow-400/30 relative overflow-hidden">
