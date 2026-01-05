@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building, Crown, Globe, ExternalLink } from 'lucide-react'
+import { Building, Crown } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import SearchBar from '../components/SearchBar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import SingleSelectDropdown from '../components/SingleSelectDropdown'
+import HomeCompanyCard from '../components/HomeCompanyCard'
 import { TrustedStandardsBanner } from '../components/TrustedStandardsBanner'
 import { CompanyNominationBanner } from '../components/CompanyNominationBanner'
 import { CompanyNominationModal } from '../components/CompanyNominationModal'
@@ -271,19 +272,25 @@ export default function TrustedCompaniesPage() {
                 </div>
 
                 {loading && filteredCompanies.length === 0 ? (
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="p-6 space-y-4">
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <div key={i} className="flex items-center gap-4 animate-pulse">
-                                    <div className="w-10 h-10 rounded-lg bg-slate-200 shrink-0" />
-                                    <div className="flex-1 space-y-2">
-                                        <div className="h-4 bg-slate-200 rounded w-1/4" />
-                                        <div className="h-3 bg-slate-200 rounded w-3/4" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="bg-white rounded-xl border border-slate-100 overflow-hidden h-[340px] animate-pulse">
+                                <div className="h-[56%] bg-slate-200" />
+                                <div className="p-5 space-y-3">
+                                    <div className="flex justify-between items-start">
+                                        <div className="h-6 bg-slate-200 rounded w-1/2" />
+                                        <div className="h-5 bg-slate-200 rounded w-16" />
                                     </div>
-                                    <div className="w-20 h-8 rounded bg-slate-200" />
+                                    <div className="h-4 bg-slate-200 rounded w-1/3" />
+                                    <div className="h-4 bg-slate-200 rounded w-full" />
+                                    <div className="h-4 bg-slate-200 rounded w-2/3" />
+                                    <div className="pt-4 mt-2 border-t border-slate-50 flex justify-between">
+                                        <div className="h-4 bg-slate-200 rounded w-1/3" />
+                                        <div className="h-4 bg-slate-200 rounded w-1/4" />
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
                 ) : filteredCompanies.length === 0 ? (
                     <div className="text-center py-20 text-slate-500">
@@ -291,99 +298,15 @@ export default function TrustedCompaniesPage() {
                     </div>
                 ) : (
                     <>
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">
-                                            <th className="px-6 py-4">企业名称</th>
-                                            <th className="px-6 py-4 w-1/4">一句话介绍</th>
-                                            <th className="px-6 py-4 w-1/4">标签</th>
-                                            <th className="px-6 py-4 text-center">企业官网</th>
-                                            <th className="px-6 py-4 text-center">招聘官网</th>
-                                            <th className="px-6 py-4 text-center">在招岗位数</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {filteredCompanies.map(company => (
-                                            <tr 
-                                                key={company.id} 
-                                                className="hover:bg-slate-50 transition-colors cursor-pointer group"
-                                                onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
-                                                            {company.logo ? (
-                                                                <img src={company.logo} alt={company.name} className="w-full h-full object-contain p-1" />
-                                                            ) : (
-                                                                <Building className="w-5 h-5 text-slate-400" />
-                                                            )}
-                                                        </div>
-                                                        <span className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                                                            {company.name}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-sm text-slate-600 line-clamp-2" title={company.description}>
-                                                        {company.description || '暂无介绍'}
-                                                    </p>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {company.tags?.slice(0, 3).map((tag, index) => (
-                                                            <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
-                                                                {tag}
-                                                            </span>
-                                                        ))}
-                                                        {(company.tags?.length || 0) > 3 && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">
-                                                                +{(company.tags?.length || 0) - 3}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                                    {company.website ? (
-                                                        <a 
-                                                            href={company.website} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
-                                                            title="访问官网"
-                                                        >
-                                                            <Globe className="w-4 h-4" />
-                                                        </a>
-                                                    ) : (
-                                                        <span className="text-slate-300">-</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                                    {company.careersPage ? (
-                                                        <a 
-                                                            href={company.careersPage} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
-                                                            title="访问招聘官网"
-                                                        >
-                                                            <ExternalLink className="w-4 h-4" />
-                                                        </a>
-                                                    ) : (
-                                                        <span className="text-slate-300">-</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
-                                                        {jobCounts[company.id]?.total || 0} 岗位
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredCompanies.map(company => (
+                                <HomeCompanyCard
+                                    key={company.id}
+                                    company={company}
+                                    jobStats={jobCounts[company.id]}
+                                    onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
+                                />
+                            ))}
                         </div>
                         
                         {/* Load More Button */}
