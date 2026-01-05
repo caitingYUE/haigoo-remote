@@ -394,6 +394,7 @@ export class DataManagementService {
     experienceLevel?: string;
     isManuallyEdited?: boolean;
     isFeatured?: boolean;
+    isApproved?: boolean;
     company?: string;
     // 新增：关键词搜索（岗位名称/公司/描述/地点/标签）
     search?: string;

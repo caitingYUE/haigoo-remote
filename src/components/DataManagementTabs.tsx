@@ -61,6 +61,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     industry?: string;
     source?: string;
     isFeatured?: boolean;
+    isApproved?: boolean;
   }>({});
 
   // Search debounce state
@@ -1207,6 +1208,22 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           )}
           {activeTab === 'processed' && (
             <div className="flex gap-2 items-center">
+              <select
+                className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={processedDataFilters.isApproved === undefined ? '' : processedDataFilters.isApproved.toString()}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setProcessedDataFilters(prev => ({
+                    ...prev,
+                    isApproved: val === '' ? undefined : val === 'true'
+                  }));
+                }}
+              >
+                <option value="">全部审核状态</option>
+                <option value="true">已审核 (Approved)</option>
+                <option value="false">待审核 (Pending)</option>
+              </select>
+
               <Tooltip content={
                 <div className="text-left space-y-2">
                   <p className="font-semibold text-indigo-200">全量数据清洗逻辑：</p>
