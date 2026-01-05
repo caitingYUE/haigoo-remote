@@ -718,8 +718,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <option value="Remotive">Remotive</option>
               <option value="Himalayas">Himalayas</option>
               <option value="NoDesk">NoDesk</option>
-              <option value="enterprise_crawler">企业爬虫</option>
-              <option value="manual">人工录入</option>
+              <option value="special:official">企业官网/认证企业</option>
+              <option value="special:manual">人工录入</option>
             </select>
 
             <input
