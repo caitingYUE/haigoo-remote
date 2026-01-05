@@ -491,6 +491,9 @@ CREATE INDEX IF NOT EXISTS idx_jobs_region ON jobs (region);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);
 CREATE INDEX IF NOT EXISTS idx_jobs_is_trusted ON jobs (is_trusted);
 
+-- 2026-01-05: Add approval workflow field
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT false;
+
 -- 2025-01-02: 增加时区和中国友好度字段
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS timezone VARCHAR(200);
 -- ALTER TABLE jobs ADD COLUMN china_friendly BOOLEAN DEFAULT false;

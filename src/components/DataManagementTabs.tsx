@@ -767,13 +767,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">发布日期</th>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位来源</th>
               <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">精选</th>
+              <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">审核</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {processedData.length === 0 ? (
               <tr>
-                <td colSpan={13} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={14} className="px-6 py-12 text-center text-slate-500">
                   <div className="flex flex-col items-center gap-2">
                     <Database className="w-8 h-8 text-slate-300" />
                     <p>暂无数据</p>
@@ -994,20 +995,30 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
 
                 {/* 12. 精选 (对应 DB is_featured) */}
-                <td className="px-3 py-2 w-16">
-                  <button
-                    onClick={() => handleToggleFeatured(job.id, !!job.isFeatured)}
-                    className={`p-1 rounded-full transition-colors ${job.isFeatured
-                      ? 'text-yellow-500 hover:bg-yellow-50'
-                      : 'text-slate-300 hover:text-yellow-500 hover:bg-slate-50'
-                      }`}
-                    title={job.isFeatured ? '取消精选' : '设为精选'}
-                  >
-                    <Star className={`w-4 h-4 ${job.isFeatured ? 'fill-current' : ''}`} />
-                  </button>
+                <td className="px-3 py-2 w-16 text-center">
+                  {job.isFeatured ? (
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-100 text-yellow-600" title="精选岗位">
+                      <Star className="w-4 h-4 fill-current" />
+                    </span>
+                  ) : (
+                    <span className="text-slate-300">-</span>
+                  )}
                 </td>
 
-                {/* 13. 操作 */}
+                {/* 13. 审核 (对应 DB is_approved) */}
+                <td className="px-3 py-2 w-16 text-center">
+                  {(job as any).isApproved ? (
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600" title="已审核通过">
+                      <CheckCircle className="w-4 h-4" />
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400" title="待审核">
+                      <Info className="w-4 h-4" />
+                    </span>
+                  )}
+                </td>
+
+                {/* 14. 操作 */}
                 <td className="px-3 py-2 w-24">
                   <div className="flex items-center gap-2">
                     <button
@@ -1302,7 +1313,8 @@ const EditJobModal: React.FC<{
     requirements: job.requirements?.join('\n') || '',
     benefits: job.benefits?.join('\n') || '',
     region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
-    isFeatured: job.isFeatured || false
+    isFeatured: job.isFeatured || false,
+    isApproved: (job as any).isApproved || false
   });
 
   // 监听job变化，更新表单数据 (当导航切换时)
@@ -1320,7 +1332,8 @@ const EditJobModal: React.FC<{
       requirements: job.requirements?.join('\n') || '',
       benefits: job.benefits?.join('\n') || '',
       region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
-      isFeatured: job.isFeatured || false
+      isFeatured: job.isFeatured || false,
+      isApproved: (job as any).isApproved || false
     });
   }, [job]);
 
@@ -1392,6 +1405,43 @@ const EditJobModal: React.FC<{
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Approval Action Bar */}
+          <div className="flex items-center justify-between bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.isApproved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+                {formData.isApproved ? <CheckCircle className="w-6 h-6" /> : <Info className="w-6 h-6" />}
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">
+                  {formData.isApproved ? '已通过审核' : '待审核'}
+                </h3>
+                <p className="text-sm text-slate-500">
+                  {formData.isApproved ? '该岗位已对外展示' : '该岗位尚未通过人工审核，仅管理员可见'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const newStatus = !formData.isApproved;
+                setFormData(prev => ({ ...prev, isApproved: newStatus }));
+                // Optionally auto-save immediately, but let's stick to explicit save for now or trigger save
+                // To match user request "click approve to show online", it should probably save.
+                // But we have a main save button. Let's just update state and let user click save, 
+                // OR make this a distinct action.
+                // The user said "add an Approve button... after approval it can be shown".
+                // Let's make it toggle the state in form, and saving the form persists it.
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                formData.isApproved 
+                  ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' 
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
+              }`}
+            >
+              {formData.isApproved ? '撤销审核' : '通过审核'}
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">岗位名称</label>
