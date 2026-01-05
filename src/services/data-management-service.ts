@@ -424,8 +424,17 @@ export class DataManagementService {
       // 添加时间戳避免缓存
       queryParams.append('_t', Date.now().toString());
 
+      // Get token for admin access
+      const token = localStorage.getItem('haigoo_auth_token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       // 调用后端API进行真正的分页查询
-      const resp = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`);
+      const resp = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`, {
+        headers
+      });
       if (!resp.ok) {
         throw new Error(`GET /api/data/processed-jobs failed: ${resp.status}`);
       }

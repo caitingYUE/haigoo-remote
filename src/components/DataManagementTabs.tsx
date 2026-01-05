@@ -708,13 +708,19 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             </select>
 
             {/* 来源筛选 */}
-            <input
-              type="text"
-              placeholder="来源 (e.g. WeWorkRemotely)"
+            <select
               value={processedDataFilters.source || ''}
               onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, source: e.target.value || undefined })}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-40"
-            />
+            >
+              <option value="">所有来源</option>
+              <option value="WeWorkRemotely">WeWorkRemotely</option>
+              <option value="Remotive">Remotive</option>
+              <option value="Himalayas">Himalayas</option>
+              <option value="NoDesk">NoDesk</option>
+              <option value="enterprise_crawler">企业爬虫</option>
+              <option value="manual">人工录入</option>
+            </select>
 
             <input
               type="text"
