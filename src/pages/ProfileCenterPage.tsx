@@ -122,7 +122,7 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
     const t = sp.get('tab') as TabKey | null
-    if (t && ['resume', 'favorites', 'feedback', 'recommend'].includes(t)) setTab(t as TabKey)
+    if (t && ['resume', 'favorites', 'feedback'].includes(t)) setTab(t as TabKey)
   }, [location.search])
 
   const switchTab = (t: TabKey) => {
