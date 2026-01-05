@@ -93,15 +93,18 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         </div>
 
                         {/* Main Heading */}
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-                            Global Remote Jobs
-                            <br className="hidden md:block" />
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 mb-4 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
                             <span className={`text-transparent bg-clip-text ${isChristmas ? 'bg-gradient-to-r from-red-600 via-orange-500 to-amber-500' : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600'}`}>
                                 精选全球优质远程岗位
                             </span>
                         </h1>
 
-                        <p className="text-lg md:text-xl text-slate-600 mb-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 leading-relaxed max-w-lg">
+                        {/* English Slogan */}
+                        <p className="text-sm md:text-base font-bold text-slate-400 tracking-[0.2em] uppercase mb-8 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 font-mono">
+                            Work your brain, leave your body to be happy
+                        </p>
+
+                        <p className="text-lg md:text-xl text-slate-600 mb-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 leading-relaxed max-w-lg font-medium">
                             人工筛选 · 真实可申 · 助力拿下满意 Offer
                         </p>
 
