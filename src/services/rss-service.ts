@@ -195,8 +195,8 @@ class RSSService {
 
     // 按顺序尝试多个代理基址：开发环境优先本地，其次线上；生产环境仅线上
     const baseCandidates = process.env.NODE_ENV === 'development'
-      ? ['http://localhost:3001', 'https://haigoo.vercel.app']
-      : ['https://haigoo.vercel.app'];
+      ? ['', 'http://localhost:3000', 'http://localhost:3001', 'https://haigooremote.com']
+      : ['', 'https://haigooremote.com'];
 
     let lastError: unknown = null;
 

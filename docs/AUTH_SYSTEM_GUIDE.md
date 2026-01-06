@@ -150,7 +150,7 @@ FROM_NAME=Haigoo Team
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 
 # 网站URL（用于邮箱验证链接）
-SITE_URL=https://haigoo.vercel.app
+SITE_URL=https://haigooremote.com
 ```
 
 ### Google OAuth 配置步骤
@@ -160,7 +160,7 @@ SITE_URL=https://haigoo.vercel.app
 3. 启用 **Google+ API**
 4. 创建 **OAuth 2.0 客户端ID**
    - 应用类型：Web应用
-   - 授权重定向URI：`https://haigoo.vercel.app`
+   - 授权重定向URI：`https://haigooremote.com`
 5. 复制 **客户端ID** 到 `GOOGLE_CLIENT_ID` 环境变量
 
 ### Gmail SMTP 配置（用于邮箱验证）

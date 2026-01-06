@@ -104,7 +104,7 @@ Branch Name: main
 ```
 Name: Haigoo Production
 Authorized JavaScript origins:
-  - https://haigoo.vercel.app
+  - https://haigooremote.com
 Authorized redirect URIs:
   - https://haigoo.vercel.app/api/auth/callback
 ```

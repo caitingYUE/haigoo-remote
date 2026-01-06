@@ -10,7 +10,7 @@
 
 ✅ 已有 Google Cloud Project（如果还没有，请先创建）  
 ✅ 开发环境 URL: `https://haigoo-remote-git-develop-caitlinyct.vercel.app`  
-✅ 生产环境 URL: `https://haigoo.vercel.app`
+✅ 生产环境 URL: `https://haigooremote.com`
 
 ---
 

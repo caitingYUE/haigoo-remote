@@ -8,14 +8,14 @@ const https = require('https');
 const http = require('http');
 
 // 配置
-const PROD_URL = 'https://haigoo.vercel.app/api/data/processed-jobs?limit=100';
+const PROD_URL = 'https://haigooremote.com/api/data/processed-jobs?limit=100';
 const DEV_URL = 'https://haigoo-remote-git-develop-caitlinyct.vercel.app/api/data/processed-jobs';
 const DATA_LIMIT = 100;
 
 console.log('=========================================');
 console.log('🔄 开始从生产环境同步数据到开发环境');
 console.log('=========================================\n');
-console.log(`源（生产）: https://haigoo.vercel.app`);
+console.log(`源（生产）: https://haigooremote.com`);
 console.log(`目标（开发）: https://haigoo-remote-git-develop-caitlinyct.vercel.app`);
 console.log(`数据量: 最多 ${DATA_LIMIT} 条\n`);
 

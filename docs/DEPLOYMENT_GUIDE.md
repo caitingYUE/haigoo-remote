@@ -122,7 +122,7 @@ git push origin develop
 
 1. **访问后台管理页面**
 ```
-https://haigoo.vercel.app/admin_team
+https://haigooremote.com/admin_team
 ```
 
 2. **处理原始数据**
@@ -161,7 +161,7 @@ https://haigoo.vercel.app/admin_team
 
 2. **手动触发定时任务**
 ```bash
-curl -X POST https://haigoo.vercel.app/api/cron/sync-jobs \
+curl -X POST https://haigooremote.com/api/cron/sync-jobs \
   -H "Authorization: Bearer your_cron_secret"
 ```
 

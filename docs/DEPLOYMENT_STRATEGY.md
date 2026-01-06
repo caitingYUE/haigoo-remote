@@ -12,7 +12,7 @@
 - **用途**: 面向真实用户的稳定版本
 - **Git 分支**: `main`
 - **Vercel 部署**: Production Deployment
-- **域名**: `haigoo.vercel.app` 或自定义域名 `haigoo.com`
+- **域名**: `haigooremote.com`
 - **数据存储**: 生产级 Redis/KV 实例
 
 ### 2. **开发环境（Development/Staging）**
@@ -79,7 +79,7 @@ feature/* (功能分支)
 | `SMTP_PASS` | 邮件密码 | `prod_password_xxx` | Production |
 | `GOOGLE_CLIENT_ID` | Google OAuth ID | `prod_google_id_xxx` | Production |
 | `NODE_ENV` | 环境标识 | `production` | Production |
-| `SITE_URL` | 站点 URL | `https://haigoo.vercel.app` | Production |
+| `SITE_URL` | 站点 URL | `https://haigooremote.com` | Production |
 
 #### **开发环境变量（Preview）**
 

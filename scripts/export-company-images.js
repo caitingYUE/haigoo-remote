@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Production API endpoint
-const API_URL = 'https://haigoo.vercel.app/api/data/trusted-companies';
+const API_URL = 'https://haigooremote.com/api/data/trusted-companies';
 
 async function fetchCompaniesFromAPI() {
     try {

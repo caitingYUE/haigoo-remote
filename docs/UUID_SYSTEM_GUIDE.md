@@ -234,7 +234,7 @@ PATCH /api/auth?action=update-profile   # 更新用户资料
 **获取当前用户：**
 ```bash
 curl -H "Authorization: Bearer {token}" \
-  https://haigoo.vercel.app/api/auth?action=me
+  https://haigooremote.com/api/auth?action=me
 ```
 
 **获取特定用户（管理员）：**

@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 // Production API endpoint - correct domain
 const API_URLS = [
-  'https://haigoo.vercel.app/api/data/trusted-companies',
+  'https://haigooremote.com/api/data/trusted-companies',
   'https://haigoo-remote.vercel.app/api/data/trusted-companies'
 ];
 

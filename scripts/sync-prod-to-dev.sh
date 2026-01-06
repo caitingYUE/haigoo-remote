@@ -6,7 +6,7 @@
 # ================================
 
 # 配置
-PROD_URL="https://haigoo.vercel.app"  # 生产环境
+PROD_URL="https://haigooremote.com"  # 生产环境
 DEV_URL="https://haigoo-remote-git-develop-caitlinyct.vercel.app"  # 开发环境
 DATA_LIMIT=100  # 复制的数据条数
 

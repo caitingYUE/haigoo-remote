@@ -8,7 +8,7 @@
 - **技术栈**: React + TypeScript + Vite + Tailwind CSS + Zustand + Vercel Functions/Edge（Express 仅用于本地开发）
 - **部署平台**: Vercel
 - **代码仓库**: https://github.com/caitingYUE/haigoo-remote
-- **在线地址**: https://haigoo.vercel.app
+- **在线地址**: https://haigooremote.com
 
 ### 核心功能
 1. **智能简历优化** - 基于AI的简历分析和优化建议
@@ -183,7 +183,7 @@ vercel --prod
 ### 部署后配置
 1. **获取部署 URL**
    ```
-   https://haigoo.vercel.app
+   https://haigooremote.com
    ```
 
 2. **API端点**

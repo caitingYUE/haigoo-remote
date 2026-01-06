@@ -96,7 +96,7 @@ git push
 ### 4. 验证部署
 
 访问以下 URL 测试：
-- `https://haigoo.vercel.app/api/health` - 检查系统状态
+- `https://haigooremote.com/api/health` - 检查系统状态
 - 上传 PDF/DOCX 简历测试解析
 
 ## 支持的格式

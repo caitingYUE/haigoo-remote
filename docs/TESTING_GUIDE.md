@@ -22,7 +22,7 @@
 ### ✅ 2. 用户注册测试
 
 **测试步骤：**
-1. 访问 `https://haigoo.vercel.app/register`
+1. 访问 `https://haigooremote.com/register`
 2. 填写测试邮箱（例如：`test@example.com`）
 3. 设置密码（至少8位，包含字母和数字）
 4. 可选：自定义用户名（不填则随机生成）
