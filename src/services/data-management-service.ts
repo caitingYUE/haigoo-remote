@@ -415,6 +415,7 @@ export class DataManagementService {
       if (filters?.company) queryParams.append('company', filters.company);
       if (filters?.search) queryParams.append('search', filters.search);
       if (filters?.isRemote !== undefined) queryParams.append('isRemote', filters.isRemote.toString());
+      if (filters?.isApproved !== undefined) queryParams.append('isApproved', filters.isApproved.toString());
       
       // 处理日期范围
       if (filters?.dateRange) {
