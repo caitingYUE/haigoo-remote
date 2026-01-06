@@ -55,13 +55,13 @@ Stripe: JD 为 null。
 AlphaSights: JD 为 null。
 原因: 官网高度动态化（SPA/React），Cheerio 无法处理动态 DOM。
 4. 问题总结与建议 (Issues & Recommendations)
-核心问题 (Key Issues)
-优先级	问题描述	涉及数据源	影响
-P0	公司名解析失败	Himalayas (RSS)	100% 的 Unknown Company 来源，必须修复。
-P1	JD 抓取失败/为空	Stripe, AlphaSights	职位无法投递。
-P1	JD 抓取错误 (非正文)	MongoDB, Docker	抓取到页脚或营销文案，误导用户。
-P1	数据管道阻塞	Remotive (RSS)	新职位无法入库。
-P2	仅抓取元数据	Kraken	信息量过低。
+58→核心问题 (Key Issues)
+59→优先级	问题描述	涉及数据源	影响	状态
+60→P0	公司名解析失败	Himalayas (RSS)	100% 的 Unknown Company 来源，必须修复。	[已修复] - stream-process-rss.js 添加了 URL 解析逻辑
+61→P1	JD 抓取失败/为空	Stripe, AlphaSights	职位无法投递。	待处理
+62→P1	JD 抓取错误 (非正文)	MongoDB, Docker	抓取到页脚或营销文案，误导用户。	待处理
+63→P1	数据管道阻塞	Remotive (RSS)	新职位无法入库。	[已修复] - 移除了 stream-process-rss.js 中的安全限制
+64→P2	仅抓取元数据	Kraken	信息量过低。	待处理
 改进建议 (Action Items)
 Himalayas 专项修复: 引入 NLP 或通过 title 分割规则提取公司名。
 爬虫智能升级:
