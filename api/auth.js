@@ -126,7 +126,12 @@ async function handleRegister(req, res) {
     await sendVerificationEmail(email, finalUsername, verificationToken)
   }
 
-  const token = generateToken({ userId, email })
+  const token = generateToken({ 
+    userId, 
+    email,
+    role: user.roles?.admin ? 'admin' : 'user',
+    isAdmin: !!user.roles?.admin
+  })
   return res.status(201).json({
     success: true,
     token,
@@ -220,7 +225,12 @@ async function handleLogin(req, res) {
 
   console.log(`[auth] User logged in: ${email}`)
 
-  const token = generateToken({ userId: user.user_id, email: user.email })
+  const token = generateToken({ 
+    userId: user.user_id, 
+    email: user.email,
+    role: user.roles?.admin ? 'admin' : 'user',
+    isAdmin: !!user.roles?.admin
+  })
   return res.status(200).json({
     success: true,
     token,
@@ -278,7 +288,12 @@ async function handleGoogleLogin(req, res) {
     await saveUser(user)
   }
 
-  const token = generateToken({ userId: user.user_id, email: user.email })
+  const token = generateToken({ 
+    userId: user.user_id, 
+    email: user.email,
+    role: user.roles?.admin ? 'admin' : 'user',
+    isAdmin: !!user.roles?.admin
+  })
   return res.status(200).json({
     success: true,
     token,
