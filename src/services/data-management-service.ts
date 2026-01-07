@@ -1,7 +1,5 @@
-import { ClassificationService } from './classification-service';
 import { Job, SyncStatus, RSSSource, SyncError, JobCategory } from '../types/rss-types';
-import { RSSFeedItem, rssService } from './rss-service';
-import { CompanyService } from './company-service';
+import { rssService } from './rss-service';
 
 // 原始RSS数据接口
 export interface RawRSSData {
@@ -63,7 +61,7 @@ export class DataManagementService {
   private readonly RETENTION_DAYS = 7;
 
   /**
-   * 同步所有RSS源数据
+   * 同步所有RSS源数据 (Backend-driven via SSE)
    * @param skipProcessing 是否跳过处理步骤（仅拉取原始数据）
    * @param onStatusUpdate 可选的状态更新回调
    */
@@ -81,251 +79,116 @@ export class DataManagementService {
       errors: []
     };
 
-    try {
-      const sources = rssService.getRSSSources();
-      syncStatus.totalSources = sources.length;
+    if (onStatusUpdate) onStatusUpdate('正在连接服务器启动同步任务...');
 
-      console.log(`开始同步 ${sources.length} 个RSS源... (跳过处理: ${skipProcessing})`);
-      if (onStatusUpdate) onStatusUpdate(`正在拉取 ${sources.length} 个RSS数据源...`);
+    return new Promise((resolve, reject) => {
+        // Use daily-ingest task which runs fetch and process in sequence
+        // Note: skipProcessing param is currently ignored by the backend daily-ingest task, 
+        // which always runs both. We can enhance backend later if needed.
+        const eventSource = new EventSource('/api/cron/index?task=daily-ingest');
+        
+        eventSource.onopen = () => {
+            console.log('[Sync] SSE connection opened');
+        };
 
-      // 并发同步所有RSS源
-      const syncPromises = sources.map(async (source, index) => {
-        try {
-          console.log(`[${index + 1}/${sources.length}] 同步 ${source.name} - ${source.category}`);
-          
-          const rawData = await this.fetchAndStoreRawData(source);
+        eventSource.onmessage = (event) => {
+            // Generic message handler if needed
+        };
 
-          let processedJobs: ProcessedJobData[] = [];
-          if (!skipProcessing) {
-            processedJobs = await this.processRawData(rawData);
-            syncStatus.newJobsAdded += processedJobs.length;
-          }
+        // Listen for specific events
+        eventSource.addEventListener('sequence_start', (e: any) => {
+            try {
+                const data = JSON.parse(e.data);
+                if (onStatusUpdate) onStatusUpdate(data.message);
+                console.log('[Sync] Sequence Start:', data);
+            } catch (err) {}
+        });
 
-          syncStatus.successfulSources++;
-          syncStatus.totalJobsProcessed += rawData.length;
+        eventSource.addEventListener('task_start', (e: any) => {
+            try {
+                const data = JSON.parse(e.data);
+                if (onStatusUpdate) onStatusUpdate(`正在执行: ${data.task === 'stream-fetch-rss' ? '抓取RSS' : '处理数据'}`);
+                console.log('[Sync] Task Start:', data);
+            } catch (err) {}
+        });
 
-          console.log(`✅ ${source.name} - ${source.category}: ${rawData.length} 原始数据` +
-            (skipProcessing ? '' : `, ${processedJobs.length} 处理后职位`));
-        } catch (error) {
-          syncStatus.failedSources++;
-          const syncError: SyncError = {
-            source: source.name,
-            url: source.url,
-            error: error instanceof Error ? error.message : '未知错误',
-            timestamp: new Date()
-          };
-          syncStatus.errors.push(syncError);
-          console.error(`❌ ${source.name} - ${source.category}: ${syncError.error}`);
-        }
-      });
+        eventSource.addEventListener('fetch_complete', (e: any) => {
+             try {
+                const data = JSON.parse(e.data);
+                syncStatus.totalSources = data.fetchedCount || 0; // Approx
+                if (onStatusUpdate) onStatusUpdate(data.message);
+            } catch (err) {}
+        });
 
-      await Promise.all(syncPromises);
+        eventSource.addEventListener('save_complete', (e: any) => {
+             try {
+                const data = JSON.parse(e.data);
+                if (data.savedCount) {
+                    syncStatus.newJobsAdded += data.savedCount; // Use this for new jobs or raw items depending on context
+                }
+                if (onStatusUpdate) onStatusUpdate(data.message);
+            } catch (err) {}
+        });
 
-      // 触发服务端全量职位数据重新解析（地点/薪资增强）
-      // 这将涵盖 RSS 职位以及 Crawler 职位
-      if (!skipProcessing) {
-        try {
-          console.log('触发服务端全量职位数据重新解析（地点/薪资增强）...');
-          if (onStatusUpdate) onStatusUpdate('正在进行AI深度解析与数据清洗 (可能需要1-2分钟)...');
-          
-          const reprocessResp = await fetch('/api/data/processed-jobs?action=reprocess', { method: 'POST' });
-          const reprocessResult = await reprocessResp.json();
-          console.log('全量职位重新解析完成:', reprocessResult);
-          
-          if (reprocessResult.updated > 0) {
-            // 注意：这里可能会重复计算更新数，但作为统计参考是可以的
-            syncStatus.updatedJobs += reprocessResult.updated;
-            syncStatus.aiUpdatedJobs = (syncStatus.aiUpdatedJobs || 0) + (reprocessResult.ai_updated || 0);
-            const regexUpdates = (reprocessResult.updated || 0) - (reprocessResult.ai_updated || 0);
-            syncStatus.regexUpdatedJobs = (syncStatus.regexUpdatedJobs || 0) + (regexUpdates > 0 ? regexUpdates : 0);
-          }
-        } catch (e) {
-          console.error('全量职位重新解析失败:', e);
-          syncStatus.errors.push({
-            source: 'System',
-            url: '',
-            error: `全量重解析失败: ${e instanceof Error ? e.message : String(e)}`,
-            timestamp: new Date()
-          });
-        }
-      }
+        eventSource.addEventListener('item_processing', (e: any) => {
+             try {
+                const data = JSON.parse(e.data);
+                if (onStatusUpdate && data.message) onStatusUpdate(data.message);
+            } catch (err) {}
+        });
 
-      // 清理过期数据
-      if (onStatusUpdate) onStatusUpdate('正在清理过期数据...');
-      await this.cleanupOldData();
+        eventSource.addEventListener('error', (e: any) => {
+             try {
+                const data = JSON.parse(e.data);
+                console.error('[Sync] Error:', data);
+                syncStatus.errors.push({
+                    source: 'Backend',
+                    url: '',
+                    error: data.message || data.error,
+                    timestamp: new Date()
+                });
+                // Don't close immediately on task error, sequence might continue? 
+                // Actually daily-ingest sequence might fail if one task fails.
+                // But let's wait for sequence_complete or close on fatal error.
+            } catch (err) {}
+        });
 
-      syncStatus.isRunning = false;
-      syncStatus.nextSync = new Date(Date.now() + 60 * 60 * 1000); // 1小时后
+        eventSource.addEventListener('sequence_complete', (e: any) => {
+            try {
+                const data = JSON.parse(e.data);
+                console.log('[Sync] Sequence Complete:', data);
+                if (onStatusUpdate) onStatusUpdate('同步任务全部完成');
+                syncStatus.isRunning = false;
+                eventSource.close();
+                resolve(syncStatus);
+            } catch (err) {
+                eventSource.close();
+                resolve(syncStatus);
+            }
+        });
 
-      console.log(`🎉 同步完成: ${syncStatus.successfulSources}/${syncStatus.totalSources} 成功, ${syncStatus.totalJobsProcessed} 个职位处理`);
-      if (onStatusUpdate) onStatusUpdate('同步完成！');
-
-    } catch (error) {
-      syncStatus.isRunning = false;
-      const syncError: SyncError = {
-        source: 'System',
-        url: '',
-        error: `全局同步错误: ${error instanceof Error ? error.message : '未知错误'}`,
-        timestamp: new Date()
-      };
-      syncStatus.errors.push(syncError);
-      console.error('同步过程中发生错误:', error);
-      if (onStatusUpdate) onStatusUpdate('同步失败，请查看控制台日志');
-    }
-
-    return syncStatus;
+        eventSource.onerror = (err) => {
+            console.error('[Sync] SSE Connection Error:', err);
+            // Check readyState. If CLOSED (2), it's done.
+            if (eventSource.readyState === EventSource.CLOSED) {
+                // Already handled
+            } else {
+                eventSource.close();
+                // If we haven't resolved yet
+                if (syncStatus.isRunning) {
+                    syncStatus.isRunning = false;
+                    syncStatus.errors.push({
+                        source: 'Connection',
+                        url: '',
+                        error: '连接中断',
+                        timestamp: new Date()
+                    });
+                    reject(new Error('SSE Connection Error'));
+                }
+            }
+        };
+    });
   }
-
-  /**
-   * 获取并存储原始RSS数据
-   */
-  private async fetchAndStoreRawData(source: RSSSource): Promise<RawRSSData[]> {
-    try {
-      const xmlData = await rssService.fetchRSSFeed(source.url);
-      const items = rssService.parseRSSFeed(xmlData, source);
-
-      const rawDataList: RawRSSData[] = items.map(item => ({
-        id: this.generateRawDataId(item.link, source.name),
-        source: source.name,
-        category: source.category,
-        url: source.url,
-        title: item.title,
-        description: item.description,
-        link: item.link,
-        pubDate: item.pubDate,
-        rawContent: JSON.stringify(item),
-        fetchedAt: new Date(),
-        status: 'raw'
-      }));
-
-      // 存储原始数据（增量追加）
-      await this.saveRawData(rawDataList, 'append');
-
-      return rawDataList;
-    } catch (error) {
-      console.error(`获取RSS数据失败 ${source.name}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 处理原始数据为标准职位格式
-   */
-  private async processRawData(rawDataList: RawRSSData[]): Promise<ProcessedJobData[]> {
-    const processedJobs: ProcessedJobData[] = [];
-
-    for (const rawData of rawDataList) {
-      try {
-        const rssItem: RSSFeedItem = JSON.parse(rawData.rawContent);
-
-        // 使用现有的转换逻辑（现在是异步的）
-        const job = await this.convertRSSItemToProcessedJob(rssItem, rawData);
-
-        processedJobs.push(job);
-
-        // 更新原始数据状态
-        rawData.status = 'processed';
-      } catch (error) {
-        rawData.status = 'error';
-        rawData.processingError = error instanceof Error ? error.message : '处理失败';
-        console.error(`处理原始数据失败 ${rawData.id}:`, error);
-      }
-    }
-
-    // 保存处理后的数据（增量追加）
-    await this.saveProcessedJobs(processedJobs, 'append');
-
-    return processedJobs;
-  }
-
-  /**
-   * 转换RSS项目为处理后的职位数据
-   */
-  private async convertRSSItemToProcessedJob(item: RSSFeedItem, rawData: RawRSSData): Promise<ProcessedJobData> {
-    // 基础职位信息
-    const baseJob: Job = {
-      id: this.generateJobId(item.link, rawData.source),
-      title: item.title,
-      company: item.company || this.extractCompany(item.title, item.description),
-      description: item.description,
-      location: item.location || this.extractLocation(item.description),
-      salary: item.salary,
-      jobType: (item.jobType as Job['jobType']) || 'full-time',
-      experienceLevel: item.experienceLevel || this.determineExperienceLevel(item.title, item.description),
-      publishedAt: new Date(item.pubDate).toISOString(),
-      source: rawData.source,
-      url: item.link,
-      companyWebsite: this.extractCompanyWebsite(item.description, item.link),
-      category: this.categorizeJob(item.title, item.description, rawData.category),
-      tags: this.extractTags(item.title, item.description),
-      requirements: this.extractRequirements(item.description),
-      benefits: this.extractBenefits(item.description),
-      remoteLocationRestriction: item.remoteLocationRestriction,
-      isRemote: this.isRemoteJob(item.title, item.description),
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    // Generate AI summary (30-50 characters)
-    try {
-      const summaryResult = await this.generateJobSummary(
-        baseJob.title,
-        baseJob.description || '',
-        baseJob.requirements
-      );
-      if (summaryResult) {
-        baseJob.summary = summaryResult;
-      }
-    } catch (error) {
-      console.warn(`Failed to generate summary for job ${baseJob.id}:`, error);
-      // Continue without summary - it's optional
-    }
-
-    // 扩展为处理后的职位数据
-    const processedJob: ProcessedJobData = {
-      ...baseJob,
-      rawDataId: rawData.id,
-      processedAt: new Date(),
-      processingVersion: '1.0.0',
-      isManuallyEdited: false,
-      editHistory: []
-    };
-
-    return processedJob;
-  }
-
-  /**
-   * 生成岗位简介（30-50字）
-   */
-  private async generateJobSummary(
-    title: string,
-    description: string,
-    responsibilities: string[]
-  ): Promise<string | undefined> {
-    try {
-      const response = await fetch('/api/ai?action=generate-job-summary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          description,
-          responsibilities
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Summary API failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.success ? data.summary : undefined;
-    } catch (error) {
-      console.error('Generate job summary error:', error);
-      return undefined;
-    }
-  }
-
 
   /**
    * 获取原始RSS数据（分页查询）
@@ -572,32 +435,12 @@ export class DataManagementService {
   }
 
   /**
-   * 重新处理所有职位的URL
+   * 重新处理所有职位的URL (Deprecated)
+   * Functionality should be moved to backend
    */
   async reprocessJobUrls(): Promise<{ updated: number }> {
-    try {
-      const allJobs = await this.loadProcessedJobs();
-      let updatedCount = 0;
-
-      const updatedJobs = allJobs.map(job => {
-        const url = CompanyService.extractCompanyUrlFromDescription(job.description || '');
-        // 如果提取到了URL，且与当前不同（或者当前为空），则更新
-        if (url && url !== job.companyWebsite) {
-          updatedCount++;
-          return { ...job, companyWebsite: url };
-        }
-        return job;
-      });
-
-      if (updatedCount > 0) {
-        await this.saveProcessedJobs(updatedJobs, 'replace');
-      }
-
-      return { updated: updatedCount };
-    } catch (error) {
-      console.error('重新处理URL失败:', error);
-      return { updated: 0 };
-    }
+    console.warn('reprocessJobUrls is deprecated and disabled in frontend. Please implement backend task.');
+    return { updated: 0 };
   }
 
   /**
@@ -627,38 +470,14 @@ export class DataManagementService {
         sources: sourceStats
       };
     } catch (error) {
-      console.warn('API获取存储统计失败，回退本地计算:', error);
-      try {
-        const [rawData, processedJobs] = await Promise.all([
-          this.loadRawData(),
-          this.loadProcessedJobs()
-        ]);
-        const sources = rssService.getRSSSources();
-        const sourceStats = sources.map(source => {
-          const rawCount = rawData.filter(item => item.source === source.name && item.category === source.category).length;
-          const processedCount = processedJobs.filter(job => job.source === source.name).length;
-          const errorCount = rawData.filter(item => item.source === source.name && item.status === 'error').length;
-          const lastSyncItems = rawData.filter(item => item.source === source.name && item.category === source.category);
-          const lastSync = lastSyncItems.length > 0 ? new Date(Math.max(...lastSyncItems.map(item => new Date(item.fetchedAt).getTime()))) : undefined;
-          return { name: `${source.name} - ${source.category}`, rawCount, processedCount, errorCount, lastSync };
-        });
-        return {
-          totalRawData: rawData.length,
-          totalProcessedJobs: processedJobs.length,
-          storageSize: JSON.stringify(rawData).length + JSON.stringify(processedJobs).length,
-          dataRetentionDays: this.RETENTION_DAYS,
-          sources: sourceStats
-        };
-      } catch (fallbackError) {
-        console.error('获取存储统计失败（回退也失败）:', fallbackError);
-        return {
+      console.warn('API获取存储统计失败:', error);
+       return {
           totalRawData: 0,
           totalProcessedJobs: 0,
           storageSize: 0,
           dataRetentionDays: this.RETENTION_DAYS,
           sources: []
         };
-      }
     }
   }
 
@@ -669,8 +488,6 @@ export class DataManagementService {
     try {
       console.log('🧹 开始清理过期数据 (调用后端API)...');
       
-      // 获取当前所有 RSS 源名称，限制清理范围仅为 RSS 数据
-      // 这样可以保护 Crawler 数据和手动上传的数据不被误删
       const sources = rssService.getRSSSources().map(s => s.name);
 
       const resp = await fetch(`/api/data/processed-jobs?action=cleanup&days=${this.RETENTION_DAYS}`, {
@@ -686,50 +503,12 @@ export class DataManagementService {
         console.warn('清理过期数据警告:', result.error || '未知错误');
       }
       
-      // 注意：原始 RSS 数据 (raw_rss) 的清理逻辑暂时保留或也需要迁移到后端
-      // 目前 raw_rss 表可能没有对应的 cleanup action，为了简单起见，
-      // 如果 raw_rss 不重要，我们可以暂时不清理，或者以后添加专门的清理 endpoint。
-      // 鉴于用户主要关心 job 数据被误删，我们先确保 jobs 表的安全。
-      
     } catch (error) {
       console.error('清理过期数据失败:', error);
     }
   }
 
   // 私有辅助方法
-  private async saveRawData(data: RawRSSData[], mode: 'append' | 'replace' = 'append'): Promise<void> {
-    try {
-      const CHUNK_SIZE = 200
-      for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-        const chunk = data.slice(i, i + CHUNK_SIZE)
-        const resp = await fetch('/api/data/raw-rss', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items: chunk, mode })
-        })
-        if (!resp.ok) {
-          const text = await resp.text()
-          throw new Error(`POST /api/data/raw-rss failed: ${resp.status} ${text}`)
-        }
-      }
-    } catch (error) {
-      console.error('保存原始数据到API失败:', error)
-      throw error
-    }
-  }
-
-  private async loadRawData(): Promise<RawRSSData[]> {
-    try {
-      const resp = await fetch(`/api/data/raw-rss?page=1&limit=10000&_t=${Date.now()}`)
-      if (!resp.ok) throw new Error(`GET /api/data/raw-rss failed: ${resp.status}`)
-      const json = await resp.json()
-      return Array.isArray(json?.items) ? json.items : (Array.isArray(json?.data) ? json.data : [])
-    } catch (error) {
-      console.error('加载原始数据API失败:', error)
-      return []
-    }
-  }
-
   private async saveProcessedJobs(jobs: ProcessedJobData[], mode: 'append' | 'replace' = 'append'): Promise<void> {
     try {
       // 分片上传，避免 413（请求体过大）
@@ -755,184 +534,6 @@ export class DataManagementService {
     }
   }
 
-  private async loadProcessedJobs(): Promise<ProcessedJobData[]> {
-    try {
-      const resp = await fetch(`/api/data/processed-jobs?page=1&limit=1000&_t=${Date.now()}`)
-      if (!resp.ok) {
-        throw new Error(`GET /api/data/processed-jobs failed: ${resp.status}`)
-      }
-      const json = await resp.json()
-      return Array.isArray(json?.jobs) ? json.jobs : []
-    } catch (error) {
-      console.error('加载处理后数据API失败:', error)
-      throw error
-    }
-  }
-
-  // 辅助方法（从job-aggregator复制）
-  private generateRawDataId(url: string, source: string): string {
-    return `raw_${this.simpleHash(url + source)}`;
-  }
-
-  private generateJobId(url: string, source: string): string {
-    return `job_${this.simpleHash(url + source)}`;
-  }
-
-  private simpleHash(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash).toString(36);
-  }
-
-  private extractCompany(title: string, description: string): string {
-    // 简化的公司提取逻辑
-    const companyMatch = title.match(/at\s+([^-,\n]+)/i) ||
-      description.match(/Company:\s*([^,\n]+)/i) ||
-      description.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+is\s+(?:looking|hiring|seeking)/i);
-
-    return companyMatch ? companyMatch[1].trim() : 'Unknown Company';
-  }
-
-  private extractLocation(description: string): string {
-    const locationMatch = description.match(/Location:\s*([^,\n]+)/i) ||
-      description.match(/Based in\s+([^,\n]+)/i) ||
-      description.match(/Remote.*?from\s+([^,\n]+)/i);
-
-    return locationMatch ? locationMatch[1].trim() : 'Remote';
-  }
-
-  private extractCompanyWebsite(description?: string, jobLink?: string): string | undefined {
-    if (!description) return undefined;
-    // 1) 先尝试从“公司官网/Website/Official”等标签附近提取URL
-    const labeledUrlRegex = /(?:公司官网|企业官网|公司网站|官网|company\s*(?:website|site|page)?|official\s*(?:site|page)|website)\s*[:：]?\s*(https?:\/\/[^\s"'<)\]\u3002\uFF0C\uFF1B]+)/i;
-    const labeledMatch = description.match(labeledUrlRegex);
-    const cleanUrl = (u: string): string => {
-      // 去除结尾多余标点或括号/方括号
-      return u.replace(/[\)\]\.,;:!\u3002\uFF0C\uFF1B]+$/, '');
-    }
-    if (labeledMatch && labeledMatch[1]) {
-      return cleanUrl(labeledMatch[1]);
-    }
-
-    // 2) 否则匹配所有URL，按域名和路径进行优先级筛选
-    const urlRegex = /(https?:\/\/[^\s"'<)\]\u3002\uFF0C\uFF1B]+)/g;
-    const rawMatches = description.match(urlRegex) || [];
-    if (rawMatches.length === 0) return undefined;
-    const jobDomain = jobLink ? this.getDomain(jobLink) : undefined;
-    const excludeDomains = new Set([
-      'weworkremotely.com', 'remotive.com', 'himalayas.app', 'nodesk.co', 'remoteok.com', 'indeed.com', 'linkedin.com',
-      'lever.co', 'greenhouse.io', 'workable.com', 'ashbyhq.com', 'jobs.github.com', 'stackoverflow.com', 'angel.co',
-      'medium.com', 'twitter.com', 'facebook.com', 'instagram.com', 'youtube.com', 't.co', 'bit.ly', 'goo.gl'
-    ]);
-
-    // 评分：排除聚合/社交域，排除与jobLink相同域；优先路径短且无查询参数
-    const candidates = rawMatches
-      .map(u => cleanUrl(u))
-      .map(u => {
-        const hostname = this.getDomain(u) || '';
-        let score = 0;
-        // 排除项给负分
-        if (excludeDomains.has(hostname)) score -= 100;
-        if (jobDomain && hostname === jobDomain) score -= 50;
-        try {
-          const parsed = new URL(u);
-          const pathSegs = parsed.pathname.split('/').filter(Boolean).length;
-          const hasQuery = !!parsed.search;
-          // 路径越短、无查询分数越高
-          score += (5 - Math.min(pathSegs, 5));
-          if (!hasQuery) score += 2;
-        } catch { }
-        return { url: u, hostname, score };
-      })
-      .sort((a, b) => b.score - a.score);
-
-    // 返回最高分候选
-    return candidates[0]?.url || rawMatches[0];
-  }
-
-  private getDomain(url: string): string | undefined {
-    try {
-      const { hostname } = new URL(url);
-      return hostname.replace(/^www\./, '');
-    } catch {
-      return undefined;
-    }
-  }
-
-  private isRemoteJob(title: string, description: string): boolean {
-    const remoteKeywords = ['remote', 'work from home', 'distributed', 'anywhere'];
-    const text = (title + ' ' + description).toLowerCase();
-    return remoteKeywords.some(keyword => text.includes(keyword));
-  }
-
-  private determineExperienceLevel(title: string, description: string): 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' {
-    return ClassificationService.determineExperienceLevel(title, description);
-  }
-
-  private categorizeJob(title: string, description: string, sourceCategory: string): JobCategory {
-    // 优先使用 ClassificationService 进行分类
-    const category = ClassificationService.classifyJob(title, description);
-    if (category !== '其他') {
-      return category;
-    }
-
-    // 尝试匹配源分类到标准分类
-    const categoryMap: Record<string, JobCategory> = {
-      'tech': '后端开发', // 默认为后端，或者泛指开发
-      'software engineering': '后端开发',
-      'web development': '前端开发',
-      'design': 'UI/UX设计',
-      'marketing': '市场营销',
-      'sales': '销售',
-      'product': '产品经理',
-      'data': '数据分析',
-      'customer support': '客户服务',
-      'devops': '运维/SRE'
-    };
-
-    const mappedCategory = categoryMap[sourceCategory.toLowerCase()];
-    return mappedCategory || '其他';
-  }
-
-  private extractTags(title: string, description: string): string[] {
-    const techKeywords = [
-      'javascript', 'typescript', 'react', 'vue', 'angular', 'node.js', 'python', 'java',
-      'go', 'rust', 'php', 'ruby', 'swift', 'kotlin', 'flutter', 'react native',
-      'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'jenkins',
-      'mongodb', 'postgresql', 'mysql', 'redis', 'elasticsearch'
-    ];
-
-    const text = (title + ' ' + description).toLowerCase();
-    return techKeywords.filter(keyword => text.includes(keyword));
-  }
-
-  private extractRequirements(description: string): string[] {
-    const requirementSection = description.match(/(?:requirements?|qualifications?|skills?):?\s*(.*?)(?:\n\n|$)/is);
-    if (requirementSection) {
-      return requirementSection[1]
-        .split(/[•\-\n]/)
-        .map(req => req.trim())
-        .filter(req => req.length > 10)
-        .slice(0, 5);
-    }
-    return [];
-  }
-
-  private extractBenefits(description: string): string[] {
-    const benefitSection = description.match(/(?:benefits?|perks?|we offer):?\s*(.*?)(?:\n\n|$)/is);
-    if (benefitSection) {
-      return benefitSection[1]
-        .split(/[•\-\n]/)
-        .map(benefit => benefit.trim())
-        .filter(benefit => benefit.length > 5)
-        .slice(0, 5);
-    }
-    return [];
-  }
 }
 
 // 导出单例实例

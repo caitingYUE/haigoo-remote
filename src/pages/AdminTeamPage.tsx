@@ -32,8 +32,8 @@ import {
   Mail
 } from 'lucide-react';
 import { JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
-import { jobAggregator } from '../services/job-aggregator';
 import { rssService } from '../services/rss-service';
+import { dataManagementService } from '../services/data-management-service';
 import DataManagementTabs from '../components/DataManagementTabs';
 import UserManagementPage from './UserManagementPage';
 import AdminCompanyManagementPage from './AdminCompanyManagementPage';
@@ -242,7 +242,7 @@ const AdminTeamPage: React.FC = () => {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await jobAggregator.syncAllJobs();
+      await dataManagementService.syncAllRSSData(false);
       await loadData();
     } catch (error) {
       console.error('同步失败:', error);

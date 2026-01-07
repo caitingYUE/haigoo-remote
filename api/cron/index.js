@@ -111,8 +111,7 @@ async function runSequence(req, mainRes, tasks) {
   console.log(`[CronSequence] Starting sequence with ${tasks.length} tasks...`);
 
   // Send sequence start event
-  mainRes.write(`event: sequence_start
-data: ${JSON.stringify({
+  mainRes.write(`event: sequence_start\ndata: ${JSON.stringify({
     type: 'sequence_start',
     message: `开始执行定时任务序列，共 ${tasks.length} 个任务`,
     tasks: tasks.map(t => t.name),
