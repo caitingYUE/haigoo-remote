@@ -122,10 +122,10 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
             >
                <div className="flex flex-col sm:flex-row p-4 gap-4">
                   {/* Left: Company Logo & Name (Redesigned like Fig 2) */}
-                  <div className="hidden sm:flex flex-col items-center justify-center w-28 h-28 flex-shrink-0 bg-slate-50 rounded-lg border border-slate-100 overflow-hidden relative group-hover:border-indigo-100 transition-colors">
+                  <div className="hidden sm:flex flex-col items-center justify-between w-28 h-28 flex-shrink-0 bg-slate-50 rounded-lg border border-slate-100 overflow-hidden relative group-hover:border-indigo-100 transition-colors p-1">
                      {job.logo ? (
                         <>
-                           <div className="flex-1 w-full flex items-center justify-center p-2">
+                           <div className="flex-1 w-full flex items-center justify-center min-h-0 p-1">
                               <img
                                  src={job.logo}
                                  alt={job.company}
@@ -135,13 +135,10 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                                     const target = e.target as HTMLImageElement;
                                     target.style.display = 'none';
                                     target.parentElement?.classList.add('hidden');
-                                    // Logic to show text fallback is handled by parent state or conditional rendering, 
-                                    // but here simpler to just hide img and let text show? 
-                                    // Actually, let's keep it simple: if error, hide img.
                                  }}
                               />
                            </div>
-                           <span className="text-xs font-bold text-slate-700 text-center w-full px-1 pb-2 truncate" title={job.translations?.company || job.company}>
+                           <span className="text-xs font-bold text-slate-700 text-center w-full px-1 pb-1 truncate flex-shrink-0" title={job.translations?.company || job.company}>
                               {job.translations?.company || job.company}
                            </span>
                         </>
@@ -178,7 +175,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            {/* Source Badges */}
                            {sourceType === 'referral' && (
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-600">
-                                 官方内推
+                                 Haigoo内推
                               </span>
                            )}
                         </div>
@@ -233,27 +230,28 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   </div>
 
                   {/* Right: Salary, Date & Action */}
-                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center min-w-[140px] pl-4 border-l border-slate-100 border-dashed sm:border-l-0 sm:pl-0 gap-1">
-                     {/* Salary */}
-                     <div className="text-right">
+                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between min-w-[140px] pl-4 border-l border-slate-100 border-dashed sm:border-l-0 sm:pl-0 gap-1 sm:self-stretch">
+                     {/* Top: Publish Date & Match Score */}
+                     <div className="flex flex-col items-end gap-1">
+                        <div className="text-[10px] text-slate-400 font-medium">
+                           {DateFormatter.formatPublishTime(job.publishedAt)}
+                        </div>
+                        {matchScore !== undefined && matchScore > 0 && (
+                           <div className="flex items-center justify-end gap-1">
+                              <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                              <span className="text-xs font-bold text-amber-600">
+                                 {matchScore}%
+                              </span>
+                           </div>
+                        )}
+                     </div>
+
+                     {/* Bottom: Salary */}
+                     <div className="text-right sm:mt-auto">
                         <div className={`text-lg leading-tight ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
                            {formatSalary(job.salary)}
                         </div>
                      </div>
-                     
-                     {/* Publish Date (Moved here) */}
-                     <div className="text-[10px] text-slate-400 font-medium mt-1 mb-1">
-                        {DateFormatter.formatPublishTime(job.publishedAt)}
-                     </div>
-                     
-                     {matchScore !== undefined && matchScore > 0 && (
-                        <div className="flex items-center justify-end gap-1 mt-1">
-                           <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
-                           <span className="text-xs font-bold text-amber-600">
-                              {matchScore}%
-                           </span>
-                        </div>
-                     )}
                   </div>
                </div>
             </div>

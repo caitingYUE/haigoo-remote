@@ -514,7 +514,20 @@ export default function JobsPage() {
     canonicalJobs.forEach(j => {
       if (j.type) types.add(j.type)
     })
-    return Array.from(types).sort().map(t => ({ label: t, value: t }))
+    
+    const typeMap: Record<string, string> = {
+      'full-time': '全职',
+      'part-time': '兼职',
+      'contract': '合同',
+      'freelance': '自由职业',
+      'internship': '实习',
+      'temporary': '临时'
+    };
+
+    return Array.from(types).sort().map(t => ({ 
+      label: typeMap[t.toLowerCase()] || t, 
+      value: t 
+    }))
   }, [canonicalJobs])
 
   const timezoneOptions = useMemo(() => {

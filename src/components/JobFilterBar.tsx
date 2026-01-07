@@ -282,8 +282,8 @@ export default function JobFilterBar({
           
           {/* Role (Category) */}
           <FilterDropdown
-            label="Role"
-            activeLabel={getActiveLabel('category', categoryOptions, 'Role')}
+            label="角色"
+            activeLabel={getActiveLabel('category', categoryOptions, '角色')}
             isActive={(filters.category?.length || 0) > 0}
             isOpen={openDropdown === 'category'}
             onToggle={() => toggleDropdown('category')}
@@ -324,8 +324,8 @@ export default function JobFilterBar({
 
           {/* Location */}
           <FilterDropdown
-            label="Location"
-            activeLabel={getActiveLabel('location', locationOptions, 'Location')}
+            label="地点"
+            activeLabel={getActiveLabel('location', locationOptions, '地点')}
             isActive={(filters.location?.length || 0) > 0}
             isOpen={openDropdown === 'location'}
             onToggle={() => toggleDropdown('location')}
@@ -344,8 +344,8 @@ export default function JobFilterBar({
 
           {/* Job Type (Renamed from Commitment) */}
           <FilterDropdown
-            label="Job Type"
-            activeLabel={getActiveLabel('jobType', jobTypeOptions, 'Job Type')}
+            label="工作类型"
+            activeLabel={getActiveLabel('jobType', jobTypeOptions, '工作类型')}
             isActive={(filters.jobType?.length || 0) > 0}
             isOpen={openDropdown === 'jobType'}
             onToggle={() => toggleDropdown('jobType')}
@@ -364,8 +364,8 @@ export default function JobFilterBar({
 
            {/* Industry */}
            <FilterDropdown
-            label="Industry"
-            activeLabel={getActiveLabel('industry', industryOptions, 'Industry')}
+            label="行业"
+            activeLabel={getActiveLabel('industry', industryOptions, '行业')}
             isActive={(filters.industry?.length || 0) > 0}
             isOpen={openDropdown === 'industry'}
             onToggle={() => toggleDropdown('industry')}
