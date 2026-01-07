@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { Briefcase, Globe, ChevronRight, Sparkles, Check, Target, Share2 } from 'lucide-react';
+import { MapPin, ChevronRight, Sparkles, Check, Share2, Gem, Clock } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { stripMarkdown } from '../utils/text-formatter';
@@ -123,7 +123,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                <div className="flex flex-col sm:flex-row p-4 gap-4">
                   {/* Left: Company Logo & Name (Redesigned like Fig 2) */}
                   <div className="hidden sm:flex flex-col items-center justify-between p-3 w-28 h-28 flex-shrink-0 bg-slate-50 rounded-lg border border-slate-100">
-                     <span className="text-xs font-bold text-slate-700 text-center leading-tight line-clamp-2 w-full mb-1" title={job.translations?.company || job.company}>
+                     <span className="text-sm font-extrabold text-slate-900 text-center leading-tight line-clamp-2 w-full mb-1" title={job.translations?.company || job.company}>
                         {job.translations?.company || job.company}
                      </span>
                      <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
@@ -156,7 +156,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            {/* Job Type */}
                            {job.type && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                 <Briefcase className="w-3 h-3" />
+                                 <Clock className="w-3 h-3" />
                                  {job.type === 'full-time' ? '全职' : job.type}
                               </span>
                            )}
@@ -164,7 +164,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            {/* Category - Improved Style (Fig 2) */}
                            {job.category && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                                 <Target className="w-3 h-3" />
+                                 <Gem className="w-3 h-3" />
                                  {job.category}
                               </span>
                            )}
@@ -192,7 +192,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         {/* Meta Info */}
                         <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                            <div className="flex items-center">
-                              <Globe className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                              <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400" />
                               <span className="truncate max-w-[200px] font-medium">{job.translations?.location || job.location}</span>
                            </div>
 
