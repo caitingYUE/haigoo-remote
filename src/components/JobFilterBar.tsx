@@ -280,10 +280,10 @@ export default function JobFilterBar({
         {/* Filter Row - Scrollable on mobile, wrap on desktop */}
         <div className="flex flex-wrap items-center gap-2 flex-1 w-full overflow-x-auto pb-1 xl:pb-0 no-scrollbar">
           
-          {/* Role (Category) -> Renamed to '职能' (Function) to match backend 'category' better */}
+          {/* Role (Category) -> Renamed to '角色' (Role) to match backend 'category' better */}
           <FilterDropdown
-            label="职能"
-            activeLabel={getActiveLabel('category', categoryOptions, '职能')}
+            label="角色"
+            activeLabel={getActiveLabel('category', categoryOptions, '角色')}
             isActive={(filters.category?.length || 0) > 0}
             isOpen={openDropdown === 'category'}
             onToggle={() => toggleDropdown('category')}

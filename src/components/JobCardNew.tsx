@@ -135,21 +135,21 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          <>
             <div
                onClick={() => onClick?.(job)}
-               className={`group relative bg-white rounded-xl mb-3 border transition-all duration-200 cursor-pointer overflow-hidden
+               className={`group relative bg-white rounded-lg mb-3 border transition-all duration-200 cursor-pointer overflow-hidden
                ${isActive
-                     ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md bg-indigo-50/10'
-                     : 'border-slate-200 hover:border-indigo-300 hover:shadow-lg'
+                     ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-sm'
+                     : 'border-slate-200 hover:border-indigo-400 hover:shadow-md'
                   } ${className || ''}`}
                id={`job-card-${job.id}`}
             >
-               <div className="flex flex-col sm:flex-row p-5 gap-4 items-start sm:items-center">
+               <div className="flex flex-col sm:flex-row p-4 gap-4 items-start sm:items-center">
                   {/* Left: Logo */}
                   <div className="hidden sm:block">
                      <CompanyLogo size="md" />
                   </div>
 
                   {/* Middle: Content */}
-                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                      {/* Title Row */}
                      <div className="flex items-center gap-2">
                         <h3 className={`text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1 ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
@@ -172,14 +172,14 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            {job.translations?.company || job.company}
                         </span>
                         
-                        <div className="hidden sm:flex items-center gap-1 truncate">
-                           <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        <div className="hidden sm:flex items-center gap-1 truncate text-xs">
+                           <MapPin className="w-3 h-3 flex-shrink-0" />
                            <span className="truncate max-w-[150px]">{job.translations?.location || job.location}</span>
                         </div>
                      </div>
 
                      {/* Tags Row - Clean & Minimal */}
-                     <div className="flex flex-wrap items-center gap-2 mt-1">
+                     <div className="flex flex-wrap items-center gap-2">
                         {/* Job Type Badge */}
                         {job.type && (
                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-50 text-slate-600 border border-slate-100">
