@@ -114,21 +114,24 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          <>
             <div
                onClick={() => onClick?.(job)}
-               className={`group relative bg-white rounded-xl mb-4 border transition-all duration-300
+               className={`group relative bg-white rounded-xl mb-3 border transition-all duration-300
                ${isActive
                      ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md'
-                     : 'border-slate-200 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5'
+                     : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5'
                   } ${className || ''}`}
             >
-               <div className="flex flex-col sm:flex-row p-6 gap-6">
-                  {/* Left: Company Logo & Name (Distinct Area) */}
-                  <div className="hidden sm:flex flex-col items-center justify-start pt-1 w-24 flex-shrink-0 gap-2">
-                     <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+               <div className="flex flex-col sm:flex-row p-4 gap-4">
+                  {/* Left: Company Logo & Name (Redesigned like Fig 2) */}
+                  <div className="hidden sm:flex flex-col items-center justify-between p-3 w-28 h-28 flex-shrink-0 bg-slate-50 rounded-lg border border-slate-100">
+                     <span className="text-[10px] font-bold text-slate-500 text-center leading-tight line-clamp-1 w-full" title={job.translations?.company || job.company}>
+                        {job.translations?.company || job.company}
+                     </span>
+                     <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
                         {job.logo ? (
                            <img
                               src={job.logo}
                               alt={job.company}
-                              className="w-full h-full object-contain p-2"
+                              className="w-12 h-12 object-contain"
                               onError={(e) => {
                                  const target = e.target as HTMLImageElement;
                                  target.style.display = 'none';
@@ -140,78 +143,81 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               }}
                            />
                         ) : (
-                           <span className="font-serif italic text-2xl text-slate-400">{companyInitial}</span>
+                           <span className="font-serif italic text-3xl text-slate-300">{companyInitial}</span>
                         )}
                      </div>
-                     <span className="text-xs font-bold text-slate-700 text-center leading-tight line-clamp-2" title={job.translations?.company || job.company}>
-                        {job.translations?.company || job.company}
-                     </span>
                   </div>
 
                   {/* Middle: Main Content */}
-                  <div className="flex-1 flex flex-col gap-2 min-w-0 relative">
-                     {/* Top Row: Job Type Badge */}
-                     <div className="flex items-center gap-2 mb-1">
-                        {job.type && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-600">
-                              {job.type === 'full-time' ? '全职' : job.type}
-                           </span>
-                        )}
+                  <div className="flex-1 flex flex-col justify-between min-w-0 relative py-1">
+                     <div>
+                        {/* Top Row: Tags (Job Type, Category) */}
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                           {/* Job Type */}
+                           {job.type && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100/50">
+                                 <Briefcase className="w-3 h-3" />
+                                 {job.type === 'full-time' ? '全职' : job.type}
+                              </span>
+                           )}
 
-                        {/* Source Badges */}
-                        {sourceType === 'referral' && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-600">
-                              <Target className="w-3 h-3 mr-1" />
-                              官方内推
-                           </span>
-                        )}
+                           {/* Category */}
+                           {job.category && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100/50">
+                                 <Target className="w-3 h-3" />
+                                 {job.category}
+                              </span>
+                           )}
 
-                        {isTranslated && (
-                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-slate-50 text-slate-400 border border-slate-100">
-                              译
-                           </span>
-                        )}
-                     </div>
-
-                     {/* Title (Large & Bold) */}
-                     <div className="pr-24"> {/* Padding right to avoid overlap with Date/Salary on mobile if needed, but here Date is top right absolute */}
-                        <h3 className={`text-xl font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
-                           {job.translations?.title || job.title}
-                        </h3>
-                     </div>
-
-                     {/* Meta Info (Icon + Text) - Adjusted: Moved Company to left, Removed "Remote" tag */}
-                     <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500 mt-1">
-                        {/* Location (Clean, no extra 'Remote' pill) */}
-                        <div className="flex items-center">
-                           <Globe className="w-4 h-4 mr-1.5 text-slate-400" />
-                           <span className="truncate max-w-[300px] font-medium text-slate-600">{job.translations?.location || job.location}</span>
+                           {/* Source Badges */}
+                           {sourceType === 'referral' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-600">
+                                 官方内推
+                              </span>
+                           )}
                         </div>
 
-                        {/* Industry */}
-                        {(job.companyIndustry || (job as any).industry) && (
-                           <div className="flex items-center">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>
-                              <span>{(job.companyIndustry || (job as any).industry)}</span>
-                           </div>
-                        )}
+                        {/* Title */}
+                        <div className="flex items-center gap-2 mb-1.5">
+                           <h3 className={`text-lg font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-1 ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
+                              {job.translations?.title || job.title}
+                           </h3>
+                           {isTranslated && (
+                              <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-[10px] text-slate-500 font-serif" title="已翻译">
+                                 译
+                              </span>
+                           )}
+                        </div>
 
-                        {/* Category */}
-                        {job.category && (
+                        {/* Meta Info */}
+                        <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                            <div className="flex items-center">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>
-                              <span>{job.category}</span>
+                              <Globe className="w-3.5 h-3.5 mr-1 text-slate-400" />
+                              <span className="truncate max-w-[200px] font-medium">{job.translations?.location || job.location}</span>
                            </div>
-                        )}
+
+                           {(job.companyIndustry || (job as any).industry) && (
+                              <div className="flex items-center">
+                                 <span className="w-1 h-1 rounded-full bg-slate-300 mr-2"></span>
+                                 <span>{(job.companyIndustry || (job as any).industry)}</span>
+                              </div>
+                           )}
+                           
+                           {/* Mobile Company Name */}
+                           <div className="sm:hidden flex items-center">
+                                <span className="w-1 h-1 rounded-full bg-slate-300 mr-2"></span>
+                                <span className="font-medium text-slate-700">{job.translations?.company || job.company}</span>
+                           </div>
+                        </div>
                      </div>
 
-                     {/* Tags (Refined Visuals) */}
+                     {/* Bottom Row: Tags (Skills/Benefits) */}
                      {displayTags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
+                        <div className="flex flex-wrap gap-1.5 mt-3">
                            {displayTags.map((tag, i) => (
                               <span
                                  key={i}
-                                 className="inline-flex items-center px-3 py-1 rounded-md bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100 hover:bg-slate-100 transition-colors"
+                                 className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-medium border border-transparent hover:bg-slate-200 transition-colors"
                               >
                                  {tag.text}
                               </span>
@@ -220,27 +226,33 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      )}
                   </div>
 
-                  {/* Right: Salary & Date (Absolute positioning or Flex column) */}
-                  <div className="flex flex-col items-end justify-between min-w-[120px] pl-4 border-l border-slate-100 border-dashed sm:border-l-0 sm:pl-0">
-                     {/* Top Right: Date */}
-                     <div className="text-xs text-slate-400 font-medium mb-auto">
-                        {DateFormatter.formatPublishTime(job.publishedAt)}
-                     </div>
-
-                     {/* Bottom Right: Salary */}
-                     <div className="text-right mt-4 sm:mt-0">
-                        <div className={`text-lg sm:text-xl leading-none ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
+                  {/* Right: Salary, Date & Action */}
+                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center min-w-[140px] pl-4 border-l border-slate-100 border-dashed sm:border-l-0 sm:pl-0 gap-2">
+                     {/* Salary */}
+                     <div className="text-right">
+                        <div className={`text-lg leading-none ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
                            {formatSalary(job.salary)}
                         </div>
-                        {matchScore !== undefined && matchScore > 0 && (
-                           <div className="flex items-center justify-end gap-1 mt-1.5">
-                              <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
-                              <span className="text-xs font-bold text-amber-600">
-                                 {matchScore}% 匹配
-                              </span>
-                           </div>
-                        )}
+                        {/* Publish Date (Moved here) */}
+                         <div className="text-[10px] text-slate-400 font-medium mt-1">
+                            {DateFormatter.formatPublishTime(job.publishedAt)}
+                         </div>
                      </div>
+
+                     {/* View Job Button (New) */}
+                     <button className="hidden sm:flex items-center gap-1 px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-indigo-600 transition-colors mt-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-200">
+                        View job
+                        <ChevronRight className="w-3 h-3" />
+                     </button>
+                     
+                     {matchScore !== undefined && matchScore > 0 && (
+                        <div className="sm:hidden flex items-center justify-end gap-1">
+                           <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                           <span className="text-xs font-bold text-amber-600">
+                              {matchScore}%
+                           </span>
+                        </div>
+                     )}
                   </div>
                </div>
             </div>

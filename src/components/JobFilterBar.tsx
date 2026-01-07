@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChevronDown, Check, Search, SortAsc, Sparkles, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, Check, Search, SortAsc, Sparkles, SlidersHorizontal, Gem, MapPin, Clock, Banknote, BarChart2, Globe, Building2, X } from 'lucide-react';
 
 // --- Types ---
 
@@ -96,11 +96,11 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
       buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
     } else {
       // Cleaner active state: subtle bg, colored text
-      buttonClass += "bg-indigo-50 text-indigo-700 border-indigo-100 font-semibold";
+      buttonClass += "bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold shadow-sm";
     }
   } else {
     // Default state: Clean white background with subtle border
-    buttonClass += "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900 shadow-sm";
+    buttonClass += "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900 shadow-sm hover:shadow";
   }
 
   // Chevron color adjustment for solid variants
@@ -225,48 +225,12 @@ export default function JobFilterBar({
     return `${defaultLabel} (${current.length})`;
   };
 
-  // Custom label logic for Function
-  const getCategoryLabel = () => {
-    const current = filters.category;
-    if (!current || current.length === 0) return '职能类型';
-    if (current.length === 1) {
-      const found = categoryOptions.find(o => o.value === current[0]);
-      return found ? found.label : current[0];
-    }
-    return `职能类型 (${current.length})`;
-  };
-
-  // Custom label logic for Region/Identity
-  const getRegionLabel = () => {
-    if (filters.regionType?.includes('domestic')) return '中国居民';
-    if (filters.regionType?.includes('overseas')) return '海外居民';
-    return '身份要求';
-  };
-
-  const getMoreFiltersCount = () => {
-    const count =
-      (filters.experienceLevel?.length || 0) +
-      (filters.salary?.length || 0) +
-      (filters.industry?.length || 0) +
-      (filters.location?.length || 0) +
-      (filters.timezone?.length || 0);
-    return count > 0 ? `更多筛选 (${count})` : '更多筛选';
-  };
-
-  const hasMoreFilters =
-    (filters.experienceLevel?.length || 0) > 0 ||
-    (filters.salary?.length || 0) > 0 ||
-    (filters.industry?.length || 0) > 0 ||
-    (filters.location?.length || 0) > 0 ||
-    (filters.timezone?.length || 0) > 0;
-
   const clearAllFilters = () => {
     onFilterChange({
       category: [],
       experienceLevel: [],
       industry: [],
       regionType: [],
-      // sourceType: [], // Keep source filters if set elsewhere, or clear it? Assuming user can't set it via UI anymore, we should probably clear it to be safe, but let's just clear what's visible. Actually better to clear everything to reset state.
       sourceType: [],
       jobType: [],
       salary: [],
@@ -278,139 +242,178 @@ export default function JobFilterBar({
     onSearchChange('');
   };
 
+  const hasActiveFilters = 
+    (filters.category?.length || 0) > 0 ||
+    (filters.experienceLevel?.length || 0) > 0 ||
+    (filters.industry?.length || 0) > 0 ||
+    (filters.regionType?.length || 0) > 0 ||
+    (filters.jobType?.length || 0) > 0 ||
+    (filters.salary?.length || 0) > 0 ||
+    (filters.location?.length || 0) > 0 ||
+    (filters.timezone?.length || 0) > 0 ||
+    filters.isTrusted || 
+    filters.isNew;
+
   return (
-    <div className="flex flex-col xl:flex-row gap-4 mb-6">
-      {/* Search Input - Clean & Spacious */}
-      <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search jobs, skills, or companies..."
-          className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-900 placeholder-slate-400 font-medium transition-all"
-        />
-      </div>
+    <div className="flex flex-col gap-4 mb-6">
+      <div className="flex flex-col xl:flex-row gap-3 items-start xl:items-center">
+        {/* Search Input - Adjusted Width */}
+        <div className="relative w-full xl:w-72 flex-shrink-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search jobs..."
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-sm font-medium transition-all"
+          />
+          {searchTerm && (
+             <button 
+                onClick={() => onSearchChange('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+             >
+                <X className="w-3 h-3" />
+             </button>
+          )}
+        </div>
 
-      {/* Filter Row */}
-      <div className="flex flex-wrap items-center gap-3 flex-1">
-        {/* Reset Button */}
-        {((filters.category?.length || 0) > 0 || (filters.experienceLevel?.length || 0) > 0 || (filters.industry?.length || 0) > 0 || (filters.regionType?.length || 0) > 0 || (filters.jobType?.length || 0) > 0 || (filters.salary?.length || 0) > 0 || (filters.location?.length || 0) > 0 || filters.isTrusted || filters.isNew || searchTerm) && (
-          <button
-            onClick={clearAllFilters}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-700 whitespace-nowrap"
-            title="重置所有筛选"
+        {/* Filter Row - Scrollable on mobile, wrap on desktop */}
+        <div className="flex flex-wrap items-center gap-2 flex-1 w-full overflow-x-auto pb-1 xl:pb-0 no-scrollbar">
+          
+          {/* Role (Category) */}
+          <FilterDropdown
+            label="Role"
+            activeLabel={getActiveLabel('category', categoryOptions, 'Role')}
+            isActive={(filters.category?.length || 0) > 0}
+            isOpen={openDropdown === 'category'}
+            onToggle={() => toggleDropdown('category')}
+            onClose={() => setOpenDropdown(null)}
+            icon={<Gem className="w-3.5 h-3.5" />}
           >
-            <span className="text-xs font-medium">重置</span>
+            {categoryOptions.map(opt => (
+              <CheckboxItem
+                key={opt.value}
+                label={opt.label}
+                checked={filters.category?.includes(opt.value) || false}
+                onChange={(c) => handleCheckboxChange('category', opt.value, c)}
+              />
+            ))}
+          </FilterDropdown>
+
+          {/* Rate (Salary) */}
+          <FilterDropdown
+            label="Rate"
+            activeLabel={getActiveLabel('salary', SALARY_OPTIONS, 'Rate')}
+            isActive={(filters.salary?.length || 0) > 0}
+            isOpen={openDropdown === 'salary'}
+            onToggle={() => toggleDropdown('salary')}
+            onClose={() => setOpenDropdown(null)}
+            icon={<Banknote className="w-3.5 h-3.5" />}
+          >
+            {SALARY_OPTIONS.map(opt => (
+              <CheckboxItem
+                key={opt.value}
+                label={opt.label}
+                checked={filters.salary?.includes(opt.value) || false}
+                onChange={(c) => handleCheckboxChange('salary', opt.value, c)}
+              />
+            ))}
+          </FilterDropdown>
+
+          {/* Location */}
+          <FilterDropdown
+            label="Location"
+            activeLabel={getActiveLabel('location', locationOptions, 'Location')}
+            isActive={(filters.location?.length || 0) > 0}
+            isOpen={openDropdown === 'location'}
+            onToggle={() => toggleDropdown('location')}
+            onClose={() => setOpenDropdown(null)}
+            icon={<MapPin className="w-3.5 h-3.5" />}
+          >
+            {locationOptions.map(opt => (
+              <CheckboxItem
+                key={opt.value}
+                label={opt.label}
+                checked={filters.location?.includes(opt.value) || false}
+                onChange={(c) => handleCheckboxChange('location', opt.value, c)}
+              />
+            ))}
+          </FilterDropdown>
+
+          {/* Commitment (Job Type) */}
+          <FilterDropdown
+            label="Commitment"
+            activeLabel={getActiveLabel('jobType', jobTypeOptions, 'Commitment')}
+            isActive={(filters.jobType?.length || 0) > 0}
+            isOpen={openDropdown === 'jobType'}
+            onToggle={() => toggleDropdown('jobType')}
+            onClose={() => setOpenDropdown(null)}
+            icon={<Clock className="w-3.5 h-3.5" />}
+          >
+            {jobTypeOptions.map(opt => (
+              <CheckboxItem
+                key={opt.value}
+                label={opt.label}
+                checked={filters.jobType?.includes(opt.value) || false}
+                onChange={(c) => handleCheckboxChange('jobType', opt.value, c)}
+              />
+            ))}
+          </FilterDropdown>
+
+           {/* Industry */}
+           <FilterDropdown
+            label="Industry"
+            activeLabel={getActiveLabel('industry', industryOptions, 'Industry')}
+            isActive={(filters.industry?.length || 0) > 0}
+            isOpen={openDropdown === 'industry'}
+            onToggle={() => toggleDropdown('industry')}
+            onClose={() => setOpenDropdown(null)}
+            icon={<Building2 className="w-3.5 h-3.5" />}
+          >
+            {industryOptions.map(opt => (
+              <CheckboxItem
+                key={opt.value}
+                label={opt.label}
+                checked={filters.industry?.includes(opt.value) || false}
+                onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
+              />
+            ))}
+          </FilterDropdown>
+
+          {/* Clear All Button */}
+          {(hasActiveFilters || searchTerm) && (
+            <button
+              onClick={clearAllFilters}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors ml-auto xl:ml-0"
+            >
+              Clear all
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {/* Right Actions */}
+        <div className="flex items-center gap-2 ml-auto hidden xl:flex">
+          <button
+            onClick={onSortChange}
+            className={`flex items-center gap-2 px-3 py-2 border rounded-lg shadow-sm text-sm font-medium transition-all whitespace-nowrap ${sortBy === 'recent'
+              ? 'bg-slate-900 border-slate-900 text-white'
+              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            title={sortBy === 'recent' ? '当前：最新发布' : '当前：相关度排序'}
+          >
+            <SortAsc className="w-4 h-4" />
+            <span className="hidden sm:inline">{sortBy === 'recent' ? '最新' : '相关'}</span>
           </button>
-        )}
 
-        {/* Function Type (Renamed from Category) */}
-        <FilterDropdown
-          label="职能类型"
-          activeLabel={getCategoryLabel()}
-          isActive={(filters.category?.length || 0) > 0}
-          isOpen={openDropdown === 'category'}
-          onToggle={() => toggleDropdown('category')}
-          onClose={() => setOpenDropdown(null)}
-        >
-          {categoryOptions.map(opt => (
-            <CheckboxItem
-              key={opt.value}
-              label={opt.label}
-              checked={filters.category?.includes(opt.value) || false}
-              onChange={(c) => handleCheckboxChange('category', opt.value, c)}
-            />
-          ))}
-        </FilterDropdown>
-
-        {/* More Filters */}
-        <FilterDropdown
-          label="更多筛选"
-          activeLabel={getMoreFiltersCount()}
-          isActive={hasMoreFilters}
-          isOpen={openDropdown === 'more'}
-          onToggle={() => toggleDropdown('more')}
-          onClose={() => setOpenDropdown(null)}
-          icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
-        >
-          {/* Experience Section */}
-          <FilterSectionHeader title="岗位级别" />
-          {EXPERIENCE_OPTIONS.map(opt => (
-            <CheckboxItem
-              key={opt.value}
-              label={opt.label}
-              checked={filters.experienceLevel?.includes(opt.value) || false}
-              onChange={(c) => handleCheckboxChange('experienceLevel', opt.value, c)}
-            />
-          ))}
-
-          {/* Salary Section */}
-          <FilterSectionHeader title="薪资范围" />
-          {SALARY_OPTIONS.map(opt => (
-            <CheckboxItem
-              key={opt.value}
-              label={opt.label}
-              checked={filters.salary?.includes(opt.value) || false}
-              onChange={(c) => handleCheckboxChange('salary', opt.value, c)}
-            />
-          ))}
-
-          {/* Industry Section */}
-          <FilterSectionHeader title="行业领域" />
-          {industryOptions.map(opt => (
-            <CheckboxItem
-              key={opt.value}
-              label={opt.label}
-              checked={filters.industry?.includes(opt.value) || false}
-              onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
-            />
-          ))}
-
-          {/* Location Section */}
-          <FilterSectionHeader title="城市/地点" />
-          {locationOptions.map(opt => (
-            <CheckboxItem
-              key={opt.value}
-              label={opt.label}
-              checked={filters.location?.includes(opt.value) || false}
-              onChange={(c) => handleCheckboxChange('location', opt.value, c)}
-            />
-          ))}
-
-          {/* Timezone Section */}
-          <FilterSectionHeader title="时区" />
-          {timezoneOptions.map(opt => (
-            <CheckboxItem
-              key={opt.value}
-              label={opt.label}
-              checked={filters.timezone?.includes(opt.value) || false}
-              onChange={(c) => handleCheckboxChange('timezone', opt.value, c)}
-            />
-          ))}
-        </FilterDropdown>
-      </div>
-
-      <div className="flex items-center gap-3 ml-auto">
-        <button
-          onClick={onSortChange}
-          className={`flex items-center gap-2 px-3 py-2 border rounded-lg shadow-sm text-sm font-medium transition-all whitespace-nowrap ${sortBy === 'recent'
-            ? 'bg-slate-900 border-slate-900 text-white'
-            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
-          title={sortBy === 'recent' ? '当前：最新发布' : '当前：相关度排序'}
-        >
-          <SortAsc className="w-4 h-4" />
-          <span className="hidden sm:inline">{sortBy === 'recent' ? '最新' : '相关'}</span>
-        </button>
-
-        <button
-          onClick={onOpenTracking}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white border border-indigo-600 rounded-lg shadow-sm text-sm font-bold hover:bg-indigo-700 transition-all whitespace-nowrap"
-        >
-          <Sparkles className="w-4 h-4 text-indigo-100" />
-          <span className="hidden sm:inline">岗位追踪</span>
-        </button>
+          <button
+            onClick={onOpenTracking}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white border border-indigo-600 rounded-lg shadow-sm text-sm font-bold hover:bg-indigo-700 transition-all whitespace-nowrap"
+          >
+            <Sparkles className="w-4 h-4 text-indigo-100" />
+            <span className="hidden sm:inline">岗位追踪</span>
+          </button>
+        </div>
       </div>
     </div>
   );
