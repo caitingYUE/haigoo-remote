@@ -338,7 +338,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
                      <div className="flex items-center text-xs text-slate-500 font-medium truncate">
                         <span className="text-slate-700 mr-2">{job.translations?.company || job.company}</span>
-                        <Globe className="w-3 h-3 mr-1 text-slate-400" />
+                        <MapPin className="w-3 h-3 mr-1 text-slate-400" />
                         <span className="truncate max-w-[100px]">{job.translations?.location || job.location}</span>
                      </div>
                   </div>
