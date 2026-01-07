@@ -16,20 +16,20 @@ import { trackingService } from '../services/tracking-service'
 import { useDebounce } from '../hooks/useDebounce'
 
 // Industry Options
-// const INDUSTRY_OPTIONS = [
-//   '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
-//   '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
-//   '硬件/物联网', '消费生活', '其他'
-// ].map(v => ({ label: v, value: v }));
+const INDUSTRY_OPTIONS = [
+  '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
+  '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
+  '硬件/物联网', '消费生活', '其他'
+].map(v => ({ label: v, value: v }));
 
-// Job Type Options
-// const JOB_TYPE_OPTIONS = [
-//   { label: '全职', value: 'full-time' },
-//   { label: '兼职', value: 'part-time' },
-//   { label: '合同', value: 'contract' },
-//   { label: '自由职业', value: 'freelance' },
-//   { label: '实习', value: 'internship' }
-// ];
+// Job Type Options - Standardized
+const JOB_TYPE_OPTIONS = [
+  { label: '全职', value: 'full-time' },
+  { label: '兼职', value: 'part-time' },
+  { label: '合同', value: 'contract' },
+  { label: '自由职业', value: 'freelance' },
+  { label: '实习', value: 'internship' }
+];
 
 // Location Options
 // const LOCATION_OPTIONS = [
@@ -482,54 +482,6 @@ export default function JobsPage() {
     return Array.from(locs).sort().map(l => ({ label: l, value: l }))
   }, [canonicalJobs])
 
-  const industryOptions = useMemo(() => {
-    const inds = new Set<string>()
-    canonicalJobs.forEach(j => {
-      let ind = ''
-      if (j.companyId) {
-        const company = companyMap[j.companyId]
-        if (company) {
-          if (company.industry) {
-            ind = company.industry
-          }
-          else if (company.tags && company.tags.length > 0) {
-            const KNOWN_INDUSTRIES = [
-              '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
-              '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
-              '硬件/物联网', '消费生活', 'SaaS', 'AI', 'Fintech', 'EdTech', 'HealthTech', 'Crypto', 'Web3', 'E-commerce'
-            ]
-            const found = company.tags.find(t => KNOWN_INDUSTRIES.some(k => k.toLowerCase() === t.toLowerCase()))
-            if (found) ind = found
-          }
-        }
-      }
-
-      if (ind) inds.add(ind)
-    })
-    return Array.from(inds).sort().map(i => ({ label: i, value: i }))
-  }, [canonicalJobs, companyMap])
-
-  const typeOptions = useMemo(() => {
-    const types = new Set<string>()
-    canonicalJobs.forEach(j => {
-      if (j.type) types.add(j.type)
-    })
-    
-    const typeMap: Record<string, string> = {
-      'full-time': '全职',
-      'part-time': '兼职',
-      'contract': '合同',
-      'freelance': '自由职业',
-      'internship': '实习',
-      'temporary': '临时'
-    };
-
-    return Array.from(types).sort().map(t => ({ 
-      label: typeMap[t.toLowerCase()] || t, 
-      value: t 
-    }))
-  }, [canonicalJobs])
-
   const timezoneOptions = useMemo(() => {
     const timezones = new Set<string>()
     canonicalJobs.forEach(j => {
@@ -704,8 +656,8 @@ export default function JobsPage() {
               filters={filters}
               onFilterChange={(newFilters: any) => setFilters((prev: any) => ({ ...prev, ...newFilters }))}
               categoryOptions={topCategories.map(c => ({ label: c, value: c }))}
-              industryOptions={industryOptions}
-              jobTypeOptions={typeOptions}
+              industryOptions={INDUSTRY_OPTIONS}
+              jobTypeOptions={JOB_TYPE_OPTIONS}
               locationOptions={locationOptions}
               timezoneOptions={timezoneOptions}
               searchTerm={searchTerm}
@@ -869,7 +821,7 @@ export default function JobsPage() {
           onSave={saveUserPreferences}
           initialPreferences={userPreferences || undefined}
           jobTypeOptions={topCategories}
-          industryOptions={industryOptions.map(opt => opt.label)}
+          industryOptions={INDUSTRY_OPTIONS.map(opt => opt.label)}
         />
       </div>
     </MobileRestricted>

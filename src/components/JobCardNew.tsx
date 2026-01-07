@@ -174,7 +174,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
                            {/* Source Badges */}
                            {sourceType === 'referral' && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-600">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-50 text-purple-600 border border-purple-100">
                                  Haigoo内推
                               </span>
                            )}
@@ -209,7 +209,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            {/* Mobile Company Name */}
                            <div className="sm:hidden flex items-center">
                                 <span className="w-1 h-1 rounded-full bg-slate-300 mr-2"></span>
-                                <span className="font-medium text-slate-700">{job.translations?.company || job.company}</span>
+                                <span className="font-medium text-slate-700 truncate max-w-[150px]">{job.translations?.company || job.company}</span>
                            </div>
                         </div>
                      </div>
@@ -233,7 +233,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between min-w-[140px] pl-4 border-l border-slate-100 border-dashed sm:border-l-0 sm:pl-0 gap-1 sm:self-stretch">
                      {/* Top: Publish Date & Match Score */}
                      <div className="flex flex-col items-end gap-1">
-                        <div className="text-[10px] text-slate-400 font-medium">
+                        <div className="text-xs text-slate-500 font-medium">
                            {DateFormatter.formatPublishTime(job.publishedAt)}
                         </div>
                         {matchScore !== undefined && matchScore > 0 && (
@@ -248,7 +248,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
                      {/* Bottom: Salary */}
                      <div className="text-right sm:mt-auto">
-                        <div className={`text-lg leading-tight ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
+                        <div className={`text-base leading-tight ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-bold text-slate-900'}`}>
                            {formatSalary(job.salary)}
                         </div>
                      </div>
