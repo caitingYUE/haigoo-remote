@@ -94,13 +94,13 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
   if (isActive || isOpen) {
     if (variant === 'solid-blue') {
       buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
-    } else if (variant === 'solid-purple') {
-      buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
     } else {
-      buttonClass += "bg-indigo-50 text-indigo-600 border-indigo-200 font-medium";
+      // Cleaner active state: subtle bg, colored text
+      buttonClass += "bg-indigo-50 text-indigo-700 border-indigo-100 font-semibold";
     }
   } else {
-    buttonClass += "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300";
+    // Default state: Clean white background with subtle border
+    buttonClass += "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900 shadow-sm";
   }
 
   // Chevron color adjustment for solid variants
@@ -279,23 +279,21 @@ export default function JobFilterBar({
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-md p-2 rounded-2xl border border-slate-200/60 shadow-lg shadow-indigo-100/20 flex flex-col xl:flex-row gap-3 transition-all duration-300">
-      {/* Search Input - Compact */}
-      <div className="relative flex-1 xl:max-w-xs min-w-[240px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+    <div className="flex flex-col xl:flex-row gap-4 mb-6">
+      {/* Search Input - Clean & Spacious */}
+      <div className="relative flex-1 max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="搜索职位、公司、技能..."
-          className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-sm transition-all"
+          placeholder="Search jobs, skills, or companies..."
+          className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-900 placeholder-slate-400 font-medium transition-all"
         />
       </div>
 
-      <div className="h-px xl:h-auto xl:w-px bg-slate-100 xl:mx-1"></div>
-
       {/* Filter Row */}
-      <div className="flex flex-wrap items-center gap-2 flex-1">
+      <div className="flex flex-wrap items-center gap-3 flex-1">
         {/* Reset Button */}
         {((filters.category?.length || 0) > 0 || (filters.experienceLevel?.length || 0) > 0 || (filters.industry?.length || 0) > 0 || (filters.regionType?.length || 0) > 0 || (filters.jobType?.length || 0) > 0 || (filters.salary?.length || 0) > 0 || (filters.location?.length || 0) > 0 || filters.isTrusted || filters.isNew || searchTerm) && (
           <button
@@ -393,15 +391,12 @@ export default function JobFilterBar({
         </FilterDropdown>
       </div>
 
-      <div className="h-px xl:h-auto xl:w-px bg-slate-100 xl:mx-1"></div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 justify-end">
+      <div className="flex items-center gap-3 ml-auto">
         <button
           onClick={onSortChange}
           className={`flex items-center gap-2 px-3 py-2 border rounded-lg shadow-sm text-sm font-medium transition-all whitespace-nowrap ${sortBy === 'recent'
-              ? 'bg-slate-900 border-slate-900 text-white'
-              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+            ? 'bg-slate-900 border-slate-900 text-white'
+            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
             }`}
           title={sortBy === 'recent' ? '当前：最新发布' : '当前：相关度排序'}
         >

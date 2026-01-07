@@ -120,8 +120,8 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   } ${className || ''}`}
             >
                <div className="flex flex-col sm:flex-row p-6 gap-6">
-                  {/* Left: Company Logo (Distinct Area) */}
-                  <div className="hidden sm:flex flex-col items-center justify-start pt-1">
+                  {/* Left: Company Logo & Name (Distinct Area) */}
+                  <div className="hidden sm:flex flex-col items-center justify-start pt-1 w-24 flex-shrink-0 gap-2">
                      <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                         {job.logo ? (
                            <img
@@ -134,7 +134,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                                  if (target.parentElement) {
                                     const span = document.createElement('span');
                                     span.className = 'font-serif italic text-2xl text-slate-400';
-                                    span.textContent = companyInitial;
                                     target.parentElement.appendChild(span);
                                  }
                               }}
@@ -143,31 +142,24 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            <span className="font-serif italic text-2xl text-slate-400">{companyInitial}</span>
                         )}
                      </div>
-                     {/* Optional: Company Name below logo for very clean look? No, keep in main body for readability */}
+                     <span className="text-xs font-bold text-slate-700 text-center leading-tight line-clamp-2" title={job.translations?.company || job.company}>
+                        {job.translations?.company || job.company}
+                     </span>
                   </div>
 
                   {/* Middle: Main Content */}
-                  <div className="flex-1 flex flex-col gap-3 min-w-0">
-                     {/* Row 1: Badges (Top) */}
-                     <div className="flex items-center flex-wrap gap-2">
-                        {/* Job Type Badge */}
+                  <div className="flex-1 flex flex-col gap-2 min-w-0 relative">
+                     {/* Top Row: Job Type Badge */}
+                     <div className="flex items-center gap-2 mb-1">
                         {job.type && (
-                           <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
-                              <Briefcase className="w-3 h-3 mr-1" />
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-600">
                               {job.type === 'full-time' ? '全职' : job.type}
-                           </span>
-                        )}
-
-                        {/* Category Badge */}
-                        {job.category && (
-                           <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
-                              {job.category}
                            </span>
                         )}
 
                         {/* Source Badges */}
                         {sourceType === 'referral' && (
-                           <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-600">
                               <Target className="w-3 h-3 mr-1" />
                               官方内推
                            </span>
@@ -178,33 +170,24 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               译
                            </span>
                         )}
-
-                        {/* New Badge (Logic based on publish time < 3 days?) - Placeholder logic if field exists */}
-                        {/* <span className="text-red-500 text-xs font-bold">New</span> */}
                      </div>
 
-                     {/* Row 2: Title (Large & Bold) */}
-                     <div>
+                     {/* Title (Large & Bold) */}
+                     <div className="pr-24"> {/* Padding right to avoid overlap with Date/Salary on mobile if needed, but here Date is top right absolute */}
                         <h3 className={`text-xl font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
                            {job.translations?.title || job.title}
                         </h3>
                      </div>
 
-                     {/* Row 3: Meta Info (Icon + Text) */}
-                     <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
-                        {/* Company Name */}
-                        <div className="flex items-center font-medium text-slate-700">
-                           <span className="hover:underline cursor-pointer">{job.translations?.company || job.company}</span>
-                        </div>
-
-                        {/* Location */}
+                     {/* Meta Info (Icon + Text) - Adjusted: Moved Company to left, Removed "Remote" tag */}
+                     <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500 mt-1">
+                        {/* Location (Clean, no extra 'Remote' pill) */}
                         <div className="flex items-center">
                            <Globe className="w-4 h-4 mr-1.5 text-slate-400" />
-                           <span className="truncate max-w-[200px]">{job.translations?.location || job.location}</span>
-                           {job.isRemote && <span className="ml-1 text-emerald-600 bg-emerald-50 px-1.5 rounded text-xs font-medium">Remote</span>}
+                           <span className="truncate max-w-[300px] font-medium text-slate-600">{job.translations?.location || job.location}</span>
                         </div>
 
-                        {/* Industry / Info */}
+                        {/* Industry */}
                         {(job.companyIndustry || (job as any).industry) && (
                            <div className="flex items-center">
                               <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>
@@ -212,19 +195,22 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            </div>
                         )}
 
-                        {/* Publish Date */}
-                        <div className="flex items-center text-slate-400 text-xs">
-                           <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
-                        </div>
+                        {/* Category */}
+                        {job.category && (
+                           <div className="flex items-center">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>
+                              <span>{job.category}</span>
+                           </div>
+                        )}
                      </div>
 
-                     {/* Row 4: Tags (Pills) */}
+                     {/* Tags (Refined Visuals) */}
                      {displayTags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-1">
+                        <div className="flex flex-wrap gap-2 mt-3">
                            {displayTags.map((tag, i) => (
                               <span
                                  key={i}
-                                 className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                 className="inline-flex items-center px-3 py-1 rounded-md bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100 hover:bg-slate-100 transition-colors"
                               >
                                  {tag.text}
                               </span>
@@ -233,11 +219,16 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      )}
                   </div>
 
-                  {/* Right: Salary & Action (Fixed Width on Desktop) */}
-                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-4 sm:min-w-[180px] border-t sm:border-t-0 sm:border-l border-dashed border-slate-100 pt-4 sm:pt-0 sm:pl-6 mt-2 sm:mt-0">
-                     {/* Salary */}
-                     <div className="text-right">
-                        <div className={`text-xl leading-none ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
+                  {/* Right: Salary & Date (Absolute positioning or Flex column) */}
+                  <div className="flex flex-col items-end justify-between min-w-[120px] pl-4 border-l border-slate-100 border-dashed sm:border-l-0 sm:pl-0">
+                     {/* Top Right: Date */}
+                     <div className="text-xs text-slate-400 font-medium mb-auto">
+                        {DateFormatter.formatPublishTime(job.publishedAt)}
+                     </div>
+
+                     {/* Bottom Right: Salary */}
+                     <div className="text-right mt-4 sm:mt-0">
+                        <div className={`text-lg sm:text-xl leading-none ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
                            {formatSalary(job.salary)}
                         </div>
                         {matchScore !== undefined && matchScore > 0 && (
@@ -248,17 +239,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                               </span>
                            </div>
                         )}
-                     </div>
-
-                     {/* Action Button */}
-                     <button className="hidden sm:flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-indigo-600 text-white text-sm font-bold rounded-full transition-all duration-300 shadow-sm hover:shadow-md group/btn w-full">
-                        <span>View Job</span>
-                        <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
-                     </button>
-
-                     {/* Mobile Only Action (Arrow) */}
-                     <div className="sm:hidden text-indigo-600 font-bold text-sm flex items-center">
-                        查看详情 <ChevronRight className="w-4 h-4 ml-1" />
                      </div>
                   </div>
                </div>
