@@ -36,7 +36,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    const formatSalary = (salary: Job['salary']) => {
       // Handle missing/zero cases
       if (!salary) return '薪资Open';
-      
+
       // Handle string type (New format or legacy string)
       if (typeof salary === 'string') {
          if (salary === '0' || salary === 'null' || salary === 'Open' || salary === '0-0') return '薪资Open';
@@ -54,24 +54,24 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
       // Handle object type (Legacy format)
       if (salary.min === 0 && salary.max === 0) return '薪资Open';
-      
+
       const formatAmount = (amount: number) => {
          // Safety check: if amount is null/undefined/NaN, return '0' or empty string
          if (amount === null || amount === undefined || isNaN(amount)) return '0';
-         
+
          if (amount >= 1000) return `${(amount / 1000).toFixed(0)}k`;
          return amount.toString();
       };
-      const currencySymbol = salary.currency === 'CNY' ? '¥' : 
-                             salary.currency === 'USD' ? '$' : 
-                             salary.currency === 'EUR' ? '€' : 
-                             salary.currency === 'GBP' ? '£' : 
-                             (salary.currency || '');
-      
+      const currencySymbol = salary.currency === 'CNY' ? '¥' :
+         salary.currency === 'USD' ? '$' :
+            salary.currency === 'EUR' ? '€' :
+               salary.currency === 'GBP' ? '£' :
+                  (salary.currency || '');
+
       // Safety checks for min/max
       const min = salary.min || 0;
       const max = salary.max || 0;
-      
+
       if (min === max) return `${currencySymbol}${formatAmount(min)}`;
       return `${currencySymbol}${formatAmount(min)} - ${currencySymbol}${formatAmount(max)}`;
    };
@@ -88,11 +88,11 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
    if (variant === 'list') {
       const isTranslated = !!job.translations?.title;
-      
+
       // Merge and deduplicate tags for display
       const displayTags = useMemo(() => {
          const tags: { text: string; type: 'skill' | 'benefit' | 'other' }[] = [];
-         
+
          // 1. Skills (Priority)
          if (job.skills && job.skills.length > 0) {
             job.skills.slice(0, 5).forEach(skill => tags.push({ text: skill, type: 'skill' }));
@@ -111,330 +111,361 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
 
       return (
          <>
-         <div
-            onClick={() => onClick?.(job)}
-            className={`group relative p-5 bg-white rounded-2xl mb-3 border cursor-pointer transition-all duration-200
+            <div
+               onClick={() => onClick?.(job)}
+               className={`group relative p-6 bg-white rounded-2xl mb-3 border cursor-pointer transition-all duration-200
                ${isActive
-                  ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/40 shadow-md'
-                  : 'border-slate-100 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5'
-               } ${className || ''}`}
-         >
-            {/* Share Button (List) - Removed */}
-
-
-            <div className="flex gap-4 items-start">
-               {/* Company Logo */}
-               <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-xl flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 relative">
-                  {job.logo ? (
-                     <img
-                        src={job.logo}
-                        alt={job.company}
-                        className="w-full h-full object-contain p-1.5"
-                        onError={(e) => {
-                           const target = e.target as HTMLImageElement;
-                           target.style.display = 'none';
-                           if (target.parentElement) {
-                              const span = document.createElement('span');
-                              span.className = 'font-serif italic text-lg';
-                              span.textContent = companyInitial;
-                              target.parentElement.appendChild(span);
-                           }
-                        }}
-                     />
-                  ) : (
-                     <span className="font-serif italic text-lg">{companyInitial}</span>
-                  )}
-               </div>
-
-               {/* Main Content */}
-               <div className="flex-1 min-w-0 flex flex-col gap-2">
-                  {/* Row 1: Title & Badges */}
-                  <div className="flex flex-wrap items-center gap-2">
-                     <h3 className={`font-bold text-lg text-slate-900 line-clamp-2 group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
-                        {job.translations?.title || job.title}
-                     </h3>
-                     
-                     {/* Source Badges */}
-                     {sourceType === 'referral' && (
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200" title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）">
-                           <Target className="w-3 h-3" />
-                           Haigoo 内推
-                        </div>
-                     )}
-                     
-                     {isTranslated && (
-                        <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-medium rounded border border-indigo-100 flex-shrink-0">
-                           译
-                        </span>
+                     ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/40 shadow-md'
+                     : 'border-slate-200 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5'
+                  } ${className || ''}`}
+            >
+               <div className="flex items-center gap-5">
+                  {/* Company Logo - Larger and distinct */}
+                  <div className="w-16 h-16 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-2xl flex-shrink-0 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 relative">
+                     {job.logo ? (
+                        <img
+                           src={job.logo}
+                           alt={job.company}
+                           className="w-full h-full object-contain p-2"
+                           onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              if (target.parentElement) {
+                                 const span = document.createElement('span');
+                                 span.className = 'font-serif italic text-lg';
+                                 span.textContent = companyInitial;
+                                 target.parentElement.appendChild(span);
+                              }
+                           }}
+                        />
+                     ) : (
+                        <span className="font-serif italic text-xl">{companyInitial}</span>
                      )}
                   </div>
 
-                  {/* Row 2: Meta Info (Company | Location | Exp | Degree) */}
-                  <div className="flex items-center gap-2 text-sm text-slate-500 flex-wrap leading-none">
-                     <span className="font-medium text-slate-700 truncate max-w-[200px]">
-                        {job.translations?.company || job.company}
-                     </span>
-                     <span className="text-slate-300">|</span>
-                     <span className="flex items-center truncate" title={job.translations?.location || job.location}>
-                        {job.isRemote && <Globe className="w-3 h-3 mr-1 text-indigo-500" />}
-                        {(job.translations?.location || job.location)}
-                     </span>
-                     {job.experienceLevel && (
-                        <>
-                           <span className="text-slate-300">|</span>
-                           <span>{job.experienceLevel}</span>
-                        </>
-                     )}
-                     {job.type && (
-                         <>
-                            <span className="text-slate-300">|</span>
-                            <span>{job.type === 'full-time' ? '全职' : job.type}</span>
-                         </>
-                     )}
+                  {/* Main Content Area */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                     {/* Row 1: Title (Primary) + Category + Source Badges */}
+                     <div className="flex items-center gap-3">
+                        <h3 className={`font-bold text-xl text-slate-900 group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
+                           {job.translations?.title || job.title}
+                        </h3>
+
+                        {job.category && (
+                           <span className="px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">
+                              {job.category}
+                           </span>
+                        )}
+
+                        {/* Source Badges */}
+                        {sourceType === 'referral' && (
+                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap" title="由 Haigoo 审核简历并转递给企业">
+                              <Target className="w-3 h-3" />
+                              官方内推
+                           </div>
+                        )}
+
+                        {isTranslated && (
+                           <span className="px-1.5 py-0.5 bg-slate-50 text-slate-500 text-[10px] font-medium rounded border border-slate-200 flex-shrink-0">
+                              译
+                           </span>
+                        )}
+                     </div>
+
+                     {/* Row 2: Company Info (Name | Industry | Stage/Tags) - Key Emphasis */}
+                     <div className="flex items-center flex-wrap gap-2 text-sm leading-none">
+                        <span className="font-bold text-slate-800 text-base hover:underline" title={job.translations?.company || job.company}>
+                           {job.translations?.company || job.company}
+                        </span>
+
+                        {(job.companyIndustry || (job as any).industry) && (
+                           <>
+                              <span className="text-slate-300">|</span>
+                              <span className="text-slate-600 font-medium">{(job.companyIndustry || (job as any).industry)}</span>
+                           </>
+                        )}
+
+                        {/* Highlighted Company Tags */}
+                        {job.companyTags && job.companyTags.length > 0 && (
+                           <>
+                              <span className="text-slate-300">|</span>
+                              <div className="flex gap-1.5">
+                                 {job.companyTags.slice(0, 3).map((tag, i) => (
+                                    <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                       {tag}
+                                    </span>
+                                 ))}
+                              </div>
+                           </>
+                        )}
+                     </div>
+
+                     {/* Row 3: Secondary Meta (Location | Level | Job Tags) */}
+                     <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                        <span className="flex items-center font-medium text-slate-600" title={job.translations?.location || job.location}>
+                           {(job.translations?.location || job.location)}
+                           {job.isRemote && <span className="ml-1 text-emerald-600 bg-emerald-50 px-1 rounded">Remote</span>}
+                        </span>
+
+                        {job.experienceLevel && (
+                           <>
+                              <span className="text-slate-300">•</span>
+                              <span>{job.experienceLevel}</span>
+                           </>
+                        )}
+
+                        {/* Job Skills/Tags (Limited) */}
+                        {displayTags.filter(t => t.type === 'skill').length > 0 && (
+                           <>
+                              <span className="text-slate-300">•</span>
+                              <div className="flex gap-1.5 opacity-80">
+                                 {displayTags.filter(t => t.type === 'skill').slice(0, 4).map((tag, i) => (
+                                    <span key={i} className="hover:text-indigo-600 transition-colors">
+                                       #{tag.text}
+                                    </span>
+                                 ))}
+                              </div>
+                           </>
+                        )}
+                     </div>
                   </div>
 
-                  {/* Row 3: Tags & Skills */}
-                  <div className="flex flex-wrap gap-2 mt-1">
-                     {/* Category Tag */}
-                     {job.category && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                           {job.category}
+                  {/* Right Side: Salary & Actions - Strictly Aligned */}
+                  <div className="flex flex-col items-end justify-center gap-1 min-w-[140px] pl-4 border-l border-slate-100 border-dashed self-stretch">
+                     <div className="flex flex-col items-end">
+                        <span className={`text-xl leading-none ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium text-base' : 'font-extrabold text-rose-500'}`}>
+                           {formatSalary(job.salary)}
                         </span>
-                     )}
-                     
-                     {displayTags.map((tag, i) => (
-                        <span 
-                           key={i} 
-                           className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border
-                              ${tag.type === 'skill' 
-                                 ? 'bg-blue-50 text-blue-700 border-blue-100' 
-                                 : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}
-                        >
-                           {tag.text}
-                        </span>
-                     ))}
-                  </div>
-               </div>
+                        {matchScore !== undefined && matchScore > 0 && (
+                           <div className="flex items-center gap-1 mt-1.5">
+                              <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                              <span className="text-xs font-bold text-amber-600">
+                                 {matchScore}% 匹配
+                              </span>
+                           </div>
+                        )}
+                     </div>
 
-               {/* Right Side: Salary & Date */}
-               <div className="flex flex-col items-end justify-between self-stretch py-0.5 min-w-[100px]">
-                   <div className="text-xs text-slate-400 font-medium">
-                      {DateFormatter.formatPublishTime(job.publishedAt)}
-                   </div>
-                   
-                   <div className="flex flex-col items-end gap-1 mt-auto">
-                      <span className={`text-lg leading-tight ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium text-sm' : 'font-bold text-rose-500'}`}>
-                         {formatSalary(job.salary)}
-                      </span>
-                      
-                      {matchScore !== undefined && matchScore > 0 && (
-                         <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                            <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
-                            <span className="text-xs font-bold text-amber-700">
-                               {matchScore}% 匹配
-                            </span>
-                         </div>
-                      )}
-                   </div>
+                     <div className="mt-auto text-xs text-slate-400 font-medium pt-2">
+                        {DateFormatter.formatPublishTime(job.publishedAt)}
+                     </div>
+                  </div>
                </div>
             </div>
-         </div>
-         <ShareJobModal 
-            isOpen={isShareModalOpen} 
-            onClose={() => setIsShareModalOpen(false)} 
-            jobId={job.id}
-            jobTitle={job.translations?.title || job.title}
-            companyName={job.translations?.company || job.company || ''}
-         />
+            <ShareJobModal
+               isOpen={isShareModalOpen}
+               onClose={() => setIsShareModalOpen(false)}
+               jobId={job.id}
+               jobTitle={job.translations?.title || job.title}
+               companyName={job.translations?.company || job.company || ''}
+            />
          </>
       );
    }
 
    return (
       <>
-      <div
-         onClick={() => onClick?.(job)}
-         className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] cursor-pointer overflow-visible ${className || ''}`}
-      >
-         {/* Share Button (Grid) */}
-         <button
-            onClick={handleShare}
-            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10"
-            title="分享职位"
+         <div
+            onClick={() => onClick?.(job)}
+            className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] cursor-pointer overflow-visible ${className || ''}`}
          >
-            <Share2 className="w-5 h-5" />
-         </button>
+            {/* Share Button (Grid) */}
+            <button
+               onClick={handleShare}
+               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10"
+               title="分享职位"
+            >
+               <Share2 className="w-5 h-5" />
+            </button>
 
-         {/* Top Decoration removed as requested to move tags inline */}
-         {/* <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
+            {/* Top Decoration removed as requested to move tags inline */}
+            {/* <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
             ...
          </div> */}
 
-         <div className="flex flex-col h-full">
-            {/* Header Section */}
-            <div className="flex items-start gap-4 mb-5">
-               {/* Company Logo */}
-               <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-2xl shadow-inner flex-shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
-                  {job.logo ? (
-                     <img
-                        src={job.logo}
-                        alt={job.company}
-                        className="w-full h-full object-contain p-1"
-                        onError={(e) => {
-                           const target = e.target as HTMLImageElement;
-                           target.style.display = 'none';
-                           if (target.parentElement) {
-                              target.parentElement.classList.remove('bg-white');
-                              target.parentElement.classList.add('bg-gradient-to-br', 'from-slate-50', 'to-slate-100');
-                              const span = document.createElement('span');
-                              span.className = 'font-serif italic';
-                              span.textContent = companyInitial;
-                              target.parentElement.appendChild(span);
-                           }
-                        }}
-                     />
-                  ) : (
-                     <div className="w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-                        <span className="font-serif italic">{companyInitial}</span>
-                     </div>
-                  )}
-               </div>
-
-               <div className="flex-1 min-w-0 pt-0.5">
-                  <div className="flex items-center gap-2 mb-1">
-                     <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate tracking-tight">
-                        {job.translations?.title || job.title}
-                     </h3>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                     <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                     <span className="truncate max-w-[150px]" title={job.translations?.company || job.company}>
-                        {job.translations?.company || job.company}
-                     </span>
-                     <span className="text-slate-300">|</span>
-                     <span className="flex items-center truncate max-w-[150px]" title={job.translations?.location || job.location}>
-                        {job.isRemote && <Globe className="w-3 h-3 mr-1 text-indigo-500" />}
-                        {/* Display extracted location logic */}
-                        {(job.translations?.location || job.location) === 'Remote' 
-                           ? (job.isRemote ? '远程' : 'Remote') 
-                           : (job.translations?.location || job.location)}
-                     </span>
-                     {job.type && (
-                        <>
-                           <span className="text-slate-300">|</span>
-                           <span className="whitespace-nowrap">{job.type === 'full-time' ? '全职' : job.type}</span>
-                        </>
+            <div className="flex flex-col h-full">
+               {/* Header Section */}
+               <div className="flex items-start gap-4 mb-5">
+                  {/* Company Logo */}
+                  <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-2xl shadow-inner flex-shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                     {job.logo ? (
+                        <img
+                           src={job.logo}
+                           alt={job.company}
+                           className="w-full h-full object-contain p-1"
+                           onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              if (target.parentElement) {
+                                 target.parentElement.classList.remove('bg-white');
+                                 target.parentElement.classList.add('bg-gradient-to-br', 'from-slate-50', 'to-slate-100');
+                                 const span = document.createElement('span');
+                                 span.className = 'font-serif italic';
+                                 span.textContent = companyInitial;
+                                 target.parentElement.appendChild(span);
+                              }
+                           }}
+                        />
+                     ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                           <span className="font-serif italic">{companyInitial}</span>
+                        </div>
                      )}
                   </div>
 
-                     {/* Source Tag Inline */}
-                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        {sourceType === 'referral' && (
-                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200" title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）">
-                              <Target className="w-3 h-3" />
-                              Haigoo 内推
+                  <div className="flex-1 min-w-0 pt-0.5">
+                     <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate tracking-tight">
+                           {job.translations?.title || job.title}
+                        </h3>
+                     </div>
+                     <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center flex-wrap gap-2 text-sm text-slate-500 font-medium">
+                           <span className="font-bold text-slate-700 truncate max-w-[150px]" title={job.translations?.company || job.company}>
+                              {job.translations?.company || job.company}
+                           </span>
+
+                           {/* Added Industry Info */}
+                           {(job.companyIndustry || (job as any).industry) && (
+                              <>
+                                 <span className="text-slate-300">|</span>
+                                 <span className="text-slate-600 truncate max-w-[100px]">{(job.companyIndustry || (job as any).industry)}</span>
+                              </>
+                           )}
+
+                           <span className="text-slate-300">|</span>
+                           <span className="flex items-center truncate max-w-[120px]" title={job.translations?.location || job.location}>
+                              {job.isRemote && <Globe className="w-3 h-3 mr-1 text-indigo-500" />}
+                              {(job.translations?.location || job.location) === 'Remote'
+                                 ? (job.isRemote ? '远程' : 'Remote')
+                                 : (job.translations?.location || job.location)}
+                           </span>
+                        </div>
+
+                        {/* Added Company Tags */}
+                        {job.companyTags && job.companyTags.length > 0 && (
+                           <div className="flex flex-wrap gap-1.5 mt-0.5">
+                              {job.companyTags.slice(0, 3).map((tag, i) => (
+                                 <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                                    {tag}
+                                 </span>
+                              ))}
                            </div>
                         )}
+
+                        {/* Source Tag Inline */}
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                           {sourceType === 'referral' && (
+                              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="由 Haigoo 审核简历并转递给企业">
+                                 <Target className="w-3 h-3" />
+                                 官方内推
+                              </div>
+                           )}
+                           {isTranslated && (
+                              <span className="px-1.5 py-0.5 bg-slate-50 text-slate-500 text-[10px] font-medium rounded border border-slate-200 flex-shrink-0">
+                                 译
+                              </span>
+                           )}
+                        </div>
                      </div>
                   </div>
                </div>
-            </div>
 
-            {/* Job Description Summary - Prioritize translation */}
-            {(() => {
-               // Generate job summary
-               const getJobSummary = (): string => {
-                  // Try translated description first
-                  const descToUse = job.translations?.description || job.description
+               {/* Job Description Summary - Prioritize translation */}
+               {(() => {
+                  // Generate job summary
+                  const getJobSummary = (): string => {
+                     // Try translated description first
+                     const descToUse = job.translations?.description || job.description
 
-                  if (descToUse) {
-                     const cleanText = stripMarkdown(descToUse)
+                     if (descToUse) {
+                        const cleanText = stripMarkdown(descToUse)
 
-                     if (cleanText.length > 200) {
-                        return cleanText.substring(0, 200) + '...'
+                        if (cleanText.length > 200) {
+                           return cleanText.substring(0, 200) + '...'
+                        }
+                        return cleanText
                      }
-                     return cleanText
+
+                     // Fallback to summary
+                     if (job.summary) {
+                        // Safety check for summary
+                        if (typeof job.summary !== 'string') return '';
+
+                        return job.summary.length > 200
+                           ? job.summary.substring(0, 200) + '...'
+                           : job.summary
+                     }
+
+                     return ''
                   }
 
-                  // Fallback to summary
-                  if (job.summary) {
-                     // Safety check for summary
-                     if (typeof job.summary !== 'string') return '';
-                     
-                     return job.summary.length > 200
-                        ? job.summary.substring(0, 200) + '...'
-                        : job.summary
-                  }
+                  const summary = getJobSummary()
 
-                  return ''
-               }
+                  return summary ? (
+                     <p className="text-sm text-slate-600 leading-relaxed mb-5 line-clamp-2">
+                        {summary}
+                     </p>
+                  ) : null
+               })()}
 
-               const summary = getJobSummary()
-
-               return summary ? (
-                  <p className="text-sm text-slate-600 leading-relaxed mb-5 line-clamp-2">
-                     {summary}
-                  </p>
-               ) : null
-            })()}
-
-            {/* Tags Section - Pill Shape */}
-            <div className="flex flex-wrap gap-2 mb-6">
-               <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100">
-                  <Briefcase className="w-3 h-3 mr-1.5 text-slate-400" />
-                  {job.type === 'full-time' ? '全职' : job.type}
-               </span>
-               {job.category && (
+               {/* Tags Section - Pill Shape */}
+               <div className="flex flex-wrap gap-2 mb-6">
                   <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100">
-                     {job.category}
+                     <Briefcase className="w-3 h-3 mr-1.5 text-slate-400" />
+                     {job.type === 'full-time' ? '全职' : job.type}
                   </span>
-               )}
-               {/* {(job.sourceType === 'rss' || job.sourceType === 'third-party') && (
+                  {job.category && (
+                     <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100">
+                        {job.category}
+                     </span>
+                  )}
+                  {/* {(job.sourceType === 'rss' || job.sourceType === 'third-party') && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-medium border border-slate-200">
                      第三方
                   </span>
                )} */}
-               <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100 max-w-[200px] truncate" title={job.location}>
-                  <Globe className="w-3 h-3 mr-1.5 text-indigo-500 flex-shrink-0" />
-                  {(job.translations?.location || job.location)}
-               </span>
-               {matchScore !== undefined && matchScore > 0 && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-yellow-50 to-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                     <Sparkles className="w-3 h-3 mr-1.5 text-amber-500 fill-amber-500" />
-                     匹配 {matchScore}%
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100 max-w-[200px] truncate" title={job.location}>
+                     <Globe className="w-3 h-3 mr-1.5 text-indigo-500 flex-shrink-0" />
+                     {(job.translations?.location || job.location)}
                   </span>
-               )}
-            </div>
-
-            {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-6 py-4 border-t border-dashed border-slate-100">
-               <div>
-                  <p className="text-xs text-slate-400 mb-1">薪资范围 (Salary)</p>
-                  <p className="font-bold text-slate-900">{formatSalary(job.salary)}</p>
+                  {matchScore !== undefined && matchScore > 0 && (
+                     <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-yellow-50 to-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                        <Sparkles className="w-3 h-3 mr-1.5 text-amber-500 fill-amber-500" />
+                        匹配 {matchScore}%
+                     </span>
+                  )}
                </div>
-               <div>
-                  <p className="text-xs text-slate-400 mb-1">发布日期 (Date)</p>
-                  <p className="font-bold text-slate-900">{DateFormatter.formatPublishTime(job.publishedAt)}</p>
-               </div>
-            </div>
 
-            {/* Footer Action */}
-            <div className="mt-auto pt-2">
-               <button className="w-full group/btn relative flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-sm hover:shadow-indigo-200 hover:shadow-lg overflow-hidden">
-                  <span className="relative z-10">{job.canRefer ? '一键投递 (Apply Now)' : '查看详情 (View Details)'}</span>
-                  <ChevronRight className="w-4 h-4 relative z-10 group-hover/btn:translate-x-1 transition-transform" />
-                  <div className="absolute inset-0 bg-indigo-600 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-left duration-300"></div>
-               </button>
+               {/* Info Grid */}
+               <div className="grid grid-cols-2 gap-4 mb-6 py-4 border-t border-dashed border-slate-100">
+                  <div>
+                     <p className="text-xs text-slate-400 mb-1">薪资范围 (Salary)</p>
+                     <p className="font-bold text-slate-900">{formatSalary(job.salary)}</p>
+                  </div>
+                  <div>
+                     <p className="text-xs text-slate-400 mb-1">发布日期 (Date)</p>
+                     <p className="font-bold text-slate-900">{DateFormatter.formatPublishTime(job.publishedAt)}</p>
+                  </div>
+               </div>
+
+               {/* Footer Action */}
+               <div className="mt-auto pt-2">
+                  <button className="w-full group/btn relative flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-sm hover:shadow-indigo-200 hover:shadow-lg overflow-hidden">
+                     <span className="relative z-10">{job.canRefer ? '一键投递 (Apply Now)' : '查看详情 (View Details)'}</span>
+                     <ChevronRight className="w-4 h-4 relative z-10 group-hover/btn:translate-x-1 transition-transform" />
+                     <div className="absolute inset-0 bg-indigo-600 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-left duration-300"></div>
+                  </button>
+               </div>
             </div>
          </div>
-      </div>
-      <ShareJobModal 
-            isOpen={isShareModalOpen} 
-            onClose={() => setIsShareModalOpen(false)} 
+         <ShareJobModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
             jobId={job.id}
             jobTitle={job.translations?.title || job.title}
             companyName={job.translations?.company || job.company || ''}
          />
-         </>
-      );
-   }
+      </>
+   );
+}
