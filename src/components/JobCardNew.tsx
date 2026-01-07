@@ -122,30 +122,36 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
             >
                <div className="flex flex-col sm:flex-row p-4 gap-4">
                   {/* Left: Company Logo & Name (Redesigned like Fig 2) */}
-                  <div className="hidden sm:flex flex-col items-center justify-between p-3 w-28 h-28 flex-shrink-0 bg-slate-50 rounded-lg border border-slate-100">
-                     <span className="text-sm font-extrabold text-slate-900 text-center leading-tight line-clamp-2 w-full mb-1" title={job.translations?.company || job.company}>
-                        {job.translations?.company || job.company}
-                     </span>
-                     <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
-                        {job.logo ? (
-                           <img
-                              src={job.logo}
-                              alt={job.company}
-                              className="w-12 h-12 object-contain"
-                              onError={(e) => {
-                                 const target = e.target as HTMLImageElement;
-                                 target.style.display = 'none';
-                                 if (target.parentElement) {
-                                    const span = document.createElement('span');
-                                    span.className = 'font-serif italic text-2xl text-slate-400';
-                                    target.parentElement.appendChild(span);
-                                 }
-                              }}
-                           />
-                        ) : (
-                           <span className="font-serif italic text-3xl text-slate-300">{companyInitial}</span>
-                        )}
-                     </div>
+                  <div className="hidden sm:flex flex-col items-center justify-center w-28 h-28 flex-shrink-0 bg-slate-50 rounded-lg border border-slate-100 overflow-hidden relative group-hover:border-indigo-100 transition-colors">
+                     {job.logo ? (
+                        <>
+                           <div className="flex-1 w-full flex items-center justify-center p-2">
+                              <img
+                                 src={job.logo}
+                                 alt={job.company}
+                                 className="max-w-full max-h-full object-contain"
+                                 onError={(e) => {
+                                    // Fallback if image fails
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.parentElement?.classList.add('hidden');
+                                    // Logic to show text fallback is handled by parent state or conditional rendering, 
+                                    // but here simpler to just hide img and let text show? 
+                                    // Actually, let's keep it simple: if error, hide img.
+                                 }}
+                              />
+                           </div>
+                           <span className="text-xs font-bold text-slate-700 text-center w-full px-1 pb-2 truncate" title={job.translations?.company || job.company}>
+                              {job.translations?.company || job.company}
+                           </span>
+                        </>
+                     ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-indigo-50/30 p-2 text-center">
+                           <span className="font-serif italic font-bold text-slate-800 text-lg leading-tight line-clamp-3 break-words" title={job.translations?.company || job.company}>
+                              {job.translations?.company || job.company}
+                           </span>
+                        </div>
+                     )}
                   </div>
 
                   {/* Middle: Main Content */}
@@ -290,7 +296,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                {/* Header Section */}
                <div className="flex items-start gap-4 mb-4">
                   {/* Company Logo */}
-                  <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-bold overflow-hidden shadow-sm flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-bold overflow-hidden shadow-sm flex-shrink-0 relative group-hover:border-indigo-100 transition-colors">
                      {job.logo ? (
                         <img
                            src={job.logo}
@@ -299,6 +305,9 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                            onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
+                              // No text fallback here as it might be too small, or we can use the same logic?
+                              // Grid logo is 48x48 (w-12), List logo is 112x112 (w-28).
+                              // For 48x48, full text is too small. Initial is better.
                               if (target.parentElement) {
                                  const span = document.createElement('span');
                                  span.className = 'font-serif italic text-lg';
@@ -313,20 +322,8 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   </div>
 
                   <div className="flex-1 min-w-0">
-                     {/* Job Type & Date Row */}
-                     <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                           {job.type && (
-                              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
-                                 {job.type === 'full-time' ? 'Full-time' : job.type}
-                              </span>
-                           )}
-                           {job.category && (
-                              <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                                 {job.category}
-                              </span>
-                           )}
-                        </div>
+                     {/* Date (Top Row) */}
+                     <div className="flex items-center justify-end mb-1">
                         <span className="text-[10px] text-slate-400 font-medium">
                            {DateFormatter.formatPublishTime(job.publishedAt)}
                         </span>
@@ -335,6 +332,20 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1 mb-1" title={job.translations?.title || job.title}>
                         {job.translations?.title || job.title}
                      </h3>
+
+                     {/* Tags Row (Moved Below Title) */}
+                     <div className="flex items-center gap-2 mb-2">
+                        {job.type && (
+                           <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                              {job.type === 'full-time' ? 'Full-time' : job.type}
+                           </span>
+                        )}
+                        {job.category && (
+                           <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                              {job.category}
+                           </span>
+                        )}
+                     </div>
 
                      <div className="flex items-center text-xs text-slate-500 font-medium truncate">
                         <span className="text-slate-700 mr-2">{job.translations?.company || job.company}</span>
