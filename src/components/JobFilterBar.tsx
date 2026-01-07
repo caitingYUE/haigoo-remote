@@ -255,7 +255,7 @@ export default function JobFilterBar({
     filters.isNew;
 
   return (
-    <div className="flex flex-col gap-4 mb-6">
+    <div className="flex flex-col gap-4 mb-2">
       <div className="flex flex-col xl:flex-row gap-3 items-start xl:items-center">
         {/* Search Input - Adjusted Width */}
         <div className="relative w-full xl:w-72 flex-shrink-0">
@@ -300,10 +300,11 @@ export default function JobFilterBar({
             ))}
           </FilterDropdown>
 
-          {/* Rate (Salary) */}
+          {/* Salary (Renamed from Rate) */}
+          {/* 
           <FilterDropdown
-            label="Rate"
-            activeLabel={getActiveLabel('salary', SALARY_OPTIONS, 'Rate')}
+            label="Salary"
+            activeLabel={getActiveLabel('salary', SALARY_OPTIONS, 'Salary')}
             isActive={(filters.salary?.length || 0) > 0}
             isOpen={openDropdown === 'salary'}
             onToggle={() => toggleDropdown('salary')}
@@ -319,6 +320,7 @@ export default function JobFilterBar({
               />
             ))}
           </FilterDropdown>
+          */}
 
           {/* Location */}
           <FilterDropdown
@@ -340,10 +342,10 @@ export default function JobFilterBar({
             ))}
           </FilterDropdown>
 
-          {/* Commitment (Job Type) */}
+          {/* Job Type (Renamed from Commitment) */}
           <FilterDropdown
-            label="Commitment"
-            activeLabel={getActiveLabel('jobType', jobTypeOptions, 'Commitment')}
+            label="Job Type"
+            activeLabel={getActiveLabel('jobType', jobTypeOptions, 'Job Type')}
             isActive={(filters.jobType?.length || 0) > 0}
             isOpen={openDropdown === 'jobType'}
             onToggle={() => toggleDropdown('jobType')}

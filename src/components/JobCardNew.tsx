@@ -123,7 +123,7 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                <div className="flex flex-col sm:flex-row p-4 gap-4">
                   {/* Left: Company Logo & Name (Redesigned like Fig 2) */}
                   <div className="hidden sm:flex flex-col items-center justify-between p-3 w-28 h-28 flex-shrink-0 bg-slate-50 rounded-lg border border-slate-100">
-                     <span className="text-[10px] font-bold text-slate-500 text-center leading-tight line-clamp-1 w-full" title={job.translations?.company || job.company}>
+                     <span className="text-xs font-bold text-slate-700 text-center leading-tight line-clamp-2 w-full mb-1" title={job.translations?.company || job.company}>
                         {job.translations?.company || job.company}
                      </span>
                      <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
@@ -155,15 +155,15 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                            {/* Job Type */}
                            {job.type && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100/50">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
                                  <Briefcase className="w-3 h-3" />
                                  {job.type === 'full-time' ? '全职' : job.type}
                               </span>
                            )}
 
-                           {/* Category */}
+                           {/* Category - Improved Style (Fig 2) */}
                            {job.category && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100/50">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
                                  <Target className="w-3 h-3" />
                                  {job.category}
                               </span>
@@ -227,26 +227,21 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                   </div>
 
                   {/* Right: Salary, Date & Action */}
-                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center min-w-[140px] pl-4 border-l border-slate-100 border-dashed sm:border-l-0 sm:pl-0 gap-2">
+                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center min-w-[140px] pl-4 border-l border-slate-100 border-dashed sm:border-l-0 sm:pl-0 gap-1">
                      {/* Salary */}
                      <div className="text-right">
-                        <div className={`text-lg leading-none ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
+                        <div className={`text-lg leading-tight ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
                            {formatSalary(job.salary)}
                         </div>
-                        {/* Publish Date (Moved here) */}
-                         <div className="text-[10px] text-slate-400 font-medium mt-1">
-                            {DateFormatter.formatPublishTime(job.publishedAt)}
-                         </div>
                      </div>
-
-                     {/* View Job Button (New) */}
-                     <button className="hidden sm:flex items-center gap-1 px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-indigo-600 transition-colors mt-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-200">
-                        View job
-                        <ChevronRight className="w-3 h-3" />
-                     </button>
+                     
+                     {/* Publish Date (Moved here) */}
+                     <div className="text-[10px] text-slate-400 font-medium mt-1 mb-1">
+                        {DateFormatter.formatPublishTime(job.publishedAt)}
+                     </div>
                      
                      {matchScore !== undefined && matchScore > 0 && (
-                        <div className="sm:hidden flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1 mt-1">
                            <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
                            <span className="text-xs font-bold text-amber-600">
                               {matchScore}%

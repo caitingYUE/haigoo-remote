@@ -704,7 +704,7 @@ export default function JobsPage() {
           </div>
 
           {/* Main Content Area: Split View */}
-          <div className="flex-1 flex overflow-hidden gap-6 min-h-0">
+          <div className="flex-1 flex overflow-hidden gap-6 min-h-0 mt-2">
             {/* Middle Column: Job List */}
             <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[55%] xl:w-[55%]' : 'lg:w-[800px] mx-auto'} bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden flex-shrink-0`}>
               {/* List Header Info */}
