@@ -186,7 +186,13 @@ class RecommendationHistoryService {
    * 将RSS Job转换为Page Job格式
    */
   private convertRSSJobToPageJob(rssJob: any): Job {
-    return jobAggregator.convertRSSJobToPageJob(rssJob);
+    return {
+      ...rssJob,
+      type: rssJob.jobType || rssJob.type || 'full-time',
+      responsibilities: rssJob.responsibilities || [],
+      skills: rssJob.tags || rssJob.skills || [],
+      requirements: rssJob.requirements || [],
+    } as Job;
   }
 
   /**
