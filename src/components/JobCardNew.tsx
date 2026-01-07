@@ -137,9 +137,10 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                onClick={() => onClick?.(job)}
                className={`group relative bg-white rounded-xl mb-3 border transition-all duration-200 cursor-pointer overflow-hidden
                ${isActive
-                     ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md'
+                     ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md bg-indigo-50/10'
                      : 'border-slate-200 hover:border-indigo-300 hover:shadow-lg'
                   } ${className || ''}`}
+               id={`job-card-${job.id}`}
             >
                <div className="flex flex-col sm:flex-row p-5 gap-4 items-start sm:items-center">
                   {/* Left: Logo */}
