@@ -113,135 +113,97 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          <>
             <div
                onClick={() => onClick?.(job)}
-               className={`group relative bg-white rounded-xl mb-4 border transition-all duration-300
+               className={`group relative bg-white rounded-xl mb-3 border transition-all duration-200
                ${isActive
-                     ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md'
-                     : 'border-slate-200 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5'
+                     ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md z-10'
+                     : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:translate-x-1'
                   } ${className || ''}`}
             >
-               <div className="flex flex-col sm:flex-row p-6 gap-6">
+               <div className="flex flex-col sm:flex-row p-5 gap-5 items-start">
                   {/* Left: Company Logo (Distinct Area) */}
                   <div className="hidden sm:flex flex-col items-center justify-start pt-1">
-                     <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
+                     <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                         {job.logo ? (
                            <img
                               src={job.logo}
                               alt={job.company}
-                              className="w-full h-full object-contain p-2"
+                              className="w-full h-full object-contain p-1.5"
                               onError={(e) => {
                                  const target = e.target as HTMLImageElement;
                                  target.style.display = 'none';
                                  if (target.parentElement) {
                                     const span = document.createElement('span');
-                                    span.className = 'font-serif italic text-2xl text-slate-400';
+                                    span.className = 'font-serif italic text-lg text-slate-400';
                                     span.textContent = companyInitial;
                                     target.parentElement.appendChild(span);
                                  }
                               }}
                            />
                         ) : (
-                           <span className="font-serif italic text-2xl text-slate-400">{companyInitial}</span>
+                           <span className="font-serif italic text-lg text-slate-400">{companyInitial}</span>
                         )}
                      </div>
-                     {/* Optional: Company Name below logo for very clean look? No, keep in main body for readability */}
                   </div>
 
                   {/* Middle: Main Content */}
-                  <div className="flex-1 flex flex-col gap-3 min-w-0">
-                     {/* Row 1: Badges (Top) */}
-                     <div className="flex items-center flex-wrap gap-2">
-                        {/* Job Type Badge */}
-                        {job.type && (
-                           <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
-                              <Briefcase className="w-3 h-3 mr-1" />
-                              {job.type === 'full-time' ? '全职' : job.type}
-                           </span>
-                        )}
-
-                        {/* Category Badge */}
-                        {job.category && (
-                           <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
-                              {job.category}
-                           </span>
-                        )}
-
-                        {/* Source Badges */}
-                        {sourceType === 'referral' && (
-                           <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
-                              <Target className="w-3 h-3 mr-1" />
-                              官方内推
-                           </span>
-                        )}
-
-                        {isTranslated && (
-                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-slate-50 text-slate-400 border border-slate-100">
-                              译
-                           </span>
-                        )}
-
-                        {/* New Badge (Logic based on publish time < 3 days?) - Placeholder logic if field exists */}
-                        {/* <span className="text-red-500 text-xs font-bold">New</span> */}
-                     </div>
-
-                     {/* Row 2: Title (Large & Bold) */}
-                     <div>
-                        <h3 className={`text-xl font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
-                           {job.translations?.title || job.title}
-                        </h3>
-                     </div>
-
-                     {/* Row 3: Meta Info (Icon + Text) */}
-                     <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
-                        {/* Company Name */}
-                        <div className="flex items-center font-medium text-slate-700">
-                           <span className="hover:underline cursor-pointer">{job.translations?.company || job.company}</span>
-                        </div>
-
-                        {/* Location */}
-                        <div className="flex items-center">
-                           <Globe className="w-4 h-4 mr-1.5 text-slate-400" />
-                           <span className="truncate max-w-[200px]">{job.translations?.location || job.location}</span>
-                           {job.isRemote && <span className="ml-1 text-emerald-600 bg-emerald-50 px-1.5 rounded text-xs font-medium">Remote</span>}
-                        </div>
-
-                        {/* Industry / Info */}
-                        {(job.companyIndustry || (job as any).industry) && (
-                           <div className="flex items-center">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>
-                              <span>{(job.companyIndustry || (job as any).industry)}</span>
+                  <div className="flex-1 flex flex-col gap-2 min-w-0">
+                     {/* Row 1: Title & Badges */}
+                     <div className="flex items-start justify-between gap-2">
+                        <div className="flex flex-col gap-1">
+                           <h3 className={`text-lg font-bold text-slate-900 leading-snug group-hover:text-indigo-600 transition-colors ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
+                              {job.translations?.title || job.title}
+                           </h3>
+                           
+                           {/* Meta Info Row */}
+                           <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 font-medium">
+                              <span className="text-slate-900 hover:underline cursor-pointer">{job.translations?.company || job.company}</span>
+                              <span className="w-0.5 h-3 bg-slate-300"></span>
+                              <div className="flex items-center">
+                                 <Globe className="w-3 h-3 mr-1 text-slate-400" />
+                                 <span className="truncate max-w-[150px]">{job.translations?.location || job.location}</span>
+                              </div>
+                              {job.type && (
+                                 <>
+                                    <span className="w-0.5 h-3 bg-slate-300"></span>
+                                    <span>{job.type === 'full-time' ? '全职' : job.type}</span>
+                                 </>
+                              )}
+                              <span className="w-0.5 h-3 bg-slate-300"></span>
+                              <span className="text-slate-400">{DateFormatter.formatPublishTime(job.publishedAt)}</span>
                            </div>
-                        )}
-
-                        {/* Publish Date */}
-                        <div className="flex items-center text-slate-400 text-xs">
-                           <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
                         </div>
                      </div>
 
-                     {/* Row 4: Tags (Pills) */}
+                     {/* Row 2: Tags (Pills) */}
                      {displayTags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-1">
+                        <div className="flex flex-wrap gap-1.5 mt-1">
                            {displayTags.map((tag, i) => (
                               <span
                                  key={i}
-                                 className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                 className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 text-xs border border-slate-100 hover:bg-white hover:border-slate-200 transition-colors"
                               >
                                  {tag.text}
                               </span>
                            ))}
+                           {sourceType === 'referral' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
+                                 <Target className="w-3 h-3 mr-1" />
+                                 官方内推
+                              </span>
+                           )}
                         </div>
                      )}
                   </div>
 
-                  {/* Right: Salary & Action (Fixed Width on Desktop) */}
-                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-4 sm:min-w-[180px] border-t sm:border-t-0 sm:border-l border-dashed border-slate-100 pt-4 sm:pt-0 sm:pl-6 mt-2 sm:mt-0">
+                  {/* Right: Salary & Action */}
+                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 sm:min-w-[140px] pt-4 sm:pt-0 mt-2 sm:mt-0 border-t sm:border-t-0 border-dashed border-slate-100 sm:border-none">
                      {/* Salary */}
                      <div className="text-right">
-                        <div className={`text-xl leading-none ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
+                        <div className={`text-base ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-extrabold text-slate-900'}`}>
                            {formatSalary(job.salary)}
                         </div>
                         {matchScore !== undefined && matchScore > 0 && (
-                           <div className="flex items-center justify-end gap-1 mt-1.5">
+                           <div className="flex items-center justify-end gap-1 mt-1">
                               <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
                               <span className="text-xs font-bold text-amber-600">
                                  {matchScore}% 匹配
@@ -251,14 +213,13 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      </div>
 
                      {/* Action Button */}
-                     <button className="hidden sm:flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-indigo-600 text-white text-sm font-bold rounded-full transition-all duration-300 shadow-sm hover:shadow-md group/btn w-full">
+                     <button className="hidden sm:flex items-center justify-center gap-1 px-4 py-1.5 bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-all duration-300 shadow-sm hover:shadow-md group/btn w-full mt-1">
                         <span>View Job</span>
-                        <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
                      </button>
 
-                     {/* Mobile Only Action (Arrow) */}
+                     {/* Mobile Only Action */}
                      <div className="sm:hidden text-indigo-600 font-bold text-sm flex items-center">
-                        查看详情 <ChevronRight className="w-4 h-4 ml-1" />
+                        查看 <ChevronRight className="w-4 h-4 ml-0.5" />
                      </div>
                   </div>
                </div>
