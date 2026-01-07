@@ -77,17 +77,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       return `${currencySymbol}${formatAmount(min)} - ${currencySymbol}${formatAmount(max)}`;
    };
 
-   // Handle company website click
-   // const handleCompanyClick = (e: React.MouseEvent) => {
-   //    e.stopPropagation();
-   //    // Strict: Only use companyWebsite from backend (trusted_companies)
-   //    const url = job.companyWebsite;
-   //    if (url) {
-   //       window.open(url, '_blank', 'noopener,noreferrer');
-   //    }
-   // };
-
-
    // 1. Merge and deduplicate tags for display (Common for both variants)
    const displayTags = useMemo(() => {
       const tags: { text: string; type: 'skill' | 'benefit' | 'other' }[] = [];
@@ -105,155 +94,150 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
          job.companyTags.slice(0, 3).forEach(tag => tags.push({ text: tag, type: 'benefit' }));
       }
 
-      return tags.slice(0, 8); // Max 8 tags total
+      return tags.slice(0, 5); // Reduce max tags for cleaner look
    }, [job.skills, (job as any).tags, job.companyTags]);
 
-   if (variant === 'list') {
+   // Common Logo Component
+   const CompanyLogo = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
+      const sizeClasses = {
+         sm: 'w-10 h-10 p-1.5',
+         md: 'w-12 h-12 p-2',
+         lg: 'w-14 h-14 p-2'
+      };
 
+      return (
+         <div className={`${sizeClasses[size]} flex-shrink-0 bg-white rounded-lg border border-slate-100 flex items-center justify-center overflow-hidden relative group-hover:border-indigo-100 transition-colors`}>
+            {job.logo ? (
+               <img
+                  src={job.logo}
+                  alt={job.company}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                     const target = e.target as HTMLImageElement;
+                     target.style.display = 'none';
+                     if (target.parentElement) {
+                        target.parentElement.classList.add('bg-indigo-50');
+                        target.parentElement.innerHTML = `<span class="text-indigo-500 font-bold text-lg">${companyInitial}</span>`;
+                     }
+                  }}
+               />
+            ) : (
+               <div className="w-full h-full flex items-center justify-center bg-indigo-50 text-indigo-500 font-bold text-lg">
+                  {companyInitial}
+               </div>
+            )}
+         </div>
+      );
+   };
+
+   if (variant === 'list') {
       return (
          <>
             <div
                onClick={() => onClick?.(job)}
-               className={`group relative bg-white rounded-xl mb-3 border transition-all duration-300
+               className={`group relative bg-white rounded-xl mb-3 border transition-all duration-200 cursor-pointer overflow-hidden
                ${isActive
                      ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md'
-                     : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5'
+                     : 'border-slate-200 hover:border-indigo-300 hover:shadow-lg'
                   } ${className || ''}`}
             >
-               <div className="flex flex-col sm:flex-row p-4 gap-4">
-                  {/* Left: Company Logo & Name (Redesigned like Fig 2) */}
-                  <div className="hidden sm:flex flex-col items-center justify-between w-28 h-28 flex-shrink-0 bg-slate-50 rounded-lg border border-slate-100 overflow-hidden relative group-hover:border-indigo-100 transition-colors p-1">
-                     {job.logo ? (
-                        <>
-                           <div className="flex-1 w-full flex items-center justify-center min-h-0 p-1">
-                              <img
-                                 src={job.logo}
-                                 alt={job.company}
-                                 className="max-w-full max-h-full object-contain"
-                                 onError={(e) => {
-                                    // Fallback if image fails
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                    target.parentElement?.classList.add('hidden');
-                                 }}
-                              />
-                           </div>
-                           <span className="text-xs font-bold text-slate-700 text-center w-full px-1 pb-1 truncate flex-shrink-0" title={job.translations?.company || job.company}>
-                              {job.translations?.company || job.company}
-                           </span>
-                        </>
-                     ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-indigo-50/30 p-2 text-center">
-                           <span className="font-serif italic font-bold text-slate-800 text-lg leading-tight line-clamp-3 break-words" title={job.translations?.company || job.company}>
-                              {job.translations?.company || job.company}
-                           </span>
-                        </div>
-                     )}
+               <div className="flex flex-col sm:flex-row p-5 gap-4 items-start sm:items-center">
+                  {/* Left: Logo */}
+                  <div className="hidden sm:block">
+                     <CompanyLogo size="md" />
                   </div>
 
-                  {/* Middle: Main Content */}
-                  <div className="flex-1 flex flex-col justify-between min-w-0 relative py-1">
-                     <div>
-                        {/* Top Row: Tags (Job Type, Category) */}
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                           {/* Job Type */}
-                           {job.type && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                 <Clock className="w-3 h-3" />
-                                 {job.type === 'full-time' ? '全职' : job.type}
-                              </span>
-                           )}
-
-                           {/* Category - Improved Style (Fig 2) */}
-                           {job.category && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                                 <Gem className="w-3 h-3" />
-                                 {job.category}
-                              </span>
-                           )}
-
-                           {/* Source Badges */}
-                           {sourceType === 'referral' && (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-50 text-purple-600 border border-purple-100">
-                                 Haigoo内推
-                              </span>
-                           )}
-                        </div>
-
-                        {/* Title */}
-                        <div className="flex items-center gap-2 mb-1.5">
-                           <h3 className={`text-lg font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-1 ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
-                              {job.translations?.title || job.title}
-                           </h3>
-                           {isTranslated && (
-                              <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-[10px] text-slate-500 font-serif" title="已翻译">
-                                 译
-                              </span>
-                           )}
-                        </div>
-
-                        {/* Meta Info */}
-                        <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                           <div className="flex items-center">
-                              <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400" />
-                              <span className="truncate max-w-[200px] font-medium">{job.translations?.location || job.location}</span>
-                           </div>
-
-                           {(job.companyIndustry || (job as any).industry) && (
-                              <div className="flex items-center">
-                                 <span className="w-1 h-1 rounded-full bg-slate-300 mr-2"></span>
-                                 <span>{(job.companyIndustry || (job as any).industry)}</span>
-                              </div>
-                           )}
-                           
-                           {/* Mobile Company Name */}
-                           <div className="sm:hidden flex items-center">
-                                <span className="w-1 h-1 rounded-full bg-slate-300 mr-2"></span>
-                                <span className="font-medium text-slate-700 truncate max-w-[150px]">{job.translations?.company || job.company}</span>
-                           </div>
-                        </div>
-                     </div>
-
-                     {/* Bottom Row: Tags (Skills/Benefits) */}
-                     {displayTags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                           {displayTags.map((tag, i) => (
-                              <span
-                                 key={i}
-                                 className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-medium border border-transparent hover:bg-slate-200 transition-colors"
-                              >
-                                 {tag.text}
-                              </span>
-                           ))}
-                        </div>
-                     )}
-                  </div>
-
-                  {/* Right: Salary, Date & Action */}
-                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between min-w-[140px] pl-4 border-l border-slate-100 border-dashed sm:border-l-0 sm:pl-0 gap-1 sm:self-stretch">
-                     {/* Top: Publish Date & Match Score */}
-                     <div className="flex flex-col items-end gap-1">
-                        <div className="text-xs text-slate-500 font-medium">
-                           {DateFormatter.formatPublishTime(job.publishedAt)}
-                        </div>
-                        {matchScore !== undefined && matchScore > 0 && (
-                           <div className="flex items-center justify-end gap-1">
-                              <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
-                              <span className="text-xs font-bold text-amber-600">
-                                 {matchScore}%
-                              </span>
-                           </div>
+                  {/* Middle: Content */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                     {/* Title Row */}
+                     <div className="flex items-center gap-2">
+                        <h3 className={`text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1 ${isActive ? 'text-indigo-700' : ''}`} title={job.translations?.title || job.title}>
+                           {job.translations?.title || job.title}
+                        </h3>
+                        {isTranslated && (
+                           <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-[10px] text-slate-500" title="已翻译">
+                              译
+                           </span>
                         )}
+                        {/* Mobile Date */}
+                        <span className="sm:hidden ml-auto text-xs text-slate-400 font-medium whitespace-nowrap">
+                           {DateFormatter.formatPublishTime(job.publishedAt)}
+                        </span>
                      </div>
 
-                     {/* Bottom: Salary */}
-                     <div className="text-right sm:mt-auto">
-                        <div className={`text-base leading-tight ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-bold' : 'font-bold text-slate-900'}`}>
-                           {formatSalary(job.salary)}
+                     {/* Company & Location Row */}
+                     <div className="flex items-center text-sm text-slate-500 gap-3">
+                        <span className="font-medium text-slate-700 truncate max-w-[200px]" title={job.translations?.company || job.company}>
+                           {job.translations?.company || job.company}
+                        </span>
+                        
+                        <div className="hidden sm:flex items-center gap-1 truncate">
+                           <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                           <span className="truncate max-w-[150px]">{job.translations?.location || job.location}</span>
                         </div>
+                     </div>
+
+                     {/* Tags Row - Clean & Minimal */}
+                     <div className="flex flex-wrap items-center gap-2 mt-1">
+                        {/* Job Type Badge */}
+                        {job.type && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-50 text-slate-600 border border-slate-100">
+                              {job.type === 'full-time' ? '全职' : job.type}
+                           </span>
+                        )}
+                        
+                        {/* Category Badge */}
+                        {job.category && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-50 text-slate-600 border border-slate-100">
+                              {job.category}
+                           </span>
+                        )}
+
+                        {/* First 2 Tags only to avoid clutter */}
+                        {displayTags.slice(0, 2).map((tag, i) => (
+                           <span
+                              key={i}
+                              className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-xs text-slate-500 bg-white border border-slate-100"
+                           >
+                              {tag.text}
+                           </span>
+                        ))}
+                     </div>
+                  </div>
+
+                  {/* Right: Salary & Action */}
+                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto gap-2 sm:gap-1 mt-2 sm:mt-0 pl-0 sm:pl-4 border-t sm:border-t-0 border-slate-50 pt-3 sm:pt-0">
+                      {/* Mobile Location (moved here to balance) */}
+                      <div className="flex sm:hidden items-center gap-1 text-xs text-slate-500 truncate mr-auto">
+                           <MapPin className="w-3 h-3 flex-shrink-0" />
+                           <span className="truncate max-w-[120px]">{job.translations?.location || job.location}</span>
+                      </div>
+
+                      {/* Salary */}
+                      <div className={`text-sm sm:text-base ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                           {formatSalary(job.salary)}
+                     </div>
+
+                     {/* Date (Desktop) */}
+                     <span className="hidden sm:inline-block text-xs text-slate-400 font-medium">
+                        {DateFormatter.formatPublishTime(job.publishedAt)}
+                     </span>
+                     
+                     {/* View Button (Hover) */}
+                     <div className="hidden group-hover:flex items-center gap-1 text-indigo-600 text-xs font-bold transition-all mt-1">
+                         View <ChevronRight className="w-3 h-3" />
                      </div>
                   </div>
                </div>
+               
+               {/* Share Button (List) */}
+               <button
+                  onClick={handleShare}
+                  className="absolute top-3 right-3 p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-slate-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                  title="分享职位"
+               >
+                  <Share2 className="w-4 h-4" />
+               </button>
             </div>
             <ShareJobModal
                isOpen={isShareModalOpen}
@@ -266,147 +250,64 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
       );
    }
 
+   // Grid Variant (Cleaned up)
    return (
       <>
          <div
             onClick={() => onClick?.(job)}
-            className={`group relative bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] cursor-pointer overflow-visible ${className || ''}`}
+            className={`group relative bg-white rounded-xl p-5 border transition-all duration-200 cursor-pointer
+            ${className || ''}
+            border-slate-200 hover:border-indigo-300 hover:shadow-lg h-full flex flex-col`}
          >
-            {/* Share Button (Grid) */}
-            {/* Share Button (Grid) - Keep as subtle action */}
+            {/* Share Button */}
             <button
                onClick={(e) => {
                   e.stopPropagation();
                   handleShare(e);
                }}
-               className="absolute top-4 right-4 p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-slate-50 rounded-full transition-all z-10"
+               className="absolute top-4 right-4 p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-slate-50 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10"
                title="分享职位"
             >
                <Share2 className="w-4 h-4" />
             </button>
 
-            {/* Top Decoration removed as requested to move tags inline */}
-            {/* <div className="absolute top-0 right-0 p-0 flex flex-col items-end pointer-events-none">
-            ...
-         </div> */}
-
-            <div className="flex flex-col h-full">
-               {/* Header Section */}
-               <div className="flex items-start gap-4 mb-4">
-                  {/* Company Logo */}
-                  <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-bold overflow-hidden shadow-sm flex-shrink-0 relative group-hover:border-indigo-100 transition-colors">
-                     {job.logo ? (
-                        <img
-                           src={job.logo}
-                           alt={job.company}
-                           className="w-full h-full object-contain p-1.5"
-                           onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              // No text fallback here as it might be too small, or we can use the same logic?
-                              // Grid logo is 48x48 (w-12), List logo is 112x112 (w-28).
-                              // For 48x48, full text is too small. Initial is better.
-                              if (target.parentElement) {
-                                 const span = document.createElement('span');
-                                 span.className = 'font-serif italic text-lg';
-                                 span.textContent = companyInitial;
-                                 target.parentElement.appendChild(span);
-                              }
-                           }}
-                        />
-                     ) : (
-                        <span className="font-serif italic text-lg">{companyInitial}</span>
-                     )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                     {/* Date (Top Row) */}
-                     <div className="flex items-center justify-end mb-1">
-                        <span className="text-[10px] text-slate-400 font-medium">
-                           {DateFormatter.formatPublishTime(job.publishedAt)}
-                        </span>
-                     </div>
-
-                     <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1 mb-1" title={job.translations?.title || job.title}>
-                        {job.translations?.title || job.title}
-                     </h3>
-
-                     {/* Tags Row (Moved Below Title) */}
-                     <div className="flex items-center gap-2 mb-2">
-                        {job.type && (
-                           <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
-                              {job.type === 'full-time' ? 'Full-time' : job.type}
-                           </span>
-                        )}
-                        {job.category && (
-                           <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                              {job.category}
-                           </span>
-                        )}
-                     </div>
-
-                     <div className="flex items-center text-xs text-slate-500 font-medium truncate">
-                        <span className="text-slate-700 mr-2">{job.translations?.company || job.company}</span>
-                        <MapPin className="w-3 h-3 mr-1 text-slate-400" />
-                        <span className="truncate max-w-[100px]">{job.translations?.location || job.location}</span>
-                     </div>
+            {/* Header */}
+            <div className="flex items-start gap-4 mb-4">
+               <CompanyLogo size="md" />
+               <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 mb-1" title={job.translations?.title || job.title}>
+                     {job.translations?.title || job.title}
+                  </h3>
+                  <div className="flex items-center text-xs text-slate-500 font-medium">
+                     <span className="text-slate-700 truncate mr-2 max-w-[120px]">{job.translations?.company || job.company}</span>
+                     <MapPin className="w-3 h-3 mr-1 text-slate-400 flex-shrink-0" />
+                     <span className="truncate max-w-[80px]">{job.translations?.location || job.location}</span>
                   </div>
                </div>
+            </div>
 
-               {/* Job Description Summary - Prioritize translation */}
-               {(() => {
-                  // Generate job summary
-                  const getJobSummary = (): string => {
-                     // Try translated description first
-                     const descToUse = job.translations?.description || job.description
+            {/* Tags (Inline) */}
+            <div className="flex flex-wrap gap-1.5 mb-4">
+               {job.type && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-50 text-slate-600 border border-slate-100">
+                     {job.type === 'full-time' ? '全职' : job.type}
+                  </span>
+               )}
+               {displayTags.slice(0, 3).map((tag, i) => (
+                  <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] text-slate-500 bg-white border border-slate-100">
+                     {tag.text}
+                  </span>
+               ))}
+            </div>
 
-                     if (descToUse) {
-                        const cleanText = stripMarkdown(descToUse)
-
-                        if (cleanText.length > 200) {
-                           return cleanText.substring(0, 200) + '...'
-                        }
-                        return cleanText
-                     }
-
-                     // Fallback to summary
-                     if (job.summary) {
-                        // Safety check for summary
-                        if (typeof job.summary !== 'string') return '';
-
-                        return job.summary.length > 200
-                           ? job.summary.substring(0, 200) + '...'
-                           : job.summary
-                     }
-
-                     return ''
-                  }
-
-                  const summary = getJobSummary()
-
-                  return summary ? (
-                     <p className="text-sm text-slate-600 leading-relaxed mb-5 line-clamp-2">
-                        {summary}
-                     </p>
-                  ) : null
-               })()}
-
-               {/* Tags Section - Simple & Clean */}
-               <div className="flex flex-wrap gap-1.5 mb-4 max-h-[48px] overflow-hidden">
-                  {displayTags.slice(0, 4).map((tag: any, i: number) => (
-                     <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 text-[10px] font-medium border border-slate-100">
-                        {tag.text}
-                     </span>
-                  ))}
+            {/* Footer */}
+            <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
+               <div className={`text-sm ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                  {formatSalary(job.salary)}
                </div>
-
-               {/* Info Grid - Simplified */}
-               <div className="mt-auto pt-4 border-t border-dashed border-slate-100 flex items-end justify-between">
-                  <div>
-                     <p className="text-xs text-slate-400 mb-0.5">Salary</p>
-                     <p className="font-bold text-slate-900 text-lg leading-none">{formatSalary(job.salary)}</p>
-                  </div>
-               </div>
+               <span className="text-xs text-slate-400 font-medium">
+                  {DateFormatter.formatPublishTime(job.publishedAt)}
+               </span>
             </div>
          </div>
          <ShareJobModal
