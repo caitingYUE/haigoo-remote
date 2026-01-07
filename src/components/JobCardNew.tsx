@@ -22,6 +22,7 @@ interface JobCardNewProps {
 export default function JobCardNew({ job, onClick, matchScore, className, variant = 'grid', isActive = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    const sourceType = getJobSourceType(job);
+   const isTranslated = !!job.translations?.title;
    const [showCopied, setShowCopied] = useState(false);
    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -87,7 +88,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    // };
 
    if (variant === 'list') {
-      const isTranslated = !!job.translations?.title;
 
       // Merge and deduplicate tags for display
       const displayTags = useMemo(() => {
