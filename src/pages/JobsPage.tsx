@@ -15,11 +15,11 @@ import { JobTrackingModal, JobPreferences } from '../components/JobTrackingModal
 import { trackingService } from '../services/tracking-service'
 import { useDebounce } from '../hooks/useDebounce'
 
-// Industry Options (Static for consistency)
+// Industry Options (Based on classification-service.js)
 const INDUSTRY_OPTIONS = [
   '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
-  '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
-  '硬件/物联网', '消费生活', '市场调研', '其他'
+  '电子商务', 'Web3/区块链', '游戏/娱乐', '企业服务/SaaS',
+  '硬件/物联网', '其他'
 ].map(v => ({ label: v, value: v }));
 
 // Job Type Options - Standardized
@@ -31,13 +31,27 @@ const JOB_TYPE_OPTIONS = [
   { label: '实习', value: 'internship' }
 ];
 
-// Top Categories (Static based on DB analysis to ensure all options are available)
+// Top Categories (Based on classification-service.js JOB_KEYWORDS)
 const CATEGORY_OPTIONS = [
-  '后端开发', '前端开发', '全栈开发', '移动开发', '测试/QA', '运维/SRE', '架构师', '技术支持', '网络安全', '操作系统/内核',
-  '产品经理', '产品设计', '用户体验/设计', '内容创作',
-  '市场营销', '销售', '客户经理', '客户服务', '咨询',
-  '人力资源', '财务', '管理', '行政',
-  '数据分析', '人工智能', '其他'
+  // 开发
+  '后端开发', '前端开发', '全栈开发', '移动开发', '数据开发', '服务器开发',
+  '算法工程师', '测试/QA', '运维/SRE', '网络安全', '操作系统/内核',
+  '技术支持', '硬件开发', '架构师', 'CTO/技术管理',
+  
+  // 产品 & 设计
+  '产品经理', '产品设计', 'UI/UX设计', '视觉设计', '平面设计', '用户研究',
+  
+  // 业务 & 运营
+  '市场营销', '销售', '客户经理', '客户服务', '运营', '增长黑客', '内容创作',
+  
+  // 职能
+  '人力资源', '招聘', '财务', '法务', '行政', '管理',
+  
+  // 数据
+  '数据分析', '商业分析', '数据科学',
+  
+  // 其他
+  '教育培训', '咨询', '投资', '其他'
 ].map(v => ({ label: v, value: v }));
 
 // Location Options
