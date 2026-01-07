@@ -1030,6 +1030,23 @@ class JobAggregator {
   }
 
   /**
+   * 更新岗位审核状态
+   */
+  async updateJobApprovalStatus(jobId: string, isApproved: boolean): Promise<boolean> {
+    const job = this.jobs.find(j => j.id === jobId);
+    if (job) {
+      job.isApproved = isApproved;
+      job.updatedAt = new Date().toISOString();
+
+      // Persist to API
+      this.syncJobToAPI(job).catch(err => console.error('Failed to sync approval status to API:', err));
+
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * 更新岗位内部数据 (Member Only Fields)
    */
   async updateJobInternalData(jobId: string, data: {

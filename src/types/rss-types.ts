@@ -43,6 +43,9 @@ export interface Job {
 
   // Featured status
   isFeatured?: boolean;
+  
+  // Approval status
+  isApproved?: boolean;
 
   // Haigoo Member Fields
   riskRating?: {
