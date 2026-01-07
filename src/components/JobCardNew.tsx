@@ -408,12 +408,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      <p className="text-xs text-slate-400 mb-0.5">Salary</p>
                      <p className="font-bold text-slate-900 text-lg leading-none">{formatSalary(job.salary)}</p>
                   </div>
-                  {matchScore !== undefined && matchScore > 0 && (
-                     <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">
-                        <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
-                        <span className="text-xs font-bold text-amber-700">{matchScore}%</span>
-                     </div>
-                  )}
                </div>
             </div>
          </div>
