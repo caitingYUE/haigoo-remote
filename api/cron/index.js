@@ -123,7 +123,7 @@ async function runSequence(req, mainRes, tasks) {
     console.log(`[CronSequence] Starting task ${i + 1}/${tasks.length}: ${task.name}...`);
 
     // Send task start event
-    mainRes.write(`event: task_start data: ${JSON.stringify({
+    mainRes.write(`event: task_start\ndata: ${JSON.stringify({
       type: 'task_start',
       task: task.name,
       index: i + 1,
@@ -190,7 +190,7 @@ async function runSequence(req, mainRes, tasks) {
   }
 
   // Send sequence completion event
-  mainRes.write(`event: sequence_complete data: ${JSON.stringify({
+  mainRes.write(`event: sequence_complete\ndata: ${JSON.stringify({
     type: 'sequence_complete',
     message: '定时任务序列执行完成',
     totalTasks: tasks.length,
