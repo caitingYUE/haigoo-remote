@@ -5,6 +5,8 @@ import App from './App.tsx'
 import './index.css'
 // import './services/init-scheduler'
 
+console.log('--- VERSION CHECK: 2026-01-08 12:05 Fix-Filter-Rewrite ---');
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
