@@ -787,8 +787,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-20 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位级别</th>
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">企业名称</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位类型</th>
-              <th className="w-32 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域限制</th>
-              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域分类</th>
+              <th className="w-32 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">地点/远程</th>
+              {/* <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域分类</th> */}
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">技能标签</th>
               <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">发布日期</th>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位来源</th>
@@ -950,7 +950,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   </Tooltip>
                 </td>
 
-                {/* 8. 区域分类 (对应 DB region) */}
+                {/* 8. 区域分类 (对应 DB region) - 已隐藏
                 <td className="px-3 py-2 w-24 truncate">
                   {(() => {
                     const r = job.region;
@@ -969,6 +969,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     );
                   })()}
                 </td>
+                */}
 
                 {/* 9. 技能标签 (对应 DB tags) */}
                 <td className="px-3 py-2 w-40 truncate">
@@ -1407,6 +1408,28 @@ const EditJobModal: React.FC<{
     }, false); // Keep modal open for bulk editing
   };
 
+  // Tag suggestions based on category
+  const getSuggestedTags = (category: string) => {
+    const commonTags = ['Remote', 'English', 'Communication'];
+    const categoryTags: Record<string, string[]> = {
+      '前端开发': ['React', 'Vue', 'TypeScript', 'JavaScript', 'HTML/CSS', 'Next.js', 'TailwindCSS'],
+      '后端开发': ['Java', 'Python', 'Node.js', 'Go', 'Spring Boot', 'Django', 'SQL', 'Microservices'],
+      '全栈开发': ['React', 'Node.js', 'TypeScript', 'Full Stack', 'AWS', 'GraphQL'],
+      '移动开发': ['iOS', 'Android', 'Flutter', 'React Native', 'Swift', 'Kotlin'],
+      'UI/UX设计': ['Figma', 'Sketch', 'UI Design', 'UX Research', 'Prototyping', 'Adobe XD'],
+      '产品经理': ['Product Management', 'Agile', 'Scrum', 'User Stories', 'Roadmap', 'Jira'],
+      '数据分析': ['SQL', 'Python', 'Tableau', 'Power BI', 'Data Analysis', 'Excel'],
+      '运维/SRE': ['AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Linux', 'Terraform'],
+      '市场营销': ['SEO', 'Content Marketing', 'Social Media', 'Growth Hacking', 'Google Analytics', 'Copywriting'],
+      '人工智能': ['Machine Learning', 'Deep Learning', 'PyTorch', 'TensorFlow', 'NLP', 'Computer Vision'],
+      'Web3/区块链': ['Solidity', 'Smart Contracts', 'Ethereum', 'DeFi', 'Web3.js', 'Rust']
+    };
+    
+    return [...(categoryTags[category] || []), ...commonTags];
+  };
+
+  const currentSuggestedTags = getSuggestedTags(formData.category);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -1628,10 +1651,11 @@ const EditJobModal: React.FC<{
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="例如: React, TypeScript, Node.js"
                 />
-                {availableTags.length > 0 && (
+                {/* Use currentSuggestedTags instead of generic availableTags if available */}
+                {(currentSuggestedTags.length > 0 ? currentSuggestedTags : availableTags).length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     <span className="text-xs text-slate-500 flex items-center">推荐标签:</span>
-                    {availableTags.map(tag => (
+                    {(currentSuggestedTags.length > 0 ? currentSuggestedTags : availableTags).map(tag => (
                       <button
                         key={tag}
                         type="button"
