@@ -115,6 +115,17 @@ export default function JobsPage() {
   const [locationOptions, setLocationOptions] = useState<{label: string, value: string, count?: number}[]>([]); 
   const [timezoneOptions, setTimezoneOptions] = useState<{label: string, value: string, count?: number}[]>([]);
 
+  // P0 Fix: Reset options when search term changes or filters are cleared (to avoid getting stuck with empty options)
+  useEffect(() => {
+    if (!searchTerm && !filters.category.length && !filters.industry.length && !filters.location.length) {
+        // Reset to full list if no filters active
+        setCategoryOptions(CATEGORY_OPTIONS);
+        setIndustryOptions(INDUSTRY_OPTIONS);
+        setJobTypeOptions(JOB_TYPE_OPTIONS);
+        // Location remains dynamic
+    }
+  }, [searchTerm, filters]);
+
   useEffect(() => {
     localStorage.setItem('haigoo_job_filters', JSON.stringify(filters))
   }, [filters])
@@ -345,27 +356,29 @@ export default function JobsPage() {
         const { category, industry, jobType, location, timezone } = data.aggregations;
         
         // Helper to merge with static options
-        const mergeOptions = (staticOpts: any[], dynamicOpts: any[], selectedValues: string[] = []) => {
-            if (!dynamicOpts) return staticOpts;
-            
-            const combined = [...dynamicOpts];
-            
-            // Ensure selected values are present
-            selectedValues.forEach(val => {
-                if (!combined.find(c => c.value === val)) {
-                    combined.push({ value: val, count: 0 });
-                }
-            });
-            
-            return combined.map((d: any) => {
-                const staticMatch = staticOpts.find(s => s.value === d.value);
-                return {
-                    label: staticMatch ? staticMatch.label : d.value,
-                    value: d.value,
-                    count: d.count
-                };
-            });
-        };
+         const mergeOptions = (staticOpts: any[], dynamicOpts: any[], selectedValues: string[] = []) => {
+             // 修正：如果 dynamicOpts 存在但为空数组（表示当前条件下无数据），则应返回空，而不是回退到静态全量
+             // 但为了防止筛选死锁（选中了某个值但不在列表中导致无法取消），我们需要保留已选中的值
+             if (!dynamicOpts) return staticOpts;
+             
+             const combined = [...dynamicOpts];
+             
+             // Ensure selected values are present (so they can be unchecked)
+             selectedValues.forEach(val => {
+                 if (!combined.find(c => c.value === val)) {
+                     combined.push({ value: val, count: 0 });
+                 }
+             });
+             
+             return combined.map((d: any) => {
+                 const staticMatch = staticOpts.find(s => s.value === d.value);
+                 return {
+                     label: staticMatch ? staticMatch.label : d.value,
+                     value: d.value,
+                     count: d.count
+                 };
+             });
+         };
 
         setCategoryOptions(mergeOptions(CATEGORY_OPTIONS, category, filters.category));
         setIndustryOptions(mergeOptions(INDUSTRY_OPTIONS, industry, filters.industry));
