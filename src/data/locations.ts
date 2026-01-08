@@ -649,9 +649,17 @@ export function findLocation(query: string): LocationData | null {
         return LOCATION_DATABASE[normalized]
     }
 
-    // 别名匹配
+    // 别名匹配 (Use stricter matching)
     for (const [key, data] of Object.entries(LOCATION_DATABASE)) {
-        if (data.aliases.some(alias => normalized.includes(alias) || alias.includes(normalized))) {
+        if (data.aliases.some(alias => {
+            // Short aliases (<= 3 chars) must match exactly or be a distinct word
+            if (alias.length <= 3) {
+                const regex = new RegExp(`\\b${alias}\\b`, 'i');
+                return normalized === alias || regex.test(normalized);
+            }
+            // Longer aliases can use includes
+            return normalized.includes(alias) || alias.includes(normalized);
+        })) {
             return data
         }
     }

@@ -24,13 +24,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
    const sourceType = getJobSourceType(job);
    const isTranslated = !!job.translations?.title;
    const [showCopied, setShowCopied] = useState(false);
-   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-
-   const handleShare = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsShareModalOpen(true);
-      trackingService.track('click_share_button', { jobId: job.id, from: 'card' });
-   };
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
@@ -223,30 +216,9 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                      <span className="hidden sm:inline-block text-xs text-slate-400 font-medium">
                         {DateFormatter.formatPublishTime(job.publishedAt)}
                      </span>
-                     
-                     {/* View Button (Hover) */}
-                     <div className="hidden group-hover:flex items-center gap-1 text-indigo-600 text-xs font-bold transition-all mt-1">
-                         View <ChevronRight className="w-3 h-3" />
-                     </div>
                   </div>
                </div>
-               
-               {/* Share Button (List) */}
-               <button
-                  onClick={handleShare}
-                  className="absolute top-3 right-3 p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-slate-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
-                  title="分享职位"
-               >
-                  <Share2 className="w-4 h-4" />
-               </button>
             </div>
-            <ShareJobModal
-               isOpen={isShareModalOpen}
-               onClose={() => setIsShareModalOpen(false)}
-               jobId={job.id}
-               jobTitle={job.translations?.title || job.title}
-               companyName={job.translations?.company || job.company || ''}
-            />
          </>
       );
    }
@@ -260,18 +232,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
             ${className || ''}
             border-slate-200 hover:border-indigo-300 hover:shadow-lg h-full flex flex-col`}
          >
-            {/* Share Button */}
-            <button
-               onClick={(e) => {
-                  e.stopPropagation();
-                  handleShare(e);
-               }}
-               className="absolute top-4 right-4 p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-slate-50 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10"
-               title="分享职位"
-            >
-               <Share2 className="w-4 h-4" />
-            </button>
-
             {/* Header */}
             <div className="flex items-start gap-4 mb-4">
                <CompanyLogo size="md" />
@@ -311,13 +271,6 @@ export default function JobCardNew({ job, onClick, matchScore, className, varian
                </span>
             </div>
          </div>
-         <ShareJobModal
-            isOpen={isShareModalOpen}
-            onClose={() => setIsShareModalOpen(false)}
-            jobId={job.id}
-            jobTitle={job.translations?.title || job.title}
-            companyName={job.translations?.company || job.company || ''}
-         />
       </>
    );
 }

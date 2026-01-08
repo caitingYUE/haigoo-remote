@@ -396,7 +396,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     </span>
                                     {showLocationTooltip && (
                                         <div className="absolute z-50 mt-2 left-0">
-                                            <LocationTooltip location={job.location || ''} onClose={() => setShowLocationTooltip(false)} />
+                                            <LocationTooltip location={locText} onClose={() => setShowLocationTooltip(false)} />
                                         </div>
                                     )}
                                 </div>

@@ -85,7 +85,7 @@ export default function JobsPage() {
       category: [] as string[],
       experienceLevel: [] as string[],
       industry: [] as string[],
-      regionType: ['domestic'] as string[],
+      regionType: [] as string[],
       sourceType: [] as string[],
       location: [] as string[],
       timezone: [] as string[],
