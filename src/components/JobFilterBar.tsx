@@ -136,7 +136,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
             /* Desktop Styles */
             md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:w-auto md:min-w-[240px] md:max-w-[300px] md:rounded-xl md:shadow-xl md:border md:border-slate-100
              md:animate-in md:fade-in md:zoom-in-95
-           ">
+           "
+           onClick={(e) => e.stopPropagation()} // Stop propagation to prevent closing when clicking inside
+           >
             <div className="p-2 pb-8 md:pb-2 max-h-[60vh] md:max-h-[400px] overflow-y-auto custom-scrollbar">
               {/* Mobile Handle */}
               <div className="md:hidden flex justify-center pb-2 pt-1" onClick={onClose}>
