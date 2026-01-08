@@ -681,7 +681,14 @@ export default function JobsPage() {
           <div className="flex-shrink-0 z-50 relative">
             <JobFilterBar
               filters={filters}
-              onFilterChange={(newFilters: any) => setFilters((prev: any) => ({ ...prev, ...newFilters }))}
+              onFilterChange={(newFilters: any) => {
+                console.log('[JobsPage] onFilterChange triggered:', newFilters);
+                setFilters((prev: any) => {
+                  const updated = { ...prev, ...newFilters };
+                  console.log('[JobsPage] New filters state:', updated);
+                  return updated;
+                });
+              }}
               categoryOptions={CATEGORY_OPTIONS}
               industryOptions={INDUSTRY_OPTIONS}
               jobTypeOptions={JOB_TYPE_OPTIONS}

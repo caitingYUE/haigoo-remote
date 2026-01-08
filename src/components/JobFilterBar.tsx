@@ -199,6 +199,7 @@ export default function JobFilterBar({
   };
 
   const handleCheckboxChange = (section: keyof typeof filters, value: string, checked: boolean) => {
+    console.log(`[JobFilterBar] Checkbox changed: section=${section}, value=${value}, checked=${checked}`);
     const current = (filters[section] as string[]) || [];
     let updated;
 
@@ -212,6 +213,7 @@ export default function JobFilterBar({
       updated = current.filter(item => item !== value);
     }
 
+    console.log(`[JobFilterBar] Calling onFilterChange with:`, { [section]: updated });
     onFilterChange({ [section]: updated });
   };
 
