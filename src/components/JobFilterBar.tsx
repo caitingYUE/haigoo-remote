@@ -152,7 +152,14 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
 };
 
 const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, count, emphasized }) => (
-  <label className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full">
+  <label
+    className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full"
+    onClick={(e) => {
+      // P0 Debug: Explicitly handle label click to ensure event propagation
+      console.log(`[JobFilterBar] Label clicked for: ${label}`);
+      // e.stopPropagation(); // Do not stop propagation, let it reach input
+    }}
+  >
     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${checked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'
       }`}>
       {checked && <Check className="w-3 h-3 text-white" />}
@@ -161,7 +168,10 @@ const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, c
       type="checkbox"
       className="hidden"
       checked={checked}
-      onChange={(e) => onChange(e.target.checked)}
+      onChange={(e) => {
+        console.log(`[JobFilterBar] Input onChange triggered for: ${label}, newChecked: ${e.target.checked}`);
+        onChange(e.target.checked);
+      }}
     />
     <span className={`text-sm flex-1 ${checked ? 'text-indigo-600 font-medium' : 'text-slate-600'} ${emphasized ? 'font-bold' : ''}`}>
       {label}
