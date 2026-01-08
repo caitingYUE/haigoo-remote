@@ -259,6 +259,7 @@ export class DataManagementService {
     isFeatured?: boolean;
     isApproved?: boolean;
     company?: string;
+    industry?: string;
     // 新增：关键词搜索（岗位名称/公司/描述/地点/标签）
     search?: string;
     isRemote?: boolean;
@@ -276,9 +277,11 @@ export class DataManagementService {
       if (filters?.category) queryParams.append('category', filters.category);
       if (filters?.source) queryParams.append('source', filters.source);
       if (filters?.company) queryParams.append('company', filters.company);
+      if (filters?.industry) queryParams.append('industry', filters.industry);
       if (filters?.search) queryParams.append('search', filters.search);
       if (filters?.isRemote !== undefined) queryParams.append('isRemote', filters.isRemote.toString());
       if (filters?.isApproved !== undefined) queryParams.append('isApproved', filters.isApproved.toString());
+      if (filters?.isFeatured !== undefined) queryParams.append('isFeatured', filters.isFeatured.toString());
       
       // 处理日期范围
       if (filters?.dateRange) {
