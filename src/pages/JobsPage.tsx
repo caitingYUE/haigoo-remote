@@ -292,7 +292,11 @@ export default function JobsPage() {
       // Debug Log
       console.log('[loadJobsWithFilters] Request params:', queryParams.toString());
 
-      let response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`, {
+      // P0 Fix: Add timestamp to prevent caching of old API response structure
+      const requestUrl = `/api/data/processed-jobs?${queryParams.toString()}&_t=${Date.now()}`;
+      console.log('[loadJobsWithFilters] Fetching:', requestUrl);
+
+      let response = await fetch(requestUrl, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         signal // P0 Fix: Pass abort signal
       })
@@ -309,6 +313,14 @@ export default function JobsPage() {
       }
 
       const data = await response.json()
+      
+      // Debug Aggregations
+      console.log('[loadJobsWithFilters] Response Data:', {
+         total: data.total,
+         jobsCount: data.jobs?.length,
+         hasAggregations: !!data.aggregations,
+         aggregations: data.aggregations
+      });
 
       // 设置岗位数据和分页信息
       if (loadMore) {
