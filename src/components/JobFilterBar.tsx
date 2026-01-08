@@ -110,7 +110,10 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
-        onClick={onToggle}
+        onClick={(e) => {
+          console.log(`[FilterDropdown] Button clicked: ${label}`);
+          onToggle();
+        }}
         className={buttonClass}
       >
         {icon && <span className={isActive && (variant === 'solid-blue' || variant === 'solid-purple') ? 'text-white' : 'text-slate-500'}>{icon}</span>}
@@ -120,14 +123,18 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
 
       {isOpen && (
         <>
-          {/* Mobile Overlay */}
+          {/* Backdrop Overlay - Handles 'click outside' reliably */}
           <div
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
-            onClick={onClose}
+            className="fixed inset-0 z-[9990] bg-black/20 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none cursor-default"
+            onClick={(e) => {
+               console.log('[FilterDropdown] Backdrop clicked');
+               e.stopPropagation();
+               onClose();
+            }}
           />
 
           <div className="
-            z-50 overflow-hidden bg-white
+            z-[9999] overflow-hidden bg-white
             
             /* Mobile Styles */
             fixed bottom-0 left-0 right-0 w-full rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.1)] border-t border-slate-200
@@ -137,7 +144,11 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
             md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:w-auto md:min-w-[240px] md:max-w-[300px] md:rounded-xl md:shadow-xl md:border md:border-slate-100
              md:animate-in md:fade-in md:zoom-in-95
            "
-           onClick={(e) => e.stopPropagation()} // Stop propagation to prevent closing when clicking inside
+           style={{ pointerEvents: 'auto' }}
+           onClick={(e) => {
+             console.log('[FilterDropdown] Content container clicked (propagation stopped)');
+             e.stopPropagation();
+           }} 
            >
             <div className="p-2 pb-8 md:pb-2 max-h-[60vh] md:max-h-[400px] overflow-y-auto custom-scrollbar">
               {/* Mobile Handle */}
@@ -285,7 +296,7 @@ export default function JobFilterBar({
         </div>
 
         {/* Filter Row - Scrollable on mobile, wrap on desktop */}
-        <div className="flex flex-wrap items-center gap-2 flex-1 w-full overflow-x-auto pb-1 xl:pb-0 no-scrollbar">
+        <div className="flex flex-wrap items-center gap-2 flex-1 w-full pb-1 xl:pb-0">
           
           {/* Role (Category) -> Renamed to '角色' (Role) to match backend 'category' better */}
           <FilterDropdown
