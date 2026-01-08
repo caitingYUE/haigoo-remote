@@ -15,22 +15,45 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { Job } from '../types'
 
+import { JobCardSkeleton } from '../components/skeletons/JobCardSkeleton'
+import { CompanyCardSkeleton } from '../components/skeletons/CompanyCardSkeleton'
+
 export default function LandingPage() {
   const navigate = useNavigate()
   const { user, token, isAuthenticated, isMember } = useAuth()
   const { showSuccess, showWarning, showError } = useNotificationHelpers()
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
-  const [featuredJobs, setFeaturedJobs] = useState<Job[]>([])
+  const [featuredJobs, setFeaturedJobs] = useState<Job[]>(() => {
+    try {
+      const cached = localStorage.getItem('haigoo_home_featured_jobs')
+      return cached ? JSON.parse(cached) : []
+    } catch { return [] }
+  })
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
-  const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>([])
+  const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>(() => {
+    try {
+      const cached = localStorage.getItem('haigoo_home_trusted_companies')
+      return cached ? JSON.parse(cached) : []
+    } catch { return [] }
+  })
   const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<{ totalJobs: number | null, companiesCount: number | null, dailyJobs: number | null }>({ totalJobs: null, companiesCount: null, dailyJobs: null })
-  const [jobsLoading, setJobsLoading] = useState(true)
-  const [companiesLoading, setCompaniesLoading] = useState(true)
+  
+  // Only show loading state if we don't have cached data
+  const [jobsLoading, setJobsLoading] = useState(() => {
+    try {
+      return !localStorage.getItem('haigoo_home_featured_jobs')
+    } catch { return true }
+  })
+  const [companiesLoading, setCompaniesLoading] = useState(() => {
+    try {
+      return !localStorage.getItem('haigoo_home_trusted_companies')
+    } catch { return true }
+  })
 
   const toggleSaveJob = async (job: Job) => {
     if (!isAuthenticated || !token) {
@@ -151,6 +174,8 @@ export default function LandingPage() {
           .then(featuredJobsData => {
             setFeaturedJobs(featuredJobsData)
             setJobsLoading(false)
+            // Cache the result
+            localStorage.setItem('haigoo_home_featured_jobs', JSON.stringify(featuredJobsData))
           })
           .catch(error => {
             console.error('Failed to load featured jobs:', error)
@@ -163,6 +188,8 @@ export default function LandingPage() {
             setTrustedCompanies(featuredCompaniesData.companies)
             setCompanyJobStats(featuredCompaniesData.stats)
             setCompaniesLoading(false)
+            // Cache the result
+            localStorage.setItem('haigoo_home_trusted_companies', JSON.stringify(featuredCompaniesData.companies))
           })
           .catch(error => {
             console.error('Failed to load featured companies:', error)
@@ -190,6 +217,7 @@ export default function LandingPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Featured Jobs Section */}
+        {(jobsLoading || featuredJobs.length > 0) && (
         <div id="featured-jobs" className="py-24">
           <div className="flex items-center justify-between mb-12">
             <div className="flex flex-col gap-2">
@@ -206,16 +234,10 @@ export default function LandingPage() {
           </div>
 
           {jobsLoading ? (
-            <div className="flex justify-center py-20">
-              <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent absolute top-0 left-0"></div>
-              </div>
-            </div>
-          ) : featuredJobs.length === 0 ? (
-            <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100 border-dashed">
-              <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500">暂无精选岗位</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {[...Array(6)].map((_, i) => (
+                <JobCardSkeleton key={i} />
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -240,6 +262,7 @@ export default function LandingPage() {
             </button>
           </div>
         </div>
+        )}
         <div className="py-16 border-t border-slate-100">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -258,11 +281,10 @@ export default function LandingPage() {
           </div>
 
           {companiesLoading ? (
-            <div className="flex justify-center py-20">
-              <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-100"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent absolute top-0 left-0"></div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <CompanyCardSkeleton key={i} />
+              ))}
             </div>
           ) : trustedCompanies.length === 0 ? (
             <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100 border-dashed">

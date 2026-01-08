@@ -62,6 +62,8 @@ const CATEGORY_OPTIONS = [
 
 import { MobileRestricted } from '../components/MobileRestricted'
 
+import { JobCardSkeleton } from '../components/skeletons/JobCardSkeleton'
+
 export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -765,8 +767,19 @@ export default function JobsPage() {
               {/* List Content */}
               <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-white overscroll-y-contain">
                 {showLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="p-0">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="border-b border-slate-50 last:border-0">
+                         {/* Wrapper to match JobCardNew list variant spacing if needed, 
+                             JobCardSkeleton has its own border/padding. 
+                             JobCardNew usually has border-b in list view or similar.
+                             Let's just render the skeleton. 
+                         */}
+                         <div className="p-4">
+                            <JobCardSkeleton />
+                         </div>
+                      </div>
+                    ))}
                   </div>
                 ) : distributedJobs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
