@@ -620,7 +620,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         {displayText(job.company || '')}
                                     </h3>
                                     <div className="flex items-center gap-2 text-sm text-slate-600">
-                                        <span>{companyInfo?.industry || job.category || '未分类'}</span>
+                                        <span>{companyInfo?.industry || job.companyIndustry || job.category || '未分类'}</span>
                                     </div>
                                     {job.isTrusted && (
                                         <div className="mt-2">
