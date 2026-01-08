@@ -288,6 +288,8 @@ export default function JobsPage() {
       if (filters.salary?.length > 0) queryParams.append('salary', filters.salary.join(','))
       if (filters.isTrusted) queryParams.append('isTrusted', 'true')
       if (filters.isNew) queryParams.append('isNew', 'true')
+      // ⚠️ P0 Fix: Always enforce approval check for C-side job list
+      queryParams.append('isApproved', 'true')
 
       // Debug Log
       console.log('[loadJobsWithFilters] Request params:', queryParams.toString());

@@ -13,6 +13,22 @@ import { processedJobsService } from '../services/processed-jobs-service';
 import { useNotificationHelpers } from './NotificationSystem';
 // 简历库相关逻辑已迁移至独立页面
 
+// Define skill keywords for recommendations
+const SKILL_KEYWORDS = [
+  // Programming Languages
+  'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'PHP', 'Ruby', 'Swift', 'Kotlin',
+  // Frontend
+  'React', 'Vue', 'Angular', 'HTML', 'CSS', 'Sass', 'Less', 'Webpack', 'Vite', 'Next.js', 'TailwindCSS',
+  // Backend
+  'Node.js', 'Express', 'Django', 'Flask', 'Spring', 'Laravel', 'Rails', 'NestJS',
+  // Database
+  'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Elasticsearch',
+  // Cloud & DevOps
+  'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'CI/CD',
+  // Tools
+  'Git', 'Jenkins', 'Jira', 'Confluence'
+];
+
 interface DataManagementTabsProps {
   className?: string;
 }
@@ -143,12 +159,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           if (data.config.jobCategories) {
             setAvailableCategories(data.config.jobCategories);
           }
-          if (data.config.companyTags) {
-            setAvailableTags(data.config.companyTags);
-          }
+          // Use hardcoded skill tags instead of company tags for recommendations
+          setAvailableTags(SKILL_KEYWORDS);
+        } else {
+          setAvailableTags(SKILL_KEYWORDS);
         }
       } catch (error) {
         console.error('Failed to load job categories/tags:', error);
+        setAvailableTags(SKILL_KEYWORDS);
       }
     };
     loadCategories();
@@ -286,7 +304,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   };
 
   // 保存编辑
-  const handleSaveEdit = async (updatedJob: Partial<ProcessedJobData>) => {
+  const handleSaveEdit = async (updatedJob: Partial<ProcessedJobData>, shouldClose: boolean = true) => {
     console.log('[Frontend] Saving job edit:', updatedJob); // Debug Log
     if (!editingJob) return;
 
@@ -314,8 +332,13 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
         await dataManagementService.addProcessedJob(newJob);
       }
-      setShowEditModal(false);
-      setEditingJob(null);
+      
+      if (shouldClose) {
+        setShowEditModal(false);
+        setEditingJob(null);
+      } else {
+        showSuccess('保存成功', '职位信息已更新');
+      }
 
       // 重新加载数据以显示最新状态
       // Use a slight delay to ensure DB write is propagated if reading from secondary or cache
@@ -1311,7 +1334,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 // 编辑职位模态框组件
 const EditJobModal: React.FC<{
   job: ProcessedJobData;
-  onSave: (updatedJob: Partial<ProcessedJobData>) => void;
+  onSave: (updatedJob: Partial<ProcessedJobData>, shouldClose?: boolean) => void;
   onClose: () => void;
   onNavigate?: (direction: 'prev' | 'next') => void;
   hasPrev?: boolean;
@@ -1323,6 +1346,7 @@ const EditJobModal: React.FC<{
     title: job.title,
     company: job.company,
     location: job.location,
+    timezone: job.timezone || '',
     salary: job.salary || '',
     jobType: job.jobType as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship',
     experienceLevel: job.experienceLevel as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive',
@@ -1342,6 +1366,7 @@ const EditJobModal: React.FC<{
       title: job.title,
       company: job.company,
       location: job.location,
+      timezone: job.timezone || '',
       salary: job.salary || '',
       jobType: job.jobType as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship',
       experienceLevel: job.experienceLevel as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive',
@@ -1379,7 +1404,7 @@ const EditJobModal: React.FC<{
       tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
       requirements: formData.requirements.split('\n').filter(Boolean),
       benefits: formData.benefits.split('\n').filter(Boolean)
-    });
+    }, false); // Keep modal open for bulk editing
   };
 
   return (
@@ -1489,6 +1514,17 @@ const EditJobModal: React.FC<{
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">时区</label>
+              <input
+                type="text"
+                value={formData.timezone}
+                onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="例如: UTC+8, PST, America/New_York"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">薪资</label>
               <input
                 type="text"
@@ -1514,7 +1550,7 @@ const EditJobModal: React.FC<{
               </select>
             </div>
 
-            <div>
+            <div className="hidden">
               <label className="block text-sm font-medium text-slate-700 mb-2">区域分类</label>
               <select
                 value={formData.region || ''}

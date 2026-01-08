@@ -66,7 +66,8 @@ export default function CompanyDetailPage() {
             // Use 'company' param which usually does partial match in backend.
             // But we want to filter more strictly to avoid "Alpha" matching "AlphaSights" if not intended.
             // Let's fetch and then filter client side if needed, or rely on service.
-            const response = await processedJobsService.getProcessedJobs(1, 100, { company: decodedCompanyName })
+            // ⚠️ P0 Fix: Only show approved jobs on C-side
+            const response = await processedJobsService.getProcessedJobs(1, 100, { company: decodedCompanyName, isApproved: true })
             setJobs(response.jobs)
         } catch (error) {
             console.error('Failed to load company data:', error)

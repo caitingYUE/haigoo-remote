@@ -27,6 +27,7 @@ export interface ProcessedJobsFilters {
   canRefer?: boolean
   sourceFilter?: string
   sortBy?: 'recent' | 'relevance'
+  isApproved?: boolean
 }
 
 class ProcessedJobsService {
@@ -61,6 +62,7 @@ class ProcessedJobsService {
       if (filters.region) params.append('region', filters.region)
       if (filters.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString())
       if (filters.canRefer !== undefined) params.append('canRefer', filters.canRefer.toString())
+      if (filters.isApproved !== undefined) params.append('isApproved', filters.isApproved.toString())
       if (filters.sortBy) params.append('sortBy', filters.sortBy)
       // Append source filter if present
       if (filters.sourceFilter && filters.sourceFilter !== 'all') {

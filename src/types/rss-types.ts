@@ -29,6 +29,7 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
   region?: 'domestic' | 'overseas' | 'both';
+  timezone?: string;
 
   // New Company Sync Fields
   companyIndustry?: string;
