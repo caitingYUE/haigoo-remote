@@ -254,18 +254,25 @@ export default function JobsPage() {
         // Explicitly send relevance to ensure backend knows the intent
         queryParams.append('sortBy', 'relevance')
       }
+
+      // Debug Log
+      console.log('[loadJobsWithFilters] Current filters state:', filters);
+
       if (searchTerm) queryParams.append('search', searchTerm)
-      if (filters.category.length > 0) queryParams.append('category', filters.category.join(','))
-      if (filters.experienceLevel.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
-      if (filters.location.length > 0) queryParams.append('location', filters.location.join(','))
-      if (filters.industry.length > 0) queryParams.append('industry', filters.industry.join(','))
-      if (filters.regionType.length > 0) queryParams.append('regionType', filters.regionType.join(','))
-      if (filters.sourceType.length > 0) queryParams.append('sourceType', filters.sourceType.join(','))
-      if (filters.type.length > 0) queryParams.append('type', filters.type.join(','))
-      if (filters.jobType.length > 0) queryParams.append('jobType', filters.jobType.join(','))
-      if (filters.salary.length > 0) queryParams.append('salary', filters.salary.join(','))
+      if (filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
+      if (filters.experienceLevel?.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
+      if (filters.location?.length > 0) queryParams.append('location', filters.location.join(','))
+      if (filters.industry?.length > 0) queryParams.append('industry', filters.industry.join(','))
+      if (filters.regionType?.length > 0) queryParams.append('regionType', filters.regionType.join(','))
+      if (filters.sourceType?.length > 0) queryParams.append('sourceType', filters.sourceType.join(','))
+      if (filters.type?.length > 0) queryParams.append('type', filters.type.join(','))
+      if (filters.jobType?.length > 0) queryParams.append('jobType', filters.jobType.join(','))
+      if (filters.salary?.length > 0) queryParams.append('salary', filters.salary.join(','))
       if (filters.isTrusted) queryParams.append('isTrusted', 'true')
       if (filters.isNew) queryParams.append('isNew', 'true')
+
+      // Debug Log
+      console.log('[loadJobsWithFilters] Request params:', queryParams.toString());
 
       let response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
