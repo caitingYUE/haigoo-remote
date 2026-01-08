@@ -63,7 +63,7 @@ export default function ProfileCenterPage() {
   const { showSuccess, showError } = useNotificationHelpers()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const [upgradeSource, setUpgradeSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
 
   const handleRemoveFavorite = async (jobId: string) => {
@@ -476,7 +476,7 @@ export default function ProfileCenterPage() {
       const isTempId = latestResume?.id && /^\d{13}$/.test(latestResume.id);
 
       // If temp ID or no ID, we might need to create it first (should have been done in upload, but just in case)
-      let resumeIdToAnalyze = latestResume?.id;
+      const resumeIdToAnalyze = latestResume?.id;
 
       // If we are unsure if it's saved, we can try to re-save/sync content
       // But 'analyze' endpoint reads from DB.

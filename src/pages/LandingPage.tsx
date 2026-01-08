@@ -88,7 +88,7 @@ export default function LandingPage() {
     const currentIndex = featuredJobs.findIndex(j => j.id === selectedJob.id)
     if (currentIndex === -1) return
 
-    let nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1
+    const nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1
     if (nextIndex >= 0 && nextIndex < featuredJobs.length) {
       setSelectedJob(featuredJobs[nextIndex])
     }

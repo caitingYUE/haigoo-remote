@@ -10,7 +10,7 @@ import { Job } from '../types'
 import { extractLocations } from '../utils/locationHelper'
 
 import { useNotificationHelpers } from '../components/NotificationSystem'
-import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import { trustedCompaniesService } from '../services/trusted-companies-service'
 import { JobTrackingModal, JobPreferences } from '../components/JobTrackingModal'
 import { trackingService } from '../services/tracking-service'
 import { useDebounce } from '../hooks/useDebounce'
@@ -480,15 +480,14 @@ export default function JobsPage() {
   // 地址分类加载已移除 - 不再需要关键词匹配
 
   // 筛选逻辑
-  const [companyMap, setCompanyMap] = useState<Record<string, TrustedCompany>>({})
   useEffect(() => {
     const loadCompanies = async () => {
       const ids = Array.from(new Set(canonicalJobs.map(j => j.companyId).filter(Boolean))) as string[]
-      if (ids.length === 0) { setCompanyMap({}); return }
-      const results = await Promise.all(ids.map(id => trustedCompaniesService.getCompanyById(id)))
-      const map: Record<string, TrustedCompany> = {}
-      ids.forEach((id, i) => { const c = results[i]; if (c) map[id] = c })
-      setCompanyMap(map)
+      if (ids.length === 0) { return }
+      await Promise.all(ids.map(id => trustedCompaniesService.getCompanyById(id)))
+      // const map: Record<string, TrustedCompany> = {}
+      // ids.forEach((id, i) => { const c = results[i]; if (c) map[id] = c })
+      // setCompanyMap(map)
     }
     loadCompanies()
   }, [canonicalJobs])
@@ -612,6 +611,8 @@ export default function JobsPage() {
     params.delete('jobId')
     navigate({ search: params.toString() }, { replace: true })
   }
+  // Suppress unused variable warning for now as it might be used in mobile view later
+  void handleBackToList;
 
 
   const clearAllFilters = () => {

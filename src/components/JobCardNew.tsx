@@ -1,13 +1,10 @@
 
-import React, { useMemo, useState } from 'react';
-import { MapPin, ChevronRight, Sparkles, Check, Share2, Gem, Clock } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { MapPin } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
-import { stripMarkdown } from '../utils/text-formatter';
-import { MemberBadge } from './MemberBadge';
 import { getJobSourceType } from '../utils/job-source-helper';
-import { trackingService } from '../services/tracking-service';
-import { ShareJobModal } from './ShareJobModal';
+
 
 
 interface JobCardNewProps {
@@ -19,12 +16,11 @@ interface JobCardNewProps {
    isActive?: boolean;
 }
 
-export default function JobCardNew({ job, onClick, matchScore, className, variant = 'grid', isActive = false }: JobCardNewProps) {
+export default function JobCardNew({ job, onClick, className, variant = 'grid', isActive = false }: JobCardNewProps) {
    // const navigate = useNavigate();
-   const sourceType = getJobSourceType(job);
+   // const sourceType = getJobSourceType(job);
    const isTranslated = !!job.translations?.title;
-   const [showCopied, setShowCopied] = useState(false);
-
+   
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
    const formatSalary = (salary: Job['salary']) => {

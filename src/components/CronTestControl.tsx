@@ -338,8 +338,8 @@ const CronTestControl: React.FC = () => {
             return { fetched: data.fetchedCount, status: 'fetch_complete' };
           case 'save_start':
             return { status: 'saving' };
-          case 'save_complete':
-            return { saved: data.savedCount, status: 'save_complete' };
+          // case 'save_complete':
+          //   return { saved: data.savedCount, status: 'save_complete' };
           case 'batch_start':
             return { batch: data.batchNumber };
           case 'read_complete':
@@ -410,7 +410,7 @@ const CronTestControl: React.FC = () => {
     const streamMessages: Array<{ type: string, message: string, timestamp: string }> = [];
 
     try {
-      while (true) {
+      for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
 

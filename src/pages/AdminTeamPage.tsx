@@ -524,7 +524,7 @@ const AdminTeamPage: React.FC = () => {
   // 渲染简历库
   const renderResumeLibrary = () => {
     // 1. Filter
-    let filteredResumes = resumes.filter(resume => {
+    const filteredResumes = resumes.filter(resume => {
       // Search
       const term = resumeSearchTerm.toLowerCase();
       const fileName = resume.fileName?.toLowerCase() || '';

@@ -98,7 +98,7 @@ export const TreeRenderer: React.FC<TreeRendererProps> = ({ data, width = 600, h
             const ctx = canvas.getContext('2d');
             if (!ctx) return [];
     
-            let workingKeywords = [...allKeywords];
+            const workingKeywords = [...allKeywords];
             
             // Add extra decorations to fill gaps - Increased for density
             const DECORATIONS = ['❄', '❅', '❆', '★', '✦', '✨', '•', '·', '◦'];

@@ -166,7 +166,7 @@ const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, c
     </div>
     <input
       type="checkbox"
-      className="hidden"
+      className="sr-only"
       checked={checked}
       onChange={(e) => {
         console.log(`[JobFilterBar] Input onChange triggered for: ${label}, newChecked: ${e.target.checked}`);

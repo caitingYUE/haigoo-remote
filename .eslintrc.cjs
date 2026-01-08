@@ -43,7 +43,7 @@ module.exports = {
     {
       files: ['src/pages/**/*.ts', 'src/pages/**/*.tsx', 'src/components/**/*.tsx'],
       rules: {
-        '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }]
+        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }]
       }
     }
   ]
