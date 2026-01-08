@@ -108,6 +108,13 @@ export default function JobsPage() {
     return defaultFilters
   })
 
+  // Dynamic Filter Options State
+  const [categoryOptions, setCategoryOptions] = useState<{label: string, value: string, count?: number}[]>(CATEGORY_OPTIONS);
+  const [industryOptions, setIndustryOptions] = useState<{label: string, value: string, count?: number}[]>(INDUSTRY_OPTIONS);
+  const [jobTypeOptions, setJobTypeOptions] = useState<{label: string, value: string, count?: number}[]>(JOB_TYPE_OPTIONS);
+  const [locationOptions, setLocationOptions] = useState<{label: string, value: string, count?: number}[]>([]); 
+  const [timezoneOptions, setTimezoneOptions] = useState<{label: string, value: string, count?: number}[]>([]);
+
   useEffect(() => {
     localStorage.setItem('haigoo_job_filters', JSON.stringify(filters))
   }, [filters])
@@ -332,6 +339,47 @@ export default function JobsPage() {
       setTotalJobs(data.total || 0)
       setCurrentPage(page)
       setLoadingStage('idle')
+      
+      // Update Dynamic Filter Options from Aggregations
+      if (!loadMore && data.aggregations) {
+        const { category, industry, jobType, location, timezone } = data.aggregations;
+        
+        // Helper to merge with static options
+        const mergeOptions = (staticOpts: any[], dynamicOpts: any[], selectedValues: string[] = []) => {
+            if (!dynamicOpts) return staticOpts;
+            
+            const combined = [...dynamicOpts];
+            
+            // Ensure selected values are present
+            selectedValues.forEach(val => {
+                if (!combined.find(c => c.value === val)) {
+                    combined.push({ value: val, count: 0 });
+                }
+            });
+            
+            return combined.map((d: any) => {
+                const staticMatch = staticOpts.find(s => s.value === d.value);
+                return {
+                    label: staticMatch ? staticMatch.label : d.value,
+                    value: d.value,
+                    count: d.count
+                };
+            });
+        };
+
+        setCategoryOptions(mergeOptions(CATEGORY_OPTIONS, category, filters.category));
+        setIndustryOptions(mergeOptions(INDUSTRY_OPTIONS, industry, filters.industry));
+        setJobTypeOptions(mergeOptions(JOB_TYPE_OPTIONS, jobType, filters.jobType));
+        
+        if (location) {
+            setLocationOptions(location.map((l: any) => ({ label: l.value, value: l.value, count: l.count })));
+        }
+        
+        if (timezone) {
+            setTimezoneOptions(timezone.map((t: any) => ({ label: t.value, value: t.value, count: t.count })));
+        }
+      }
+
       console.log(`✅ 获取到 ${data.jobs?.length || 0} 个岗位（第${page}页，后端筛选和排序）`)
     } catch (error) {
       // P0 Fix: Ignore AbortError (request was intentionally canceled)
@@ -495,39 +543,8 @@ export default function JobsPage() {
   // Combined loading state logic
   const showLoading = jobsLoading
 
-  // Derived Data for Dynamic Filters - now using all jobs instead of regionJobs
-
-  const locationOptions = useMemo(() => {
-    const locs = new Set<string>()
-    canonicalJobs.forEach(j => {
-      if (j.location) {
-        const extracted = extractLocations(j.location)
-        extracted.forEach(loc => locs.add(loc))
-      }
-    })
-    return Array.from(locs).sort().map(l => ({ label: l, value: l }))
-  }, [canonicalJobs])
-
-  const timezoneOptions = useMemo(() => {
-    const timezones = new Set<string>()
-    canonicalJobs.forEach(j => {
-      if (j.timezone) timezones.add(j.timezone)
-    })
-    return Array.from(timezones).sort().map(tz => ({ label: tz, value: tz }))
-  }, [canonicalJobs])
-
-  const topCategories = useMemo(() => {
-    const counts: Record<string, number> = {}
-    canonicalJobs.forEach(j => {
-      if (j.category) {
-        counts[j.category] = (counts[j.category] || 0) + 1
-      }
-    })
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .map(e => e[0])
-  }, [canonicalJobs])
+  // Derived Data for Dynamic Filters - now using backend aggregations
+  // Frontend calculations removed to support global facets
 
   // 筛选逻辑已经移到后端，直接使用后端返回的排序结果
   const filteredJobs = useMemo(() => {
@@ -690,9 +707,9 @@ export default function JobsPage() {
                   return updated;
                 });
               }}
-              categoryOptions={CATEGORY_OPTIONS}
-              industryOptions={INDUSTRY_OPTIONS}
-              jobTypeOptions={JOB_TYPE_OPTIONS}
+              categoryOptions={categoryOptions}
+              industryOptions={industryOptions}
+              jobTypeOptions={jobTypeOptions}
               locationOptions={locationOptions}
               timezoneOptions={timezoneOptions}
               searchTerm={searchTerm}
@@ -855,7 +872,7 @@ export default function JobsPage() {
           onClose={() => setIsPreferenceModalOpen(false)}
           onSave={saveUserPreferences}
           initialPreferences={userPreferences || undefined}
-          jobTypeOptions={topCategories}
+          jobTypeOptions={CATEGORY_OPTIONS.map(o => o.label)}
           industryOptions={INDUSTRY_OPTIONS.map(opt => opt.label)}
         />
       </div>
