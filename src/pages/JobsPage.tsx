@@ -342,9 +342,7 @@ export default function JobsPage() {
         setJobsLoading(false)
       }
     }
-    // 重要修复：移除 navigate 和 location.search 依赖，防止 URL 变化导致无限循环
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated, showError, pageSize])
+  }, [token, isAuthenticated, showError, pageSize, filters, searchTerm, sortBy])
 
   // 加载更多数据
   const loadMoreJobs = async () => {
