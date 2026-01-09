@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { MapPin, Clock, Calendar, ArrowUpRight, ChevronDown } from 'lucide-react';
+import { MapPin, Clock, Calendar } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { getJobSourceType } from '../utils/job-source-helper';
@@ -121,128 +121,97 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
    };
 
    if (variant === 'list') {
-      const isNew = new Date(job.publishedAt).getTime() > Date.now() - 3 * 24 * 60 * 60 * 1000;
-
       return (
          <div
             onClick={() => onClick?.(job)}
-            className={`group relative bg-white rounded-2xl mb-4 border transition-all duration-200 cursor-pointer overflow-hidden
+            className={`group relative bg-white rounded-xl mb-3 border transition-all duration-200 cursor-pointer overflow-hidden
             ${isActive
                   ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md'
-                  : 'border-slate-100 hover:border-indigo-300 hover:shadow-lg'
+                  : 'border-slate-100 hover:border-indigo-300 hover:shadow-md'
                } ${className || ''}`}
             id={`job-card-${job.id}`}
          >
-            <div className="flex flex-col md:flex-row p-6 gap-6 items-start">
-               {/* Left: Logo (Large Box) */}
+            <div className="flex flex-col md:flex-row p-4 gap-4 items-start">
+               {/* Left: Logo */}
                <div className="hidden md:block flex-shrink-0">
-                  <CompanyLogo size="xl" />
+                  <CompanyLogo size="lg" />
                </div>
 
-               {/* Middle: Content */}
-               <div className="flex-1 min-w-0 flex flex-col">
-                  {/* Top Badges */}
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                     {/* Job Type */}
-                     {job.type && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
-                           <Calendar className="w-3 h-3 mr-1" />
-                           {job.type === 'full-time' ? '全职' : job.type}
-                        </span>
-                     )}
-                     
-                     {/* Category */}
-                     {job.category && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
-                           <MapPin className="w-3 h-3 mr-1" />
-                           {job.category}
-                        </span>
-                     )}
+               {/* Content Area */}
+               <div className="flex-1 min-w-0 flex flex-col gap-2">
+                  {/* Row 1: Badges & Salary (Desktop) */}
+                  <div className="flex items-center justify-between gap-2">
+                     <div className="flex flex-wrap items-center gap-2">
+                        {/* Job Type */}
+                        {job.type && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {job.type === 'full-time' ? '全职' : job.type}
+                           </span>
+                        )}
+                        
+                        {/* Category */}
+                        {job.category && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
+                              <MapPin className="w-3 h-3 mr-1" />
+                              {job.category}
+                           </span>
+                        )}
+                     </div>
 
-                     {/* New Badge */}
-                     {isNew && (
-                        <span className="text-xs font-bold text-rose-500 ml-1 animate-pulse">
-                           New
-                        </span>
-                     )}
+                     {/* Salary (Desktop) */}
+                     <div className={`hidden md:block text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                        {formatSalary(job.salary)}
+                     </div>
                   </div>
 
-                  {/* Title */}
-                  <div className="flex items-center gap-2 mb-2">
-                     <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
+                  {/* Row 2: Title */}
+                  <div className="flex items-center gap-2">
+                     <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
                         {job.translations?.title || job.title}
                      </h3>
                      {isTranslated && (
-                        <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-[10px] text-slate-500" title="已翻译">
+                        <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-[10px] text-slate-500" title="已翻译">
                            译
                         </span>
                      )}
                   </div>
 
-                  {/* Meta Info Row */}
-                  <div className="flex flex-wrap items-center text-sm text-slate-500 gap-4 mb-4">
-                     {/* Company Name (Mobile/Tablet or consistent display) */}
+                  {/* Row 3: Meta Info */}
+                  <div className="flex flex-wrap items-center text-sm text-slate-500 gap-x-4 gap-y-1">
                      <span className="font-medium text-slate-700" title={job.translations?.company || job.company}>
                         {job.translations?.company || job.company}
                      </span>
                      
-                     <div className="hidden sm:flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4 text-slate-400" />
-                        <span className="truncate max-w-[200px]">{job.translations?.location || job.location}</span>
+                     <div className="flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate max-w-[150px]">{job.translations?.location || job.location}</span>
                      </div>
 
-                     <div className="hidden sm:flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-slate-400" />
+                     <div className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
                         <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
                      </div>
                   </div>
 
-                  {/* Skills Tags (Pill Shape) */}
-                  <div className="flex flex-wrap items-center gap-2 mt-auto">
-                     {displayTags.map((tag, i) => (
-                        <span
-                           key={i}
-                           className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
-                        >
-                           {tag.text}
-                        </span>
-                     ))}
+                  {/* Row 4: Tags & Mobile Salary */}
+                  <div className="flex items-center justify-between mt-1">
+                     <div className="flex flex-wrap items-center gap-2">
+                        {displayTags.map((tag, i) => (
+                           <span
+                              key={i}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                           >
+                              {tag.text}
+                           </span>
+                        ))}
+                     </div>
+
+                     {/* Salary (Mobile) */}
+                     <div className={`md:hidden text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                        {formatSalary(job.salary)}
+                     </div>
                   </div>
-               </div>
-
-               {/* Right: Salary & Action */}
-               <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-4 md:pl-6 md:border-l md:border-slate-50 min-w-[140px]">
-                   {/* Mobile Logo (visible only on mobile) */}
-                   <div className="md:hidden">
-                       <CompanyLogo size="md" />
-                   </div>
-
-                   <div className="flex flex-col items-end gap-1">
-                       {/* Salary */}
-                       <div className={`text-lg md:text-xl whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
-                            {formatSalary(job.salary)}
-                      </div>
-                      <div className="text-xs text-slate-400">
-                         {job.type === 'contract' || job.type === 'freelance' ? '/hr' : '/year'} (est.)
-                      </div>
-                   </div>
-
-                   {/* Action Button */}
-                   <button className="hidden md:flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm hover:shadow group-hover:scale-105 transform duration-200">
-                      View job
-                      <ArrowUpRight className="w-4 h-4" />
-                   </button>
-
-                   {/* Mobile View Button (Simple) */}
-                   <div className="md:hidden">
-                      <ArrowUpRight className="w-6 h-6 text-slate-900" />
-                   </div>
-
-                   {/* Expand Details (Desktop) */}
-                   <div className="hidden md:flex items-center gap-1 text-xs text-slate-400 mt-auto hover:text-indigo-600 transition-colors pt-4">
-                      Expand details
-                      <ChevronDown className="w-3 h-3" />
-                   </div>
                </div>
             </div>
          </div>
