@@ -93,6 +93,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     const timer = setTimeout(() => {
       if (searchTerm !== (processedDataFilters.search || '')) {
         setProcessedDataFilters(prev => ({ ...prev, search: searchTerm || undefined }));
+        setProcessedDataPage(1); // Reset to page 1 on search
       }
     }, 800); // 800ms delay for better user experience
     return () => clearTimeout(timer);
@@ -682,7 +683,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
             <select
               value={processedDataFilters.category || ''}
-              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, category: e.target.value as JobCategory || undefined })}
+              onChange={(e) => {
+                setProcessedDataFilters({ ...processedDataFilters, category: e.target.value as JobCategory || undefined });
+                setProcessedDataPage(1);
+              }}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有分类</option>
@@ -705,7 +709,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
             <select
               value={processedDataFilters.isFeatured === undefined ? '' : processedDataFilters.isFeatured.toString()}
-              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, isFeatured: e.target.value === '' ? undefined : e.target.value === 'true' })}
+              onChange={(e) => {
+                setProcessedDataFilters({ ...processedDataFilters, isFeatured: e.target.value === '' ? undefined : e.target.value === 'true' });
+                setProcessedDataPage(1);
+              }}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有岗位</option>
@@ -715,7 +722,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
             <select
               value={processedDataFilters.industry || ''}
-              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, industry: e.target.value || undefined })}
+              onChange={(e) => {
+                setProcessedDataFilters({ ...processedDataFilters, industry: e.target.value || undefined });
+                setProcessedDataPage(1);
+              }}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">所有行业</option>
@@ -736,7 +746,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             {/* 来源筛选 */}
             <select
               value={processedDataFilters.source || ''}
-              onChange={(e) => setProcessedDataFilters({ ...processedDataFilters, source: e.target.value || undefined })}
+              onChange={(e) => {
+                setProcessedDataFilters({ ...processedDataFilters, source: e.target.value || undefined });
+                setProcessedDataPage(1);
+              }}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-40"
             >
               <option value="">所有来源</option>
@@ -1241,6 +1254,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     ...prev,
                     isApproved: val === '' ? undefined : val === 'true'
                   }));
+                  setProcessedDataPage(1);
                 }}
               >
                 <option value="">全部审核状态</option>
