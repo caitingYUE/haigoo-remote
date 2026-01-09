@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CUDA Engineer - Kernel & Performance Specialist | Eigen AI Careers</title>
+    <meta name="description" content="We're hiring a CUDA Engineer to push GPU performance to the limits on NVIDIA Hopper and Blackwell." />
+    <link rel="icon" href="../../images/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../../assets/css/design.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="nav">
+        <div class="nav__inner">
+          <a class="nav__logo" href="/">
+            <img src="/images/full_logo.svg" alt="Eigen AI logo" />
+          </a>
+          <button
+            class="nav__toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="nav-collapsible"
+          >
+            <span class="sr-only">Toggle navigation</span>
+            <span aria-hidden="true" class="nav__toggle-icon">
+              <span class="nav__toggle-bar"></span>
+              <span class="nav__toggle-bar"></span>
+              <span class="nav__toggle-bar"></span>
+            </span>
+          </button>
+          <div class="nav__collapsible" id="nav-collapsible">
+            <nav class="nav__menu" aria-label="Primary">
+              <a class="nav__link" href="/">Home</a>
+              <a class="nav__link" href="/#platform">Platform</a>
+              <a class="nav__link" href="/models">Models</a>
+              
+              <a class="nav__link" href="/blog">Blog</a>
+              <a class="nav__link" href="/careers">Careers</a>
+              <a class="nav__link" href="/contact">Contact</a>
+            </nav>
+            <a class="nav__cta" href="/#subscribe">Subscribe</a>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="page-hero">
+          <div class="container">
+            <div class="page-hero__content">
+              <div class="eyebrow eyebrow--light">Careers</div>
+              <h1 class="page-hero__title">CUDA Engineer - Kernel & Performance Specialist</h1>
+              <p class="page-hero__description">We're hiring a CUDA Engineer to push GPU performance to the limits on NVIDIA Hopper and Blackwell.</p>
+              <div class="page-hero__meta">
+
+              </div>
+              <div class="hero__actions hero__actions--left">
+                <a class="button button--primary" href="mailto:talents@eigenai.com?subject=CUDA%20Engineer%20-%20Kernel%20%26%20Performance%20Specialist">Apply now</a>
+                <a class="button button--ghost" href="/careers">View all roles</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="container">
+            <article class="job-detail">
+              <div class="rich-text">
+                <p>You'll design and optimize CUDA and C++ kernels powering LLMs, transformers, and generative AI with low-precision formats, operator fusion, and advanced memory optimization.</p>
+                <h2>What you'll do</h2>
+                <ul>
+                  <li>Build and optimize CUDA kernels (attention, MLP, layernorm, etc.).</li>
+                  <li>Develop FP4 and FP8 kernels and support new microscaling formats such as MXFP4 and MXFP6.</li>
+                  <li>Use CUTLASS for high-performance GEMMs and fused ops.</li>
+                  <li>Profile and tune performance across the GPU memory hierarchy.</li>
+                  <li>Integrate with PyTorch, Triton, and TensorRT.</li>
+                </ul>
+                <h2>What we're looking for</h2>
+                <ul>
+                  <li>Strong CUDA and C++ expertise with deep knowledge of Hopper and Blackwell.</li>
+                  <li>Experience with low-precision formats, CUTLASS, and Triton.</li>
+                  <li>Skilled in operator fusion, tiling, and warp-level programming.</li>
+                  <li>Proficient with profiling tools including Nsight and nvprof.</li>
+                </ul>
+                <h2>Preferred</h2>
+                <ul>
+                  <li>Experience with Blackwell microscaling formats.</li>
+                  <li>Open-source contributions or published work in low-precision kernels.</li>
+                </ul>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        © <span id="year"></span> Eigen AI. All rights reserved.
+      </footer>
+    </div>
+
+        <script>
+      (function () {
+        const nav = document.querySelector(".nav");
+        if (!nav) return;
+
+        const toggle = nav.querySelector(".nav__toggle");
+        const collapsible = nav.querySelector(".nav__collapsible");
+        if (!toggle || !collapsible) return;
+
+        const body = document.body;
+        const navLinks = nav.querySelectorAll(".nav__link, .nav__cta");
+        const mobileQuery = window.matchMedia("(max-width: 900px)");
+        const isNavOpen = () => nav.classList.contains("nav--open");
+
+        const updateBodyScrollLock = (expanded) => {
+          if (expanded && mobileQuery.matches) {
+            body.classList.add("nav-open");
+          } else {
+            body.classList.remove("nav-open");
+          }
+        };
+
+        const updateAriaHidden = (expanded) => {
+          if (mobileQuery.matches) {
+            collapsible.setAttribute("aria-hidden", expanded ? "false" : "true");
+          } else {
+            collapsible.removeAttribute("aria-hidden");
+          }
+        };
+
+        const setExpanded = (expanded) => {
+          toggle.setAttribute("aria-expanded", String(expanded));
+          nav.classList.toggle("nav--open", expanded);
+          updateBodyScrollLock(expanded);
+          updateAriaHidden(expanded);
+        };
+
+        toggle.addEventListener("click", () => {
+          setExpanded(!isNavOpen());
+        });
+
+        navLinks.forEach((link) => {
+          link.addEventListener("click", () => {
+            if (!mobileQuery.matches) return;
+            setExpanded(false);
+          });
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            setExpanded(false);
+          }
+        });
+
+        const handleViewportChange = () => {
+          if (!mobileQuery.matches) {
+            setExpanded(false);
+          } else {
+            const open = isNavOpen();
+            updateBodyScrollLock(open);
+            updateAriaHidden(open);
+          }
+        };
+
+        if (typeof mobileQuery.addEventListener === "function") {
+          mobileQuery.addEventListener("change", handleViewportChange);
+        } else if (typeof mobileQuery.addListener === "function") {
+          mobileQuery.addListener(handleViewportChange);
+        }
+
+        handleViewportChange();
+      })();
+    </script>
+
+    <script>
+      (function () {
+        const root = document.documentElement;
+        const nav = document.querySelector(".nav");
+        if (!nav) return;
+
+        const updateNavHeight = () => {
+          const { height } = nav.getBoundingClientRect();
+          if (height > 0) {
+            root.style.setProperty("--nav-sticky-height", `${height}px`);
+          }
+        };
+
+        updateNavHeight();
+
+        if (window.ResizeObserver) {
+          const navResizeObserver = new ResizeObserver(updateNavHeight);
+          navResizeObserver.observe(nav);
+        }
+
+        window.addEventListener("resize", updateNavHeight);
+        window.addEventListener("load", updateNavHeight);
+      })();
+    </script>
+
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>

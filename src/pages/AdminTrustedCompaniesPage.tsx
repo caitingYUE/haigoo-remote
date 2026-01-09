@@ -3,7 +3,6 @@ import {
     Building2, Search, Plus, Edit2, Trash2,
     ExternalLink, X, Loader2,
     Wand2, DownloadCloud, Upload, Image as ImageIcon, RefreshCw,
-    Users, MapPin, Star, Calendar,
     Globe as GlobeIcon, Briefcase as BriefcaseIcon, Linkedin as LinkedinIcon
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
@@ -11,6 +10,7 @@ import { CompanyIndustry } from '../types/rss-types'
 import Cropper, { Area } from 'react-easy-crop'
 import getCroppedImg from '../utils/cropImage'
 import { ClassificationService } from '../services/classification-service'
+import AdminCompanyJobsModal from '../components/AdminCompanyJobsModal'
 
 export default function AdminTrustedCompaniesPage() {
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
@@ -29,13 +29,13 @@ export default function AdminTrustedCompaniesPage() {
 
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingCompany, setEditingCompany] = useState<TrustedCompany | null>(null)
+    const [selectedCompanyForJobs, setSelectedCompanyForJobs] = useState<TrustedCompany | null>(null)
     const [formData, setFormData] = useState<Partial<TrustedCompany>>({})
     const [saving, setSaving] = useState(false)
 
     // New states for automation features
     const [crawlingId, setCrawlingId] = useState<string | null>(null)
     const [autoFilling, setAutoFilling] = useState(false)
-    const [analyzingId, setAnalyzingId] = useState<string | null>(null)
     const [filterCanRefer, setFilterCanRefer] = useState<'all' | 'yes' | 'no'>('all')
     
     // Batch crawl state
@@ -232,36 +232,6 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
-    const handleFetchLinkedInInfo = async () => {
-        if (!formData.linkedin) {
-            alert('请先输入LinkedIn链接');
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/data?resource=companies&action=crawl&url=${encodeURIComponent(formData.linkedin)}&translate=true`);
-            const data = await response.json();
-
-            if (data.error) {
-                alert('获取失败: ' + data.error);
-                return;
-            }
-
-            setFormData(prev => ({
-                ...prev,
-                description: data.description || prev.description,
-                logo: data.logo || prev.logo,
-                address: data.address || prev.address,
-                coverImage: data.coverImage || prev.coverImage
-            }));
-
-            alert('获取成功！请检查并补充信息。');
-        } catch (error) {
-            console.error('Fetch LinkedIn error:', error);
-            alert('获取失败，请稍后重试');
-        }
-    };
-
     const openCropperWithSource = (source: string) => {
         // Fix CORS issues by proxying remote images
         if (source.startsWith('http') && !source.includes('/api/images')) {
@@ -348,32 +318,7 @@ export default function AdminTrustedCompaniesPage() {
         }))
     }
 
-    const handleQuickAnalyze = async (company: TrustedCompany) => {
-        if (!company.description && !company.website) {
-            alert('该企业暂无简介，无法分析')
-            return
-        }
-        try {
-            setAnalyzingId(company.id)
-            const result = ClassificationService.classifyCompany(company.name, company.description || '')
-            const payload = {
-                ...company,
-                industry: result.industry,
-                tags: Array.from(new Set([...(company.tags || []), ...result.tags]))
-            }
-            const success = await trustedCompaniesService.saveCompany(payload)
-            if (success) {
-                setCompanies(prev => prev.map(c => c.id === company.id ? { ...c, ...payload } : c))
-            } else {
-                alert('分析后保存失败')
-            }
-        } catch (error) {
-            console.error('分析失败', error)
-            alert('分析失败，请重试')
-        } finally {
-            setAnalyzingId(null)
-        }
-    }
+
 
 
     const handleSyncData = async () => {
@@ -607,7 +552,11 @@ export default function AdminTrustedCompaniesPage() {
                                             <span className="text-xs text-gray-400">{company.foundedYear ? `${company.foundedYear}年成立` : '-'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    <td 
+                                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 cursor-pointer hover:text-indigo-600 hover:font-medium underline decoration-dashed underline-offset-4"
+                                        onClick={() => setSelectedCompanyForJobs(company)}
+                                        title="点击管理岗位"
+                                    >
                                         {company.jobCount ?? 0}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -650,18 +599,6 @@ export default function AdminTrustedCompaniesPage() {
                                                 <Loader2 className="w-4 h-4 animate-spin" />
                                             ) : (
                                                 <DownloadCloud className="w-4 h-4" />
-                                            )}
-                                        </button>
-                                        <button
-                                            onClick={() => handleQuickAnalyze(company)}
-                                            disabled={analyzingId === company.id}
-                                            className="text-gray-600 hover:text-purple-600 mr-4 disabled:opacity-50"
-                                            title="AI分析行业与标签"
-                                        >
-                                            {analyzingId === company.id ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                <Wand2 className="w-4 h-4" />
                                             )}
                                         </button>
                                         <button onClick={() => handleEdit(company)} className="text-indigo-600 hover:text-indigo-900 mr-4">
@@ -721,6 +658,16 @@ export default function AdminTrustedCompaniesPage() {
                         </button>
                     </div>
                 </div>
+            )}
+
+            {selectedCompanyForJobs && (
+                <AdminCompanyJobsModal
+                    company={selectedCompanyForJobs}
+                    onClose={() => {
+                        setSelectedCompanyForJobs(null)
+                        loadCompanies()
+                    }}
+                />
             )}
 
             {isModalOpen && (
@@ -889,23 +836,13 @@ export default function AdminTrustedCompaniesPage() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="url"
-                                            value={formData.linkedin || ''}
-                                            onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
-                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="https://linkedin.com/company/..."
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleFetchLinkedInInfo}
-                                            className="px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 whitespace-nowrap"
-                                            title="尝试抓取公开信息"
-                                        >
-                                            <Wand2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                    <input
+                                        type="url"
+                                        value={formData.linkedin || ''}
+                                        onChange={e => setFormData({ ...formData, linkedin: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="https://linkedin.com/company/..."
+                                    />
                                 </div>
                             </div>
 

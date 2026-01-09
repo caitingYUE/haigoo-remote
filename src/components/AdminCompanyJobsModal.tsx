@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Plus, RefreshCw, ExternalLink, Trash2, Loader2, Search } from 'lucide-react';
+import { X, Plus, RefreshCw, ExternalLink, Trash2, Loader2, Search, Edit2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { TrustedCompany } from '../services/trusted-companies-service';
-import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
+import { EditJobModal } from './EditJobModal';
+import { dataManagementService, ProcessedJobData } from '../services/data-management-service';
 
 interface AdminCompanyJobsModalProps {
     company: TrustedCompany;
@@ -12,10 +13,11 @@ interface AdminCompanyJobsModalProps {
 
 export default function AdminCompanyJobsModal({ company, onClose }: AdminCompanyJobsModalProps) {
     const { token } = useAuth();
-    const [jobs, setJobs] = useState<Job[]>([]);
+    const [jobs, setJobs] = useState<ProcessedJobData[]>([]);
     const [loading, setLoading] = useState(true);
     const [crawling, setCrawling] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [editingJob, setEditingJob] = useState<ProcessedJobData | null>(null);
 
     const fetchJobs = useCallback(async () => {
         try {
@@ -77,6 +79,33 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
         } catch (error) {
             console.error('Delete job error:', error);
             alert('删除请求失败');
+        }
+    };
+
+    const handleEditJob = (job: ProcessedJobData) => {
+        setEditingJob(job);
+    };
+
+    const handleSaveEdit = async (updatedJob: Partial<ProcessedJobData>, shouldClose: boolean = true) => {
+        if (!editingJob) return;
+
+        try {
+            // Optimistic update
+            setJobs(prev => prev.map(job => 
+                job.id === editingJob.id ? { ...job, ...updatedJob } as ProcessedJobData : job
+            ));
+
+            if (editingJob.id) {
+                await dataManagementService.updateProcessedJob(editingJob.id, updatedJob, 'admin');
+            }
+            
+            if (shouldClose) {
+                setEditingJob(null);
+            }
+        } catch (error) {
+            console.error('Failed to save job:', error);
+            alert('保存失败');
+            fetchJobs(); // Revert on error
         }
     };
 
@@ -158,7 +187,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                                         <tr key={job.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="font-medium text-slate-900">{job.title}</div>
-                                                <div className="text-xs text-slate-500 mt-0.5">{job.type}</div>
+                                                <div className="text-xs text-slate-500 mt-0.5">{job.jobType}</div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-600">
                                                 {job.location}
@@ -168,9 +197,9 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    {job.sourceUrl && (
+                                                    {job.url && (
                                                         <a
-                                                            href={job.sourceUrl}
+                                                            href={job.url}
                                                             target="_blank"
                                                             rel="noreferrer"
                                                             className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-indigo-50 transition-colors"
@@ -179,6 +208,13 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                                                             <ExternalLink className="w-4 h-4" />
                                                         </a>
                                                     )}
+                                                    <button
+                                                        onClick={() => handleEditJob(job)}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-indigo-50 transition-colors"
+                                                        title="编辑"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
                                                     <button
                                                         onClick={() => handleDeleteJob(job.id)}
                                                         className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors"
@@ -196,6 +232,15 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                     )}
                 </div>
             </div>
+            
+            {editingJob && (
+                <EditJobModal
+                    job={editingJob}
+                    onSave={handleSaveEdit}
+                    onClose={() => setEditingJob(null)}
+                    availableCategories={['前端开发', '后端开发', '全栈开发', '移动开发', 'UI/UX设计', '产品经理', '数据分析', '运维/SRE', '市场营销', '人工智能', 'Web3/区块链']}
+                />
+            )}
         </div>
     );
 }
