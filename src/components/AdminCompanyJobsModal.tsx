@@ -23,7 +23,11 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
         try {
             setLoading(true);
             // Fetch jobs filtered by company ID
-            const res = await fetch(`/api/data/processed-jobs?company=${encodeURIComponent(company.name)}&limit=100`);
+            const res = await fetch(`/api/data/processed-jobs?company=${encodeURIComponent(company.name)}&limit=100`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             const data = await res.json();
             if (data.jobs) {
                 setJobs(data.jobs);
@@ -33,7 +37,7 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
         } finally {
             setLoading(false);
         }
-    }, [company.name]);
+    }, [company.name, token]);
 
     useEffect(() => {
         fetchJobs();
@@ -67,7 +71,10 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
         
         try {
             const res = await fetch(`/api/data/processed-jobs?id=${encodeURIComponent(jobId)}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
             
             if (res.ok) {
