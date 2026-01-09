@@ -9,21 +9,28 @@ import { dataManagementService, ProcessedJobData } from '../services/data-manage
 interface AdminCompanyJobsModalProps {
     company: TrustedCompany;
     onClose: () => void;
+    onUpdate?: (count: number) => void;
 }
 
-export default function AdminCompanyJobsModal({ company, onClose }: AdminCompanyJobsModalProps) {
+export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: AdminCompanyJobsModalProps) {
     const { token } = useAuth();
     const [jobs, setJobs] = useState<ProcessedJobData[]>([]);
     const [loading, setLoading] = useState(true);
     const [crawling, setCrawling] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [editingJob, setEditingJob] = useState<ProcessedJobData | null>(null);
+    
+    // Pagination
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const PAGE_SIZE = 10;
 
     const fetchJobs = useCallback(async () => {
         try {
             setLoading(true);
-            // Fetch jobs filtered by company ID
-            const res = await fetch(`/api/data/processed-jobs?company=${encodeURIComponent(company.name)}&limit=100`, {
+            // Use companyId for exact filtering
+            const companyFilter = company.id ? `companyId=${company.id}` : `company=${encodeURIComponent(company.name)}`;
+            const res = await fetch(`/api/data/processed-jobs?${companyFilter}&limit=${PAGE_SIZE}&page=${page}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -31,13 +38,18 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
             const data = await res.json();
             if (data.jobs) {
                 setJobs(data.jobs);
+                setTotal(data.total || 0);
+                // Notify parent about total count
+                if (onUpdate && typeof data.total === 'number') {
+                    onUpdate(data.total);
+                }
             }
         } catch (error) {
             console.error('Failed to fetch jobs:', error);
         } finally {
             setLoading(false);
         }
-    }, [company.name, token]);
+    }, [company.id, company.name, token, page, onUpdate]);
 
     useEffect(() => {
         fetchJobs();
@@ -55,6 +67,8 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
             const data = await res.json();
             if (data.success) {
                 alert(`抓取成功，新增/更新 ${data.count} 个职位`);
+                // Reset to page 1 to see new jobs
+                setPage(1);
                 fetchJobs();
             } else {
                 alert(`抓取失败: ${data.error}`);
@@ -79,6 +93,12 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
             
             if (res.ok) {
                 setJobs(prev => prev.filter(j => j.id !== jobId));
+                setTotal(prev => Math.max(0, prev - 1));
+                if (jobs.length === 1 && page > 1) {
+                    setPage(p => p - 1);
+                } else {
+                    fetchJobs(); // Refresh current page to fill the gap
+                }
             } else {
                 const data = await res.json();
                 alert(`删除失败: ${data.error || res.statusText}`);
@@ -237,6 +257,32 @@ export default function AdminCompanyJobsModal({ company, onClose }: AdminCompany
                             </tbody>
                         </table>
                     )}
+                </div>
+
+                {/* Pagination */}
+                <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-white rounded-b-2xl">
+                    <span className="text-sm text-slate-500">
+                        共 {total} 个职位
+                    </span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1 || loading}
+                            className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white"
+                        >
+                            上一页
+                        </button>
+                        <span className="text-sm text-slate-600 self-center">
+                             {page} / {Math.max(1, Math.ceil(total / PAGE_SIZE))}
+                        </span>
+                        <button
+                            onClick={() => setPage(p => p + 1)}
+                            disabled={page * PAGE_SIZE >= total || loading}
+                            className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white"
+                        >
+                            下一页
+                        </button>
+                    </div>
                 </div>
             </div>
             
