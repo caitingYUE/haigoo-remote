@@ -16,6 +16,7 @@ export default function AdminTrustedCompaniesPage() {
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
 
     // Pagination & Sort State
     const [page, setPage] = useState(1)
@@ -51,9 +52,20 @@ export default function AdminTrustedCompaniesPage() {
     const [coverUrlInput, setCoverUrlInput] = useState('')
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (debouncedSearch !== searchTerm) {
+                setDebouncedSearch(searchTerm)
+                setPage(1)
+            }
+        }, 800)
+        return () => clearTimeout(timer)
+    }, [searchTerm, debouncedSearch])
+
     useEffect(() => {
         loadCompanies()
-    }, [page, sortBy, sortOrder, industryFilter, filterCanRefer])
+    }, [page, sortBy, sortOrder, industryFilter, filterCanRefer, debouncedSearch])
 
     // Load companies ONLY from trusted_companies database table
     const loadCompanies = async () => {
@@ -65,7 +77,7 @@ export default function AdminTrustedCompaniesPage() {
                 sortBy,
                 sortOrder,
                 industry: industryFilter,
-                search: searchTerm,
+                search: debouncedSearch,
                 canRefer: filterCanRefer,
                 isTrusted: 'yes' // Explicitly request trusted companies (manually added or verified)
             })
@@ -109,6 +121,7 @@ export default function AdminTrustedCompaniesPage() {
             setSortBy(field)
             setSortOrder('desc')
         }
+        setPage(1)
     }
 
     const handleEdit = (company: TrustedCompany) => {
@@ -363,12 +376,6 @@ export default function AdminTrustedCompaniesPage() {
     }
 
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault()
-        setPage(1)
-        loadCompanies()
-    }
-
     const handleSyncData = async () => {
         if (!confirm('确定要同步所有岗位数据并重新计算企业岗位数量吗？这可能需要几分钟。')) return
         try {
@@ -478,7 +485,7 @@ export default function AdminTrustedCompaniesPage() {
                 </div>
             )}
 
-            <form onSubmit={handleSearch} className="mb-6 flex flex-wrap gap-3 items-center">
+            <div className="mb-6 flex flex-wrap gap-3 items-center">
                 <div className="relative flex-1 min-w-[260px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
@@ -514,10 +521,7 @@ export default function AdminTrustedCompaniesPage() {
                     <option value="yes">可内推</option>
                     <option value="no">不可内推</option>
                 </select>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
-                    搜索
-                </button>
-            </form>
+            </div>
 
             {loading ? (
                 <div className="flex justify-center py-12">

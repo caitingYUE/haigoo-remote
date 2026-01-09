@@ -479,13 +479,19 @@ export default function AdminCompanyManagementPage() {
                         type="text"
                         placeholder="搜索企业名称、行业..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setPage(1);
+                        }}
                         className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
                 <select
                     value={industryFilter}
-                    onChange={(e) => setIndustryFilter(e.target.value)}
+                    onChange={(e) => {
+                        setIndustryFilter(e.target.value);
+                        setPage(1);
+                    }}
                     className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                 >
                     <option value="">所有行业</option>
