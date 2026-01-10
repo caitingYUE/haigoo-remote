@@ -30,7 +30,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             setLoading(true);
             // Use companyId for exact filtering
             const companyFilter = company.id ? `companyId=${company.id}` : `company=${encodeURIComponent(company.name)}`;
-            const res = await fetch(`/api/data/processed-jobs?${companyFilter}&limit=${PAGE_SIZE}&page=${page}`, {
+            const res = await fetch(`/api/data/processed-jobs?${companyFilter}&limit=${PAGE_SIZE}&page=${page}&isAdmin=true`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
