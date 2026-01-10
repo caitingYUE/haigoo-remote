@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X, CheckCircle, Info, Star, ArrowDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, CheckCircle, Info, Star, ArrowDown, Loader2 } from 'lucide-react';
 import { ProcessedJobData } from '../services/data-management-service';
 import { JobCategory } from '../types/rss-types';
 
@@ -42,6 +42,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     isApproved: (job as any).isApproved || false
   });
 
+  const [isSaving, setIsSaving] = useState(false);
+
   // 监听job变化，更新表单数据 (当导航切换时)
   useEffect(() => {
     setFormData({
@@ -79,14 +81,19 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [hasPrev, hasNext, onNavigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      ...formData,
-      tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-      requirements: formData.requirements.split('\n').filter(Boolean),
-      benefits: formData.benefits.split('\n').filter(Boolean)
-    }, false); // Keep modal open for bulk editing
+    setIsSaving(true);
+    try {
+      await onSave({
+        ...formData,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        requirements: formData.requirements.split('\n').filter(Boolean),
+        benefits: formData.benefits.split('\n').filter(Boolean)
+      }, false); // Keep modal open for bulk editing
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Tag suggestions based on category
@@ -414,9 +421,15 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           <div className="flex gap-3 pt-6 border-t border-slate-200">
             <button
               type="submit"
-              className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors"
+              disabled={isSaving}
+              className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              保存更改
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  保存中...
+                </>
+              ) : '保存更改'}
             </button>
             <button
               type="button"

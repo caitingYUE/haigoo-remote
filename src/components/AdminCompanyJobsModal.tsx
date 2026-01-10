@@ -196,6 +196,9 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             
             if (shouldClose) {
                 setEditingJob(null);
+            } else {
+                // 如果不关闭弹窗，给予用户反馈
+                alert('保存成功');
             }
         } catch (error) {
             console.error('Failed to save job:', error);
