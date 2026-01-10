@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChevronDown, Check, Search, SortAsc, Sparkles, SlidersHorizontal, Gem, MapPin, Clock, Banknote, BarChart2, Globe, Building2, X } from 'lucide-react';
+import { ChevronDown, Check, Search, SortAsc, Sparkles, SlidersHorizontal, Gem, MapPin, Clock, Banknote, BarChart2, Globe, Building2, X, Briefcase, Calendar } from 'lucide-react';
 
 // --- Types ---
 
@@ -306,7 +306,7 @@ export default function JobFilterBar({
             isOpen={openDropdown === 'category'}
             onToggle={() => toggleDropdown('category')}
             onClose={() => setOpenDropdown(null)}
-            icon={<Gem className="w-3.5 h-3.5" />}
+            icon={<Briefcase className="w-3.5 h-3.5" />}
           >
             {categoryOptions.map(opt => (
               <CheckboxItem
@@ -368,7 +368,7 @@ export default function JobFilterBar({
             isOpen={openDropdown === 'jobType'}
             onToggle={() => toggleDropdown('jobType')}
             onClose={() => setOpenDropdown(null)}
-            icon={<Clock className="w-3.5 h-3.5" />}
+            icon={<Calendar className="w-3.5 h-3.5" />}
           >
             {jobTypeOptions.map(opt => (
               <CheckboxItem
