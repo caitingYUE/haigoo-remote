@@ -1,11 +1,10 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { MapPin, Clock, Calendar, Building2, Briefcase } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { getJobSourceType } from '../utils/job-source-helper';
-
-
+// import { FastAverageColor } from 'fast-average-color'; // Optional: Use if installed
 
 interface JobCardNewProps {
    job: Job;
@@ -16,12 +15,44 @@ interface JobCardNewProps {
    isActive?: boolean;
 }
 
+// Simple hash function to generate a stable pastel color from string
+const getPastelColor = (str: string) => {
+   let hash = 0;
+   for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+   }
+   
+   // Generate HSL color with high lightness and low saturation for pastel look
+   // Use hash to pick Hue (0-360)
+   const h = Math.abs(hash) % 360;
+   // Saturation 60-80%
+   const s = 70 + (Math.abs(hash) % 20);
+   // Lightness 90-96% (Very light background)
+   const l = 93 + (Math.abs(hash) % 5);
+   
+   return `hsl(${h}, ${s}%, ${l}%)`;
+};
+
+// Generate matching text color (darker version of the same hue)
+const getDarkerColor = (str: string) => {
+   let hash = 0;
+   for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+   }
+   const h = Math.abs(hash) % 360;
+   return `hsl(${h}, 70%, 30%)`;
+};
+
 export default function JobCardNew({ job, onClick, className, variant = 'grid', isActive = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
    const isTranslated = !!job.translations?.title;
    
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
+
+   // Dynamic Background Color Logic
+   const bgColor = useMemo(() => getPastelColor(job.company || 'default'), [job.company]);
+   const textColor = useMemo(() => getDarkerColor(job.company || 'default'), [job.company]);
 
    const formatSalary = (salary: Job['salary']) => {
       // Handle missing/zero cases
@@ -86,9 +117,50 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
       return tags.slice(0, 5); // Reduce max tags for cleaner look
    }, [job.skills, (job as any).tags, job.companyTags]);
 
-   // Common Logo Component
-   const CompanyLogo = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
-      const sizeClasses = {
+   // Redesigned Company Logo Component
+   // Matching reference: Large card style, dynamic background, centered logo, company name above
+   const CompanyCard = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
+      
+      return (
+         <div 
+            className="flex-shrink-0 flex flex-col items-center justify-center p-4 rounded-xl transition-colors h-full w-[140px] relative overflow-hidden"
+            style={{ backgroundColor: bgColor }}
+         >
+             {/* Company Name (Top) */}
+            <div 
+               className="text-xs font-bold text-center mb-3 line-clamp-1 w-full px-1"
+               style={{ color: textColor }}
+               title={job.translations?.company || job.company}
+            >
+               {job.translations?.company || job.company}
+            </div>
+
+            {/* Logo (Centered) */}
+            <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 overflow-hidden mb-1">
+               {job.logo ? (
+                  <img
+                     src={job.logo}
+                     alt={job.company}
+                     className="w-full h-full object-contain"
+                     onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.parentElement) {
+                           target.parentElement.innerHTML = `<span class="text-xl font-bold" style="color:${textColor}">${companyInitial}</span>`;
+                        }
+                     }}
+                  />
+               ) : (
+                  <span className="text-xl font-bold" style={{ color: textColor }}>{companyInitial}</span>
+               )}
+            </div>
+         </div>
+      );
+   };
+
+   // Legacy Small Logo (for mobile or specific variants if needed)
+   const CompanyLogoSmall = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
+       const sizeClasses = {
          sm: 'w-10 h-10 p-1.5',
          md: 'w-12 h-12 p-2',
          lg: 'w-14 h-14 p-2',
@@ -131,14 +203,19 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                } ${className || ''}`}
             id={`job-card-${job.id}`}
          >
-            <div className="flex flex-col md:flex-row p-4 gap-4 items-start">
-               {/* Left: Logo */}
-               <div className="hidden md:block flex-shrink-0">
-                  <CompanyLogo size="lg" />
+            <div className="flex flex-col md:flex-row p-4 gap-4 items-stretch">
+               {/* Left: New Company Card Style (Desktop Only) */}
+               <div className="hidden md:block flex-shrink-0 self-stretch">
+                  <CompanyCard />
+               </div>
+
+               {/* Mobile Logo (Fallback to old style) */}
+               <div className="md:hidden flex-shrink-0 self-start">
+                  <CompanyLogoSmall size="md" />
                </div>
 
                {/* Content Area */}
-               <div className="flex-1 min-w-0 flex flex-col gap-2">
+               <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
                   {/* Row 1: Badges & Salary (Desktop) */}
                   <div className="flex items-center justify-between gap-2">
                      <div className="flex flex-wrap items-center gap-2">
@@ -174,8 +251,8 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                   </div>
 
                   {/* Row 2: Title */}
-                  <div className="flex items-center gap-2">
-                     <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
+                  <div className="flex items-center gap-2 mt-1">
+                     <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
                         {job.translations?.title || job.title}
                      </h3>
                      {isTranslated && (
@@ -186,29 +263,30 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                   </div>
 
                   {/* Row 3: Meta Info */}
-                  <div className="flex flex-wrap items-center text-sm text-slate-500 gap-x-4 gap-y-1">
-                     <span className="font-medium text-slate-700" title={job.translations?.company || job.company}>
+                  <div className="flex flex-wrap items-center text-sm text-slate-500 gap-x-6 gap-y-1 mt-1">
+                     {/* Company Name (Mobile Only - since desktop has it in the card) */}
+                     <span className="font-medium text-slate-700 md:hidden" title={job.translations?.company || job.company}>
                         {job.translations?.company || job.company}
                      </span>
                      
-                     <div className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="truncate max-w-[150px]">{job.translations?.location || job.location}</span>
+                     <div className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-slate-400" />
+                        <span className="truncate max-w-[200px]">{job.translations?.location || job.location}</span>
                      </div>
 
-                     <div className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                     <div className="flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-slate-400" />
                         <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
                      </div>
                   </div>
 
                   {/* Row 4: Tags & Mobile Salary */}
-                  <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center justify-between mt-auto pt-2">
                      <div className="flex flex-wrap items-center gap-2">
                         {displayTags.map((tag, i) => (
                            <span
                               key={i}
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                              className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100/80 hover:bg-slate-200 transition-colors"
                            >
                               {tag.text}
                            </span>
@@ -237,7 +315,7 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
          >
             {/* Header */}
             <div className="flex items-start gap-4 mb-4">
-               <CompanyLogo size="md" />
+               <CompanyLogoSmall size="md" />
                <div className="flex-1 min-w-0">
                   <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 mb-1" title={job.translations?.title || job.title}>
                      {job.translations?.title || job.title}
