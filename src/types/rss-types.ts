@@ -228,6 +228,15 @@ export interface Job {
   isFeatured?: boolean;
   // Approval status for public visibility
   isApproved?: boolean;
+  // Translation status
+  isTranslated?: boolean;
+  translations?: {
+    description?: string;
+    title?: string;
+    requirements?: string[];
+    benefits?: string[];
+    [key: string]: any;
+  } | null;
 }
 
 export interface JobFilter {

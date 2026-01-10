@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Plus, RefreshCw, ExternalLink, Trash2, Loader2, Search, Edit2 } from 'lucide-react';
+import { X, Plus, RefreshCw, ExternalLink, Trash2, Loader2, Search, Edit2, Languages, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { TrustedCompany } from '../services/trusted-companies-service';
 import { DateFormatter } from '../utils/date-formatter';
@@ -17,8 +17,10 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
     const [jobs, setJobs] = useState<ProcessedJobData[]>([]);
     const [loading, setLoading] = useState(true);
     const [crawling, setCrawling] = useState(false);
+    const [translating, setTranslating] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [editingJob, setEditingJob] = useState<ProcessedJobData | null>(null);
+    const [currentJobIndex, setCurrentJobIndex] = useState(-1);
     
     // Pagination
     const [page, setPage] = useState(1);
@@ -30,7 +32,8 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             setLoading(true);
             // Use companyId for exact filtering
             const companyFilter = company.id ? `companyId=${company.id}` : `company=${encodeURIComponent(company.name)}`;
-            const res = await fetch(`/api/data/processed-jobs?${companyFilter}&limit=${PAGE_SIZE}&page=${page}&isAdmin=true`, {
+            const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : '';
+            const res = await fetch(`/api/data/processed-jobs?${companyFilter}&limit=${PAGE_SIZE}&page=${page}&isAdmin=true${searchParam}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -51,9 +54,14 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         }
     }, [company.id, company.name, token, page, onUpdate]);
 
+    // Debounce search
     useEffect(() => {
-        fetchJobs();
-    }, [fetchJobs]);
+        const timer = setTimeout(() => {
+            setPage(1); // Reset to page 1 on search
+            fetchJobs();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm, fetchJobs]);
 
     const handleCrawl = async () => {
         try {
@@ -77,6 +85,34 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             alert('抓取请求失败');
         } finally {
             setCrawling(false);
+        }
+    };
+
+    const handleTranslate = async (jobIds: string[]) => {
+        if (jobIds.length === 0) return;
+        
+        try {
+            setTranslating(true);
+            const res = await fetch(`/api/data/processed-jobs?action=translate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ jobIds })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                alert(`成功翻译 ${data.count} 个职位`);
+                fetchJobs(); // Refresh to show translations
+            } else {
+                alert(`翻译失败: ${data.error}`);
+            }
+        } catch (error) {
+            alert('翻译请求失败');
+        } finally {
+            setTranslating(false);
         }
     };
 
@@ -117,7 +153,21 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
     };
 
     const handleEditJob = (job: ProcessedJobData) => {
+        const index = jobs.findIndex(j => j.id === job.id);
         setEditingJob(job);
+        setCurrentJobIndex(index);
+    };
+
+    const handleNavigateJob = (direction: 'prev' | 'next') => {
+        if (currentJobIndex === -1) return;
+        
+        let newIndex = direction === 'prev' ? currentJobIndex - 1 : currentJobIndex + 1;
+        
+        // Boundary checks
+        if (newIndex < 0 || newIndex >= jobs.length) return;
+        
+        setEditingJob(jobs[newIndex]);
+        setCurrentJobIndex(newIndex);
     };
 
     const handleSaveEdit = async (updatedJob: Partial<ProcessedJobData>, shouldClose: boolean = true) => {
@@ -143,10 +193,6 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         }
     };
 
-    const filteredJobs = jobs.filter(job =>
-        job.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl">
@@ -157,7 +203,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                             {company.logo && <img src={company.logo} className="w-6 h-6 object-contain rounded" alt="" />}
                             {company.name} - 职位管理
                         </h2>
-                        <p className="text-sm text-slate-500 mt-1">共 {jobs.length} 个职位</p>
+                        <p className="text-sm text-slate-500 mt-1">共 {total} 个职位</p>
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
                         <X className="w-6 h-6" />
@@ -185,6 +231,14 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                         {crawling ? '抓取中...' : '立即抓取'}
                     </button>
                     <button
+                        onClick={() => handleTranslate(jobs.map(j => j.id))}
+                        disabled={translating || jobs.length === 0}
+                        className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+                    >
+                        {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                        {translating ? '翻译中...' : '一键翻译本页'}
+                    </button>
+                    <button
                         className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 flex items-center gap-2 text-sm font-medium"
                         onClick={() => alert('手动录入功能开发中...')}
                     >
@@ -210,14 +264,14 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {filteredJobs.length === 0 ? (
+                                {jobs.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
                                             暂无职位数据，请尝试抓取
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredJobs.map(job => (
+                                    jobs.map(job => (
                                         <tr key={job.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="font-medium text-slate-900">{job.title}</div>
@@ -242,6 +296,14 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                                                             <ExternalLink className="w-4 h-4" />
                                                         </a>
                                                     )}
+                                                    <button
+                                                        onClick={() => handleTranslate([job.id])}
+                                                        disabled={translating}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-indigo-50 transition-colors disabled:opacity-50"
+                                                        title={job.isTranslated ? '重新翻译' : '翻译'}
+                                                    >
+                                                        <Languages className={`w-4 h-4 ${job.isTranslated ? 'text-green-600' : ''}`} />
+                                                    </button>
                                                     <button
                                                         onClick={() => handleEditJob(job)}
                                                         className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-indigo-50 transition-colors"
@@ -298,6 +360,9 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                     job={editingJob}
                     onSave={handleSaveEdit}
                     onClose={() => setEditingJob(null)}
+                    onNavigate={handleNavigateJob}
+                    hasPrev={currentJobIndex > 0}
+                    hasNext={currentJobIndex < jobs.length - 1}
                     availableCategories={['前端开发', '后端开发', '全栈开发', '移动开发', 'UI/UX设计', '产品经理', '数据分析', '运维/SRE', '市场营销', '人工智能', 'Web3/区块链']}
                 />
             )}
