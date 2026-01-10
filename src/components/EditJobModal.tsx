@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X, CheckCircle, Info, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, CheckCircle, Info, Star, ArrowDown } from 'lucide-react';
 import { ProcessedJobData } from '../services/data-management-service';
 import { JobCategory } from '../types/rss-types';
 
@@ -370,7 +370,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                       className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-800 transition-colors bg-white px-2 py-1 rounded border border-indigo-200 hover:border-indigo-300 shadow-sm"
                       title="使用翻译替换当前描述"
                     >
-                      <ArrowDownCircle className="w-3 h-3" />
+                      <ArrowDown className="w-3 h-3" />
                       填入描述
                     </button>
                   </div>
