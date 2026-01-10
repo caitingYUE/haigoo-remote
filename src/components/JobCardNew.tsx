@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { MapPin, Clock, Calendar, Building2 } from 'lucide-react';
+import { MapPin, Clock, Calendar, Building2, Briefcase } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { getJobSourceType } from '../utils/job-source-helper';
@@ -142,27 +142,27 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                   {/* Row 1: Badges & Salary (Desktop) */}
                   <div className="flex items-center justify-between gap-2">
                      <div className="flex flex-wrap items-center gap-2">
-                        {/* Job Type */}
+                        {/* Job Type (Amber) */}
                         {job.type && (
                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
                               <Calendar className="w-3 h-3 mr-1" />
                               {job.type === 'full-time' ? '全职' : job.type}
                            </span>
                         )}
-                        
-                        {/* Category */}
-                        {job.category && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
-                              <MapPin className="w-3 h-3 mr-1" />
-                              {job.category}
-                           </span>
-                        )}
 
-                        {/* Industry */}
+                        {/* Industry (Purple - Differentiated from Category) */}
                         {job.companyIndustry && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100/50">
                               <Building2 className="w-3 h-3 mr-1" />
                               {job.companyIndustry}
+                           </span>
+                        )}
+                        
+                        {/* Category (Blue/Indigo - Role related) */}
+                        {job.category && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
+                              <Briefcase className="w-3 h-3 mr-1" />
+                              {job.category}
                            </span>
                         )}
                      </div>
@@ -252,16 +252,16 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
 
             {/* Tags (Inline) */}
             <div className="flex flex-wrap gap-1.5 mb-4">
-               {/* Industry */}
-               {job.companyIndustry && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
-                     <Building2 className="w-3 h-3 mr-1" />
-                     {job.companyIndustry}
+               {/* Job Type (Amber) */}
+               {job.type && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100">
+                     {job.type === 'full-time' ? '全职' : job.type}
                   </span>
                )}
-               {job.type && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-50 text-slate-600 border border-slate-100">
-                     {job.type === 'full-time' ? '全职' : job.type}
+               {/* Industry (Purple) */}
+               {job.companyIndustry && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-600 border border-purple-100">
+                     {job.companyIndustry}
                   </span>
                )}
                {displayTags.slice(0, 3).map((tag, i) => (
