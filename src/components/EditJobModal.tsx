@@ -360,10 +360,21 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             <div className="md:col-span-2">
               {(job as any).translations?.description && (
                 <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2 text-indigo-800 font-medium">
-                    <span className="text-xs bg-indigo-200 px-2 py-0.5 rounded text-indigo-800">中文翻译 (参考)</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-indigo-800 font-medium">
+                      <span className="text-xs bg-indigo-200 px-2 py-0.5 rounded text-indigo-800">中文翻译 (参考)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, description: (job as any).translations.description })}
+                      className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-800 transition-colors bg-white px-2 py-1 rounded border border-indigo-200 hover:border-indigo-300 shadow-sm"
+                      title="使用翻译替换当前描述"
+                    >
+                      <ArrowDownCircle className="w-3 h-3" />
+                      填入描述
+                    </button>
                   </div>
-                  <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+                  <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto custom-scrollbar">
                     {(job as any).translations.description}
                   </div>
                 </div>

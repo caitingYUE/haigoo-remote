@@ -63,6 +63,17 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         return () => clearTimeout(timer);
     }, [searchTerm, fetchJobs]);
 
+    // Sync editingJob with jobs when jobs update (e.g. after translation refresh)
+    useEffect(() => {
+        if (editingJob) {
+            const updatedJob = jobs.find(j => j.id === editingJob.id);
+            // If we found the job and it's a different reference (meaning it was updated), update editingJob
+            if (updatedJob && updatedJob !== editingJob) {
+                setEditingJob(updatedJob);
+            }
+        }
+    }, [jobs]);
+
     const handleCrawl = async () => {
         try {
             setCrawling(true);
