@@ -83,8 +83,13 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
          job.companyTags.slice(0, 3).forEach(tag => tags.push({ text: tag, type: 'benefit' }));
       }
 
+      // 3. Industry Tag
+      if (job.companyIndustry) {
+         tags.unshift({ text: job.companyIndustry, type: 'other' });
+      }
+
       return tags.slice(0, 5); // Reduce max tags for cleaner look
-   }, [job.skills, (job as any).tags, job.companyTags]);
+   }, [job.skills, (job as any).tags, job.companyTags, job.companyIndustry]);
 
    // Common Logo Component
    const CompanyLogo = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
