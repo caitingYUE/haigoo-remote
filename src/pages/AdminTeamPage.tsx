@@ -974,7 +974,6 @@ const AdminTeamPage: React.FC = () => {
           {loading ? (
             <div className="loading">
               <Loader className="w-6 h-6 animate-spin" />
-              加载中...
             </div>
           ) : (
             <div className="admin-content">
