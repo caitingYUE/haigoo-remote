@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { MapPin, Clock, Calendar } from 'lucide-react';
+import { MapPin, Clock, Calendar, Building2 } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { getJobSourceType } from '../utils/job-source-helper';
@@ -83,13 +83,8 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
          job.companyTags.slice(0, 3).forEach(tag => tags.push({ text: tag, type: 'benefit' }));
       }
 
-      // 3. Industry Tag
-      if (job.companyIndustry) {
-         tags.unshift({ text: job.companyIndustry, type: 'other' });
-      }
-
       return tags.slice(0, 5); // Reduce max tags for cleaner look
-   }, [job.skills, (job as any).tags, job.companyTags, job.companyIndustry]);
+   }, [job.skills, (job as any).tags, job.companyTags]);
 
    // Common Logo Component
    const CompanyLogo = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
@@ -160,6 +155,14 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
                               <MapPin className="w-3 h-3 mr-1" />
                               {job.category}
+                           </span>
+                        )}
+
+                        {/* Industry */}
+                        {job.companyIndustry && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100/50">
+                              <Building2 className="w-3 h-3 mr-1" />
+                              {job.companyIndustry}
                            </span>
                         )}
                      </div>
@@ -249,6 +252,12 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
 
             {/* Tags (Inline) */}
             <div className="flex flex-wrap gap-1.5 mb-4">
+               {/* Industry */}
+               {job.companyIndustry && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
+                     {job.companyIndustry}
+                  </span>
+               )}
                {job.type && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-50 text-slate-600 border border-slate-100">
                      {job.type === 'full-time' ? '全职' : job.type}
