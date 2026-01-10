@@ -386,6 +386,18 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
+    const handleJobUpdate = useCallback((newCount: number) => {
+        setCompanies(prev => {
+            // Avoid unnecessary updates to prevent re-renders
+            const target = prev.find(c => c.id === selectedCompanyForJobs?.id)
+            if (target && target.jobCount === newCount) return prev
+            
+            return prev.map(c => 
+                c.id === selectedCompanyForJobs?.id ? { ...c, jobCount: newCount } : c
+            )
+        })
+    }, [selectedCompanyForJobs?.id])
+
     return (
         <div className="p-6 max-w-[1600px] mx-auto">
             <div className="flex justify-between items-center mb-6">

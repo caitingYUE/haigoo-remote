@@ -93,7 +93,14 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             
             if (res.ok) {
                 setJobs(prev => prev.filter(j => j.id !== jobId));
-                setTotal(prev => Math.max(0, prev - 1));
+                
+                // Optimistic update for total count
+                const newTotal = Math.max(0, total - 1);
+                setTotal(newTotal);
+                if (onUpdate) {
+                    onUpdate(newTotal);
+                }
+
                 if (jobs.length === 1 && page > 1) {
                     setPage(p => p - 1);
                 } else {
