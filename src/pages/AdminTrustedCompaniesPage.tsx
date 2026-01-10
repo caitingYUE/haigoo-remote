@@ -678,12 +678,7 @@ export default function AdminTrustedCompaniesPage() {
                     onClose={() => {
                         setSelectedCompanyForJobs(null)
                     }}
-                    onUpdate={(newCount) => {
-                        // Optimistically update the job count for the specific company
-                        setCompanies(prev => prev.map(c => 
-                            c.id === selectedCompanyForJobs.id ? { ...c, jobCount: newCount } : c
-                        ))
-                    }}
+                    onUpdate={handleJobUpdate}
                 />
             )}
 
