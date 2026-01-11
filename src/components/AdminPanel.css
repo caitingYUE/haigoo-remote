@@ -59,7 +59,7 @@
 
 /* 侧边栏导航 */
 .admin-sidebar {
-  width: 240px;
+  width: 200px;
   flex-shrink: 0;
   background: var(--background-light);
   border-right: 1px solid var(--border-light);
@@ -284,9 +284,9 @@
 /* 主内容区域 */
 .admin-main {
   flex: 1;
-  margin-left: 240px;
+  margin-left: 200px;
   padding: 1.5rem 2.5rem;
-  max-width: calc(100vw - 240px);
+  max-width: calc(100vw - 200px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
