@@ -51,6 +51,7 @@ import { processedJobsService } from '../services/processed-jobs-service';
 
 import AdminTrackingManagement from '../components/admin/AdminTrackingManagement';
 import AdminTrackingDashboard from '../components/admin/AdminTrackingDashboard';
+import AdminJobBundles from '../components/admin/AdminJobBundles';
 import logoPng from '../assets/logo.png';
 
 // 扩展RSSSource接口以包含管理所需的字段
