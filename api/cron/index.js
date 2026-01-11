@@ -62,11 +62,10 @@ export default async function handler(req, res) {
       case 'daily-enrich': {
         const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
         const { default: streamEnrichCompaniesHandler } = await import('../../lib/cron-handlers/stream-enrich-companies.js');
-        const { default: streamCrawlTrustedJobsHandler } = await import('../../lib/cron-handlers/stream-crawl-trusted-jobs.js');
+        // stream-crawl-trusted-jobs runs separately every 4 hours, no need to duplicate here
         return await runSequence(req, res, [
           { name: 'stream-translate-jobs', handler: streamTranslateJobsHandler },
-          { name: 'stream-enrich-companies', handler: streamEnrichCompaniesHandler },
-          { name: 'stream-crawl-trusted-jobs', handler: streamCrawlTrustedJobsHandler }
+          { name: 'stream-enrich-companies', handler: streamEnrichCompaniesHandler }
         ]);
       }
 
