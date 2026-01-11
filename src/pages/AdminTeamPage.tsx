@@ -899,7 +899,7 @@ const AdminTeamPage: React.FC = () => {
             <img src={logoPng} alt="Haigoo" className="w-10 h-10 object-contain" />
             {!sidebarCollapsed && (
               <div className="logo-text">
-                <h1>Haigoo Remote</h1>
+                <h1>Haigoo</h1>
                 <p>团队管理后台</p>
               </div>
             )}
