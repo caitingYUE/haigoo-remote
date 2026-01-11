@@ -996,14 +996,7 @@
 }
 
 .loading::before {
-  content: '';
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border-light);
-  border-top: 2px solid var(--primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-right: 0.75rem;
+  content: none;
 }
 
 .admin-panel.dark .loading::before {

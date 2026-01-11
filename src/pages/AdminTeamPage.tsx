@@ -950,7 +950,7 @@ const AdminTeamPage: React.FC = () => {
         <div className="admin-container">
           {/* 页面头部 */}
           <header className="admin-header">
-            <h1>{activeTab === 'overview' ? '数据概览' : activeTab === 'data' ? '数据管理' : activeTab === 'rss' ? 'RSS源管理' : activeTab === 'companies' ? '全部企业管理' : activeTab === 'trusted-companies' ? '可信企业管理' : activeTab === 'team' ? '团队管理' : activeTab === 'users' ? '用户管理' : activeTab === 'tags' ? '标签管理' : activeTab === 'feedback' ? '用户反馈' : activeTab === 'analytics' ? '数据分析' : activeTab === 'settings' ? '系统设置' : '海狗招聘团队管理后台'}</h1>
+            <h1>{activeTab === 'overview' ? '数据概览' : activeTab === 'data' ? '数据管理' : activeTab === 'rss' ? 'RSS源管理' : activeTab === 'companies' ? '全部企业管理' : activeTab === 'trusted-companies' ? '可信企业管理' : activeTab === 'team' ? '团队管理' : activeTab === 'users' ? '用户管理' : activeTab === 'tags' ? '标签管理' : activeTab === 'feedback' ? '用户反馈' : activeTab === 'analytics' ? '数据分析' : activeTab === 'settings' ? '系统设置' : 'Haigoo Team Admin System'}</h1>
             <div className="flex items-center gap-4">
               {user && (
                 <div className="flex items-center gap-2 text-sm text-slate-700">
