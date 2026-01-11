@@ -876,6 +876,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'dashboard', label: '数据概览', icon: BarChart3 },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
+    { id: 'job-bundles', label: '职位组合', icon: Tag },
     { id: 'companies', label: '全部企业', icon: Building },
     { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
     { id: 'tag-management', label: '标签管理', icon: Tag },
@@ -982,6 +983,7 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'rss' && renderRSSManagement()}
               {activeTab === 'jobs' && renderJobDataManagement()}
+              {activeTab === 'job-bundles' && <AdminJobBundles />}
               {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'subscriptions' && <SubscriptionsTable />}
               {activeTab === 'users' && <UserManagementPage />}
