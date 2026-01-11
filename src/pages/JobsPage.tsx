@@ -3,6 +3,7 @@ import { Search, SortAsc, Sparkles, Briefcase, Zap, AlertTriangle, X } from 'luc
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
+import JobBundleBanner from '../components/JobBundleBanner'
 import JobDetailModal from '../components/JobDetailModal'
 import { JobDetailPanel } from '../components/JobDetailPanel'
 import JobFilterBar from '../components/JobFilterBar'
@@ -226,6 +227,36 @@ export default function JobsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [sortBy, setSortBy] = useState<'relevance' | 'recent'>('relevance')
+  const [activeBundle, setActiveBundle] = useState<any>(null);
+
+  useEffect(() => {
+    // Fetch active bundle
+    const fetchActiveBundle = async () => {
+      try {
+        const res = await fetch('/api/admin/job-bundles?is_active=true');
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          // Filter public and check time
+          const now = new Date();
+          const validBundles = data.data.filter((b: any) => {
+             if (!b.is_public) return false;
+             if (b.start_time && new Date(b.start_time) > now) return false;
+             if (b.end_time && new Date(b.end_time) < now) return false;
+             return true;
+          });
+          
+          if (validBundles.length > 0) {
+              // Sort by priority (asc) and pick first
+              validBundles.sort((a: any, b: any) => a.priority - b.priority);
+              setActiveBundle(validBundles[0]);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch active bundle', e);
+      }
+    };
+    fetchActiveBundle();
+  }, []);
 
   // 匹配分数缓存（不再需要单独管理，因为后端已经返回匹配分数）
   const [matchScores, setMatchScores] = useState<Record<string, number>>({})
@@ -806,6 +837,12 @@ export default function JobsPage() {
                   </div>
                 ) : (
                   <div>
+                    {activeBundle && !loadingMore && currentPage === 1 && (
+                        <div className="mb-4">
+                            <JobBundleBanner bundle={activeBundle} />
+                        </div>
+                    )}
+
                     {distributedJobs.map((job, index) => (
                       <JobCardNew
                         key={job.id}

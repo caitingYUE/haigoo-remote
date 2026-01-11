@@ -35,6 +35,7 @@ const MembershipPage = lazyRetry(() => import('./pages/MembershipPage'), 'Member
 const JoinClubApplicationPage = lazy(() => import('./pages/JoinClubApplicationPage'))
 const NoPermissionPage = lazy(() => import('./pages/NoPermissionPage'))
 const JobDetailPage = lazy(() => import('./pages/JobDetailPage'))
+const JobBundleDetailPage = lazy(() => import('./pages/JobBundleDetailPage'))
 const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
 const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 
@@ -149,6 +150,7 @@ function App() {
                           {/* 公开页面 */}
                           <Route path="/" element={<LandingPage />} />
                           <Route path="/jobs" element={<JobsPage />} />
+                          <Route path="/job-bundles/:id" element={<JobBundleDetailPage />} />
                           <Route path="/job/:id" element={<JobDetailPage />} />
                           <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
                           <Route path="/company/:id" element={<CompanyProfilePage />} />
