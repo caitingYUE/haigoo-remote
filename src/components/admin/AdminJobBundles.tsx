@@ -48,7 +48,20 @@ const AdminJobBundles: React.FC = () => {
     }
   };
 
-  // Fetch full job details for the selected IDs when editing
+  // Format date for datetime-local input (YYYY-MM-DDThh:mm)
+  const formatDateForInput = (dateStr: string | null) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const offset = date.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(date.getTime() - offset)).toISOString().slice(0, 16);
+    return localISOTime;
+  };
+
+  // Parse datetime-local input to ISO string
+  const parseDateFromInput = (value: string) => {
+    if (!value) return null;
+    return new Date(value).toISOString();
+  };
   const fetchJobDetails = async (ids: string[]) => {
     if (!ids || ids.length === 0) {
       setSelectedJobs([]);
@@ -71,18 +84,18 @@ const AdminJobBundles: React.FC = () => {
       // Or we can fetch them using `fetch('/api/data/processed-jobs?ids=' + ids.join(','))` if implemented.
       // Let's implement a helper in the backend later.
       
-      // Temporary: Just set empty details, populate via search
-      setSelectedJobs(ids.map(id => ({ job_id: id, title: 'Loading...', company: '...' })));
+    // Temporary: Just set empty details, populate via search
+    // setSelectedJobs(ids.map(id => ({ id: id, title: 'Loading...', company: '...' })));
       
-      // Real fetch
-      const res = await fetch(`/api/data/processed-jobs?ids=${ids.join(',')}`);
-      const data = await res.json();
-      if (data.jobs) {
-          // Reorder according to ids
-          const jobMap = new Map(data.jobs.map((j: any) => [j.job_id, j]));
-          const ordered = ids.map(id => jobMap.get(id)).filter(Boolean);
-          setSelectedJobs(ordered);
-      }
+    // Real fetch
+    const res = await fetch(`/api/data/processed-jobs?ids=${ids.join(',')}`);
+    const data = await res.json();
+    if (data.jobs) {
+        // Reorder according to ids
+        const jobMap = new Map(data.jobs.map((j: any) => [j.id, j]));
+        const ordered = ids.map(id => jobMap.get(id)).filter(Boolean);
+        setSelectedJobs(ordered);
+    }
     } catch (e) {
       console.error('Failed to fetch job details', e);
     }
@@ -114,7 +127,7 @@ const AdminJobBundles: React.FC = () => {
       const method = currentBundle.id ? 'PUT' : 'POST';
       const body = {
         ...currentBundle,
-        job_ids: selectedJobs.map(j => j.job_id)
+        job_ids: selectedJobs.map(j => j.id) // Use j.id consistently
       };
 
       const res = await fetch(url, {
@@ -162,12 +175,13 @@ const AdminJobBundles: React.FC = () => {
   };
 
   const addJobToBundle = (job: any) => {
-    if (selectedJobs.find(j => j.job_id === job.job_id)) return;
+    // Check if job is already selected
+    if (selectedJobs.some(j => j.id === job.id)) return;
     setSelectedJobs([...selectedJobs, job]);
   };
 
   const removeJobFromBundle = (jobId: string) => {
-    setSelectedJobs(selectedJobs.filter(j => j.job_id !== jobId));
+    setSelectedJobs(selectedJobs.filter(j => j.id !== jobId));
   };
 
   const moveJob = (index: number, direction: 'up' | 'down') => {
@@ -227,16 +241,16 @@ const AdminJobBundles: React.FC = () => {
                 <label>开始时间</label>
                 <input 
                   type="datetime-local" 
-                  value={currentBundle.start_time ? new Date(currentBundle.start_time).toISOString().slice(0, 16) : ''}
-                  onChange={e => setCurrentBundle({...currentBundle, start_time: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                  value={formatDateForInput(currentBundle.start_time || null)}
+                  onChange={e => setCurrentBundle({...currentBundle, start_time: parseDateFromInput(e.target.value)})}
                 />
               </div>
               <div>
                 <label>结束时间</label>
                 <input 
                   type="datetime-local" 
-                  value={currentBundle.end_time ? new Date(currentBundle.end_time).toISOString().slice(0, 16) : ''}
-                  onChange={e => setCurrentBundle({...currentBundle, end_time: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                  value={formatDateForInput(currentBundle.end_time || null)}
+                  onChange={e => setCurrentBundle({...currentBundle, end_time: parseDateFromInput(e.target.value)})}
                 />
               </div>
             </div>
@@ -293,15 +307,17 @@ const AdminJobBundles: React.FC = () => {
                 </div>
                 <div className="search-results">
                   {searchResults.map(job => (
-                    <div key={job.job_id} className="search-item">
+                    <div key={job.id} className="search-item">
                       <div className="job-info">
                         <div className="job-title">{job.title}</div>
-                        <div className="job-company">{job.company}</div>
+                        <div className="job-company text-xs text-gray-500">
+                           {job.company} <span className="ml-2 text-gray-400">ID: {job.id}</span>
+                        </div>
                       </div>
                       <button 
                         onClick={() => addJobToBundle(job)}
                         className="btn-add"
-                        disabled={!!selectedJobs.find(j => j.job_id === job.job_id)}
+                        disabled={!!selectedJobs.find(j => j.id === job.id)}
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -315,7 +331,7 @@ const AdminJobBundles: React.FC = () => {
                 <h4>已选职位 ({selectedJobs.length})</h4>
                 <div className="selected-list">
                   {selectedJobs.map((job, index) => (
-                    <div key={job.job_id} className="selected-item">
+                    <div key={job.id} className="selected-item">
                       <div className="item-order">{index + 1}</div>
                       <div className="job-info">
                         <div className="job-title">{job.title}</div>
@@ -324,7 +340,7 @@ const AdminJobBundles: React.FC = () => {
                       <div className="item-actions">
                         <button onClick={() => moveJob(index, 'up')} disabled={index === 0}>↑</button>
                         <button onClick={() => moveJob(index, 'down')} disabled={index === selectedJobs.length - 1}>↓</button>
-                        <button onClick={() => removeJobFromBundle(job.job_id)} className="text-red-500">
+                        <button onClick={() => removeJobFromBundle(job.id)} className="text-red-500">
                           <X className="w-4 h-4" />
                         </button>
                       </div>

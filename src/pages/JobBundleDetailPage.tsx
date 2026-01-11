@@ -67,13 +67,22 @@ export default function JobBundleDetailPage() {
 
   const fetchJobs = async (ids: string[]) => {
       try {
-          const res = await fetch(`/api/data/processed-jobs?ids=${ids.join(',')}`);
+          console.log('[JobBundle] Fetching jobs with IDs:', ids);
+          // 确保ids参数正确编码
+          const res = await fetch(`/api/data/processed-jobs?ids=${encodeURIComponent(ids.join(','))}`);
           const data = await res.json();
+          console.log('[JobBundle] API response:', data);
+          
           if (data.jobs) {
               // Reorder
               const jobMap = new Map(data.jobs.map((j: any) => [j.id, j]));
-              const ordered = ids.map(id => jobMap.get(id)).filter(Boolean) as Job[];
+              // 兼容可能存在的不同ID类型（string/number）
+              const ordered = ids.map(id => jobMap.get(id) || jobMap.get(String(id)) || jobMap.get(Number(id))).filter(Boolean) as Job[];
+              console.log('[JobBundle] Ordered jobs:', ordered);
               setJobs(ordered);
+          } else {
+              console.warn('[JobBundle] No jobs found in response');
+              setJobs([]);
           }
       } catch (e) {
           console.error('Failed to fetch jobs', e);
