@@ -174,3 +174,33 @@
     1.  **人工添加**: 支持管理员点击添加按钮手动录入企业。
     2.  **智能辅助**: 支持自动抓取企业简介、Logo 和岗位数据；支持基于简介判断行业、添加标签；支持判断是否可内推。
     3.  **数据归一**: 可信企业最终也会被归类到【全部企业】的大池子中，且其抓取的高质量岗位数据会同步更新到所有岗位数据中，供前端展示。
+
+---
+
+## 7. 定时任务架构 (Cron Job Architecture)
+
+系统基于 Vercel Cron 实现自动化数据更新，核心任务分为三大类。
+
+### 7.1 任务调度表 (Schedule)
+| 任务名称 | API 路径 | 触发时间 (UTC) | 功能描述 |
+| :--- | :--- | :--- | :--- |
+| **Daily Ingest** | `/api/cron/daily-ingest` | 01:30 | **RSS抓取与入库**。串行执行 `stream-fetch-rss` (抓取) 和 `stream-process-rss` (处理)。 |
+| **Daily Enrich** | `/api/cron/daily-enrich` | 02:00 | **数据翻译与补全**。串行执行 `stream-translate-jobs` (翻译) 和 `stream-enrich-companies` (补全企业信息)。 |
+| **Trusted Crawl** | `/api/cron/stream-crawl-trusted-jobs` | 每4小时 | **可信企业官网爬取**。独立运行，高频更新可信源数据。 |
+| **Rotate Featured** | `/api/cron/rotate-featured` | 03:00 | **精选职位轮换**。更新首页推荐位。 |
+
+### 7.2 核心机制与优化 (Core Mechanisms)
+
+#### A. 增量保存与分批处理 (Incremental Saving & Chunking)
+针对 Serverless 环境的执行时长限制（通常 10-15秒或更长），所有耗时任务（如 RSS 抓取）均采用了**流式处理**模式：
+*   **分批 (Chunking)**: 将大量 RSS 源按 3-5 个一组进行分批。
+*   **即时入库 (Immediate Upsert)**: 每处理完一批数据，**立即**执行数据库 `INSERT ON CONFLICT UPDATE` 操作。
+*   **优势**: 即使任务在第 N 批次超时被杀，前 N-1 批次的数据已安全入库，杜绝了“跑了很久最后入库失败导致 +0” 的问题。
+
+#### B. 独立容错 (Isolated Error Handling)
+*   每个 RSS 源或爬取任务的错误都被独立捕获。
+*   单个源的解析失败、超时不会中断整个 Cron 任务流，确保其他源能正常更新。
+
+#### C. 安全熔断 (Safety Circuit Breaker)
+*   **RSS 处理**: 设置了 `MAX_BATCHES` (如 20批次/1000条)，防止因数据积压导致的无限循环和资源耗尽。
+*   **可信爬虫**: 单个企业爬取设置独立超时限制，防止卡死。
