@@ -21,11 +21,32 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
     const [searchTerm, setSearchTerm] = useState('');
     const [editingJob, setEditingJob] = useState<ProcessedJobData | null>(null);
     const [currentJobIndex, setCurrentJobIndex] = useState(-1);
+    const [availableCategories, setAvailableCategories] = useState<string[]>([]);
     
     // Pagination
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const PAGE_SIZE = 10;
+
+    // Fetch Tag Config
+    useEffect(() => {
+        const fetchTagConfig = async () => {
+            try {
+                const res = await fetch('/api/data/trusted-companies?target=tags', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await res.json();
+                if (data.success && data.config?.jobCategories) {
+                    setAvailableCategories(data.config.jobCategories);
+                }
+            } catch (error) {
+                console.error('Failed to fetch tag config:', error);
+            }
+        };
+        fetchTagConfig();
+    }, [token]);
 
     const fetchJobs = useCallback(async () => {
         try {
@@ -377,7 +398,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                     onNavigate={handleNavigateJob}
                     hasPrev={currentJobIndex > 0}
                     hasNext={currentJobIndex < jobs.length - 1}
-                    availableCategories={['前端开发', '后端开发', '全栈开发', '移动开发', 'UI/UX设计', '产品经理', '数据分析', '运维/SRE', '市场营销', '人工智能', 'Web3/区块链']}
+                    availableCategories={availableCategories.length > 0 ? availableCategories : ['前端开发', '后端开发', '全栈开发', '移动开发', 'UI/UX设计', '产品经理', '数据分析', '运维/SRE', '市场营销', '人工智能', 'Web3/区块链']}
                 />
             )}
         </div>
