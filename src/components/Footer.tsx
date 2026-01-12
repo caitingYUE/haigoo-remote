@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Linkedin, Mail, BookOpen } from 'lucide-react';
+import { LinkedInLogo, XiaohongshuLogo, OutlookLogo } from './SocialIcons';
 
 export default function Footer() {
   return (
@@ -33,7 +33,7 @@ export default function Footer() {
               className="text-slate-400 hover:text-[#0077b5] transition-colors p-1"
               title="LinkedIn"
             >
-              <Linkedin className="w-4 h-4" />
+              <LinkedInLogo className="w-5 h-5" />
             </a>
             
             <a 
@@ -43,16 +43,16 @@ export default function Footer() {
               className="text-slate-400 hover:text-[#ff2442] transition-colors flex items-center gap-1.5 p-1"
               title="小红书"
             >
-              <BookOpen className="w-4 h-4" />
+              <XiaohongshuLogo className="w-5 h-5" />
               <span className="font-medium text-xs">小红书</span>
             </a>
 
             <a 
               href="mailto:haigooremote@outlook.com" 
-              className="text-slate-400 hover:text-indigo-600 transition-colors p-1"
+              className="text-slate-400 hover:text-[#0078d4] transition-colors p-1"
               title="联系邮箱"
             >
-              <Mail className="w-4 h-4" />
+              <OutlookLogo className="w-5 h-5" />
             </a>
           </div>
         </div>
