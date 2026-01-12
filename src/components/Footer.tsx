@@ -22,17 +22,17 @@ export default function Footer() {
           </div>
 
           {/* Separator */}
-          <span className="hidden sm:block w-1 h-1 bg-slate-300 rounded-full" aria-hidden="true" />
+          {/* <span className="hidden sm:block w-1 h-1 bg-slate-300 rounded-full" aria-hidden="true" /> */}
 
           {/* Links */}
-          <Link 
+          {/* <Link 
             to="/bug-leaderboard" 
             className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors group"
             title="查看贡献榜"
           >
             <Trophy className="w-4 h-4 text-slate-400 group-hover:text-yellow-500 transition-colors" />
             <span>贡献榜</span>
-          </Link>
+          </Link> */}
         </div>
       </div>
     </footer>
