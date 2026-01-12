@@ -24,11 +24,26 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   availableCategories = [], 
   availableTags = [] 
 }) => {
+  // Helper to format date for datetime-local input
+  const formatDateForInput = (isoString?: string) => {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      // Adjust for timezone offset to get correct local time string for input
+      const offset = date.getTimezoneOffset() * 60000;
+      const localDate = new Date(date.getTime() - offset);
+      return localDate.toISOString().slice(0, 16);
+    } catch (e) {
+      return '';
+    }
+  };
+
   const [formData, setFormData] = useState({
     title: job.title,
     company: job.company,
     location: job.location,
     timezone: job.timezone || '',
+    publishedAt: formatDateForInput(job.publishedAt),
     salary: job.salary || '',
     jobType: job.jobType as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship',
     experienceLevel: job.experienceLevel as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive',
@@ -51,6 +66,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       company: job.company,
       location: job.location,
       timezone: job.timezone || '',
+      publishedAt: formatDateForInput(job.publishedAt),
       salary: job.salary || '',
       jobType: job.jobType as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship',
       experienceLevel: job.experienceLevel as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive',
@@ -87,6 +103,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     try {
       await onSave({
         ...formData,
+        publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : undefined,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         requirements: formData.requirements.split('\n').filter(Boolean),
         benefits: formData.benefits.split('\n').filter(Boolean)
@@ -232,6 +249,16 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="例如: UTC+8, PST, America/New_York"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">发布时间</label>
+              <input
+                type="datetime-local"
+                value={formData.publishedAt}
+                onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
 
