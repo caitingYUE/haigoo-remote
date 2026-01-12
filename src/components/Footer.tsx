@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy } from 'lucide-react';
+import { Linkedin, Mail, BookOpen } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -22,17 +22,39 @@ export default function Footer() {
           </div>
 
           {/* Separator */}
-          {/* <span className="hidden sm:block w-1 h-1 bg-slate-300 rounded-full" aria-hidden="true" /> */}
+          <span className="hidden sm:block w-1 h-1 bg-slate-300 rounded-full" aria-hidden="true" />
 
-          {/* Links */}
-          {/* <Link 
-            to="/bug-leaderboard" 
-            className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors group"
-            title="查看贡献榜"
-          >
-            <Trophy className="w-4 h-4 text-slate-400 group-hover:text-yellow-500 transition-colors" />
-            <span>贡献榜</span>
-          </Link> */}
+          {/* Social Links */}
+          <div className="flex items-center gap-5">
+            <a 
+              href="https://www.linkedin.com/company/haigoo/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-[#0077b5] transition-colors p-1"
+              title="LinkedIn"
+            >
+              <Linkedin className="w-4 h-4" />
+            </a>
+            
+            <a 
+              href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-[#ff2442] transition-colors flex items-center gap-1.5 p-1"
+              title="小红书"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span className="font-medium text-xs">小红书</span>
+            </a>
+
+            <a 
+              href="mailto:haigooremote@outlook.com" 
+              className="text-slate-400 hover:text-indigo-600 transition-colors p-1"
+              title="联系邮箱"
+            >
+              <Mail className="w-4 h-4" />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
