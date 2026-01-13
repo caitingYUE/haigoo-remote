@@ -196,8 +196,7 @@ export default function AdminTrustedCompaniesPage() {
                 setFormData(prev => ({
                     ...prev,
                     description: metadata.description || prev.description,
-                    logo: metadata.icon || metadata.image || prev.logo,
-                    coverImage: metadata.image || prev.coverImage
+                    logo: metadata.icon || metadata.image || prev.logo
                 }))
                 // If name is empty, try to use title
                 if (!formData.name && metadata.title) {
