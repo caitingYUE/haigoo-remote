@@ -5,7 +5,7 @@ import {
   Filter,
   Briefcase, BarChart3, Loader, Edit3, Eye, Link as LinkIcon,
   MapPin, Calendar, Server, Star, ExternalLink, Info, Plus, Building, X,
-  ChevronLeft, ChevronRight, HelpCircle
+  ChevronLeft, ChevronRight, HelpCircle, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { JobCategory } from '../types/rss-types';
 import { dataManagementService, RawRSSData, ProcessedJobData, StorageStats } from '../services/data-management-service';
@@ -79,6 +79,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     source?: string;
     isFeatured?: boolean;
     isApproved?: boolean;
+    sortBy?: string;
   }>({});
 
   // Search debounce state
@@ -823,7 +824,30 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-32 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">地点/远程</th>
               {/* <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域分类</th> */}
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">技能标签</th>
-              <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">发布日期</th>
+              <th 
+                className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                onClick={() => {
+                  const currentSort = processedDataFilters.sortBy;
+                  let nextSort;
+                  if (currentSort === 'published_at_desc') {
+                    nextSort = 'published_at_asc';
+                  } else if (currentSort === 'published_at_asc') {
+                    nextSort = undefined; // 取消排序，或者回到默认
+                  } else {
+                    nextSort = 'published_at_desc';
+                  }
+                  setProcessedDataFilters({ ...processedDataFilters, sortBy: nextSort });
+                  setProcessedDataPage(1);
+                }}
+              >
+                <div className="flex items-center gap-1">
+                  发布日期
+                  <div className="flex flex-col">
+                    <ArrowUp className={`w-2 h-2 ${processedDataFilters.sortBy === 'published_at_asc' ? 'text-indigo-600' : 'text-slate-300'}`} />
+                    <ArrowDown className={`w-2 h-2 -mt-0.5 ${processedDataFilters.sortBy === 'published_at_desc' ? 'text-indigo-600' : 'text-slate-300'}`} />
+                  </div>
+                </div>
+              </th>
               <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位来源</th>
               <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">精选</th>
               <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">审核</th>
