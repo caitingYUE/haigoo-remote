@@ -19,6 +19,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
     const [crawling, setCrawling] = useState(false);
     const [translating, setTranslating] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [editingJob, setEditingJob] = useState<ProcessedJobData | null>(null);
     const [currentJobIndex, setCurrentJobIndex] = useState(-1);
     const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -48,12 +49,21 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         fetchTagConfig();
     }, [token]);
 
+    // Handle search debounce
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setPage(1); // Reset to page 1 on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
     const fetchJobs = useCallback(async () => {
         try {
             setLoading(true);
             // Use companyId for exact filtering
             const companyFilter = company.id ? `companyId=${company.id}` : `company=${encodeURIComponent(company.name)}`;
-            const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : '';
+            const searchParam = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : '';
             const res = await fetch(`/api/data/processed-jobs?${companyFilter}&limit=${PAGE_SIZE}&page=${page}&isAdmin=true${searchParam}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -73,16 +83,12 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         } finally {
             setLoading(false);
         }
-    }, [company.id, company.name, token, page, onUpdate]);
+    }, [company.id, company.name, token, page, onUpdate, debouncedSearch]);
 
-    // Debounce search
+    // Fetch jobs when page or debouncedSearch changes
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setPage(1); // Reset to page 1 on search
-            fetchJobs();
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchTerm, fetchJobs]);
+        fetchJobs();
+    }, [fetchJobs]);
 
     // Sync editingJob with jobs when jobs update (e.g. after translation refresh)
     useEffect(() => {

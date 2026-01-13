@@ -56,6 +56,19 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
    // const sourceType = getJobSourceType(job);
    const isTranslated = !!job.translations?.title;
    
+   // Check if job is new (published within 3 days)
+   const isNew = useMemo(() => {
+      if (!job.publishedAt) return false;
+      try {
+         const pubDate = new Date(job.publishedAt);
+         const threeDaysAgo = new Date();
+         threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+         return !isNaN(pubDate.getTime()) && pubDate >= threeDaysAgo;
+      } catch (e) {
+         return false;
+      }
+   }, [job.publishedAt]);
+   
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
    // Dynamic Background Color Logic
@@ -276,6 +289,11 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                            译
                         </span>
                      )}
+                     {isNew && (
+                        <span className="flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
+                           New
+                        </span>
+                     )}
                   </div>
 
                   {/* Row 3: Meta Info */}
@@ -333,9 +351,16 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
             <div className="flex items-start gap-4 mb-4">
                <CompanyLogoSmall size="md" />
                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 mb-1" title={job.translations?.title || job.title}>
-                     {job.translations?.title || job.title}
-                  </h3>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                     <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2" title={job.translations?.title || job.title}>
+                        {job.translations?.title || job.title}
+                     </h3>
+                     {isNew && (
+                        <span className="flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
+                           New
+                        </span>
+                     )}
+                  </div>
                   <div className="flex items-center text-xs text-slate-500 font-medium">
                      <span className="text-slate-700 truncate mr-2 max-w-[120px]">{job.translations?.company || job.company}</span>
                      <MapPin className="w-3 h-3 mr-1 text-slate-400 flex-shrink-0" />
