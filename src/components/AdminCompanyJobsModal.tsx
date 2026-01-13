@@ -299,6 +299,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                             <thead className="bg-slate-50 sticky top-0 z-10">
                                 <tr>
                                     <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">职位名称</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
                                     <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">地点</th>
                                     <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">发布时间</th>
                                     <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">操作</th>
@@ -307,7 +308,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                             <tbody className="divide-y divide-gray-100">
                                 {jobs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                                        <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                                             暂无职位数据，请尝试抓取
                                         </td>
                                     </tr>
@@ -317,6 +318,17 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                                             <td className="px-6 py-4">
                                                 <div className="font-medium text-slate-900">{job.title}</div>
                                                 <div className="text-xs text-slate-500 mt-0.5">{job.jobType}</div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {job.isApproved ? (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                        已审核
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                                                        待审核
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-600">
                                                 {job.location}
