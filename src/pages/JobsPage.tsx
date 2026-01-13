@@ -727,7 +727,7 @@ export default function JobsPage() {
               <div className="flex items-center gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
                 <p className="text-sm text-amber-800 font-medium">
-                  系统公告：近几天数据库正在升级更新，数据可能会出现短暂抖动或不稳定，敬请谅解。
+                  系统公告：岗位数据正在进行全面审核与质量优化，感谢您的耐心等待与支持。
                 </p>
               </div>
               <button 
