@@ -1,9 +1,17 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase } from 'lucide-react';
+import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { getJobSourceType } from '../utils/job-source-helper';
+
+const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
+   'Entry': '初级',
+   'Mid': '中级',
+   'Senior': '高级',
+   'Lead': '资深',
+   'Executive': '专家'
+};
 // import { FastAverageColor } from 'fast-average-color'; // Optional: Use if installed
 
 interface JobCardNewProps {
@@ -227,6 +235,14 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                            </span>
                         )}
 
+                        {/* Experience Level (Emerald - New) */}
+                        {job.experienceLevel && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
+                              <TrendingUp className="w-3 h-3 mr-1" />
+                              {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
+                           </span>
+                        )}
+
                         {/* Industry (Purple - Differentiated from Category) */}
                         {job.companyIndustry && (
                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100/50">
@@ -334,6 +350,12 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                {job.type && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100">
                      {job.type === 'full-time' ? '全职' : job.type}
+                  </span>
+               )}
+               {/* Experience Level (Emerald) */}
+               {job.experienceLevel && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
+                     {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
                   </span>
                )}
                {/* Industry (Purple) */}
