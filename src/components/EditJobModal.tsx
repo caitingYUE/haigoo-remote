@@ -40,6 +40,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
   const [formData, setFormData] = useState({
     title: job.title,
+    translations: (job as any).translations || {},
     company: job.company,
     location: job.location,
     timezone: job.timezone || '',
@@ -63,6 +64,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   useEffect(() => {
     setFormData({
       title: job.title,
+      translations: (job as any).translations || {},
       company: job.company,
       location: job.location,
       timezone: job.timezone || '',
@@ -218,6 +220,24 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
+              {(formData as any).translations?.title && (
+                <div className="mt-1.5 flex items-center justify-between bg-slate-50 px-2 py-1.5 rounded border border-slate-200">
+                   <span className="text-xs text-slate-600 truncate mr-2" title={(formData as any).translations.title}>
+                     翻译: {(formData as any).translations.title}
+                   </span>
+                   <button 
+                     type="button"
+                     onClick={() => {
+                        const newTrans = { ...(formData as any).translations };
+                        delete newTrans.title;
+                        setFormData({ ...formData, translations: newTrans });
+                     }}
+                     className="text-xs text-red-600 hover:text-red-700 font-medium whitespace-nowrap"
+                   >
+                     清除翻译
+                   </button>
+                </div>
+              )}
             </div>
 
             <div>

@@ -318,6 +318,25 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       setProcessedData(updatedData as ProcessedJobData[]);
 
       if (editingJob.id) {
+        // 检查标题是否改变，如果改变则清除翻译
+        if (updatedJob.title && updatedJob.title !== editingJob.title) {
+            console.log('[Frontend] Title changed, clearing translation title');
+            const currentTranslations = (updatedJob as any).translations || editingJob.translations || {};
+            const newTranslations = { ...currentTranslations };
+            delete newTranslations.title;
+            (updatedJob as any).translations = newTranslations;
+            (updatedJob as any).isTranslated = false;
+        }
+
+        // 检查公司名是否改变，如果改变则清除翻译
+        if (updatedJob.company && updatedJob.company !== editingJob.company) {
+            console.log('[Frontend] Company changed, clearing translation company');
+            const currentTranslations = (updatedJob as any).translations || editingJob.translations || {};
+            const newTranslations = { ...currentTranslations };
+            delete newTranslations.company;
+            (updatedJob as any).translations = newTranslations;
+        }
+
         // 更新现有职位
         await dataManagementService.updateProcessedJob(editingJob.id, updatedJob, 'admin');
       } else {
