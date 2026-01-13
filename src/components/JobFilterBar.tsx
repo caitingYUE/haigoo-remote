@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChevronDown, Check, Search, SortAsc, Sparkles, SlidersHorizontal, Gem, MapPin, Clock, Banknote, BarChart2, Globe, Building2, X, Briefcase, Calendar } from 'lucide-react';
+import { ChevronDown, Check, Search, SortAsc, Sparkles, SlidersHorizontal, Gem, MapPin, Clock, Banknote, BarChart2, Globe, Building2, X, Briefcase, Calendar, TrendingUp } from 'lucide-react';
 
 // --- Types ---
 
@@ -298,68 +298,6 @@ export default function JobFilterBar({
         {/* Filter Row - Scrollable on mobile, wrap on desktop */}
         <div className="flex flex-wrap items-center gap-2 flex-1 w-full pb-1 xl:pb-0">
           
-          {/* Role (Category) -> Renamed to '角色' (Role) to match backend 'category' better */}
-          <FilterDropdown
-            label="角色"
-            activeLabel={getActiveLabel('category', categoryOptions, '角色')}
-            isActive={(filters.category?.length || 0) > 0}
-            isOpen={openDropdown === 'category'}
-            onToggle={() => toggleDropdown('category')}
-            onClose={() => setOpenDropdown(null)}
-            icon={<Briefcase className="w-3.5 h-3.5" />}
-          >
-            {categoryOptions.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={filters.category?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('category', opt.value, c)}
-              />
-            ))}
-          </FilterDropdown>
-
-          {/* Salary (Renamed from Rate) */}
-          {/* 
-          <FilterDropdown
-            label="Salary"
-            activeLabel={getActiveLabel('salary', SALARY_OPTIONS, 'Salary')}
-            isActive={(filters.salary?.length || 0) > 0}
-            isOpen={openDropdown === 'salary'}
-            onToggle={() => toggleDropdown('salary')}
-            onClose={() => setOpenDropdown(null)}
-            icon={<Banknote className="w-3.5 h-3.5" />}
-          >
-            {SALARY_OPTIONS.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={filters.salary?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('salary', opt.value, c)}
-              />
-            ))}
-          </FilterDropdown>
-          */}
-
-          {/* Location */}
-          <FilterDropdown
-            label="地点"
-            activeLabel={getActiveLabel('location', locationOptions, '地点')}
-            isActive={(filters.location?.length || 0) > 0}
-            isOpen={openDropdown === 'location'}
-            onToggle={() => toggleDropdown('location')}
-            onClose={() => setOpenDropdown(null)}
-            icon={<MapPin className="w-3.5 h-3.5" />}
-          >
-            {locationOptions.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={filters.location?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('location', opt.value, c)}
-              />
-            ))}
-          </FilterDropdown>
-
           {/* Job Type (Renamed from Commitment) */}
           <FilterDropdown
             label="工作类型"
@@ -380,7 +318,47 @@ export default function JobFilterBar({
             ))}
           </FilterDropdown>
 
-           {/* Industry */}
+          {/* Experience Level (New) */}
+          <FilterDropdown
+            label="级别"
+            activeLabel={getActiveLabel('experienceLevel', EXPERIENCE_OPTIONS, '级别')}
+            isActive={(filters.experienceLevel?.length || 0) > 0}
+            isOpen={openDropdown === 'experienceLevel'}
+            onToggle={() => toggleDropdown('experienceLevel')}
+            onClose={() => setOpenDropdown(null)}
+            icon={<TrendingUp className="w-3.5 h-3.5" />}
+          >
+            {EXPERIENCE_OPTIONS.map(opt => (
+              <CheckboxItem
+                key={opt.value}
+                label={opt.label}
+                checked={filters.experienceLevel?.includes(opt.value) || false}
+                onChange={(c) => handleCheckboxChange('experienceLevel', opt.value, c)}
+              />
+            ))}
+          </FilterDropdown>
+
+          {/* Role (Category) -> Renamed to '角色' (Role) to match backend 'category' better */}
+          <FilterDropdown
+            label="角色"
+            activeLabel={getActiveLabel('category', categoryOptions, '角色')}
+            isActive={(filters.category?.length || 0) > 0}
+            isOpen={openDropdown === 'category'}
+            onToggle={() => toggleDropdown('category')}
+            onClose={() => setOpenDropdown(null)}
+            icon={<Briefcase className="w-3.5 h-3.5" />}
+          >
+            {categoryOptions.map(opt => (
+              <CheckboxItem
+                key={opt.value}
+                label={opt.label}
+                checked={filters.category?.includes(opt.value) || false}
+                onChange={(c) => handleCheckboxChange('category', opt.value, c)}
+              />
+            ))}
+          </FilterDropdown>
+
+          {/* Industry */}
            <FilterDropdown
             label="行业"
             activeLabel={getActiveLabel('industry', industryOptions, '行业')}
@@ -396,6 +374,26 @@ export default function JobFilterBar({
                 label={opt.label}
                 checked={filters.industry?.includes(opt.value) || false}
                 onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
+              />
+            ))}
+          </FilterDropdown>
+
+          {/* Location */}
+          <FilterDropdown
+            label="地点"
+            activeLabel={getActiveLabel('location', locationOptions, '地点')}
+            isActive={(filters.location?.length || 0) > 0}
+            isOpen={openDropdown === 'location'}
+            onToggle={() => toggleDropdown('location')}
+            onClose={() => setOpenDropdown(null)}
+            icon={<MapPin className="w-3.5 h-3.5" />}
+          >
+            {locationOptions.map(opt => (
+              <CheckboxItem
+                key={opt.value}
+                label={opt.label}
+                checked={filters.location?.includes(opt.value) || false}
+                onChange={(c) => handleCheckboxChange('location', opt.value, c)}
               />
             ))}
           </FilterDropdown>
