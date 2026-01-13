@@ -221,14 +221,14 @@ export default function LandingPage() {
         <div id="featured-jobs" className="py-24">
           <div className="flex items-center justify-between mb-12">
             <div className="flex flex-col gap-2">
-              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">精选机会</h2>
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">精选岗位</h2>
               <p className="text-slate-500">每周精选高薪/高增长/好文化的优质岗位</p>
             </div>
             <button
               onClick={() => navigate('/jobs?region=domestic')}
               className="hidden md:flex px-6 py-2.5 bg-white text-slate-700 font-medium rounded-full border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 items-center gap-2 group"
             >
-              查看全部
+              浏览所有岗位
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
@@ -257,16 +257,16 @@ export default function LandingPage() {
               onClick={() => navigate('/jobs?region=domestic')}
               className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 transition-all duration-200 inline-flex items-center gap-2 shadow-sm"
             >
-              查看更多机会
+              浏览所有岗位
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
         )}
         <div className="py-16 border-t border-slate-100">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900 mb-1 tracking-tight">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col gap-2">
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
                 精选企业
               </h2>
               <p className="text-slate-500">Haigoo 认证的优质远程雇主</p>
