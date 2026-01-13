@@ -381,20 +381,24 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
                         {(() => {
                             const locText = displayText(job.location || '', job.translations?.location);
-                            const isGeneric = /(remote|anywhere|everywhere|worldwide|global|远程|全球)/i.test(locText);
+                            // Only show tooltip if text is truncated (simplified logic: check length)
+                            const isLongText = locText.length > 30;
+                            
                             return (
                                 <div className="relative">
                                     <span
-                                        className={`truncate max-w-[150px] inline-block ${!isGeneric ? 'cursor-help border-b border-dashed border-slate-300 hover:text-indigo-600 hover:border-indigo-400' : 'cursor-pointer hover:text-indigo-600'}`}
+                                        className={`truncate max-w-[150px] inline-block ${isLongText ? 'cursor-help border-b border-dashed border-slate-300 hover:text-indigo-600 hover:border-indigo-400' : ''}`}
                                         onClick={(e) => {
-                                            e.stopPropagation();
-                                            setShowLocationTooltip(!showLocationTooltip);
+                                            if (isLongText) {
+                                                e.stopPropagation();
+                                                setShowLocationTooltip(!showLocationTooltip);
+                                            }
                                         }}
                                         title={locText}
                                     >
                                         {locText}
                                     </span>
-                                    {showLocationTooltip && (
+                                    {showLocationTooltip && isLongText && (
                                         <div className="absolute z-50 mt-2 left-0">
                                             <LocationTooltip location={locText} onClose={() => setShowLocationTooltip(false)} />
                                         </div>

@@ -389,6 +389,12 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                      {job.companyIndustry}
                   </span>
                )}
+               {/* Category (Blue/Indigo - Role related) */}
+               {job.category && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100">
+                     {job.category}
+                  </span>
+               )}
                {displayTags.slice(0, 3).map((tag, i) => (
                   <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] text-slate-500 bg-white border border-slate-100">
                      {tag.text}

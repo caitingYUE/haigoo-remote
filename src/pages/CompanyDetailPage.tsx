@@ -44,31 +44,27 @@ export default function CompanyDetailPage() {
     const loadCompanyData = async () => {
         setLoading(true)
         try {
-            // Try to get trusted company info first
-            const companiesData = await trustedCompaniesService.getAllCompanies()
-            const companies = Array.isArray(companiesData) ? companiesData : ((companiesData as any)?.companies || [])
+            // P0 Optimization: Run requests in parallel
+            // 1. Fetch trusted company info (filtered by name)
+            // 2. Fetch jobs
+            const [companiesResponse, jobsResponse] = await Promise.all([
+                trustedCompaniesService.getAllCompanies({ search: decodedCompanyName }),
+                processedJobsService.getProcessedJobs(1, 100, { company: decodedCompanyName, isApproved: true })
+            ]);
+
+            const companies = Array.isArray(companiesResponse) 
+                ? companiesResponse 
+                : ((companiesResponse as any)?.companies || []);
 
             const norm = decodedCompanyName.trim().toLowerCase()
             const trusted = companies.find((c: TrustedCompany) => c.name?.trim().toLowerCase() === norm) ||
                 companies.find((c: TrustedCompany) => c.name && c.name.toLowerCase().includes(norm))
 
-            // Set company info whether found or not (if not found, companyInfo will be null/undefined)
-            // But if found, ensure we set it.
             if (trusted) {
-                // Ensure isTrusted is true if found in trusted list
                 setCompanyInfo({ ...trusted, isTrusted: true })
-            } else {
-                // Try to fallback to fetching via ID if URL param was ID? 
-                // But here we rely on name. If name fails, we might need to handle ID.
             }
 
-            // Fetch all jobs from this company using EXACT MATCH if possible or fuzzy
-            // Use 'company' param which usually does partial match in backend.
-            // But we want to filter more strictly to avoid "Alpha" matching "AlphaSights" if not intended.
-            // Let's fetch and then filter client side if needed, or rely on service.
-            // ⚠️ P0 Fix: Only show approved jobs on C-side
-            const response = await processedJobsService.getProcessedJobs(1, 100, { company: decodedCompanyName, isApproved: true })
-            setJobs(response.jobs)
+            setJobs(jobsResponse.jobs)
         } catch (error) {
             console.error('Failed to load company data:', error)
         } finally {
@@ -225,10 +221,10 @@ export default function CompanyDetailPage() {
 
                             {/* Always render Certified Info for trusted companies */}
                             {companyInfo?.isTrusted && (
-                                <div className="mt-4 bg-slate-50/50 rounded-xl border border-slate-200/60 overflow-hidden relative">
+                                <div className="mt-4 bg-slate-50/50 rounded-xl border border-slate-200/60 relative">
                                     {isMember && (
                                         <div className="absolute top-0 right-0 z-10">
-                                            <div className="bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg shadow-sm flex items-center gap-1">
+                                            <div className="bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-xl shadow-sm flex items-center gap-1">
                                                 <Crown className="w-3 h-3" />
                                                 会员专属权益已生效
                                             </div>
