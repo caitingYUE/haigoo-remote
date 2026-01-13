@@ -169,12 +169,34 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 </div>
               )}
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            
+            <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      保存中...
+                    </>
+                  ) : '保存'}
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors ml-2"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+            </div>
           </div>
         </div>
 
@@ -463,28 +485,6 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 placeholder="例如:&#10;Remote work&#10;Health insurance"
               />
             </div>
-          </div>
-
-          <div className="flex gap-3 pt-6 border-t border-slate-200">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  保存中...
-                </>
-              ) : '保存更改'}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg hover:bg-slate-300 transition-colors"
-            >
-              取消
-            </button>
           </div>
         </form>
       </div>
