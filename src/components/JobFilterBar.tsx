@@ -11,7 +11,7 @@ interface FilterDropdownProps {
   onClose: () => void;
   children: React.ReactNode;
   isActive: boolean; // Whether any value is selected
-  variant?: 'default' | 'solid-blue' | 'solid-purple'; // Added variant
+  colorTheme?: 'indigo' | 'amber' | 'emerald' | 'purple' | 'slate';
   icon?: React.ReactNode;
 }
 
@@ -21,6 +21,7 @@ interface CheckboxItemProps {
   onChange: (checked: boolean) => void;
   count?: number;
   emphasized?: boolean;
+  colorTheme?: 'indigo' | 'amber' | 'emerald' | 'purple' | 'slate';
 }
 
 interface JobFilterBarProps {
@@ -68,9 +69,43 @@ const SALARY_OPTIONS = [
   { label: '80k以上', value: '80000-999999' }
 ];
 
+// --- Theme Configuration ---
+const THEME_STYLES = {
+  indigo: {
+    active: 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm',
+    icon: 'text-indigo-500',
+    checkbox: 'bg-indigo-600 border-indigo-600',
+    textChecked: 'text-indigo-700'
+  },
+  amber: {
+    active: 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm',
+    icon: 'text-amber-500',
+    checkbox: 'bg-amber-500 border-amber-500',
+    textChecked: 'text-amber-700'
+  },
+  emerald: {
+    active: 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm',
+    icon: 'text-emerald-500',
+    checkbox: 'bg-emerald-600 border-emerald-600',
+    textChecked: 'text-emerald-700'
+  },
+  purple: {
+    active: 'bg-purple-50 text-purple-700 border-purple-200 shadow-sm',
+    icon: 'text-purple-500',
+    checkbox: 'bg-purple-600 border-purple-600',
+    textChecked: 'text-purple-700'
+  },
+  slate: {
+    active: 'bg-slate-100 text-slate-900 border-slate-200 shadow-sm',
+    icon: 'text-slate-500',
+    checkbox: 'bg-slate-600 border-slate-600',
+    textChecked: 'text-slate-900'
+  }
+};
+
 // --- Components ---
 
-const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, variant = 'default', icon }) => {
+const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, colorTheme = 'slate', icon }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -88,27 +123,26 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
     };
   }, [isOpen, onClose]);
 
-  // Determine button styles based on variant and active state
+  const theme = THEME_STYLES[colorTheme];
+
+  // Button Styles
   let buttonClass = "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border whitespace-nowrap ";
 
   if (isActive || isOpen) {
-    if (variant === 'solid-blue') {
-      buttonClass += "bg-indigo-600 text-white border-indigo-600 font-medium shadow-sm hover:bg-indigo-700";
-    } else {
-      // Cleaner active state: subtle bg, colored text
-      buttonClass += "bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold shadow-sm";
-    }
+    buttonClass += theme.active + " font-semibold";
   } else {
     // Default state: Clean white background with subtle border
     buttonClass += "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900 shadow-sm hover:shadow";
   }
 
-  // Chevron color adjustment for solid variants
-  const chevronClass = `w-3.5 h-3.5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''} ${(isActive || isOpen) && (variant === 'solid-blue' || variant === 'solid-purple') ? 'text-white' : 'text-slate-400'
-    }`;
+  // Chevron Style
+  const chevronClass = `w-3.5 h-3.5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''} ${isActive || isOpen ? theme.icon : 'text-slate-400'}`;
+
+  // Icon Style (Input icon)
+  const iconClass = isActive || isOpen ? theme.icon : 'text-slate-400 group-hover:text-slate-500';
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="relative inline-block text-left group" ref={dropdownRef}>
       <button
         onClick={(e) => {
           console.log(`[FilterDropdown] Button clicked: ${label}`);
@@ -116,7 +150,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
         }}
         className={buttonClass}
       >
-        {icon && <span className={isActive && (variant === 'solid-blue' || variant === 'solid-purple') ? 'text-white' : 'text-slate-500'}>{icon}</span>}
+        {icon && <span className={iconClass}>{icon}</span>}
         <span className="truncate max-w-[100px]">{isActive && activeLabel ? activeLabel : label}</span>
         <ChevronDown className={chevronClass} />
       </button>
@@ -155,7 +189,13 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
               <div className="md:hidden flex justify-center pb-2 pt-1" onClick={onClose}>
                 <div className="w-12 h-1 bg-slate-200 rounded-full"></div>
               </div>
-              {children}
+              {/* Pass theme to children (CheckboxItems) */}
+              {React.Children.map(children, child => {
+                if (React.isValidElement(child)) {
+                  return React.cloneElement(child as React.ReactElement<any>, { colorTheme });
+                }
+                return child;
+              })}
             </div>
           </div>
         </>
@@ -164,29 +204,33 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
   );
 };
 
-const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, count, emphasized }) => (
-  <div
-    className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full select-none"
-    onClick={(e) => {
-      // P0 Debug: Explicitly handle label click to ensure event propagation
-      console.log(`[JobFilterBar] Container clicked for: ${label}`);
-      e.preventDefault(); // Prevent default label behavior
-      e.stopPropagation(); // Stop bubbling
-      onChange(!checked); // Manually toggle
-    }}
-  >
-    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${checked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'
-      }`}>
-      {checked && <Check className="w-3 h-3 text-white" />}
+const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, count, emphasized, colorTheme = 'slate' }) => {
+  const theme = THEME_STYLES[colorTheme];
+  
+  return (
+    <div
+      className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full select-none"
+      onClick={(e) => {
+        // P0 Debug: Explicitly handle label click to ensure event propagation
+        console.log(`[JobFilterBar] Container clicked for: ${label}`);
+        e.preventDefault(); // Prevent default label behavior
+        e.stopPropagation(); // Stop bubbling
+        onChange(!checked); // Manually toggle
+      }}
+    >
+      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${checked ? theme.checkbox : 'border-slate-300 bg-white'
+        }`}>
+        {checked && <Check className="w-3 h-3 text-white" />}
+      </div>
+      <span className={`text-sm flex-1 ${checked ? `${theme.textChecked} font-medium` : 'text-slate-600'} ${emphasized ? 'font-bold' : ''}`}>
+        {label}
+      </span>
+      {count !== undefined && (
+        <span className="ml-auto text-xs text-slate-400">{count}</span>
+      )}
     </div>
-    <span className={`text-sm flex-1 ${checked ? 'text-indigo-600 font-medium' : 'text-slate-600'} ${emphasized ? 'font-bold' : ''}`}>
-      {label}
-    </span>
-    {count !== undefined && (
-      <span className="ml-auto text-xs text-slate-400">{count}</span>
-    )}
-  </div>
-);
+  );
+};
 
 const FilterSectionHeader: React.FC<{ title: string }> = ({ title }) => (
   <div className="px-2 py-1.5 mt-2 first:mt-0 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50 rounded-md">
@@ -307,6 +351,7 @@ export default function JobFilterBar({
             onToggle={() => toggleDropdown('jobType')}
             onClose={() => setOpenDropdown(null)}
             icon={<Calendar className="w-3.5 h-3.5" />}
+            colorTheme="amber"
           >
             {jobTypeOptions.map(opt => (
               <CheckboxItem
@@ -327,6 +372,7 @@ export default function JobFilterBar({
             onToggle={() => toggleDropdown('experienceLevel')}
             onClose={() => setOpenDropdown(null)}
             icon={<TrendingUp className="w-3.5 h-3.5" />}
+            colorTheme="emerald"
           >
             {EXPERIENCE_OPTIONS.map(opt => (
               <CheckboxItem
@@ -334,6 +380,27 @@ export default function JobFilterBar({
                 label={opt.label}
                 checked={filters.experienceLevel?.includes(opt.value) || false}
                 onChange={(c) => handleCheckboxChange('experienceLevel', opt.value, c)}
+              />
+            ))}
+          </FilterDropdown>
+
+          {/* Industry - Moved before Role */}
+           <FilterDropdown
+            label="行业"
+            activeLabel={getActiveLabel('industry', industryOptions, '行业')}
+            isActive={(filters.industry?.length || 0) > 0}
+            isOpen={openDropdown === 'industry'}
+            onToggle={() => toggleDropdown('industry')}
+            onClose={() => setOpenDropdown(null)}
+            icon={<Building2 className="w-3.5 h-3.5" />}
+            colorTheme="purple"
+          >
+            {industryOptions.map(opt => (
+              <CheckboxItem
+                key={opt.value}
+                label={opt.label}
+                checked={filters.industry?.includes(opt.value) || false}
+                onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
               />
             ))}
           </FilterDropdown>
@@ -347,6 +414,7 @@ export default function JobFilterBar({
             onToggle={() => toggleDropdown('category')}
             onClose={() => setOpenDropdown(null)}
             icon={<Briefcase className="w-3.5 h-3.5" />}
+            colorTheme="indigo"
           >
             {categoryOptions.map(opt => (
               <CheckboxItem
@@ -354,26 +422,6 @@ export default function JobFilterBar({
                 label={opt.label}
                 checked={filters.category?.includes(opt.value) || false}
                 onChange={(c) => handleCheckboxChange('category', opt.value, c)}
-              />
-            ))}
-          </FilterDropdown>
-
-          {/* Industry */}
-           <FilterDropdown
-            label="行业"
-            activeLabel={getActiveLabel('industry', industryOptions, '行业')}
-            isActive={(filters.industry?.length || 0) > 0}
-            isOpen={openDropdown === 'industry'}
-            onToggle={() => toggleDropdown('industry')}
-            onClose={() => setOpenDropdown(null)}
-            icon={<Building2 className="w-3.5 h-3.5" />}
-          >
-            {industryOptions.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={filters.industry?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
               />
             ))}
           </FilterDropdown>
@@ -387,6 +435,7 @@ export default function JobFilterBar({
             onToggle={() => toggleDropdown('location')}
             onClose={() => setOpenDropdown(null)}
             icon={<MapPin className="w-3.5 h-3.5" />}
+            colorTheme="slate"
           >
             {locationOptions.map(opt => (
               <CheckboxItem
