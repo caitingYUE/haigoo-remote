@@ -144,12 +144,12 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
       
       return (
          <div 
-            className="flex-shrink-0 flex flex-col items-center justify-center p-4 rounded-xl transition-colors h-full w-[140px] relative overflow-hidden"
+            className="flex-shrink-0 flex flex-col items-center justify-center px-3 py-4 rounded-xl transition-colors h-full w-[140px] relative overflow-hidden"
             style={{ backgroundColor: bgColor }}
          >
              {/* Company Name (Top) */}
             <div 
-               className="text-xs font-bold text-center mb-3 line-clamp-1 w-full px-1"
+               className="text-base font-bold text-center mb-2 line-clamp-2 w-full leading-snug break-words"
                style={{ color: textColor }}
                title={job.translations?.company || job.company}
             >
@@ -157,7 +157,7 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
             </div>
 
             {/* Logo (Centered) */}
-            <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 overflow-hidden mb-1">
+            <div className="w-20 h-20 bg-white rounded-2xl shadow-sm flex items-center justify-center p-3 overflow-hidden">
                {job.logo ? (
                   <img
                      src={job.logo}
@@ -167,12 +167,12 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         if (target.parentElement) {
-                           target.parentElement.innerHTML = `<span class="text-xl font-bold" style="color:${textColor}">${companyInitial}</span>`;
+                           target.parentElement.innerHTML = `<span class="text-3xl font-bold" style="color:${textColor}">${companyInitial}</span>`;
                         }
                      }}
                   />
                ) : (
-                  <span className="text-xl font-bold" style={{ color: textColor }}>{companyInitial}</span>
+                  <span className="text-3xl font-bold" style={{ color: textColor }}>{companyInitial}</span>
                )}
             </div>
          </div>
