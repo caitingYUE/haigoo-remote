@@ -60,10 +60,10 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 
                 {/* Firework - Main */}
                 <img
-                    src="/fireworks.png"
+                    src="/fireworks-realistic.svg"
                     alt="Fireworks"
                     onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-24 md:top-32 right-[5%] md:right-[8%] w-48 md:w-64 lg:w-80 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-screen"
+                    className="absolute top-24 md:top-32 right-[5%] md:right-[8%] w-56 md:w-72 lg:w-96 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-plus-lighter opacity-90"
                     style={{ animation: 'float-slow 4s ease-in-out infinite, pulse-glow 3s ease-in-out infinite' }}
                 />
             </div>

@@ -1,0 +1,52 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow-center" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#FFF7E6" stop-opacity="1"/>
+      <stop offset="40%" stop-color="#FFD700" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#FF8C00" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="streak-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#FFD700" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#FF4500" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Central Glow -->
+  <circle cx="256" cy="256" r="60" fill="url(#glow-center)" filter="url(#blur-glow)" opacity="0.8"/>
+  
+  <!-- Radiating Streaks -->
+  <g filter="url(#blur-glow)">
+    <!-- Inner bright burst -->
+    <path d="M256 256 L256 180" stroke="#FFF" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    <path d="M256 256 L332 256" stroke="#FFF" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    <path d="M256 256 L256 332" stroke="#FFF" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    <path d="M256 256 L180 256" stroke="#FFF" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    
+    <path d="M256 256 L310 202" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+    <path d="M256 256 L310 310" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+    <path d="M256 256 L202 310" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+    <path d="M256 256 L202 202" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+    
+    <!-- Outer long streaks -->
+    <path d="M256 200 L256 120" stroke="url(#streak-glow)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M256 312 L256 392" stroke="url(#streak-glow)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M312 256 L392 256" stroke="url(#streak-glow)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M200 256 L120 256" stroke="url(#streak-glow)" stroke-width="2" stroke-linecap="round"/>
+    
+    <path d="M296 216 L352 160" stroke="#FFA500" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M296 296 L352 352" stroke="#FFA500" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M216 296 L160 352" stroke="#FFA500" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M216 216 L160 160" stroke="#FFA500" stroke-width="1.5" stroke-linecap="round"/>
+    
+    <!-- Random particles -->
+    <circle cx="360" cy="180" r="3" fill="#FFD700" opacity="0.8"/>
+    <circle cx="150" cy="360" r="2" fill="#FF4500" opacity="0.7"/>
+    <circle cx="380" cy="256" r="2.5" fill="#FFF" opacity="0.9"/>
+    <circle cx="256" cy="100" r="2" fill="#FFD700" opacity="0.6"/>
+  </g>
+</svg>
