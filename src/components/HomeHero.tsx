@@ -49,49 +49,45 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                     {/* Left Column: Content */}
                     <div className="flex-1 text-left max-w-3xl z-10">
-                        {/* Badge - Minimal & Clean */}
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 backdrop-blur-md`}>
-                            <span className="relative flex h-2.5 w-2.5">
-                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75`}></span>
-                                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500`}></span>
-                            </span>
-                            <span className={`text-sm font-bold text-white tracking-wide uppercase`}>
-                                {isChristmas ? 'Happy New Year 2026' : 'Global Remote Opportunities'}
-                            </span>
+                        {/* English Tagline - Elegant Script */}
+                        <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <p className="text-xl md:text-2xl font-serif italic text-white/90 tracking-wide font-light drop-shadow-md">
+                                "Work your brain, leave your body to be happy."
+                            </p>
                         </div>
 
                         {/* Main Heading */}
-                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-8 tracking-tight leading-[1.15] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-                            <span className="block text-white/90 mb-2">为中国求职者精选的</span>
-                            <span className={`text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 to-white pb-2 inline-block`}>
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight leading-[1.2] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 drop-shadow-lg">
+                            <span className="block text-white mb-1">为中国求职者精选的</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-indigo-200 inline-block">
                                 全球远程岗位
                             </span>
                         </h1>
 
                         {/* Subtitle */}
-                        <p className="text-xl md:text-2xl text-white/80 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-2xl">
-                            只收录国内可申请的岗位 <span className="text-white/40 mx-3">|</span> 来源真实 <span className="text-white/40 mx-3">|</span> 人工逐条筛选
+                        <p className="text-lg md:text-xl text-white/90 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-2xl drop-shadow-md">
+                            只收录国内可申请的岗位 <span className="text-white/60 mx-3">|</span> 来源真实 <span className="text-white/60 mx-3">|</span> 人工逐条筛选
                         </p>
 
                         {/* Search Bar - Clean & Floating */}
                         <div className="w-full max-w-xl animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 relative group">
                             {/* Glow effect */}
-                            <div className="absolute -inset-1 bg-indigo-500/30 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
+                            <div className="absolute -inset-1 bg-white/20 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
                             <div className="relative flex">
                                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                    <Search className="w-6 h-6 text-slate-400" />
+                                    <Search className="w-6 h-6 text-slate-500" />
                                 </div>
                                 <input
                                     type="text"
                                     placeholder="搜索公司 / 职位 / 技能"
-                                    className="w-full pl-14 pr-36 py-5 bg-white/95 backdrop-blur border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-xl text-lg placeholder:text-slate-400"
+                                    className="w-full pl-14 pr-36 py-4 bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all shadow-2xl text-lg placeholder:text-slate-500 text-slate-900"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                 />
                                 <button
                                     onClick={handleSearch}
-                                    className={`absolute right-2.5 top-2.5 bottom-2.5 px-8 bg-slate-900 text-white text-base font-bold rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg`}
+                                    className={`absolute right-2 top-2 bottom-2 px-6 bg-slate-900 text-white text-base font-bold rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg`}
                                 >
                                     搜索
                                 </button>
