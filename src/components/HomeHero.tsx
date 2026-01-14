@@ -30,62 +30,49 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     }
 
     return (
-        <div className="relative bg-[#FFFDF9] overflow-hidden min-h-[640px] flex items-center justify-center border-b border-indigo-50/50">
-            {/* 1. Refined Background Effects */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                {/* Subtle Grid Pattern for structure */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#E5E7EB 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.3 }}></div>
-
-                {isChristmas ? (
-                    <>
-                        {/* Large, diffused warm light (Top Left) */}
-                        <div className="absolute -top-20 -left-20 w-[900px] h-[900px] bg-amber-500/5 rounded-full blur-[120px]"></div>
-                        {/* Soft Festive Red (Bottom Right) */}
-                        <div className="absolute -bottom-40 -right-20 w-[700px] h-[700px] bg-rose-500/5 rounded-full blur-[100px]"></div>
-                        {/* Accent Light (Top Right) */}
-                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-[80px]"></div>
-                    </>
-                ) : (
-                    <>
-                        <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px]"></div>
-                        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[100px]"></div>
-                    </>
-                )}
+        <div className="relative min-h-[800px] flex items-center justify-center overflow-hidden">
+            {/* Background Image & Overlay */}
+            <div className="absolute inset-0 z-0">
+                <div 
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                    style={{ backgroundImage: "url('/background.jpg')" }}
+                ></div>
+                <div className="absolute inset-0 bg-black/40"></div>
             </div>
 
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-16">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-16 lg:gap-24">
 
                     {/* Left Column: Content */}
                     <div className="flex-1 text-left max-w-3xl z-10">
                         {/* Badge - Minimal & Clean */}
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${isChristmas ? 'bg-white border-rose-100/50' : 'bg-white border-indigo-100/50'} border mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-sm shadow-orange-500/5 backdrop-blur-sm`}>
+                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 backdrop-blur-md`}>
                             <span className="relative flex h-2.5 w-2.5">
-                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isChristmas ? 'bg-red-400' : 'bg-indigo-400'} opacity-75`}></span>
-                                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isChristmas ? 'bg-red-500' : 'bg-indigo-500'}`}></span>
+                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75`}></span>
+                                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500`}></span>
                             </span>
-                            <span className={`text-sm font-bold ${isChristmas ? 'text-rose-700' : 'text-indigo-700'} tracking-wide uppercase`}>
+                            <span className={`text-sm font-bold text-white tracking-wide uppercase`}>
                                 {isChristmas ? 'Happy New Year 2026' : 'Global Remote Opportunities'}
                             </span>
                         </div>
 
-                        {/* Main Heading - Premium Gradient */}
-                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight leading-[1.15] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-                            <span className="block text-slate-800 mb-2">为中国求职者精选的</span>
-                            <span className={`text-transparent bg-clip-text ${isChristmas ? 'bg-gradient-to-r from-rose-600 via-red-500 to-amber-500' : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600'} pb-2 inline-block`}>
+                        {/* Main Heading */}
+                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-8 tracking-tight leading-[1.15] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+                            <span className="block text-white/90 mb-2">为中国求职者精选的</span>
+                            <span className={`text-amber-400 pb-2 inline-block`}>
                                 全球远程岗位
                             </span>
                         </h1>
 
                         {/* Subtitle */}
-                        <p className="text-xl md:text-2xl text-slate-500 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-2xl">
-                            只收录国内可申请的岗位 <span className="text-slate-300 mx-3">|</span> 来源真实 <span className="text-slate-300 mx-3">|</span> 人工逐条筛选
+                        <p className="text-xl md:text-2xl text-white/80 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-2xl">
+                            只收录国内可申请的岗位 <span className="text-white/40 mx-3">|</span> 来源真实 <span className="text-white/40 mx-3">|</span> 人工逐条筛选
                         </p>
 
                         {/* Search Bar - Clean & Floating */}
                         <div className="w-full max-w-xl animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-rose-100 to-amber-100 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
+                            {/* Glow effect */}
+                            <div className="absolute -inset-1 bg-amber-500/30 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
                             <div className="relative flex">
                                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <Search className="w-6 h-6 text-slate-400" />
@@ -93,14 +80,14 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                 <input
                                     type="text"
                                     placeholder="搜索公司 / 职位 / 技能"
-                                    className="w-full pl-14 pr-36 py-5 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-200 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-lg placeholder:text-slate-400"
+                                    className="w-full pl-14 pr-36 py-5 bg-white/95 backdrop-blur border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all shadow-xl text-lg placeholder:text-slate-400"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                 />
                                 <button
                                     onClick={handleSearch}
-                                    className={`absolute right-2.5 top-2.5 bottom-2.5 px-8 ${isChristmas ? 'bg-slate-900 hover:bg-slate-800' : 'bg-slate-900'} text-white text-base font-bold rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-slate-900/10`}
+                                    className={`absolute right-2.5 top-2.5 bottom-2.5 px-8 bg-slate-900 text-white text-base font-bold rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg`}
                                 >
                                     搜索
                                 </button>
