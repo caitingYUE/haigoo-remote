@@ -16,6 +16,7 @@ export default function Layout({ children }: LayoutProps) {
   const [resendMsg, setResendMsg] = useState('')
 
   const isJobsPage = pathname === '/jobs' || pathname.startsWith('/jobs/')
+  const isHome = pathname === '/'
   const hideFooter = pathname.startsWith('/resume') || isJobsPage
   
   const showVerificationWarning = isAuthenticated && user && !user.emailVerified
@@ -44,7 +45,7 @@ export default function Layout({ children }: LayoutProps) {
       
       {/* Email Verification Warning Banner */}
       {showVerificationWarning && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 relative z-40">
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 relative z-40 mt-32">
             <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center md:justify-between gap-2 md:gap-4 text-amber-800 text-sm">
                 <div className="flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
@@ -73,7 +74,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       )}
 
-      <main className={`flex-1 relative ${isJobsPage ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
+      <main className={`flex-1 relative ${isJobsPage ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'} ${!isHome && !showVerificationWarning ? 'pt-32' : ''}`}>
         <div className={`relative z-10 ${isJobsPage ? 'h-full' : ''}`}>
           {children}
         </div>

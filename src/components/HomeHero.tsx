@@ -17,6 +17,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     const [searchQuery, setSearchQuery] = useState('')
     const [isChristmas, setIsChristmas] = useState(false)
     const [showHappinessCard, setShowHappinessCard] = useState(false)
+    const [imageLoaded, setImageLoaded] = useState(false)
 
     useEffect(() => {
         // Force New Year Mode
@@ -33,11 +34,13 @@ export default function HomeHero({ stats }: HomeHeroProps) {
         <div className="relative min-h-[800px] flex items-center justify-center overflow-hidden">
             {/* Background Image & Overlay */}
             <div className="absolute inset-0 z-0">
-                <div 
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                    style={{ backgroundImage: "url('/background.jpg')" }}
-                ></div>
-                <div className="absolute inset-0 bg-black/40"></div>
+                <img 
+                    src="/background.jpg" 
+                    alt="Background" 
+                    className={`w-full h-full object-cover transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'} grayscale-[0.8] contrast-125`}
+                    onLoad={() => setImageLoaded(true)}
+                />
+                <div className="absolute inset-0 bg-slate-900/50"></div>
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-16">
@@ -48,8 +51,8 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         {/* Badge - Minimal & Clean */}
                         <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 backdrop-blur-md`}>
                             <span className="relative flex h-2.5 w-2.5">
-                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75`}></span>
-                                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500`}></span>
+                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75`}></span>
+                                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500`}></span>
                             </span>
                             <span className={`text-sm font-bold text-white tracking-wide uppercase`}>
                                 {isChristmas ? 'Happy New Year 2026' : 'Global Remote Opportunities'}
@@ -59,7 +62,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         {/* Main Heading */}
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-8 tracking-tight leading-[1.15] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
                             <span className="block text-white/90 mb-2">为中国求职者精选的</span>
-                            <span className={`text-amber-400 pb-2 inline-block`}>
+                            <span className={`text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 to-white pb-2 inline-block`}>
                                 全球远程岗位
                             </span>
                         </h1>
@@ -72,7 +75,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         {/* Search Bar - Clean & Floating */}
                         <div className="w-full max-w-xl animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 relative group">
                             {/* Glow effect */}
-                            <div className="absolute -inset-1 bg-amber-500/30 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
+                            <div className="absolute -inset-1 bg-indigo-500/30 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
                             <div className="relative flex">
                                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <Search className="w-6 h-6 text-slate-400" />
@@ -80,7 +83,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                 <input
                                     type="text"
                                     placeholder="搜索公司 / 职位 / 技能"
-                                    className="w-full pl-14 pr-36 py-5 bg-white/95 backdrop-blur border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all shadow-xl text-lg placeholder:text-slate-400"
+                                    className="w-full pl-14 pr-36 py-5 bg-white/95 backdrop-blur border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-xl text-lg placeholder:text-slate-400"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
