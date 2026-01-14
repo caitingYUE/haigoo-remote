@@ -63,7 +63,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     src="/hero-bg2.svg"
                     alt="Lantern"
                     onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-[-2%] right-[2%] md:right-[5%] w-40 md:w-56 lg:w-72 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-2xl opacity-90 hover:opacity-100"
+                    className="absolute top-[-5%] right-[2%] md:right-[5%] w-40 md:w-56 lg:w-72 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-2xl opacity-90 hover:opacity-100"
                     style={{ animation: 'float-slow 6s ease-in-out infinite' }}
                 />
                 
@@ -72,9 +72,19 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     src="/hero-bg1.svg"
                     alt="Lantern"
                     onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-[8%] right-[15%] md:right-[18%] w-24 md:w-32 lg:w-40 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-xl opacity-85 hover:opacity-100"
+                    className="absolute top-[5%] right-[15%] md:right-[18%] w-24 md:w-32 lg:w-40 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-xl opacity-85 hover:opacity-100"
                     style={{ animation: 'float-delayed 7s ease-in-out infinite 1s' }}
                 />
+
+                {/* 2026 Happy New Year Text - Subtle */}
+                <div className="absolute top-[32%] right-[5%] md:right-[8%] transform rotate-[-5deg] pointer-events-none opacity-0 animate-in fade-in slide-in-from-top-4 duration-1000 delay-500 fill-mode-forwards">
+                    <h2 className="text-3xl md:text-4xl font-serif font-bold text-amber-100/30 tracking-widest drop-shadow-sm select-none" style={{ textShadow: '0 2px 10px rgba(251, 191, 36, 0.2)' }}>
+                        2026
+                    </h2>
+                    <p className="text-sm md:text-base font-light text-amber-50/20 tracking-[0.3em] mt-1 text-right">
+                        HAPPY NEW YEAR
+                    </p>
+                </div>
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-16">
