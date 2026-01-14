@@ -182,7 +182,7 @@ export default function Header() {
     >
       <div className={
         isHome
-          ? "bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-white/40 px-6 md:px-8 transition-all duration-300"
+          ? `bg-white/90 backdrop-blur-md ${isMenuOpen ? 'rounded-3xl' : 'rounded-full'} shadow-lg border border-white/40 px-6 md:px-8 transition-all duration-300`
           : "px-6 md:px-10 lg:px-20 transition-all duration-300"
       }>
         <div className="flex items-center justify-between h-20 max-w-7xl mx-auto">
