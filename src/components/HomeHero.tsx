@@ -45,35 +45,26 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent"></div>
             </div>
 
-            {/* Festive Lanterns - Absolute Positioned Top Right */}
+            {/* Festive Fireworks - Absolute Positioned Top Right */}
             <div className="absolute top-0 right-0 z-20 w-full h-full overflow-hidden pointer-events-none">
                 <style>{`
                     @keyframes float-slow {
-                        0%, 100% { transform: translateY(0) rotate(0deg); }
-                        50% { transform: translateY(15px) rotate(2deg); }
+                        0%, 100% { transform: translateY(0) scale(1); opacity: 0.9; }
+                        50% { transform: translateY(-10px) scale(1.05); opacity: 1; }
                     }
-                    @keyframes float-delayed {
-                        0%, 100% { transform: translateY(0) rotate(0deg); }
-                        50% { transform: translateY(10px) rotate(-2deg); }
+                    @keyframes pulse-glow {
+                        0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(255,165,0,0.3)); }
+                        50% { filter: brightness(1.2) drop-shadow(0 0 20px rgba(255,165,0,0.6)); }
                     }
                 `}</style>
                 
-                {/* Lantern 1 - Larger */}
+                {/* Firework - Main */}
                 <img
-                    src="/lantern-large.png"
-                    alt="Lantern"
+                    src="/fireworks.png"
+                    alt="Fireworks"
                     onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-32 md:top-40 right-[2%] md:right-[5%] w-40 md:w-56 lg:w-72 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-2xl opacity-90 hover:opacity-100 z-50"
-                    style={{ animation: 'float-slow 6s ease-in-out infinite' }}
-                />
-                
-                {/* Lantern 2 - Smaller */}
-                <img
-                    src="/lantern-small.png"
-                    alt="Lantern"
-                    onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-48 md:top-64 right-[15%] md:right-[18%] w-24 md:w-32 lg:w-40 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-xl opacity-85 hover:opacity-100 z-50"
-                    style={{ animation: 'float-delayed 7s ease-in-out infinite 1s' }}
+                    className="absolute top-24 md:top-32 right-[5%] md:right-[8%] w-48 md:w-64 lg:w-80 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-screen"
+                    style={{ animation: 'float-slow 4s ease-in-out infinite, pulse-glow 3s ease-in-out infinite' }}
                 />
             </div>
 
