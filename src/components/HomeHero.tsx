@@ -60,19 +60,19 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 
                 {/* Lantern 1 - Larger */}
                 <img
-                    src="/hero-bg2.png"
+                    src="/lantern-large.png"
                     alt="Lantern"
                     onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-[8%] right-[2%] md:right-[5%] w-40 md:w-56 lg:w-72 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-2xl opacity-90 hover:opacity-100 z-50"
+                    className="absolute top-32 md:top-40 right-[2%] md:right-[5%] w-40 md:w-56 lg:w-72 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-2xl opacity-90 hover:opacity-100 z-50"
                     style={{ animation: 'float-slow 6s ease-in-out infinite' }}
                 />
                 
                 {/* Lantern 2 - Smaller */}
                 <img
-                    src="/hero-bg1.png"
+                    src="/lantern-small.png"
                     alt="Lantern"
                     onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-[18%] right-[15%] md:right-[18%] w-24 md:w-32 lg:w-40 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-xl opacity-85 hover:opacity-100 z-50"
+                    className="absolute top-48 md:top-64 right-[15%] md:right-[18%] w-24 md:w-32 lg:w-40 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-xl opacity-85 hover:opacity-100 z-50"
                     style={{ animation: 'float-delayed 7s ease-in-out infinite 1s' }}
                 />
             </div>
