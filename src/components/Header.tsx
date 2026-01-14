@@ -194,20 +194,17 @@ export default function Header() {
               />
               <span className="ml-3 text-[#1A365D] font-semibold text-lg flex items-center gap-2">
                 海狗远程俱乐部
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm ring-1 ring-white/20">
-                  内测版
-                </span>
               </span>
             </Link>
           </div>
 
           {/* Center Navigation - Right aligned */}
-          <div className="hidden md:flex items-center gap-6 ml-auto mr-8">
+          <div className="hidden md:flex items-center gap-8 ml-auto mr-8">
             <Link
               to="/"
               className={`text-base transition-colors ${location.pathname === '/'
                 ? 'text-slate-900 font-bold'
-                : 'text-slate-600 font-normal hover:text-slate-900'
+                : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
             >
               首页
@@ -217,7 +214,7 @@ export default function Header() {
               to="/jobs"
               className={`text-base transition-colors ${location.pathname === '/jobs'
                 ? 'text-slate-900 font-bold'
-                : 'text-slate-600 font-normal hover:text-slate-900'
+                : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
             >
               远程岗位
@@ -227,7 +224,7 @@ export default function Header() {
               to="/trusted-companies"
               className={`text-base transition-colors ${location.pathname.startsWith('/trusted-companies')
                 ? 'text-slate-900 font-bold'
-                : 'text-slate-600 font-normal hover:text-slate-900'
+                : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
             >
               精选企业
@@ -237,7 +234,7 @@ export default function Header() {
               to="/membership"
               className={`text-base transition-colors ${location.pathname === '/membership'
                 ? 'text-slate-900 font-bold'
-                : 'text-slate-600 font-normal hover:text-slate-900'
+                : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
             >
               会员中心
@@ -247,7 +244,7 @@ export default function Header() {
               to="/profile"
               className={`text-base transition-colors ${location.pathname.startsWith('/profile')
                 ? 'text-slate-900 font-bold'
-                : 'text-slate-600 font-normal hover:text-slate-900'
+                : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
             >
               个人中心

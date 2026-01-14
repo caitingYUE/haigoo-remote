@@ -96,47 +96,34 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         </div>
                     </div>
 
-                    {/* Right Column: New Glassmorphism Blessing Card */}
+                    {/* Right Column: Clean Minimalist Card */}
                     <div className="flex-1 flex justify-center md:justify-end relative z-20">
                         <div
                             onClick={() => setShowHappinessCard(true)}
-                            className="relative group cursor-pointer perspective-1000"
+                            className="relative group cursor-pointer"
                         >
-                            {/* Card Stack Effect */}
-                            <div className="absolute top-4 -right-4 w-full h-full bg-white/30 rounded-3xl rotate-6 transition-transform group-hover:rotate-12 duration-500 border border-white/20"></div>
-                            <div className="absolute top-2 -right-2 w-full h-full bg-white/60 rounded-3xl rotate-3 transition-transform group-hover:rotate-6 duration-500 border border-white/40"></div>
-
-                            {/* Main Card */}
-                            <div className="relative bg-white/80 backdrop-blur-2xl border border-white/80 p-10 rounded-3xl shadow-[0_20px_50px_-12px_rgba(244,63,94,0.25)] hover:shadow-[0_30px_60px_-15px_rgba(244,63,94,0.35)] transition-all duration-500 hover:-translate-y-2 w-80 text-center">
-                                {/* Icon */}
-                                <div className="mb-8 relative inline-block">
-                                    <div className="absolute inset-0 bg-rose-400 blur-2xl opacity-30 rounded-full animate-pulse"></div>
-                                    <div className="w-24 h-24 bg-gradient-to-br from-white to-rose-50 rounded-2xl shadow-xl shadow-rose-500/10 flex items-center justify-center border border-white relative z-10 mx-auto transform group-hover:scale-110 transition-transform duration-500">
-                                        <Gift className="w-12 h-12 text-rose-500" />
-                                    </div>
-                                    {/* Sparkles */}
-                                    <Sparkles className="absolute -top-4 -right-4 w-8 h-8 text-amber-400 animate-pulse" />
-                                    <Sparkles className="absolute -bottom-2 -left-4 w-6 h-6 text-amber-300 animate-bounce delay-700" />
-                                </div>
-
-                                <h3 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-amber-600">
-                                        新年上上签
-                                    </span>
+                            {/* Simple Card */}
+                            <div className="relative bg-white p-8 md:p-10 rounded-2xl shadow-xl transition-all duration-500 hover:-translate-y-1 w-80 md:w-96 text-center border border-slate-100">
+                                {/* Header Text */}
+                                <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                                    新年上上签
                                 </h3>
-
-                                <p className="text-slate-500 text-base leading-relaxed mb-8">
-                                    抽取您的 2026 专属<br />远程工作职场祝福
+                                <p className="text-slate-500 text-sm mb-8">
+                                    抽取您的 2026 专属远程工作职场祝福
                                 </p>
 
-                                <div className="inline-flex items-center justify-center px-8 py-3 rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white text-sm font-bold shadow-lg shadow-rose-500/30 group-hover:shadow-rose-500/50 transition-all duration-300 transform group-hover:scale-105">
+                                {/* Minimalist Icon Area */}
+                                <div className="mb-8 flex justify-center">
+                                    <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                                        <Gift className="w-10 h-10 text-indigo-600" />
+                                    </div>
+                                </div>
+
+                                {/* Button */}
+                                <div className="w-full py-3 rounded-xl bg-slate-900 text-white font-semibold text-sm transition-all duration-300 hover:bg-indigo-600 shadow-md hover:shadow-lg">
                                     点击开启好运
                                 </div>
                             </div>
-
-                            {/* Decorative Elements */}
-                            <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br from-amber-200/30 to-rose-200/30 rounded-full blur-3xl pointer-events-none"></div>
-                            <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-gradient-to-tr from-rose-200/30 to-indigo-200/30 rounded-full blur-3xl pointer-events-none"></div>
                         </div>
                     </div>
 
