@@ -60,11 +60,20 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 
                 {/* Firework - Main */}
                 <img
-                    src="/fireworks-realistic.svg"
+                    src="/fireworks.png"
                     alt="Fireworks"
                     onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-24 md:top-32 right-[5%] md:right-[8%] w-56 md:w-72 lg:w-96 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-plus-lighter opacity-90"
-                    style={{ animation: 'float-slow 4s ease-in-out infinite, pulse-glow 3s ease-in-out infinite' }}
+                    className="absolute top-24 md:top-32 right-[2%] md:right-[5%] w-32 md:w-48 lg:w-64 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-screen opacity-90"
+                    style={{ animation: 'float-slow 5s ease-in-out infinite, pulse-glow 4s ease-in-out infinite' }}
+                />
+
+                {/* Firework - Small */}
+                <img
+                    src="/fireworks.png"
+                    alt="Fireworks"
+                    onClick={() => setShowHappinessCard(true)}
+                    className="absolute top-48 md:top-64 right-[12%] md:right-[15%] w-20 md:w-28 lg:w-36 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-screen opacity-70"
+                    style={{ animation: 'float-delayed 6s ease-in-out infinite 1s, pulse-glow 3s ease-in-out infinite 0.5s' }}
                 />
             </div>
 
