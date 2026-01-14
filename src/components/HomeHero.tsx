@@ -41,31 +41,32 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     onLoad={() => setImageLoaded(true)}
                 />
                 {/* Gradient Overlay for better text readability while keeping image visible */}
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/60 to-slate-900/30"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 via-slate-900/40 to-slate-900/10"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent"></div>
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-16">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-16 lg:gap-24">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-12 lg:gap-20">
 
                     {/* Left Column: Content */}
                     <div className="flex-1 text-left max-w-3xl z-10">
                         {/* English Tagline - Elegant Script */}
-                        <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                            <p className="text-2xl md:text-3xl font-serif italic text-white/90 tracking-wide font-light drop-shadow-md">
+                        <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <p className="text-xl md:text-2xl font-serif italic text-white/90 tracking-wide font-light drop-shadow-md">
                                 "Work your brain, leave your body to be happy."
                             </p>
                         </div>
 
                         {/* Main Heading */}
-                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-white mb-8 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 drop-shadow-xl">
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight leading-[1.2] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 drop-shadow-xl">
                             <span className="block text-white mb-2">为中国求职者精选的</span>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-indigo-200 inline-block pb-2">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-indigo-200 inline-block pb-1">
                                 全球远程岗位
                             </span>
                         </h1>
 
                         {/* Subtitle */}
-                        <p className="text-xl md:text-2xl text-white/95 mb-12 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-3xl drop-shadow-md">
+                        <p className="text-lg md:text-xl text-white/95 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-2xl drop-shadow-md">
                             只收录国内可申请的岗位 <span className="text-white/60 mx-3">|</span> 来源真实 <span className="text-white/60 mx-3">|</span> 人工逐条筛选
                         </p>
 
