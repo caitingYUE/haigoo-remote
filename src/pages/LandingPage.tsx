@@ -350,29 +350,29 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Membership CTA Section - Premium Dark Card */}
-        <div className="mt-12 relative rounded-[2.5rem] bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 overflow-hidden shadow-2xl shadow-purple-900/20">
+        {/* Membership CTA Section - Premium Light Sunset Card */}
+        <div className="mt-12 relative rounded-[2.5rem] bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 overflow-hidden shadow-2xl shadow-purple-900/5 border border-white/50">
           {/* Background Effects */}
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
 
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-pink-500/20 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3 animate-pulse delay-1000"></div>
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-200/30 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-pink-200/30 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3 animate-pulse delay-1000"></div>
 
           <div className="relative z-10 px-8 py-16 md:px-20 text-center flex flex-col items-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/90 text-sm font-bold tracking-widest uppercase mb-8 shadow-lg backdrop-blur-md">
-              <Crown className="w-4 h-4 fill-white/80" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 border border-purple-100 text-purple-900/80 text-sm font-bold tracking-widest uppercase mb-8 shadow-sm backdrop-blur-md">
+              <Crown className="w-4 h-4 fill-purple-900/60" />
               Invite Only · Global Access
             </div>
 
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight leading-[1.1]">
-              <span className="block text-white/80 text-2xl md:text-3xl font-medium mb-3 tracking-normal">Join the Elite</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-100 to-pink-100 drop-shadow-sm">
+              <span className="block text-slate-500 text-2xl md:text-3xl font-medium mb-3 tracking-normal">Join the Elite</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 drop-shadow-sm">
                 Haigoo Member
               </span>
             </h2>
 
-            <p className="text-lg text-white/80 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+            <p className="text-lg text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
               解锁企业深度风险评估、内推直达通道、无限收藏夹等专属特权，<br className="hidden md:block" />
               让你的远程求职之路更加顺畅。
             </p>
@@ -384,14 +384,14 @@ export default function LandingPage() {
                     <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                       <button
                         onClick={() => navigate('/jobs')}
-                        className="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl backdrop-blur-md flex items-center justify-center gap-2"
+                        className="px-8 py-4 bg-white hover:bg-slate-50 border border-purple-100 text-purple-900 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                       >
-                        <CheckCircle2 className="w-5 h-5 text-pink-300" />
+                        <CheckCircle2 className="w-5 h-5 text-purple-600" />
                         您已是尊贵会员 - 去探索岗位
                       </button>
                       <button
                         onClick={() => setShowCertificateModal(true)}
-                        className="px-8 py-4 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl backdrop-blur-md flex items-center justify-center gap-2"
+                        className="px-8 py-4 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                       >
                         <Download className="w-5 h-5" />
                         下载会员证书
@@ -400,7 +400,7 @@ export default function LandingPage() {
                   )
                 } else if (applicationStatus === 'pending') {
                   return (
-                    <button disabled className="px-10 py-4 bg-white/5 text-white/50 border border-white/10 font-bold rounded-xl cursor-not-allowed w-full sm:w-auto backdrop-blur-md">
+                    <button disabled className="px-10 py-4 bg-slate-100 text-slate-400 border border-slate-200 font-bold rounded-xl cursor-not-allowed w-full sm:w-auto">
                       会员申请审核中
                     </button>
                   )
@@ -408,7 +408,7 @@ export default function LandingPage() {
                   return (
                     <button
                       onClick={() => navigate('/membership')}
-                      className="px-10 py-4 bg-gradient-to-r from-white via-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-900 font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
+                      className="px-10 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl shadow-purple-500/30 hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
                     >
                       内测中，仅限邀请，申请加入
                       <ArrowRight className="w-5 h-5" />
