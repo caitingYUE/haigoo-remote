@@ -37,10 +37,11 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 <img 
                     src="/background.jpg" 
                     alt="Background" 
-                    className={`w-full h-full object-cover transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'} grayscale-[0.8] contrast-125`}
+                    className={`w-full h-full object-cover transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
                 />
-                <div className="absolute inset-0 bg-slate-900/50"></div>
+                {/* Gradient Overlay for better text readability while keeping image visible */}
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/60 to-slate-900/30"></div>
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-16">
