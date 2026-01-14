@@ -63,7 +63,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     src="/hero-bg2.png"
                     alt="Lantern"
                     onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-[2%] right-[2%] md:right-[5%] w-40 md:w-56 lg:w-72 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-2xl opacity-90 hover:opacity-100"
+                    className="absolute top-[8%] right-[2%] md:right-[5%] w-40 md:w-56 lg:w-72 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-2xl opacity-90 hover:opacity-100 z-50"
                     style={{ animation: 'float-slow 6s ease-in-out infinite' }}
                 />
                 
@@ -72,16 +72,9 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     src="/hero-bg1.png"
                     alt="Lantern"
                     onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-[15%] right-[15%] md:right-[18%] w-24 md:w-32 lg:w-40 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-xl opacity-85 hover:opacity-100"
+                    className="absolute top-[18%] right-[15%] md:right-[18%] w-24 md:w-32 lg:w-40 h-auto cursor-pointer hover:scale-105 transition-transform duration-500 pointer-events-auto drop-shadow-xl opacity-85 hover:opacity-100 z-50"
                     style={{ animation: 'float-delayed 7s ease-in-out infinite 1s' }}
                 />
-                
-                {/* Subtle New Year Greeting */}
-                <div className="absolute top-[28%] right-[8%] transform rotate-[-5deg] pointer-events-none opacity-60">
-                    <p className="text-3xl md:text-4xl font-serif text-amber-100/80 tracking-widest drop-shadow-lg" style={{ fontFamily: '"Dancing Script", cursive' }}>
-                        2026 Happy New Year
-                    </p>
-                </div>
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-16">
