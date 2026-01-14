@@ -202,7 +202,7 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-8 ml-auto mr-8">
             <Link
               to="/"
-              className={`text-base transition-colors ${location.pathname === '/'
+              className={`text-base transition-colors no-underline ${location.pathname === '/'
                 ? 'text-slate-900 font-bold'
                 : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
@@ -212,7 +212,7 @@ export default function Header() {
 
             <Link
               to="/jobs"
-              className={`text-base transition-colors ${location.pathname === '/jobs'
+              className={`text-base transition-colors no-underline ${location.pathname === '/jobs'
                 ? 'text-slate-900 font-bold'
                 : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
@@ -222,7 +222,7 @@ export default function Header() {
 
             <Link
               to="/trusted-companies"
-              className={`text-base transition-colors ${location.pathname.startsWith('/trusted-companies')
+              className={`text-base transition-colors no-underline ${location.pathname.startsWith('/trusted-companies')
                 ? 'text-slate-900 font-bold'
                 : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
@@ -232,7 +232,7 @@ export default function Header() {
 
             <Link
               to="/membership"
-              className={`text-base transition-colors ${location.pathname === '/membership'
+              className={`text-base transition-colors no-underline ${location.pathname === '/membership'
                 ? 'text-slate-900 font-bold'
                 : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
@@ -242,7 +242,7 @@ export default function Header() {
 
             <Link
               to="/profile"
-              className={`text-base transition-colors ${location.pathname.startsWith('/profile')
+              className={`text-base transition-colors no-underline ${location.pathname.startsWith('/profile')
                 ? 'text-slate-900 font-bold'
                 : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
