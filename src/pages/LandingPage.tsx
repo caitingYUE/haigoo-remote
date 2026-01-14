@@ -351,13 +351,13 @@ export default function LandingPage() {
         </div>
 
         {/* Membership CTA Section - Premium Dark Card */}
-        <div className="mt-12 relative rounded-[2.5rem] bg-gradient-to-br from-indigo-800 via-blue-700 to-teal-600 overflow-hidden shadow-2xl shadow-indigo-900/20">
+        <div className="mt-12 relative rounded-[2.5rem] bg-gradient-to-br from-orange-900 via-amber-800 to-yellow-900 overflow-hidden shadow-2xl shadow-orange-900/20">
           {/* Background Effects */}
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
 
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-400/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-400/20 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3 animate-pulse delay-1000"></div>
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-400/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 animate-pulse"></div>
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-yellow-400/20 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3 animate-pulse delay-1000"></div>
 
           <div className="relative z-10 px-8 py-16 md:px-20 text-center flex flex-col items-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/90 text-sm font-bold tracking-widest uppercase mb-8 shadow-lg backdrop-blur-md">
@@ -367,7 +367,7 @@ export default function LandingPage() {
 
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight leading-[1.1]">
               <span className="block text-white/80 text-2xl md:text-3xl font-medium mb-3 tracking-normal">Join the Elite</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-teal-100 drop-shadow-sm">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-orange-100 to-yellow-100 drop-shadow-sm">
                 Haigoo Member
               </span>
             </h2>
@@ -386,12 +386,12 @@ export default function LandingPage() {
                         onClick={() => navigate('/jobs')}
                         className="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl backdrop-blur-md flex items-center justify-center gap-2"
                       >
-                        <CheckCircle2 className="w-5 h-5 text-teal-300" />
+                        <CheckCircle2 className="w-5 h-5 text-yellow-300" />
                         您已是尊贵会员 - 去探索岗位
                       </button>
                       <button
                         onClick={() => setShowCertificateModal(true)}
-                        className="px-8 py-4 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 text-indigo-100 font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl backdrop-blur-md flex items-center justify-center gap-2"
+                        className="px-8 py-4 bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/30 text-orange-100 font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl backdrop-blur-md flex items-center justify-center gap-2"
                       >
                         <Download className="w-5 h-5" />
                         下载会员证书
@@ -408,7 +408,7 @@ export default function LandingPage() {
                   return (
                     <button
                       onClick={() => navigate('/membership')}
-                      className="px-10 py-4 bg-gradient-to-r from-white via-indigo-50 to-teal-50 hover:from-indigo-100 hover:to-teal-100 text-indigo-900 font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
+                      className="px-10 py-4 bg-gradient-to-r from-white via-orange-50 to-yellow-50 hover:from-orange-100 hover:to-yellow-100 text-orange-900 font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
                     >
                       内测中，仅限邀请，申请加入
                       <ArrowRight className="w-5 h-5" />
