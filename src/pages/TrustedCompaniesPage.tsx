@@ -25,9 +25,23 @@ export default function TrustedCompaniesPage() {
     const [selectedJobCategories, setSelectedJobCategories] = useState<string[]>([])
     
     // Add missing state variables
-    const [companies, setCompanies] = useState<TrustedCompany[]>([])
-    const [filteredCompanies, setFilteredCompanies] = useState<TrustedCompany[]>([])
-    const [loading, setLoading] = useState(true)
+    const [companies, setCompanies] = useState<TrustedCompany[]>(() => {
+        try {
+            const cached = localStorage.getItem('haigoo_trusted_companies_cache')
+            return cached ? JSON.parse(cached) : []
+        } catch { return [] }
+    })
+    const [filteredCompanies, setFilteredCompanies] = useState<TrustedCompany[]>(() => {
+        try {
+            const cached = localStorage.getItem('haigoo_trusted_companies_cache')
+            return cached ? JSON.parse(cached) : []
+        } catch { return [] }
+    })
+    const [loading, setLoading] = useState(() => {
+        try {
+            return !localStorage.getItem('haigoo_trusted_companies_cache')
+        } catch { return true }
+    })
     const [searchTerm, setSearchTerm] = useState('')
     const [jobCounts, setJobCounts] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
     const [totalActiveJobs, setTotalActiveJobs] = useState(0)
@@ -47,29 +61,22 @@ export default function TrustedCompaniesPage() {
 
     useEffect(() => {
         // Initial load
-        loadFilteredData(1, true)
+        // If we have cache, we do a silent update (don't show loading spinner)
+        const hasCache = filteredCompanies.length > 0
+        loadFilteredData(1, true, hasCache)
     }, [])
 
     // 当搜索或过滤条件变化时，重新加载数据 (reset to page 1)
     useEffect(() => {
-        // Skip first render as it is handled by initial load
-        // But since we use same function, we can just call it.
-        // We need a ref to track if it's initial render if we want to avoid double fetch?
-        // Actually, initial state is empty, so loadFilteredData(1) is fine.
-        // But useEffect [] runs once.
-        // Let's just use this effect for updates.
-        // For initial load, we can rely on this effect if we set initial states correctly.
-        // However, we want to debounce search.
-        
         const timer = setTimeout(() => {
             loadFilteredData(1, true)
         }, 300)
         return () => clearTimeout(timer)
     }, [searchTerm, selectedIndustries, selectedJobCategories])
 
-    const loadFilteredData = async (pageNum: number, isReset: boolean = false) => {
+    const loadFilteredData = async (pageNum: number, isReset: boolean = false, silent: boolean = false) => {
         try {
-            setLoading(true)
+            if (!silent) setLoading(true)
             const result = await trustedCompaniesService.getCompaniesWithJobStats({
                 page: pageNum,
                 limit: PAGE_SIZE,
@@ -87,6 +94,15 @@ export default function TrustedCompaniesPage() {
                 setCompanies(newList) // Keep track of base list if needed, but filteredCompanies is what we show
                 setFilteredCompanies(newList)
                 setPage(1)
+                
+                // Cache the first page result if no filters active
+                if (pageNum === 1 && !searchTerm && selectedIndustries.length === 0 && selectedJobCategories.length === 0) {
+                    try {
+                        localStorage.setItem('haigoo_trusted_companies_cache', JSON.stringify(newList))
+                    } catch (e) {
+                        console.error('Failed to cache companies', e)
+                    }
+                }
             } else {
                 setFilteredCompanies(prev => [...prev, ...newList])
                 setPage(pageNum)

@@ -33,12 +33,14 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     return (
         <div className="relative min-h-[800px] flex items-center justify-center overflow-hidden">
             {/* Background Image & Overlay */}
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0 bg-slate-900">
                 <img 
-                    src="/background.png" 
+                    src="/background.webp" 
                     alt="Background" 
                     className={`w-full h-full object-cover transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
+                    loading="eager"
+                    decoding="async"
                 />
                 {/* Gradient Overlay for better text readability while keeping image visible */}
                 <div className="absolute inset-0 bg-gradient-to-r from-slate-900/60 via-slate-900/20 to-transparent"></div>

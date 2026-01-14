@@ -44,6 +44,7 @@ const ChristmasPage = lazyRetry(() => import('./pages/ChristmasPage'), 'Christma
 const AdminBugReportsPage = lazy(() => import('./pages/AdminBugReportsPage'))
 const BugLeaderboardPage = lazy(() => import('./pages/BugLeaderboardPage'))
 
+import PageLoadingSkeleton from './components/PageLoadingSkeleton'
 import { BugReportButton } from './components/BugReporter/BugReportButton'
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -74,7 +75,7 @@ function App() {
               <GlobalVerificationGuard>
               <BugReportButton />
               <PageViewTracker />
-              <Suspense fallback={<div className="p-6 text-center">加载中…</div>}>
+              <Suspense fallback={<PageLoadingSkeleton />}>
                 <Routes>
                   {/* Public: Christmas Campaign (Deprecated for New Year) */}
                   <Route path="/christmas" element={<ChristmasPage />} />

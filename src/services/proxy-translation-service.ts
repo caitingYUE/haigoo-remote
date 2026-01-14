@@ -61,7 +61,7 @@ export class ProxyTranslationService {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), this.timeout)
 
-      const response = await fetch(`${this.baseUrl}/api/translate`, {
+      const response = await fetch(`${this.baseUrl}/api/ai?action=translate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ export class ProxyTranslationService {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), this.timeout * 2) // 批量翻译给更多时间
 
-      const response = await fetch(`${this.baseUrl}/api/translate`, {
+      const response = await fetch(`${this.baseUrl}/api/ai?action=translate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -221,7 +221,7 @@ export class ProxyTranslationService {
    */
   async checkHealth(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/translate`, {
+      const response = await fetch(`${this.baseUrl}/api/ai?action=translate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -267,11 +267,11 @@ export class ProxyTranslationService {
   getServiceInfo() {
     return {
       name: 'Proxy Translation Service',
-      provider: 'Multiple (MyMemory, LibreTranslate, Google)',
-      endpoint: `${this.baseUrl}/api/translate`,
+      provider: 'AI (Bailian/DeepSeek)',
+      endpoint: `${this.baseUrl}/api/ai?action=translate`,
       timeout: this.timeout,
       supportsCORS: true,
-      cost: 'Free'
+      cost: 'Paid (API)'
     }
   }
 }

@@ -26,9 +26,11 @@ export class AIService {
       temperature?: number
       topP?: number
       provider?: 'bailian' | 'deepseek'
+      action?: string
     }
   ): Promise<ApiResponse<BailianResponse>> {
     const provider = options?.provider || 'bailian'
+    const action = options?.action || 'analyze-resume'
     
     // Construct payload for proxy
     const payload = {
@@ -43,7 +45,7 @@ export class AIService {
     }
 
     try {
-      const response = await fetch('/api/ai?action=analyze-resume', {
+      const response = await fetch(`/api/ai?action=${action}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

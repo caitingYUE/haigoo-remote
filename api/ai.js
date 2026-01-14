@@ -127,6 +127,69 @@ export default async function handler(req, res) {
         }
     }
 
+    // === Action: Translate Text (for ProxyTranslationService) ===
+    if (action === 'translate') {
+      const { text, targetLanguage = 'zh', sourceLanguage = 'auto' } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: 'Text is required' });
+      }
+
+      const apiKey = process.env.VITE_ALIBABA_BAILIAN_API_KEY || process.env.ALIBABA_BAILIAN_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'Translation Service Not Configured (Missing API Key)' });
+      }
+
+      const apiUrl = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      };
+
+      const targetLangName = targetLanguage === 'zh' || targetLanguage === 'zh-CN' ? 'Chinese' : targetLanguage;
+      
+      const requestBody = {
+        model: 'qwen-plus',
+        input: {
+          messages: [
+            { role: "system", content: `You are a professional translator. Translate the following text to ${targetLangName}. Keep technical terms (like React, Java, Python, API, etc.) in their original English form. Only output the translated text without explanations.` },
+            { role: "user", content: text }
+          ]
+        },
+        parameters: {
+          temperature: 0.3
+        }
+      };
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Translation API Error:', data);
+        return res.status(response.status).json({ 
+          success: false, 
+          error: data.message || data.code || 'Translation Provider Error',
+          details: data
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          translatedText: data.output?.text || text,
+          sourceLanguage,
+          targetLanguage,
+          confidence: 0.95,
+          provider: 'Bailian'
+        }
+      });
+    }
+
     // === Action: Analyze Resume ===
     if (action === 'analyze-resume') {
       const body = req.body;
