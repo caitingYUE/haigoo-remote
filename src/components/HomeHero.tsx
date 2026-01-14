@@ -53,7 +53,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         {/* English Tagline - Elegant Script */}
                         <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                             <p className="text-xl md:text-2xl font-serif italic text-white/90 tracking-wide font-light drop-shadow-md">
-                                "Work your brain, leave your body to be happy."
+                                "Work for Life"
                             </p>
                         </div>
 
@@ -102,26 +102,26 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             onClick={() => setShowHappinessCard(true)}
                             className="relative group cursor-pointer"
                         >
-                            {/* Simple Card */}
-                            <div className="relative bg-white p-8 md:p-10 rounded-2xl shadow-xl transition-all duration-500 hover:-translate-y-1 w-80 md:w-96 text-center border border-slate-100">
+                            {/* Simple Card - Matching Header Style */}
+                            <div className="relative bg-white/90 backdrop-blur-md p-8 rounded-3xl shadow-lg transition-all duration-500 hover:-translate-y-1 w-80 md:w-96 text-center border border-white/40">
                                 {/* Header Text */}
-                                <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                                <h3 className="text-xl font-bold text-slate-800 mb-2 tracking-tight">
                                     新年上上签
                                 </h3>
-                                <p className="text-slate-500 text-sm mb-8">
-                                    抽取您的 2026 专属远程工作职场祝福
+                                <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+                                    开启您的 2026 专属远程好运
                                 </p>
 
                                 {/* Minimalist Icon Area */}
-                                <div className="mb-8 flex justify-center">
-                                    <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                                        <Gift className="w-10 h-10 text-indigo-600" />
+                                <div className="mb-6 flex justify-center">
+                                    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-500 shadow-inner">
+                                        <Gift className="w-8 h-8 text-slate-700" />
                                     </div>
                                 </div>
 
                                 {/* Button */}
-                                <div className="w-full py-3 rounded-xl bg-slate-900 text-white font-semibold text-sm transition-all duration-300 hover:bg-indigo-600 shadow-md hover:shadow-lg">
-                                    点击开启好运
+                                <div className="w-full py-3 rounded-xl bg-slate-900 text-white font-medium text-sm transition-all duration-300 hover:bg-slate-800 shadow-md">
+                                    点击抽取
                                 </div>
                             </div>
                         </div>
