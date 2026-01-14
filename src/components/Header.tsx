@@ -169,22 +169,12 @@ export default function Header() {
     { id: 'profile-feedback', label: '我要反馈', href: '/profile?tab=feedback' }
   ]
 
-  const isHome = location.pathname === '/';
-
   return (
     <header
-      className={
-        isHome 
-          ? "fixed top-6 left-0 right-0 z-50 mx-auto max-w-7xl px-4 md:px-6 lg:px-8 transition-all duration-300"
-          : "sticky top-0 z-50 backdrop-blur-md bg-white/70 border-b border-white/20 transition-all duration-300"
-      }
+      className="relative z-50 backdrop-blur-md bg-white/70 border-b border-white/20 transition-all duration-300"
       role="banner"
     >
-      <div className={
-        isHome
-          ? `bg-white/90 backdrop-blur-md ${isMenuOpen ? 'rounded-3xl' : 'rounded-full'} shadow-lg border border-white/40 px-6 md:px-8 transition-all duration-300`
-          : "px-6 md:px-10 lg:px-20 transition-all duration-300"
-      }>
+      <div className="px-6 md:px-10 lg:px-20 transition-all duration-300">
         <div className="flex items-center justify-between h-20 max-w-7xl mx-auto">
           {/* Logo */}
           <div className="flex items-center">
@@ -215,9 +205,9 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-6 ml-auto mr-8">
             <Link
               to="/"
-              className={`text-base font-medium transition-colors ${location.pathname === '/'
-                ? 'text-indigo-600 font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
+              className={`text-base transition-colors ${location.pathname === '/'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-600 font-normal hover:text-slate-900'
                 }`}
             >
               首页
@@ -225,9 +215,9 @@ export default function Header() {
 
             <Link
               to="/jobs"
-              className={`text-base font-medium transition-colors ${location.pathname === '/jobs'
-                ? 'text-indigo-600 font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
+              className={`text-base transition-colors ${location.pathname === '/jobs'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-600 font-normal hover:text-slate-900'
                 }`}
             >
               远程岗位
@@ -235,9 +225,9 @@ export default function Header() {
 
             <Link
               to="/trusted-companies"
-              className={`text-base font-medium transition-colors ${location.pathname.startsWith('/trusted-companies')
-                ? 'text-indigo-600 font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
+              className={`text-base transition-colors ${location.pathname.startsWith('/trusted-companies')
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-600 font-normal hover:text-slate-900'
                 }`}
             >
               精选企业
@@ -245,9 +235,9 @@ export default function Header() {
 
             <Link
               to="/membership"
-              className={`text-base font-medium transition-colors ${location.pathname === '/membership'
-                ? 'text-indigo-600 font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
+              className={`text-base transition-colors ${location.pathname === '/membership'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-600 font-normal hover:text-slate-900'
                 }`}
             >
               会员中心
@@ -255,9 +245,9 @@ export default function Header() {
 
             <Link
               to="/profile"
-              className={`text-base font-medium transition-colors ${location.pathname.startsWith('/profile')
-                ? 'text-indigo-600 font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
+              className={`text-base transition-colors ${location.pathname.startsWith('/profile')
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-600 font-normal hover:text-slate-900'
                 }`}
             >
               个人中心
