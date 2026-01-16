@@ -24,3 +24,8 @@ WHERE name = 'Eigen AI';
 UPDATE trusted_companies 
 SET careers_page = 'https://app.dover.com/jobs/mixrank' 
 WHERE name = 'MixRank';
+
+-- 2026-01-16: Update MixRank careers page URL to Y Combinator (Dover page is uncrawlable SPA)
+UPDATE trusted_companies 
+SET careers_page = 'https://www.ycombinator.com/companies/mixrank/jobs' 
+WHERE name = 'MixRank';
