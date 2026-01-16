@@ -19,3 +19,8 @@ CREATE TABLE IF NOT EXISTS job_bundles (
 UPDATE trusted_companies 
 SET careers_page = 'https://www.eigenai.com/join' 
 WHERE name = 'Eigen AI';
+
+-- 2026-01-16: Update MixRank careers page URL
+UPDATE trusted_companies 
+SET careers_page = 'https://app.dover.com/jobs/mixrank' 
+WHERE name = 'MixRank';
