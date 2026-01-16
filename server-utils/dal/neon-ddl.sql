@@ -25,6 +25,11 @@ UPDATE trusted_companies
 SET careers_page = 'https://app.dover.com/jobs/mixrank' 
 WHERE name = 'MixRank';
 
+-- 2026-01-16: Update Udacity careers page URL to Greenhouse (Official Job Board)
+UPDATE trusted_companies 
+SET careers_page = 'https://job-boards.greenhouse.io/udacity' 
+WHERE name = 'Udacity';
+
 -- 2026-01-16: Update MixRank careers page URL to Y Combinator (Dover page is uncrawlable SPA)
 UPDATE trusted_companies 
 SET careers_page = 'https://www.ycombinator.com/companies/mixrank/jobs' 
