@@ -14,3 +14,8 @@ CREATE TABLE IF NOT EXISTS job_bundles (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 2026-01-16: Update Eigen AI careers page URL
+UPDATE trusted_companies 
+SET careers_page = 'https://www.eigenai.com/join' 
+WHERE name = 'Eigen AI';
