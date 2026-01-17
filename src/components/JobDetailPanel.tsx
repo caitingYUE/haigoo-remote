@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, Shield, Sparkles, Target, Crown, Lock, CheckCircle2, Clock } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, Shield, Sparkles, Target, Crown, Lock, CheckCircle2, Clock, Mail } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -61,6 +61,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
     const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
     const [showApplyInterceptModal, setShowApplyInterceptModal] = useState(false)
+    const [showApplySelectionModal, setShowApplySelectionModal] = useState(false)
     const [isShareModalOpen, setIsShareModalOpen] = useState(false)
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
 
@@ -175,7 +176,41 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         proceedToApply();
     }
 
-    const proceedToApply = async () => {
+    const executeApply = async (method: 'website' | 'email') => {
+        if (method === 'email' && companyInfo?.hiringEmail) {
+            trackingService.track('click_apply', {
+                job_id: job.id,
+                job_title: job.title,
+                company: job.company,
+                apply_method: 'email'
+            });
+
+            window.location.href = `mailto:${companyInfo.hiringEmail}?subject=${encodeURIComponent(`Application for ${job.title}`)}`;
+            
+            if (isAuthenticated) {
+                try {
+                    const token = localStorage.getItem('haigoo_auth_token');
+                    await fetch('/api/user-profile?action=record_interaction', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            jobId: job.id,
+                            type: 'apply_redirect',
+                            notes: 'Applied via Email'
+                        })
+                    });
+                    showSuccess('已为你记录申请，可在「我的投递」查看');
+                } catch (error) {
+                    console.error('Failed to record interaction:', error);
+                }
+            }
+            setShowApplySelectionModal(false);
+            return;
+        }
+
         const url = job.url || job.sourceUrl;
         
         trackingService.track('click_apply', {
@@ -212,6 +247,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             }
         } else {
             onApply?.(job.id);
+        }
+        setShowApplySelectionModal(false);
+    }
+
+    const proceedToApply = async () => {
+        // Check if member and company has hiring email
+        if (isMember && companyInfo?.hiringEmail) {
+            setShowApplySelectionModal(true);
+        } else {
+            executeApply('website');
         }
     }
 
@@ -785,6 +830,71 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 jobTitle={job.translations?.title || job.title}
                 companyName={job.translations?.company || job.company || ''}
             />
+
+            {/* Apply Selection Modal */}
+            {showApplySelectionModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <h3 className="font-bold text-slate-900 text-lg">选择投递方式</h3>
+                            <button 
+                                onClick={() => setShowApplySelectionModal(false)}
+                                className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 space-y-4">
+                            <button
+                                onClick={() => executeApply('website')}
+                                className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                                        <ExternalLink className="w-5 h-5 text-slate-600 group-hover:text-indigo-600" />
+                                    </div>
+                                    <div className="text-left">
+                                        <div className="font-bold text-slate-900">官网投递</div>
+                                        <div className="text-xs text-slate-500 mt-0.5">跳转至企业官网申请</div>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-400" />
+                            </button>
+
+                            <div className="relative">
+                                <div className="absolute -top-3 left-4 px-2 bg-gradient-to-r from-amber-50 to-orange-50 text-orange-700 text-[10px] font-bold rounded-full border border-orange-100 z-10 flex items-center gap-1">
+                                    <Zap className="w-3 h-3 fill-current" />
+                                    推荐方式
+                                </div>
+                                <button
+                                    onClick={() => executeApply('email')}
+                                    className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-indigo-100 bg-indigo-50/30 hover:bg-indigo-50 hover:border-indigo-200 transition-all group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                                            <Mail className="w-5 h-5 text-indigo-600" />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="font-bold text-slate-900">招聘邮箱投递</div>
+                                            <div className="text-xs text-slate-500 mt-0.5">直接发送简历至 HR 邮箱</div>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-indigo-300 group-hover:text-indigo-500" />
+                                </button>
+                            </div>
+
+                            <div className="bg-blue-50 rounded-lg p-3 flex gap-3 items-start">
+                                <Sparkles className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-blue-700 leading-relaxed">
+                                    <span className="font-bold">提示：</span>
+                                    招聘邮箱投递可以大幅提升触达效率，获得 <span className="font-bold text-orange-600">3X</span> 以上的响应效果
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     )
 }

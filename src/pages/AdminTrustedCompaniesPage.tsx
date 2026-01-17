@@ -857,6 +857,17 @@ export default function AdminTrustedCompaniesPage() {
                                 </div>
                             </div>
 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">招聘邮箱 (可选)</label>
+                                <input
+                                    type="email"
+                                    value={formData.hiringEmail || ''}
+                                    onChange={e => setFormData({ ...formData, hiringEmail: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="jobs@company.com"
+                                />
+                            </div>
+
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">总部地址</label>

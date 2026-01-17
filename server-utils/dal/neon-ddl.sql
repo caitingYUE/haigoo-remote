@@ -45,4 +45,8 @@ UPDATE trusted_companies
 SET careers_page = 'https://job-boards.greenhouse.io/metalab' 
 WHERE name = 'MetaLab';
 
+-- 2026-01-17: Add hiring_email to trusted_companies
+ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS hiring_email VARCHAR(255);
+
+
 
