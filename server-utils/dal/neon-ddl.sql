@@ -40,3 +40,9 @@ UPDATE trusted_companies
 SET careers_page = 'https://job-boards.greenhouse.io/speechify' 
 WHERE name ILIKE '%Speechify%';
 
+-- 2026-01-17: Update MetaLab careers page URL to Greenhouse (Official Job Board)
+UPDATE trusted_companies 
+SET careers_page = 'https://job-boards.greenhouse.io/metalab' 
+WHERE name = 'MetaLab';
+
+
