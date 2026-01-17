@@ -44,6 +44,28 @@ export default function MyApplicationsTab() {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm('确定要删除这条申请记录吗？')) return;
+    try {
+      const res = await fetch('/api/user-profile?action=delete_application', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ id })
+      });
+      
+      if (res.ok) {
+        setApplications(prev => prev.filter(app => app.id !== id));
+      } else {
+        alert('删除失败，请重试');
+      }
+    } catch (error) {
+      console.error('Failed to delete application', error);
+    }
+  };
+
   const handleStatusUpdate = async (id: number, newStatus: string) => {
     setUpdatingId(id);
     try {
@@ -145,6 +167,13 @@ export default function MyApplicationsTab() {
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
                   {getStatusLabel(app.status)}
                 </span>
+                <button 
+                    onClick={() => handleDelete(app.id)}
+                    className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50"
+                    title="删除记录"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
             

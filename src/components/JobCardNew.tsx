@@ -237,7 +237,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                </div>
 
                {/* Content Area */}
-               <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative">
+               <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-8">
                   {/* Delete Button (List View) */}
                   {onDelete && (
                       <button 

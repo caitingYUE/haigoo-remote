@@ -785,6 +785,7 @@ export default function ProfileCenterPage() {
           <h2 className="text-2xl font-bold text-slate-900">我的收藏</h2>
           <p className="text-slate-500 mt-1">您收藏的职位列表。</p>
         </div>
+        <span className="text-xs font-normal text-gray-400">仅保留近1年的收藏记录</span>
       </div>
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[300px]">
         {loadingFavorites ? (
