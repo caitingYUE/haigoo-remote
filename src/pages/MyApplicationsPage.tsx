@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Clock, CheckCircle, XCircle, MoreHorizontal, AlertCircle, MessageSquare } from 'lucide-react';
+import { Briefcase, Clock, CheckCircle, XCircle, MoreHorizontal, AlertCircle, MessageSquare, Trash2 } from 'lucide-react';
 
 interface Application {
   id: number;
@@ -69,6 +69,30 @@ export default function MyApplicationsPage() {
       console.error('Failed to update status', error);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('确定要删除这条申请记录吗？')) return;
+    
+    try {
+      const res = await fetch('/api/user-profile?action=delete_application', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ id })
+      });
+      
+      if (res.ok) {
+        setApplications(prev => prev.filter(app => app.id !== id));
+      } else {
+        alert('删除失败，请重试');
+      }
+    } catch (error) {
+      console.error('Failed to delete application', error);
+      alert('删除失败，请检查网络');
     }
   };
 
@@ -184,6 +208,14 @@ export default function MyApplicationsPage() {
                               {getStatusLabel(status)}
                             </button>
                           ))}
+                          <div className="h-px bg-slate-100 my-1"></div>
+                          <button
+                            onClick={() => handleDelete(app.id)}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            删除记录
+                          </button>
                         </div>
                       </div>
                     </div>
