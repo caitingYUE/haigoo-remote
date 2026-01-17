@@ -432,23 +432,6 @@ export default function Header() {
 
                       {/* 简化的菜单选项 - 只保留文字 */}
                       <div className="py-1" role="group" aria-label="用户菜单选项">
-                        {userMenuItems.map((item) => {
-                          return (
-                            <Link
-                              key={item.id}
-                              to={item.href}
-                              className={`block px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none rounded-lg ${location.pathname === item.href || location.search.includes(item.href.split('?')[1])
-                                ? 'bg-indigo-50 text-indigo-700 font-medium'
-                                : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700'
-                                }`}
-                              role="menuitem"
-                              tabIndex={isUserMenuOpen ? 0 : -1}
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              {item.label}
-                            </Link>
-                          )
-                        })}
                       </div>
 
                       {/* 退出登录 - 只保留文字 */}
