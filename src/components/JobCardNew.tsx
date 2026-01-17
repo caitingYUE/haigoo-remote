@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp } from 'lucide-react';
+import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2 } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { getJobSourceType } from '../utils/job-source-helper';
@@ -17,6 +17,7 @@ const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
 interface JobCardNewProps {
    job: Job;
    onClick?: (job: Job) => void;
+   onDelete?: (jobId: string) => void;
    matchScore?: number; // Personalized match score (0-100)
    className?: string;
    variant?: 'grid' | 'list';
@@ -51,7 +52,7 @@ const getDarkerColor = (str: string) => {
    return `hsl(${h}, 70%, 30%)`;
 };
 
-export default function JobCardNew({ job, onClick, className, variant = 'grid', isActive = false }: JobCardNewProps) {
+export default function JobCardNew({ job, onClick, onDelete, className, variant = 'grid', isActive = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
    const isTranslated = !!job.translations?.title;
@@ -236,7 +237,21 @@ export default function JobCardNew({ job, onClick, className, variant = 'grid', 
                </div>
 
                {/* Content Area */}
-               <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
+               <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative">
+                  {/* Delete Button (List View) */}
+                  {onDelete && (
+                      <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(job.id);
+                        }}
+                        className="absolute right-0 top-0 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors z-10"
+                        title="删除记录"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                  )}
+
                   {/* Row 1: Badges & Salary (Desktop) */}
                   <div className="flex items-center justify-between gap-2">
                      <div className="flex flex-wrap items-center gap-2">

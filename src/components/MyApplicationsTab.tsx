@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Briefcase, Clock, CheckCircle, XCircle, MoreHorizontal, AlertCircle, MessageSquare, FileText } from 'lucide-react';
+import { Briefcase, Clock, CheckCircle, XCircle, MoreHorizontal, AlertCircle, MessageSquare, FileText, Trash2 } from 'lucide-react';
 
 interface Application {
   id: number;
@@ -114,9 +114,12 @@ export default function MyApplicationsTab() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <Briefcase className="w-6 h-6" />
-          我的申请
+      <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-6 h-6" />
+            我的申请
+          </div>
+          <span className="text-xs font-normal text-gray-400">仅保留近1年的申请记录</span>
       </h2>
       <div className="grid gap-4">
         {applications.map((app) => (

@@ -809,6 +809,7 @@ export default function ProfileCenterPage() {
                   job={f as Job}
                   variant="list"
                   onClick={() => { setSelectedJob(f as Job); setIsJobDetailOpen(true) }}
+                  onDelete={(jobId) => handleRemoveFavorite(jobId)}
                 />
               </div>
             ))}

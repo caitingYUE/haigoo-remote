@@ -124,7 +124,7 @@ export default function MyApplicationsPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">我的投递</h1>
-            <p className="mt-2 text-slate-600">管理您的所有求职申请记录</p>
+            <p className="mt-2 text-slate-600">管理您的所有求职申请记录（仅保留近1年）</p>
           </div>
           <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200">
             <span className="text-sm text-slate-500">共投递</span>
