@@ -93,6 +93,7 @@ export default function MyApplicationsTab() {
   const getStatusColor = (status: string) => {
     const styles: Record<string, string> = {
         'pending': 'bg-yellow-100 text-yellow-800',
+        'pending_apply': 'bg-blue-50 text-blue-600 border border-blue-100', // 待申请
         'applied': 'bg-blue-100 text-blue-800',
         'reviewed': 'bg-indigo-100 text-indigo-800',
         'referred': 'bg-purple-100 text-purple-800',
