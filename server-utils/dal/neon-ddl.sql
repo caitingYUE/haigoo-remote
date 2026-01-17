@@ -34,3 +34,9 @@ WHERE name = 'Udacity';
 UPDATE trusted_companies 
 SET careers_page = 'https://www.ycombinator.com/companies/mixrank/jobs' 
 WHERE name = 'MixRank';
+
+-- 2026-01-17: Update Speechify careers page URL to Greenhouse (Official Job Board)
+UPDATE trusted_companies 
+SET careers_page = 'https://job-boards.greenhouse.io/speechify' 
+WHERE name ILIKE '%Speechify%';
+
