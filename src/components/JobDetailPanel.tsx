@@ -252,8 +252,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const proceedToApply = async () => {
-        // Check if member and company has hiring email
-        if (isMember && companyInfo?.hiringEmail) {
+        // Check if company has hiring email (regardless of member status)
+        if (companyInfo?.hiringEmail) {
             setShowApplySelectionModal(true);
         } else {
             executeApply('website');
@@ -868,15 +868,33 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     推荐方式
                                 </div>
                                 <button
-                                    onClick={() => executeApply('email')}
+                                    onClick={() => {
+                                        if (isMember) {
+                                            executeApply('email')
+                                        } else {
+                                            setShowApplySelectionModal(false)
+                                            setShowUpgradeModal(true)
+                                        }
+                                    }}
                                     className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-indigo-100 bg-indigo-50/30 hover:bg-indigo-50 hover:border-indigo-200 transition-all group"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                                            <Mail className="w-5 h-5 text-indigo-600" />
+                                            {isMember ? (
+                                                <Mail className="w-5 h-5 text-indigo-600" />
+                                            ) : (
+                                                <Lock className="w-4 h-4 text-amber-500" />
+                                            )}
                                         </div>
                                         <div className="text-left">
-                                            <div className="font-bold text-slate-900">招聘邮箱投递</div>
+                                            <div className="font-bold text-slate-900 flex items-center gap-2">
+                                                招聘邮箱投递
+                                                {!isMember && (
+                                                    <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded font-bold uppercase">
+                                                        Member Only
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="text-xs text-slate-500 mt-0.5">直接发送简历至 HR 邮箱</div>
                                         </div>
                                     </div>
