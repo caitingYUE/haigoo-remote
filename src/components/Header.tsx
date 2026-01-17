@@ -166,7 +166,8 @@ export default function Header() {
     { id: 'profile-favorites', label: '我的收藏', href: '/profile?tab=favorites' },
     { id: 'profile-subscriptions', label: '订阅管理', href: '/profile?tab=subscriptions' },
     { id: 'membership', label: '会员中心', href: '/membership' },
-    { id: 'profile-feedback', label: '我要反馈', href: '/profile?tab=feedback' }
+    { id: 'profile-feedback', label: '我要反馈', href: '/profile?tab=feedback' },
+    { id: 'profile-settings', label: '账号设置', href: '/profile?tab=settings' }
   ]
 
   return (
@@ -428,6 +429,19 @@ export default function Header() {
                             <p className="text-xs text-slate-500 truncate" title={user?.profile?.title || user?.email}>{user?.profile?.title || user?.email}</p>
                           </div>
                         </div>
+                      </div>
+
+                      {/* 简化的菜单选项 */}
+                      <div className="py-1" role="group" aria-label="用户菜单选项">
+                        <Link
+                          to="/profile?tab=settings"
+                          className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-all duration-200"
+                          role="menuitem"
+                          tabIndex={isUserMenuOpen ? 0 : -1}
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          账号设置
+                        </Link>
                       </div>
 
                       {/* 退出登录 - 只保留文字 */}
