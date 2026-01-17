@@ -571,11 +571,16 @@ export default function Header() {
                     </div>
 
                     {userMenuItems.map((item) => {
+                      const isActive = location.pathname === item.href || (item.href.includes('?') && location.search.includes(item.href.split('?')[1]))
                       return (
                         <Link
                           key={item.id}
                           to={item.href}
-                          className="block px-3 py-2 text-base font-medium text-slate-500 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg"
+                          className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
+                            isActive
+                              ? 'bg-indigo-50 text-indigo-700'
+                              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                          }`}
                           onClick={() => setIsMenuOpen(false)}
                         >
                           {item.label}
