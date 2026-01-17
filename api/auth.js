@@ -892,6 +892,14 @@ export default async function handler(req, res) {
       case 'copilot':
         return await handleCopilot(req, res)
 
+      case 'request-password-reset':
+        if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+        return await handleRequestPasswordReset(req, res)
+
+      case 'reset-password':
+        if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+        return await handleResetPassword(req, res)
+
       default:
         return res.status(400).json({
           success: false,
