@@ -400,7 +400,7 @@ export default function Header() {
                   {/* 优化下拉菜单设计 */}
                   {isUserMenuOpen && (
                     <div
-                      className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
+                      className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
                       role="menu"
                       aria-labelledby="user-menu-button"
                       aria-orientation="vertical"
@@ -423,19 +423,15 @@ export default function Header() {
                               <User className="h-5 w-5 text-white" aria-hidden="true" />
                             </div>
                           )}
-                          <div>
-                            <p className="text-sm font-medium text-slate-900 truncate max-w-[150px]">{user?.username || '用户'}</p>
-                            <p className="text-xs text-slate-500 truncate max-w-[150px]" title={user?.profile?.title || user?.email}>{user?.profile?.title || user?.email}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-slate-900 truncate">{user?.username || '用户'}</p>
+                            <p className="text-xs text-slate-500 truncate" title={user?.profile?.title || user?.email}>{user?.profile?.title || user?.email}</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* 简化的菜单选项 - 只保留文字 */}
-                      <div className="py-1" role="group" aria-label="用户菜单选项">
-                      </div>
-
                       {/* 退出登录 - 只保留文字 */}
-                      <div className="border-t border-slate-100 pt-1" role="group" aria-label="账户操作">
+                      <div className="pt-1" role="group" aria-label="账户操作">
                         <button
                           onClick={handleLogout}
                           className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 focus:outline-none focus:bg-red-50"
