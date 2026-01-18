@@ -737,13 +737,25 @@ export default function AdminTrustedCompaniesPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">简介</label>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="block text-sm font-medium text-gray-700">简介</label>
+                                    <span className={`text-xs ${
+                                        (formData.description?.length || 0) > 300 ? 'text-amber-600 font-medium' : 'text-gray-400'
+                                    }`}>
+                                        {formData.description?.length || 0} 字 (建议 &le; 300)
+                                    </span>
+                                </div>
                                 <textarea
                                     value={formData.description || ''}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    rows={3}
+                                    rows={4}
+                                    maxLength={500}
                                     className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="请输入企业简介..."
                                 />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    请控制简介长度，以免在详情页占用过多版面。
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
