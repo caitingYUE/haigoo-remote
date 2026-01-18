@@ -248,7 +248,7 @@ export default function CompanyDetailPage() {
                                     <div className="p-4 relative">
                                         {isMember ? (
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
-                                                {/* Website - New Position */}
+                                                {/* Website - Row 1 */}
                                                 {companyInfo.website && (
                                                     <a
                                                         href={companyInfo.website}
@@ -266,48 +266,24 @@ export default function CompanyDetailPage() {
                                                     </a>
                                                 )}
 
-                                                {/* Hiring Email */}
-                                                {companyInfo.hiringEmail && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm h-full">
-                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                                                            <Mail className="w-5 h-5 text-indigo-600" />
+                                                {/* Employees - Row 1 */}
+                                                {companyInfo.employeeCount && (
+                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full">
+                                                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                                            <Users className="w-5 h-5 text-blue-500" />
                                                         </div>
                                                         <div className="min-w-0 flex-1">
-                                                            <div className="font-bold text-slate-900 text-sm truncate" title={companyInfo.hiringEmail}>
-                                                                {companyInfo.hiringEmail}
-                                                            </div>
-                                                            {companyInfo.emailType && (
-                                                                <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                                                                    {companyInfo.emailType}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Rating */}
-                                                {companyInfo.companyRating && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm h-full">
-                                                        <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
-                                                            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="text-xs text-slate-500 mb-0.5 font-medium">企业评分</div>
+                                                            <div className="text-xs text-slate-500 mb-0.5 font-medium">员工人数</div>
                                                             <div className="font-bold text-slate-900 text-sm">
-                                                                {companyInfo.companyRating}
+                                                                {companyInfo.employeeCount}
                                                             </div>
-                                                            {companyInfo.ratingSource && (
-                                                                <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                                                                    评分来源: {companyInfo.ratingSource}
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
 
-                                                {/* Address */}
+                                                {/* Address - Row 1 */}
                                                 {companyInfo.address && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm col-span-2 lg:col-span-1 relative h-full">
+                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors relative h-full">
                                                         <div
                                                             className={`w-10 h-10 rounded-lg bg-indigo-50 transition-colors flex items-center justify-center flex-shrink-0 ${
                                                                 companyInfo.address.includes('远程') || companyInfo.address.toLowerCase().includes('remote')
@@ -347,24 +323,9 @@ export default function CompanyDetailPage() {
                                                     </div>
                                                 )}
 
-                                                {/* Employees */}
-                                                {companyInfo.employeeCount && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm h-full">
-                                                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                                            <Users className="w-5 h-5 text-blue-500" />
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="text-xs text-slate-500 mb-0.5 font-medium">员工人数</div>
-                                                            <div className="font-bold text-slate-900 text-sm">
-                                                                {companyInfo.employeeCount}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Founded */}
+                                                {/* Founded - Row 1 */}
                                                 {companyInfo.foundedYear && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm h-full">
+                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full">
                                                         <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
                                                             <Calendar className="w-5 h-5 text-emerald-500" />
                                                         </div>
@@ -373,6 +334,47 @@ export default function CompanyDetailPage() {
                                                             <div className="font-bold text-slate-900 text-sm">
                                                                 {companyInfo.foundedYear}
                                                             </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Rating - Row 2 */}
+                                                {companyInfo.companyRating && (
+                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full">
+                                                        <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                                                            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-baseline gap-2 mb-0.5">
+                                                                <div className="text-xs text-slate-500 font-medium">企业评分</div>
+                                                                <div className="font-bold text-slate-900 text-sm">
+                                                                    {companyInfo.companyRating}
+                                                                </div>
+                                                            </div>
+                                                            {companyInfo.ratingSource && (
+                                                                <div className="text-[10px] text-slate-400 truncate" title={`评分来源: ${companyInfo.ratingSource}`}>
+                                                                    来源: {companyInfo.ratingSource}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Hiring Email - Row 2 - Flexible Width */}
+                                                {companyInfo.hiringEmail && (
+                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full col-span-1 lg:col-span-3">
+                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                                            <Mail className="w-5 h-5 text-indigo-600" />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="font-bold text-slate-900 text-sm truncate" title={companyInfo.hiringEmail}>
+                                                                {companyInfo.hiringEmail}
+                                                            </div>
+                                                            {companyInfo.emailType && (
+                                                                <div className="text-[10px] text-slate-400 mt-0.5 truncate">
+                                                                    {companyInfo.emailType}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
