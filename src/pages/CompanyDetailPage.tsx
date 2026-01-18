@@ -273,7 +273,6 @@ export default function CompanyDetailPage() {
                                                             <Mail className="w-4 h-4 text-indigo-500" />
                                                         </div>
                                                         <div className="min-w-0 flex-1">
-                                                            <div className="text-[10px] text-slate-500 mb-0.5">招聘邮箱</div>
                                                             <div className="font-medium text-slate-900 text-sm truncate" title={companyInfo.hiringEmail}>
                                                                 {companyInfo.hiringEmail}
                                                             </div>
@@ -297,6 +296,9 @@ export default function CompanyDetailPage() {
                                                             <div className="font-bold text-slate-900 text-sm">
                                                                 {companyInfo.companyRating}
                                                             </div>
+                                                            <div className="text-[9px] text-slate-400 mt-0.5">
+                                                                评分来源: Haigoo用户评价
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
@@ -305,11 +307,21 @@ export default function CompanyDetailPage() {
                                                 {companyInfo.address && (
                                                     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm col-span-2 lg:col-span-1 relative">
                                                         <div
-                                                            className="p-1.5 bg-indigo-50 rounded-md cursor-help hover:bg-indigo-100 transition-colors"
-                                                            onMouseEnter={() => setShowLocationTooltip(true)}
+                                                            className={`p-1.5 bg-indigo-50 rounded-md transition-colors ${
+                                                                companyInfo.address.includes('远程') || companyInfo.address.toLowerCase().includes('remote')
+                                                                    ? ''
+                                                                    : 'cursor-help hover:bg-indigo-100'
+                                                            }`}
+                                                            onMouseEnter={() => {
+                                                                if (!companyInfo.address!.includes('远程') && !companyInfo.address!.toLowerCase().includes('remote')) {
+                                                                    setShowLocationTooltip(true)
+                                                                }
+                                                            }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setShowLocationTooltip(!showLocationTooltip);
+                                                                if (!companyInfo.address!.includes('远程') && !companyInfo.address!.toLowerCase().includes('remote')) {
+                                                                    setShowLocationTooltip(!showLocationTooltip);
+                                                                }
                                                             }}
                                                         >
                                                             <MapPin className="w-4 h-4 text-indigo-500" />
@@ -322,7 +334,7 @@ export default function CompanyDetailPage() {
                                                         </div>
 
                                                         {/* Location Tooltip */}
-                                                        {showLocationTooltip && (
+                                                        {showLocationTooltip && !companyInfo.address.includes('远程') && !companyInfo.address.toLowerCase().includes('remote') && (
                                                             <div className="absolute top-full left-0 mt-2 z-50">
                                                                 <LocationTooltip
                                                                     location={companyInfo.address}
@@ -366,6 +378,7 @@ export default function CompanyDetailPage() {
                                                 {/* Specialties - Full Width */}
                                                 {companyInfo.specialties && companyInfo.specialties.length > 0 && (
                                                     <div className="col-span-full pt-2 mt-1 border-t border-slate-100">
+                                                        <div className="text-[10px] text-slate-500 mb-1.5">企业领域/专长</div>
                                                         <div className="flex flex-wrap gap-2">
                                                             {companyInfo.specialties.map((spec, idx) => (
                                                                 <span key={idx} className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200 text-xs font-medium">
