@@ -669,9 +669,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         {displayText(job.company || '')}
                                     </h3>
                                     {job.isTrusted && isMember && (
-                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold shadow-sm">
-                                            <Shield className="w-3 h-3" />
-                                            <span>企业已认证</span>
+                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-white text-[10px] font-bold shadow-sm">
+                                            <Crown className="w-3 h-3 text-amber-400" />
+                                            <span>会员专属信息</span>
                                         </div>
                                     )}
                                 </div>
@@ -728,7 +728,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             <Mail className="w-3 h-3 text-indigo-600" />
                                         </div>
                                         <span className="text-indigo-600 font-bold">
-                                            {isMember ? (companyInfo?.emailType || '通用支持邮箱') : 'HR直招邮箱'}
+                                            {isMember ? (companyInfo?.hiringEmail || companyInfo?.emailType || '通用支持邮箱') : 'HR直招邮箱'}
                                         </span>
                                     </div>
                                 </div>
@@ -835,22 +835,19 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         }}
                         className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${
                             isMember 
-                                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:shadow-indigo-200 hover:-translate-y-0.5' 
+                                ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5' 
                                 : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50 cursor-pointer'
                         }`}
                     >
                         {isMember ? (
                             <>
-                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                                <div className="absolute inset-0 bg-white/5 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
                                 <div className="flex items-center gap-2 relative z-10">
                                     <Mail className="w-4 h-4" />
-                                    <span>邮箱直申</span>
-                                </div>
-                                <div className="text-[10px] opacity-90 font-normal relative z-10 mt-0.5">
-                                    推荐: {companyInfo?.emailType || '通用支持邮箱'}
+                                    <span>邮箱直申 ({companyInfo?.emailType || '通用支持邮箱'})</span>
                                 </div>
                                 <div className="absolute top-0 right-0 w-3 h-3 bg-amber-400 rounded-full animate-ping opacity-75"></div>
-                                <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-amber-400 rounded-full border-2 border-indigo-600"></div>
+                                <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-amber-400 rounded-full border-2 border-slate-900"></div>
                             </>
                         ) : (
                             <>
