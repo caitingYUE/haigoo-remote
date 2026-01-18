@@ -362,7 +362,7 @@ export default function CompanyDetailPage() {
 
                                                 {/* Hiring Email - Row 2 - Flexible Width */}
                                                 {companyInfo.hiringEmail && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full col-span-1 lg:col-span-3">
+                                                    <div className={`flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full col-span-1 ${companyInfo.hiringEmail.length > 25 ? 'lg:col-span-2' : 'lg:col-span-1'}`}>
                                                         <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
                                                             <Mail className="w-5 h-5 text-indigo-600" />
                                                         </div>
@@ -451,14 +451,16 @@ export default function CompanyDetailPage() {
                                     </div>
                                 </div>
                             )}
+                        </div>
 
-                            {/* About Us - Moved to Main Column */}
-                            <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        {/* Right Column: Description (Sidebar) */}
+                        <div className="lg:w-80 flex-shrink-0">
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
                                 <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
                                     <Info className="w-4 h-4 text-slate-500" />
                                     <h2 className="font-bold text-slate-900 text-sm">关于我们</h2>
                                 </div>
-                                <div className="p-4">
+                                <div className="p-4 max-h-[400px] overflow-y-auto custom-scrollbar">
                                     <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
                                         {companyInfo?.description || '暂无简介'}
                                     </div>
