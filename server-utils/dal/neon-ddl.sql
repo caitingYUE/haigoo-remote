@@ -58,3 +58,6 @@ CREATE INDEX IF NOT EXISTS idx_jobs_company_lower ON jobs(lower(company));
 
 -- Add index on trusted_companies(name) for faster lookup
 CREATE INDEX IF NOT EXISTS idx_trusted_companies_name_lower ON trusted_companies(lower(name));
+
+-- Add index on extracted_companies(name) for faster union queries
+CREATE INDEX IF NOT EXISTS idx_extracted_companies_name_lower ON extracted_companies(lower(name));
