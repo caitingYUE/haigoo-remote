@@ -695,21 +695,25 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
                                             <Users className="w-3 h-3 text-indigo-600" />
                                         </div>
-                                        <span className="truncate font-medium text-slate-600">{companyInfo?.employeeCount || '规模未知'}</span>
+                                        <span className="truncate font-medium text-slate-600">
+                                            {isMember ? (companyInfo?.employeeCount || '规模未知') : '会员可见'}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
                                             <MapPin className="w-3 h-3 text-indigo-600" />
                                         </div>
-                                        <span className="truncate font-medium text-slate-600" title={companyInfo?.address || '总部未知'}>
-                                            {companyInfo?.address || '总部未知'}
+                                        <span className="truncate font-medium text-slate-600" title={isMember ? (companyInfo?.address || '总部未知') : ''}>
+                                            {isMember ? (companyInfo?.address || '总部未知') : '会员可见'}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
                                             <Calendar className="w-3 h-3 text-indigo-600" />
                                         </div>
-                                        <span className="font-medium text-slate-600">{companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知'}</span>
+                                        <span className="font-medium text-slate-600">
+                                            {isMember ? (companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知') : '会员可见'}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
@@ -718,7 +722,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <span className={isMember ? "text-indigo-600 font-bold" : "text-slate-400 flex items-center gap-1 text-[11px] font-medium"}>
                                             {isMember ? (companyInfo?.emailType || '通用支持邮箱') : (
                                                 <>
-                                                    <span>解锁邮箱类型</span>
+                                                    <span>会员可见</span>
                                                     <Lock className="w-2.5 h-2.5" />
                                                 </>
                                             )}
