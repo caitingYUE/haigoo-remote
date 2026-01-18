@@ -265,6 +265,7 @@ export class DataManagementService {
     isRemote?: boolean;
     tags?: string[];
     dateRange?: { start: Date; end: Date };
+    companySize?: string[];
     sortBy?: string;
   }): Promise<PaginatedResult<ProcessedJobData>> {
     try {
@@ -284,6 +285,8 @@ export class DataManagementService {
       if (filters?.isApproved !== undefined) queryParams.append('isApproved', filters.isApproved.toString());
       if (filters?.isFeatured !== undefined) queryParams.append('isFeatured', filters.isFeatured.toString());
       if (filters?.sortBy) queryParams.append('sortBy', filters.sortBy);
+      if (filters?.companySize && filters.companySize.length > 0) queryParams.append('companySize', filters.companySize.join(','));
+      if (filters?.tags && filters.tags.length > 0) queryParams.append('tags', filters.tags.join(','));
       
       // 处理日期范围
       if (filters?.dateRange) {

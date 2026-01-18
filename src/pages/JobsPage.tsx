@@ -94,6 +94,7 @@ export default function JobsPage() {
       timezone: [] as string[],
       jobType: [] as string[],
       salary: [] as string[],
+      companySize: [] as string[],
       isTrusted: false,
       isNew: false
     }
@@ -319,6 +320,7 @@ export default function JobsPage() {
       if (filters.type?.length > 0) queryParams.append('type', filters.type.join(','))
       if (filters.jobType?.length > 0) queryParams.append('jobType', filters.jobType.join(','))
       if (filters.salary?.length > 0) queryParams.append('salary', filters.salary.join(','))
+      if (filters.companySize?.length > 0) queryParams.append('companySize', filters.companySize.join(','))
       if (filters.isTrusted) queryParams.append('isTrusted', 'true')
       if (filters.isNew) queryParams.append('isNew', 'true')
       // ⚠️ P0 Fix: Always enforce approval check for C-side job list
@@ -704,6 +706,7 @@ export default function JobsPage() {
       location: [],
       jobType: [],
       salary: [],
+      companySize: [],
       timezone: [],
       isTrusted: false,
       isNew: false
