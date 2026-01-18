@@ -410,16 +410,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 mb-5">
-                    <div className="flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="truncate max-w-[200px] font-medium">{displayText(job.company || '')}</span>
-                        {job.isTrusted && isMember && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 flex-shrink-0">
-                                <Sparkles className="w-3 h-3" />
-                                认证
-                            </span>
-                        )}
-                    </div>
+                        <div className="flex items-center gap-1.5">
+                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="truncate max-w-[200px] font-medium">{displayText(job.company || '')}</span>
+                            {job.isTrusted && isMember && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 flex-shrink-0">
+                                    <Sparkles className="w-3 h-3" />
+                                    认证
+                                </span>
+                            )}
+                        </div>
 
                     <div className="flex items-center gap-1.5">
                         <div className="w-1 h-1 rounded-full bg-slate-300"></div>
@@ -602,12 +602,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         className="mb-6"
                     />
 
-                    {/* Trusted Company Standards Banner - Restored */}
-                    {job.isTrusted && (
-                        <div className="mb-6">
-                            <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => setShowUpgradeModal(true)} />
-                        </div>
-                    )}
+                        {job.isTrusted && isMember && (
+                            <div className="mb-6">
+                                <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => setShowUpgradeModal(true)} />
+                            </div>
+                        )}
 
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
