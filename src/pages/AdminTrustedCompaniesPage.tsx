@@ -126,7 +126,10 @@ export default function AdminTrustedCompaniesPage() {
 
     const handleEdit = (company: TrustedCompany) => {
         setEditingCompany(company)
-        setFormData({ ...company })
+        setFormData({ 
+            ...company,
+            emailType: company.emailType || '通用支持邮箱'
+        })
         setCoverUrlInput(company.coverImage || '')
         resetCropperState()
         setIsModalOpen(true)
