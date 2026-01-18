@@ -413,7 +413,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <div className="flex items-center gap-1.5">
                         <Building2 className="w-3.5 h-3.5 text-slate-400" />
                         <span className="truncate max-w-[200px] font-medium">{displayText(job.company || '')}</span>
-                        {job.isTrusted && (
+                        {job.isTrusted && isMember && (
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 flex-shrink-0">
                                 <Sparkles className="w-3 h-3" />
                                 认证
@@ -641,11 +641,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <section className="py-6">
                         <div
                             onClick={handleCompanyClick}
-                            className="border border-slate-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
+                            className="bg-gradient-to-br from-white to-slate-50/50 border border-slate-200 rounded-xl p-5 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group/card"
                         >
-                            <div className="flex items-start gap-4 mb-3">
+                            <div className="flex items-start gap-4 mb-4">
                                 {job.logo ? (
-                                    <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1">
+                                    <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1 group-hover/card:scale-105 transition-transform duration-300">
                                         <img
                                             src={job.logo}
                                             alt={job.company}
@@ -653,20 +653,20 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             onError={(e) => {
                                                 (e.target as HTMLImageElement).style.display = 'none';
                                                 (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-lg">${(job.company || '未知').charAt(0)}</span>`;
-                                                (e.target as HTMLImageElement).parentElement!.className = "w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0";
+                                                (e.target as HTMLImageElement).parentElement!.className = "w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 group-hover/card:scale-105 transition-transform duration-300";
                                             }}
                                         />
                                     </div>
                                 ) : (
-                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                                        <span className="text-white font-bold text-lg">
+                                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 group-hover/card:scale-105 transition-transform duration-300">
+                                        <span className="text-white font-bold text-xl">
                                             {(job.company || '未知公司').charAt(0)}
                                         </span>
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-base font-bold text-slate-900 mb-1">
+                                    <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover/card:text-indigo-600 transition-colors">
                                         {displayText(job.company || '')}
                                     </h3>
                                     {job.isTrusted && isMember && (
@@ -677,13 +677,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     )}
                                 </div>
                                 
-                                <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
+                                <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
                                     <span>{companyInfo?.industry || job.companyIndustry || job.category || '未分类'}</span>
                                     {companyInfo?.companyRating && (
                                         <>
                                             <span className="text-slate-300">•</span>
                                             <span className="flex items-center gap-0.5 text-amber-500 font-medium">
-                                                <Star className="w-3 h-3 fill-current" />
+                                                <Star className="w-3.5 h-3.5 fill-current" />
                                                 {companyInfo.companyRating}
                                             </span>
                                         </>
@@ -691,32 +691,32 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 </div>
 
                                 {/* Enhanced Company Info Grid */}
-                                <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 bg-slate-50/80 p-3 rounded-lg border border-slate-100">
+                                <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-full bg-white border border-slate-100 flex items-center justify-center flex-shrink-0">
-                                            <Users className="w-3 h-3 text-indigo-500" />
+                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                            <Users className="w-3 h-3 text-indigo-600" />
                                         </div>
-                                        <span className="truncate">{companyInfo?.employeeCount || '规模未知'}</span>
+                                        <span className="truncate font-medium text-slate-600">{companyInfo?.employeeCount || '规模未知'}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-full bg-white border border-slate-100 flex items-center justify-center flex-shrink-0">
-                                            <MapPin className="w-3 h-3 text-indigo-500" />
+                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                            <MapPin className="w-3 h-3 text-indigo-600" />
                                         </div>
-                                        <span className="truncate" title={companyInfo?.address || '总部未知'}>
+                                        <span className="truncate font-medium text-slate-600" title={companyInfo?.address || '总部未知'}>
                                             {companyInfo?.address || '总部未知'}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-full bg-white border border-slate-100 flex items-center justify-center flex-shrink-0">
-                                            <Calendar className="w-3 h-3 text-indigo-500" />
+                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                            <Calendar className="w-3 h-3 text-indigo-600" />
                                         </div>
-                                        <span>{companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知'}</span>
+                                        <span className="font-medium text-slate-600">{companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知'}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-full bg-white border border-slate-100 flex items-center justify-center flex-shrink-0">
-                                            <Mail className="w-3 h-3 text-indigo-500" />
+                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                            <Mail className="w-3 h-3 text-indigo-600" />
                                         </div>
-                                        <span className={isMember ? "text-indigo-600 font-medium" : "text-slate-400 flex items-center gap-1 text-[11px]"}>
+                                        <span className={isMember ? "text-indigo-600 font-bold" : "text-slate-400 flex items-center gap-1 text-[11px] font-medium"}>
                                             {isMember ? (companyInfo?.emailType || '通用支持邮箱') : (
                                                 <>
                                                     <span>解锁邮箱类型</span>
@@ -810,7 +810,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         }
                         executeApply('website')
                     }}
-                    className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3 px-4 rounded-lg font-medium transition-all hover:border-indigo-300 flex flex-col items-center justify-center gap-0.5 min-h-[52px] group"
+                    className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3 px-4 rounded-lg font-medium transition-all hover:border-indigo-300 hover:shadow-sm flex flex-col items-center justify-center gap-0.5 min-h-[52px] group"
                 >
                     <div className="flex items-center gap-2">
                         <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
@@ -832,7 +832,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${
                             isMember 
                                 ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:shadow-indigo-200 hover:-translate-y-0.5' 
-                                : 'bg-slate-50 text-slate-500 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/30 cursor-pointer'
+                                : 'bg-gradient-to-br from-slate-50 to-slate-100/80 border border-slate-200 hover:border-indigo-300 hover:shadow-sm cursor-pointer'
                         }`}
                     >
                         {isMember ? (
@@ -850,13 +850,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             </>
                         ) : (
                             <>
-                                <div className="flex items-center gap-2 mb-0.5">
-                                    <Lock className="w-3.5 h-3.5 group-hover/email:text-indigo-500 transition-colors" />
-                                    <span className="group-hover/email:text-indigo-600 transition-colors">邮箱直申 (会员)</span>
-                                </div>
-                                <div className="text-[10px] text-slate-400 group-hover/email:text-indigo-400 transition-colors font-normal">
-                                    解锁会员专属高效通道
-                                </div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                        <Lock className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-indigo-500 transition-colors" />
+                        <span className="text-slate-600 font-semibold group-hover/btn:text-indigo-600 transition-colors">邮箱直申 (会员)</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-normal group-hover/btn:text-indigo-400 transition-colors">
+                        解锁会员专属高效通道
+                    </div>
                             </>
                         )}
                     </button>
