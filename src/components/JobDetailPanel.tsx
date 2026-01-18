@@ -816,13 +816,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         }
                         executeApply('website')
                     }}
-                    className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3 px-4 rounded-lg font-medium transition-all hover:border-indigo-300 hover:shadow-sm flex flex-col items-center justify-center gap-0.5 min-h-[52px] group"
+                    className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3 px-4 rounded-lg font-medium transition-all hover:border-indigo-300 hover:shadow-sm flex items-center justify-center gap-2 min-h-[52px] group relative overflow-hidden"
                 >
-                    <div className="flex items-center gap-2">
-                        <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                        <span>官网直申</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-normal">直接跳转</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-50/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
+                    <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">官网直申</span>
                 </button>
 
                 {/* Email Apply Button */}
