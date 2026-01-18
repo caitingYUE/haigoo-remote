@@ -28,6 +28,8 @@ export interface ProcessedJobsFilters {
   sourceFilter?: string
   sortBy?: 'recent' | 'relevance'
   isApproved?: boolean
+  companyId?: string
+  skipAggregations?: boolean
 }
 
 class ProcessedJobsService {
@@ -54,6 +56,7 @@ class ProcessedJobsService {
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom)
       if (filters.dateTo) params.append('dateTo', filters.dateTo)
       if (filters.company) params.append('company', filters.company)
+      if (filters.companyId) params.append('companyId', filters.companyId)
       if (filters.isRemote !== undefined) params.append('isRemote', filters.isRemote.toString())
       if (filters.search) params.append('search', filters.search)
       if (filters.location) params.append('location', filters.location)
@@ -63,6 +66,7 @@ class ProcessedJobsService {
       if (filters.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString())
       if (filters.canRefer !== undefined) params.append('canRefer', filters.canRefer.toString())
       if (filters.isApproved !== undefined) params.append('isApproved', filters.isApproved.toString())
+      if (filters.skipAggregations) params.append('skipAggregations', 'true')
       if (filters.sortBy) params.append('sortBy', filters.sortBy)
       // Append source filter if present
       if (filters.sourceFilter && filters.sourceFilter !== 'all') {

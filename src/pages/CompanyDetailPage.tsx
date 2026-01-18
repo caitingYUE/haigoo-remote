@@ -46,7 +46,8 @@ export default function CompanyDetailPage() {
         try {
             // P0 Optimization: Run requests sequentially to prioritize ID-based job fetching
             // 1. Fetch trusted company info first to get ID
-            const companiesResponse = await trustedCompaniesService.getAllCompanies({ search: decodedCompanyName });
+            // Use 'name' parameter for precise search if available in backend
+            const companiesResponse = await trustedCompaniesService.getAllCompanies({ name: decodedCompanyName });
             
             const companies = Array.isArray(companiesResponse) 
                 ? companiesResponse 
@@ -64,8 +65,8 @@ export default function CompanyDetailPage() {
 
             // 2. Fetch jobs using company ID if available (much faster), otherwise fallback to name
             const jobsQuery = companyId 
-                ? { companyId, isApproved: true } 
-                : { company: decodedCompanyName, isApproved: true };
+                ? { companyId, isApproved: true, skipAggregations: true } 
+                : { company: decodedCompanyName, isApproved: true, skipAggregations: true };
 
             const jobsResponse = await processedJobsService.getProcessedJobs(1, 100, jobsQuery);
             setJobs(jobsResponse.jobs)
