@@ -665,56 +665,80 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="text-base font-semibold text-slate-900 mb-1">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-base font-bold text-slate-900 mb-1">
                                         {displayText(job.company || '')}
                                     </h3>
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                                        <span>{companyInfo?.industry || job.companyIndustry || job.category || '未分类'}</span>
-                                    </div>
-                                    {/* Enhanced Company Info - Moved from Modal */}
-                                    <div className="mt-3 grid grid-cols-2 gap-y-2 gap-x-4 text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                        <div className="flex items-center gap-1.5">
-                                            <Users className="w-3.5 h-3.5 text-slate-400" />
-                                            <span>{companyInfo?.employeeCount || '规模未知'}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                            <span className="truncate max-w-[100px]" title={companyInfo?.address || '总部未知'}>
-                                                {companyInfo?.address || '总部未知'}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                            <span>{companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知'}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-                                            <span>{companyInfo?.companyRating ? `${companyInfo.companyRating}分` : '暂无评分'}</span>
-                                        </div>
-                                    </div>
-
                                     {job.isTrusted && (
-                                        <div className="mt-2">
-                                            {isMember ? (
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-100">
-                                                    <CheckCircle2 className="w-3 h-3" />
-                                                    企业已认证
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
-                                                    <Lock className="w-3 h-3" />
-                                                    认证信息仅会员可见
-                                                </span>
-                                            )}
+                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold shadow-sm">
+                                            <Shield className="w-3 h-3" />
+                                            <span>企业已认证</span>
                                         </div>
                                     )}
                                 </div>
-                            </div>
+                                
+                                <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
+                                    <span>{companyInfo?.industry || job.companyIndustry || job.category || '未分类'}</span>
+                                    {companyInfo?.companyRating && (
+                                        <>
+                                            <span className="text-slate-300">•</span>
+                                            <span className="flex items-center gap-0.5 text-amber-500 font-medium">
+                                                <Star className="w-3 h-3 fill-current" />
+                                                {companyInfo.companyRating}
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
 
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-600">查看企业详情及更多岗位</span>
-                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                                {/* Enhanced Company Info Grid */}
+                                <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 bg-slate-50/80 p-3 rounded-lg border border-slate-100">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-white border border-slate-100 flex items-center justify-center flex-shrink-0">
+                                            <Users className="w-3 h-3 text-indigo-500" />
+                                        </div>
+                                        <span className="truncate">{companyInfo?.employeeCount || '规模未知'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-white border border-slate-100 flex items-center justify-center flex-shrink-0">
+                                            <MapPin className="w-3 h-3 text-indigo-500" />
+                                        </div>
+                                        <span className="truncate" title={companyInfo?.address || '总部未知'}>
+                                            {companyInfo?.address || '总部未知'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-white border border-slate-100 flex items-center justify-center flex-shrink-0">
+                                            <Calendar className="w-3 h-3 text-indigo-500" />
+                                        </div>
+                                        <span>{companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-white border border-slate-100 flex items-center justify-center flex-shrink-0">
+                                            <Mail className="w-3 h-3 text-indigo-500" />
+                                        </div>
+                                        <span className={isMember ? "text-indigo-600 font-medium" : "text-slate-400 flex items-center gap-1 text-[11px]"}>
+                                            {isMember ? (companyInfo?.emailType || '通用支持邮箱') : (
+                                                <>
+                                                    <span>解锁邮箱类型</span>
+                                                    <Lock className="w-2.5 h-2.5" />
+                                                </>
+                                            )}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs text-slate-500 mt-3 px-1">
+                            <span className="flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                Haigoo 已核验企业真实性
+                            </span>
+                            <div className="flex items-center gap-1 text-indigo-600 font-medium group-hover:translate-x-1 transition-transform">
+                                查看详情
+                                <ChevronRight className="w-3.5 h-3.5" />
+                            </div>
+                        </div>
                         </div>
                     </section>
 
@@ -775,7 +799,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             < footer className="border-t border-slate-100 bg-white p-4 flex-shrink-0 grid grid-cols-2 gap-3" >
                 {/* Website Apply Button */}
                 <button
-                    onClick={() => executeApply('website')}
+                    onClick={() => {
+                        if (!isAuthenticated) {
+                            if (window.confirm('申请职位需要登录\n\n是否前往登录？')) {
+                                navigate('/login')
+                            }
+                            return
+                        }
+                        executeApply('website')
+                    }}
                     className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3 px-4 rounded-lg font-medium transition-all hover:border-indigo-300 flex items-center justify-center gap-2 group"
                 >
                     <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
@@ -783,13 +815,25 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </button>
 
                 {/* Email Apply Button */}
-                <div className="flex-1 relative group/email">
-                    {/* Tooltip/Hint */}
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-max max-w-[200px] bg-slate-800 text-white text-xs py-1.5 px-3 rounded-lg shadow-lg opacity-0 group-hover/email:opacity-100 transition-opacity pointer-events-none z-10 text-center">
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
-                        <span className="font-bold text-yellow-300">推荐: </span>
-                        {companyInfo?.emailType || '通用支持邮箱'}
-                        <span className="opacity-75 block text-[10px] mt-0.5">响应率通常更高</span>
+                <div className="flex-1 flex flex-col justify-end gap-2 relative group/email">
+                    {/* Direct Info Label - Always visible for context */}
+                    <div className="flex items-center justify-center gap-1.5 text-[11px] font-medium leading-none min-h-[16px]">
+                        {isMember ? (
+                            <>
+                                <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                <span className="text-amber-600">
+                                    推荐: {companyInfo?.emailType || '通用支持邮箱'}
+                                    <span className="text-amber-600/70 font-normal ml-1">· 响应更快</span>
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <Lock className="w-3 h-3 text-slate-400 group-hover/email:text-indigo-400 transition-colors" />
+                                <span className="text-slate-500 group-hover/email:text-indigo-600 transition-colors">
+                                    解锁会员专属高效通道
+                                </span>
+                            </>
+                        )}
                     </div>
 
                     <button
@@ -800,18 +844,19 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 setShowUpgradeModal(true)
                             }
                         }}
-                        className={`w-full py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 relative overflow-hidden ${
+                        className={`w-full py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 relative overflow-hidden group/btn shadow-sm ${
                             isMember 
-                                ? 'bg-slate-900 hover:bg-indigo-600 text-white shadow-md hover:shadow-lg' 
-                                : 'bg-slate-100 text-slate-400 cursor-not-allowed hover:bg-slate-200'
+                                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:shadow-indigo-200 hover:-translate-y-0.5' 
+                                : 'bg-slate-50 text-slate-500 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/30 cursor-pointer'
                         }`}
                     >
                         {isMember ? (
                             <>
-                                <Mail className="w-4 h-4" />
-                                <span>邮箱直申</span>
-                                <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-ping opacity-75"></div>
-                                <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full"></div>
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                                <Mail className="w-4 h-4 relative z-10" />
+                                <span className="relative z-10">邮箱直申</span>
+                                <div className="absolute top-0 right-0 w-3 h-3 bg-amber-400 rounded-full animate-ping opacity-75"></div>
+                                <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-amber-400 rounded-full border-2 border-indigo-600"></div>
                             </>
                         ) : (
                             <>
