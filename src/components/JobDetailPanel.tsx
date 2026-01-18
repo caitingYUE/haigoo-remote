@@ -678,7 +678,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 
                                 <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
                                     <span>{companyInfo?.industry || job.companyIndustry || job.category || '未分类'}</span>
-                                    {companyInfo?.companyRating && (
+                                    {companyInfo?.companyRating && isMember && (
                                         <>
                                             <span className="text-slate-300">•</span>
                                             <span className="flex items-center gap-0.5 text-amber-500 font-medium">
