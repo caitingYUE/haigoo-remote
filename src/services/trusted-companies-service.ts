@@ -20,6 +20,7 @@ export interface TrustedCompany {
     address?: string;
     employeeCount?: string;
     hiringEmail?: string;
+    emailType?: string;
     foundedYear?: string;
     specialties?: string[];
     companyRating?: string;

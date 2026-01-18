@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star, Shield, Crown, Info } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star, Shield, Crown, Info, Mail } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -264,6 +264,26 @@ export default function CompanyDetailPage() {
                                                             <div className="font-medium text-indigo-600 text-sm truncate">点击访问</div>
                                                         </div>
                                                     </a>
+                                                )}
+
+                                                {/* Hiring Email */}
+                                                {companyInfo.hiringEmail && (
+                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 shadow-sm">
+                                                        <div className="p-1.5 bg-indigo-50 rounded-md">
+                                                            <Mail className="w-4 h-4 text-indigo-500" />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="text-[10px] text-slate-500 mb-0.5">招聘邮箱</div>
+                                                            <div className="font-medium text-slate-900 text-sm truncate" title={companyInfo.hiringEmail}>
+                                                                {companyInfo.hiringEmail}
+                                                            </div>
+                                                            {companyInfo.emailType && (
+                                                                <div className="text-[9px] text-slate-400 mt-0.5">
+                                                                    {companyInfo.emailType}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 )}
 
                                                 {/* Rating */}
