@@ -394,7 +394,7 @@ export default function CompanyDetailPage() {
                                                             <Crown className="w-5 h-5 text-white" />
                                                         </div>
                                                         <h3 className="text-sm font-bold text-slate-900 mb-1">会员专属深度信息</h3>
-                                                        <p className="text-slate-500 text-xs mb-3">解锁官网、评分、薪资范围等企业情报</p>
+                                                        <p className="text-slate-500 text-xs mb-3">解锁官网、评分、业务信息等企业情报，让求职更加安心</p>
                                                         <button
                                                             onClick={() => navigate('/membership')}
                                                             className="flex items-center justify-center gap-1.5 px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mx-auto w-fit"

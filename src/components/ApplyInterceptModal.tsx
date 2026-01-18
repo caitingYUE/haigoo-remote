@@ -370,10 +370,10 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 <div className="flex-1">
                                     <p className="text-sm font-semibold text-indigo-900 mb-1 flex items-center gap-1.5">
                                         <Sparkles className="w-4 h-4 text-indigo-600" />
-                                        升级会员，查看企业深度评估
+                                        升级会员，解锁企业深度信息
                                     </p>
                                     <p className="text-xs text-indigo-700">
-                                        中国候选人友好度 · 历史回复率 · 平均反馈周期 · 风险提示
+                                        企业官网、业务、总部地点、员工数量、评分等信息
                                     </p>
                                 </div>
                             </div>
@@ -388,7 +388,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 }}
                                 className="py-3 px-4 bg-white border-2 border-indigo-600 text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition-colors text-sm"
                             >
-                                查看风险评估
+                                查看企业详情
                             </button>
                             <button
                                 onClick={() => {
