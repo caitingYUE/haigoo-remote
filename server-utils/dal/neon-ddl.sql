@@ -48,5 +48,13 @@ WHERE name = 'MetaLab';
 -- 2026-01-17: Add hiring_email to trusted_companies
 ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS hiring_email VARCHAR(255);
 
+-- 2026-01-18: Performance Optimization for Company Detail Page
+-- Add index on jobs(company_id) to speed up job fetching by ID
+CREATE INDEX IF NOT EXISTS idx_jobs_company_id ON jobs(company_id);
 
+-- Add index on jobs(company) for faster text search (if fallback needed)
+-- Using LOWER() for case-insensitive matching which is common in ILIKE or manual lower() comparisons
+CREATE INDEX IF NOT EXISTS idx_jobs_company_lower ON jobs(lower(company));
 
+-- Add index on trusted_companies(name) for faster lookup
+CREATE INDEX IF NOT EXISTS idx_trusted_companies_name_lower ON trusted_companies(lower(name));

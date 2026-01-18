@@ -44,14 +44,10 @@ export default function CompanyDetailPage() {
     const loadCompanyData = async () => {
         setLoading(true)
         try {
-            // P0 Optimization: Run requests in parallel
-            // 1. Fetch trusted company info (filtered by name)
-            // 2. Fetch jobs
-            const [companiesResponse, jobsResponse] = await Promise.all([
-                trustedCompaniesService.getAllCompanies({ search: decodedCompanyName }),
-                processedJobsService.getProcessedJobs(1, 100, { company: decodedCompanyName, isApproved: true })
-            ]);
-
+            // P0 Optimization: Run requests sequentially to prioritize ID-based job fetching
+            // 1. Fetch trusted company info first to get ID
+            const companiesResponse = await trustedCompaniesService.getAllCompanies({ search: decodedCompanyName });
+            
             const companies = Array.isArray(companiesResponse) 
                 ? companiesResponse 
                 : ((companiesResponse as any)?.companies || []);
@@ -60,10 +56,18 @@ export default function CompanyDetailPage() {
             const trusted = companies.find((c: TrustedCompany) => c.name?.trim().toLowerCase() === norm) ||
                 companies.find((c: TrustedCompany) => c.name && c.name.toLowerCase().includes(norm))
 
+            let companyId = null;
             if (trusted) {
                 setCompanyInfo({ ...trusted, isTrusted: true })
+                companyId = trusted.id;
             }
 
+            // 2. Fetch jobs using company ID if available (much faster), otherwise fallback to name
+            const jobsQuery = companyId 
+                ? { companyId, isApproved: true } 
+                : { company: decodedCompanyName, isApproved: true };
+
+            const jobsResponse = await processedJobsService.getProcessedJobs(1, 100, jobsQuery);
             setJobs(jobsResponse.jobs)
         } catch (error) {
             console.error('Failed to load company data:', error)
