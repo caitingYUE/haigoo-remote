@@ -31,6 +31,7 @@ export interface TrustedCompany {
     canRefer: boolean;
     jobCount?: number;
     lastCrawledAt?: string; // New field
+    translations?: { description?: string; [key: string]: any };
     createdAt: string;
     updatedAt: string;
 }
@@ -56,6 +57,9 @@ export interface CompanyMetadata {
     address?: string;
     _source?: string;
     _fallbackUrl?: string;
+    translations?: {
+        description: string;
+    };
 }
 
 class TrustedCompaniesService {
