@@ -362,12 +362,20 @@ export default function CompanyDetailPage() {
 
                                                 {/* Hiring Email - Row 2 - Flexible Width */}
                                                 {companyInfo.hiringEmail && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full col-span-1 overflow-hidden group/email">
-                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                                    <div 
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(companyInfo.hiringEmail || '');
+                                                            // Optional: You could add a toast notification here if available
+                                                            alert(`邮箱已复制: ${companyInfo.hiringEmail}`);
+                                                        }}
+                                                        className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full col-span-1 overflow-hidden group/email cursor-pointer relative"
+                                                        title="点击复制完整邮箱"
+                                                    >
+                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0 group-hover/email:bg-indigo-100 transition-colors">
                                                             <Mail className="w-5 h-5 text-indigo-600" />
                                                         </div>
                                                         <div className="min-w-0 flex-1">
-                                                            <div className="font-bold text-slate-900 text-sm truncate group-hover/email:text-indigo-700 transition-colors" title={companyInfo.hiringEmail}>
+                                                            <div className="font-bold text-slate-900 text-sm truncate group-hover/email:text-indigo-700 transition-colors">
                                                                 {companyInfo.hiringEmail}
                                                             </div>
                                                             {companyInfo.emailType && (
@@ -375,6 +383,10 @@ export default function CompanyDetailPage() {
                                                                     {companyInfo.emailType}
                                                                 </div>
                                                             )}
+                                                        </div>
+                                                        {/* Hover Hint */}
+                                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/email:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-2 py-1 rounded">
+                                                            点击复制
                                                         </div>
                                                     </div>
                                                 )}

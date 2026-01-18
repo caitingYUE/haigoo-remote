@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2 } from 'lucide-react';
+import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Zap } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { getJobSourceType } from '../utils/job-source-helper';
@@ -384,26 +384,42 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                </div>
             </div>
 
-            {/* Tags (Key Info Only) */}
+            {/* Tags (Rich Info Restored) */}
             <div className="flex flex-wrap gap-2 mb-4 content-start">
                {/* Job Type (Amber) */}
                {job.type && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap">
+                     <Briefcase className="w-3 h-3 mr-1" />
                      {job.type === 'full-time' ? '全职' : job.type}
                   </span>
                )}
                {/* Experience Level (Emerald) */}
                {job.experienceLevel && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
+                     <TrendingUp className="w-3 h-3 mr-1" />
                      {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
+                  </span>
+               )}
+               {/* Industry (Purple) */}
+               {job.companyIndustry && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap max-w-[140px] truncate">
+                     <Building2 className="w-3 h-3 mr-1" />
+                     {job.companyIndustry}
                   </span>
                )}
                {/* Category (Blue/Indigo - Role related) */}
                {job.category && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap max-w-[120px] truncate">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap max-w-[140px] truncate">
+                     <Zap className="w-3 h-3 mr-1" />
                      {job.category}
                   </span>
                )}
+               {/* Skill Tags (Restored - First 3) */}
+               {displayTags.slice(0, 3).map((tag, i) => (
+                  <span key={i} className="inline-flex items-center px-2.5 py-1 rounded text-xs text-slate-600 bg-slate-100 border border-slate-200 whitespace-nowrap max-w-[100px] truncate">
+                     {tag.text}
+                  </span>
+               ))}
             </div>
 
             {/* Footer */}
