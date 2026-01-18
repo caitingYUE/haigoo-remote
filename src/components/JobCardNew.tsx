@@ -358,68 +358,57 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
       <>
          <div
             onClick={() => onClick?.(job)}
-            className={`group relative bg-white rounded-xl p-5 border transition-all duration-200 cursor-pointer
+            className={`group relative bg-white rounded-xl p-5 border transition-all duration-200 cursor-pointer shadow-sm
             ${className || ''}
-            border-slate-200 hover:border-indigo-300 hover:shadow-lg h-full flex flex-col`}
+            border-slate-200 hover:border-indigo-400 hover:shadow-xl h-full flex flex-col`}
          >
             {/* Header */}
             <div className="flex items-start gap-4 mb-4">
                <CompanyLogoSmall size="md" />
                <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                     <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2" title={job.translations?.title || job.title}>
+                     <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 leading-snug" title={job.translations?.title || job.title}>
                         {job.translations?.title || job.title}
                      </h3>
                      {isNew && (
-                        <span className="flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
+                        <span className="flex-shrink-0 inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
                            New
                         </span>
                      )}
                   </div>
-                  <div className="flex items-center text-xs text-slate-500 font-medium">
-                     <span className="text-slate-700 truncate mr-2 max-w-[120px]">{job.translations?.company || job.company}</span>
-                     <MapPin className="w-3 h-3 mr-1 text-slate-400 flex-shrink-0" />
-                     <span className="truncate max-w-[80px]">{job.translations?.location || job.location}</span>
+                  <div className="flex items-center text-sm text-slate-500 font-medium">
+                     <span className="text-slate-700 truncate mr-2 max-w-[140px]">{job.translations?.company || job.company}</span>
+                     <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 flex-shrink-0" />
+                     <span className="truncate max-w-[100px]">{job.translations?.location || job.location}</span>
                   </div>
                </div>
             </div>
 
-            {/* Tags (Inline) */}
-            <div className="flex flex-wrap gap-1.5 mb-4">
+            {/* Tags (Key Info Only) */}
+            <div className="flex flex-wrap gap-2 mb-4 content-start">
                {/* Job Type (Amber) */}
                {job.type && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100 whitespace-nowrap">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap">
                      {job.type === 'full-time' ? '全职' : job.type}
                   </span>
                )}
                {/* Experience Level (Emerald) */}
                {job.experienceLevel && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100 whitespace-nowrap">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
                      {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
-                  </span>
-               )}
-               {/* Industry (Purple) */}
-               {job.companyIndustry && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-600 border border-purple-100 whitespace-nowrap max-w-[100px] truncate">
-                     {job.companyIndustry}
                   </span>
                )}
                {/* Category (Blue/Indigo - Role related) */}
                {job.category && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100 whitespace-nowrap max-w-[100px] truncate">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap max-w-[120px] truncate">
                      {job.category}
                   </span>
                )}
-               {displayTags.slice(0, 3).map((tag, i) => (
-                  <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] text-slate-500 bg-white border border-slate-100 whitespace-nowrap max-w-[80px] truncate">
-                     {tag.text}
-                  </span>
-               ))}
             </div>
 
             {/* Footer */}
             <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
-               <div className={`text-sm ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+               <div className={`text-base ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-indigo-600'}`}>
                   {formatSalary(job.salary)}
                </div>
                <span className="text-xs text-slate-400 font-medium">

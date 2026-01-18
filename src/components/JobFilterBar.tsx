@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChevronDown, Check, Search, SortAsc, Sparkles, SlidersHorizontal, Gem, MapPin, Clock, Banknote, BarChart2, Globe, Building2, X, Briefcase, Calendar, TrendingUp, Users } from 'lucide-react';
+import { ChevronDown, Check, Search, SortAsc, Sparkles, SlidersHorizontal, Gem, MapPin, Clock, Banknote, BarChart2, Globe, Building2, X, Briefcase, Calendar, TrendingUp } from 'lucide-react';
 
 // --- Types ---
 
@@ -35,7 +35,6 @@ interface JobFilterBarProps {
     salary: string[];
     location: string[];
     timezone: string[];
-    companySize?: string[];
     isTrusted: boolean;
     isNew: boolean;
   };
@@ -68,16 +67,6 @@ const SALARY_OPTIONS = [
   { label: '30k-50k', value: '30000-50000' },
   { label: '50k-80k', value: '50000-80000' },
   { label: '80k以上', value: '80000-999999' }
-];
-
-const COMPANY_SIZE_OPTIONS = [
-  { label: '1-10人', value: '1-10' },
-  { label: '11-50人', value: '11-50' },
-  { label: '51-200人', value: '51-200' },
-  { label: '201-500人', value: '201-500' },
-  { label: '501-1000人', value: '501-1000' },
-  { label: '1001-5000人', value: '1001-5000' },
-  { label: '5000人以上', value: '5000+' }
 ];
 
 // --- Theme Configuration ---
@@ -412,27 +401,6 @@ export default function JobFilterBar({
                 label={opt.label}
                 checked={filters.industry?.includes(opt.value) || false}
                 onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
-              />
-            ))}
-          </FilterDropdown>
-
-          {/* Company Size */}
-          <FilterDropdown
-            label="规模"
-            activeLabel={getActiveLabel('companySize', COMPANY_SIZE_OPTIONS, '规模')}
-            isActive={(filters.companySize?.length || 0) > 0}
-            isOpen={openDropdown === 'companySize'}
-            onToggle={() => toggleDropdown('companySize')}
-            onClose={() => setOpenDropdown(null)}
-            icon={<Users className="w-3.5 h-3.5" />}
-            colorTheme="slate"
-          >
-            {COMPANY_SIZE_OPTIONS.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={filters.companySize?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('companySize', opt.value, c)}
               />
             ))}
           </FilterDropdown>

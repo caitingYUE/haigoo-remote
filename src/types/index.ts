@@ -41,10 +41,9 @@ export interface Job {
     type?: string
     requirements?: string[]
     responsibilities?: string[]
-  }
   isTranslated?: boolean
   translatedAt?: string
-  // Trusted Company Fields
+
   companyId?: string
   sourceType?: 'trusted' | 'rss' | 'third-party' | 'club-referral' | 'official'
   isTrusted?: boolean
@@ -53,6 +52,8 @@ export interface Job {
   // Enterprise Fields (Synced)
   companyIndustry?: string
   companyTags?: string[]
+  hiringEmail?: string
+  emailType?: string
   companyWebsite?: string
   companyDescription?: string
 
