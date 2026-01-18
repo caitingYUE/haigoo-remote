@@ -388,30 +388,30 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
             <div className="flex flex-wrap gap-1.5 mb-4">
                {/* Job Type (Amber) */}
                {job.type && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100 whitespace-nowrap">
                      {job.type === 'full-time' ? '全职' : job.type}
                   </span>
                )}
                {/* Experience Level (Emerald) */}
                {job.experienceLevel && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100 whitespace-nowrap">
                      {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
                   </span>
                )}
                {/* Industry (Purple) */}
                {job.companyIndustry && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-600 border border-purple-100">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-600 border border-purple-100 whitespace-nowrap max-w-[100px] truncate">
                      {job.companyIndustry}
                   </span>
                )}
                {/* Category (Blue/Indigo - Role related) */}
                {job.category && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100 whitespace-nowrap max-w-[100px] truncate">
                      {job.category}
                   </span>
                )}
                {displayTags.slice(0, 3).map((tag, i) => (
-                  <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] text-slate-500 bg-white border border-slate-100">
+                  <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] text-slate-500 bg-white border border-slate-100 whitespace-nowrap max-w-[80px] truncate">
                      {tag.text}
                   </span>
                ))}

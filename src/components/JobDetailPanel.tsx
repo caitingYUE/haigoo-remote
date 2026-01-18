@@ -846,8 +846,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     <Mail className="w-4 h-4" />
                                     <span>邮箱直申 ({companyInfo?.emailType || '通用支持邮箱'})</span>
                                 </div>
-                                <div className="absolute top-0 right-0 w-3 h-3 bg-amber-400 rounded-full animate-ping opacity-75"></div>
-                                <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-amber-400 rounded-full border-2 border-slate-900"></div>
                             </>
                         ) : (
                             <>

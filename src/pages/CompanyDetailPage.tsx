@@ -362,7 +362,7 @@ export default function CompanyDetailPage() {
 
                                                 {/* Hiring Email - Row 2 - Flexible Width */}
                                                 {companyInfo.hiringEmail && (
-                                                    <div className={`flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full col-span-1 ${companyInfo.hiringEmail.length > 25 ? 'lg:col-span-2' : 'lg:col-span-1'}`}>
+                                                    <div className={`flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full col-span-1 ${companyInfo.hiringEmail.length > 25 ? 'lg:col-span-2' : ''}`}>
                                                         <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
                                                             <Mail className="w-5 h-5 text-indigo-600" />
                                                         </div>
