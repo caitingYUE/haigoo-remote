@@ -804,7 +804,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             </main >
 
             {/* Footer */}
-            < footer className="border-t border-slate-100 bg-white p-4 flex-shrink-0 grid grid-cols-2 gap-3" >
+            < footer className={`border-t border-slate-100 bg-white p-4 flex-shrink-0 grid ${companyInfo?.hiringEmail ? 'grid-cols-2' : 'grid-cols-1'} gap-3`} >
                 {/* Website Apply Button */}
                 <button
                     onClick={() => {
@@ -823,43 +823,45 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">官网直申</span>
                 </button>
 
-                {/* Email Apply Button */}
-                <div className="flex-1 flex flex-col justify-end relative group/email">
-                    <button
-                        onClick={() => {
-                            if (isMember) {
-                                executeApply('email')
-                            } else {
-                                setShowUpgradeModal(true)
-                            }
-                        }}
-                        className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${
-                            isMember 
-                                ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5' 
-                                : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50 cursor-pointer'
-                        }`}
-                    >
-                        {isMember ? (
-                            <>
-                                <div className="absolute inset-0 bg-white/5 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
-                                <div className="flex items-center gap-2 relative z-10">
-                                    <Mail className="w-4 h-4" />
-                                    <span>邮箱直申 ({companyInfo?.emailType || job.emailType || '通用邮箱'})</span>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                    <div className="flex items-center gap-2 mb-0.5">
-                        <Lock className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-indigo-500 transition-colors" />
-                        <span className="text-slate-600 font-semibold group-hover/btn:text-indigo-600 transition-colors">邮箱直申 (会员)</span>
+                {/* Email Apply Button - Only show if company has hiring email */}
+                {companyInfo?.hiringEmail && (
+                    <div className="flex-1 flex flex-col justify-end relative group/email">
+                        <button
+                            onClick={() => {
+                                if (isMember) {
+                                    executeApply('email')
+                                } else {
+                                    setShowUpgradeModal(true)
+                                }
+                            }}
+                            className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${
+                                isMember 
+                                    ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5' 
+                                    : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50 cursor-pointer'
+                            }`}
+                        >
+                            {isMember ? (
+                                <>
+                                    <div className="absolute inset-0 bg-white/5 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                                    <div className="flex items-center gap-2 relative z-10">
+                                        <Mail className="w-4 h-4" />
+                                        <span>邮箱直申 ({companyInfo?.emailType || job.emailType || '通用邮箱'})</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <Lock className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-indigo-500 transition-colors" />
+                            <span className="text-slate-600 font-semibold group-hover/btn:text-indigo-600 transition-colors">邮箱直申 (会员)</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-normal group-hover/btn:text-indigo-400 transition-colors">
+                            解锁会员专属高效通道
+                        </div>
+                                </>
+                            )}
+                        </button>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-normal group-hover/btn:text-indigo-400 transition-colors">
-                        解锁会员专属高效通道
-                    </div>
-                            </>
-                        )}
-                    </button>
-                </div>
+                )}
             </footer >
 
             {/* Feedback Modal */}
