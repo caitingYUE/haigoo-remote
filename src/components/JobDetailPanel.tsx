@@ -728,7 +728,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             <Mail className="w-3 h-3 text-indigo-600" />
                                         </div>
                                         <span className="text-indigo-600 font-bold">
-                                            {isMember ? (companyInfo?.hiringEmail || companyInfo?.emailType || '通用支持邮箱') : 'HR直招邮箱'}
+                                            {isMember ? (companyInfo?.hiringEmail || companyInfo?.emailType || '通用邮箱') : 'HR直招邮箱'}
                                         </span>
                                     </div>
                                 </div>
@@ -844,7 +844,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <div className="absolute inset-0 bg-white/5 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
                                 <div className="flex items-center gap-2 relative z-10">
                                     <Mail className="w-4 h-4" />
-                                    <span>邮箱直申 ({companyInfo?.emailType || job.emailType || '通用支持邮箱'})</span>
+                                    <span>邮箱直申 ({companyInfo?.emailType || job.emailType || '通用邮箱'})</span>
                                 </div>
                             </>
                         ) : (

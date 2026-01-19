@@ -888,14 +888,14 @@ export default function AdminTrustedCompaniesPage() {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">招聘邮箱类型</label>
                                     <select
-                                        value={formData.emailType || '通用支持邮箱'}
+                                        value={formData.emailType || '通用邮箱'}
                                         onChange={e => setFormData({ ...formData, emailType: e.target.value })}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     >
-                                        <option value="招聘专用邮箱">招聘专用邮箱</option>
-                                        <option value="通用支持邮箱">通用支持邮箱</option>
-                                        <option value="内部员工邮箱">内部员工邮箱</option>
-                                        <option value="企业领导邮箱">企业领导邮箱</option>
+                                        <option value="招聘邮箱">招聘邮箱</option>
+                                        <option value="通用邮箱">通用邮箱</option>
+                                        <option value="员工邮箱">员工邮箱</option>
+                                        <option value="高管邮箱">高管邮箱</option>
                                     </select>
                                 </div>
                             </div>
