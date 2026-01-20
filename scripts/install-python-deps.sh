@@ -3,15 +3,13 @@
 
 echo "Installing Python dependencies for resume parsing..."
 
-# 安装 pyresparser
-pip3 install pyresparser
+# 安装 Python 依赖
+pip3 install -r server-utils/requirements.txt --break-system-packages
 
-# 安装 spacy 和下载语言模型
-pip3 install spacy
+# 下载 spacy 语言模型
 python3 -m spacy download en_core_web_sm
 
-# 安装 nltk 和下载数据
-pip3 install nltk
+# 下载 nltk 数据
 python3 -c "import nltk; nltk.download('stopwords'); nltk.download('punkt'); nltk.download('averaged_perceptron_tagger'); nltk.download('maxent_ne_chunker'); nltk.download('words')"
 
 echo "Python dependencies installed successfully!"
