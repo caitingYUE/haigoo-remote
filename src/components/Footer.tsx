@@ -17,7 +17,7 @@ export default function Footer() {
             aria-label="版权信息"
           >
             <p>
-              © 2025 Haigoo 远程工作助手.
+              © 2026 Haigoo. All rights reserved.
             </p>
           </div>
 
@@ -25,12 +25,12 @@ export default function Footer() {
           <span className="hidden sm:block w-1 h-1 bg-slate-300 rounded-full" aria-hidden="true" />
 
           {/* Social Links */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3">
             <a 
               href="https://www.linkedin.com/company/haigoo/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-slate-400 hover:text-[#0077b5] transition-colors p-1"
+              className="w-8 h-8 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
               title="LinkedIn"
             >
               <LinkedInLogo className="w-5 h-5" />
@@ -40,16 +40,15 @@ export default function Footer() {
               href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-slate-400 hover:text-[#ff2442] transition-colors flex items-center gap-1.5 p-1"
+              className="w-8 h-8 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
               title="小红书"
             >
               <XiaohongshuLogo className="w-5 h-5" />
-              <span className="font-medium text-xs">小红书</span>
             </a>
 
             <a 
               href="mailto:haigooremote@outlook.com" 
-              className="text-slate-400 hover:text-[#0078d4] transition-colors p-1"
+              className="w-8 h-8 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
               title="联系邮箱"
             >
               <OutlookLogo className="w-5 h-5" />

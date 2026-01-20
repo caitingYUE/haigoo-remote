@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Plus, RefreshCw, ExternalLink, Trash2, Loader2, Search, Edit2, Languages, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Plus, ExternalLink, Trash2, Loader2, Search, Edit2, Languages } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { TrustedCompany } from '../services/trusted-companies-service';
 import { DateFormatter } from '../utils/date-formatter';
@@ -16,7 +16,6 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
     const { token } = useAuth();
     const [jobs, setJobs] = useState<ProcessedJobData[]>([]);
     const [loading, setLoading] = useState(true);
-    const [crawling, setCrawling] = useState(false);
     const [translating, setTranslating] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -100,31 +99,6 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             }
         }
     }, [jobs]);
-
-    const handleCrawl = async () => {
-        try {
-            setCrawling(true);
-            const res = await fetch(`/api/data/trusted-companies?action=crawl-jobs&id=${company.id}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert(`抓取成功，新增/更新 ${data.count} 个职位`);
-                // Reset to page 1 to see new jobs
-                setPage(1);
-                fetchJobs();
-            } else {
-                alert(`抓取失败: ${data.error}`);
-            }
-        } catch (error) {
-            alert('抓取请求失败');
-        } finally {
-            setCrawling(false);
-        }
-    };
 
     const handleTranslate = async (jobIds: string[]) => {
         if (jobIds.length === 0) return;
@@ -263,14 +237,6 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                             className="w-full pl-9 pr-4 py-2 rounded-lg border-slate-300 text-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
                     </div>
-                    <button
-                        onClick={handleCrawl}
-                        disabled={crawling}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
-                    >
-                        {crawling ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                        {crawling ? '抓取中...' : '立即抓取'}
-                    </button>
                     <button
                         onClick={() => handleTranslate(jobs.map(j => j.id))}
                         disabled={translating || jobs.length === 0}
