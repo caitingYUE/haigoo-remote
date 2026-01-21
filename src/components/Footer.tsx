@@ -31,7 +31,7 @@ export default function Footer() {
                   href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg transition-all border border-slate-200 hover:border-red-200"
+                  className="group flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg transition-all border border-slate-200 hover:border-red-200 hover:no-underline"
                   title="Follow us on XiaoHongShu"
                 >
                   <XiaohongshuLogo className="w-5 h-5" />
@@ -43,7 +43,7 @@ export default function Footer() {
                   href="https://www.linkedin.com/company/haigoo/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg transition-all border border-slate-200 hover:border-blue-200"
+                  className="group flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg transition-all border border-slate-200 hover:border-blue-200 hover:no-underline"
                   title="Follow us on LinkedIn"
                 >
                   <LinkedInLogo className="w-5 h-5" />
@@ -53,7 +53,7 @@ export default function Footer() {
                 {/* Email */}
                 <a 
                   href="mailto:haigooremote@outlook.com" 
-                  className="group flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-lg transition-all border border-slate-200 hover:border-indigo-200"
+                  className="group flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-lg transition-all border border-slate-200 hover:border-indigo-200 hover:no-underline"
                   title="Contact us via Email"
                 >
                   <OutlookLogo className="w-5 h-5" />

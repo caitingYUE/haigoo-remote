@@ -444,7 +444,7 @@ export default function LandingPage() {
         />
 
         {/* Job Alert Subscription */}
-        <div className="mt-32">
+        <div className="mt-32 mb-24">
           <div className="relative rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-50 overflow-hidden bg-white">
             <div className="absolute inset-0 bg-gradient-to-br from-white via-indigo-50/30 to-blue-50/30"></div>
 
