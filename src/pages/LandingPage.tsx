@@ -216,9 +216,52 @@ export default function LandingPage() {
       {/* <NewYearBlessingSection /> */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Featured Companies Section */}
+        <div className="py-24">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col gap-2">
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+                精选企业
+              </h2>
+              <p className="text-slate-500">Haigoo 认证的优质远程雇主</p>
+            </div>
+            <button
+              onClick={() => navigate('/trusted-companies')}
+              className="hidden md:flex px-6 py-2.5 bg-white text-slate-700 font-medium rounded-full border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 items-center gap-2 group"
+            >
+              浏览所有企业
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+
+          {companiesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <CompanyCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : trustedCompanies.length === 0 ? (
+            <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100 border-dashed">
+              <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500">暂无企业数据</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {trustedCompanies.map((company) => (
+                <HomeCompanyCard
+                  key={company.id}
+                  company={company}
+                  jobStats={companyJobStats[company.name]}
+                  onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Featured Jobs Section */}
         {(jobsLoading || featuredJobs.length > 0) && (
-        <div id="featured-jobs" className="py-24">
+        <div id="featured-jobs" className="py-16 border-t border-slate-100">
           <div className="flex items-center justify-between mb-12">
             <div className="flex flex-col gap-2">
               <h2 className="text-3xl font-bold text-slate-900 tracking-tight">精选岗位</h2>
@@ -263,47 +306,6 @@ export default function LandingPage() {
           </div>
         </div>
         )}
-        <div className="py-16 border-t border-slate-100">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex flex-col gap-2">
-              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-                精选企业
-              </h2>
-              <p className="text-slate-500">Haigoo 认证的优质远程雇主</p>
-            </div>
-            <button
-              onClick={() => navigate('/trusted-companies')}
-              className="hidden md:flex px-6 py-2.5 bg-white text-slate-700 font-medium rounded-full border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 items-center gap-2 group"
-            >
-              浏览所有企业
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-
-          {companiesLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <CompanyCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : trustedCompanies.length === 0 ? (
-            <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100 border-dashed">
-              <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500">暂无企业数据</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {trustedCompanies.map((company) => (
-                <HomeCompanyCard
-                  key={company.id}
-                  company={company}
-                  jobStats={companyJobStats[company.name]}
-                  onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Brand Promise Section - "Why Haigoo?" */}
         <div className="py-24 border-t border-slate-100">
