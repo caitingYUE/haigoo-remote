@@ -223,7 +223,7 @@ export default function LandingPage() {
               <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
                 精选企业
               </h2>
-              <p className="text-slate-500">Haigoo 认证的优质远程雇主</p>
+              <p className="text-slate-500">尊重员工、开放多元、持续成长的远程企业</p>
             </div>
             <button
               onClick={() => navigate('/trusted-companies')}
@@ -265,7 +265,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between mb-12">
             <div className="flex flex-col gap-2">
               <h2 className="text-3xl font-bold text-slate-900 tracking-tight">精选岗位</h2>
-              <p className="text-slate-500">每周精选高薪/高增长/好文化的优质岗位</p>
+              <p className="text-slate-500">人工逐条筛选的高薪/高增长/好文化的优质远程机会</p>
             </div>
             <button
               onClick={() => navigate('/jobs?region=domestic')}

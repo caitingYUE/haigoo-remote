@@ -104,7 +104,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                         {/* Subtitle */}
                         <p className="text-lg md:text-xl text-white/90 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-xl drop-shadow-md">
-                            全球精选 <span className="text-white/60 mx-3">|</span> 国内可申 <span className="text-white/60 mx-3">|</span> 真实可投的长期远程岗位
+                            全球精选 <span className="text-white/60 mx-3">|</span> 国内可申 <span className="text-white/60 mx-3">|</span> 真实可投 <span className="text-white/60 mx-3">|</span> 有远见的优质远程企业
                         </p>
 
                         {/* Search Bar - Clean & Floating */}

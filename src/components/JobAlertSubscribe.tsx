@@ -101,65 +101,55 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
       toggleTopic(topicValue);
   }
 
-  const renderDropdown = (isDarkBg: boolean, className: string = "w-64") => (
-    <div className={`absolute top-full left-0 z-50 mt-2 p-3 rounded-xl shadow-xl border ${isDarkBg ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} ${className}`}>
-      <div className={`flex justify-between items-center mb-2 px-1`}>
-        <span className={`text-xs font-medium ${isDarkBg ? 'text-slate-400' : 'text-slate-500'}`}>
-          最多可选 {MAX_SUBSCRIPTION_TOPICS} 个
-        </span>
-        {selectedTopics.length > 0 && (
-            <span 
-                onClick={(e) => { e.stopPropagation(); setSelectedTopics([]); }}
-                className="text-xs text-indigo-500 hover:text-indigo-600 cursor-pointer"
-            >
-                清空
-            </span>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto custom-scrollbar">
-        {SUBSCRIPTION_TOPICS.map(opt => {
-            const isSelected = selectedTopics.includes(opt.value)
-            return (
-            <div 
-                key={opt.value}
-                onClick={() => toggleTopic(opt.value)}
-                className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm cursor-pointer transition-all border
-                    ${isSelected 
-                        ? (isDarkBg ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-indigo-50 text-indigo-600 border-indigo-200 font-medium') 
-                        : (isDarkBg ? 'bg-slate-700 text-slate-300 border-slate-600 hover:border-slate-500' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:bg-slate-50')
-                    }
-                `}
-            >
-                {opt.label}
-            </div>
-            )
-        })}
-      </div>
-    </div>
-  )
-
   const renderTriggerContent = (isLight: boolean) => {
-      if (selectedTopics.length === 0) {
-          return <span className={isLight ? 'text-slate-400' : 'text-white/60'}>选择岗位类型</span>
-      }
+    if (selectedTopics.length === 0) return (
+      <span className={isLight ? "text-slate-400" : "text-indigo-200"}>选择岗位类型</span>
+    )
+    return (
+      <div className="flex flex-wrap gap-1">
+        {selectedTopics.map(t => (
+          <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">
+            {t}
+          </span>
+        ))}
+      </div>
+    )
+  }
+
+  // Modified renderDropdown to be simpler since tags are now outside
+  const renderDropdown = (isDark: boolean, widthClass = "w-full") => {
       return (
-          <div className="flex flex-wrap gap-1.5 overflow-hidden max-h-[28px]">
-              {selectedTopics.map(t => {
-                  const label = SUBSCRIPTION_TOPICS.find(opt => opt.value === t)?.label || t
-                  return (
-                      <span key={t} className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium z-10 ${isLight ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-white/20 text-white border border-white/20'}`}>
-                          {label}
-                          <span 
-                            onClick={(e) => removeTopic(e, t)}
-                            className={`ml-1 hover:text-red-400 cursor-pointer p-0.5 rounded-full hover:bg-black/5`}
-                          >
-                              ×
-                          </span>
-                      </span>
-                  )
-              })}
-              {selectedTopics.length > 2 && <span className="text-xs opacity-50 self-center">...</span>}
-          </div>
+        <div className={`absolute left-0 bottom-full mb-2 ${widthClass} max-h-60 overflow-y-auto rounded-xl shadow-xl border z-50
+            ${isDark 
+            ? 'bg-slate-800 border-slate-700' 
+            : 'bg-white border-slate-200'}
+        `}>
+            <div className="p-2 grid grid-cols-1 gap-1">
+                {SUBSCRIPTION_TOPICS.map(topic => {
+                    const isSelected = selectedTopics.includes(topic.value)
+                    return (
+                        <button
+                            key={topic.value}
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent closing
+                                toggleTopic(topic.value)
+                            }}
+                            className={`flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors
+                                ${isDark
+                                ? (isSelected ? 'bg-indigo-900/50 text-indigo-300' : 'text-slate-300 hover:bg-slate-700')
+                                : (isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50')}
+                            `}
+                        >
+                            <span>{topic.label}</span>
+                            {isSelected && <Check className="w-4 h-4" />}
+                        </button>
+                    )
+                })}
+            </div>
+            <div className={`px-3 py-2 text-xs border-t ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-500'}`}>
+                最多可选 {MAX_SUBSCRIPTION_TOPICS} 个
+            </div>
+        </div>
       )
   }
 
