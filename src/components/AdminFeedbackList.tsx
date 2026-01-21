@@ -202,6 +202,22 @@ export default function AdminFeedbackList() {
                                             </td>
                                             <td className="max-w-md">
                                                 <div className="text-sm text-slate-900 break-words">{feedback.content}</div>
+                                                {feedback.companyName && (
+                                                    <div className="mt-2 text-xs bg-indigo-50 p-2 rounded border border-indigo-100">
+                                                        <div className="font-semibold text-indigo-700 mb-1 flex items-center gap-1">
+                                                            <Briefcase className="w-3 h-3" /> 招聘需求信息
+                                                        </div>
+                                                        <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-slate-700">
+                                                            <span className="text-slate-500">企业:</span>
+                                                            <span className="font-medium">{feedback.companyName}</span>
+                                                            
+                                                            <span className="text-slate-500">官网:</span>
+                                                            <a href={feedback.companyWebsite} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline truncate">
+                                                                {feedback.companyWebsite}
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 {feedback.replyContent && (
                                                     <div className="mt-2 text-xs bg-slate-50 p-2 rounded border border-slate-100 text-slate-600">
                                                         <div className="font-semibold text-indigo-600 mb-1">管理员回复:</div>
