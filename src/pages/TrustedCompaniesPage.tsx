@@ -257,7 +257,7 @@ export default function TrustedCompaniesPage() {
                                 </div>
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                     <div className="font-bold text-2xl text-slate-900 mb-1">3x</div>
-                                    <div className="text-sm text-slate-500 font-medium">面试回复率</div>
+                                    <div className="text-sm text-slate-500 font-medium">申请回复率</div>
                                 </div>
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                     <div className="font-bold text-2xl text-slate-900 mb-1">Direct</div>
@@ -272,10 +272,6 @@ export default function TrustedCompaniesPage() {
                                 <Crown className="w-5 h-5" />
                                 立即升级会员查看
                             </button>
-                            
-                            <p className="mt-4 text-sm text-slate-400">
-                                30天无理由退款保证 · 安全支付
-                            </p>
                         </div>
                     </div>
                 ) : (
