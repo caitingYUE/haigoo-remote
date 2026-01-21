@@ -17,6 +17,23 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
         recruitmentNeeds: ''
     });
 
+    // Hide header when modal is open
+    React.useEffect(() => {
+        const header = document.querySelector('header');
+        if (isOpen && header) {
+            header.classList.add('hidden');
+        } else if (header) {
+            header.classList.remove('hidden');
+        }
+
+        // Cleanup function to ensure header is shown when component unmounts
+        return () => {
+            if (header) {
+                header.classList.remove('hidden');
+            }
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {

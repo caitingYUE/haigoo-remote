@@ -1,5 +1,7 @@
 import React from 'react';
 import { ThumbsUp, ArrowRight, ShieldCheck, Briefcase } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CompanyNominationBannerProps {
     onClick: () => void;
@@ -7,10 +9,22 @@ interface CompanyNominationBannerProps {
 }
 
 export const CompanyNominationBanner: React.FC<CompanyNominationBannerProps> = ({ onClick, className = '' }) => {
+    const navigate = useNavigate();
+    const { user } = useAuth();
+
+    const handleClick = () => {
+        if (!user) {
+            // Redirect to login, remembering the current page to return to
+            navigate('/login', { state: { from: window.location.pathname } });
+            return;
+        }
+        onClick();
+    };
+
     return (
         <div
             className={`bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative group cursor-pointer text-left h-full ${className}`}
-            onClick={onClick}
+            onClick={handleClick}
         >
             {/* Background Decoration */}
             <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
