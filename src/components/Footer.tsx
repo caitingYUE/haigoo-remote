@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { LinkedInLogo, XiaohongshuLogo, OutlookLogo } from './SocialIcons';
+import logoPng from '../assets/logo.png';
 
 export default function Footer() {
   return (
@@ -14,7 +15,7 @@ export default function Footer() {
           {/* Left Side: Brand & Copyright */}
           <div className="flex flex-col items-center md:items-start gap-4">
              <div className="flex items-center gap-2">
-                <img src="/logo.svg" alt="Haigoo Logo" className="h-8 w-auto" />
+                <img src={logoPng} alt="Haigoo Logo" className="h-8 w-auto" />
                 <span className="text-xl font-bold text-slate-900 tracking-tight">Haigoo</span>
              </div>
              <p className="text-sm text-slate-500">

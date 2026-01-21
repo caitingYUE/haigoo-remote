@@ -215,7 +215,7 @@ export default function LandingPage() {
       {/* New Year Blessing Section (Hidden for now) */}
       {/* <NewYearBlessingSection /> */}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         {/* Featured Companies Section */}
         <div className="py-24">
           <div className="flex items-center justify-between mb-8">
@@ -444,7 +444,7 @@ export default function LandingPage() {
         />
 
         {/* Job Alert Subscription */}
-        <div className="mt-32 mb-24">
+        <div className="mt-32">
           <div className="relative rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-50 overflow-hidden bg-white">
             <div className="absolute inset-0 bg-gradient-to-br from-white via-indigo-50/30 to-blue-50/30"></div>
 
