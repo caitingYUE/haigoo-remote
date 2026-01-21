@@ -22,3 +22,9 @@ ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS email_type VARCHAR(50) DE
 -- 4. UPDATE trusted_companies SET email_type = '员工邮箱' WHERE email_type = '内部员工邮箱';
 -- 5. UPDATE trusted_companies SET email_type = '高管邮箱' WHERE email_type = '企业领导邮箱';
 -- 6. ALTER TABLE trusted_companies ADD CONSTRAINT valid_email_type CHECK (email_type IN ('招聘邮箱', '通用邮箱', '员工邮箱', '高管邮箱'));
+
+-- 2026-01-21: Add recruitment request fields to feedbacks table
+-- Description: Store company info for "I want to recruit" requests
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS company_website VARCHAR(255);
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS recruitment_needs TEXT;

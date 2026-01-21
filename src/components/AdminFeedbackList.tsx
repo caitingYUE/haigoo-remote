@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2, CheckCircle, XCircle, AlertCircle, MessageSquare, Reply, User, Trash2, Download } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertCircle, MessageSquare, Reply, User, Trash2, Download, Briefcase, Globe } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { SUPER_ADMIN_EMAILS } from '../config/admin';
 
