@@ -9,7 +9,7 @@ interface CompanyNominationBannerProps {
 export const CompanyNominationBanner: React.FC<CompanyNominationBannerProps> = ({ onClick, className = '' }) => {
     return (
         <div
-            className={`bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative group cursor-pointer ${className}`}
+            className={`bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative group cursor-pointer text-left h-full ${className}`}
             onClick={onClick}
         >
             {/* Background Decoration */}

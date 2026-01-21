@@ -38,7 +38,7 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
   };
 
   return (
-    <div className={`bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 relative group ${className}`}>
+    <div className={`bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 relative group text-left h-full ${className}`}>
       {/* Background Decoration */}
       <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
         <ShieldCheck className="w-24 h-24 text-indigo-600 rotate-12" />
