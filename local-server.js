@@ -61,7 +61,7 @@ async function startServer() {
         app.all('/api/run-migration', async (req, res) => { req.query.action = 'migrate'; await adminOpsHandler(req, res); });
 
         console.log('Importing parse-resume handler...');
-        const resumesHandler = (await import('./api/resumes.js')).default;
+        const resumesHandler = (await import('./lib/api-handlers/resumes.js')).default;
         // Map legacy route to new handler
         app.all('/api/parse-resume-new', async (req, res) => { await resumesHandler(req, res); });
         // Also map standard resumes route if not already done (it wasn't in the original file?)
@@ -74,7 +74,7 @@ async function startServer() {
         console.log('AI handler imported.');
 
         console.log('Importing images handler...');
-        const imagesHandler = (await import('./api/images.js')).default;
+        const imagesHandler = (await import('./lib/api-handlers/image-proxy-handler.js')).default;
         app.all('/api/images', async (req, res) => { await imagesHandler(req, res); });
         // Backward compatibility if needed, or just redirect
         app.all('/api/proxy-image', async (req, res) => { await imagesHandler(req, res); });
@@ -97,11 +97,11 @@ async function startServer() {
         console.log('Campaign handlers imported.');
 
         console.log('Importing cron handlers...');
-        const crawlTrustedJobsHandler = (await import('./lib/cron-handlers/crawl-trusted-jobs.js')).default;
+        const crawlTrustedJobsHandler = (await import('./lib/cron-handlers/stream-crawl-trusted-jobs.js')).default;
         // sync-jobs usually refers to translate-jobs in this context or process-rss
         // But translate-jobs is the one user cares about
         // I'll map sync-jobs to translate-jobs.js as it seems most relevant
-        const syncJobsHandler = (await import('./lib/cron-handlers/translate-jobs.js')).default;
+        const syncJobsHandler = (await import('./lib/cron-handlers/stream-translate-jobs.js')).default;
 
         app.all('/api/cron/crawl-trusted-jobs', async (req, res) => { await crawlTrustedJobsHandler(req, res); });
         app.all('/api/cron/sync-jobs', async (req, res) => { await syncJobsHandler(req, res); });
@@ -152,7 +152,7 @@ async function startServer() {
 
         // /api/translate-jobs -> lib/cron-handlers/translate-jobs.js
         // Note: In production this is routed via vercel.json rewrites
-        const translateJobsHandler = (await import('./lib/cron-handlers/translate-jobs.js')).default;
+        const translateJobsHandler = (await import('./lib/cron-handlers/stream-translate-jobs.js')).default;
         app.all('/api/translate-jobs', async (req, res) => {
             console.log('[LocalServer] Route /api/translate-jobs hit');
             await translateJobsHandler(req, res);

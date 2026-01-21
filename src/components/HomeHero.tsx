@@ -33,7 +33,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     return (
         <div className="relative min-h-[800px] flex items-center justify-center overflow-hidden">
             {/* Background Image & Overlay */}
-            <div className="absolute inset-0 z-0 bg-slate-900">
+            <div className="absolute inset-0 z-0 bg-neutral-900">
                 <img 
                     src="/background.webp" 
                     alt="Background" 
@@ -43,8 +43,11 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     decoding="async"
                 />
                 {/* Gradient Overlay for better text readability while keeping image visible */}
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/60 via-slate-900/20 to-transparent"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent"></div>
+                {/* Updated to warmer neutral tones for a more positive feel */}
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/70 via-neutral-900/30 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/40 via-transparent to-transparent"></div>
+                {/* Subtle warm amber glow */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 via-transparent to-transparent mix-blend-overlay"></div>
             </div>
 
             {/* Festive Fireworks - Absolute Positioned Top Right */}
@@ -87,7 +90,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         {/* English Tagline - Elegant Script */}
                         <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                             <p className="text-2xl md:text-3xl font-serif italic text-white/95 tracking-wide font-light drop-shadow-md">
-                                "Work for Life"
+                                "You deserve a better life."
                             </p>
                         </div>
 
