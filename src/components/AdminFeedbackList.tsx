@@ -190,20 +190,32 @@ export default function AdminFeedbackList() {
                                                 </div>
                                             </td>
                                             <td>
-                                                {feedback.jobId ? (
-                                                    <span className={`status-badge ${feedback.accuracy === 'accurate' ? 'high' : feedback.accuracy === 'inaccurate' ? 'low' : 'medium'}`}>
-                                                        {feedback.accuracy === 'accurate' ? <CheckCircle className="w-3 h-3 mr-1" /> :
-                                                            feedback.accuracy === 'inaccurate' ? <XCircle className="w-3 h-3 mr-1" /> :
-                                                                <AlertCircle className="w-3 h-3 mr-1" />}
-                                                        {feedback.accuracy === 'accurate' ? '准确' : feedback.accuracy === 'inaccurate' ? '不准确' : '未知'}
+                                                {feedback.source === 'recruitment_request' ? (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        <Briefcase className="w-3 h-3 mr-1" /> 我要招聘
                                                     </span>
+                                                ) : feedback.jobId && feedback.jobId !== 'platform' ? (
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                                            <AlertCircle className="w-3 h-3 mr-1" /> 岗位信息反馈
+                                                        </span>
+                                                        {feedback.accuracy !== 'unknown' && (
+                                                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                                                                feedback.accuracy === 'accurate' 
+                                                                    ? 'bg-green-50 text-green-700 border-green-200' 
+                                                                    : 'bg-red-50 text-red-700 border-red-200'
+                                                            }`}>
+                                                                {feedback.accuracy === 'accurate' ? '信息准确' : '信息不准'}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 ) : (
-                                                    <span className="status-badge medium">
-                                                        <MessageSquare className="w-3 h-3 mr-1" /> 平台建议
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                        <MessageSquare className="w-3 h-3 mr-1" /> 我要反馈
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="max-w-md">
+                                            <td className="min-w-[350px]">
                                                 <div className="text-sm text-slate-900 break-words">{feedback.content}</div>
                                                 {feedback.companyName && (
                                                     <div className="mt-2 text-xs bg-indigo-50 p-2 rounded border border-indigo-100">
