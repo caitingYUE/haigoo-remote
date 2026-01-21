@@ -328,8 +328,8 @@ export default function LandingPage() {
               },
               {
                 icon: <Target className="w-6 h-6 text-white" />,
-                title: "精准匹配",
-                desc: "深入了解企业文化和招聘需求，为您推荐价值观契合的团队，拒绝海投无效沟通。",
+                title: "优质文化",
+                desc: "深入了解企业背景和招聘需求，选择开放有远见的企业，在远程中也能收获自我价值和成长。",
                 color: "bg-indigo-500"
               },
               {
@@ -373,7 +373,7 @@ export default function LandingPage() {
             </h2>
 
             <p className="text-lg text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
-              解锁企业深度风险评估、内推直达通道、无限收藏夹等专属特权，<br className="hidden md:block" />
+              解锁企业背景信息、高管内推直达通道、简历优化等专属特权，<br className="hidden md:block" />
               让你的远程求职之路更加顺畅。
             </p>
 
