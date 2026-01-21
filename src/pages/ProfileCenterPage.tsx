@@ -30,6 +30,16 @@ export default function ProfileCenterPage() {
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
+
+  // Sync tab with URL query parameter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const urlTab = searchParams.get('tab') as TabKey | null
+    if (urlTab && ['resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(urlTab)) {
+      setTab(urlTab)
+    }
+  }, [location.search])
+
   const [isUploading, setIsUploading] = useState(false)
   const [resumeScore, setResumeScore] = useState<number>(0)
   // Define suggestion type

@@ -161,13 +161,13 @@ export default function Header() {
   }
 
   // 用户菜单选项 - 恢复个人中心入口
-  const userMenuItems: { id: string; label: string; href: string }[] = [
+  const userMenuItems: { id: string; label: string; href: string; danger?: boolean }[] = [
     { id: 'profile-resume', label: '我的简历', href: '/profile?tab=resume' },
     { id: 'profile-favorites', label: '我的收藏', href: '/profile?tab=favorites' },
     { id: 'profile-subscriptions', label: '订阅管理', href: '/profile?tab=subscriptions' },
     { id: 'membership', label: '会员中心', href: '/membership' },
     { id: 'profile-feedback', label: '我要反馈', href: '/profile?tab=feedback' },
-    { id: 'profile-settings', label: '账号设置', href: '/profile?tab=settings' }
+    { id: 'profile-settings', label: '注销账号', href: '/profile?tab=settings', danger: true }
   ]
 
   return (
@@ -431,30 +431,37 @@ export default function Header() {
                         </div>
                       </div>
 
-                      {/* 简化的菜单选项 */}
-                      <div className="py-1" role="group" aria-label="用户菜单选项">
-                        <Link
-                          to="/profile?tab=settings"
-                          className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-all duration-200"
-                          role="menuitem"
-                          tabIndex={isUserMenuOpen ? 0 : -1}
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          账号设置
-                        </Link>
-                      </div>
-
-                      {/* 退出登录 - 只保留文字 */}
+                      {/* 简化的菜单选项 - 这里可以放其他普通菜单项，暂时为空或保留其他非敏感项 */}
+                      
+                      {/* 账户操作区域 */}
                       <div className="pt-1" role="group" aria-label="账户操作">
+                        {/* 退出登录 - 调整为常规颜色 */}
                         <button
                           onClick={handleLogout}
-                          className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 focus:outline-none focus:bg-red-50"
+                          className="block w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-all duration-200 focus:outline-none focus:bg-slate-50"
                           role="menuitem"
                           tabIndex={isUserMenuOpen ? 0 : -1}
                           aria-label="退出登录"
                         >
-                          退出登录
+                          <div className="flex items-center">
+                            <span className="flex-1">退出登录</span>
+                          </div>
                         </button>
+
+                        {/* 注销账号 - 放在最后，红色警示 */}
+                        <div className="border-t border-slate-100 mt-1 pt-1">
+                          <Link
+                            to="/profile?tab=settings"
+                            className="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200"
+                            role="menuitem"
+                            tabIndex={isUserMenuOpen ? 0 : -1}
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <div className="flex items-center">
+                              <span className="flex-1">注销账号</span>
+                            </div>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   )}
