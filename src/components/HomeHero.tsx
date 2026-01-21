@@ -96,15 +96,15 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                         {/* Main Heading */}
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 drop-shadow-xl">
-                            <span className="block text-white mb-2">为中国求职者精选的</span>
+                            <span className="block text-white mb-2">理想生活，</span>
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-white to-amber-50 inline-block pb-2">
-                                全球远程岗位
+                                从远程工作开始
                             </span>
                         </h1>
 
                         {/* Subtitle */}
                         <p className="text-lg md:text-xl text-white/90 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-xl drop-shadow-md">
-                            只收录国内可申请的岗位 <span className="text-white/60 mx-3">|</span> 来源真实 <span className="text-white/60 mx-3">|</span> 人工逐条筛选
+                            全球精选 <span className="text-white/60 mx-3">|</span> 国内可申 <span className="text-white/60 mx-3">|</span> 真实可投的长期远程岗位
                         </p>
 
                         {/* Search Bar - Clean & Floating */}
