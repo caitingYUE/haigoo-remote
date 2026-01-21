@@ -17,6 +17,9 @@ interface Feedback {
     createdAt: string;
     replyContent?: string;
     repliedAt?: string;
+    companyName?: string;
+    companyWebsite?: string;
+    recruitmentNeeds?: string;
 }
 
 export default function AdminFeedbackList() {
