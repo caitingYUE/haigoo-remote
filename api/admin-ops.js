@@ -2,6 +2,7 @@ import neonHelper from '../server-utils/dal/neon-helper.js'
 import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'
 import subscriptionsHandler from '../lib/api-handlers/subscriptions.js'
 import bugReportsHandler from '../lib/api-handlers/bug-reports.js'
+import contactMinerHandler from '../lib/api-handlers/contact-miner.js'
 import { systemSettingsService } from '../lib/services/system-settings-service.js'
 
 export default async function handler(req, res) {
