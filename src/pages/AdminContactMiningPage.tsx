@@ -6,7 +6,6 @@ import {
     Linkedin, Twitter, Facebook, Youtube, Github
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { API_BASE_url } from '../services/config';
 
 interface ContactResult {
     email: string;
