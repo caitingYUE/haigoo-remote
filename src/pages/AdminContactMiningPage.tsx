@@ -32,6 +32,7 @@ export default function AdminContactMiningPage() {
     const { token } = useAuth();
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const [useGoogle, setUseGoogle] = useState(false);
     const [result, setResult] = useState<MiningResponse | null>(null);
     const [error, setError] = useState('');
 
@@ -50,7 +51,10 @@ export default function AdminContactMiningPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ input: input.trim() })
+                body: JSON.stringify({ 
+                    input: input.trim(),
+                    useGoogle 
+                })
             });
 
             const data = await response.json();
@@ -105,43 +109,58 @@ export default function AdminContactMiningPage() {
                 </h1>
                 <p className="text-gray-500 mt-2">
                     输入公司官网或域名，自动爬取公开的邮箱联系方式（含新闻稿、博客等外部链接）、社交媒体，并进行角色归类和置信度评分。
-                    <br/>
-                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block mt-1">
-                        🚀 提示：配置 Google Search API Key 后可启用全网搜索增强模式
-                    </span>
                 </p>
             </div>
 
             {/* Input Section */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-                <form onSubmit={handleMine} className="flex gap-4">
-                    <div className="relative flex-1">
-                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder="输入公司域名 (e.g., airbnb.com) 或 官网 URL"
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        />
+                <form onSubmit={handleMine} className="flex flex-col gap-4">
+                    <div className="flex gap-4">
+                        <div className="relative flex-1">
+                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="输入公司域名 (e.g., airbnb.com) 或 官网 URL"
+                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={loading || !input.trim()}
+                            className="px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-sm"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    正在挖掘...
+                                </>
+                            ) : (
+                                <>
+                                    <Search className="w-5 h-5" />
+                                    开始挖掘
+                                </>
+                            )}
+                        </button>
                     </div>
-                    <button
-                        type="submit"
-                        disabled={loading || !input.trim()}
-                        className="px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-sm"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                正在挖掘...
-                            </>
-                        ) : (
-                            <>
-                                <Search className="w-5 h-5" />
-                                开始挖掘
-                            </>
-                        )}
-                    </button>
+
+                    {/* Advanced Options */}
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="useGoogle"
+                            checked={useGoogle}
+                            onChange={(e) => setUseGoogle(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
+                        <label htmlFor="useGoogle" className="text-sm text-gray-600 cursor-pointer select-none flex items-center gap-2">
+                            启用 Google 全网深度搜索
+                            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                                高级功能 (限额 100次/天)
+                            </span>
+                        </label>
+                    </div>
                 </form>
 
                 {error && (
