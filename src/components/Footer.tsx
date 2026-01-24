@@ -53,7 +53,7 @@ export default function Footer() {
 
                 {/* Email */}
                 <a 
-                  href="mailto:haigooremote@outlook.com" 
+                  href="mailto:hi@haigooremote.com" 
                   className="group flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-lg transition-all border border-slate-200 hover:border-indigo-200 hover:no-underline"
                   title="Contact us via Email"
                 >
