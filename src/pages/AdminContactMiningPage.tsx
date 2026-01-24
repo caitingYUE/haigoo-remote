@@ -105,6 +105,10 @@ export default function AdminContactMiningPage() {
                 </h1>
                 <p className="text-gray-500 mt-2">
                     输入公司官网或域名，自动爬取公开的邮箱联系方式（含新闻稿、博客等外部链接）、社交媒体，并进行角色归类和置信度评分。
+                    <br/>
+                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block mt-1">
+                        🚀 提示：配置 Google Search API Key 后可启用全网搜索增强模式
+                    </span>
                 </p>
             </div>
 
