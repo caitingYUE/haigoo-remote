@@ -29,6 +29,11 @@ export default async function handler(req, res) {
         return await bugReportsHandler(req, res)
     }
 
+    // Dispatch to Contact Miner Handler
+    if (action === 'contact_mining') {
+        return await contactMinerHandler(req, res)
+    }
+
     // === Application Stats (Merged from admin-applications.js) ===
     if (action === 'application_stats') {
         const token = extractToken(req)
