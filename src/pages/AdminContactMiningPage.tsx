@@ -104,7 +104,7 @@ export default function AdminContactMiningPage() {
                     企业联系方式挖掘 (Contact Miner)
                 </h1>
                 <p className="text-gray-500 mt-2">
-                    输入公司官网或域名，自动爬取公开的邮箱联系方式、社交媒体，并进行角色归类和置信度评分。
+                    输入公司官网或域名，自动爬取公开的邮箱联系方式（含新闻稿、博客等外部链接）、社交媒体，并进行角色归类和置信度评分。
                 </p>
             </div>
 

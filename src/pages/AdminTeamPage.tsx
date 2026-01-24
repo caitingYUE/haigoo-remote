@@ -880,6 +880,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'job-bundles', label: '职位组合', icon: Tag },
     { id: 'companies', label: '全部企业', icon: Building },
     { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
+    { id: 'contact-mining', label: '联系挖掘', icon: Search },
     { id: 'tag-management', label: '标签管理', icon: Tag },
     { id: 'resumes', label: '简历数据', icon: FileText },
     { id: 'subscriptions', label: '订阅管理', icon: Mail },
@@ -888,7 +889,6 @@ const AdminTeamPage: React.FC = () => {
     { id: 'member-applications', label: '会员申请', icon: FileText },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'core-metrics', label: '核心看板', icon: Activity },
-    { id: 'contact-mining', label: '联系挖掘', icon: Search },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'settings', label: '系统设置', icon: Settings },
     { id: 'tracking', label: '埋点管理', icon: Activity }
