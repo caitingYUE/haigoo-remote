@@ -555,13 +555,13 @@ const MembershipPage: React.FC = () => {
                               <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-3">
                                  {/* Feishu Group QR */}
                                  <img 
-                                    src="/feishu.png" 
-                                    alt="Feishu Group QR" 
+                                    src="/dingtalk.jpg" 
+                                    alt="DingTalk Group QR" 
                                     className="w-32 h-32 object-contain rounded-lg"
                                  />
                               </div>
                               <p className="text-xs text-slate-500 text-center max-w-[160px]">
-                                 请使用飞书扫码加入<br/>获取一手内推资讯
+                                 请使用钉钉扫码加入<br/>快速获取响应和支持
                               </p>
                            </div>
                         </div>
