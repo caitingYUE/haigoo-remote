@@ -233,14 +233,20 @@ export default function AdminContactMiningPage() {
                                                             {contact.confidence >= 80 ? <CheckCircle2 className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
                                                             {contact.confidence}%
                                                         </div>
-                                                        <a 
-                                                            href={contact.source} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                            className="text-blue-600 hover:text-blue-800 text-xs block mt-1 flex items-center gap-1"
-                                                        >
-                                                            来源 <ExternalLink className="w-3 h-3" />
-                                                        </a>
+                                                        {contact.source.startsWith('http') ? (
+                                                            <a 
+                                                                href={contact.source} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-600 hover:text-blue-800 text-xs block mt-1 flex items-center gap-1"
+                                                            >
+                                                                来源 <ExternalLink className="w-3 h-3" />
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-gray-400 text-xs block mt-1 flex items-center gap-1">
+                                                                {contact.source}
+                                                            </span>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
