@@ -13,6 +13,8 @@ interface FilterDropdownProps {
   isActive: boolean; // Whether any value is selected
   colorTheme?: 'indigo' | 'amber' | 'emerald' | 'purple' | 'slate';
   icon?: React.ReactNode;
+  onApply?: () => void;
+  onClear?: () => void;
 }
 
 interface CheckboxItemProps {
@@ -105,13 +107,18 @@ const THEME_STYLES = {
 
 // --- Components ---
 
-const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, colorTheme = 'slate', icon }) => {
+const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, colorTheme = 'slate', icon, onApply, onClear }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onClose();
+        // If clicking outside, trigger apply if available, otherwise just close
+        if (onApply) {
+            onApply();
+        } else {
+            onClose();
+        }
       }
     };
 
@@ -121,7 +128,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, onApply]);
 
   const theme = THEME_STYLES[colorTheme];
 
@@ -146,7 +153,11 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
       <button
         onClick={(e) => {
           console.log(`[FilterDropdown] Button clicked: ${label}`);
-          onToggle();
+          if (isOpen && onApply) {
+             onApply(); // Apply on toggle close
+          } else {
+             onToggle();
+          }
         }}
         className={buttonClass}
       >
@@ -163,7 +174,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
             onClick={(e) => {
                console.log('[FilterDropdown] Backdrop clicked');
                e.stopPropagation();
-               onClose();
+               if (onApply) onApply(); else onClose();
             }}
           />
 
@@ -184,9 +195,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
              e.stopPropagation();
            }} 
            >
-            <div className="p-2 pb-8 md:pb-2 max-h-[60vh] md:max-h-[400px] overflow-y-auto custom-scrollbar">
+            <div className="p-2 pb-8 md:pb-2 max-h-[60vh] md:max-h-[320px] overflow-y-auto custom-scrollbar">
               {/* Mobile Handle */}
-              <div className="md:hidden flex justify-center pb-2 pt-1" onClick={onClose}>
+              <div className="md:hidden flex justify-center pb-2 pt-1" onClick={onApply || onClose}>
                 <div className="w-12 h-1 bg-slate-200 rounded-full"></div>
               </div>
               {/* Pass theme to children (CheckboxItems) */}
@@ -197,6 +208,36 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
                 return child;
               })}
             </div>
+            
+            {/* Action Footer */}
+            {(onApply || onClear) && (
+                <div className="p-3 border-t border-slate-100 bg-slate-50/80 backdrop-blur-sm flex justify-between items-center gap-4">
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onClear) onClear();
+                        }}
+                        className="text-xs text-slate-500 hover:text-slate-800 font-medium px-2 py-1 rounded hover:bg-slate-200/50 transition-colors"
+                    >
+                        清空
+                    </button>
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onApply) onApply();
+                        }}
+                        className={`flex-1 px-3 py-1.5 text-xs font-semibold text-white rounded-md shadow-sm shadow-${colorTheme}-500/20 hover:shadow-md transition-all ${
+                            colorTheme === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' :
+                            colorTheme === 'amber' ? 'bg-amber-500 hover:bg-amber-600' :
+                            colorTheme === 'emerald' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                            colorTheme === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
+                            'bg-slate-800 hover:bg-slate-900'
+                        }`}
+                    >
+                        应用筛选
+                    </button>
+                </div>
+            )}
           </div>
         </>
       )}
@@ -253,31 +294,71 @@ export default function JobFilterBar({
   onOpenTracking
 }: JobFilterBarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  
+  // Temp filters for deferred application
+  const [tempFilters, setTempFilters] = useState(filters);
+
+  // Sync temp filters when dropdown is closed or filters change externally
+  useEffect(() => {
+    if (openDropdown === null) {
+      setTempFilters(filters);
+    }
+  }, [filters, openDropdown]);
+
+  const applyFilters = (key: string) => {
+    // Only trigger update if changed
+    // Simple deep check for the specific key
+    const currentVal = filters[key as keyof typeof filters];
+    const newVal = tempFilters[key as keyof typeof filters];
+    
+    if (JSON.stringify(currentVal) !== JSON.stringify(newVal)) {
+        onFilterChange({ [key]: newVal });
+    }
+    setOpenDropdown(null);
+  };
+
+  const clearTempFilter = (key: string) => {
+      setTempFilters(prev => ({ ...prev, [key]: [] }));
+  };
 
   const toggleDropdown = (key: string) => {
-    setOpenDropdown(openDropdown === key ? null : key);
+    if (openDropdown === key) {
+      // Closing: Apply
+      applyFilters(key);
+    } else {
+      // Opening: Sync temp with real (just in case)
+      setTempFilters(prev => ({ ...prev, [key]: filters[key as keyof typeof filters] }));
+      setOpenDropdown(key);
+    }
   };
 
   const handleCheckboxChange = (section: keyof typeof filters, value: string, checked: boolean) => {
     console.log(`[JobFilterBar] Checkbox changed: section=${section}, value=${value}, checked=${checked}`);
-    const current = (filters[section] as string[]) || [];
-    let updated;
+    
+    // Update TEMP state only
+    setTempFilters(prev => {
+        const current = (prev[section] as string[]) || [];
+        let updated;
 
-    if (checked) {
-      if (section === 'regionType') {
-        updated = [value]; // Single select behavior
-      } else {
-        updated = [...current, value];
-      }
-    } else {
-      updated = current.filter(item => item !== value);
-    }
-
-    console.log(`[JobFilterBar] Calling onFilterChange with:`, { [section]: updated });
-    onFilterChange({ [section]: updated });
+        if (checked) {
+            if (section === 'regionType') {
+                updated = [value]; // Single select behavior
+            } else {
+                updated = [...current, value];
+            }
+        } else {
+            updated = current.filter(item => item !== value);
+        }
+        
+        return { ...prev, [section]: updated };
+    });
   };
 
   const getActiveLabel = (section: keyof typeof filters, options: { label: string, value: string }[], defaultLabel: string) => {
+    // Use REAL filters for label display when closed, TEMP when open?
+    // Actually better to use REAL filters for the button label always, 
+    // but maybe TEMP when open to show live count?
+    // Let's stick to REAL filters for the button label to avoid jumping during edit before apply.
     const current = filters[section] as string[];
     if (!current || current.length === 0) return defaultLabel;
     if (current.length === 1) {
@@ -349,7 +430,9 @@ export default function JobFilterBar({
             isActive={(filters.jobType?.length || 0) > 0}
             isOpen={openDropdown === 'jobType'}
             onToggle={() => toggleDropdown('jobType')}
-            onClose={() => setOpenDropdown(null)}
+            onClose={() => applyFilters('jobType')}
+            onApply={() => applyFilters('jobType')}
+            onClear={() => clearTempFilter('jobType')}
             icon={<Calendar className="w-3.5 h-3.5" />}
             colorTheme="amber"
           >
@@ -357,7 +440,7 @@ export default function JobFilterBar({
               <CheckboxItem
                 key={opt.value}
                 label={opt.label}
-                checked={filters.jobType?.includes(opt.value) || false}
+                checked={tempFilters.jobType?.includes(opt.value) || false}
                 onChange={(c) => handleCheckboxChange('jobType', opt.value, c)}
               />
             ))}
@@ -370,7 +453,9 @@ export default function JobFilterBar({
             isActive={(filters.experienceLevel?.length || 0) > 0}
             isOpen={openDropdown === 'experienceLevel'}
             onToggle={() => toggleDropdown('experienceLevel')}
-            onClose={() => setOpenDropdown(null)}
+            onClose={() => applyFilters('experienceLevel')}
+            onApply={() => applyFilters('experienceLevel')}
+            onClear={() => clearTempFilter('experienceLevel')}
             icon={<TrendingUp className="w-3.5 h-3.5" />}
             colorTheme="emerald"
           >
@@ -378,7 +463,7 @@ export default function JobFilterBar({
               <CheckboxItem
                 key={opt.value}
                 label={opt.label}
-                checked={filters.experienceLevel?.includes(opt.value) || false}
+                checked={tempFilters.experienceLevel?.includes(opt.value) || false}
                 onChange={(c) => handleCheckboxChange('experienceLevel', opt.value, c)}
               />
             ))}
@@ -391,7 +476,9 @@ export default function JobFilterBar({
             isActive={(filters.industry?.length || 0) > 0}
             isOpen={openDropdown === 'industry'}
             onToggle={() => toggleDropdown('industry')}
-            onClose={() => setOpenDropdown(null)}
+            onClose={() => applyFilters('industry')}
+            onApply={() => applyFilters('industry')}
+            onClear={() => clearTempFilter('industry')}
             icon={<Building2 className="w-3.5 h-3.5" />}
             colorTheme="purple"
           >
@@ -399,7 +486,7 @@ export default function JobFilterBar({
               <CheckboxItem
                 key={opt.value}
                 label={opt.label}
-                checked={filters.industry?.includes(opt.value) || false}
+                checked={tempFilters.industry?.includes(opt.value) || false}
                 onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
               />
             ))}
@@ -412,7 +499,9 @@ export default function JobFilterBar({
             isActive={(filters.category?.length || 0) > 0}
             isOpen={openDropdown === 'category'}
             onToggle={() => toggleDropdown('category')}
-            onClose={() => setOpenDropdown(null)}
+            onClose={() => applyFilters('category')}
+            onApply={() => applyFilters('category')}
+            onClear={() => clearTempFilter('category')}
             icon={<Briefcase className="w-3.5 h-3.5" />}
             colorTheme="indigo"
           >
@@ -420,7 +509,7 @@ export default function JobFilterBar({
               <CheckboxItem
                 key={opt.value}
                 label={opt.label}
-                checked={filters.category?.includes(opt.value) || false}
+                checked={tempFilters.category?.includes(opt.value) || false}
                 onChange={(c) => handleCheckboxChange('category', opt.value, c)}
               />
             ))}
@@ -433,7 +522,9 @@ export default function JobFilterBar({
             isActive={(filters.location?.length || 0) > 0}
             isOpen={openDropdown === 'location'}
             onToggle={() => toggleDropdown('location')}
-            onClose={() => setOpenDropdown(null)}
+            onClose={() => applyFilters('location')}
+            onApply={() => applyFilters('location')}
+            onClear={() => clearTempFilter('location')}
             icon={<MapPin className="w-3.5 h-3.5" />}
             colorTheme="slate"
           >
@@ -441,7 +532,7 @@ export default function JobFilterBar({
               <CheckboxItem
                 key={opt.value}
                 label={opt.label}
-                checked={filters.location?.includes(opt.value) || false}
+                checked={tempFilters.location?.includes(opt.value) || false}
                 onChange={(c) => handleCheckboxChange('location', opt.value, c)}
               />
             ))}
