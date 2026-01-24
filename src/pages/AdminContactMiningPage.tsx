@@ -15,6 +15,13 @@ interface ContactResult {
     context: string;
 }
 
+interface SocialLink {
+    platform: string;
+    url: string;
+    handle?: string;
+    context?: string;
+}
+
 interface MiningResponse {
     success: boolean;
     company: string;
@@ -24,7 +31,7 @@ interface MiningResponse {
         socialLinksFound: number;
     };
     contacts: ContactResult[];
-    socialLinks: string[];
+    socialLinks: SocialLink[];
     error?: string;
 }
 
@@ -293,22 +300,37 @@ export default function AdminContactMiningPage() {
                                     未发现社交媒体链接
                                 </div>
                             ) : (
-                                <div className="p-2">
+                                <div className="p-2 max-h-[600px] overflow-y-auto">
                                     {result.socialLinks.map((link, idx) => (
                                         <a 
                                             key={idx}
-                                            href={link}
+                                            href={link.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
+                                            className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group border-b border-gray-50 last:border-0"
                                         >
-                                            <div className="text-gray-400 group-hover:text-blue-600 transition-colors">
-                                                {getSocialIcon(link)}
+                                            <div className="text-gray-400 group-hover:text-blue-600 transition-colors mt-1">
+                                                {getSocialIcon(link.url)}
                                             </div>
-                                            <span className="text-sm text-gray-600 group-hover:text-gray-900 truncate flex-1">
-                                                {link.replace(/^https?:\/\/(www\.)?/, '')}
-                                            </span>
-                                            <ExternalLink className="w-3 h-3 text-gray-300 group-hover:text-gray-400" />
+                                            <div className="flex-1 min-w-0">
+                                                {/* Handle/Name Display */}
+                                                <div className="text-sm font-medium text-gray-800 truncate">
+                                                    {link.handle || link.context || 'Social Link'}
+                                                </div>
+                                                
+                                                {/* Context/Title Display */}
+                                                {(link.handle && link.context && link.handle !== link.context) && (
+                                                    <div className="text-xs text-gray-500 truncate mt-0.5">
+                                                        {link.context}
+                                                    </div>
+                                                )}
+
+                                                {/* URL Display */}
+                                                <div className="text-xs text-gray-400 truncate mt-0.5 font-mono">
+                                                    {link.url.replace(/^https?:\/\/(www\.)?/, '')}
+                                                </div>
+                                            </div>
+                                            <ExternalLink className="w-3 h-3 text-gray-300 group-hover:text-gray-400 mt-1" />
                                         </a>
                                     ))}
                                 </div>
