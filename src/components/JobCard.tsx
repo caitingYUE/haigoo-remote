@@ -8,6 +8,14 @@ import { SingleLineTags } from './SingleLineTags';
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
 import { getJobSourceType } from '../utils/job-source-helper';
 
+const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
+  'Entry': '初级',
+  'Mid': '中级',
+  'Senior': '高级',
+  'Lead': '专家',
+  'Executive': '高管'
+};
+
 interface JobCardProps {
   job: Job;
   onSave?: (jobId: string) => void;
@@ -63,15 +71,21 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
   };
 
   const getJobTypeLabel = (jobType: string) => {
-    const labels = {
+    const labels: Record<string, string> = {
       'full-time': '全职',
+      'Full-time': '全职',
       'part-time': '兼职',
+      'Part-time': '兼职',
       'contract': '合同',
+      'Contract': '合同',
       'freelance': '自由职业',
+      'Freelance': '自由职业',
       'internship': '实习',
-      'remote': '远程'
+      'Internship': '实习',
+      'remote': '远程',
+      'Remote': '远程'
     };
-    return labels[jobType as keyof typeof labels] || jobType;
+    return labels[jobType] || jobType;
   };
 
   // 键盘导航处理
@@ -100,14 +114,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
     ];
 
     if (job.experienceLevel) {
-      const experienceMap: Record<string, string> = {
-        'Entry': '初级',
-        'Mid': '中级',
-        'Senior': '高级',
-        'Lead': '资深',
-        'Executive': '专家'
-      };
-      const experienceLabel = experienceMap[job.experienceLevel] || job.experienceLevel;
+      const experienceLabel = EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel;
       parts.push(`经验要求：${experienceLabel}`);
     }
 
@@ -334,7 +341,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
         )}
         {job.experienceLevel && (
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
-            {job.experienceLevel}
+            {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
           </span>
         )}
       </div>

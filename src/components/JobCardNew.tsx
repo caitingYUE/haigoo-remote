@@ -9,8 +9,23 @@ const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
    'Entry': '初级',
    'Mid': '中级',
    'Senior': '高级',
-   'Lead': '资深',
-   'Executive': '专家'
+   'Lead': '专家',
+   'Executive': '高管'
+};
+
+const JOB_TYPE_MAP: Record<string, string> = {
+   'full-time': '全职',
+   'Full-time': '全职',
+   'part-time': '兼职',
+   'Part-time': '兼职',
+   'contract': '合同',
+   'Contract': '合同',
+   'freelance': '自由职业',
+   'Freelance': '自由职业',
+   'internship': '实习',
+   'Internship': '实习',
+   'remote': '远程',
+   'Remote': '远程'
 };
 // import { FastAverageColor } from 'fast-average-color'; // Optional: Use if installed
 
@@ -259,7 +274,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                         {job.type && (
                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
                               <Calendar className="w-3 h-3 mr-1" />
-                              {job.type === 'full-time' ? '全职' : job.type}
+                              {JOB_TYPE_MAP[job.type] || job.type}
                            </span>
                         )}
 
