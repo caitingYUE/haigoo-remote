@@ -203,6 +203,13 @@ export class TranslationMappingService {
     const cleanType = type.trim().toLowerCase();
     
     if (this.matchesAny(cleanType, [
+      'intern', 'internship', 'trainee', 'apprentice',
+      '实习', '实习生', '培训生', '学徒'
+    ])) {
+      return JobType.INTERNSHIP;
+    }
+
+    if (this.matchesAny(cleanType, [
       'full-time', 'fulltime', 'full time', 'permanent', 'regular',
       '全职', '正式', '长期', '永久'
     ])) {
@@ -231,13 +238,6 @@ export class TranslationMappingService {
     }
     
     if (this.matchesAny(cleanType, [
-      'intern', 'internship', 'trainee', 'apprentice',
-      '实习', '实习生', '培训生', '学徒'
-    ])) {
-      return JobType.INTERNSHIP;
-    }
-    
-    if (this.matchesAny(cleanType, [
       'temporary', 'temp', 'short-term', 'seasonal',
       '临时', '短期', '季节性'
     ])) {
@@ -254,20 +254,6 @@ export class TranslationMappingService {
     const cleanIndustry = industry.trim().toLowerCase();
     
     if (this.matchesAny(cleanIndustry, [
-      'technology', 'tech', 'software', 'it', 'internet', 'saas', 'fintech', 'edtech',
-      '科技', '技术', '软件', '互联网', '信息技术', '金融科技', '教育科技'
-    ])) {
-      return IndustryType.TECHNOLOGY;
-    }
-    
-    if (this.matchesAny(cleanIndustry, [
-      'healthcare', 'health', 'medical', 'pharma', 'pharmaceutical', 'biotech', 'hospital',
-      '医疗', '健康', '医药', '生物技术', '制药', '医院'
-    ])) {
-      return IndustryType.HEALTHCARE;
-    }
-    
-    if (this.matchesAny(cleanIndustry, [
       'finance', 'financial', 'banking', 'investment', 'insurance', 'fintech',
       '金融', '银行', '投资', '保险', '金融服务'
     ])) {
@@ -279,6 +265,20 @@ export class TranslationMappingService {
       '教育', '学校', '大学', '培训', '学习', '教育科技'
     ])) {
       return IndustryType.EDUCATION;
+    }
+
+    if (this.matchesAny(cleanIndustry, [
+      'healthcare', 'health', 'medical', 'pharma', 'pharmaceutical', 'biotech', 'hospital',
+      '医疗', '健康', '医药', '生物技术', '制药', '医院'
+    ])) {
+      return IndustryType.HEALTHCARE;
+    }
+
+    if (this.matchesAny(cleanIndustry, [
+      'technology', 'tech', 'software', 'it', 'internet', 'saas', 'fintech', 'edtech',
+      '科技', '技术', '软件', '互联网', '信息技术', '金融科技', '教育科技'
+    ])) {
+      return IndustryType.TECHNOLOGY;
     }
     
     if (this.matchesAny(cleanIndustry, [
