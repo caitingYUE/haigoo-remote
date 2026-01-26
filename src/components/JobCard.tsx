@@ -10,10 +10,15 @@ import { getJobSourceType } from '../utils/job-source-helper';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
   'Entry': '初级',
+  'entry': '初级',
   'Mid': '中级',
+  'mid': '中级',
   'Senior': '高级',
+  'senior': '高级',
   'Lead': '专家',
-  'Executive': '高管'
+  'lead': '专家',
+  'Executive': '高管',
+  'executive': '高管'
 };
 
 interface JobCardProps {
