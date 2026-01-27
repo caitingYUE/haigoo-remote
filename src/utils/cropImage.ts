@@ -79,5 +79,38 @@ export default async function getCroppedImg(
   ctx.putImageData(data, 0, 0)
 
   // As Base64 string
-  return canvas.toDataURL('image/jpeg');
+  // Optimize: Use WebP with 0.8 quality for better compression
+  return canvas.toDataURL('image/webp', 0.8);
+}
+
+/**
+ * Compresses an image string (Base64 or URL) to WebP format with resizing
+ */
+export async function compressImage(
+    imageSrc: string, 
+    maxWidth = 1200, 
+    quality = 0.8
+): Promise<string> {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
+    let { width, height } = image;
+
+    // Resize if too large
+    if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return imageSrc;
+
+    // Draw with smoothing
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(image, 0, 0, width, height);
+
+    return canvas.toDataURL('image/webp', quality);
 }

@@ -8,7 +8,7 @@ import {
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
 import Cropper, { Area } from 'react-easy-crop'
-import getCroppedImg from '../utils/cropImage'
+import getCroppedImg, { compressImage } from '../utils/cropImage'
 import { ClassificationService } from '../services/classification-service'
 import AdminCompanyJobsModal from '../components/AdminCompanyJobsModal'
 
@@ -193,7 +193,16 @@ export default function AdminTrustedCompaniesPage() {
 
         try {
             setSaving(true)
-            const result = await trustedCompaniesService.saveCompany(formData)
+            
+            // Optimize cover image if present and is a base64 string (starts with data:image)
+            let optimizedFormData = { ...formData };
+            if (formData.coverImage && formData.coverImage.startsWith('data:image')) {
+                // Compress image to WebP with 0.8 quality and max width 1200
+                const compressedCover = await compressImage(formData.coverImage, 1200, 0.8);
+                optimizedFormData.coverImage = compressedCover;
+            }
+
+            const result = await trustedCompaniesService.saveCompany(optimizedFormData)
 
             if (result.success && result.company) {
                 // Optimistic Update / Direct State Update
