@@ -28,3 +28,9 @@ ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS email_type VARCHAR(50) DE
 ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);
 ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS company_website VARCHAR(255);
 ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS recruitment_needs TEXT;
+
+-- 2026-01-27: Optimize Trusted Companies Page Loading
+-- Add indexes for common sort and filter columns
+CREATE INDEX IF NOT EXISTS idx_trusted_companies_updated_at ON trusted_companies(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_trusted_companies_industry ON trusted_companies(industry);
+CREATE INDEX IF NOT EXISTS idx_trusted_companies_source ON trusted_companies(source);

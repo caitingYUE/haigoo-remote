@@ -169,14 +169,25 @@ export default function AdminTrustedCompaniesPage() {
 
         try {
             setSaving(true)
-            const success = await trustedCompaniesService.saveCompany(formData)
+            const result = await trustedCompaniesService.saveCompany(formData)
 
-            if (success) {
+            if (result.success && result.company) {
+                // Optimistic Update / Direct State Update
+                setCompanies(prev => {
+                    const exists = prev.some(c => c.id === result.company!.id);
+                    if (exists) {
+                        return prev.map(c => c.id === result.company!.id ? result.company! : c);
+                    } else {
+                        return [result.company!, ...prev];
+                    }
+                });
+
                 setIsModalOpen(false)
                 setCoverUrlInput('')
-                loadCompanies()
+                // Remove full reload to improve performance
+                // loadCompanies() 
             } else {
-                alert('保存失败')
+                alert('保存失败: ' + (result.error || '未知错误'))
             }
         } catch (error) {
             console.error('Save failed:', error)
@@ -223,8 +234,16 @@ export default function AdminTrustedCompaniesPage() {
             setCrawlingId(id)
             const result = await trustedCompaniesService.crawlJobs(id, true, 10) // default options
             if (result.success) {
-                alert(`抓取成功！新增/更新了 ${result.count || 0} 个岗位`)
-                loadCompanies() // reload to update job counts
+                alert(`抓取成功！当前共 ${result.count || 0} 个岗位`)
+                
+                // Optimistic Update
+                setCompanies(prev => prev.map(c => c.id === id ? { 
+                    ...c, 
+                    jobCount: result.count || 0,
+                    lastCrawledAt: new Date().toISOString()
+                } : c));
+                
+                // loadCompanies() // reload to update job counts
             } else {
                 alert('抓取失败: ' + (result.error || '未知错误'))
             }

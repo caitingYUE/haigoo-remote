@@ -248,7 +248,7 @@ class TrustedCompaniesService {
         }
     }
 
-    async saveCompany(company: Partial<TrustedCompany>): Promise<boolean> {
+    async saveCompany(company: Partial<TrustedCompany>): Promise<{ success: boolean; company?: TrustedCompany; error?: string }> {
         try {
             const queryParams = new URLSearchParams();
             queryParams.append('resource', 'companies');
@@ -276,10 +276,17 @@ class TrustedCompaniesService {
                 },
                 body: JSON.stringify(payload)
             });
-            return response.ok;
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                return { success: true, company: data.company };
+            } else {
+                return { success: false, error: data.error || 'Failed to save company' };
+            }
         } catch (error) {
             console.error('Error saving company:', error);
-            return false;
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     }
 
