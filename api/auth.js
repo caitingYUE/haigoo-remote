@@ -31,17 +31,20 @@ const GOOGLE_CONFIGURED = !!GOOGLE_CLIENT_ID
 const googleClient = GOOGLE_CONFIGURED ? new OAuth2Client(GOOGLE_CLIENT_ID) : null
 
 // CORS headers
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
+function setCorsHeaders(res, req) {
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://haigoo-admin.vercel.app',
+    'https://www.haigooremote.com'
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
-
-
-
-/**
- * 验证 Google ID Token
- */
 async function verifyGoogleToken(token) {
   if (!GOOGLE_CONFIGURED || !googleClient) {
     return null
@@ -832,7 +835,7 @@ async function handleResetPassword(req, res) {
  * 主处理器
  */
 export default async function handler(req, res) {
-  setCorsHeaders(res)
+  setCorsHeaders(res, req)
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end()

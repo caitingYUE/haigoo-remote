@@ -62,9 +62,8 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: false,      // 不移除所有 console
+        drop_console: true,      // 生产环境移除所有 console
         drop_debugger: true,      // 移除 debugger
-        pure_funcs: ['console.info'] // 移除 console.info
       },
       mangle: {
         toplevel: false,          // ❗不要混淆顶层变量（避免破坏 Vercel 入口）

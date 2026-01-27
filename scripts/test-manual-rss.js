@@ -27,7 +27,7 @@ async function testManualRSS() {
     
     const response = await fetch(testSource.url, {
         headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; HaigooBot/1.0; +https://haigoo.io)'
+            'User-Agent': 'Mozilla/5.0 (compatible; HaigooBot/1.0; +https://haigooremote.com)'
         }
     });
     

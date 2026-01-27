@@ -9,6 +9,12 @@ import crypto from 'crypto'
 
 // JWT 密钥（从环境变量读取，或使用默认值）
 const JWT_SECRET = process.env.JWT_SECRET || 'haigoo-jwt-secret-key-change-in-production'
+
+// Security Warning for Default Secret
+if (!process.env.JWT_SECRET) {
+  console.warn('\x1b[31m%s\x1b[0m', 'CRITICAL SECURITY WARNING: Using default JWT_SECRET. This is unsafe for production! Please set JWT_SECRET in your environment variables.');
+}
+
 const JWT_EXPIRES_IN = '30d' // Token 有效期 30 天
 
 // 密码加密轮次

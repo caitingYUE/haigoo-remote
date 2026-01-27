@@ -1,7 +1,23 @@
 
+import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'
+import userHelper from '../server-utils/user-helper.js'
+import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js'
+import neonHelper from '../server-utils/dal/neon-helper.js'
+import { writeJobsToNeon } from '../lib/api-handlers/processed-jobs.js'
+import { translateJobs } from '../lib/services/translation-service.cjs'
+
 export default async function handler(req, res) {
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://haigoo-admin.vercel.app',
+      'https://www.haigooremote.com'
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -18,6 +34,17 @@ export default async function handler(req, res) {
   try {
     // === Action: Translate Jobs (Merged from translate-jobs.js) ===
     if (action === 'translate-jobs') {
+        // Auth Check: Admin only
+        const token = extractToken(req)
+        const payload = token ? verifyToken(token) : null
+        const requester = payload?.userId ? await userHelper.getUserById(payload.userId) : null
+        const isAdmin = !!(requester?.roles?.admin || SUPER_ADMIN_EMAILS.includes(requester?.email))
+
+        if (!isAdmin) {
+            console.warn('[translate-jobs] Unauthorized access attempt:', requester?.email)
+            return res.status(403).json({ success: false, error: 'Forbidden: Admin access required' })
+        }
+
         if (req.method !== 'POST') {
             return res.status(405).json({ error: 'Method not allowed' })
         }
@@ -303,4 +330,34 @@ function extractMainDuty(title, responsibilities) {
         return responsibilities[0].substring(0, 15);
     }
     return '';
+}
+
+// Helper for Translate Jobs
+function mapRowToJob(row) {
+    return {
+        id: row.job_id,
+        title: row.title,
+        description: row.description,
+        responsibilities: typeof row.responsibilities === 'string' ? JSON.parse(row.responsibilities || '[]') : row.responsibilities,
+        requirements: typeof row.requirements === 'string' ? JSON.parse(row.requirements || '[]') : row.requirements,
+        benefits: typeof row.benefits === 'string' ? JSON.parse(row.benefits || '[]') : row.benefits,
+        translations: row.translations,
+        isTranslated: row.is_translated
+    }
+}
+
+async function getAllJobs() {
+    if (!neonHelper.isConfigured) return [];
+    try {
+        // Limit to 2000 to prevent OOM
+        const result = await neonHelper.query(`
+            SELECT * FROM jobs 
+            ORDER BY published_at DESC 
+            LIMIT 2000
+        `);
+        return result ? result.map(mapRowToJob) : [];
+    } catch (e) {
+        console.error('getAllJobs error:', e);
+        return [];
+    }
 }

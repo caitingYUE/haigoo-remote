@@ -19,7 +19,9 @@ declare global {
 
 // 阿里百炼API配置
 export const ALIBABA_BAILIAN_CONFIG = {
-  apiKey: import.meta.env.VITE_ALIBABA_BAILIAN_API_KEY,
+  // ⚠️ Security: Do not expose API Key in frontend code!
+  // The frontend should call /api/ai proxy instead.
+  apiKey: '', 
   baseUrl: import.meta.env.VITE_ALIBABA_BAILIAN_BASE_URL || 'https://dashscope.aliyuncs.com/api/v1',
   models: {
     // 通用对话模型
@@ -44,13 +46,7 @@ export const API_CONFIG = {
 
 // 验证API配置
 export const validateConfig = (): boolean => {
-  const hasBailian = !!ALIBABA_BAILIAN_CONFIG.apiKey && !!ALIBABA_BAILIAN_CONFIG.baseUrl
-
-  if (!hasBailian) {
-    console.error('未配置阿里百炼API密钥，请检查环境变量 VITE_ALIBABA_BAILIAN_API_KEY')
-    return false
-  }
-  
+  // Frontend always passes validation as it uses proxy
   return true
 }
 
@@ -62,7 +58,6 @@ export const getApiUrl = (endpoint: string): string => {
 // 获取请求头
 export const getHeaders = (): Record<string, string> => {
   return {
-    'Authorization': `Bearer ${ALIBABA_BAILIAN_CONFIG.apiKey}`,
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   }
