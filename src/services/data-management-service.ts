@@ -263,6 +263,7 @@ export class DataManagementService {
     // 新增：关键词搜索（岗位名称/公司/描述/地点/标签）
     search?: string;
     isRemote?: boolean;
+    location?: string;
     tags?: string[];
     dateRange?: { start: Date; end: Date };
     sortBy?: string;
@@ -279,6 +280,7 @@ export class DataManagementService {
       if (filters?.source) queryParams.append('source', filters.source);
       if (filters?.company) queryParams.append('company', filters.company);
       if (filters?.industry) queryParams.append('industry', filters.industry);
+      if (filters?.location) queryParams.append('location', filters.location);
       if (filters?.search) queryParams.append('search', filters.search);
       if (filters?.isRemote !== undefined) queryParams.append('isRemote', filters.isRemote.toString());
       if (filters?.isApproved !== undefined) queryParams.append('isApproved', filters.isApproved.toString());

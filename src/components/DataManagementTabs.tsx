@@ -15,6 +15,8 @@ import { EditJobModal } from './EditJobModal';
 // 简历库相关逻辑已迁移至独立页面
 
 // Define skill keywords for recommendations
+import MultiSelectDropdown from './MultiSelectDropdown';
+
 const SKILL_KEYWORDS = [
   // Programming Languages
   'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'PHP', 'Ruby', 'Swift', 'Kotlin',
@@ -28,6 +30,47 @@ const SKILL_KEYWORDS = [
   'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'CI/CD',
   // Tools
   'Git', 'Jenkins', 'Jira', 'Confluence'
+];
+
+const LOCATION_OPTIONS = [
+  { label: '远程', value: 'Remote' },
+  { label: '中国', value: 'China' },
+  { label: '美国', value: 'USA' },
+  { label: '欧洲', value: 'Europe' },
+  { label: '亚太', value: 'APAC' },
+  { label: '全球', value: 'Global' }
+];
+
+const LEVEL_OPTIONS = [
+  { label: '初级 (Entry)', value: 'Entry' },
+  { label: '中级 (Mid)', value: 'Mid' },
+  { label: '高级 (Senior)', value: 'Senior' },
+  { label: '专家 (Lead)', value: 'Lead' },
+  { label: '管理 (Executive)', value: 'Executive' }
+];
+
+const SOURCE_OPTIONS = [
+  { label: 'WeWorkRemotely', value: 'WeWorkRemotely' },
+  { label: 'Remotive', value: 'Remotive' },
+  { label: 'Himalayas', value: 'Himalayas' },
+  { label: 'NoDesk', value: 'NoDesk' },
+  { label: '企业官网/认证企业', value: 'special:official' },
+  { label: '人工录入', value: 'special:manual' }
+];
+
+const INDUSTRY_OPTIONS = [
+  { label: '互联网/软件', value: '互联网/软件' },
+  { label: '企业服务/SaaS', value: '企业服务/SaaS' },
+  { label: '人工智能', value: '人工智能' },
+  { label: '大健康/医疗', value: '大健康/医疗' },
+  { label: '教育', value: '教育' },
+  { label: '金融/Fintech', value: '金融/Fintech' },
+  { label: 'Web3/区块链', value: 'Web3/区块链' },
+  { label: '电子商务', value: '电子商务' },
+  { label: '游戏', value: '游戏' },
+  { label: '媒体/娱乐', value: '媒体/娱乐' },
+  { label: '硬件/物联网', value: '硬件/物联网' },
+  { label: '消费生活', value: '消费生活' }
 ];
 
 interface DataManagementTabsProps {
@@ -69,14 +112,15 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   }>({});
 
   const [processedDataFilters, setProcessedDataFilters] = useState<{
-    category?: JobCategory;
+    category?: string[];
     company?: string;
     // 新增：关键词搜索（岗位名称/公司/描述/地点/标签）
     search?: string;
-    experienceLevel?: string;
+    experienceLevel?: string[];
     tags?: string[];
-    industry?: string;
-    source?: string;
+    industry?: string[];
+    source?: string[];
+    location?: string[];
     isFeatured?: boolean;
     isApproved?: boolean;
     sortBy?: string;
@@ -134,10 +178,21 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const loadProcessedData = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Convert array filters to comma-separated strings
+      const filters = {
+        ...processedDataFilters,
+        category: processedDataFilters.category?.join(','),
+        industry: processedDataFilters.industry?.join(','),
+        source: processedDataFilters.source?.join(','),
+        experienceLevel: processedDataFilters.experienceLevel?.join(','),
+        location: processedDataFilters.location?.join(','),
+      };
+
       const result = await dataManagementService.getProcessedJobs(
         processedDataPage,
         processedDataPageSize,
-        processedDataFilters
+        filters as any
       );
       setProcessedData(result.data);
       setProcessedDataTotal(result.total);
@@ -694,114 +749,95 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const renderProcessedDataTable = () => (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200">
       {/* 过滤器 */}
-      <div className="p-6 border-b border-slate-200">
-        <div className="flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2">
+      <div className="p-4 border-b border-slate-200">
+        <div className="flex flex-wrap gap-2 items-center justify-between">
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex items-center gap-1 mr-2">
               <Filter className="w-4 h-4 text-slate-500" />
-              <span className="text-sm font-medium text-slate-700">过滤条件：</span>
             </div>
 
-            <select
-              value={processedDataFilters.category || ''}
-              onChange={(e) => {
-                setProcessedDataFilters({ ...processedDataFilters, category: e.target.value as JobCategory || undefined });
+            <MultiSelectDropdown
+              label="分类"
+              options={availableCategories.length > 0 ? availableCategories.map(c => ({ label: c, value: c })) : [
+                  { label: '前端开发', value: '前端开发' },
+                  { label: '后端开发', value: '后端开发' },
+                  { label: '全栈开发', value: '全栈开发' },
+                  { label: '产品经理', value: '产品经理' },
+                  { label: 'UI/UX设计', value: 'UI/UX设计' },
+                  { label: '数据分析', value: '数据分析' },
+                  { label: '运营', value: '运营' },
+                  { label: '市场营销', value: '市场营销' },
+                  { label: '其他', value: '其他' }
+              ]}
+              selected={processedDataFilters.category || []}
+              onChange={(selected) => {
+                setProcessedDataFilters({ ...processedDataFilters, category: selected });
                 setProcessedDataPage(1);
               }}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">所有分类</option>
-              {availableCategories.length > 0 ? availableCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              )) : (
-                <>
-                  <option value="前端开发">前端开发</option>
-                  <option value="后端开发">后端开发</option>
-                  <option value="全栈开发">全栈开发</option>
-                  <option value="产品经理">产品经理</option>
-                  <option value="UI/UX设计">UI/UX设计</option>
-                  <option value="数据分析">数据分析</option>
-                  <option value="运营">运营</option>
-                  <option value="市场营销">市场营销</option>
-                  <option value="其他">其他</option>
-                </>
-              )}
-            </select>
-
-            <select
-              value={processedDataFilters.isFeatured === undefined ? '' : processedDataFilters.isFeatured.toString()}
-              onChange={(e) => {
-                setProcessedDataFilters({ ...processedDataFilters, isFeatured: e.target.value === '' ? undefined : e.target.value === 'true' });
-                setProcessedDataPage(1);
-              }}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">所有岗位</option>
-              <option value="true">精选岗位</option>
-              <option value="false">非精选</option>
-            </select>
-
-            <select
-              value={processedDataFilters.industry || ''}
-              onChange={(e) => {
-                setProcessedDataFilters({ ...processedDataFilters, industry: e.target.value || undefined });
-                setProcessedDataPage(1);
-              }}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">所有行业</option>
-              <option value="互联网/软件">互联网/软件</option>
-              <option value="企业服务/SaaS">企业服务/SaaS</option>
-              <option value="人工智能">人工智能</option>
-              <option value="大健康/医疗">大健康/医疗</option>
-              <option value="教育">教育</option>
-              <option value="金融/Fintech">金融/Fintech</option>
-              <option value="Web3/区块链">Web3/区块链</option>
-              <option value="电子商务">电子商务</option>
-              <option value="游戏">游戏</option>
-              <option value="媒体/娱乐">媒体/娱乐</option>
-              <option value="硬件/物联网">硬件/物联网</option>
-              <option value="消费生活">消费生活</option>
-            </select>
-
-            {/* 来源筛选 */}
-            <select
-              value={processedDataFilters.source || ''}
-              onChange={(e) => {
-                setProcessedDataFilters({ ...processedDataFilters, source: e.target.value || undefined });
-                setProcessedDataPage(1);
-              }}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-40"
-            >
-              <option value="">所有来源</option>
-              <option value="WeWorkRemotely">WeWorkRemotely</option>
-              <option value="Remotive">Remotive</option>
-              <option value="Himalayas">Himalayas</option>
-              <option value="NoDesk">NoDesk</option>
-              <option value="special:official">企业官网/认证企业</option>
-              <option value="special:manual">人工录入</option>
-            </select>
-
-            <input
-              type="text"
-              placeholder="搜索岗位名称或公司..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
+
+            <MultiSelectDropdown
+              label="级别"
+              options={LEVEL_OPTIONS}
+              selected={processedDataFilters.experienceLevel || []}
+              onChange={(selected) => {
+                setProcessedDataFilters({ ...processedDataFilters, experienceLevel: selected });
+                setProcessedDataPage(1);
+              }}
+            />
+
+            <MultiSelectDropdown
+              label="行业"
+              options={INDUSTRY_OPTIONS}
+              selected={processedDataFilters.industry || []}
+              onChange={(selected) => {
+                setProcessedDataFilters({ ...processedDataFilters, industry: selected });
+                setProcessedDataPage(1);
+              }}
+            />
+
+            <MultiSelectDropdown
+              label="来源"
+              options={SOURCE_OPTIONS}
+              selected={processedDataFilters.source || []}
+              onChange={(selected) => {
+                setProcessedDataFilters({ ...processedDataFilters, source: selected });
+                setProcessedDataPage(1);
+              }}
+            />
+
+            <MultiSelectDropdown
+              label="地点"
+              options={LOCATION_OPTIONS}
+              selected={processedDataFilters.location || []}
+              onChange={(selected) => {
+                setProcessedDataFilters({ ...processedDataFilters, location: selected });
+                setProcessedDataPage(1);
+              }}
+            />
+
+            <div className="w-48">
+                <input
+                type="text"
+                placeholder="搜索岗位/公司..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+            </div>
 
             <button
               onClick={() => setProcessedDataFilters({})}
-              className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50"
+              className="px-3 py-2.5 text-sm text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50"
             >
-              清除过滤
+              清除
             </button>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleAddJob()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
             >
               <Plus className="w-4 h-4" />
               新增职位
