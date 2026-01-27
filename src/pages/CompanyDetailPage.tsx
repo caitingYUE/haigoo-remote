@@ -59,8 +59,22 @@ export default function CompanyDetailPage() {
 
             let companyId = null;
             if (trusted) {
-                setCompanyInfo({ ...trusted, isTrusted: true })
-                companyId = trusted.id;
+                // If trusted company is found, check if coverImage is missing (due to list optimization)
+                // If missing, fetch full details by ID to get the cover image
+                let fullTrusted = trusted;
+                if (!trusted.coverImage && trusted.id) {
+                    try {
+                        const details = await trustedCompaniesService.getCompanyById(trusted.id);
+                        if (details) {
+                            fullTrusted = details;
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch full company details:', e);
+                    }
+                }
+                
+                setCompanyInfo({ ...fullTrusted, isTrusted: true })
+                companyId = fullTrusted.id;
             }
 
             // 2. Fetch jobs using company ID if available (much faster), otherwise fallback to name
