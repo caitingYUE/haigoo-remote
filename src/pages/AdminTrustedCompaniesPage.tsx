@@ -124,13 +124,37 @@ export default function AdminTrustedCompaniesPage() {
         setPage(1)
     }
 
-    const handleEdit = (company: TrustedCompany) => {
+    const handleEdit = async (company: TrustedCompany) => {
+        // Optimistic UI: Show modal immediately with available data
         setEditingCompany(company)
         setFormData({ 
             ...company,
             emailType: company.emailType || '通用支持邮箱'
         })
-        setCoverUrlInput(company.coverImage || '')
+        
+        // If coverImage is missing (due to list optimization), fetch full details
+        if (!company.coverImage) {
+            setCoverUrlInput('') // Temporary empty
+            
+            try {
+                // Fetch full details
+                const fullCompany = await trustedCompaniesService.getCompanyById(company.id);
+                if (fullCompany) {
+                    setEditingCompany(fullCompany);
+                    setFormData({ 
+                        ...fullCompany,
+                        emailType: fullCompany.emailType || '通用支持邮箱'
+                    });
+                    setCoverUrlInput(fullCompany.coverImage || '');
+                }
+            } catch (e) {
+                console.error("Failed to fetch full company details:", e);
+                // Keep showing what we have, maybe user can re-upload if needed
+            }
+        } else {
+            setCoverUrlInput(company.coverImage || '')
+        }
+        
         resetCropperState()
         setIsModalOpen(true)
     }
