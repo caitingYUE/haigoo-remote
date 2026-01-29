@@ -72,10 +72,9 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             if (data.jobs) {
                 setJobs(data.jobs);
                 setTotal(data.total || 0);
-                // Notify parent about total count
-                if (onUpdate && typeof data.total === 'number') {
-                    onUpdate(data.total);
-                }
+                // Do NOT update parent count here, as data.total includes unapproved jobs (isAdmin=true),
+                // while the parent list usually displays only approved/active jobs.
+                // Updating it would cause a mismatch (showing total instead of approved).
             }
         } catch (error) {
             console.error('Failed to fetch jobs:', error);
@@ -142,12 +141,10 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             if (res.ok) {
                 setJobs(prev => prev.filter(j => j.id !== jobId));
                 
-                // Optimistic update for total count
+                // Optimistic update for local total count
                 const newTotal = Math.max(0, total - 1);
                 setTotal(newTotal);
-                if (onUpdate) {
-                    onUpdate(newTotal);
-                }
+                // Do NOT update parent count (same reason as fetchJobs)
 
                 if (jobs.length === 1 && page > 1) {
                     setPage(p => p - 1);
