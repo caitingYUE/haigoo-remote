@@ -26,7 +26,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
     // Pagination
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
-    const PAGE_SIZE = 10;
+    const PAGE_SIZE = 20;
 
     // Fetch Tag Config
     useEffect(() => {
@@ -161,6 +161,43 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         }
     };
 
+    const handleAddJob = () => {
+        const newJob: ProcessedJobData = {
+            id: '', // Empty ID indicates new job
+            title: '',
+            company: company.name,
+            companyId: company.id,
+            location: '',
+            description: '',
+            url: '',
+            publishedAt: new Date().toISOString(),
+            source: 'manual',
+            sourceType: 'manual',
+            category: '其他',
+            tags: [],
+            isManuallyEdited: true,
+            isApproved: true,
+            status: 'active',
+            processedAt: new Date(),
+            processingVersion: '1.0',
+            editHistory: [],
+            requirements: [],
+            benefits: [],
+            jobType: 'full-time',
+            experienceLevel: 'Mid',
+            region: 'domestic',
+            isTrusted: true,
+            canRefer: false,
+            isFeatured: false,
+            rawDataId: '',
+            isRemote: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        setEditingJob(newJob);
+        setCurrentJobIndex(-1);
+    };
+
     const handleEditJob = (job: ProcessedJobData) => {
         const index = jobs.findIndex(j => j.id === job.id);
         setEditingJob(job);
@@ -183,13 +220,20 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         if (!editingJob) return;
 
         try {
-            // Optimistic update
-            setJobs(prev => prev.map(job => 
-                job.id === editingJob.id ? { ...job, ...updatedJob } as ProcessedJobData : job
-            ));
-
             if (editingJob.id) {
+                // Update existing job
+                // Optimistic update
+                setJobs(prev => prev.map(job => 
+                    job.id === editingJob.id ? { ...job, ...updatedJob } as ProcessedJobData : job
+                ));
+
                 await dataManagementService.updateProcessedJob(editingJob.id, updatedJob, 'admin');
+            } else {
+                // Create new job
+                const newJob = { ...editingJob, ...updatedJob } as ProcessedJobData;
+                await dataManagementService.addProcessedJob(newJob);
+                // Refresh list to show new job (cannot optimistically update easily as we need ID)
+                fetchJobs();
             }
             
             if (shouldClose) {
@@ -197,6 +241,10 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             } else {
                 // 如果不关闭弹窗，给予用户反馈
                 alert('保存成功');
+                if (!editingJob.id) {
+                    // For new job, we should probably close or reload to get ID, but for now let's just close
+                    setEditingJob(null);
+                }
             }
         } catch (error) {
             console.error('Failed to save job:', error);
@@ -243,8 +291,8 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                         {translating ? '翻译中...' : '一键翻译本页'}
                     </button>
                     <button
-                        className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 flex items-center gap-2 text-sm font-medium"
-                        onClick={() => alert('手动录入功能开发中...')}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
+                        onClick={handleAddJob}
                     >
                         <Plus className="w-4 h-4" />
                         手动录入

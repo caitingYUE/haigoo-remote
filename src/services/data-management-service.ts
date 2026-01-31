@@ -24,6 +24,9 @@ export interface ProcessedJobData extends Job {
   processingVersion: string;
   tags: string[];
   isManuallyEdited: boolean;
+  sourceType?: string; // Added for frontend compatibility
+  isTrusted?: boolean; // Added for frontend compatibility
+  canRefer?: boolean; // Added for frontend compatibility
   editHistory: {
     field: string;
     oldValue: any;
