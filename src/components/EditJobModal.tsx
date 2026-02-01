@@ -55,7 +55,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     benefits: job.benefits?.join('\n') || '',
     region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
     isFeatured: job.isFeatured || false,
-    isApproved: (job as any).isApproved || false
+    isApproved: (job as any).isApproved || false,
+    url: job.url || ''
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -79,7 +80,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       benefits: job.benefits?.join('\n') || '',
       region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
       isFeatured: job.isFeatured || false,
-      isApproved: (job as any).isApproved || false
+      isApproved: (job as any).isApproved || false,
+      url: job.url || ''
     });
   }, [job]);
 
@@ -313,6 +315,18 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="例如: $80,000 - $120,000"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">申请链接 (URL)</label>
+              <input
+                type="url"
+                value={(formData as any).url || ''}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value } as any)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="https://..."
+              />
+              <p className="text-xs text-slate-500 mt-1">手动录入岗位时请填写，爬虫抓取的岗位会自动填充。</p>
             </div>
 
             <div>
