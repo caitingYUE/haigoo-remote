@@ -32,7 +32,7 @@ export interface TrustedCompany {
     canRefer: boolean;
     jobCount?: number;
     lastCrawledAt?: string; // New field
-    translations?: { description?: string; [key: string]: any };
+    translations?: { description?: string;[key: string]: any };
     createdAt: string;
     updatedAt: string;
 }
@@ -94,7 +94,7 @@ class TrustedCompaniesService {
             queryParams.append('resource', 'companies'); // Match api/data.js logic
             // queryParams.append('target', 'companies'); // Remove target param as api/data.js handles routing via resource
             queryParams.append('_t', Date.now().toString());
-            
+
             if (params) {
                 if (params.page) queryParams.append('page', params.page.toString());
                 if (params.limit) queryParams.append('limit', params.limit.toString());
@@ -110,20 +110,20 @@ class TrustedCompaniesService {
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch companies');
             const data = await response.json();
-            
+
             // Check for success flag in standard API response wrapper
             if (data.success === false) {
-                 throw new Error(data.error || 'Failed to fetch companies');
+                throw new Error(data.error || 'Failed to fetch companies');
             }
 
             // Handle both wrapped response ({ success: true, companies: [...] }) and direct response
             const responseData = data.success && data.companies ? data : data;
-            
+
             // If paginated response
             if (responseData.total !== undefined) {
                 return responseData;
             }
-            
+
             // If array wrapped in object
             if (responseData.companies && Array.isArray(responseData.companies)) {
                 return responseData.companies;
@@ -146,11 +146,11 @@ class TrustedCompaniesService {
             const queryParams = new URLSearchParams();
             queryParams.append('resource', 'companies');
             queryParams.append('action', 'featured_home');
-            
+
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch featured companies');
             const data = await response.json();
-            
+
             return {
                 companies: data.companies || [],
                 stats: data.stats || {}
@@ -168,11 +168,11 @@ class TrustedCompaniesService {
             queryParams.append('resource', 'companies');
             queryParams.append('action', 'cover_image');
             queryParams.append('company_id', companyId);
-            
+
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch cover image');
             const data = await response.json();
-            
+
             return {
                 coverImage: data.coverImage || ''
             };
@@ -200,7 +200,7 @@ class TrustedCompaniesService {
             queryParams.append('resource', 'companies'); // Match api/data.js routing
             queryParams.append('target', 'trusted_companies_with_jobs_info'); // Specific handler action
             queryParams.append('_t', Date.now().toString());
-            
+
             if (params.page) queryParams.append('page', params.page.toString());
             if (params.limit) queryParams.append('limit', params.limit.toString());
             if (params.sortBy) queryParams.append('sortBy', params.sortBy);
@@ -223,7 +223,7 @@ class TrustedCompaniesService {
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch companies with job stats');
             const data = await response.json();
-            
+
             return data;
         } catch (error) {
             console.error('Error fetching companies with job stats:', error);
@@ -237,7 +237,7 @@ class TrustedCompaniesService {
             queryParams.append('resource', 'companies'); // Match api/data.js routing
             queryParams.append('target', 'companies'); // Specific handler action (optional but safe)
             queryParams.append('id', id);
-            
+
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch company');
             const data = await response.json();
@@ -263,7 +263,7 @@ class TrustedCompaniesService {
                 isTrusted: true, // Force trusted for manual saves
                 canRefer: !!company.canRefer,
                 // Map frontend url to website if needed (though backend handles both)
-                url: company.website, 
+                url: company.website,
                 careersPage: company.careersPage,
                 linkedin: company.linkedin
             };
@@ -276,9 +276,9 @@ class TrustedCompaniesService {
                 },
                 body: JSON.stringify(payload)
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success) {
                 return { success: true, company: data.company };
             } else {
@@ -295,7 +295,7 @@ class TrustedCompaniesService {
             const queryParams = new URLSearchParams();
             queryParams.append('resource', 'companies');
             queryParams.append('id', id);
-            
+
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
                 method: 'DELETE',
                 headers: {
@@ -332,7 +332,7 @@ class TrustedCompaniesService {
         }
     }
 
-    async crawlJobs(companyId: string, fetchDetails: boolean = false, maxDetails: number = 10): Promise<{ success: boolean; count?: number; error?: string }> {
+    async crawlJobs(companyId: string, fetchDetails: boolean = false, maxDetails: number = 100): Promise<{ success: boolean; count?: number; error?: string }> {
         try {
             const queryParams = new URLSearchParams();
             queryParams.append('resource', 'companies');

@@ -18,12 +18,13 @@ async function testOsome() {
             { maxJobs: 3, fetchDetails: true }
         );
 
-        if (!result || !result.jobs || result.jobs.length === 0) {
-            console.log('❌ No jobs found during crawl');
-            return;
-        }
-
         console.log(`✅ Jobs found: ${result.jobs.length}`);
+        result.jobs.forEach((job, i) => {
+            console.log(`--- Job ${i + 1} ---`);
+            console.log(`Title: ${job.title}`);
+            console.log(`Location: ${job.location}`);
+            console.log(`URL: ${job.url}`);
+        });
 
         // Pick the first job and try to fetch details explicitly to see debug logs
         const firstJob = result.jobs[0];

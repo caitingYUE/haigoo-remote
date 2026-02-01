@@ -8,7 +8,6 @@ import JobDetailModal from '../components/JobDetailModal'
 import { JobDetailPanel } from '../components/JobDetailPanel'
 import JobFilterBar from '../components/JobFilterBar'
 import { Job } from '../types'
-import { extractLocations } from '../utils/locationHelper'
 
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService } from '../services/trusted-companies-service'
