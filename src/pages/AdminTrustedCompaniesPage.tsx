@@ -37,7 +37,7 @@ export default function AdminTrustedCompaniesPage() {
     const [crawlingId, setCrawlingId] = useState<string | null>(null)
     const [autoFilling, setAutoFilling] = useState(false)
     const [filterCanRefer, setFilterCanRefer] = useState<'all' | 'yes' | 'no'>('all')
-    
+
     // Batch crawl state
     const [batchCrawling, setBatchCrawling] = useState(false)
     const [batchProgress, setBatchProgress] = useState('')
@@ -127,21 +127,21 @@ export default function AdminTrustedCompaniesPage() {
     const handleEdit = async (company: TrustedCompany) => {
         // Optimistic UI: Show modal immediately with available data
         setEditingCompany(company)
-        setFormData({ 
+        setFormData({
             ...company,
             emailType: company.emailType || '通用支持邮箱'
         })
-        
+
         // If coverImage is missing (due to list optimization), fetch full details
         if (!company.coverImage) {
             setCoverUrlInput('') // Temporary empty
-            
+
             try {
                 // Fetch full details
                 const fullCompany = await trustedCompaniesService.getCompanyById(company.id);
                 if (fullCompany) {
                     setEditingCompany(fullCompany);
-                    setFormData({ 
+                    setFormData({
                         ...fullCompany,
                         emailType: fullCompany.emailType || '通用支持邮箱'
                     });
@@ -154,7 +154,7 @@ export default function AdminTrustedCompaniesPage() {
         } else {
             setCoverUrlInput(company.coverImage || '')
         }
-        
+
         resetCropperState()
         setIsModalOpen(true)
     }
@@ -193,7 +193,7 @@ export default function AdminTrustedCompaniesPage() {
 
         try {
             setSaving(true)
-            
+
             // Optimize cover image if present and is a base64 string (starts with data:image)
             let optimizedFormData = { ...formData };
             if (formData.coverImage && formData.coverImage.startsWith('data:image')) {
@@ -265,17 +265,17 @@ export default function AdminTrustedCompaniesPage() {
     const handleCrawlJobs = async (id: string) => {
         try {
             setCrawlingId(id)
-            const result = await trustedCompaniesService.crawlJobs(id, true, 10) // default options
+            const result = await trustedCompaniesService.crawlJobs(id, true, 100) // Increase limit to 100
             if (result.success) {
                 alert(`抓取成功！当前共 ${result.count || 0} 个岗位`)
-                
+
                 // Optimistic Update
-                setCompanies(prev => prev.map(c => c.id === id ? { 
-                    ...c, 
+                setCompanies(prev => prev.map(c => c.id === id ? {
+                    ...c,
                     jobCount: result.count || 0,
                     lastCrawledAt: new Date().toISOString()
                 } : c));
-                
+
                 // loadCompanies() // reload to update job counts
             } else {
                 alert('抓取失败: ' + (result.error || '未知错误'))
@@ -415,10 +415,10 @@ export default function AdminTrustedCompaniesPage() {
             for (let i = 0; i < companies.length; i++) {
                 const company = companies[i]
                 setBatchProgress(`正在抓取 (${i + 1}/${companies.length}): ${company.name}`)
-                
+
                 try {
                     // Reuse existing service method with default options (force=true, limit=10)
-                    const result = await trustedCompaniesService.crawlJobs(company.id, true, 10)
+                    const result = await trustedCompaniesService.crawlJobs(company.id, true, 100)
                     if (result.success) {
                         successCount++
                     } else {
@@ -430,7 +430,7 @@ export default function AdminTrustedCompaniesPage() {
                     console.error(`Error crawling ${company.name}:`, err)
                 }
             }
-            
+
             alert(`批量抓取完成！成功: ${successCount}, 失败: ${failCount}`)
             loadCompanies() // Reload to update counts
         } catch (error) {
@@ -533,144 +533,144 @@ export default function AdminTrustedCompaniesPage() {
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">规模/地址</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">评分/成立</th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
-                                    onClick={() => handleSort('jobCount')}
-                                >
-                                    <div className="flex items-center gap-1">
-                                        在招岗位
-                                        {sortBy === 'jobCount' && (
-                                            <span className="text-gray-700">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                                        )}
-                                    </div>
-                                </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
-                                    onClick={() => handleSort('updatedAt')}
-                                >
-                                    <div className="flex items-center gap-1">
-                                        更新时间
-                                        {sortBy === 'updatedAt' && (
-                                            <span className="text-gray-700">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                                        )}
-                                    </div>
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">链接</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {companies.map(company => (
-                                <tr key={company.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center">
-                                            <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200">
-                                                {company.logo ? (
-                                                    <img src={company.logo} alt="" className="h-full w-full object-contain p-1" />
-                                                ) : (
-                                                    <Building2 className="w-5 h-5 text-gray-400" />
-                                                )}
-                                            </div>
-                                            <div className="ml-4 max-w-xs">
-                                                <div className="font-medium text-gray-900 flex items-center gap-2">
-                                                    {company.name}
-                                                    {company.canRefer && (
-                                                        <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded border border-green-200 whitespace-nowrap">
-                                                            内推
-                                                        </span>
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">规模/地址</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">评分/成立</th>
+                                    <th
+                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('jobCount')}
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            在招岗位
+                                            {sortBy === 'jobCount' && (
+                                                <span className="text-gray-700">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th
+                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('updatedAt')}
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            更新时间
+                                            {sortBy === 'updatedAt' && (
+                                                <span className="text-gray-700">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">链接</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {companies.map(company => (
+                                    <tr key={company.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center">
+                                                <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200">
+                                                    {company.logo ? (
+                                                        <img src={company.logo} alt="" className="h-full w-full object-contain p-1" />
+                                                    ) : (
+                                                        <Building2 className="w-5 h-5 text-gray-400" />
                                                     )}
                                                 </div>
-                                                <div className="text-xs text-gray-500 truncate" title={company.description}>
-                                                    {company.description || '暂无简介'}
+                                                <div className="ml-4 max-w-xs">
+                                                    <div className="font-medium text-gray-900 flex items-center gap-2">
+                                                        {company.name}
+                                                        {company.canRefer && (
+                                                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded border border-green-200 whitespace-nowrap">
+                                                                内推
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 truncate" title={company.description}>
+                                                        {company.description || '暂无简介'}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                            {company.industry || '未分类'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        <div className="flex flex-col">
-                                            <span>{company.employeeCount || '-'}</span>
-                                            <span className="text-xs text-gray-400 truncate max-w-[150px]" title={company.address}>{company.address || '-'}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        <div className="flex flex-col">
-                                            <span>{company.companyRating ? `⭐ ${company.companyRating}` : '-'}</span>
-                                            <span className="text-xs text-gray-400">{company.foundedYear ? `${company.foundedYear}年成立` : '-'}</span>
-                                        </div>
-                                    </td>
-                                    <td 
-                                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 cursor-pointer hover:text-indigo-600 hover:font-medium underline decoration-dashed underline-offset-4"
-                                        onClick={() => setSelectedCompanyForJobs(company)}
-                                        title="点击管理岗位"
-                                    >
-                                        {company.jobCount ?? 0}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {company.updatedAt ? (
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {company.industry || '未分类'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                             <div className="flex flex-col">
-                                                <span>{new Date(company.updatedAt).toLocaleDateString()}</span>
-                                                <span className="text-xs text-gray-400">{new Date(company.updatedAt).toLocaleTimeString()}</span>
+                                                <span>{company.employeeCount || '-'}</span>
+                                                <span className="text-xs text-gray-400 truncate max-w-[150px]" title={company.address}>{company.address || '-'}</span>
                                             </div>
-                                        ) : (
-                                            <span className="text-gray-400">-</span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <div className="flex gap-2">
-                                            {company.website && (
-                                                <a href={company.website} target="_blank" rel="noreferrer" title="官网" className="text-gray-400 hover:text-indigo-600">
-                                                    <GlobeIcon />
-                                                </a>
-                                            )}
-                                            {company.careersPage && (
-                                                <a href={company.careersPage} target="_blank" rel="noreferrer" title="招聘主页" className="text-gray-400 hover:text-indigo-600">
-                                                    <BriefcaseIcon />
-                                                </a>
-                                            )}
-                                            {company.linkedin && (
-                                                <a href={company.linkedin} target="_blank" rel="noreferrer" title="LinkedIn" className="text-gray-400 hover:text-indigo-600">
-                                                    <LinkedinIcon />
-                                                </a>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button
-                                            onClick={() => handleCrawlJobs(company.id)}
-                                            disabled={crawlingId === company.id}
-                                            className="text-gray-600 hover:text-indigo-600 mr-4 disabled:opacity-50"
-                                            title="抓取岗位数据"
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            <div className="flex flex-col">
+                                                <span>{company.companyRating ? `⭐ ${company.companyRating}` : '-'}</span>
+                                                <span className="text-xs text-gray-400">{company.foundedYear ? `${company.foundedYear}年成立` : '-'}</span>
+                                            </div>
+                                        </td>
+                                        <td
+                                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 cursor-pointer hover:text-indigo-600 hover:font-medium underline decoration-dashed underline-offset-4"
+                                            onClick={() => setSelectedCompanyForJobs(company)}
+                                            title="点击管理岗位"
                                         >
-                                            {crawlingId === company.id ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            {company.jobCount ?? 0}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {company.updatedAt ? (
+                                                <div className="flex flex-col">
+                                                    <span>{new Date(company.updatedAt).toLocaleDateString()}</span>
+                                                    <span className="text-xs text-gray-400">{new Date(company.updatedAt).toLocaleTimeString()}</span>
+                                                </div>
                                             ) : (
-                                                <DownloadCloud className="w-4 h-4" />
+                                                <span className="text-gray-400">-</span>
                                             )}
-                                        </button>
-                                        <button onClick={() => handleEdit(company)} className="text-indigo-600 hover:text-indigo-900 mr-4">
-                                            <Edit2 className="w-4 h-4" />
-                                        </button>
-                                        <button onClick={() => handleDelete(company.id)} className="text-red-600 hover:text-red-900">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <div className="flex gap-2">
+                                                {company.website && (
+                                                    <a href={company.website} target="_blank" rel="noreferrer" title="官网" className="text-gray-400 hover:text-indigo-600">
+                                                        <GlobeIcon />
+                                                    </a>
+                                                )}
+                                                {company.careersPage && (
+                                                    <a href={company.careersPage} target="_blank" rel="noreferrer" title="招聘主页" className="text-gray-400 hover:text-indigo-600">
+                                                        <BriefcaseIcon />
+                                                    </a>
+                                                )}
+                                                {company.linkedin && (
+                                                    <a href={company.linkedin} target="_blank" rel="noreferrer" title="LinkedIn" className="text-gray-400 hover:text-indigo-600">
+                                                        <LinkedinIcon />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button
+                                                onClick={() => handleCrawlJobs(company.id)}
+                                                disabled={crawlingId === company.id}
+                                                className="text-gray-600 hover:text-indigo-600 mr-4 disabled:opacity-50"
+                                                title="抓取岗位数据"
+                                            >
+                                                {crawlingId === company.id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <DownloadCloud className="w-4 h-4" />
+                                                )}
+                                            </button>
+                                            <button onClick={() => handleEdit(company)} className="text-indigo-600 hover:text-indigo-900 mr-4">
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => handleDelete(company.id)} className="text-red-600 hover:text-red-900">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-        )}
+            )}
 
             {!loading && (
                 <div className="mt-4 flex justify-between items-center">
@@ -778,9 +778,8 @@ export default function AdminTrustedCompaniesPage() {
                             <div>
                                 <div className="flex justify-between items-center mb-1">
                                     <label className="block text-sm font-medium text-gray-700">简介</label>
-                                    <span className={`text-xs ${
-                                        (formData.description?.length || 0) > 300 ? 'text-amber-600 font-medium' : 'text-gray-400'
-                                    }`}>
+                                    <span className={`text-xs ${(formData.description?.length || 0) > 300 ? 'text-amber-600 font-medium' : 'text-gray-400'
+                                        }`}>
                                         {formData.description?.length || 0} 字 (建议 &le; 300)
                                     </span>
                                 </div>
@@ -932,6 +931,7 @@ export default function AdminTrustedCompaniesPage() {
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     >
                                         <option value="招聘邮箱">招聘邮箱</option>
+                                        <option value="HR邮箱">HR邮箱</option>
                                         <option value="通用邮箱">通用邮箱</option>
                                         <option value="员工邮箱">员工邮箱</option>
                                         <option value="高管邮箱">高管邮箱</option>

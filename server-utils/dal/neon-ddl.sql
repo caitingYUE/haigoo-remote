@@ -13,7 +13,7 @@ CREATE INDEX IF NOT EXISTS idx_trusted_companies_name_lower ON trusted_companies
 CREATE INDEX IF NOT EXISTS idx_extracted_companies_name_lower ON extracted_companies(lower(name));
 
 -- 2026-01-18: Add email_type to trusted_companies
--- Description: Support email type classification (招聘邮箱, 通用邮箱, 员工邮箱, 高管邮箱)
+-- Description: Support email type classification (招聘邮箱, 通用邮箱, 员工邮箱, 高管邮箱, HR邮箱)
 ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS email_type VARCHAR(50) DEFAULT '通用邮箱';
 -- Note: Need to update existing data and constraint manually in DB console:
 -- 1. DROP CONSTRAINT valid_email_type;
@@ -21,7 +21,7 @@ ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS email_type VARCHAR(50) DE
 -- 3. UPDATE trusted_companies SET email_type = '通用邮箱' WHERE email_type = '通用支持邮箱';
 -- 4. UPDATE trusted_companies SET email_type = '员工邮箱' WHERE email_type = '内部员工邮箱';
 -- 5. UPDATE trusted_companies SET email_type = '高管邮箱' WHERE email_type = '企业领导邮箱';
--- 6. ALTER TABLE trusted_companies ADD CONSTRAINT valid_email_type CHECK (email_type IN ('招聘邮箱', '通用邮箱', '员工邮箱', '高管邮箱'));
+-- 6. ALTER TABLE trusted_companies ADD CONSTRAINT valid_email_type CHECK (email_type IN ('招聘邮箱', '通用邮箱', '员工邮箱', '高管邮箱', 'HR邮箱'));
 
 -- 2026-01-21: Add recruitment request fields to feedbacks table
 -- Description: Store company info for "I want to recruit" requests
