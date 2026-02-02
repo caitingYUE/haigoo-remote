@@ -140,13 +140,10 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             <div className="absolute -inset-1 bg-amber-100/10 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
                             <div className="relative flex flex-col gap-3">
                                 <div className="relative flex">
-                                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                        <Search className="w-6 h-6 text-slate-500" />
-                                    </div>
                                     <input
                                         type="text"
                                         placeholder="搜索公司 / 职位 / 技能"
-                                        className="w-full pl-14 pr-36 py-4 bg-white/90 backdrop-blur-xl border border-white/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all shadow-xl text-lg placeholder:text-slate-500 text-slate-900"
+                                        className="w-full pl-4 pr-36 py-4 bg-white/90 backdrop-blur-xl border border-white/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all shadow-xl text-lg placeholder:text-slate-500 text-slate-900"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -160,17 +157,17 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                     </button>
                                 </div>
                                 {/* Quick Search Tags */}
-                                <div className="flex flex-wrap gap-2 px-2">
-                                    {hotTags.map((tag) => (
+                                <div className="flex flex-nowrap overflow-hidden gap-2 px-2">
+                                    {hotTags.map((tag, index) => (
                                         <button
                                             key={tag}
                                             onClick={() => {
                                                 setSearchQuery(tag)
                                                 navigate(`/jobs?search=${encodeURIComponent(tag)}`)
                                             }}
-                                            className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-1"
+                                            className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-1 whitespace-nowrap"
                                         >
-                                            <span className="text-[10px]">🔥</span> {tag}
+                                            {index < 3 && <span className="text-[10px]">🔥</span>} {tag}
                                         </button>
                                     ))}
                                 </div>

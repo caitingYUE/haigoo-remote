@@ -446,21 +446,6 @@ export default function Header() {
                             <span className="flex-1">退出登录</span>
                           </div>
                         </button>
-
-                        {/* 注销账号 - 放在最后，红色警示 */}
-                        <div className="border-t border-slate-100 mt-1 pt-1">
-                          <Link
-                            to="/profile?tab=settings"
-                            className="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200"
-                            role="menuitem"
-                            tabIndex={isUserMenuOpen ? 0 : -1}
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            <div className="flex items-center">
-                              <span className="flex-1">注销账号</span>
-                            </div>
-                          </Link>
-                        </div>
                       </div>
                     </div>
                   )}
