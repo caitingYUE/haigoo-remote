@@ -183,7 +183,7 @@ export const SubscriptionsTable: React.FC = () => {
                           {sub.identifier}
                       </div>
                   </td>
-                  <td>{renderTopics(sub.topic, sub.channel, sub.nickname)}</td>
+                  <td>{renderTopics(sub.topic, sub.channel, sub.nickname, sub.preferences)}</td>
                   <td>{sub.frequency}</td>
                   <td>
                     <span

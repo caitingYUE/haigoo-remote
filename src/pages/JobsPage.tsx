@@ -880,7 +880,7 @@ export default function JobsPage() {
                           onClick={() => setIsPreferenceModalOpen(true)}
                           className="px-4 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors whitespace-nowrap"
                         >
-                          开启职位追踪
+                          开启岗位订阅
                         </button>
                       </div>
                     )}

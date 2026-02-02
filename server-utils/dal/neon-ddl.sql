@@ -34,3 +34,7 @@ ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS recruitment_needs TEXT;
 CREATE INDEX IF NOT EXISTS idx_trusted_companies_updated_at ON trusted_companies(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_trusted_companies_industry ON trusted_companies(industry);
 CREATE INDEX IF NOT EXISTS idx_trusted_companies_source ON trusted_companies(source);
+
+-- 2026-02-02: Unified Subscription System
+-- Description: Add preferences column to subscriptions table to store detailed job tracking criteria
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS preferences JSONB;

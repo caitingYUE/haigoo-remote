@@ -9,9 +9,8 @@ type Variant = 'card' | 'compact' | 'minimal'
 export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: { variant?: Variant, theme?: 'light' | 'dark' }) {
   const navigate = useNavigate()
   const { isAuthenticated, token } = useAuth()
-  const [channel, setChannel] = useState<'email' | 'feishu'>('feishu')
+  const [channel] = useState<'email'>('email')
   const [identifier, setIdentifier] = useState('')
-  const [feishuNickname, setFeishuNickname] = useState('')
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -57,12 +56,8 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
 
   const submit = async () => {
     if (!identifier.trim()) return
-    if (channel === 'email' && selectedTopics.length === 0) {
+    if (selectedTopics.length === 0) {
         alert('请至少选择一个岗位类型')
-        return
-    }
-    if (channel === 'feishu' && (!identifier.trim() || !feishuNickname.trim())) {
-        alert('请输入飞书手机号和昵称')
         return
     }
     
@@ -72,10 +67,9 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            channel, 
+            channel: 'email', 
             identifier, 
-            nickname: channel === 'feishu' ? feishuNickname : undefined,
-            topic: channel === 'email' ? selectedTopics.join(',') : undefined
+            topic: selectedTopics.join(',')
         })
       })
       const json = await resp.json()
@@ -222,27 +216,8 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
 
     return (
       <div className="flex flex-col gap-3">
-        {/* Channel Selector */}
-        <div className="flex justify-center gap-4 mb-1">
-          <button
-            onClick={() => setChannel('feishu')}
-            className={`text-sm font-medium transition-colors ${channel === 'feishu'
-              ? (isLight ? 'text-indigo-600' : 'text-white')
-              : (isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/60 hover:text-white')}`}
-          >
-            飞书订阅
-          </button>
-          <div className={`w-px h-4 ${isLight ? 'bg-slate-300' : 'bg-white/20'}`}></div>
-          <button
-            onClick={() => setChannel('email')}
-            className={`text-sm font-medium transition-colors ${channel === 'email'
-              ? (isLight ? 'text-indigo-600' : 'text-white')
-              : (isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/60 hover:text-white')}`}
-          >
-            Email 订阅
-          </button>
-        </div>
-
+        {/* Channel Selector Removed - Email Only */}
+        
         <div className="flex flex-col sm:flex-row gap-3 relative z-20">
            {channel === 'email' && (
              <div className="relative w-full sm:w-40" ref={dropdownRef}>
@@ -261,24 +236,12 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
              </div>
            )}
 
-          {channel === 'feishu' && (
-            <input
-              className={`w-full sm:w-40 px-4 py-3 rounded-xl border focus:outline-none transition-colors backdrop-blur-sm
-                  ${isLight
-                  ? 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100'
-                  : 'bg-white/10 border-white/20 text-white placeholder-indigo-200 focus:bg-white/20'}`}
-              placeholder="飞书昵称"
-              value={feishuNickname}
-              onChange={e => setFeishuNickname(e.target.value)}
-            />
-          )}
-
           <input
             className={`flex-1 px-4 py-3 rounded-xl border focus:outline-none transition-colors backdrop-blur-sm
                 ${isLight
                 ? 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100'
                 : 'bg-white/10 border-white/20 text-white placeholder-indigo-200 focus:bg-white/20'}`}
-            placeholder={channel === 'email' ? "输入您的邮箱地址" : "输入飞书绑定的手机号"}
+            placeholder="输入您的邮箱地址"
             value={identifier}
             onChange={e => setIdentifier(e.target.value)}
           />
@@ -338,40 +301,24 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
       ) : (
         <>
             <div className="space-y-3">
-                {channel === 'email' && (
-                    <div className="relative" ref={dropdownRef}>
-                        <button 
-                            className="w-full px-3 py-2 border rounded-lg text-sm flex items-center justify-between hover:border-indigo-500 transition-colors"
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        >
-                            <div className="flex-1 flex items-center mr-2">{renderTriggerContent(true)}</div>
-                            <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        </button>
-                        {isDropdownOpen && renderDropdown(false)}
-                    </div>
-                )}
+                <div className="relative" ref={dropdownRef}>
+                    <button 
+                        className="w-full px-3 py-2 border rounded-lg text-sm flex items-center justify-between hover:border-indigo-500 transition-colors"
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    >
+                        <div className="flex-1 flex items-center mr-2">{renderTriggerContent(true)}</div>
+                        <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    </button>
+                    {isDropdownOpen && renderDropdown(false)}
+                </div>
 
                 <div className="flex flex-col gap-2">
-                    <div className="flex gap-2">
-                        <select className="input w-24 px-2 py-2 border rounded-lg text-sm bg-slate-50" value={channel} onChange={e => setChannel(e.target.value as any)}>
-                            <option value="feishu">飞书</option>
-                            <option value="email">Email</option>
-                        </select>
-                        <input 
-                            className="input flex-1 px-3 py-2 border rounded-lg text-sm" 
-                            placeholder={channel === 'email' ? 'you@example.com' : '飞书绑定手机号'} 
-                            value={identifier} 
-                            onChange={e => setIdentifier(e.target.value)} 
-                        />
-                    </div>
-                    {channel === 'feishu' && (
-                        <input 
-                            className="input w-full px-3 py-2 border rounded-lg text-sm" 
-                            placeholder="飞书昵称" 
-                            value={feishuNickname} 
-                            onChange={e => setFeishuNickname(e.target.value)} 
-                        />
-                    )}
+                    <input 
+                        className="input w-full px-3 py-2 border rounded-lg text-sm" 
+                        placeholder="you@example.com" 
+                        value={identifier} 
+                        onChange={e => setIdentifier(e.target.value)} 
+                    />
                 </div>
                 
                 <button onClick={submit} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">

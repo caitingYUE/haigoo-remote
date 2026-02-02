@@ -1090,17 +1090,21 @@ export default function ProfileCenterPage() {
       }
     }
 
-    const getTopicLabel = (topicStr: string) => {
-      if (!topicStr) return '无'
-      const values = topicStr.split(',')
-      return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
+  const getTopicLabel = (topicStr: string, preferences?: any) => {
+    if (preferences && Object.keys(preferences).length > 0) {
+        return <span className="text-indigo-600 font-medium">详细偏好订阅</span>
     }
+    if (!topicStr) return '无'
+    const values = topicStr.split(',')
+    return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
+  }
 
-    const getEditLabel = () => {
-      if (editTopics.length === 0) return '请选择'
-      if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
-      return `已选 ${editTopics.length} 个`
-    }
+  const getEditLabel = () => {
+    // 简单编辑只支持 topic，不支持详细偏好
+    if (editTopics.length === 0) return '请选择'
+    if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
+    return `已选 ${editTopics.length} 个`
+  }
 
     return (
       <div className="space-y-6">

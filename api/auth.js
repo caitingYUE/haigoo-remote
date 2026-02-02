@@ -593,14 +593,14 @@ async function handleDeleteSubscription(req, res) {
 async function handleSubscribe(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
   
-  const { channel, identifier, topic, nickname } = req.body || {}
+  const { channel, identifier, topic, nickname, preferences } = req.body || {}
   if (!channel || !identifier) {
     return res.status(400).json({ success: false, error: '缺少必要字段' })
   }
 
   // 验证不同渠道的必填项
-  if (channel === 'email' && !topic) {
-    return res.status(400).json({ success: false, error: '邮箱订阅需要选择岗位类型' })
+  if (channel === 'email' && !topic && !preferences) {
+    return res.status(400).json({ success: false, error: '邮箱订阅需要选择岗位类型或提供偏好' })
   }
   if (channel === 'feishu' && !nickname) {
     return res.status(400).json({ success: false, error: '飞书订阅需要提供昵称' })
@@ -645,7 +645,10 @@ async function handleSubscribe(req, res) {
       }
       
       // 根据渠道更新特定字段
-      if (channel === 'email') updates.topic = topic
+      if (channel === 'email') {
+        if (topic) updates.topic = topic
+        if (preferences) updates.preferences = preferences
+      }
       if (channel === 'feishu') updates.nickname = nickname
 
       if (userId && !existingSubscription[0].user_id) {
@@ -666,7 +669,10 @@ async function handleSubscribe(req, res) {
         updated_at: new Date().toISOString()
       }
 
-      if (channel === 'email') newSub.topic = topic
+      if (channel === 'email') {
+        if (topic) newSub.topic = topic
+        if (preferences) newSub.preferences = preferences
+      }
       if (channel === 'feishu') newSub.nickname = nickname
 
       await neonHelper.insert('subscriptions', newSub)

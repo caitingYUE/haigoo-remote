@@ -3,6 +3,7 @@ export interface Subscription {
   identifier: string;
   topic?: string;
   nickname?: string;
+  preferences?: any;
   channel: 'email' | 'feishu';
   frequency: string;
   status: 'active' | 'inactive' | 'bounced';

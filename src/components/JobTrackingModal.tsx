@@ -296,7 +296,7 @@ export function JobTrackingModal({
                     <div>
                         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-indigo-600" />
-                            职位追踪
+                            岗位订阅
                         </h2>
                         <p className="text-xs text-slate-500 mt-0.5">
                             找不到满意的岗位？提交您的需求，有合适岗位时系统将通知您
