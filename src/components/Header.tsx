@@ -175,7 +175,7 @@ export default function Header() {
       className="absolute top-6 left-0 right-0 z-50 px-4 md:px-6 lg:px-8 transition-all duration-300 pointer-events-none"
       role="banner"
     >
-      <div className="max-w-7xl mx-auto bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-white/40 px-6 md:px-8 pointer-events-auto transition-all duration-300">
+      <div className="max-w-7xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-white/40 px-6 md:px-8 pointer-events-auto transition-all duration-300">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex items-center">
@@ -240,7 +240,7 @@ export default function Header() {
             >
               会员中心
             </Link>
-            
+
             <Link
               to="/profile"
               className={`text-base transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/profile')
