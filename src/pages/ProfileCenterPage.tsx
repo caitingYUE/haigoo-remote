@@ -1396,7 +1396,8 @@ export default function ProfileCenterPage() {
                   { id: 'favorites', label: '我的收藏', icon: Heart },
                   { id: 'applications', label: '我的申请', icon: Briefcase },
                   { id: 'subscriptions', label: '订阅管理', icon: Bell },
-                  { id: 'feedback', label: '我要反馈', icon: MessageSquare }
+                  { id: 'feedback', label: '我要反馈', icon: MessageSquare },
+                  { id: 'settings', label: '注销账号', icon: Settings }
                 ].map((item) => (
                   <button
                     key={item.id}
