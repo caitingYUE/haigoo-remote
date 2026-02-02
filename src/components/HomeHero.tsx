@@ -111,24 +111,42 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         <div className="w-full max-w-lg animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 relative group">
                             {/* Glow effect */}
                             <div className="absolute -inset-1 bg-amber-100/10 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
-                            <div className="relative flex">
-                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                    <Search className="w-6 h-6 text-slate-500" />
+                            <div className="relative flex flex-col gap-3">
+                                <div className="relative flex">
+                                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                        <Search className="w-6 h-6 text-slate-500" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="搜索公司 / 职位 / 技能"
+                                        className="w-full pl-14 pr-36 py-4 bg-white/90 backdrop-blur-xl border border-white/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all shadow-xl text-lg placeholder:text-slate-500 text-slate-900"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                    />
+                                    <button
+                                        onClick={handleSearch}
+                                        className={`absolute right-2 top-2 bottom-2 px-6 bg-slate-900 text-white text-base font-bold rounded-xl transition-all duration-200 hover:bg-slate-800 shadow-lg flex items-center gap-2`}
+                                    >
+                                        <Search className="w-4 h-4" />
+                                        搜索
+                                    </button>
                                 </div>
-                                <input
-                                    type="text"
-                                    placeholder="搜索公司 / 职位 / 技能"
-                                    className="w-full pl-14 pr-36 py-4 bg-white/90 backdrop-blur-xl border border-white/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all shadow-xl text-lg placeholder:text-slate-500 text-slate-900"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                />
-                                <button
-                                    onClick={handleSearch}
-                                    className={`absolute right-2 top-2 bottom-2 px-6 bg-slate-900 text-white text-base font-bold rounded-xl transition-all duration-200 hover:bg-slate-800 shadow-lg`}
-                                >
-                                    搜索
-                                </button>
+                                {/* Quick Search Tags */}
+                                <div className="flex flex-wrap gap-2 px-2">
+                                    {['前端开发', '后端开发', '全栈', '产品经理', '设计师', '运营'].map((tag) => (
+                                        <button
+                                            key={tag}
+                                            onClick={() => {
+                                                setSearchQuery(tag)
+                                                navigate(`/jobs?search=${encodeURIComponent(tag)}`)
+                                            }}
+                                            className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200"
+                                        >
+                                            {tag}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>

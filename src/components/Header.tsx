@@ -259,13 +259,13 @@ export default function Header() {
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-[#1A365D] hover:text-indigo-600 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors no-underline hover:no-underline"
                 >
                   登录
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-indigo-600 transition-all"
+                  className="px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg no-underline hover:no-underline"
                 >
                   注册
                 </Link>
