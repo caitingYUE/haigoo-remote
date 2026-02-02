@@ -60,7 +60,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     return (
         <div className="relative min-h-[800px] flex items-center justify-center overflow-hidden">
             {/* Background Image & Overlay */}
-            <div className="absolute inset-0 z-0 bg-slate-900">
+            <div className="absolute inset-0 z-0 bg-neutral-900">
                 <img 
                     src="/background.webp" 
                     alt="Background" 
@@ -69,12 +69,12 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     loading="eager"
                     decoding="async"
                 />
-                {/* Modern Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/50 to-transparent"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
-                {/* Premium Atmosphere Glow */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600/20 via-violet-500/10 to-amber-500/10 mix-blend-overlay"></div>
-                <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]"></div>
+                {/* Gradient Overlay for better text readability while keeping image visible */}
+                {/* Updated to warmer neutral tones for a more positive feel */}
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/70 via-neutral-900/30 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/40 via-transparent to-transparent"></div>
+                {/* Subtle warm amber glow */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 via-transparent to-transparent mix-blend-overlay"></div>
             </div>
 
             {/* Festive Fireworks - Absolute Positioned Top Right */}
@@ -137,28 +137,27 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         {/* Search Bar - Clean & Floating */}
                         <div className="w-full max-w-lg animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 relative group z-30">
                             {/* Glow effect */}
-                            <div className="absolute -inset-1 bg-indigo-500/20 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition duration-500"></div>
-                            <div className="relative flex flex-col gap-4">
-                                <div className="relative flex shadow-2xl rounded-2xl">
+                            <div className="absolute -inset-1 bg-amber-100/10 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
+                            <div className="relative flex flex-col gap-3">
+                                <div className="relative flex">
                                     <input
                                         type="text"
                                         placeholder="搜索公司 / 职位 / 技能"
-                                        className="w-full pl-6 pr-36 py-4.5 bg-white/95 backdrop-blur-2xl border border-white/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-sm text-lg placeholder:text-slate-400 text-slate-900 font-medium tracking-wide"
+                                        className="w-full pl-4 pr-36 py-4 bg-white/90 backdrop-blur-xl border border-white/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all shadow-xl text-lg placeholder:text-slate-500 text-slate-900"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                     />
                                     <button
                                         onClick={handleSearch}
-                                        className={`absolute right-2 top-2 bottom-2 px-8 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-base font-bold rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-95 flex items-center gap-2`}
+                                        className={`absolute right-2 top-2 bottom-2 px-6 bg-slate-900 text-white text-base font-bold rounded-xl transition-all duration-200 hover:bg-slate-800 shadow-lg flex items-center gap-2`}
                                     >
                                         <Search className="w-4 h-4" />
                                         搜索
                                     </button>
                                 </div>
                                 {/* Quick Search Tags */}
-                                <div className="flex flex-wrap gap-3 px-1 items-center">
-                                    <span className="text-xs font-medium text-indigo-200/80 uppercase tracking-wider mr-1">Hot:</span>
+                                <div className="flex flex-wrap gap-2 px-2">
                                     {hotTags.map((tag, index) => (
                                         <button
                                             key={tag}
@@ -166,9 +165,9 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                                 setSearchQuery(tag)
                                                 navigate(`/jobs?search=${encodeURIComponent(tag)}`)
                                             }}
-                                            className="px-3 py-1 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 rounded-lg text-xs font-medium text-white/90 transition-all duration-200 flex items-center gap-1.5 hover:-translate-y-0.5 hover:shadow-lg hover:border-white/30 group/tag"
+                                            className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-1"
                                         >
-                                            {index < 3 && <span className="text-[10px] group-hover/tag:scale-125 transition-transform">🔥</span>} {tag}
+                                            {index < 3 && <span className="text-[10px]">🔥</span>} {tag}
                                         </button>
                                     ))}
                                 </div>
