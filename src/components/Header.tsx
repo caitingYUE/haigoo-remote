@@ -172,40 +172,40 @@ export default function Header() {
 
   return (
     <header
-      className="absolute top-0 left-0 right-0 z-50 px-4 md:px-6 lg:px-8 pt-6 transition-all duration-300 pointer-events-none"
+      className="absolute top-6 left-0 right-0 z-50 px-4 md:px-6 lg:px-8 transition-all duration-300 pointer-events-none"
       role="banner"
     >
-      <div className="max-w-7xl mx-auto px-2 md:px-4 pointer-events-auto transition-all duration-300 relative">
+      <div className="max-w-7xl mx-auto bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-white/40 px-6 md:px-8 pointer-events-auto transition-all duration-300">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <div className="flex items-center z-10">
+          <div className="flex items-center">
             <Link
               to="/"
-              className="flex-shrink-0 flex items-center focus:outline-none rounded-lg transition-all duration-200 hover:opacity-80 no-underline hover:no-underline"
+              className="flex-shrink-0 flex items-center focus:outline-none rounded-lg transition-all duration-200 hover:scale-105 no-underline hover:no-underline"
               aria-label="Haigoo 首页"
             >
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
-                className="h-16 w-auto"
+                className="h-12 w-auto"
                 style={{ 
                   transform: 'translateZ(0)',
                   backfaceVisibility: 'hidden'
                 }}
               />
-              <span className="ml-3 text-slate-900 font-bold text-lg flex items-center gap-2 tracking-tight">
-                Haigoo
+              <span className="ml-3 text-[#1A365D] font-semibold text-lg flex items-center gap-2">
+                海狗远程俱乐部
               </span>
             </Link>
           </div>
 
-          {/* Center Navigation - Floating Pill Style (Fly.io) */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 bg-white/70 backdrop-blur-xl px-2 py-1.5 rounded-full shadow-sm border border-white/40 ring-1 ring-black/5">
+          {/* Center Navigation - Right aligned */}
+          <div className="hidden md:flex items-center gap-8 ml-auto mr-8">
             <Link
               to="/"
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 no-underline hover:no-underline ${location.pathname === '/'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname === '/'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
             >
               首页
@@ -213,9 +213,9 @@ export default function Header() {
 
             <Link
               to="/jobs"
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 no-underline hover:no-underline ${location.pathname === '/jobs'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname === '/jobs'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
             >
               远程岗位
@@ -223,9 +223,9 @@ export default function Header() {
 
             <Link
               to="/trusted-companies"
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
             >
               精选企业
@@ -233,17 +233,27 @@ export default function Header() {
 
             <Link
               to="/membership"
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 no-underline hover:no-underline ${location.pathname === '/membership'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname === '/membership'
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 font-medium hover:text-slate-900'
                 }`}
             >
               会员中心
             </Link>
+            
+            <Link
+              to="/profile"
+              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/profile')
+                ? 'text-slate-900 font-bold'
+                : 'text-slate-500 font-medium hover:text-slate-900'
+                }`}
+            >
+              个人中心
+            </Link>
           </div>
 
           {/* Right side actions */}
-          <div className="flex items-center space-x-3 z-10" role="toolbar" aria-label="用户操作">
+          <div className="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
             {/* 未登录：显示登录/注册按钮 */}
             {!isAuthenticated && (
               <>

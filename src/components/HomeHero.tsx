@@ -42,12 +42,8 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     loading="eager"
                     decoding="async"
                 />
-                {/* Gradient Overlay for better text readability while keeping image visible */}
-                {/* Updated to warmer neutral tones for a more positive feel */}
-                <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/70 via-neutral-900/30 to-transparent"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/40 via-transparent to-transparent"></div>
-                {/* Subtle warm amber glow */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 via-transparent to-transparent mix-blend-overlay"></div>
+                {/* Minimal Overlay - Left to Right Gradient (Dark to Transparent) */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
             </div>
 
             {/* Festive Fireworks - Absolute Positioned Top Right */}
