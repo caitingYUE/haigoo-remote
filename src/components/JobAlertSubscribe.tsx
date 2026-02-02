@@ -148,16 +148,6 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
   }
 
   const renderHint = () => {
-      if (channel === 'feishu') {
-          return (
-            <div className="flex items-start gap-1.5 mt-2 text-xs text-indigo-600 bg-indigo-50 p-2 rounded-lg border border-indigo-100">
-                <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                <span>
-                    提示：我们需要添加您的飞书账号来实现机器人订阅，请留意短信通知。
-                </span>
-            </div>
-          )
-      }
       return (
         <div className="flex items-start gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-100">
             <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
@@ -219,22 +209,20 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
         {/* Channel Selector Removed - Email Only */}
         
         <div className="flex flex-col sm:flex-row gap-3 relative z-20">
-           {channel === 'email' && (
-             <div className="relative w-full sm:w-40" ref={dropdownRef}>
-                <button
-                  className={`w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors backdrop-blur-sm flex items-center justify-between text-left
-                      ${isLight
-                      ? 'bg-white border-slate-200 text-slate-900 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100'
-                      : 'bg-white/10 border-white/20 text-white focus:bg-white/20'}
-                  `}
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                >
-                  <div className="truncate flex-1 flex items-center mr-2">{renderTriggerContent(isLight)}</div>
-                  <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isLight ? 'text-slate-400' : 'text-white/60'}`} />
-                </button>
-                {isDropdownOpen && renderDropdown(!isLight, "w-full sm:w-64")}
-             </div>
-           )}
+           <div className="relative w-full sm:w-40" ref={dropdownRef}>
+              <button
+                className={`w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors backdrop-blur-sm flex items-center justify-between text-left
+                    ${isLight
+                    ? 'bg-white border-slate-200 text-slate-900 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100'
+                    : 'bg-white/10 border-white/20 text-white focus:bg-white/20'}
+                `}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <div className="truncate flex-1 flex items-center mr-2">{renderTriggerContent(isLight)}</div>
+                <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isLight ? 'text-slate-400' : 'text-white/60'}`} />
+              </button>
+              {isDropdownOpen && renderDropdown(!isLight, "w-full sm:w-64")}
+           </div>
 
           <input
             className={`flex-1 px-4 py-3 rounded-xl border focus:outline-none transition-colors backdrop-blur-sm
@@ -270,7 +258,7 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
         {/* Hint Text */}
         <div className={`text-xs text-center sm:text-left ${isLight ? 'text-slate-500' : 'text-white/70'} mt-1 flex items-center justify-center sm:justify-start gap-1`}>
              <Info className="w-3 h-3" />
-             <span>{channel === 'feishu' ? '我们需要添加您的飞书账号来实现机器人订阅，请留意短信通知。' : '最多选3个。上传简历可大幅提升推荐精准度。'}</span>
+             <span>最多选3个。上传简历可大幅提升推荐精准度。</span>
         </div>
       </div>
     )

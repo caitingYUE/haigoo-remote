@@ -82,23 +82,34 @@ export const SubscriptionsTable: React.FC = () => {
       }
   }
 
-  const renderTopics = (topicStr: string | undefined, channel: string, nickname?: string) => {
-    if (channel === 'feishu') {
+  const renderTopics = (topicStr: string | undefined, channel: string, nickname?: string, preferences?: any) => {
+    // New preferences display
+    if (preferences && typeof preferences === 'object' && Object.keys(preferences).length > 0) {
+        const keyMap: Record<string, string> = {
+            locations: '地点',
+            jobTypes: '类型',
+            experienceLevels: '经验',
+            categories: '分类'
+        };
+
         return (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                <span style={{ 
-                    display: 'inline-block', 
-                    padding: '2px 6px', 
-                    background: '#e0f2fe', 
-                    color: '#0369a1', 
-                    fontSize: '12px', 
-                    borderRadius: '4px',
-                    border: '1px solid #bae6fd'
-                }}>
-                    飞书昵称: {nickname || '-'}
-                </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px' }}>
+                {Object.entries(preferences).map(([key, value]) => {
+                    if (!value) return null;
+                    if (Array.isArray(value) && value.length === 0) return null;
+                    
+                    const label = keyMap[key] || key;
+                    const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
+                    
+                    return (
+                        <div key={key} style={{ display: 'flex', gap: '4px' }}>
+                            <span style={{ color: '#6b7280', fontWeight: 600 }}>{label}:</span>
+                            <span style={{ color: '#374151', maxWidth: '300px', whiteSpace: 'pre-wrap' }}>{displayValue}</span>
+                        </div>
+                    );
+                })}
             </div>
-        )
+        );
     }
 
     if (!topicStr) return <span style={{ color: '#9ca3af' }}>-</span>
@@ -174,11 +185,11 @@ export const SubscriptionsTable: React.FC = () => {
                               fontSize: '10px',
                               padding: '1px 4px',
                               borderRadius: '4px',
-                              backgroundColor: sub.channel === 'feishu' ? '#dbeafe' : '#f3f4f6',
-                              color: sub.channel === 'feishu' ? '#1e40af' : '#4b5563',
-                              border: sub.channel === 'feishu' ? '1px solid #bfdbfe' : '1px solid #e5e7eb'
+                              backgroundColor: '#f3f4f6',
+                              color: '#4b5563',
+                              border: '1px solid #e5e7eb'
                           }}>
-                              {sub.channel === 'feishu' ? '飞书' : 'Email'}
+                              Email
                           </span>
                           {sub.identifier}
                       </div>
