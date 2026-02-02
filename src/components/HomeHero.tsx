@@ -31,75 +31,108 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     }
 
     return (
-        <div className="relative min-h-[700px] flex items-center justify-center overflow-hidden bg-amber-50">
-            {/* Background Image & Overlay - Warm Light Theme */}
-            <div className="absolute inset-0 z-0">
+        <div className="relative min-h-[800px] flex items-center justify-center overflow-hidden">
+            {/* Background Image & Overlay */}
+            <div className="absolute inset-0 z-0 bg-neutral-900">
                 <img 
                     src="/background.webp" 
                     alt="Background" 
-                    className={`w-full h-full object-cover transition-opacity duration-1000 ${imageLoaded ? 'opacity-40' : 'opacity-0'}`}
+                    className={`w-full h-full object-cover transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
                     loading="eager"
                     decoding="async"
                 />
-                {/* Gradient Overlay - Warm & Light */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-amber-50/80 to-white/90 backdrop-blur-[2px]"></div>
-                {/* Subtle colorful mesh gradient for Fly.io vibe */}
-                <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-purple-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 mix-blend-multiply"></div>
-                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-orange-200/30 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 mix-blend-multiply"></div>
+                {/* Gradient Overlay for better text readability while keeping image visible */}
+                {/* Updated to warmer neutral tones for a more positive feel */}
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/70 via-neutral-900/30 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/40 via-transparent to-transparent"></div>
+                {/* Subtle warm amber glow */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 via-transparent to-transparent mix-blend-overlay"></div>
             </div>
 
-            {/* Festive Fireworks - Kept but subtle */}
-            <div className="absolute top-0 right-0 z-20 w-full h-full overflow-hidden pointer-events-none opacity-60">
+            {/* Festive Fireworks - Absolute Positioned Top Right */}
+            <div className="absolute top-0 right-0 z-20 w-full h-full overflow-hidden pointer-events-none">
                 <style>{`
                     @keyframes float-slow {
-                        0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
-                        50% { transform: translateY(-10px) scale(1.05); opacity: 0.8; }
+                        0%, 100% { transform: translateY(0) scale(1); opacity: 0.9; }
+                        50% { transform: translateY(-10px) scale(1.05); opacity: 1; }
+                    }
+                    @keyframes pulse-glow {
+                        0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(255,165,0,0.3)); }
+                        50% { filter: brightness(1.2) drop-shadow(0 0 20px rgba(255,165,0,0.6)); }
                     }
                 `}</style>
-                {/* ... existing fireworks ... */}
+                
+                {/* Firework - Main */}
+                <img
+                    src="/fireworks.png"
+                    alt="Fireworks"
+                    onClick={() => setShowHappinessCard(true)}
+                    className="absolute top-24 md:top-32 right-[2%] md:right-[5%] w-32 md:w-48 lg:w-64 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-screen opacity-90"
+                    style={{ animation: 'float-slow 5s ease-in-out infinite, pulse-glow 4s ease-in-out infinite' }}
+                />
+
+                {/* Firework - Small */}
+                <img
+                    src="/fireworks.png"
+                    alt="Fireworks"
+                    onClick={() => setShowHappinessCard(true)}
+                    className="absolute top-48 md:top-64 right-[12%] md:right-[15%] w-20 md:w-28 lg:w-36 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-screen opacity-70"
+                    style={{ animation: 'float-delayed 6s ease-in-out infinite 1s, pulse-glow 3s ease-in-out infinite 0.5s' }}
+                />
             </div>
 
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 pt-32 text-center">
-                <div className="flex flex-col items-center justify-center max-w-4xl mx-auto">
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-16">
+                <div className="flex flex-col md:flex-row items-end justify-between gap-8 lg:gap-12 min-h-[500px]">
 
-                    {/* Main Heading - Fly.io Style Typography */}
-                    <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight leading-[1.15] animate-in fade-in slide-in-from-bottom-6 duration-700 drop-shadow-sm">
-                        <span className="block mb-2 text-slate-800">理想生活，</span>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 inline-block pb-2">
-                            从远程工作开始
-                        </span>
-                    </h1>
+                    {/* Left Column: Content - Aligned with left desk space */}
+                    <div className="flex-1 text-left max-w-2xl z-10 mb-12">
+                        {/* English Tagline - Elegant Script */}
+                        <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <p className="text-2xl md:text-3xl font-serif italic text-white/95 tracking-wide font-light drop-shadow-md">
+                                "You deserve a better life."
+                            </p>
+                        </div>
 
-                    {/* Subtitle */}
-                    <p className="text-xl md:text-2xl text-slate-600 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-normal max-w-2xl mx-auto">
-                        全球精选 <span className="text-slate-300 mx-3">|</span> 国内可申 <span className="text-slate-300 mx-3">|</span> 真实可投 <span className="text-slate-300 mx-3">|</span> 优质远程文化
-                    </p>
+                        {/* Main Heading */}
+                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 drop-shadow-xl">
+                            <span className="block text-white mb-2">理想生活，</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-white to-amber-50 inline-block pb-2">
+                                从远程工作开始
+                            </span>
+                        </h1>
 
-                    {/* Search Bar - Centered & Clean */}
-                    <div className="w-full max-w-xl animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 relative group mx-auto">
-                        {/* Glow effect */}
-                        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-                        <div className="relative flex shadow-xl rounded-2xl bg-white">
-                            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                <Search className="w-6 h-6 text-slate-400" />
+                        {/* Subtitle */}
+                        <p className="text-lg md:text-xl text-white/90 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-xl drop-shadow-md">
+                            全球精选 <span className="text-white/60 mx-3">|</span> 国内可申 <span className="text-white/60 mx-3">|</span> 真实可投 <span className="text-white/60 mx-3">|</span> 优质远程文化
+                        </p>
+
+                        {/* Search Bar - Clean & Floating */}
+                        <div className="w-full max-w-lg animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 relative group">
+                            {/* Glow effect */}
+                            <div className="absolute -inset-1 bg-amber-100/10 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-500"></div>
+                            <div className="relative flex">
+                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                    <Search className="w-6 h-6 text-slate-500" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="搜索公司 / 职位 / 技能"
+                                    className="w-full pl-14 pr-36 py-4 bg-white/90 backdrop-blur-xl border border-white/40 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all shadow-xl text-lg placeholder:text-slate-500 text-slate-900"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                />
+                                <button
+                                    onClick={handleSearch}
+                                    className={`absolute right-2 top-2 bottom-2 px-6 bg-slate-900 text-white text-base font-bold rounded-xl transition-all duration-200 hover:bg-slate-800 shadow-lg`}
+                                >
+                                    搜索
+                                </button>
                             </div>
-                            <input
-                                type="text"
-                                placeholder="搜索公司 / 职位 / 技能"
-                                className="w-full pl-14 pr-36 py-4 bg-transparent border-0 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 text-lg placeholder:text-slate-400 text-slate-900"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            />
-                            <button
-                                onClick={handleSearch}
-                                className={`absolute right-2 top-2 bottom-2 px-8 bg-indigo-600 text-white text-base font-bold rounded-xl transition-all duration-200 hover:bg-indigo-700 shadow-md hover:shadow-lg hover:-translate-y-0.5`}
-                            >
-                                搜索
-                            </button>
                         </div>
                     </div>
+
                 </div>
             </div>
 

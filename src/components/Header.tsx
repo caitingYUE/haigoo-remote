@@ -187,7 +187,7 @@ export default function Header() {
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
-                className="h-10 w-auto"
+                className="h-16 w-auto"
                 style={{ 
                   transform: 'translateZ(0)',
                   backfaceVisibility: 'hidden'
