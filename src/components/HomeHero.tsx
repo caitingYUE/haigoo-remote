@@ -18,10 +18,37 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     const [isChristmas, setIsChristmas] = useState(false)
     const [showHappinessCard, setShowHappinessCard] = useState(false)
     const [imageLoaded, setImageLoaded] = useState(false)
+    const [hotTags, setHotTags] = useState(['前端开发', '后端开发', '全栈', '产品经理', '设计师', '运营'])
 
     useEffect(() => {
         // Force New Year Mode
         setIsChristmas(true)
+
+        // Fetch Top 6 Hot Tags
+        const fetchHotTags = async () => {
+            try {
+                // Use pageSize=0 to only get aggregations
+                const res = await fetch('/api/data/processed-jobs?pageSize=0')
+                if (res.ok) {
+                    const data = await res.json()
+                    if (data.aggregations && data.aggregations.category) {
+                        // Sort by count desc and take top 6
+                        const topCategories = data.aggregations.category
+                            .sort((a: any, b: any) => b.count - a.count)
+                            .slice(0, 6)
+                            .map((c: any) => c.value)
+                        
+                        if (topCategories.length > 0) {
+                            setHotTags(topCategories)
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch hot tags', error)
+            }
+        }
+        
+        fetchHotTags()
     }, [])
 
     const handleSearch = () => {
@@ -134,16 +161,16 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                 </div>
                                 {/* Quick Search Tags */}
                                 <div className="flex flex-wrap gap-2 px-2">
-                                    {['前端开发', '后端开发', '全栈', '产品经理', '设计师', '运营'].map((tag) => (
+                                    {hotTags.map((tag) => (
                                         <button
                                             key={tag}
                                             onClick={() => {
                                                 setSearchQuery(tag)
                                                 navigate(`/jobs?search=${encodeURIComponent(tag)}`)
                                             }}
-                                            className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200"
+                                            className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200 flex items-center gap-1"
                                         >
-                                            {tag}
+                                            <span className="text-[10px]">🔥</span> {tag}
                                         </button>
                                     ))}
                                 </div>

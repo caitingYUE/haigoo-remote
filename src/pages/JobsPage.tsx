@@ -69,7 +69,14 @@ export default function JobsPage() {
   const location = useLocation()
   const { token, isAuthenticated } = useAuth()
 
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState(() => {
+    // Optimization: Initialize from URL to avoid double-fetch and flash of wrong content
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      return params.get('search') || params.get('searchQuery') || ''
+    }
+    return ''
+  })
   const searchTermRef = useRef(searchTerm)
   // P0 Fix: Debounce search term to reduce API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
@@ -220,7 +227,8 @@ export default function JobsPage() {
 
   // 岗位数据状态（替代页面缓存）
   const [jobs, setJobs] = useState<Job[]>([])
-  const [jobsLoading, setJobsLoading] = useState(false)
+  // P0 Fix: Initialize loading to true to prevent "No jobs found" flash
+  const [jobsLoading, setJobsLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [totalJobs, setTotalJobs] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -450,10 +458,13 @@ export default function JobsPage() {
       console.error('❌ 加载岗位数据失败:', error)
       showError('加载岗位数据失败，请稍后重试')
     } finally {
-      if (loadMore) {
-        setLoadingMore(false)
-      } else {
-        setJobsLoading(false)
+      // P0 Fix: Only update loading state if request wasn't aborted (prevent race condition with new requests)
+      if (!signal.aborted) {
+        if (loadMore) {
+          setLoadingMore(false)
+        } else {
+          setJobsLoading(false)
+        }
       }
     }
   }, [token, isAuthenticated, showError, pageSize, filters, searchTerm, sortBy])

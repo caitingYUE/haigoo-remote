@@ -131,7 +131,7 @@ export default function LoginPage() {
   
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -168,7 +168,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 placeholder="your@email.com"
               />
             </div>
@@ -181,7 +181,7 @@ export default function LoginPage() {
                 </label>
                 <Link 
                   to="/forgot-password" 
-                  className="text-xs text-violet-600 hover:text-violet-700 font-medium"
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
                 >
                   忘记密码？
                 </Link>
@@ -193,7 +193,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all pr-10"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10"
                   placeholder="••••••••"
                 />
                 <button
@@ -214,7 +214,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             >
               {isLoading ? '登录中...' : '登录'}
             </button>
@@ -237,7 +237,7 @@ export default function LoginPage() {
           {/* 注册链接 */}
           <p className="text-center mt-6 text-sm text-slate-600">
             还没有账户？{' '}
-            <Link to="/register" className="text-violet-600 font-medium hover:text-violet-700">
+            <Link to="/register" className="text-indigo-600 font-medium hover:text-indigo-700">
               立即注册
             </Link>
           </p>

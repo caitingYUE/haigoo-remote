@@ -265,7 +265,7 @@ export default function Header() {
                 </Link>
                 <Link
                   to="/register"
-                  className="px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg no-underline hover:no-underline"
+                  className="px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 hover:text-white active:text-white focus:text-white transition-all shadow-md hover:shadow-lg no-underline hover:no-underline"
                 >
                   注册
                 </Link>
