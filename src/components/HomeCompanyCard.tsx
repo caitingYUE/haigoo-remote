@@ -64,11 +64,11 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
         }
     }
 
-    // Get top 2 categories
+    // Get top 3 categories sorted by count
     const topCategories = jobStats
         ? Object.entries(jobStats.categories)
             .sort(([, a], [, b]) => b - a)
-            .slice(0, 2)
+            .slice(0, 3)
         : []
 
     return (
