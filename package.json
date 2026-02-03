@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "type-check": "tsc --noEmit",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives",
+    "lint": "eslint . --ext ts,tsx,js --report-unused-disable-directives",
     "preview": "vite preview",
     "server": "node local-server.js"
   },
