@@ -458,7 +458,7 @@ export default function LandingPage() {
               </h2>
               <p className="text-slate-600 mb-10 text-lg leading-relaxed">
                 订阅岗位提醒，第一时间获取最新的远程工作机会。<br />
-                支持 <span className="font-semibold text-indigo-600">Email</span> 和 <span className="font-semibold text-indigo-600">飞书</span> 推送。
+                支持 <span className="font-semibold text-indigo-600">Email</span> 推送。
               </p>
               <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 inline-block w-full">
                 <JobAlertSubscribe variant="minimal" theme="light" />

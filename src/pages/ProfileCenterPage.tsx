@@ -1129,8 +1129,8 @@ export default function ProfileCenterPage() {
                 <div key={sub.subscription_id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${sub.channel === 'email' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                        {sub.channel === 'email' ? 'Email' : '飞书'}
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                        Email
                       </span>
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${sub.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                         {sub.status === 'active' ? '活跃' : '已暂停'}
