@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Briefcase, Clock, CheckCircle, XCircle, MoreHorizontal, AlertCircle, MessageSquare, FileText, Trash2 } from 'lucide-react';
+import { Briefcase, Clock, CheckCircle, XCircle, MoreHorizontal, AlertCircle, MessageSquare, FileText, Trash2, ChevronDown } from 'lucide-react';
 
 interface Application {
   id: number;
@@ -109,6 +109,7 @@ export default function MyApplicationsTab() {
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
         'pending': '待处理',
+        'pending_apply': '待投递',
         'applied': '已申请',
         'reviewed': '简历已阅',
         'referred': '已内推',
@@ -144,89 +145,82 @@ export default function MyApplicationsTab() {
           </div>
           <span className="text-xs font-normal text-gray-400">仅保留近1年的申请记录</span>
       </h2>
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {applications.map((app) => (
-          <div key={app.id} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-bold text-lg text-gray-900 mb-1">{app.jobTitle}</h3>
-                <div className="flex items-center gap-2 text-gray-600 text-sm mb-3">
-                    <span className="font-medium">{app.company}</span>
-                    <span>•</span>
-                    <span className="text-gray-400 text-xs">
+          <div key={app.id} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all p-4 group">
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-base text-gray-900 mb-1.5 truncate pr-2" title={app.jobTitle}>{app.jobTitle}</h3>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mb-2">
+                    <span className="font-medium text-gray-700 flex items-center gap-1">
+                        <Briefcase className="w-3 h-3" />
+                        {app.company}
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
                         {new Date(app.updatedAt).toLocaleDateString()}
                     </span>
+                    
                     {app.applicationSource === 'referral' && (
-                        <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs">内推</span>
+                        <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded text-[10px] font-medium border border-purple-100">内推</span>
                     )}
                     {(app.applicationSource === 'official' || app.applicationSource === 'trusted_platform') && (
-                        <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full text-xs">自投</span>
+                        <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-[10px] font-medium border border-blue-100">自投</span>
                     )}
                 </div>
+                
+                {(app.notes || app.resumeName) && (
+                    <div className="flex flex-col gap-1.5 mt-2.5">
+                        {app.resumeName && (
+                            <div className="flex items-center gap-1.5 text-xs text-indigo-600">
+                                <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+                                <a 
+                                    href={`/api/resumes/${app.resumeId}/download`} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="hover:underline truncate"
+                                >
+                                    {app.resumeName}
+                                </a>
+                            </div>
+                        )}
+                        {app.notes && (
+                            <div className="flex items-start gap-1.5 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100/50">
+                                <MessageSquare className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" />
+                                <p className="line-clamp-2">{app.notes}</p>
+                            </div>
+                        )}
+                    </div>
+                )}
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
-                  {getStatusLabel(app.status)}
-                </span>
+
+              <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                <div className="relative">
+                    <select 
+                        value={app.status}
+                        onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
+                        disabled={updatingId === app.id}
+                        className={`appearance-none pl-3 pr-7 py-1 rounded-full text-xs font-medium border-0 cursor-pointer transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-70 ${getStatusColor(app.status)}`}
+                    >
+                        <option value="applied">已投递</option>
+                        <option value="interviewing">面试中</option>
+                        <option value="offer">已录用</option>
+                        <option value="rejected">已拒绝</option>
+                        {['referred', 'reviewed', 'pending', 'pending_apply', 'success', 'failed'].includes(app.status) && (
+                            <option value={app.status} disabled>{getStatusLabel(app.status)}</option>
+                        )}
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-50" />
+                </div>
+                
                 <button 
                     onClick={() => handleDelete(app.id)}
-                    className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50"
+                    className="text-gray-300 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50"
                     title="删除记录"
                 >
                     <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-            </div>
-            
-            {app.notes && (
-                <div className="mt-3 bg-gray-50 p-3 rounded-lg text-sm text-gray-600 flex items-start gap-2">
-                    <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <p>{app.notes}</p>
-                </div>
-            )}
-            
-            {app.resumeName && (
-                <div className="mt-2 flex items-center gap-2 text-sm text-indigo-600">
-                    <FileText className="w-4 h-4" />
-                    <a 
-                        href={`/api/resumes/${app.resumeId}/download`} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="hover:underline"
-                    >
-                        {app.resumeName}
-                    </a>
-                </div>
-            )}
-
-            {/* Status Update Actions for Non-Referral or User-Editable statuses */}
-            {/* Allowing users to update status for ANY application to track their own progress if they want, 
-                but maybe restrict 'referral' status updates if admin controls it? 
-                User requirement: "User manually updates status... these statuses also sync to admin"
-                "Admin records referral status... sync to user"
-                
-                So:
-                - Referral: Admin updates, User views (Maybe User can update to 'interviewing'/'offer' if they hear back before admin?)
-                  Let's allow User to update mainly 'interviewing', 'offer', 'rejected' for all types.
-            */}
-            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end gap-2">
-                <select 
-                    value={app.status}
-                    onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
-                    disabled={updatingId === app.id}
-                    className="text-sm border-gray-200 rounded-lg px-3 py-1.5 bg-gray-50 hover:bg-white focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
-                >
-                    <option value="applied">已投递</option>
-                    <option value="interviewing">面试中</option>
-                    <option value="offer">已录用</option>
-                    <option value="rejected">已拒绝</option>
-                    {/* Only show specific admin statuses if current status is already that, to display correctly, but user can't select them? 
-                        Actually user shouldn't select 'referred' manually usually.
-                    */}
-                    {(app.status === 'referred' || app.status === 'reviewed' || app.status === 'pending' || app.status === 'success' || app.status === 'failed') && (
-                        <option value={app.status} disabled>{getStatusLabel(app.status)}</option>
-                    )}
-                </select>
             </div>
           </div>
         ))}
