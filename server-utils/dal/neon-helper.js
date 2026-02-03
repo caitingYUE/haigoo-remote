@@ -2,7 +2,7 @@ import { neon } from '@neondatabase/serverless'
 
 
 // Neon/PostgreSQL 配置检测
-const DATABASE_URL =
+const getDatabaseUrl = () => 
     process.env.DATABASE_URL ||
     process.env.NEON_DATABASE_URL ||
     process.env.NEON_DATABASE_DATABASE_URL ||
@@ -11,12 +11,12 @@ const DATABASE_URL =
     process.env.pre_haigoo_DATABASE_URL ||
     process.env.PRE_HAIGOO_DATABASE_URL ||
     null
-const DATABASE_CONFIGURED = !!DATABASE_URL
 
 // 创建 Neon SQL 客户端
 const createNeonClient = () => {
-    if (!DATABASE_CONFIGURED) return null
-    return neon(DATABASE_URL)
+    const dbUrl = getDatabaseUrl();
+    if (!dbUrl) return null
+    return neon(dbUrl)
 }
 
 /**
@@ -24,7 +24,9 @@ const createNeonClient = () => {
  */
 const neonHelper = {
     // 配置信息
-    isConfigured: DATABASE_CONFIGURED,
+    get isConfigured() {
+        return !!getDatabaseUrl();
+    },
 
     /**
      * 创建并返回 Neon SQL 客户端
@@ -41,7 +43,8 @@ const neonHelper = {
      * @returns {Promise<Object|null>} 查询结果，失败返回 null
      */
     async query(query, params = []) {
-        if (!DATABASE_CONFIGURED) {
+        const dbUrl = getDatabaseUrl();
+        if (!dbUrl) {
             console.error('[Neon] Database URL is not configured!')
             return null
         }
