@@ -185,7 +185,7 @@ const neonHelper = {
      * @returns {Promise<any>} 事务执行结果
      */
     async transaction(callback) {
-        if (!DATABASE_CONFIGURED) throw new Error('Database not configured')
+        if (!getDatabaseUrl()) throw new Error('Database not configured')
 
         const sql = createNeonClient()
         if (!sql) throw new Error('Failed to create database client')
@@ -246,7 +246,7 @@ const neonHelper = {
      * @returns {Promise<Object|null>} 插入结果，失败返回 null
      */
     async insert(table, data) {
-        if (!DATABASE_CONFIGURED) return null
+        if (!getDatabaseUrl()) return null
 
         try {
             const columns = Object.keys(data)
@@ -276,7 +276,7 @@ const neonHelper = {
      * @returns {Promise<Object|null>} 查询结果，失败返回 null
      */
     async select(table, conditions = {}, options = {}) {
-        if (!DATABASE_CONFIGURED) return null
+        if (!getDatabaseUrl()) return null
 
         try {
             let query = `SELECT * FROM ${table}`
@@ -324,7 +324,7 @@ const neonHelper = {
      * @returns {Promise<Object|null>} 更新结果，失败返回 null
      */
     async update(table, data, conditions) {
-        if (!DATABASE_CONFIGURED) return null
+        if (!getDatabaseUrl()) return null
 
         try {
             const setColumns = Object.keys(data)
@@ -368,7 +368,7 @@ const neonHelper = {
      * @returns {Promise<Object|null>} 删除结果，失败返回 null
      */
     async delete(table, conditions) {
-        if (!DATABASE_CONFIGURED) return null
+        if (!getDatabaseUrl()) return null
 
         try {
             if (Object.keys(conditions).length === 0) {
@@ -402,7 +402,7 @@ const neonHelper = {
      * @returns {Promise<boolean|null>} 表是否存在，失败返回 null
      */
     async tableExists(table) {
-        if (!DATABASE_CONFIGURED) return null
+        if (!getDatabaseUrl()) return null
 
         try {
             const query = `
@@ -428,7 +428,7 @@ const neonHelper = {
      * @returns {Promise<number|null>} 记录数，失败返回 null
      */
     async count(table, conditions = {}) {
-        if (!DATABASE_CONFIGURED) return null
+        if (!getDatabaseUrl()) return null
 
         try {
             let query = `SELECT COUNT(*) FROM ${table}`
@@ -459,7 +459,7 @@ const neonHelper = {
      * @returns {Promise<Array<Object|null>>} 查询结果数组
      */
     async batch(queries) {
-        if (!DATABASE_CONFIGURED) return queries.map(() => null)
+        if (!getDatabaseUrl()) return queries.map(() => null)
 
         try {
             const sql = createNeonClient()
