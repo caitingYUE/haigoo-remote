@@ -448,7 +448,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                )}
                {/* Skill Tags (Restored - First 3) */}
                {displayTags.slice(0, 3).map((tag, i) => (
-                  <span key={i} className="inline-flex items-center px-2.5 py-1 rounded text-xs text-slate-600 bg-slate-100 border border-slate-200 whitespace-nowrap max-w-[100px] truncate">
+                  <span key={i} className="inline-flex items-center px-2.5 py-1 rounded text-xs text-slate-600 bg-slate-100 border border-slate-200 whitespace-nowrap max-w-[180px] truncate" title={tag.text}>
                      {tag.text}
                   </span>
                ))}
