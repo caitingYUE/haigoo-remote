@@ -145,15 +145,27 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
 
       // 1. Skills (Priority)
       if (job.skills && job.skills.length > 0) {
-         job.skills.slice(0, 5).forEach(skill => tags.push({ text: skill, type: 'skill' }));
+         job.skills.slice(0, 5).forEach(skill => {
+            if (skill.length < 15 && !skill.includes('年以上')) {
+               tags.push({ text: skill, type: 'skill' });
+            }
+         });
       } else if ((job as any).tags && (job as any).tags.length > 0) {
          // Fallback to 'tags' field if skills is empty
-         (job as any).tags.slice(0, 5).forEach((tag: string) => tags.push({ text: tag, type: 'skill' }));
+         (job as any).tags.slice(0, 5).forEach((tag: string) => {
+            if (tag.length < 15 && !tag.includes('年以上')) {
+               tags.push({ text: tag, type: 'skill' });
+            }
+         });
       }
 
       // 2. Company Tags (Benefits/Culture)
       if (job.companyTags && job.companyTags.length > 0) {
-         job.companyTags.slice(0, 3).forEach(tag => tags.push({ text: tag, type: 'benefit' }));
+         job.companyTags.slice(0, 3).forEach(tag => {
+            if (tag.length < 15) {
+               tags.push({ text: tag, type: 'benefit' });
+            }
+         });
       }
 
       return tags.slice(0, 5); // Reduce max tags for cleaner look

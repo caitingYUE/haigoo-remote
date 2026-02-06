@@ -392,11 +392,11 @@ export default function CompanyDetailPage() {
                                                             <div className="font-bold text-slate-900 text-sm truncate group-hover/email:text-indigo-700 transition-colors">
                                                                 {companyInfo.hiringEmail}
                                                             </div>
-                                                            {companyInfo.emailType && (
-                                                                <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                                                                    {companyInfo.emailType}
-                                                                </div>
-                                                            )}
+                                                            <div className="text-[10px] text-slate-400 mt-0.5 truncate">
+                                                                {companyInfo.emailType === '招聘专用邮箱' ? '招聘邮箱' : 
+                                                                 companyInfo.emailType === '通用支持邮箱' ? '通用邮箱' : 
+                                                                 (companyInfo.emailType || '招聘邮箱')}
+                                                            </div>
                                                         </div>
                                                         {/* Hover Hint */}
                                                         <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/email:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-2 py-1 rounded">
