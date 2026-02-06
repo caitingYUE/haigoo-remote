@@ -393,7 +393,12 @@ export default function CompanyDetailPage() {
                                                                 {companyInfo.hiringEmail}
                                                             </div>
                                                             <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                                                                {companyInfo.emailType === '招聘专用邮箱' ? '招聘邮箱' : 
+                                                                {companyInfo.emailType === '招聘邮箱' ? '招聘邮箱' : 
+                                                                 companyInfo.emailType === '通用邮箱' ? '通用邮箱' : 
+                                                                 companyInfo.emailType === '员工邮箱' ? '员工邮箱' : 
+                                                                 companyInfo.emailType === '高管邮箱' ? '高管邮箱' : 
+                                                                 // Fallback for legacy long forms
+                                                                 companyInfo.emailType === '招聘专用邮箱' ? '招聘邮箱' : 
                                                                  companyInfo.emailType === '通用支持邮箱' ? '通用邮箱' : 
                                                                  (companyInfo.emailType || '招聘邮箱')}
                                                             </div>

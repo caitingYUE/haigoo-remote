@@ -433,14 +433,14 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                   </span>
                )}
                {/* Industry (Purple) */}
-               {job.companyIndustry && (
+               {job.companyIndustry && job.companyIndustry.length < 15 && !job.companyIndustry.includes('年以上') && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap max-w-[140px] truncate">
                      <Building2 className="w-3 h-3 mr-1" />
                      {job.companyIndustry}
                   </span>
                )}
                {/* Category (Blue/Indigo - Role related) */}
-               {job.category && (
+               {job.category && job.category.length < 15 && !job.category.includes('年以上') && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap max-w-[140px] truncate">
                      <Zap className="w-3 h-3 mr-1" />
                      {job.category}
