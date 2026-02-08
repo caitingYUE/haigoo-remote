@@ -4,6 +4,7 @@ import userProfileHandler from '../lib/api-handlers/user-profile.js';
 import applicationsHandler from '../lib/api-handlers/applications.js';
 import resumesHandler from '../lib/api-handlers/resumes.js';
 import jobMatchingHandler from '../lib/api-handlers/job-matching.js';
+import translationUsageHandler from '../lib/api-handlers/translation-usage.js';
 
 export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -11,6 +12,10 @@ export default async function handler(req, res) {
   const path = url.pathname;
 
   console.log('[API:Users] Request Path:', path, 'Resource:', resource);
+
+  if (resource === 'translation-usage') {
+      return await translationUsageHandler(req, res);
+  }
 
   if (resource === 'applications') {
       return await applicationsHandler(req, res);

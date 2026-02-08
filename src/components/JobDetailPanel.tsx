@@ -86,6 +86,40 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
     }, [job?.id, isMember])
 
+    // Initialize translation usage from server
+    useEffect(() => {
+        if (isAuthenticated && !isMember) {
+            const token = localStorage.getItem('haigoo_auth_token');
+            if (token) {
+                fetch('/api/users?resource=translation-usage', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        setTranslationUsageCount(data.usage);
+                        // Sync local storage for fallback
+                        localStorage.setItem('translation_usage_count', data.usage.toString());
+                        localStorage.setItem('translation_usage_date', new Date().toDateString());
+                    }
+                })
+                .catch(err => console.error('Failed to fetch translation usage:', err));
+            }
+        } else if (!isAuthenticated) {
+             // Fallback for guest users (still use local storage or just rely on session)
+             const storedDate = localStorage.getItem('translation_usage_date')
+             const today = new Date().toDateString()
+             if (storedDate !== today) {
+                 setTranslationUsageCount(0)
+                 localStorage.setItem('translation_usage_count', '0')
+                 localStorage.setItem('translation_usage_date', today)
+             } else {
+                 const count = parseInt(localStorage.getItem('translation_usage_count') || '0', 10)
+                 setTranslationUsageCount(count)
+             }
+        }
+    }, [isAuthenticated, isMember]);
+
     useEffect(() => {
         if (job?.companyId) {
             trustedCompaniesService.getCompanyById(job.companyId).then(setCompanyInfo).catch(() => setCompanyInfo(null))
@@ -536,10 +570,38 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         }
 
                                         if (!showTranslation) {
+                                            // Optimistically increment
                                             const newCount = translationUsageCount + 1
                                             setTranslationUsageCount(newCount)
-                                            localStorage.setItem('translation_usage_count', newCount.toString())
-                                            localStorage.setItem('translation_usage_date', new Date().toDateString())
+                                            
+                                            // Call API to persist usage
+                                            const token = localStorage.getItem('haigoo_auth_token')
+                                            if (token) {
+                                                fetch('/api/users?resource=translation-usage', {
+                                                    method: 'POST',
+                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                })
+                                                .then(res => res.json())
+                                                .then(data => {
+                                                    if (data.success) {
+                                                        // Sync accurate count from server
+                                                        setTranslationUsageCount(data.usage)
+                                                        localStorage.setItem('translation_usage_count', data.usage.toString())
+                                                        localStorage.setItem('translation_usage_date', new Date().toDateString())
+                                                    } else if (data.error === 'Translation limit reached') {
+                                                        // Revert if limit reached (edge case)
+                                                        setTranslationUsageCount(TRANSLATION_FREE_LIMIT)
+                                                        setShowUpgradeModal(true)
+                                                        setShowTranslation(false) // Hide translation
+                                                        return // Stop here
+                                                    }
+                                                })
+                                                .catch(console.error)
+                                            } else {
+                                                // Local fallback
+                                                localStorage.setItem('translation_usage_count', newCount.toString())
+                                                localStorage.setItem('translation_usage_date', new Date().toDateString())
+                                            }
 
                                             if (newCount >= TRANSLATION_FREE_LIMIT) {
                                                 showInfo('试用次数已用完', '升级会员享受无限翻译')
