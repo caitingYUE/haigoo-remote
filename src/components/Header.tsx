@@ -187,7 +187,7 @@ export default function Header() {
             {/* Logo Image with Optical Adjustment */}
             <Link
               to="/"
-              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline"
+              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-6"
               aria-label="Haigoo 首页"
             >
               <img
@@ -199,10 +199,10 @@ export default function Header() {
               />
             
               {/* Vertical Separator - Pure Flex Item */}
-              <div className={`h-5 w-px mx-3 ${isHome ? 'bg-white/20' : 'bg-slate-300'}`}></div>
+              <div className={`h-5 w-px ${isHome ? 'bg-white/20' : 'bg-slate-300'}`}></div>
 
               {/* Brand Name */}
-              <span className={`font-semibold text-lg tracking-wide leading-none ${isHome ? 'text-white' : 'text-[#1A365D]'}`}>
+              <span className={`font-semibold text-base tracking-wide leading-none ${isHome ? 'text-white' : 'text-[#1A365D]'}`}>
                 海狗远程俱乐部
               </span>
             </Link>
