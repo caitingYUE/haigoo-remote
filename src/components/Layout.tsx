@@ -1,9 +1,10 @@
-import { ReactNode, useState } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { AlertTriangle, Send } from 'lucide-react'
 import Header from './Header'
 import Footer from './Footer'
 import { useAuth } from '../contexts/AuthContext'
+import { HappinessCard } from './Christmas/HappinessCard'
 
 interface LayoutProps {
   children: ReactNode
@@ -14,12 +15,23 @@ export default function Layout({ children }: LayoutProps) {
   const { user, isAuthenticated, sendVerificationEmail } = useAuth()
   const [resending, setResending] = useState(false)
   const [resendMsg, setResendMsg] = useState('')
+  const [showHappinessCard, setShowHappinessCard] = useState(false)
 
   const isJobsPage = pathname === '/jobs' || pathname.startsWith('/jobs/')
   const isHome = pathname === '/'
   const hideFooter = pathname.startsWith('/resume') || isJobsPage
   
   const showVerificationWarning = isAuthenticated && user && !user.emailVerified
+
+  useEffect(() => {
+    // Listen for custom event from Header to open Happiness Card
+    const handleOpenCard = () => setShowHappinessCard(true);
+    window.addEventListener('open-happiness-card', handleOpenCard);
+    
+    return () => {
+        window.removeEventListener('open-happiness-card', handleOpenCard);
+    }
+  }, [])
 
   const handleResend = async () => {
       if (!user?.email) return;
@@ -75,11 +87,15 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       <main className={`flex-1 relative ${isJobsPage ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'} ${!isHome && !showVerificationWarning ? 'pt-32' : ''}`}>
-        <div className={`relative z-10 ${isJobsPage ? 'h-full' : ''}`}>
+        <div className={`relative z-10 ${isJobsPage ? 'h-full' : 'animate-in fade-in slide-in-from-bottom-2 duration-500'}`}>
           {children}
         </div>
       </main>
       {!hideFooter && <Footer />}
+      
+      {showHappinessCard && (
+        <HappinessCard onClose={() => setShowHappinessCard(false)} />
+      )}
     </div>
   )
 }

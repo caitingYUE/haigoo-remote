@@ -187,7 +187,7 @@ export default function Header() {
             {/* Logo Image with Optical Adjustment */}
             <Link
               to="/"
-              className="flex-shrink-0 flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline mr-3"
+              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline"
               aria-label="Haigoo 首页"
             >
               <img
@@ -197,25 +197,25 @@ export default function Header() {
                 // Using transform instead of margin to avoid affecting layout flow
                 style={{ transform: 'translateX(-4px)' }} 
               />
-            </Link>
-              
-            {/* Vertical Separator - Pure Flex Item */}
-            <div className={`h-5 w-px ${isHome ? 'bg-white/20' : 'bg-slate-300'}`}></div>
+            
+              {/* Vertical Separator - Pure Flex Item */}
+              <div className={`h-5 w-px mx-3 ${isHome ? 'bg-white/20' : 'bg-slate-300'}`}></div>
 
-            {/* Brand Name with New Year Badge */}
-            <div className="relative flex items-center ml-6">
+              {/* Brand Name */}
               <span className={`font-semibold text-lg tracking-wide leading-none ${isHome ? 'text-white' : 'text-[#1A365D]'}`}>
                 海狗远程俱乐部
               </span>
-              
-              {/* New Year Badge - Pill Style */}
+            </Link>
+
+            {/* New Year Badge - Pill Style */}
+            <div className="relative flex items-center ml-3">
               <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     window.dispatchEvent(new CustomEvent('open-happiness-card'));
                   }}
-                  className="ml-3 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] font-bold shadow-sm border border-white/20 hover:scale-105 transition-transform flex items-center gap-1 cursor-pointer animate-in fade-in zoom-in"
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] font-bold shadow-sm border border-white/20 hover:scale-105 transition-transform flex items-center gap-1 cursor-pointer animate-in fade-in zoom-in"
                   title="点击查看新年惊喜"
               >
                 <Sparkles className="w-3 h-3 text-yellow-200" />

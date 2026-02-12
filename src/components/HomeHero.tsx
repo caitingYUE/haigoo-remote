@@ -21,10 +21,6 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     const [hotTags, setHotTags] = useState(['前端开发', '后端开发', '全栈', '产品经理', '设计师', '运营'])
 
     useEffect(() => {
-        // Listen for custom event from Header to open Happiness Card
-        const handleOpenCard = () => setShowHappinessCard(true);
-        window.addEventListener('open-happiness-card', handleOpenCard);
-
         // Force New Year Mode
         setIsChristmas(true)
 
@@ -54,9 +50,6 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
 fetchHotTags()
 
-return () => {
-    window.removeEventListener('open-happiness-card', handleOpenCard);
-}
 }, [])
 
     const handleSearch = () => {
@@ -186,10 +179,6 @@ return () => {
 
                 </div>
             </div>
-
-            {showHappinessCard && (
-                <HappinessCard onClose={() => setShowHappinessCard(false)} />
-            )}
         </div>
     )
 }
