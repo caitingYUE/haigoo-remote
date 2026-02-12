@@ -21,6 +21,10 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     const [hotTags, setHotTags] = useState(['前端开发', '后端开发', '全栈', '产品经理', '设计师', '运营'])
 
     useEffect(() => {
+        // Listen for custom event from Header to open Happiness Card
+        const handleOpenCard = () => setShowHappinessCard(true);
+        window.addEventListener('open-happiness-card', handleOpenCard);
+
         // Force New Year Mode
         setIsChristmas(true)
 
@@ -39,17 +43,21 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             .map((c: any) => c.value)
                         
                         if (topCategories.length > 0) {
-                            setHotTags(topCategories)
-                        }
-                    }
+                    setHotTags(topCategories)
                 }
-            } catch (error) {
-                console.error('Failed to fetch hot tags', error)
             }
         }
-        
-        fetchHotTags()
-    }, [])
+    } catch (error) {
+        console.error('Failed to fetch hot tags', error)
+    }
+}
+
+fetchHotTags()
+
+return () => {
+    window.removeEventListener('open-happiness-card', handleOpenCard);
+}
+}, [])
 
     const handleSearch = () => {
         if (searchQuery.trim()) {
@@ -64,56 +72,53 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 <img 
                     src="/background.webp" 
                     alt="Background" 
-                    className={`w-full h-full object-cover transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    className={`w-full h-full object-cover object-[10%_15%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
                     loading="eager"
                     decoding="async"
                 />
                 {/* Gradient Overlay for better text readability while keeping image visible */}
-                {/* Updated to warmer neutral tones for a more positive feel */}
-                <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/70 via-neutral-900/30 to-transparent"></div>
+                {/* Updated to warmer neutral tones for a more positive feel - Brightened per user request */}
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/60 via-neutral-900/20 to-transparent"></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/40 via-transparent to-transparent"></div>
-                {/* Subtle warm amber glow */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 via-transparent to-transparent mix-blend-overlay"></div>
-            </div>
-
-            {/* Festive Fireworks - Absolute Positioned Top Right */}
-            <div className="absolute top-0 right-0 z-20 w-full h-full overflow-hidden pointer-events-none">
-                <style>{`
-                    @keyframes float-slow {
-                        0%, 100% { transform: translateY(0) scale(1); opacity: 0.9; }
-                        50% { transform: translateY(-10px) scale(1.05); opacity: 1; }
-                    }
-                    @keyframes pulse-glow {
-                        0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(255,165,0,0.3)); }
-                        50% { filter: brightness(1.2) drop-shadow(0 0 20px rgba(255,165,0,0.6)); }
-                    }
-                `}</style>
                 
-                {/* Firework - Main */}
-                <img
-                    src="/fireworks.png"
-                    alt="Fireworks"
-                    onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-24 md:top-32 right-[2%] md:right-[5%] w-32 md:w-48 lg:w-64 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-screen opacity-90"
-                    style={{ animation: 'float-slow 5s ease-in-out infinite, pulse-glow 4s ease-in-out infinite' }}
-                />
+                {/* Ambient Atmosphere - Golden Glows */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-500/10 rounded-full blur-[100px] animate-pulse"></div>
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-red-500/10 rounded-full blur-[80px] animate-pulse delay-1000"></div>
+                </div>
 
-                {/* Firework - Small */}
-                <img
-                    src="/fireworks.png"
-                    alt="Fireworks"
-                    onClick={() => setShowHappinessCard(true)}
-                    className="absolute top-48 md:top-64 right-[12%] md:right-[15%] w-20 md:w-28 lg:w-36 h-auto cursor-pointer hover:scale-110 transition-transform duration-500 pointer-events-auto z-50 mix-blend-screen opacity-70"
-                    style={{ animation: 'float-delayed 6s ease-in-out infinite 1s, pulse-glow 3s ease-in-out infinite 0.5s' }}
-                />
+                {/* Subtle Floating Particles (Golden Dust) */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <style>{`
+                        @keyframes float-particle {
+                            0% { transform: translateY(0) translateX(0); opacity: 0; }
+                            10% { opacity: 0.5; }
+                            90% { opacity: 0.5; }
+                            100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
+                        }
+                    `}</style>
+                    {[...Array(6)].map((_, i) => (
+                        <div 
+                            key={i}
+                            className="absolute rounded-full bg-amber-200/40 blur-[1px]"
+                            style={{
+                                width: Math.random() * 4 + 2 + 'px',
+                                height: Math.random() * 4 + 2 + 'px',
+                                top: Math.random() * 100 + '%',
+                                left: Math.random() * 100 + '%',
+                                animation: `float-particle ${Math.random() * 10 + 10}s linear infinite ${Math.random() * 5}s`
+                            }}
+                        />
+                    ))}
+                </div>
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-16">
-                <div className="flex flex-col md:flex-row items-end justify-between gap-8 lg:gap-12 min-h-[500px]">
+                <div className="flex flex-col md:flex-row items-end justify-between gap-8 lg:gap-12 min-h-[400px]">
 
                     {/* Left Column: Content - Aligned with left desk space */}
-                    <div className="flex-1 text-left max-w-2xl z-10 mb-12">
+                    <div className="flex-1 text-left max-w-2xl z-10 mb-12 relative">
                         {/* English Tagline - Elegant Script */}
                         <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                             <p className="text-2xl md:text-3xl font-serif italic text-white/95 tracking-wide font-light drop-shadow-md">
@@ -122,12 +127,16 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         </div>
 
                         {/* Main Heading */}
-                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 drop-shadow-xl">
-                            <span className="block text-white mb-2">理想生活，</span>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-white to-amber-50 inline-block pb-2">
-                                从远程工作开始
-                            </span>
-                        </h1>
+                        <div className="relative">
+                            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 drop-shadow-xl">
+                                <span className="block text-white mb-3 tracking-wide drop-shadow-lg relative">
+                                    理想生活，
+                                </span>
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-50 via-white to-amber-100 inline-block pb-2 filter drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
+                                    从远程工作开始
+                                </span>
+                            </h1>
+                        </div>
 
                         {/* Subtitle */}
                         <p className="text-lg md:text-xl text-white/90 mb-10 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-150 leading-relaxed font-light max-w-xl drop-shadow-md">

@@ -1,4 +1,4 @@
-import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown } from 'lucide-react'
+import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown, Sparkles } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -169,83 +169,114 @@ export default function Header() {
     { id: 'profile-feedback', label: '我要反馈', href: '/profile?tab=feedback' }
   ]
 
+  const isHome = location.pathname === '/'
+
   return (
     <header
-      className="absolute top-6 left-0 right-0 z-50 px-4 md:px-6 lg:px-8 transition-all duration-300 pointer-events-none"
+      className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none ${isHome ? 'pt-6' : 'top-6 px-4 md:px-6 lg:px-8'}`}
       role="banner"
     >
-      <div className="max-w-7xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-white/40 px-6 md:px-8 pointer-events-auto transition-all duration-300">
+      <div className={`max-w-7xl mx-auto px-6 md:px-8 pointer-events-auto transition-all duration-300 ${
+        isHome 
+          ? 'bg-transparent border-transparent' 
+          : 'bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-white/40'
+      }`}>
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center group">
+            {/* Logo Image with Optical Adjustment */}
             <Link
               to="/"
-              className="flex-shrink-0 flex items-center focus:outline-none rounded-lg transition-all duration-200 hover:scale-105 no-underline hover:no-underline"
+              className="flex-shrink-0 flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline mr-3"
               aria-label="Haigoo 首页"
             >
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
-                className="h-12 w-auto"
-                style={{ 
-                  transform: 'translateZ(0)',
-                  backfaceVisibility: 'hidden'
-                }}
+                className={`h-14 md:h-16 w-auto object-contain transition-all duration-300 group-hover:opacity-90 ${isHome ? 'brightness-0 invert' : ''}`}
+                // Using transform instead of margin to avoid affecting layout flow
+                style={{ transform: 'translateX(-4px)' }} 
               />
-              <span className="ml-3 text-[#1A365D] font-semibold text-lg flex items-center gap-2">
+            </Link>
+              
+            {/* Vertical Separator - Pure Flex Item */}
+            <div className={`h-5 w-px ${isHome ? 'bg-white/20' : 'bg-slate-300'}`}></div>
+
+            {/* Brand Name with New Year Badge */}
+            <div className="relative flex items-center ml-6">
+              <span className={`font-semibold text-lg tracking-wide leading-none ${isHome ? 'text-white' : 'text-[#1A365D]'}`}>
                 海狗远程俱乐部
               </span>
-            </Link>
+              
+              {/* New Year Badge - Pill Style */}
+              <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.dispatchEvent(new CustomEvent('open-happiness-card'));
+                  }}
+                  className="ml-3 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] font-bold shadow-sm border border-white/20 hover:scale-105 transition-transform flex items-center gap-1 cursor-pointer animate-in fade-in zoom-in"
+                  title="点击查看新年惊喜"
+              >
+                <Sparkles className="w-3 h-3 text-yellow-200" />
+                新年彩蛋
+              </button>
+            </div>
           </div>
 
           {/* Center Navigation - Right aligned */}
           <div className="hidden md:flex items-center gap-8 ml-auto mr-8">
             <Link
               to="/"
-              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname === '/'
-                ? 'text-slate-900 font-bold'
-                : 'text-slate-500 font-medium hover:text-slate-900'
-                }`}
+              className={`text-base transition-colors no-underline hover:no-underline ${
+                location.pathname === '/'
+                  ? (isHome ? 'text-white font-bold' : 'text-slate-900 font-bold')
+                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+              }`}
             >
               首页
             </Link>
 
             <Link
               to="/jobs"
-              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname === '/jobs'
-                ? 'text-slate-900 font-bold'
-                : 'text-slate-500 font-medium hover:text-slate-900'
-                }`}
+              className={`text-base transition-colors no-underline hover:no-underline ${
+                location.pathname === '/jobs'
+                  ? 'text-slate-900 font-bold'
+                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+              }`}
             >
               远程岗位
             </Link>
 
             <Link
               to="/trusted-companies"
-              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
-                ? 'text-slate-900 font-bold'
-                : 'text-slate-500 font-medium hover:text-slate-900'
-                }`}
+              className={`text-base transition-colors no-underline hover:no-underline ${
+                location.pathname.startsWith('/trusted-companies')
+                  ? 'text-slate-900 font-bold'
+                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+              }`}
             >
               精选企业
             </Link>
 
             <Link
               to="/membership"
-              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname === '/membership'
-                ? 'text-slate-900 font-bold'
-                : 'text-slate-500 font-medium hover:text-slate-900'
-                }`}
+              className={`text-base transition-colors no-underline hover:no-underline ${
+                location.pathname === '/membership'
+                  ? 'text-slate-900 font-bold'
+                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+              }`}
             >
               会员中心
             </Link>
 
             <Link
               to="/profile"
-              className={`text-base transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/profile')
-                ? 'text-slate-900 font-bold'
-                : 'text-slate-500 font-medium hover:text-slate-900'
-                }`}
+              className={`text-base transition-colors no-underline hover:no-underline ${
+                location.pathname.startsWith('/profile')
+                  ? 'text-slate-900 font-bold'
+                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+              }`}
             >
               个人中心
             </Link>
@@ -258,13 +289,13 @@ export default function Header() {
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors no-underline hover:no-underline"
+                  className={`px-4 py-2 text-sm font-medium transition-colors no-underline hover:no-underline ${isHome ? 'text-white hover:text-white/80' : 'text-slate-600 hover:text-slate-900'}`}
                 >
                   登录
                 </Link>
                 <Link
                   to="/register"
-                  className="px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 hover:text-white active:text-white focus:text-white transition-all shadow-md hover:shadow-lg no-underline hover:no-underline"
+                  className={`px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline ${isHome ? 'bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                 >
                   注册
                 </Link>
@@ -278,7 +309,11 @@ export default function Header() {
                 <div ref={notificationRef} className="relative">
                   <button
                     onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                    className="p-3 text-slate-400 hover:text-slate-600 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    className={`p-3 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center ${
+                      isHome 
+                        ? 'text-white/80 hover:text-white' 
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
                     aria-label={`通知，有 ${unreadCount} 条新消息`}
                     title="通知"
                   >
