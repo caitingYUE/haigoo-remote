@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { CheckCircle2, XCircle, Loader2, ArrowRight } from 'lucide-react'
-import logoSvg from '../assets/logo.svg'
+import logoPng from '../assets/logo.png'
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams()
@@ -68,7 +68,7 @@ export default function VerifyEmailPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
-        <img src={logoSvg} alt="Haigoo" className="h-12 mx-auto mb-6" />
+        <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-6" />
         
         {status === 'verifying' && (
           <div className="flex flex-col items-center">

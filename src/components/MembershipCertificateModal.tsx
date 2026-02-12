@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import { X, Download, Loader2, Share2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { User } from '../types/auth-types';
-import logoSvg from '../assets/logo.svg';
 
 interface MembershipCertificateModalProps {
   isOpen: boolean;
