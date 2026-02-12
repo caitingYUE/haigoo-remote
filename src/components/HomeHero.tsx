@@ -72,7 +72,7 @@ return () => {
                 <img 
                     src="/background.webp" 
                     alt="Background" 
-                    className={`w-full h-full object-cover object-[10%_15%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    className={`w-full h-full object-cover object-[0%_15%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
                     loading="eager"
                     decoding="async"

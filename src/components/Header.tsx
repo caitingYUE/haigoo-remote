@@ -389,7 +389,11 @@ export default function Header() {
                 >
                   <button
                     ref={userMenuButtonRef}
-                    className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-50 transition-all duration-200 focus:outline-none"
+                    className={`flex items-center space-x-2 p-2 rounded-lg transition-all duration-200 focus:outline-none ${
+                        isHome 
+                            ? 'text-white hover:bg-white/10' 
+                            : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
                     onKeyDown={handleUserMenuKeyDown}
                     aria-expanded={isUserMenuOpen}
                     aria-haspopup="menu"
@@ -401,10 +405,14 @@ export default function Header() {
                         <img
                           src={user.avatar}
                           alt={user.username}
-                          className={`w-8 h-8 rounded-full shadow-sm ${isMember ? 'ring-2 ring-indigo-400 border-2 border-white' : ''}`}
+                          className={`w-8 h-8 rounded-full shadow-sm ${
+                              isMember 
+                                ? 'ring-2 ring-indigo-400 border-2 border-white'
+                                : ''
+                          }`}
                         />
                         {isMember && (
-                          <div className="absolute -top-1.5 -right-1.5 bg-indigo-100 rounded-full p-0.5 border border-white shadow-sm">
+                          <div className="absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm bg-indigo-100">
                             <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />
                           </div>
                         )}
@@ -412,20 +420,34 @@ export default function Header() {
                     ) : (
                       <div className="relative">
                         <div
-                          className={`w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center shadow-sm ${isMember ? 'ring-2 ring-indigo-400 border-2 border-white' : ''}`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${
+                              isHome 
+                                ? 'bg-white/20 backdrop-blur-md' 
+                                : 'bg-gradient-to-r from-haigoo-primary to-haigoo-secondary'
+                          } ${
+                              isMember 
+                                ? 'ring-2 ring-indigo-400 border-2 border-white'
+                                : ''
+                          }`}
                           role="img"
                           aria-label="用户头像"
                         >
-                          <User className="h-4 w-4 text-white" aria-hidden="true" />
+                          <User className={`h-4 w-4 ${isHome ? 'text-white' : 'text-white'}`} aria-hidden="true" />
                         </div>
                         {isMember && (
-                          <div className="absolute -top-1.5 -right-1.5 bg-indigo-100 rounded-full p-0.5 border border-white shadow-sm">
+                          <div className="absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm bg-indigo-100">
                             <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />
                           </div>
                         )}
                       </div>
                     )}
-                    <span className={`text-sm font-medium hidden sm:block ${isMember ? 'text-indigo-600' : ''}`}>{user?.username || '用户'}</span>
+                    <span className={`text-sm font-medium hidden sm:block ${
+                        isHome 
+                            ? 'text-white' 
+                            : (isMember ? 'text-indigo-600' : '')
+                    }`}>
+                        {user?.username || '用户'}
+                    </span>
                     <ChevronDown
                       className={`h-4 w-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
                       aria-hidden="true"
