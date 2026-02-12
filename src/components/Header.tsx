@@ -187,7 +187,7 @@ export default function Header() {
             {/* Logo Image with Optical Adjustment */}
             <Link
               to="/"
-              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-6"
+              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-3"
               aria-label="Haigoo 首页"
             >
               <img
@@ -197,9 +197,6 @@ export default function Header() {
                 // Using transform instead of margin to avoid affecting layout flow
                 style={{ transform: 'translateX(-4px)' }} 
               />
-            
-              {/* Vertical Separator - Pure Flex Item */}
-              <div className={`h-5 w-px ${isHome ? 'bg-white/20' : 'bg-slate-300'}`}></div>
 
               {/* Brand Name */}
               <span className={`font-semibold text-base tracking-wide leading-none ${isHome ? 'text-white' : 'text-[#1A365D]'}`}>
