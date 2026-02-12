@@ -103,19 +103,23 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                                 <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">Haigoo Member</h1>
                                 <p className="text-white/60 text-xs tracking-widest uppercase">Global Remote Work Club</p>
                             </div>
+                            {/* Top-Right Large Logo */}
+                            <div className="w-24 h-24 opacity-80">
+                                <img src={logoPng} alt="Haigoo Logo" className="w-full h-full object-contain brightness-0 invert" crossOrigin="anonymous" />
+                            </div>
                         </div>
 
                         {/* Middle - Member Info */}
-                        <div className="space-y-6">
+                        <div className="space-y-6 mt-2">
                             <div>
                                 <p className="text-indigo-200 text-xs font-medium uppercase tracking-wider mb-1">Member Name</p>
-                                <h2 className="text-3xl font-bold text-white tracking-wide">{memberName}</h2>
+                                <h2 className="text-4xl font-bold text-white tracking-wide">{memberName}</h2>
                             </div>
                             
                             <div className="flex items-center gap-12">
                                 <div>
                                     <p className="text-indigo-200 text-[10px] font-medium uppercase tracking-wider mb-0.5">Member ID</p>
-                                    <p className="text-xl font-mono font-bold text-teal-300">NO.{displayId}</p>
+                                    <p className="text-xl font-mono font-bold text-teal-300 tracking-wider">NO.{displayId}</p>
                                 </div>
                                 <div>
                                     <p className="text-indigo-200 text-[10px] font-medium uppercase tracking-wider mb-0.5">Member Since</p>
@@ -125,18 +129,16 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                         </div>
 
                         {/* Footer */}
-                        <div className="flex justify-between items-end border-t border-white/10 pt-4">
+                        <div className="flex justify-between items-end border-t border-white/10 pt-6 mt-auto">
                             <div>
-                                <p className="text-[10px] text-white/40 leading-tight">
+                                <p className="text-[10px] text-white/40 leading-relaxed">
                                     This certificate verifies the membership status within the Haigoo Remote Club.<br/>
-                                    Access to exclusive global opportunities.
+                                    Access to exclusive global opportunities and premium resources.
                                 </p>
                             </div>
-                            <div className="flex flex-col items-end">
-                                <div className="w-24 h-auto mb-1">
-                                    <img src={logoPng} alt="Haigoo Logo" className="w-full h-full object-contain brightness-0 invert opacity-90" crossOrigin="anonymous" />
-                                </div>
-                                <p className="text-[10px] text-white/40 tracking-wider">haigooremote.com</p>
+                            <div className="text-right">
+                                <p className="text-sm font-bold text-white/90 tracking-wide mb-0.5">Haigoo Remote</p>
+                                <p className="text-[10px] text-white/50 tracking-wider font-medium">haigooremote.com</p>
                             </div>
                         </div>
                     </div>
