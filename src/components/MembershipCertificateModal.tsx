@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { X, Download, Loader2, Share2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { User } from '../types/auth-types';
+import logoPng from '../assets/logo.png';
 
 interface MembershipCertificateModalProps {
   isOpen: boolean;
@@ -104,7 +105,7 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                             </div>
                             {/* Logo */}
                             <div className="w-12 h-12 flex items-center justify-center">
-                                <img src="/Haigoo_white.svg" alt="Haigoo Logo" className="w-full h-full object-contain" crossOrigin="anonymous" />
+                                <img src={logoPng} alt="Haigoo Logo" className="w-full h-full object-contain brightness-0 invert" crossOrigin="anonymous" />
                             </div>
                         </div>
 
