@@ -103,27 +103,23 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                                 <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">Haigoo Member</h1>
                                 <p className="text-white/60 text-xs tracking-widest uppercase">Global Remote Work Club</p>
                             </div>
-                            {/* Logo */}
-                            <div className="w-24 h-24 flex items-center justify-center">
-                                <img src={logoPng} alt="Haigoo Logo" className="w-full h-full object-contain brightness-0 invert" crossOrigin="anonymous" />
-                            </div>
                         </div>
 
                         {/* Middle - Member Info */}
                         <div className="space-y-6">
                             <div>
                                 <p className="text-indigo-200 text-xs font-medium uppercase tracking-wider mb-1">Member Name</p>
-                                <h2 className="text-2xl font-bold text-white tracking-wide">{memberName}</h2>
+                                <h2 className="text-3xl font-bold text-white tracking-wide">{memberName}</h2>
                             </div>
                             
-                            <div className="flex items-center gap-8">
+                            <div className="flex items-center gap-12">
                                 <div>
                                     <p className="text-indigo-200 text-[10px] font-medium uppercase tracking-wider mb-0.5">Member ID</p>
-                                    <p className="text-lg font-mono font-bold text-teal-300">NO.{displayId}</p>
+                                    <p className="text-xl font-mono font-bold text-teal-300">NO.{displayId}</p>
                                 </div>
                                 <div>
                                     <p className="text-indigo-200 text-[10px] font-medium uppercase tracking-wider mb-0.5">Member Since</p>
-                                    <p className="text-sm font-medium text-white/90">{joinDate}</p>
+                                    <p className="text-lg font-medium text-white/90">{joinDate}</p>
                                 </div>
                             </div>
                         </div>
@@ -136,9 +132,11 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                                     Access to exclusive global opportunities.
                                 </p>
                             </div>
-                            <div className="text-right">
-                                <p className="text-xs font-bold text-white/80">Haigoo Remote</p>
-                                <p className="text-[10px] text-white/40">haigooremote.com</p>
+                            <div className="flex flex-col items-end">
+                                <div className="w-24 h-auto mb-1">
+                                    <img src={logoPng} alt="Haigoo Logo" className="w-full h-full object-contain brightness-0 invert opacity-90" crossOrigin="anonymous" />
+                                </div>
+                                <p className="text-[10px] text-white/40 tracking-wider">haigooremote.com</p>
                             </div>
                         </div>
                     </div>
