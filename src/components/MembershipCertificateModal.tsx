@@ -104,7 +104,7 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                                 <p className="text-white/60 text-xs tracking-widest uppercase">Global Remote Work Club</p>
                             </div>
                             {/* Logo */}
-                            <div className="w-12 h-12 flex items-center justify-center">
+                            <div className="w-24 h-24 flex items-center justify-center">
                                 <img src={logoPng} alt="Haigoo Logo" className="w-full h-full object-contain brightness-0 invert" crossOrigin="anonymous" />
                             </div>
                         </div>
