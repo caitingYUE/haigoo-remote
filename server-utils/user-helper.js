@@ -370,7 +370,8 @@ const userHelper = {
                 lastLoginAt,
                 emailVerified,
                 verificationToken,
-                verificationExpires
+                verificationExpires,
+                passwordHash
             } = updates || {}
 
             const { isAdmin = false } = options
@@ -383,6 +384,11 @@ const userHelper = {
 
             // 构建更新字段（使用下划线命名）
             const updateFields = { updated_at: new Date().toISOString() }
+
+            // 密码哈希更新
+            if (passwordHash) {
+                updateFields.password_hash = passwordHash
+            }
 
             // 邮箱验证状态更新
             if (emailVerified === true || emailVerified === false) {

@@ -91,6 +91,12 @@ async function main() {
     await neonHelper.query(createPaymentRecords);
     console.log('Checked/Created payment_records table');
 
+    // 3. Create member_id_seq sequence
+    console.log('Checking member_id_seq...');
+    const createSequence = `CREATE SEQUENCE IF NOT EXISTS member_id_seq START WITH 100000;`;
+    await neonHelper.query(createSequence);
+    console.log('Checked/Created member_id_seq');
+
     console.log('Schema update completed successfully.');
   } catch (error) {
     console.error('Schema update failed:', error);

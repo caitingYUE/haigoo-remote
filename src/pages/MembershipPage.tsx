@@ -24,7 +24,6 @@ interface PaymentInfo {
    instruction: string;
 }
 
-import { MembershipApplicationModal } from '../components/MembershipApplicationModal';
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal';
 
 const MembershipPage: React.FC = () => {
@@ -33,16 +32,15 @@ const MembershipPage: React.FC = () => {
    const [plans, setPlans] = useState<Plan[]>([]);
    const [loading, setLoading] = useState(true);
    const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-   const [paymentMethod, setPaymentMethod] = useState<'xiaohongshu' | 'wechat_transfer'>('xiaohongshu');
+   const [paymentMethod, setPaymentMethod] = useState<'wechat' | 'alipay' | 'xiaohongshu' | 'wechat_transfer'>('wechat');
    const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
    const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
    const [showPaymentModal, setShowPaymentModal] = useState(false);
    const [currentMembership, setCurrentMembership] = useState<any>(null);
-   const [showApplicationModal, setShowApplicationModal] = useState(false);
    const [showCertificateModal, setShowCertificateModal] = useState(false);
    const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
 
-   // Application Logic
+   // Application Logic (Deprecated, but kept for legacy data display if needed)
    const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
    const [formData, setFormData] = useState({
       nickname: '',
@@ -152,8 +150,8 @@ const MembershipPage: React.FC = () => {
          return;
       }
       setSelectedPlan(plan);
-      // Beta Phase: Show Application Modal instead of direct payment
-      setShowApplicationModal(true);
+      // Direct to Payment Modal
+      setShowPaymentModal(true);
       trackingService.track('click_subscribe', {
           plan_id: plan.id,
           plan_name: plan.name,
@@ -173,13 +171,19 @@ const MembershipPage: React.FC = () => {
          });
 
          if (res.data.success) {
-            setPaymentInfo(res.data.paymentInfo);
+            const info = res.data.paymentInfo;
+            setPaymentInfo(info);
             setCurrentPaymentId(res.data.paymentId);
             trackingService.track('initiate_payment', {
                 plan_id: selectedPlan.id,
                 payment_method: paymentMethod,
                 amount: selectedPlan.price
             });
+
+            // If it's a URL redirect type (WeChat/Alipay)
+            if (info.type === 'url' && info.url) {
+               window.location.href = info.url;
+            }
          }
       } catch (error) {
          console.error('Payment creation failed', error);
@@ -350,146 +354,86 @@ const MembershipPage: React.FC = () => {
             </div>
          </div>
 
-         {/* Application Flow Section */}
-         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 -mt-20 relative z-20">
-            
-            {/* Case 1: Not Authenticated */}
-            {!isAuthenticated && (
-               <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-8 md:p-12 text-center">
-                  <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                     <Users className="w-8 h-8 text-indigo-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-4">登录以申请会员</h2>
-                  <p className="text-slate-500 max-w-lg mx-auto mb-8">
-                     Haigoo 会员目前处于内测阶段，仅限邀请加入。请先登录您的账户，然后填写申请表单。
-                  </p>
-                  <button
-                     onClick={() => navigate('/login?redirect=/membership')}
-                     className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-indigo-200"
-                  >
-                     立即登录 / 注册
-                  </button>
-               </div>
-            )}
-
-            {/* Case 2: Authenticated but Not Member */}
-            {isAuthenticated && (!((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin)) && (
-               <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
-                  <div className="p-8 md:p-12">
-                     <div className="text-center mb-10">
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2">申请加入 Haigoo Member</h2>
-                        <p className="text-slate-500">
-                           当前处于内测阶段，会员资格需人工审核。请填写以下信息，我们将在 3 个工作日内反馈。
-                        </p>
-                     </div>
-
-                     {/* Application Status Check */}
-                     {submitSuccess || applicationStatus === 'pending' ? (
-                        <div className="text-center py-10 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
-                           <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <Loader2 className="w-8 h-8 animate-spin" />
+         {/* Pricing Plans Section */}
+         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 -mt-20 relative z-20">
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+               {plans.map((plan) => {
+                  const isPlus = plan.id.includes('plus');
+                  return (
+                     <div 
+                        key={plan.id}
+                        className={`relative rounded-[2rem] p-8 border transition-all duration-300 hover:-translate-y-2 ${
+                           isPlus 
+                              ? 'bg-slate-900 text-white border-slate-800 shadow-2xl shadow-indigo-500/20' 
+                              : 'bg-white text-slate-900 border-slate-100 shadow-xl'
+                        }`}
+                     >
+                        {isPlus && (
+                           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-200 to-yellow-400 text-amber-900 text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                              MOST POPULAR
                            </div>
-                           <h3 className="text-xl font-bold text-slate-900 mb-2">申请审核中</h3>
-                           <p className="text-slate-500 max-w-xs mx-auto">
-                              您的申请已提交，正在排队审核中。结果将通过邮件或短信通知您。
+                        )}
+
+                        <div className="mb-8">
+                           <h3 className={`text-lg font-bold mb-2 ${isPlus ? 'text-indigo-300' : 'text-slate-500'}`}>
+                              {plan.name}
+                           </h3>
+                           <div className="flex items-baseline gap-1">
+                              <span className="text-4xl font-bold">¥{plan.price}</span>
+                              <span className={`text-sm ${isPlus ? 'text-slate-400' : 'text-slate-500'}`}>/年</span>
+                           </div>
+                           <p className={`text-sm mt-4 ${isPlus ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {isPlus ? '适合希望通过社区获得更多机会的专业人士' : '适合正在寻找远程工作的求职者'}
                            </p>
                         </div>
-                     ) : (
-                        <form onSubmit={handleApplicationSubmit} className="space-y-6 max-w-lg mx-auto">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">昵称 / 称呼 *</label>
-                                <input
-                                    type="text"
-                                    value={formData.nickname}
-                                    onChange={e => setFormData({ ...formData, nickname: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
-                                    placeholder="怎么称呼您"
-                                    required
-                                />
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">联系方式 *</label>
-                                <div className="flex gap-2 mb-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, contact_type: 'wechat' })}
-                                        className={`flex-1 py-2 text-sm font-medium rounded-lg border ${formData.contact_type === 'wechat' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                                    >
-                                        微信
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, contact_type: 'email' })}
-                                        className={`flex-1 py-2 text-sm font-medium rounded-lg border ${formData.contact_type === 'email' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                                    >
-                                        邮箱
-                                    </button>
-                                </div>
-                                <input
-                                    type="text"
-                                    value={formData.contact}
-                                    onChange={e => setFormData({ ...formData, contact: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
-                                    placeholder={formData.contact_type === 'wechat' ? '请输入微信号' : '请输入邮箱地址'}
-                                    required
-                                />
-                            </div>
+                        <ul className="space-y-4 mb-8">
+                           {plan.features.map((feature, idx) => (
+                              <li key={idx} className="flex items-start gap-3">
+                                 <div className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                    isPlus ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600'
+                                 }`}>
+                                    <Check className="w-3 h-3" />
+                                 </div>
+                                 <span className={`text-sm ${isPlus ? 'text-slate-300' : 'text-slate-600'}`}>
+                                    {feature}
+                                 </span>
+                              </li>
+                           ))}
+                        </ul>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">职业背景 *</label>
-                                <textarea
-                                    value={formData.experience}
-                                    onChange={e => setFormData({ ...formData, experience: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all min-h-[100px]"
-                                    placeholder="例如：3年全栈开发经验，熟悉 React/Node.js..."
-                                    required
-                                />
-                            </div>
+                        <button
+                           onClick={() => handleSubscribe(plan)}
+                           disabled={isMember}
+                           className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+                              isMember
+                                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                 : isPlus
+                                    ? 'bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/30'
+                                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-200'
+                           }`}
+                        >
+                           {isMember ? (
+                              <>
+                                 <CheckCircle2 className="w-5 h-5" />
+                                 当前会员
+                              </>
+                           ) : (
+                              <>
+                                 立即升级
+                                 <ArrowRight className="w-5 h-5" />
+                              </>
+                           )}
+                        </button>
+                     </div>
+                  );
+               })}
+            </div>
+         </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">求职方向 *</label>
-                                <textarea
-                                    value={formData.career_ideal}
-                                    onChange={e => setFormData({ ...formData, career_ideal: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all min-h-[80px]"
-                                    placeholder="例如：希望寻找海外远程全职工作，期望薪资..."
-                                    required
-                                />
-                            </div>
-
-                            {error && (
-                                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                    {error}
-                                </div>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {submitting ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        提交中...
-                                    </>
-                                ) : (
-                                    <>
-                                        提交申请
-                                        <Send className="w-5 h-5" />
-                                    </>
-                                )}
-                            </button>
-                        </form>
-                     )}
-                  </div>
-               </div>
-            )}
-            
-            {/* Case 3: Is Member - Show Dashboard / Benefits */}
-            {isAuthenticated && ((currentMembership?.isActive) || isMember) && (
+         {/* Member Dashboard (Restored) */}
+         {isAuthenticated && ((currentMembership?.isActive) || isMember) && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 relative z-20">
                <div className="space-y-8">
                   {/* 1. Member Status & Group */}
                   <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
@@ -603,7 +547,8 @@ const MembershipPage: React.FC = () => {
                      </div>
                   </div>
                </div>
-            )}
+            </div>
+         )}
 
 
             {/* FAQ / Trust Section */}
@@ -630,13 +575,6 @@ const MembershipPage: React.FC = () => {
                   ))}
                </div>
             </div>
-         </div>
-
-         {/* Application Modal */}
-         <MembershipApplicationModal
-            isOpen={showApplicationModal}
-            onClose={() => setShowApplicationModal(false)}
-         />
 
          {/* Certificate Modal */}
          {user && (
@@ -686,6 +624,43 @@ const MembershipPage: React.FC = () => {
                               <p className="font-medium text-slate-900 mb-3 text-sm">选择支付方式</p>
                               <div className="grid grid-cols-2 gap-4">
                                  <button
+                                    onClick={() => setPaymentMethod('wechat')}
+                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'wechat'
+                                       ? 'border-green-500 bg-green-50/30'
+                                       : 'border-slate-100 hover:border-green-100 hover:bg-green-50/10'
+                                       }`}
+                                 >
+                                    {paymentMethod === 'wechat' && (
+                                       <div className="absolute top-2 right-2 text-green-500">
+                                          <Check className="w-4 h-4" />
+                                       </div>
+                                    )}
+                                    <span className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+                                       <ShieldCheck className="w-5 h-5" />
+                                    </span>
+                                    <span className="text-slate-900 font-bold text-sm">微信支付</span>
+                                 </button>
+
+                                 <button
+                                    onClick={() => setPaymentMethod('alipay')}
+                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'alipay'
+                                       ? 'border-blue-500 bg-blue-50/30'
+                                       : 'border-slate-100 hover:border-blue-100 hover:bg-blue-50/10'
+                                       }`}
+                                 >
+                                    {paymentMethod === 'alipay' && (
+                                       <div className="absolute top-2 right-2 text-blue-500">
+                                          <Check className="w-4 h-4" />
+                                       </div>
+                                    )}
+                                    <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+                                       <Zap className="w-5 h-5" />
+                                    </span>
+                                    <span className="text-slate-900 font-bold text-sm">支付宝</span>
+                                 </button>
+                                 
+                                 {/* Legacy / Manual Options */}
+                                 <button
                                     onClick={() => setPaymentMethod('xiaohongshu')}
                                     className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'xiaohongshu'
                                        ? 'border-red-500 bg-red-50/30'
@@ -700,27 +675,25 @@ const MembershipPage: React.FC = () => {
                                     <span className="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
                                        <Gift className="w-5 h-5" />
                                     </span>
-                                    <span className="text-slate-900 font-bold text-sm">小红书店铺</span>
-                                    <span className="text-xs text-slate-400">担保交易 · 安全快捷</span>
+                                    <span className="text-slate-900 font-bold text-sm">小红书</span>
                                  </button>
 
                                  <button
                                     onClick={() => setPaymentMethod('wechat_transfer')}
                                     className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'wechat_transfer'
-                                       ? 'border-green-500 bg-green-50/30'
-                                       : 'border-slate-100 hover:border-green-100 hover:bg-green-50/10'
+                                       ? 'border-emerald-500 bg-emerald-50/30'
+                                       : 'border-slate-100 hover:border-emerald-100 hover:bg-emerald-50/10'
                                        }`}
                                  >
                                     {paymentMethod === 'wechat_transfer' && (
-                                       <div className="absolute top-2 right-2 text-green-500">
+                                       <div className="absolute top-2 right-2 text-emerald-500">
                                           <Check className="w-4 h-4" />
                                        </div>
                                     )}
-                                    <span className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
-                                       <ShieldCheck className="w-5 h-5" />
+                                    <span className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+                                       <Users className="w-5 h-5" />
                                     </span>
-                                    <span className="text-slate-900 font-bold text-sm">微信支付</span>
-                                    <span className="text-xs text-slate-400">人工核销 · 即时开通</span>
+                                    <span className="text-slate-900 font-bold text-sm">人工转账</span>
                                  </button>
                               </div>
                            </div>
