@@ -142,9 +142,9 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
 
                 {/* Footer: Hiring Info */}
                 <div className="pt-4 border-t border-slate-50 flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 text-slate-600">
-                        <Briefcase className="w-4 h-4 text-indigo-500" />
-                        <span className="font-medium text-xs">
+                    <div className="flex-1 min-w-0 flex items-center gap-2 text-slate-600">
+                        <Briefcase className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                        <span className="font-medium text-xs truncate">
                             {company.jobCount || 0} 个在招职位
                             {topCategories.length > 0 && (
                                 <span className="text-slate-400 font-normal ml-1">
@@ -153,7 +153,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                             )}
                         </span>
                     </div>
-                    <span className="text-xs text-indigo-600 font-medium group-hover:translate-x-1 transition-transform">
+                    <span className="text-xs text-indigo-600 font-medium group-hover:translate-x-1 transition-transform whitespace-nowrap flex-shrink-0 ml-2">
                         查看岗位 &rarr;
                     </span>
                 </div>
