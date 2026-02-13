@@ -364,7 +364,7 @@ export default function LandingPage() {
           <div className="relative z-10 px-8 py-16 md:px-20 text-center flex flex-col items-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 border border-indigo-100 text-indigo-900/80 text-sm font-bold tracking-widest uppercase mb-8 shadow-sm backdrop-blur-md">
               <Crown className="w-4 h-4 fill-indigo-900/60" />
-              Invite Only · Global Access
+              Upgrade to Premium
             </div>
 
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight leading-[1.1]">
@@ -412,7 +412,7 @@ export default function LandingPage() {
                       onClick={() => navigate('/membership')}
                       className="px-10 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl shadow-indigo-500/30 hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
                     >
-                      内测中，仅限邀请，申请加入
+                      升级会员，解锁权益
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   )

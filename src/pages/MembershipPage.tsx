@@ -291,7 +291,7 @@ const MembershipPage: React.FC = () => {
                {/* Premium Badge */}
                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/90 text-xs font-bold tracking-widest uppercase mb-8 shadow-lg backdrop-blur-md">
                   <Crown className="w-3.5 h-3.5 fill-white/80" /> 
-                  Invite Only · Global Access
+                  Upgrade to Premium
                </div>
 
                {/* Main Headline */}
