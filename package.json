@@ -12,7 +12,8 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx,js --report-unused-disable-directives",
     "preview": "vite preview",
-    "server": "node local-server.js"
+    "server": "node local-server.js",
+    "vercel-build": "echo '--- VERCEL BUILD START ---' && npm run build && echo '--- VERCEL BUILD END ---'"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
