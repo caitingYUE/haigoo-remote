@@ -20,6 +20,7 @@ export default function Footer() {
              </div>
              <p className="text-sm text-slate-500">
                © 2026 Haigoo. All rights reserved.
+               {import.meta.env.DEV ? ' (Local)' : window.location.hostname.includes('develop') ? ' (Preview)' : ''}
              </p>
           </div>
 
