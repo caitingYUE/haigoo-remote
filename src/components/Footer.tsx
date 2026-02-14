@@ -19,9 +19,10 @@ export default function Footer() {
                 <span className="text-xl font-bold text-slate-900 tracking-tight">Haigoo</span>
              </div>
              <p className="text-sm text-slate-500">
-               © 2026 Haigoo. All rights reserved.
-               {import.meta.env.DEV ? ' (Local)' : window.location.hostname.includes('develop') ? ' (Preview)' : ''}
-             </p>
+              © 2026 Haigoo. All rights reserved.
+              {/* Build: 2026-02-14-1545 */}
+              {import.meta.env.DEV ? ' (Local)' : window.location.hostname.includes('develop') ? <span className="text-amber-600 font-bold ml-1">(PREVIEW ENV - v2026.02.14)</span> : ''}
+            </p>
           </div>
 
           {/* Right Side: Social Links */}

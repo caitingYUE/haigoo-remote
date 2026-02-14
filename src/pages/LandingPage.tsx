@@ -24,6 +24,21 @@ export default function LandingPage() {
   const { showSuccess, showWarning, showError } = useNotificationHelpers()
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
+  
+  // Cache busting and version check
+  useEffect(() => {
+    const CURRENT_VERSION = '2026.02.14.01' // Increment this to force cache clear
+    const lastVersion = localStorage.getItem('haigoo_version')
+    
+    if (lastVersion !== CURRENT_VERSION) {
+      console.log('Detecting new version, clearing critical caches...')
+      localStorage.removeItem('haigoo_home_featured_jobs')
+      localStorage.removeItem('haigoo_home_trusted_companies')
+      localStorage.setItem('haigoo_version', CURRENT_VERSION)
+      // Force reload if we suspect strict caching issues, but let's try just clearing data first
+    }
+  }, [])
+
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>(() => {
     try {
       const cached = localStorage.getItem('haigoo_home_featured_jobs')
