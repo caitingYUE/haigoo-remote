@@ -1,6 +1,10 @@
 
 import { Users, Globe, Briefcase, Heart, Zap, Share2, Target, Rocket, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import pic1 from '../assets/images/pic1.webp'
+import pic2 from '../assets/images/pic2.webp'
+import pic3 from '../assets/images/pic3.webp'
+import pic4 from '../assets/images/pic4.webp'
 
 export default function AboutPage() {
   return (
@@ -30,7 +34,7 @@ export default function AboutPage() {
             {/* Right Image */}
             <div className="relative lg:ml-auto">
               <img
-                src="/src/pic1.webp"
+                src={pic1}
                 alt="Remote Work Workspace"
                 className="w-full max-w-lg rounded-2xl shadow-xl object-cover aspect-[4/3] ml-auto"
               />
@@ -64,7 +68,7 @@ export default function AboutPage() {
 
             <div className="relative">
               <img
-                src="/src/pic2.webp"
+                src={pic2}
                 alt="Window View"
                 className="w-full rounded-2xl shadow-2xl object-cover aspect-[3/4] lg:aspect-square"
               />
@@ -124,7 +128,7 @@ export default function AboutPage() {
         {/* Abstract Background Image */}
         <div className="absolute inset-0">
           <img 
-            src="/src/pic3.webp" 
+            src={pic3} 
             alt="Abstract Background" 
             className="w-full h-full object-cover"
           />
@@ -175,7 +179,7 @@ export default function AboutPage() {
          {/* Background Image Overlay */}
          <div className="absolute inset-0">
           <img 
-            src="/src/pic4.webp" 
+            src={pic4} 
             alt="Team Background" 
             className="w-full h-full object-cover opacity-40"
           />
