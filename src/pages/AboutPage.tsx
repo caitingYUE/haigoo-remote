@@ -1,5 +1,5 @@
 
-import { Users, Globe, Briefcase, Heart, Share2, Target, Rocket, ArrowRight } from 'lucide-react'
+import { Users, Globe, Briefcase, Heart, Share2, Target, Rocket, ArrowRight, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import pic1 from '../assets/images/pic1.webp'
 import pic2 from '../assets/images/pic2.webp'
