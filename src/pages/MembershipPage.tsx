@@ -125,7 +125,7 @@ const MembershipPage: React.FC = () => {
          return;
       }
       setSelectedPlan(plan);
-      setPaymentInfo(null); // Reset previous payment info
+      setPaymentMethod('alipay'); // Reset default
       setShowPaymentModal(true);
       trackingService.track('click_subscribe', {
           plan_id: plan.id,
@@ -134,26 +134,11 @@ const MembershipPage: React.FC = () => {
       });
    };
 
-   const handleCreatePayment = () => {
-      if (!selectedPlan) return;
-      if (!user?.email) {
-          alert('请先完善您的邮箱信息');
-          return;
-      }
-
-      // Manual Payment Flow - Display QR Code directly
-      const info: PaymentInfo = {
-          type: 'qrcode',
-          imageUrl: paymentMethod === 'alipay' ? '/alipay.jpg' : '/wechatpay.png',
-          instruction: `请使用${paymentMethod === 'alipay' ? '支付宝' : '微信'}扫码支付`
-      };
-      
-      setPaymentInfo(info);
-      trackingService.track('initiate_payment_manual', {
-          plan_id: selectedPlan.id,
-          payment_method: paymentMethod,
-          amount: selectedPlan.price
-      });
+   // Simplified flow: Payment info is derived directly from state
+   const currentPaymentInfo: PaymentInfo = {
+      type: 'qrcode',
+      imageUrl: paymentMethod === 'alipay' ? '/alipay.jpg' : '/wechatpay.png',
+      instruction: `请使用${paymentMethod === 'alipay' ? '支付宝' : '微信'}扫码支付`
    };
 
    const handlePaymentComplete = async () => {
@@ -173,7 +158,7 @@ const MembershipPage: React.FC = () => {
       }
 
       setShowPaymentModal(false);
-      alert('感谢您的支付！请务必确保您在支付备注中留下了邮箱。管理员将在24小时内为您开通权益。');
+      alert('感谢您的支付！权益将在24小时内开通。如有疑问请联系 hi@haigooremote.com');
       fetchStatus(); // Refresh status
       trackingService.track('complete_payment_client_claim', {
           plan_id: selectedPlan?.id
@@ -493,131 +478,128 @@ const MembershipPage: React.FC = () => {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setShowPaymentModal(false)}></div>
 
-               <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300 scale-100">
-                  {/* Header */}
-                  <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                     <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <Zap className="w-5 h-5 text-indigo-500 fill-indigo-500" />
-                        确认订单
-                     </h3>
-                     <button
-                        onClick={() => setShowPaymentModal(false)}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
-                     >
-                        <span className="text-xl leading-none">&times;</span>
-                     </button>
-                  </div>
+               <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-300 scale-100 flex flex-col md:flex-row">
+                  {/* Left Side: Order Details */}
+                  <div className="w-full md:w-2/5 bg-slate-50 border-r border-slate-100 p-6 md:p-8 flex flex-col">
+                      <div className="flex justify-between items-center mb-6 md:hidden">
+                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-indigo-500 fill-indigo-500" />
+                            确认订单
+                        </h3>
+                        <button
+                            onClick={() => setShowPaymentModal(false)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+                        >
+                            <span className="text-xl leading-none">&times;</span>
+                        </button>
+                      </div>
 
-                  <div className="p-6 md:p-8">
-                     {/* Order Summary Card */}
-                     <div className="flex justify-between items-center mb-8 bg-gradient-to-br from-indigo-50 to-slate-50 p-5 rounded-2xl border border-indigo-100/50">
-                        <div>
-                           <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">订阅方案</p>
-                           <p className="font-bold text-slate-900 text-lg">{selectedPlan.name}</p>
-                        </div>
-                        <div className="text-right">
-                           <p className="text-xs text-slate-500 mb-1">支付金额</p>
-                           <p className="text-3xl font-bold text-indigo-600">¥{selectedPlan.price}</p>
+                     <div className="mb-8">
+                        <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">订阅方案</p>
+                        <h4 className="font-bold text-slate-900 text-2xl mb-2">{selectedPlan.name}</h4>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-3xl font-bold text-slate-900">¥{selectedPlan.price}</span>
+                            <span className="text-sm text-slate-500">/年</span>
                         </div>
                      </div>
 
-                     {!paymentInfo ? (
-                        <div className="space-y-6">
-                           <div>
-                              <p className="font-medium text-slate-900 mb-3 text-sm">选择支付方式</p>
-                              <div className="grid grid-cols-2 gap-4">
-                                 <button
-                                    onClick={() => setPaymentMethod('alipay')}
-                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'alipay'
-                                       ? 'border-blue-500 bg-blue-50/30'
-                                       : 'border-slate-100 hover:border-blue-100 hover:bg-blue-50/10'
-                                       }`}
-                                 >
-                                    {paymentMethod === 'alipay' && (
-                                       <div className="absolute top-2 right-2 text-blue-500">
-                                          <Check className="w-4 h-4" />
-                                       </div>
-                                    )}
-                                    <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
-                                       <Zap className="w-5 h-5" />
-                                    </span>
-                                    <span className="text-slate-900 font-bold text-sm">支付宝</span>
-                                 </button>
+                     <div className="flex-1">
+                        <p className="font-medium text-slate-900 mb-4 text-sm">选择支付方式</p>
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => setPaymentMethod('alipay')}
+                                className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'alipay'
+                                    ? 'border-blue-500 bg-white shadow-md'
+                                    : 'border-slate-200 bg-white hover:border-blue-200'
+                                    }`}
+                            >
+                                <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                                    <Zap className="w-4 h-4" />
+                                </span>
+                                <span className="text-slate-900 font-bold text-sm flex-1 text-left">支付宝</span>
+                                {paymentMethod === 'alipay' && <CheckCircle2 className="w-5 h-5 text-blue-500" />}
+                            </button>
 
-                                 <button
-                                    onClick={() => setPaymentMethod('wechat')}
-                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'wechat'
-                                       ? 'border-green-500 bg-green-50/30'
-                                       : 'border-slate-100 hover:border-green-100 hover:bg-green-50/10'
-                                       }`}
-                                 >
-                                    {paymentMethod === 'wechat' && (
-                                       <div className="absolute top-2 right-2 text-green-500">
-                                          <Check className="w-4 h-4" />
-                                       </div>
-                                    )}
-                                    <span className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
-                                       <ShieldCheck className="w-5 h-5" />
-                                    </span>
-                                    <span className="text-slate-900 font-bold text-sm">微信支付</span>
-                                 </button>
-                              </div>
-                           </div>
-
-                           <button
-                              onClick={handleCreatePayment}
-                              className="w-full py-4 bg-slate-900 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-slate-200 hover:shadow-indigo-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
-                           >
-                              下一步 <ArrowRight className="w-5 h-5" />
-                           </button>
+                            <button
+                                onClick={() => setPaymentMethod('wechat')}
+                                className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${paymentMethod === 'wechat'
+                                    ? 'border-green-500 bg-white shadow-md'
+                                    : 'border-slate-200 bg-white hover:border-green-200'
+                                    }`}
+                            >
+                                <span className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+                                    <ShieldCheck className="w-4 h-4" />
+                                </span>
+                                <span className="text-slate-900 font-bold text-sm flex-1 text-left">微信支付</span>
+                                {paymentMethod === 'wechat' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                            </button>
                         </div>
-                     ) : (
-                        <div className="text-center">
-                           <div className="mb-6 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                              {paymentInfo.imageUrl && (
-                                 <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 inline-block mb-4">
-                                    <img src={paymentInfo.imageUrl} alt="Payment QR" className="w-48 h-auto object-contain rounded-lg" />
-                                 </div>
-                              )}
+                     </div>
+                     
+                     <div className="mt-8 pt-6 border-t border-slate-200 hidden md:block">
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            如有任何支付问题，请联系客服邮箱：<br/>
+                            <a href="mailto:hi@haigooremote.com" className="text-indigo-600 hover:underline">hi@haigooremote.com</a>
+                        </p>
+                     </div>
+                  </div>
 
-                              <p className="text-slate-800 font-bold mb-2 text-lg">{paymentInfo.instruction}</p>
-                              
-                              <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-sm text-amber-800 mb-2 text-left">
-                                 <p className="font-bold mb-1">⚠️ 重要提示：</p>
-                                 <p>付款时请务必在【添加备注】处填入您的注册邮箱：</p>
-                                 <div className="mt-2 flex items-center gap-2 bg-white p-2 rounded border border-amber-200">
-                                    <code className="flex-1 font-mono text-slate-700 break-all">{user?.email || '您的邮箱'}</code>
-                                    <button 
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(user?.email || '');
-                                            alert('邮箱已复制');
-                                        }}
-                                        className="text-amber-600 hover:text-amber-700"
-                                        title="复制邮箱"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                    </button>
-                                 </div>
-                              </div>
-                           </div>
+                  {/* Right Side: QR Code */}
+                  <div className="w-full md:w-3/5 bg-white p-6 md:p-8 flex flex-col items-center justify-center text-center relative">
+                      <button
+                        onClick={() => setShowPaymentModal(false)}
+                        className="absolute top-4 right-4 w-8 h-8 hidden md:flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                    >
+                        <span className="text-xl leading-none">&times;</span>
+                    </button>
 
-                           <div className="space-y-3">
-                              <button
-                                 onClick={handlePaymentComplete}
-                                 className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2"
-                              >
-                                 <Check className="w-5 h-5" />
-                                 我已完成支付
-                              </button>
-                              <button
-                                 onClick={() => setPaymentInfo(null)}
-                                 className="text-slate-400 text-sm hover:text-slate-600 py-2 transition-colors"
-                              >
-                                 返回重新选择
-                              </button>
-                           </div>
+                     <div className="mb-6">
+                        <div className="bg-white p-3 rounded-2xl shadow-lg border border-slate-100 inline-block mb-4 transform transition-transform hover:scale-105 duration-300">
+                           <img 
+                                src={currentPaymentInfo.imageUrl} 
+                                alt="Payment QR" 
+                                className="w-48 h-48 md:w-56 md:h-56 object-contain rounded-lg" 
+                           />
                         </div>
-                     )}
+                        <p className="text-slate-800 font-bold text-lg mb-1">{currentPaymentInfo.instruction}</p>
+                        <p className="text-slate-400 text-sm">请使用手机扫码完成支付</p>
+                     </div>
+
+                     <div className="w-full max-w-sm">
+                        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-800 mb-6 text-left">
+                            <p className="font-bold mb-2 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                付款备注说明
+                            </p>
+                            <p className="mb-2 text-amber-700/80">付款时请务必在【添加备注】处填入您的注册邮箱，以便系统自动核销：</p>
+                            <div className="flex items-center gap-2 bg-white p-2.5 rounded-lg border border-amber-200 shadow-sm group cursor-pointer hover:border-amber-300 transition-colors"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(user?.email || '');
+                                    alert('邮箱已复制');
+                                }}
+                            >
+                                <code className="flex-1 font-mono text-slate-700 break-all font-medium select-all">{user?.email || '您的邮箱'}</code>
+                                <Copy className="w-4 h-4 text-amber-400 group-hover:text-amber-600" />
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handlePaymentComplete}
+                            className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                        >
+                            <CheckCircle2 className="w-5 h-5" />
+                            我已完成支付
+                        </button>
+                        <p className="text-xs text-slate-400 mt-3">
+                            * 支付后权益将在 24 小时内开通
+                        </p>
+                        
+                         <div className="mt-4 pt-4 border-t border-slate-100 md:hidden text-center">
+                            <p className="text-xs text-slate-400">
+                                客服邮箱：<a href="mailto:hi@haigooremote.com" className="text-indigo-600">hi@haigooremote.com</a>
+                            </p>
+                         </div>
+                     </div>
                   </div>
                </div>
             </div>
