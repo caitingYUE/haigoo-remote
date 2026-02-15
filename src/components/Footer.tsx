@@ -19,18 +19,18 @@ const MailIcon = ({ className }: { className?: string }) => (
 export default function Footer() {
   return (
     <footer 
-      className="bg-white border-t border-slate-100"
+      className="bg-slate-50 border-t border-slate-200"
       role="contentinfo"
       aria-label="网站页脚"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 mb-16">
-          {/* Left Column: Brand, Intro, CTA (Span 5) */}
-          <div className="md:col-span-5 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 mb-16">
+          {/* Left Column: Brand, Intro, CTA (Span 2) */}
+          <div className="lg:col-span-2 space-y-8">
              {/* Logo */}
              <div className="flex items-center gap-3">
-                <img src={logoPng} alt="Haigoo Logo" className="h-10 w-auto" />
-                <span className="text-xl font-bold text-slate-900 tracking-tight">Haigoo Remote Club</span>
+                <img src={logoPng} alt="Haigoo Logo" className="h-12 w-auto" />
+                <span className="text-2xl font-bold text-slate-900 tracking-tight">Haigoo Remote Club</span>
              </div>
              
              {/* Intro Text */}
@@ -42,62 +42,55 @@ export default function Footer() {
              <div className="flex flex-wrap gap-4">
                 <a 
                    href="mailto:hi@haigooremote.com" 
-                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-200 shadow-sm text-sm font-medium rounded-full text-slate-700 bg-white hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all"
+                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-full text-slate-700 bg-white hover:bg-white hover:text-indigo-600 hover:border-indigo-400 hover:shadow-md transition-all no-underline hover:no-underline"
                 >
                    联系我们
                 </a>
                 <Link
                    to="/about"
-                   className="inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium rounded-full text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-full text-slate-700 bg-white hover:bg-white hover:text-indigo-600 hover:border-indigo-400 hover:shadow-md transition-all no-underline hover:no-underline"
                 >
                    关于我们
                 </Link>
              </div>
           </div>
 
-          {/* Spacer (Span 1) */}
-          <div className="hidden md:block md:col-span-1"></div>
-
-          {/* Right Columns: Address & Contact (Span 6) */}
-          <div className="md:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-8">
+          {/* Right Columns: Address & Contact (Span 1 each) */}
+          
              {/* Address */}
-             <div className="space-y-4">
+             <div className="lg:col-span-1 space-y-6">
+                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">公司地址</h4>
                 <div className="flex items-start gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0">
+                    <div className="p-2 bg-white rounded-lg text-blue-600 shrink-0 border border-slate-100 shadow-sm">
                         <MapPinIcon className="w-5 h-5" />
                     </div>
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-slate-900">公司地址</h4>
-                        <div className="text-sm text-slate-500 space-y-1">
-                            <p className="font-medium text-slate-700">行渡科技（杭州）有限公司</p>
-                            <p className="leading-relaxed">杭州市余杭区仓前街道景兴路999号10幢403-31室</p>
-                        </div>
+                    <div className="text-sm text-slate-500 space-y-1">
+                        <p className="font-medium text-slate-700">行渡科技（杭州）有限公司</p>
+                        <p className="leading-relaxed">杭州市余杭区仓前街道景兴路999号10幢403-31室</p>
                     </div>
                 </div>
              </div>
 
              {/* Contact */}
-             <div className="space-y-4">
+             <div className="lg:col-span-1 space-y-6">
+                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">联系方式</h4>
                 <div className="flex items-start gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0">
+                    <div className="p-2 bg-white rounded-lg text-blue-600 shrink-0 border border-slate-100 shadow-sm">
                         <MailIcon className="w-5 h-5" />
                     </div>
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-slate-900">联系方式</h4>
-                        <div className="text-sm text-slate-500">
-                            <a href="mailto:hi@haigooremote.com" className="hover:text-indigo-600 transition-colors block font-medium">
-                                hi@haigooremote.com
-                            </a>
-                            <p className="text-slate-400 text-xs mt-1">周一至周五 9:00-18:00</p>
-                        </div>
+                    <div className="text-sm text-slate-500">
+                        <a href="mailto:hi@haigooremote.com" className="hover:text-indigo-600 transition-colors block font-medium no-underline hover:no-underline">
+                            hi@haigooremote.com
+                        </a>
+                        <p className="text-slate-400 text-xs mt-1">周一至周五 9:00-18:00</p>
                     </div>
                 </div>
              </div>
-          </div>
+          
         </div>
 
         {/* Bottom Section */}
-        <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
            {/* Copyright */}
            <div className="flex flex-col md:flex-row items-center gap-4 text-xs text-slate-400 order-2 md:order-1">
               <p>© 2026 Haigoo. All rights reserved.</p>
