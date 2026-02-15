@@ -257,6 +257,17 @@ export default function Header() {
             </Link>
 
             <Link
+              to="/about"
+              className={`text-base transition-colors no-underline hover:no-underline ${
+                location.pathname === '/about'
+                  ? 'text-slate-900 font-bold'
+                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+              }`}
+            >
+              关于我们
+            </Link>
+
+            <Link
               to="/membership"
               className={`text-base transition-colors no-underline hover:no-underline ${
                 location.pathname === '/membership'
@@ -560,6 +571,16 @@ export default function Header() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 精选企业
+              </Link>
+              <Link
+                to="/about"
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/about'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                关于我们
               </Link>
               <Link
                 to="/membership"

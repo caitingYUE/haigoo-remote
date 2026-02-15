@@ -39,6 +39,7 @@ const JobDetailPage = lazy(() => import('./pages/JobDetailPage'))
 const JobBundleDetailPage = lazy(() => import('./pages/JobBundleDetailPage'))
 const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
 const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
 
 
 const ChristmasPage = lazyRetry(() => import('./pages/ChristmasPage'), 'ChristmasPage')
@@ -151,6 +152,7 @@ function App() {
                         <Routes>
                           {/* 公开页面 */}
                           <Route path="/" element={<LandingPage />} />
+                          <Route path="/about" element={<AboutPage />} />
                           <Route path="/jobs" element={<JobsPage />} />
                           <Route path="/job-bundles/:id" element={<JobBundleDetailPage />} />
                           <Route path="/job/:id" element={<JobDetailPage />} />
