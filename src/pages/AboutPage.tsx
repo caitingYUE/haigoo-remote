@@ -64,7 +64,7 @@ export default function AboutPage() {
 
             <div className="relative">
               <img
-                src="/src/pic2.jpg"
+                src="/src/pic2.webp"
                 alt="Window View"
                 className="w-full rounded-2xl shadow-2xl object-cover aspect-[3/4] lg:aspect-square"
               />
@@ -124,7 +124,7 @@ export default function AboutPage() {
         {/* Abstract Background Image */}
         <div className="absolute inset-0">
           <img 
-            src="/src/pic3.png" 
+            src="/src/pic3.webp" 
             alt="Abstract Background" 
             className="w-full h-full object-cover"
           />
@@ -175,7 +175,7 @@ export default function AboutPage() {
          {/* Background Image Overlay */}
          <div className="absolute inset-0">
           <img 
-            src="/src/pic4.jpg" 
+            src="/src/pic4.webp" 
             alt="Team Background" 
             className="w-full h-full object-cover opacity-40"
           />
