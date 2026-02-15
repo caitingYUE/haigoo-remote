@@ -18,7 +18,19 @@ export default function Footer() {
                 <img src={logoPng} alt="Haigoo Logo" className="h-8 w-auto" />
                 <span className="text-xl font-bold text-slate-900 tracking-tight">Haigoo</span>
              </div>
-             <p className="text-sm text-slate-500">
+
+             {/* Company Info */}
+             <div className="text-sm text-slate-500 space-y-1 text-center md:text-left">
+                <p className="font-medium text-slate-700">行渡科技（杭州）有限公司</p>
+                <p>杭州市余杭区仓前街道景兴路999号10幢403-31室</p>
+                <p>
+                   <a href="mailto:hi@haigooremote.com" className="hover:text-indigo-600 transition-colors">
+                      hi@haigooremote.com
+                   </a>
+                </p>
+             </div>
+
+             <p className="text-xs text-slate-400 mt-2">
               © 2026 Haigoo. All rights reserved.
               {/* Build: 2026-02-14-1545 */}
               {import.meta.env.DEV ? ' (Local)' : window.location.hostname.includes('develop') ? <span className="text-amber-600 font-bold ml-1">(PREVIEW ENV - v2026.02.14)</span> : ''}
