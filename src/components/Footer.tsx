@@ -23,96 +23,109 @@ export default function Footer() {
       aria-label="网站页脚"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-8">
+        {/* Main Content: Left (Brand/Intro) & Right (Address/Contact) */}
+        <div className="flex flex-col md:flex-row justify-between gap-12 lg:gap-24 mb-16">
           
-          {/* Brand & Company Info - Spans 8 cols */}
-          <div className="md:col-span-8 space-y-8">
+          {/* Left Column: Brand, Intro, CTA */}
+          <div className="md:w-5/12 space-y-6">
              {/* Logo */}
              <div className="flex items-center gap-3">
                 <img src={logoPng} alt="Haigoo Logo" className="h-10 w-auto" />
                 <span className="text-2xl font-bold text-slate-900 tracking-tight">Haigoo</span>
              </div>
-
-             {/* Company Details */}
-             <div className="space-y-4 max-w-md">
-                <h4 className="text-base font-bold text-slate-900">行渡科技（杭州）有限公司</h4>
-                
-                <div className="flex items-start gap-3 text-slate-500">
-                   <MapPinIcon className="w-5 h-5 mt-0.5 shrink-0 text-slate-400" />
-                   <span className="text-sm leading-6">杭州市余杭区仓前街道景兴路999号10幢403-31室</span>
-                </div>
-                
-                <div className="flex items-center gap-3 text-slate-500">
-                   <MailIcon className="w-5 h-5 shrink-0 text-slate-400" />
-                   <a href="mailto:hi@haigooremote.com" className="text-sm hover:text-indigo-600 transition-colors">
-                      hi@haigooremote.com
-                   </a>
-                </div>
-             </div>
              
-             {/* Copyright (Desktop) */}
-             <div className="hidden md:block pt-8">
-                <p className="text-xs text-slate-400">
-                  © 2026 Haigoo. All rights reserved.
-                  {import.meta.env.DEV ? ' (Local)' : window.location.hostname.includes('develop') ? <span className="text-amber-600 font-bold ml-1">(PREVIEW ENV - v2026.02.14)</span> : ''}
-                </p>
-             </div>
-          </div>
+             {/* Intro Text */}
+             <p className="text-slate-500 leading-relaxed text-sm">
+                连接全球机遇，释放人才潜能。Haigoo 帮助中国专业人才探索远程工作机会，实现工作与生活的完美平衡。
+             </p>
 
-          {/* Social Links - Spans 4 cols */}
-          <div className="md:col-span-4 space-y-6">
-             <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">Connect with us</h3>
-             <div className="flex flex-col gap-3">
-                {/* XiaoHongShu */}
+             {/* CTA Button */}
+             <div className="pt-2">
                 <a 
-                  href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="group flex items-center justify-between px-4 py-3 bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-xl transition-all border border-slate-200 hover:border-red-200 shadow-sm hover:shadow-md no-underline"
+                   href="mailto:hi@haigooremote.com" 
+                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-full text-slate-700 bg-white hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  <div className="flex items-center gap-3">
-                    <XiaohongshuLogo className="w-5 h-5" />
-                    <span className="text-sm font-medium">Little Red Book</span>
-                  </div>
-                  <span className="text-xs text-slate-400 group-hover:text-red-400 font-medium">Follow</span>
-                </a>
-
-                {/* LinkedIn */}
-                <a 
-                  href="https://www.linkedin.com/company/haigoo/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="group flex items-center justify-between px-4 py-3 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl transition-all border border-slate-200 hover:border-blue-200 shadow-sm hover:shadow-md no-underline"
-                >
-                  <div className="flex items-center gap-3">
-                    <LinkedInLogo className="w-5 h-5" />
-                    <span className="text-sm font-medium">LinkedIn</span>
-                  </div>
-                  <span className="text-xs text-slate-400 group-hover:text-blue-400 font-medium">Follow</span>
-                </a>
-
-                {/* Email Action */}
-                <a 
-                  href="mailto:hi@haigooremote.com" 
-                  className="group flex items-center justify-between px-4 py-3 bg-white hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-xl transition-all border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow-md no-underline"
-                >
-                  <div className="flex items-center gap-3">
-                    <OutlookLogo className="w-5 h-5" />
-                    <span className="text-sm font-medium">Email Us</span>
-                  </div>
-                  <span className="text-xs text-slate-400 group-hover:text-indigo-400 font-medium">Contact</span>
+                   联系我们
                 </a>
              </div>
           </div>
 
-          {/* Copyright (Mobile) */}
-          <div className="md:hidden col-span-1 pt-8 border-t border-slate-200">
-              <p className="text-xs text-slate-400 text-center">
-                © 2026 Haigoo. All rights reserved.
-              </p>
-          </div>
+          {/* Right Column: Address & Contact Info Grid */}
+          <div className="md:w-7/12 grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-12">
+             
+             {/* Address Column */}
+             <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                    <MapPinIcon className="w-6 h-6 text-amber-500 mt-0.5 shrink-0" />
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-slate-900">公司地址</h4>
+                        <div className="text-sm text-slate-500 space-y-1">
+                            <p className="font-medium text-slate-700">行渡科技（杭州）有限公司</p>
+                            <p className="leading-relaxed">杭州市余杭区仓前街道景兴路999号10幢403-31室</p>
+                        </div>
+                    </div>
+                </div>
+             </div>
 
+             {/* Contact Info Column */}
+             <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                    <MailIcon className="w-6 h-6 text-amber-500 mt-0.5 shrink-0" />
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-slate-900">联系方式</h4>
+                        <div className="text-sm text-slate-500">
+                            <a href="mailto:hi@haigooremote.com" className="hover:text-indigo-600 transition-colors block">
+                                hi@haigooremote.com
+                            </a>
+                        </div>
+                    </div>
+                </div>
+             </div>
+
+          </div>
         </div>
+
+        {/* Bottom Section: Social Icons & Copyright */}
+        <div className="pt-8 border-t border-slate-200 flex flex-col items-center gap-6">
+           
+           {/* Social Icons Row */}
+           <div className="flex items-center gap-8">
+              <a 
+                href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-red-500 transition-colors"
+                title="Little Red Book"
+              >
+                <XiaohongshuLogo className="w-6 h-6" />
+              </a>
+
+              <a 
+                href="https://www.linkedin.com/company/haigoo/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-blue-600 transition-colors"
+                title="LinkedIn"
+              >
+                <LinkedInLogo className="w-6 h-6" />
+              </a>
+
+              <a 
+                href="mailto:hi@haigooremote.com" 
+                className="text-slate-400 hover:text-indigo-600 transition-colors"
+                title="Email"
+              >
+                <OutlookLogo className="w-6 h-6" />
+              </a>
+           </div>
+
+           {/* Copyright */}
+           <p className="text-xs text-slate-400 text-center">
+              © 2026 Haigoo. All rights reserved.
+              {import.meta.env.DEV ? ' (Local)' : window.location.hostname.includes('develop') ? <span className="text-amber-600 font-bold ml-1">(PREVIEW ENV - v2026.02.14)</span> : ''}
+           </p>
+        </div>
+
       </div>
     </footer>
   )
