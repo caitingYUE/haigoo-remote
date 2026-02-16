@@ -41,17 +41,23 @@ export default function Footer() {
              {/* CTA Buttons */}
              <div className="flex flex-wrap gap-4">
                 <a 
-                   href="mailto:hi@haigooremote.com" 
-                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-full text-slate-700 bg-white hover:bg-white hover:text-indigo-600 hover:border-indigo-400 hover:shadow-md transition-all no-underline hover:no-underline"
+                   href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" 
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-full text-white bg-red-500 hover:bg-red-600 hover:border-red-600 hover:shadow-md transition-all no-underline hover:no-underline"
                 >
-                   联系我们
+                   <XiaohongshuLogo className="w-4 h-4 mr-2" />
+                   关注我们
                 </a>
-                <Link
-                   to="/about"
-                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-full text-slate-700 bg-white hover:bg-white hover:text-indigo-600 hover:border-indigo-400 hover:shadow-md transition-all no-underline hover:no-underline"
+                <a
+                   href="https://www.linkedin.com/in/caitlinyct/"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-full text-slate-700 bg-white hover:bg-white hover:text-blue-600 hover:border-blue-600 hover:shadow-md transition-all no-underline hover:no-underline"
                 >
-                   关于我们
-                </Link>
+                   <LinkedInLogo className="w-4 h-4 mr-2 text-blue-600" />
+                   关于创始人
+                </a>
              </div>
           </div>
 

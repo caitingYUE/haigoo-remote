@@ -33,7 +33,7 @@ export default function AboutPage() {
               <div className="flex items-center gap-x-6">
                 <Link
                   to="/jobs"
-                  className="rounded-full bg-indigo-600 px-8 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all flex items-center gap-2 no-underline hover:no-underline"
+                  className="rounded-full bg-indigo-600 px-8 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all flex items-center gap-2 no-underline hover:no-underline active:text-white visited:text-white hover:text-white"
                 >
                   探索远程机会 <ArrowRight className="w-4 h-4" />
                 </Link>
