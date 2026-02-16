@@ -58,6 +58,12 @@ export default function Footer() {
                    <LinkedInLogo className="w-4 h-4 mr-2 text-blue-600" />
                    关于创始人
                 </a>
+                <Link
+                   to="/about"
+                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-full text-slate-700 bg-white hover:bg-white hover:text-indigo-600 hover:border-indigo-400 hover:shadow-md transition-all no-underline hover:no-underline"
+                >
+                   关于我们
+                </Link>
              </div>
           </div>
 
