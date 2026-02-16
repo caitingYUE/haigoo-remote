@@ -33,7 +33,7 @@ export default function AboutPage() {
               <div className="flex items-center gap-x-6">
                 <Link
                   to="/jobs"
-                  className="rounded-full bg-indigo-600 px-8 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all flex items-center gap-2"
+                  className="rounded-full bg-indigo-600 px-8 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all flex items-center gap-2 no-underline hover:no-underline"
                 >
                   探索远程机会 <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -279,14 +279,14 @@ export default function AboutPage() {
             {!isMember ? (
               <Link
                 to="/membership"
-                className="rounded-full bg-white px-8 py-4 text-base font-bold text-indigo-600 shadow-lg hover:bg-indigo-50 hover:scale-105 transition-all duration-300"
+                className="rounded-full bg-white px-8 py-4 text-base font-bold text-indigo-600 shadow-lg hover:bg-indigo-50 hover:scale-105 transition-all duration-300 no-underline hover:no-underline"
               >
                 加入俱乐部会员
               </Link>
             ) : (
               <Link
                 to="/jobs"
-                className="rounded-full bg-white px-8 py-4 text-base font-bold text-indigo-600 shadow-lg hover:bg-indigo-50 hover:scale-105 transition-all duration-300"
+                className="rounded-full bg-white px-8 py-4 text-base font-bold text-indigo-600 shadow-lg hover:bg-indigo-50 hover:scale-105 transition-all duration-300 no-underline hover:no-underline"
               >
                 浏览远程岗位
               </Link>
@@ -294,7 +294,7 @@ export default function AboutPage() {
             
             <a 
               href="mailto:hi@haigooremote.com"
-              className="rounded-full px-8 py-4 text-base font-bold text-white border border-white/30 hover:bg-white/10 hover:border-white transition-all duration-300"
+              className="rounded-full px-8 py-4 text-base font-bold text-white bg-white/10 border border-white/30 hover:bg-white/20 hover:border-white transition-all duration-300 no-underline hover:no-underline"
             >
               联系我们
             </a>
