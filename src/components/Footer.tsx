@@ -40,15 +40,6 @@ export default function Footer() {
 
              {/* CTA Buttons */}
              <div className="flex flex-wrap gap-4">
-                <a 
-                   href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" 
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   className="inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-full text-white bg-red-500 hover:bg-red-600 hover:border-red-600 hover:shadow-md transition-all no-underline hover:no-underline"
-                >
-                   <XiaohongshuLogo className="w-4 h-4 mr-2" />
-                   关注我们
-                </a>
                 <a
                    href="https://www.linkedin.com/in/caitlinyct/"
                    target="_blank"

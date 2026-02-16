@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Users, Globe, Briefcase, Heart, Share2, Target, Rocket, ArrowRight, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { XiaohongshuLogo } from '../components/SocialIcons'
 import pic1 from '../assets/images/pic1.webp'
 import pic2 from '../assets/images/pic2.webp'
 import pic3 from '../assets/images/pic3.webp'
@@ -293,10 +294,13 @@ export default function AboutPage() {
             )}
             
             <a 
-              href="mailto:hi@haigooremote.com"
-              className="rounded-full px-8 py-4 text-base font-bold text-white bg-white/10 border border-white/30 hover:bg-white/20 hover:border-white transition-all duration-300 no-underline hover:no-underline"
+              href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full px-8 py-4 text-base font-bold text-white bg-red-500 hover:bg-red-600 border border-transparent hover:border-red-600 transition-all duration-300 no-underline hover:no-underline flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1"
             >
-              联系我们
+              <XiaohongshuLogo className="w-5 h-5" />
+              关注我们
             </a>
           </div>
         </div>
