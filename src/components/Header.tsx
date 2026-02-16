@@ -2,9 +2,9 @@ import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown, Sparkles } from 'l
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import logoPng from '../assets/logo.png'
+import brandLogoPng from '../assets/brandlogo.png'
 
-const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || logoPng
+const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || brandLogoPng
 const BETA_END_DATE = new Date('2025-01-24').getTime()
 
 export default function Header() {
