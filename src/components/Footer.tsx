@@ -28,9 +28,10 @@ export default function Footer() {
           {/* Left Column: Brand, Intro, CTA (Span 2) */}
           <div className="lg:col-span-2 space-y-8">
              {/* Logo */}
-             <div className="flex items-center">
-                <img src={logoPng} alt="Haigoo Remote Club" className="h-20 w-auto object-contain" />
-             </div>
+             <Link to="/" className="flex items-center gap-3 no-underline hover:no-underline group w-fit">
+                <img src={logoPng} alt="Haigoo Remote Club" className="h-14 w-auto object-contain group-hover:opacity-90 transition-opacity" />
+                <span className="text-xl font-bold text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">海狗远程俱乐部</span>
+             </Link>
              
              {/* Intro Text */}
              <p className="text-slate-500 leading-relaxed text-sm max-w-sm">
