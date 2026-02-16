@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Users, Globe, Briefcase, Heart, Share2, Target, Rocket, ArrowRight, Zap } from 'lucide-react'
+import { Users, Globe, Briefcase, Heart, Share2, Target, Rocket, ArrowRight, Zap, Building2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { XiaohongshuLogo } from '../components/SocialIcons'
@@ -186,21 +186,21 @@ export default function AboutPage() {
               {/* Stat 2 (Center) */}
               <div className="bg-white rounded-2xl p-8 shadow-xl border-t-4 border-indigo-600 flex flex-col items-center transform md:scale-110 z-20">
                 <div className="w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center mb-6 text-white shadow-indigo-200 shadow-xl">
-                  <Target className="w-10 h-10" />
+                  <Briefcase className="w-10 h-10" />
                 </div>
-                <dd className="text-5xl font-bold text-slate-900 mb-2">2K+</dd>
-                <dt className="text-slate-600 font-medium">活跃会员</dt>
-                <p className="text-sm text-slate-400 mt-4">深度参与共建的核心力量</p>
+                <dd className="text-5xl font-bold text-slate-900 mb-2">5K+</dd>
+                <dt className="text-slate-600 font-medium">精选岗位</dt>
+                <p className="text-sm text-slate-400 mt-4">经过严格人工审核的远程机会</p>
               </div>
 
               {/* Stat 3 */}
               <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-100 flex flex-col items-center hover:-translate-y-2 transition-transform duration-300">
                 <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mb-6 text-white shadow-indigo-200 shadow-xl">
-                  <Briefcase className="w-8 h-8" />
+                  <Building2 className="w-8 h-8" />
                 </div>
-                <dd className="text-4xl font-bold text-slate-900 mb-2">5K+</dd>
-                <dt className="text-slate-600 font-medium">精选岗位</dt>
-                <p className="text-sm text-slate-400 mt-4">经过严格人工审核的远程机会</p>
+                <dd className="text-4xl font-bold text-slate-900 mb-2">500+</dd>
+                <dt className="text-slate-600 font-medium">精选企业</dt>
+                <p className="text-sm text-slate-400 mt-4">远程友好的海内外企业</p>
               </div>
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function AboutPage() {
               href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full px-8 py-4 text-base font-bold text-white bg-red-500 hover:bg-red-600 border border-transparent hover:border-red-600 transition-all duration-300 no-underline hover:no-underline flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1"
+              className="rounded-full px-8 py-4 text-base font-bold text-white bg-white/10 hover:bg-white/20 border border-white/30 hover:border-white transition-all duration-300 no-underline hover:no-underline flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1 backdrop-blur-sm"
             >
               <XiaohongshuLogo className="w-5 h-5" />
               关注我们
