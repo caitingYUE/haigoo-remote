@@ -297,7 +297,7 @@ export default function AboutPage() {
               href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full px-8 py-4 text-base font-bold text-white bg-white/10 hover:bg-white/20 border border-white/30 hover:border-white transition-all duration-300 no-underline hover:no-underline flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1 backdrop-blur-sm"
+              className="rounded-full px-8 py-4 text-base font-bold text-[#FF2442] bg-white hover:bg-red-50 border border-transparent transition-all duration-300 no-underline hover:no-underline flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1"
             >
               <XiaohongshuLogo className="w-5 h-5" />
               关注我们
