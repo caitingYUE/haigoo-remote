@@ -59,6 +59,16 @@ export default function CopilotSection() {
     }
   })
 
+  const [demoStep, setDemoStep] = useState(0)
+
+  // Demo Animation Cycle
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setDemoStep(prev => (prev + 1) % 4)
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [])
+
   // Auto-load history on mount
   React.useEffect(() => {
     if (isAuthenticated && user?.user_id) {
@@ -482,63 +492,80 @@ export default function CopilotSection() {
                     <div className="w-3 h-3 rounded-full bg-amber-500" />
                     <div className="w-3 h-3 rounded-full bg-green-500" />
                   </div>
-                  <div className="ml-4 h-2 w-32 bg-slate-700 rounded-full" />
+                  <div className="ml-4 text-xs font-mono text-slate-400">Copilot Workflow</div>
                </div>
                
                {/* Mock Content */}
                <div className="bg-slate-900 p-6 space-y-6">
-                  {/* Step 1 */}
-                  <div className="flex gap-4">
-                     <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                  {/* Step 1: Analyze */}
+                  <div className={`flex gap-4 transition-opacity duration-500 ${demoStep >= 0 ? 'opacity-100' : 'opacity-30'}`}>
+                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${demoStep >= 0 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
                         1
                      </div>
                      <div className="space-y-2 w-full">
-                        <div className="h-4 w-3/4 bg-slate-700 rounded" />
-                        <div className="h-20 w-full bg-slate-800 rounded border border-slate-700 p-3">
+                        <div className="text-slate-300 font-medium text-sm">AI 深度解析您的背景与目标</div>
+                        <div className={`h-20 w-full bg-slate-800 rounded border border-slate-700 p-3 transition-all duration-500 ${demoStep === 0 ? 'ring-2 ring-indigo-500 bg-slate-800/80' : ''}`}>
                            <div className="h-2 w-1/2 bg-slate-600 rounded mb-2" />
                            <div className="flex gap-2">
-                              <div className="h-6 w-16 bg-green-500/20 rounded border border-green-500/30" />
-                              <div className="h-6 w-16 bg-blue-500/20 rounded border border-blue-500/30" />
+                              <div className="h-6 w-16 bg-green-500/20 rounded border border-green-500/30 text-[10px] text-green-400 flex items-center justify-center">简历评估</div>
+                              <div className="h-6 w-16 bg-blue-500/20 rounded border border-blue-500/30 text-[10px] text-blue-400 flex items-center justify-center">技能分析</div>
                            </div>
                         </div>
                      </div>
                   </div>
 
-                  {/* Step 2 */}
-                  <div className="flex gap-4">
-                     <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                  {/* Step 2: Match */}
+                  <div className={`flex gap-4 transition-opacity duration-500 ${demoStep >= 1 ? 'opacity-100' : 'opacity-30'}`}>
+                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${demoStep >= 1 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
                         2
                      </div>
                      <div className="space-y-2 w-full">
-                        <div className="h-4 w-1/2 bg-slate-700 rounded" />
-                        <div className="space-y-2">
-                           {[1,2,3].map(i => (
-                             <div key={i} className="flex items-center gap-2 p-2 rounded bg-slate-800/50 border border-slate-800">
-                                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                                <div className="h-2 w-2/3 bg-slate-600 rounded" />
+                        <div className="text-slate-300 font-medium text-sm">精准匹配全网远程机会</div>
+                        <div className={`space-y-2 transition-all duration-500 ${demoStep === 1 ? 'scale-105 origin-left' : ''}`}>
+                           {[
+                             { text: 'Senior React Developer', match: '98%' },
+                             { text: 'Frontend Engineer (Remote)', match: '95%' },
+                             { text: 'Full Stack Developer', match: '92%' }
+                           ].map((job, i) => (
+                             <div key={i} className={`flex items-center justify-between p-2 rounded bg-slate-800/50 border border-slate-800 transition-all duration-300 ${demoStep >= 1 ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'}`} style={{ transitionDelay: `${i * 100}ms` }}>
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                  <span className="text-xs text-slate-400">{job.text}</span>
+                                </div>
+                                <span className="text-[10px] text-green-500 font-mono">{job.match}</span>
                              </div>
                            ))}
                         </div>
                      </div>
                   </div>
 
-                  {/* Step 3 */}
-                  <div className="flex gap-4">
-                     <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                  {/* Step 3: Plan */}
+                  <div className={`flex gap-4 transition-opacity duration-500 ${demoStep >= 2 ? 'opacity-100' : 'opacity-30'}`}>
+                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${demoStep >= 2 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
                         3
                      </div>
                      <div className="space-y-2 w-full">
-                        <div className="h-4 w-2/3 bg-slate-700 rounded" />
+                        <div className="text-slate-300 font-medium text-sm">生成面试策略与投递计划</div>
                         <div className="grid grid-cols-2 gap-2">
-                           <div className="h-24 bg-slate-800 rounded border border-slate-700" />
-                           <div className="h-24 bg-slate-800 rounded border border-slate-700" />
+                           <div className={`h-20 bg-slate-800 rounded border border-slate-700 p-2 transition-all duration-500 ${demoStep === 2 ? 'bg-indigo-900/20 border-indigo-500/50' : ''}`}>
+                              <div className="w-6 h-6 rounded bg-slate-700 mb-2 flex items-center justify-center">
+                                <Zap className="w-3 h-3 text-amber-400" />
+                              </div>
+                              <div className="h-1.5 w-16 bg-slate-600 rounded" />
+                           </div>
+                           <div className={`h-20 bg-slate-800 rounded border border-slate-700 p-2 transition-all duration-500 ${demoStep === 2 ? 'bg-indigo-900/20 border-indigo-500/50' : ''}`}>
+                              <div className="w-6 h-6 rounded bg-slate-700 mb-2 flex items-center justify-center">
+                                <Clock className="w-3 h-3 text-blue-400" />
+                              </div>
+                              <div className="h-1.5 w-16 bg-slate-600 rounded" />
+                           </div>
                         </div>
                      </div>
                   </div>
                </div>
 
                {/* Floating Badge */}
-               <div className="absolute bottom-8 right-8 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-bold flex items-center gap-2 animate-bounce">
+               <div className={`absolute bottom-8 right-8 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-bold flex items-center gap-2 transition-all duration-500 transform ${demoStep === 3 ? 'translate-y-0 opacity-100 scale-110' : 'translate-y-4 opacity-0 scale-90'}`}>
                   <Sparkles className="w-4 h-4" />
                   已生成个性化方案
                </div>
