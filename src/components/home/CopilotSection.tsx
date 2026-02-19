@@ -46,6 +46,7 @@ export default function CopilotSection() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CopilotPlan | null>(null)
   const [isTrial, setIsTrial] = useState(false)
+  const [loadingStep, setLoadingStep] = useState(0)
 
   const [formData, setFormData] = useState<CopilotFormData>({
     goal: '',
@@ -57,6 +58,30 @@ export default function CopilotSection() {
       language: ''
     }
   })
+
+  // Auto-load history on mount
+  React.useEffect(() => {
+    if (isAuthenticated && user?.user_id) {
+      const fetchHistory = async () => {
+        try {
+          const token = localStorage.getItem('haigoo_auth_token') // Ensure using correct token key
+          const res = await fetch(`/api/copilot?userId=${user.user_id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.success && data.plan) {
+              setResult(data.plan)
+              setIsTrial(data.isTrial)
+            }
+          }
+        } catch (e) {
+          console.error('Failed to load copilot history', e)
+        }
+      }
+      fetchHistory()
+    }
+  }, [isAuthenticated, user?.user_id])
 
   const handleGenerate = async () => {
     if (!isAuthenticated) {
@@ -71,8 +96,16 @@ export default function CopilotSection() {
     }
 
     setLoading(true)
+    setLoadingStep(0)
+    
+    // Simulate steps
+    const steps = ['分析个人背景...', '匹配远程机会...', '生成行动计划...']
+    let stepInterval = setInterval(() => {
+      setLoadingStep(prev => (prev + 1) % steps.length)
+    }, 800)
+
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('haigoo_auth_token')
       const res = await fetch('/api/copilot', {
         method: 'POST',
         headers: {
@@ -103,6 +136,7 @@ export default function CopilotSection() {
       console.error(err)
       showError('服务暂时不可用', err.message)
     } finally {
+      clearInterval(stepInterval)
       setLoading(false)
     }
   }
@@ -268,7 +302,10 @@ export default function CopilotSection() {
                     </div>
                   ))}
                 </div>
-                <button onClick={() => navigate('/jobs')} className="w-full mt-4 text-center text-sm text-indigo-600 font-medium hover:text-indigo-700">
+                <button 
+                  onClick={() => navigate(`/jobs?search=${encodeURIComponent(formData.background.industry || '')}&type=${formData.goal === 'full-time' ? 'Full-time' : formData.goal === 'part-time' ? 'Part-time' : 'Contract'}`)} 
+                  className="w-full mt-4 text-center text-sm text-indigo-600 font-medium hover:text-indigo-700"
+                >
                   查看更多岗位 &rarr;
                 </button>
               </div>
@@ -417,7 +454,7 @@ export default function CopilotSection() {
                    {loading ? (
                      <>
                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                       AI 正在生成方案...
+                       {['分析个人背景...', '匹配远程机会...', '生成行动计划...'][loadingStep]}
                      </>
                    ) : (
                      <>
