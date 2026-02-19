@@ -38,3 +38,22 @@ CREATE INDEX IF NOT EXISTS idx_trusted_companies_source ON trusted_companies(sou
 -- 2026-02-02: Unified Subscription System
 -- Description: Add preferences column to subscriptions table to store detailed job tracking criteria
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS preferences JSONB;
+
+-- 2026-02-19: Remote Work Copilot
+-- Description: Store user copilot sessions and ensure resume URL in users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS resume_url VARCHAR(1024);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS has_used_copilot_trial BOOLEAN DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS copilot_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+    goal VARCHAR(50), -- 'full-time', 'part-time', 'freelance'
+    timeline VARCHAR(50), -- 'immediately', '1-3 months', etc.
+    background JSONB, -- { education, industry, seniority, language }
+    plan_data JSONB, -- Generated AI plan
+    is_trial BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_copilot_sessions_user_id ON copilot_sessions(user_id);
+

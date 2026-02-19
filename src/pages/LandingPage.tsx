@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import HomeHero from '../components/HomeHero'
+import CopilotSection from '../components/home/CopilotSection'
 import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -226,6 +227,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       {/* Premium Dark Hero Section */}
       <HomeHero stats={undefined} />
+
+      <CopilotSection />
 
       {/* New Year Blessing Section (Hidden for now) */}
       {/* <NewYearBlessingSection /> */}
