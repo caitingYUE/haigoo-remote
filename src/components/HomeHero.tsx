@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Sparkles, ArrowRight, Zap, Globe, Briefcase, Clock, Search, CheckCircle2, User, PlayCircle, Lock } from 'lucide-react'
+import { Sparkles, ArrowRight, Zap, Globe, Briefcase, Clock, Search, CheckCircle2, User, PlayCircle, Lock, MessageSquare } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
 
@@ -43,7 +43,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     useEffect(() => {
         const interval = setInterval(() => {
             setDemoStep(prev => (prev + 1) % 4)
-        }, 3000) // 3s per step for better readability
+        }, 3000) 
         return () => clearInterval(interval)
     }, [])
 
@@ -84,10 +84,10 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     goal: formData.goal,
                     timeline: formData.timeline,
                     background: {
-                        industry: formData.background.role, // Mapping role to industry for backend compatibility
+                        industry: formData.background.role, 
                         seniority: formData.background.years,
-                        education: '', // Optional
-                        language: ''   // Optional
+                        education: '', 
+                        language: ''   
                     }
                 })
             })
@@ -103,15 +103,6 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 }
                 return
             }
-
-            // Success - Redirect or Show Result
-            // For Hero context, we redirect to a dedicated result view or anchor
-            // Here we'll scroll to a "My Plan" section or navigate to dashboard
-            // But since CopilotSection is removed, let's navigate to /dashboard/copilot if we had one
-            // Or just reuse the result display logic if we want to keep it simple.
-            // Let's scroll to "featured-jobs" for now and show a success toast, 
-            // OR ideally, we should probably have a dedicated Copilot Page or Modal.
-            // Given the constraints, let's navigate to '/jobs' with pre-filled filters as a "Plan"
             
             navigate(`/jobs?search=${encodeURIComponent(formData.background.role)}&type=${formData.goal === 'full-time' ? 'Full-time' : 'Contract'}`)
             
@@ -139,230 +130,85 @@ export default function HomeHero({ stats }: HomeHeroProps) {
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-10">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div className="flex flex-col items-center justify-center text-center">
                     
-                    {/* Left Column: Content & Copilot Form */}
-                    <div className="lg:col-span-7 space-y-8">
-                        <div>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-bold mb-6 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4">
-                                <Sparkles className="w-3.5 h-3.5" />
-                                AI Remote Career Copilot
-                            </div>
-                            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-[1.1] tracking-tight animate-in fade-in slide-in-from-bottom-6 delay-100">
-                                理想生活，<br/>
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300">
-                                    从远程工作开始
-                                </span>
-                            </h1>
-                            <p className="text-lg text-slate-300 mb-8 max-w-xl leading-relaxed font-light animate-in fade-in slide-in-from-bottom-8 delay-200">
-                                不只是找工作。Haigoo Copilot 为您提供从简历评估、岗位匹配到面试策略的全流程 AI 辅助。
-                            </p>
+                    {/* Centered Hero Content */}
+                    <div className="max-w-4xl mx-auto mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-bold mb-6 backdrop-blur-md">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            AI Remote Career Copilot
                         </div>
-
-                        {/* Embedded Copilot Widget (Glassmorphism) */}
-                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 max-w-xl animate-in fade-in slide-in-from-bottom-10 delay-300 shadow-2xl shadow-black/20 relative overflow-hidden group">
-                            {/* Decorative Glow */}
-                            <div className="absolute -top-20 -right-20 w-60 h-60 bg-indigo-500/20 rounded-full blur-3xl group-hover:bg-indigo-500/30 transition-colors duration-1000"></div>
-
-                            <div className="relative space-y-6">
-                                {/* Goal Selection */}
-                                <div className="space-y-3">
-                                    <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                                        <Briefcase className="w-4 h-4" /> 您的求职目标?
-                                    </label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {[
-                                            { id: 'full-time', label: '长期全职' },
-                                            { id: 'part-time', label: '兼职副业' },
-                                            { id: 'freelance', label: '自由接单' }
-                                        ].map(opt => (
-                                            <button
-                                                key={opt.id}
-                                                onClick={() => setFormData({...formData, goal: opt.id as any})}
-                                                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                                                    formData.goal === opt.id 
-                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
-                                                    : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
-                                                }`}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Input Row */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                                            <User className="w-4 h-4" /> 当前职位/角色
-                                        </label>
-                                        <input 
-                                            type="text" 
-                                            placeholder="例如: 产品经理, Java开发"
-                                            value={formData.background.role}
-                                            onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                                            <Clock className="w-4 h-4" /> 工作年限
-                                        </label>
-                                        <select 
-                                            value={formData.background.years}
-                                            onChange={(e) => setFormData({...formData, background: {...formData.background, years: e.target.value}})}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm appearance-none cursor-pointer"
-                                        >
-                                            <option value="" className="bg-slate-800 text-slate-400">选择年限</option>
-                                            <option value="Junior" className="bg-slate-800">1-3 年</option>
-                                            <option value="Mid" className="bg-slate-800">3-5 年</option>
-                                            <option value="Senior" className="bg-slate-800">5-8 年</option>
-                                            <option value="Expert" className="bg-slate-800">8年 以上</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Action Button */}
-                                <button
-                                    onClick={handleGenerate}
-                                    disabled={loading}
-                                    className="w-full group relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl py-4 font-bold transition-all shadow-xl shadow-indigo-900/20 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
-                                >
-                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                                    <div className="relative flex items-center justify-center gap-2">
-                                        {loading ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                <span className="text-sm">{['分析背景...', '全网扫描...', '生成策略...'][loadingStep]}</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Sparkles className="w-5 h-5" />
-                                                立即生成远程求职方案
-                                            </>
-                                        )}
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
+                        <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight">
+                            理想生活，<br/>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300">
+                                从远程工作开始
+                            </span>
+                        </h1>
+                        <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-light">
+                            不只是找工作。Haigoo Copilot 为您提供从简历评估、岗位匹配到面试策略的全流程 AI 辅助。
+                        </p>
                     </div>
 
-                    {/* Right Column: Dynamic Demo Visual */}
-                    <div className="hidden lg:block lg:col-span-5 relative">
-                        {/* Abstract Device Frame */}
-                        <div className="relative z-10 bg-slate-900/90 backdrop-blur-xl rounded-[2rem] border border-slate-700/50 shadow-2xl shadow-black/50 p-6 transform rotate-[-3deg] hover:rotate-0 transition-all duration-700 group">
-                            {/* Header */}
-                            <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs">
-                                        AI
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-bold text-white">Haigoo Copilot</div>
-                                        <div className="text-[10px] text-green-400 flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                                            Online
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="text-xs text-slate-500 font-mono">v2.0 Beta</div>
-                            </div>
+                    {/* Copilot Floating Widget (Glassmorphism + Stacking) */}
+                    <div className="relative w-full max-w-2xl mx-auto group perspective-1000">
+                         {/* Back Layer - Decorative Elements (Irregular Shapes) */}
+                         <div className="absolute -top-12 -left-12 w-24 h-24 bg-purple-500/30 rounded-full blur-xl animate-pulse"></div>
+                         <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-indigo-500/30 rounded-full blur-xl animate-pulse delay-700"></div>
 
-                            {/* Dynamic Content Area */}
-                            <div className="space-y-6 h-[320px] relative">
-                                {/* Step 1: Analyze */}
-                                <div className={`transition-all duration-700 absolute inset-0 ${demoStep === 0 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10 pointer-events-none'}`}>
-                                    <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border-l-2 border-indigo-500">
-                                        <div className="text-xs text-slate-400 mb-1">正在分析您的背景...</div>
-                                        <div className="text-sm text-white font-medium flex items-center gap-2">
-                                            <User className="w-4 h-4 text-indigo-400" />
-                                            Senior Product Manager
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="h-2 bg-slate-800 rounded-full w-3/4 animate-pulse"></div>
-                                        <div className="h-2 bg-slate-800 rounded-full w-1/2 animate-pulse delay-75"></div>
-                                        <div className="flex gap-2 mt-4">
-                                            <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded border border-blue-500/30">Strategy</span>
-                                            <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded border border-purple-500/30">SaaS</span>
-                                            <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded border border-green-500/30">Agile</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Step 2: Match */}
-                                <div className={`transition-all duration-700 absolute inset-0 ${demoStep === 1 ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10 pointer-events-none'}`}>
-                                    <div className="text-xs text-slate-400 mb-3 flex justify-between">
-                                        <span>匹配到 12 个高潜机会</span>
-                                        <span className="text-indigo-400">100% Remote</span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {[
-                                            { role: 'Senior PM', company: 'Linear', match: '98%' },
-                                            { role: 'Product Lead', company: 'Notion', match: '95%' },
-                                            { role: 'Growth PM', company: 'Zapier', match: '92%' },
-                                        ].map((job, i) => (
-                                            <div key={i} className="bg-slate-800/80 p-3 rounded-xl border border-white/5 flex items-center justify-between group/item hover:bg-slate-700/80 transition-colors">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center text-xs text-white">
-                                                        {job.company[0]}
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm text-white font-bold">{job.role}</div>
-                                                        <div className="text-[10px] text-slate-400">{job.company}</div>
-                                                    </div>
-                                                </div>
-                                                <span className="text-xs font-bold text-green-400 bg-green-400/10 px-1.5 py-0.5 rounded">
-                                                    {job.match}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Step 3: Plan */}
-                                <div className={`transition-all duration-700 absolute inset-0 ${demoStep === 2 ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10 pointer-events-none'}`}>
-                                    <div className="text-center pt-8">
-                                        <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/50">
-                                            <CheckCircle2 className="w-8 h-8 text-green-400" />
-                                        </div>
-                                        <h3 className="text-white font-bold text-lg mb-2">方案已生成</h3>
-                                        <p className="text-slate-400 text-xs mb-6 px-8">
-                                            包含简历优化建议、面试准备题库及 30 天投递计划
-                                        </p>
-                                        <button className="px-6 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium shadow-lg shadow-indigo-600/30">
-                                            立即查看
-                                        </button>
-                                    </div>
-                                </div>
-
-                                 {/* Step 4: Member (Optional/Loop) */}
-                                 <div className={`transition-all duration-700 absolute inset-0 ${demoStep === 3 ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10 pointer-events-none'}`}>
-                                     <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 rounded-xl p-5 border border-indigo-500/30 h-full flex flex-col justify-center items-center text-center">
-                                         <Lock className="w-10 h-10 text-indigo-400 mb-4" />
-                                         <h4 className="text-white font-bold mb-2">解锁更多权益</h4>
-                                         <ul className="text-xs text-slate-300 space-y-2 mb-6 text-left w-full px-4">
-                                             <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-400"/> 无限次 AI 简历优化</li>
-                                             <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-400"/> 每日自动匹配新职位</li>
-                                             <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-400"/> 导师 1v1 咨询折扣</li>
-                                         </ul>
-                                         <div className="text-[10px] text-indigo-300">Haigoo Member Exclusive</div>
-                                     </div>
+                         {/* Main Glass Card */}
+                         <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-2 shadow-2xl shadow-black/40 transform transition-transform duration-500 hover:scale-[1.02]">
+                             <div className="flex flex-col md:flex-row gap-2">
+                                 {/* Input Area */}
+                                 <div className="flex-1 bg-black/20 rounded-xl px-4 py-3 flex items-center gap-3 border border-white/5 focus-within:border-indigo-500/50 focus-within:bg-black/30 transition-all">
+                                     <MessageSquare className="w-5 h-5 text-indigo-400 shrink-0" />
+                                     <input 
+                                        type="text" 
+                                        placeholder="告诉 Copilot 您的当前职位 (例如: 产品经理)" 
+                                        className="w-full bg-transparent border-none text-white placeholder:text-slate-400 focus:ring-0 text-base"
+                                        value={formData.background.role}
+                                        onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                                     />
                                  </div>
-                            </div>
-                            
-                            {/* Footer Progress */}
-                            <div className="mt-6 flex justify-between items-center gap-2">
-                                {[0, 1, 2, 3].map(i => (
-                                    <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-500 ${i <= demoStep ? 'bg-indigo-500' : 'bg-slate-800'}`}></div>
-                                ))}
-                            </div>
-                        </div>
+                                 
+                                 {/* Generate Button */}
+                                 <button 
+                                    onClick={handleGenerate}
+                                    disabled={loading}
+                                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
+                                 >
+                                    {loading ? (
+                                        <>
+                                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                           <span className="text-sm">思考中...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                           <Sparkles className="w-4 h-4" />
+                                           生成求职方案
+                                        </>
+                                    )}
+                                 </button>
+                             </div>
+                             
+                             {/* Optional Quick Tags */}
+                             <div className="flex gap-2 mt-3 px-2 pb-1 overflow-x-auto no-scrollbar">
+                                 {['Product Manager', 'React Developer', 'Designer', 'Marketing'].map(tag => (
+                                     <button 
+                                        key={tag}
+                                        onClick={() => setFormData({...formData, background: {...formData.background, role: tag}})}
+                                        className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-colors whitespace-nowrap"
+                                     >
+                                         {tag}
+                                     </button>
+                                 ))}
+                             </div>
+                         </div>
+                         
+                         {/* Stacked Preview Cards (Hinting at results) */}
+                         <div className="absolute -z-10 top-full left-4 right-4 h-12 bg-white/5 border border-white/10 rounded-b-2xl mx-4 transform -translate-y-2 opacity-60 backdrop-blur-sm"></div>
+                         <div className="absolute -z-20 top-full left-8 right-8 h-12 bg-white/5 border border-white/10 rounded-b-2xl mx-8 transform -translate-y-4 opacity-30 backdrop-blur-sm"></div>
 
-                        {/* Floating Blobs */}
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-purple-500/30 rounded-full blur-[80px] animate-pulse"></div>
-                        <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/30 rounded-full blur-[80px] animate-pulse delay-1000"></div>
                     </div>
                 </div>
             </div>
