@@ -173,14 +173,10 @@ export default function Header() {
 
   return (
     <header
-      className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none ${isHome ? 'pt-6' : 'top-6 px-4 md:px-6 lg:px-8'}`}
+      className="absolute top-4 left-0 right-0 z-50 transition-all duration-300 pointer-events-none px-4 md:px-6 lg:px-8"
       role="banner"
     >
-      <div className={`max-w-7xl mx-auto px-6 md:px-8 pointer-events-auto transition-all duration-300 ${
-        isHome 
-          ? 'bg-transparent border-transparent' 
-          : 'bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-white/40'
-      }`}>
+      <div className="max-w-7xl mx-auto px-6 md:px-8 pointer-events-auto transition-all duration-300 bg-white/80 backdrop-blur-md rounded-3xl shadow-lg border border-white/60">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex items-center group">
@@ -193,13 +189,12 @@ export default function Header() {
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
-                className={`h-14 md:h-16 w-auto object-contain transition-all duration-300 group-hover:opacity-90 ${isHome ? 'brightness-0 invert' : ''}`}
-                // Using transform instead of margin to avoid affecting layout flow
+                className="h-14 md:h-16 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
                 style={{ transform: 'translateX(-4px)' }} 
               />
 
               {/* Brand Name */}
-              <span className={`font-semibold text-base tracking-wide leading-none ${isHome ? 'text-white' : 'text-[#1A365D]'}`}>
+              <span className="font-semibold text-base tracking-wide leading-none text-[#1A365D]">
                 海狗远程俱乐部
               </span>
             </Link>
@@ -227,8 +222,8 @@ export default function Header() {
               to="/"
               className={`text-base transition-colors no-underline hover:no-underline ${
                 location.pathname === '/'
-                  ? (isHome ? 'text-white font-bold' : 'text-slate-900 font-bold')
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+                  ? 'text-slate-900 font-bold'
+                  : 'text-slate-500 font-medium hover:text-slate-900'
               }`}
             >
               首页
@@ -239,7 +234,7 @@ export default function Header() {
               className={`text-base transition-colors no-underline hover:no-underline ${
                 location.pathname === '/jobs'
                   ? 'text-slate-900 font-bold'
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+                  : 'text-slate-500 font-medium hover:text-slate-900'
               }`}
             >
               远程岗位
@@ -250,7 +245,7 @@ export default function Header() {
               className={`text-base transition-colors no-underline hover:no-underline ${
                 location.pathname.startsWith('/trusted-companies')
                   ? 'text-slate-900 font-bold'
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+                  : 'text-slate-500 font-medium hover:text-slate-900'
               }`}
             >
               精选企业
@@ -261,7 +256,7 @@ export default function Header() {
               className={`text-base transition-colors no-underline hover:no-underline ${
                 location.pathname === '/membership'
                   ? 'text-slate-900 font-bold'
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+                  : 'text-slate-500 font-medium hover:text-slate-900'
               }`}
             >
               会员中心
@@ -272,7 +267,7 @@ export default function Header() {
               className={`text-base transition-colors no-underline hover:no-underline ${
                 location.pathname.startsWith('/profile')
                   ? 'text-slate-900 font-bold'
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
+                  : 'text-slate-500 font-medium hover:text-slate-900'
               }`}
             >
               个人中心
@@ -286,13 +281,13 @@ export default function Header() {
               <>
                 <Link
                   to="/login"
-                  className={`px-4 py-2 text-sm font-medium transition-colors no-underline hover:no-underline ${isHome ? 'text-white hover:text-white/80' : 'text-slate-600 hover:text-slate-900'}`}
+                  className="px-4 py-2 text-sm font-medium transition-colors no-underline hover:no-underline text-slate-600 hover:text-slate-900"
                 >
                   登录
                 </Link>
                 <Link
                   to="/register"
-                  className={`px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline ${isHome ? 'bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                  className="px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline bg-indigo-600 hover:bg-indigo-700"
                 >
                   注册
                 </Link>
@@ -306,11 +301,7 @@ export default function Header() {
                 <div ref={notificationRef} className="relative">
                   <button
                     onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                    className={`p-3 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center ${
-                      isHome 
-                        ? 'text-white/80 hover:text-white' 
-                        : 'text-slate-400 hover:text-slate-600'
-                    }`}
+                    className="p-3 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-slate-600"
                     aria-label={`通知，有 ${unreadCount} 条新消息`}
                     title="通知"
                   >
