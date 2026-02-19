@@ -117,26 +117,20 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     }
 
     return (
-        <div className="relative min-h-[900px] flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
+        <div className="relative min-h-[900px] flex items-center justify-center overflow-hidden bg-slate-50">
             {/* Background - Bright & Future Feeling */}
             <div className="absolute inset-0 z-0">
                 <img 
                     src="/background.webp" 
                     alt="Background" 
-                    className={`w-full h-full object-cover object-[0%_20%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-30' : 'opacity-0'}`}
+                    className={`w-full h-full object-cover object-[0%_20%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-15' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
                 />
-                {/* Vivid Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/80 via-[#0a0a0a]/60 to-[#0a0a0a]"></div>
-                
-                {/* Aurora / Glow Effects */}
-                <div className="absolute top-[-20%] left-[20%] w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-[120px] mix-blend-screen animate-pulse"></div>
-                <div className="absolute top-[10%] right-[10%] w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[100px] mix-blend-screen animate-pulse delay-1000"></div>
-                <div className="absolute bottom-[-10%] left-[30%] w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[80px] mix-blend-screen"></div>
-                
-                {/* Grid Pattern */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/70 to-white"></div>
+                <div className="absolute -top-40 right-[-10%] h-[520px] w-[520px] rounded-full bg-indigo-400/10 blur-[120px]"></div>
+                <div className="absolute top-10 left-[-10%] h-[420px] w-[420px] rounded-full bg-blue-400/10 blur-[110px]"></div>
+                <div className="absolute bottom-[-20%] left-[20%] h-[520px] w-[520px] rounded-full bg-purple-400/10 blur-[140px]"></div>
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.12] mix-blend-soft-light"></div>
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-10">
@@ -144,37 +138,37 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     
                     {/* Centered Hero Content */}
                     <div className="max-w-4xl mx-auto mb-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-white/90 text-sm font-medium mb-8 backdrop-blur-md shadow-lg shadow-indigo-500/20">
-                            <Sparkles className="w-4 h-4 text-indigo-400" />
-                            <span className="bg-gradient-to-r from-indigo-200 to-purple-200 bg-clip-text text-transparent font-bold">AI Remote Career Copilot 2.0</span>
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-slate-200/70 text-slate-700 text-sm font-semibold mb-8 backdrop-blur-md shadow-sm">
+                            <Sparkles className="w-4 h-4 text-indigo-500" />
+                            <span className="text-slate-700">AI Remote Career Copilot 2.0</span>
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight drop-shadow-2xl">
+                        <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-[1.1] tracking-tight">
                             理想生活，<br/>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-purple-300 filter drop-shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
                                 从远程工作开始
                             </span>
                         </h1>
-                        <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-light">
+                        <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal">
                             不只是找工作。Haigoo Copilot 为您提供从简历评估、岗位匹配到面试策略的全流程 AI 辅助。
                         </p>
                     </div>
 
                     {/* Copilot Floating Widget (Expandable) */}
-                    <div className={`relative w-full max-w-2xl mx-auto group perspective-1000 transition-all duration-500 ${isExpanded ? 'scale-100' : 'scale-95'}`}>
+                    <div className={`relative w-full max-w-2xl mx-auto group transition-all duration-500 ${isExpanded ? 'scale-100' : 'scale-[0.98]'}`}>
                          
                          {/* Main Glass Card */}
-                         <div className={`relative bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-3 shadow-2xl shadow-black/50 transition-all duration-500 overflow-hidden ${isExpanded ? 'bg-white/15 border-white/30 ring-1 ring-white/20' : ''}`}>
+                         <div className={`relative bg-white/85 backdrop-blur-xl border border-slate-200/70 rounded-3xl p-3 shadow-[0_40px_120px_rgba(15,23,42,0.18)] transition-all duration-500 overflow-hidden ${isExpanded ? 'bg-white/95 border-slate-200 ring-1 ring-indigo-500/10' : ''}`}>
                              
                              {/* Input Row */}
                              <div className="flex flex-col md:flex-row gap-3">
                                  {/* Input Area */}
-                                 <div className="flex-1 bg-black/40 rounded-2xl px-5 py-4 flex items-center gap-4 border border-white/10 focus-within:border-indigo-500/50 focus-within:bg-black/50 transition-all shadow-inner">
-                                     <MessageSquare className={`w-6 h-6 shrink-0 transition-colors ${isExpanded ? 'text-indigo-400' : 'text-slate-400'}`} />
+                                 <div className="flex-1 bg-white rounded-2xl px-5 py-4 flex items-center gap-4 border border-slate-200 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100 transition-all shadow-sm">
+                                     <MessageSquare className={`w-6 h-6 shrink-0 transition-colors ${isExpanded ? 'text-indigo-500' : 'text-slate-400'}`} />
                                      <input 
                                         ref={inputRef}
                                         type="text" 
                                         placeholder="告诉 Copilot 您的当前职位 (例如: 产品经理)" 
-                                        className="w-full bg-transparent border-none text-white placeholder:text-slate-400 focus:ring-0 text-lg font-medium"
+                                        className="w-full bg-transparent border-none text-slate-900 placeholder:text-slate-400 focus:ring-0 text-lg font-semibold"
                                         value={formData.background.role}
                                         onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
                                         onFocus={handleInputFocus}
@@ -183,7 +177,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                      {isExpanded && (
                                          <button 
                                             onClick={() => setIsExpanded(false)}
-                                            className="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                                            className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
                                          >
                                              <ChevronUp className="w-5 h-5" />
                                          </button>
@@ -194,7 +188,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                  <button 
                                     onClick={handleGenerate}
                                     disabled={loading}
-                                    className="hidden md:flex px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-600/30 items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
+                                    className="hidden md:flex px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-500/30 items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
                                  >
                                     {loading ? (
                                         <>
@@ -211,13 +205,13 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                              </div>
 
                              {/* Expanded Options Area */}
-                             <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[300px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[320px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
                                  <div className="px-2 pb-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                                      
                                      {/* Goal Selector */}
                                      <div className="space-y-3">
-                                         <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-                                             <Briefcase className="w-4 h-4 text-indigo-400" /> 求职目标
+                                        <label className="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                                            <Briefcase className="w-4 h-4 text-indigo-500" /> 求职目标
                                          </label>
                                          <div className="flex flex-wrap gap-2">
                                              {[
@@ -228,10 +222,10 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                                  <button
                                                      key={opt.id}
                                                      onClick={() => setFormData({...formData, goal: opt.id as any})}
-                                                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                                                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all border ${
                                                          formData.goal === opt.id 
-                                                         ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300' 
-                                                         : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
+                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm' 
+                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-white hover:border-slate-300'
                                                      }`}
                                                  >
                                                      {opt.label}
@@ -242,19 +236,19 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                                      {/* Experience Selector */}
                                      <div className="space-y-3">
-                                         <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-                                             <Clock className="w-4 h-4 text-purple-400" /> 工作年限
+                                        <label className="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                                            <Clock className="w-4 h-4 text-indigo-500" /> 工作年限
                                          </label>
                                          <select 
                                              value={formData.background.years}
                                              onChange={(e) => setFormData({...formData, background: {...formData.background, years: e.target.value}})}
-                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm appearance-none cursor-pointer hover:bg-white/10"
+                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all text-sm appearance-none cursor-pointer hover:border-slate-300"
                                          >
-                                             <option value="" className="bg-slate-900 text-slate-400">选择年限</option>
-                                             <option value="Junior" className="bg-slate-900">1-3 年</option>
-                                             <option value="Mid" className="bg-slate-900">3-5 年</option>
-                                             <option value="Senior" className="bg-slate-900">5-8 年</option>
-                                             <option value="Expert" className="bg-slate-900">8年 以上</option>
+                                            <option value="">选择年限</option>
+                                            <option value="Junior">1-3 年</option>
+                                            <option value="Mid">3-5 年</option>
+                                            <option value="Senior">5-8 年</option>
+                                            <option value="Expert">8年 以上</option>
                                          </select>
                                      </div>
                                  </div>
@@ -263,7 +257,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                  <button 
                                     onClick={handleGenerate}
                                     disabled={loading}
-                                    className="md:hidden w-full mt-4 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2"
+                                    className="md:hidden w-full mt-4 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2"
                                  >
                                     {loading ? '思考中...' : '立即生成方案'}
                                  </button>
@@ -279,7 +273,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                                 setFormData({...formData, background: {...formData.background, role: tag}})
                                                 setIsExpanded(true)
                                             }}
-                                            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/5 transition-colors whitespace-nowrap hover:border-white/20"
+                                           className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-white text-xs text-slate-600 border border-slate-200 transition-colors whitespace-nowrap hover:border-slate-300"
                                          >
                                              {tag}
                                          </button>
@@ -290,23 +284,23 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                          {/* Case Demo Section (Under Input) */}
                          <div className={`mt-8 transition-all duration-700 delay-100 ${isExpanded ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
-                             <p className="text-slate-500 text-xs font-medium uppercase tracking-widest mb-4 text-center">Success Stories</p>
+                            <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest mb-4 text-center">真实案例</p>
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4">
                                  {[
                                      { role: "Senior Java Dev", company: "Atlassian", salary: "$120k", badge: "Remote" },
                                      { role: "Product Designer", company: "Linear", salary: "$90k", badge: "Async" },
                                      { role: "Growth Manager", company: "Zapier", salary: "$110k", badge: "Global" }
                                  ].map((item, i) => (
-                                     <div key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-3 flex items-center gap-3 hover:bg-white/10 transition-colors cursor-default group">
-                                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-white/80 group-hover:scale-110 transition-transform">
-                                             {i === 0 ? <Award className="w-5 h-5 text-yellow-400" /> : i === 1 ? <Star className="w-5 h-5 text-purple-400" /> : <TrendingUp className="w-5 h-5 text-green-400" />}
+                                    <div key={i} className="bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all cursor-default group">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:scale-105 transition-transform">
+                                            {i === 0 ? <Award className="w-5 h-5 text-amber-500" /> : i === 1 ? <Star className="w-5 h-5 text-indigo-500" /> : <TrendingUp className="w-5 h-5 text-emerald-500" />}
                                          </div>
                                          <div className="text-left">
-                                             <div className="text-sm font-bold text-white leading-tight">{item.role}</div>
-                                             <div className="text-xs text-slate-400 flex items-center gap-2">
+                                            <div className="text-sm font-bold text-slate-800 leading-tight">{item.role}</div>
+                                            <div className="text-xs text-slate-500 flex items-center gap-2">
                                                  <span>{item.company}</span>
-                                                 <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                                                 <span className="text-indigo-300">{item.salary}</span>
+                                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                                <span className="text-indigo-600">{item.salary}</span>
                                              </div>
                                          </div>
                                      </div>
