@@ -225,8 +225,11 @@ export default function LandingPage() {
       {/* Premium Dark Hero Section */}
       <HomeHero stats={undefined} />
 
-      {/* New Year Blessing Section (Hidden for now) */}
-      {/* <NewYearBlessingSection /> */}
+      {/* Featured Jobs Section */}
+      <FeaturedJobsSection 
+        initialJobs={featuredJobs} 
+        onJobClick={handleJobClick} 
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         {/* Featured Companies Section */}
@@ -271,12 +274,6 @@ export default function LandingPage() {
             </div>
           )}
         </div>
-
-        {/* Featured Jobs Section */}
-        <FeaturedJobsSection 
-          initialJobs={featuredJobs} 
-          onJobClick={handleJobClick} 
-        />
 
         {/* Brand Promise Section - "Why Haigoo?" */}
         <div className="py-24 border-t border-slate-100">

@@ -42,10 +42,6 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
 
       setLoading(true)
       try {
-        // If tab is 'all', we might want to use the initialJobs if provided and valid, 
-        // but to ensure consistency when switching back, we might just refetch or cache.
-        // For simplicity, we fetch.
-        
         const filters: any = { 
           isFeatured: true,
           limit: 6
@@ -53,8 +49,6 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
 
         if (activeTab !== 'all') {
           filters.category = activeTab
-          // If we filter by category, we might want to relax isFeatured if we don't have enough featured jobs in that category.
-          // But for now, let's keep isFeatured=true to ensure quality.
         }
 
         const res = await processedJobsService.getProcessedJobs(1, 6, filters)
@@ -70,44 +64,32 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
   }, [activeTab])
 
   return (
-    <div id="featured-jobs" className="py-16 border-t border-slate-100">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">精选岗位</h2>
-          <p className="text-slate-500">人工逐条筛选的高薪/高增长/好文化的优质远程机会</p>
-        </div>
-        
-        <button
-          onClick={() => navigate('/jobs?region=domestic')}
-          className="hidden md:flex px-6 py-2.5 bg-white text-slate-700 font-medium rounded-full border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 items-center gap-2 group whitespace-nowrap"
-        >
-          浏览所有岗位
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </button>
-      </div>
-
+    <div id="featured-jobs" className="py-12">
       {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-        {CATEGORIES.map((tab) => {
-          const Icon = tab.icon
-          const isActive = activeTab === tab.id
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap
-                ${isActive 
-                  ? 'bg-slate-900 text-white shadow-md ring-2 ring-slate-900 ring-offset-2' 
-                  : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
-                }
-              `}
-            >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-300' : 'text-slate-400'}`} />
-              {tab.label}
-            </button>
-          )
-        })}
+      <div className="flex flex-col items-center mb-10">
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 border-b border-slate-200 pb-1 w-full max-w-3xl">
+          {CATEGORIES.map((tab) => {
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  relative px-2 py-3 text-base font-bold transition-all
+                  ${isActive 
+                    ? 'text-indigo-600' 
+                    : 'text-slate-500 hover:text-slate-800'
+                  }
+                `}
+              >
+                {tab.label}
+                {isActive && (
+                  <span className="absolute bottom-[-5px] left-0 right-0 h-1 bg-indigo-600 rounded-t-full shadow-sm shadow-indigo-200"></span>
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Jobs Grid */}
