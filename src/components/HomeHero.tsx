@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
-import { Sparkles, Briefcase, Clock, MessageSquare, ChevronUp, Star, Award, TrendingUp, Target, CalendarClock, GraduationCap, Languages, Upload } from 'lucide-react'
+import { Sparkles, Briefcase, Clock, MessageSquare, ChevronUp, Star, Award, TrendingUp, Target, CalendarClock, GraduationCap, Languages, Upload, CheckCircle2, ArrowRight, Search } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -34,12 +34,11 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     // Copilot State
     const [loading, setLoading] = useState(false)
     const [loadingStep, setLoadingStep] = useState(0)
-    const [isExpanded, setIsExpanded] = useState(false)
     const [formData, setFormData] = useState<CopilotFormData>({
         goal: 'full-time',
         timeline: 'immediately',
         purpose: 'remote-first',
-        background: { role: '', years: '', education: '', language: '' }
+        background: { role: '', years: 'Mid', education: 'Bachelor', language: '英语沟通' }
     })
     
     const inputRef = useRef<HTMLInputElement>(null)
@@ -51,14 +50,6 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([])
     const [jobsLoading, setJobsLoading] = useState(true)
     const [jobsError, setJobsError] = useState<string | null>(null)
-
-    // Handle Input Focus to Expand
-    const handleInputFocus = () => {
-        setIsExpanded(true)
-    }
-
-    // Click outside to collapse if empty (optional, but good UX)
-    // For now, we keep it simple: manual collapse or just stay expanded
 
     const handleGenerate = async () => {
         if (!isAuthenticated) {
@@ -235,7 +226,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     }
 
     return (
-        <div className="relative min-h-[900px] flex items-center justify-center overflow-hidden bg-slate-50">
+        <div className="relative min-h-[850px] flex items-center overflow-hidden bg-slate-50 pt-20 lg:pt-0">
             {/* Background - Bright & Future Feeling */}
             <div className="absolute inset-0 z-0">
                 <img 
@@ -244,302 +235,275 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     className={`w-full h-full object-cover object-[0%_20%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-30' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-slate-50/60 to-white"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-slate-50/50"></div>
                 <div className="absolute -top-40 right-[-10%] h-[520px] w-[520px] rounded-full bg-indigo-400/10 blur-[120px]"></div>
                 <div className="absolute top-10 left-[-10%] h-[420px] w-[420px] rounded-full bg-blue-400/10 blur-[110px]"></div>
                 <div className="absolute bottom-[-20%] left-[20%] h-[520px] w-[520px] rounded-full bg-purple-400/10 blur-[140px]"></div>
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.12] mix-blend-soft-light"></div>
             </div>
 
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-10">
-                <div className="flex flex-col items-center justify-center text-center">
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                     
-                    {/* Centered Hero Content */}
-                    <div className="max-w-4xl mx-auto mb-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-slate-200/70 text-slate-700 text-sm font-semibold mb-8 backdrop-blur-md shadow-sm">
+                    {/* Left Column: Content & Form */}
+                    <div className="max-w-2xl animate-in fade-in slide-in-from-bottom-6 duration-700">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-slate-200/70 text-slate-700 text-sm font-semibold mb-6 backdrop-blur-md shadow-sm">
                             <Sparkles className="w-4 h-4 text-indigo-500" />
                             <span className="text-slate-700">AI 远程求职 Copilot 2.0</span>
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-[1.1] tracking-tight">
-                            理想生活，<br/>
+                        <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6 leading-[1.1] tracking-tight">
+                            现代化求职助手，<br/>
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
-                                从远程工作开始
+                                您的远程工作 Copilot
                             </span>
                         </h1>
-                        <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal">
-                            不只是找工作。Haigoo Copilot 为您提供从简历评估、岗位匹配到面试策略的全流程 AI 辅助。
+                        <p className="text-lg text-slate-600 mb-10 leading-relaxed font-normal">
+                            全流程 AI 辅助，从简历优化到精准岗位匹配，陪您走完远程求职的每一步。
                         </p>
-                    </div>
 
-                    {/* Copilot Floating Widget (Expandable) */}
-                    <div className={`relative w-full max-w-2xl mx-auto group transition-all duration-500 ${isExpanded ? 'scale-100' : 'scale-[0.98]'}`}>
-                         
-                         {/* Main Glass Card */}
-                         <div className={`relative bg-white/85 backdrop-blur-xl border border-slate-200/70 rounded-3xl p-3 shadow-[0_40px_120px_rgba(15,23,42,0.18)] transition-all duration-500 overflow-hidden ${isExpanded ? 'bg-white/95 border-slate-200 ring-1 ring-indigo-500/10' : ''}`}>
-                             
-                             {/* Input Row */}
-                             <div className="flex flex-col md:flex-row gap-3">
-                                 {/* Input Area */}
-                                 <div className="flex-1 bg-white rounded-2xl px-5 py-4 flex items-center gap-4 border border-slate-200 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-100 transition-all shadow-sm">
-                                     <MessageSquare className={`w-6 h-6 shrink-0 transition-colors ${isExpanded ? 'text-indigo-500' : 'text-slate-400'}`} />
-                                     <input 
-                                        ref={inputRef}
-                                        type="text" 
-                                        placeholder="告诉 Copilot 您的当前职位 (例如: 产品经理)" 
-                                        className="w-full bg-transparent border-none text-slate-900 placeholder:text-slate-400 focus:ring-0 text-lg font-semibold"
-                                        value={formData.background.role}
-                                        onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
-                                        onFocus={handleInputFocus}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                                     />
-                                     {isExpanded && (
-                                         <button 
-                                            onClick={() => setIsExpanded(false)}
-                                            className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
-                                         >
-                                             <ChevronUp className="w-5 h-5" />
-                                         </button>
-                                     )}
-                                 </div>
-                                 
-                                 {/* Generate Button (Desktop) */}
-                                 <button 
+                        {/* Mad Libs Style Form */}
+                        <div className="bg-white/80 backdrop-blur-md border border-slate-200/70 rounded-3xl p-6 md:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] hover:shadow-[0_25px_70px_-12px_rgba(0,0,0,0.15)] transition-all duration-300">
+                            <div className="text-xl md:text-2xl leading-relaxed font-medium text-slate-700 space-y-4">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                                    <span>我正在寻找一份</span>
+                                    <div className="relative inline-block group">
+                                        <input
+                                            ref={inputRef}
+                                            type="text"
+                                            value={formData.background.role}
+                                            onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
+                                            placeholder="输入职位名称"
+                                            className="inline-block w-[180px] bg-indigo-50/50 border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50 transition-colors placeholder:text-indigo-300 placeholder:font-normal"
+                                        />
+                                        <span className="absolute -bottom-5 left-0 text-xs text-slate-400 opacity-0 group-focus-within:opacity-100 transition-opacity">例如：产品经理</span>
+                                    </div>
+                                    <span>工作，</span>
+                                </div>
+                                
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                                    <span>希望</span>
+                                    <div className="relative inline-block">
+                                        <select
+                                            value={formData.timeline}
+                                            onChange={(e) => setFormData({...formData, timeline: e.target.value as any})}
+                                            className="appearance-none cursor-pointer inline-block bg-indigo-50/50 border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50 transition-colors"
+                                        >
+                                            <option value="immediately">尽快</option>
+                                            <option value="1-3 months">1-3个月内</option>
+                                            <option value="3-6 months">3-6个月内</option>
+                                            <option value="flexible">时间灵活</option>
+                                        </select>
+                                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                                    </div>
+                                    <span>入职。</span>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                                    <span>我的经验水平是</span>
+                                    <div className="relative inline-block">
+                                        <select
+                                            value={formData.background.years}
+                                            onChange={(e) => setFormData({...formData, background: {...formData.background, years: e.target.value}})}
+                                            className="appearance-none cursor-pointer inline-block bg-indigo-50/50 border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50 transition-colors"
+                                        >
+                                            <option value="Junior">初级 (1-3年)</option>
+                                            <option value="Mid">中级 (3-5年)</option>
+                                            <option value="Senior">资深 (5-8年)</option>
+                                            <option value="Expert">专家 (8年以上)</option>
+                                        </select>
+                                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                                    </div>
+                                    <span>，</span>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                                    <span>这是我的</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => resumeInputRef.current?.click()}
+                                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-dashed transition-all ${
+                                            resumeFileName 
+                                            ? 'border-emerald-400 bg-emerald-50 text-emerald-700' 
+                                            : 'border-indigo-200 bg-indigo-50/50 text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50'
+                                        }`}
+                                    >
+                                        {resumeFileName ? (
+                                            <>
+                                                <CheckCircle2 className="w-4 h-4" />
+                                                <span className="font-bold truncate max-w-[150px]">{resumeFileName}</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload className="w-4 h-4" />
+                                                <span className="font-bold underline decoration-dotted underline-offset-4">上传简历 (PDF/DOCX)</span>
+                                            </>
+                                        )}
+                                    </button>
+                                    <input
+                                        ref={resumeInputRef}
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,.txt"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0]
+                                            if (file) handleResumeUpload(file)
+                                        }}
+                                    />
+                                    <span>。</span>
+                                </div>
+                            </div>
+
+                            <div className="mt-10">
+                                <button 
                                     onClick={handleGenerate}
                                     disabled={loading}
-                                    className="hidden md:flex px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-500/30 items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
-                                 >
+                                    className="w-full md:w-auto px-8 py-4 bg-[#1A365D] hover:bg-[#2A4a7F] text-white font-bold text-lg rounded-2xl transition-all shadow-xl shadow-indigo-900/10 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
+                                >
                                     {loading ? (
                                         <>
-                                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                           <span className="text-base">思考中...</span>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            <span>{loadingStep === 0 ? '正在分析简历...' : loadingStep === 1 ? '匹配岗位中...' : '生成计划中...'}</span>
                                         </>
                                     ) : (
                                         <>
-                                           <Sparkles className="w-5 h-5" />
-                                           生成方案
+                                            <Sparkles className="w-5 h-5" />
+                                            生成我的远程成功计划
                                         </>
                                     )}
-                                 </button>
-                             </div>
+                                </button>
+                                <p className="mt-4 text-xs text-slate-500 text-center md:text-left">
+                                    AI 驱动的简历评估与个性化岗位匹配引擎
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                             {/* Expanded Options Area */}
-                            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[520px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
-                                 <div className="px-2 pb-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                     
-                                     {/* Goal Selector */}
-                                     <div className="space-y-3">
-                                        <label className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                                            <Briefcase className="w-4 h-4 text-indigo-500" /> 求职目标
-                                         </label>
-                                         <div className="flex flex-wrap gap-2">
-                                             {[
-                                                 { id: 'full-time', label: '长期全职' },
-                                                 { id: 'part-time', label: '兼职副业' },
-                                                 { id: 'freelance', label: '自由接单' }
-                                             ].map(opt => (
-                                                 <button
-                                                     key={opt.id}
-                                                     onClick={() => setFormData({...formData, goal: opt.id as any})}
-                                                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all border ${
-                                                         formData.goal === opt.id 
-                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm' 
-                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-white hover:border-slate-300'
-                                                     }`}
-                                                 >
-                                                     {opt.label}
-                                                 </button>
-                                             ))}
-                                         </div>
-                                     </div>
+                    {/* Right Column: Glass Dashboard Visual */}
+                    <div className="hidden lg:block relative h-[600px] w-full perspective-[2000px]">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-full blur-[80px]"></div>
+                        
+                        {/* Main Floating Card */}
+                        <div className="absolute inset-0 bg-white/40 backdrop-blur-xl border border-white/60 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(50,50,93,0.15)] p-6 flex flex-col gap-6 rotate-y-[-12deg] rotate-x-[5deg] hover:rotate-y-[-5deg] hover:rotate-x-[2deg] transition-all duration-700 ease-out transform-style-3d">
+                            
+                            {/* Header */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-[#1A365D] flex items-center justify-center text-white font-bold text-xl">H</div>
+                                    <div>
+                                        <div className="text-sm font-bold text-slate-800">我的远程成功计划</div>
+                                        <div className="text-xs text-slate-500">85% 已完成</div>
+                                    </div>
+                                </div>
+                                <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full w-[85%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
+                                </div>
+                            </div>
 
-                                     <div className="space-y-3">
-                                        <label className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                                            <Target className="w-4 h-4 text-indigo-500" /> 求职目的
-                                         </label>
-                                         <select 
-                                             value={formData.purpose}
-                                             onChange={(e) => setFormData({...formData, purpose: e.target.value as any})}
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all text-sm appearance-none cursor-pointer hover:border-slate-300"
-                                         >
-                                            <option value="remote-first">优先远程</option>
-                                            <option value="income-up">提高收入</option>
-                                            <option value="flexibility">时间自由</option>
-                                            <option value="career-change">转型新方向</option>
-                                         </select>
-                                     </div>
-
-                                     {/* Experience Selector */}
-                                     <div className="space-y-3">
-                                        <label className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                                            <Clock className="w-4 h-4 text-indigo-500" /> 工作年限
-                                         </label>
-                                         <select 
-                                             value={formData.background.years}
-                                             onChange={(e) => setFormData({...formData, background: {...formData.background, years: e.target.value}})}
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all text-sm appearance-none cursor-pointer hover:border-slate-300"
-                                         >
-                                            <option value="">选择年限</option>
-                                            <option value="Junior">1-3 年</option>
-                                            <option value="Mid">3-5 年</option>
-                                            <option value="Senior">5-8 年</option>
-                                            <option value="Expert">8年 以上</option>
-                                         </select>
-                                     </div>
-
-                                     <div className="space-y-3">
-                                        <label className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                                            <CalendarClock className="w-4 h-4 text-indigo-500" /> 预期开始时间
-                                         </label>
-                                         <select 
-                                             value={formData.timeline}
-                                             onChange={(e) => setFormData({...formData, timeline: e.target.value as any})}
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all text-sm appearance-none cursor-pointer hover:border-slate-300"
-                                         >
-                                            <option value="immediately">马上开始</option>
-                                            <option value="1-3 months">1-3 个月内</option>
-                                            <option value="3-6 months">3-6 个月内</option>
-                                            <option value="flexible">时间灵活</option>
-                                         </select>
-                                     </div>
-
-                                     <div className="space-y-3">
-                                        <label className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                                            <GraduationCap className="w-4 h-4 text-indigo-500" /> 教育背景
-                                         </label>
-                                         <select 
-                                             value={formData.background.education}
-                                             onChange={(e) => setFormData({...formData, background: {...formData.background, education: e.target.value}})}
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all text-sm appearance-none cursor-pointer hover:border-slate-300"
-                                         >
-                                            <option value="">选择学历</option>
-                                            <option value="High School">高中/中专</option>
-                                            <option value="Associate">大专</option>
-                                            <option value="Bachelor">本科</option>
-                                            <option value="Master">硕士</option>
-                                            <option value="PhD">博士</option>
-                                         </select>
-                                     </div>
-
-                                     <div className="space-y-3">
-                                        <label className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                                            <Languages className="w-4 h-4 text-indigo-500" /> 语言水平
-                                         </label>
-                                         <select 
-                                             value={formData.background.language}
-                                             onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all text-sm appearance-none cursor-pointer hover:border-slate-300"
-                                         >
-                                            <option value="">选择语言水平</option>
-                                            <option value="中文为主">中文为主</option>
-                                            <option value="英语读写">英语读写</option>
-                                            <option value="英语沟通">英语沟通</option>
-                                            <option value="英语商务">英语商务</option>
-                                         </select>
-                                     </div>
-
-                                     <div className="space-y-3 md:col-span-2">
-                                        <label className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                                            <Upload className="w-4 h-4 text-indigo-500" /> 简历上传（非必填）
-                                         </label>
-                                         <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => resumeInputRef.current?.click()}
-                                                className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white hover:border-slate-300 hover:bg-slate-50 transition-all"
-                                                disabled={resumeUploading}
-                                            >
-                                                {resumeUploading ? '正在上传...' : resumeFileName ? '重新上传简历' : '上传简历'}
-                                            </button>
-                                            <input
-                                                ref={resumeInputRef}
-                                                type="file"
-                                                accept=".pdf,.doc,.docx,.txt"
-                                                className="hidden"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0]
-                                                    if (file) {
-                                                        handleResumeUpload(file)
-                                                    }
-                                                }}
-                                            />
-                                            <div className="text-xs text-slate-500">
-                                                {resumeFileName ? `${resumeFileName}${resumeId ? '（已存档）' : ''}` : '可在生成初版方案后继续补充简历优化'}
+                            {/* Top Row Grid */}
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Priorities Card */}
+                                <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50 space-y-3">
+                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">今日优先级</div>
+                                    <div className="space-y-2">
+                                        <div className="flex items-start gap-2">
+                                            <div className="mt-0.5 w-4 h-4 rounded bg-indigo-500 flex items-center justify-center text-white">
+                                                <CheckCircle2 className="w-3 h-3" />
                                             </div>
-                                         </div>
-                                     </div>
-                                 </div>
-                                 
-                                 {/* Mobile Generate Button */}
-                                 <button 
-                                    onClick={handleGenerate}
-                                    disabled={loading}
-                                    className="md:hidden w-full mt-4 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2"
-                                 >
-                                    {loading ? '思考中...' : '立即生成方案'}
-                                 </button>
-                             </div>
-                             
-                             {/* Quick Tags (Visible when collapsed) */}
-                             {!isExpanded && (
-                                 <div className="flex gap-2 mt-3 px-2 pb-1 overflow-x-auto no-scrollbar">
-                                    {['产品经理', '前端开发', 'UI设计', '增长运营'].map(tag => (
-                                         <button 
-                                            key={tag}
-                                            onClick={() => {
-                                                setFormData({...formData, background: {...formData.background, role: tag}})
-                                                setIsExpanded(true)
-                                            }}
-                                           className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-white text-xs text-slate-600 border border-slate-200 transition-colors whitespace-nowrap hover:border-slate-300"
-                                         >
-                                             {tag}
-                                         </button>
-                                     ))}
-                                 </div>
-                             )}
-                         </div>
+                                            <div className="text-xs font-medium text-slate-700 leading-snug">查看 "Product Manager at Linear"</div>
+                                        </div>
+                                        <div className="flex items-start gap-2 opacity-50">
+                                            <div className="mt-0.5 w-4 h-4 rounded border border-slate-300"></div>
+                                            <div className="text-xs font-medium text-slate-700 leading-snug">准备行为面试问题</div>
+                                        </div>
+                                        <div className="flex items-start gap-2 opacity-50">
+                                            <div className="mt-0.5 w-4 h-4 rounded border border-slate-300"></div>
+                                            <div className="text-xs font-medium text-slate-700 leading-snug">优化 LinkedIn 个人资料</div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                         {/* Case Demo Section (Under Input) */}
-                         <div className={`mt-8 transition-all duration-700 delay-100 ${isExpanded ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
-                            <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest mb-4 text-center">推荐岗位</p>
-                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4">
-                                 {jobsLoading && (
-                                     Array.from({ length: 3 }).map((_, i) => (
-                                         <div key={`loading-${i}`} className="bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm animate-pulse">
-                                            <div className="w-10 h-10 rounded-full bg-slate-100"></div>
-                                            <div className="flex-1 space-y-2">
-                                                <div className="h-3 bg-slate-100 rounded w-3/4"></div>
-                                                <div className="h-3 bg-slate-100 rounded w-1/2"></div>
+                                {/* Stats Card */}
+                                <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50 space-y-3">
+                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">岗位匹配进度</div>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
+                                                <span>简历评分</span>
+                                                <span>92/100</span>
                                             </div>
-                                         </div>
-                                     ))
-                                 )}
-                                 {!jobsLoading && jobsError && (
-                                     <div className="md:col-span-3 text-center text-sm text-slate-500">
-                                         暂时无法获取推荐岗位
-                                     </div>
-                                 )}
-                                 {!jobsLoading && !jobsError && recommendedJobs.length === 0 && (
-                                     <div className="md:col-span-3 text-center text-sm text-slate-500">
-                                         暂无推荐岗位
-                                     </div>
-                                 )}
-                                 {!jobsLoading && !jobsError && recommendedJobs.map((job, i) => (
-                                    <div key={job.id || `${job.company}-${job.title}-${i}`} className="bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all cursor-pointer group" onClick={() => navigate(`/jobs/${job.id}`)}>
-                                        <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:scale-105 transition-transform">
-                                            {i === 0 ? <Award className="w-5 h-5 text-amber-500" /> : i === 1 ? <Star className="w-5 h-5 text-indigo-500" /> : <TrendingUp className="w-5 h-5 text-emerald-500" />}
-                                         </div>
-                                         <div className="text-left">
-                                            <div className="text-sm font-bold text-slate-800 leading-tight">{job.title || '职位未命名'}</div>
-                                            <div className="text-xs text-slate-500 flex items-center gap-2">
-                                                 <span>{job.company || '公司未命名'}</span>
-                                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                                <span className="text-indigo-600">{formatSalary(job.salary) || job.location || '薪资面议'}</span>
-                                             </div>
-                                         </div>
-                                     </div>
-                                 ))}
-                             </div>
-                         </div>
+                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-full w-[92%] bg-emerald-500 rounded-full"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
+                                                <span>技能匹配</span>
+                                                <span>88%</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-full w-[88%] bg-indigo-500 rounded-full"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
+                                                <span>文化契合</span>
+                                                <span>90%</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-full w-[90%] bg-purple-500 rounded-full"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Recommended Roles Section */}
+                            <div className="bg-white/60 rounded-2xl p-4 shadow-sm border border-white/50 flex-1 overflow-hidden flex flex-col">
+                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">推荐岗位</div>
+                                <div className="space-y-3 flex-1 overflow-hidden relative">
+                                    {jobsLoading ? (
+                                        // Loading Skeletons
+                                        [1, 2, 3].map(i => (
+                                            <div key={i} className="flex items-center gap-3 p-2 rounded-xl bg-white/50 border border-white/60">
+                                                <div className="w-8 h-8 rounded-lg bg-slate-100 animate-pulse"></div>
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="h-3 w-2/3 bg-slate-100 rounded animate-pulse"></div>
+                                                    <div className="h-2 w-1/2 bg-slate-100 rounded animate-pulse"></div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : recommendedJobs.length > 0 ? (
+                                        // Real Jobs
+                                        recommendedJobs.map((job) => (
+                                            <div key={job.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/80 border border-white/60 shadow-sm hover:scale-[1.02] transition-transform cursor-default">
+                                                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                                    <Briefcase className="w-4 h-4" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-xs font-bold text-slate-800 truncate">{job.title}</div>
+                                                    <div className="text-[10px] text-slate-500 truncate">{job.company || 'Unknown'} · {formatSalary(job.salary)}</div>
+                                                </div>
+                                                <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                                    95%
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        // Fallback if no jobs
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-400 text-xs gap-2">
+                                            <Search className="w-6 h-6 opacity-50" />
+                                            <span>暂无推荐岗位</span>
+                                        </div>
+                                    )}
+                                    {/* Fade at bottom */}
+                                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white/60 to-transparent pointer-events-none"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Decorative Elements */}
+                        <div className="absolute -right-10 top-20 w-24 h-24 bg-purple-400 rounded-2xl rotate-12 blur-2xl opacity-40 animate-pulse"></div>
+                        <div className="absolute -left-5 bottom-10 w-32 h-32 bg-indigo-400 rounded-full blur-3xl opacity-30 animate-pulse delay-700"></div>
                     </div>
                 </div>
             </div>
