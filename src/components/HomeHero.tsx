@@ -165,164 +165,133 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     }
 
     return (
-        <div className="relative min-h-[900px] flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-32 pb-20">
+        <div className="relative min-h-[900px] flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-40 pb-20">
             {/* Background - Soft Gradient & Image */}
-            <div className="absolute inset-0 z-0 bg-gradient-to-b from-blue-50/80 via-white to-slate-50">
+            <div className="absolute inset-0 z-0">
                 <img 
                     src="/background.webp" 
                     alt="Background" 
-                    className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${imageLoaded ? 'opacity-50' : 'opacity-0'}`}
+                    className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${imageLoaded ? 'opacity-30' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/60 to-slate-50"></div>
-                
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100/30 via-transparent to-transparent"></div>
-                <div className="absolute -top-40 right-[-10%] h-[600px] w-[600px] rounded-full bg-purple-200/20 blur-[100px]"></div>
-                <div className="absolute top-20 left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-200/20 blur-[100px]"></div>
+                <div className="absolute inset-0 bg-white/40"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-slate-50"></div>
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
                 {/* Centered Title Section */}
-                <div className="text-center mb-12 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
-                    <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-4 leading-tight tracking-tight font-sans">
+                <div className="text-center mb-16 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
+                    <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-tight tracking-tight font-sans">
                         理想生活，从远程工作开始
                     </h1>
-                    <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal mb-8">
-                        全球精选｜人工逐条审核｜仅收录国人可申岗位
+                    <p className="text-xl md:text-2xl text-slate-500 max-w-2xl mx-auto leading-relaxed font-medium tracking-wide">
+                        全球精选 <span className="mx-2 text-slate-300">|</span> 人工逐条审核 <span className="mx-2 text-slate-300">|</span> 仅收录国人可申岗位
                     </p>
                 </div>
 
                 {/* Main Glass Panel */}
-                <div className="w-full max-w-6xl bg-white/40 backdrop-blur-2xl border border-white/60 rounded-[32px] shadow-[0_40px_100px_-20px_rgba(50,50,93,0.1)] p-2 md:p-3 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100">
+                <div className="w-full max-w-6xl bg-white/60 backdrop-blur-xl border border-white/60 rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] p-2 md:p-3 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-2">
                         {/* Left Side: Input Form */}
-                        <div className="lg:col-span-5 bg-white/80 rounded-[24px] p-6 md:p-8 flex flex-col justify-center border border-white/50 shadow-sm relative overflow-hidden">
-                            <div className="flex flex-col mb-6">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden shadow-lg shadow-indigo-500/30">
+                        <div className="lg:col-span-5 bg-white/80 rounded-[24px] p-8 md:p-10 flex flex-col justify-center border border-white/50 shadow-sm relative overflow-hidden">
+                            <div className="flex flex-col mb-8">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm border border-slate-100">
                                         <img src="/copilot.webp" alt="Copilot" className="w-full h-full object-cover scale-110" />
                                     </div>
-                                    <h2 className="text-xl font-bold text-slate-900">Haigoo远程工作助手</h2>
+                                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Haigoo 远程工作助手</h2>
                                 </div>
-                                <p className="text-sm text-slate-500 leading-relaxed">Haigoo 为您提供全流程辅助，从简历优化到远程工作的每一步</p>
+                                <p className="text-base text-slate-500 leading-relaxed font-medium">Haigoo 为您提供全流程辅助，从简历优化到远程工作的每一步</p>
                             </div>
 
-                            <div className="space-y-5">
-                                {/* Step 1: Goal */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">1</div>
-                                        <label className="text-sm font-bold text-slate-700">您的目标是什么？</label>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <button 
-                                            onClick={() => setFormData({...formData, goal: 'full-time'})}
-                                            className={`px-2 py-2 rounded-lg text-sm font-medium border transition-all ${formData.goal === 'full-time' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'}`}
+                            <div className="space-y-8">
+                                <div className="text-lg leading-loose text-slate-700 font-medium">
+                                    我希望寻找一份
+                                    <span className="relative inline-block mx-1.5 align-middle">
+                                        <select
+                                            value={formData.goal}
+                                            onChange={(e) => setFormData({...formData, goal: e.target.value as any})}
+                                            className="appearance-none bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold py-1 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer hover:bg-indigo-100 transition-colors"
                                         >
-                                            全职远程
-                                        </button>
-                                        <button 
-                                            onClick={() => setFormData({...formData, goal: 'part-time'})}
-                                            className={`px-2 py-2 rounded-lg text-sm font-medium border transition-all ${formData.goal === 'part-time' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'}`}
-                                        >
-                                            兼职/副业
-                                        </button>
-                                        <button 
-                                            onClick={() => setFormData({...formData, goal: 'freelance'})}
-                                            className={`px-2 py-2 rounded-lg text-sm font-medium border transition-all ${formData.goal === 'freelance' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'}`}
-                                        >
-                                            自由职业
-                                        </button>
-                                        <button 
-                                            onClick={() => setFormData({...formData, goal: 'internship'})}
-                                            className={`px-2 py-2 rounded-lg text-sm font-medium border transition-all ${formData.goal === 'internship' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'}`}
-                                        >
-                                            实习/入门
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Step 2: Timeline */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">2</div>
-                                        <label className="text-sm font-bold text-slate-700">预期准备时间</label>
-                                    </div>
-                                    <div className="relative">
+                                            <option value="full-time">全职远程</option>
+                                            <option value="part-time">兼职/副业</option>
+                                            <option value="freelance">自由职业</option>
+                                            <option value="internship">实习/入门</option>
+                                        </select>
+                                        <ChevronUp className="w-4 h-4 text-indigo-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none rotate-180" />
+                                    </span>
+                                    工作，
+                                    <br className="hidden md:block" />
+                                    预期
+                                    <span className="relative inline-block mx-1.5 align-middle">
                                         <select
                                             value={formData.timeline}
                                             onChange={(e) => setFormData({...formData, timeline: e.target.value as any})}
-                                            className="w-full appearance-none bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all text-sm"
+                                            className="appearance-none bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold py-1 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer hover:bg-indigo-100 transition-colors"
                                         >
                                             <option value="immediately">尽快</option>
-                                            <option value="1-3 months">1-3个月</option>
-                                            <option value="3-6 months">3-6个月</option>
-                                            <option value="flexible">随时 (Flexible)</option>
+                                            <option value="1-3 months">1-3个月内</option>
+                                            <option value="3-6 months">3-6个月内</option>
+                                            <option value="flexible">随时</option>
                                         </select>
-                                        <Calendar className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                    </div>
+                                        <ChevronUp className="w-4 h-4 text-indigo-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none rotate-180" />
+                                    </span>
+                                    入职。
+                                    <br />
+                                    我的专业领域是
+                                    <span className="relative inline-block mx-1.5 align-middle w-32 md:w-40">
+                                        <input
+                                            ref={inputRef}
+                                            type="text"
+                                            value={formData.background.role}
+                                            onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
+                                            placeholder="如: 产品经理"
+                                            className="w-full bg-white border-b-2 border-slate-200 text-slate-900 font-bold py-1 px-1 focus:outline-none focus:border-indigo-500 transition-colors placeholder:font-normal placeholder:text-slate-400 text-center"
+                                        />
+                                    </span>
+                                    ，
+                                    <br className="hidden md:block" />
+                                    具备
+                                    <span className="relative inline-block mx-1.5 align-middle">
+                                        <select
+                                            value={formData.background.language}
+                                            onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
+                                            className="appearance-none bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold py-1 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer hover:bg-indigo-100 transition-colors"
+                                        >
+                                            <option value="English">英语</option>
+                                            <option value="Japanese">日语</option>
+                                            <option value="Chinese">中文</option>
+                                            <option value="Other">其他语言</option>
+                                        </select>
+                                        <ChevronUp className="w-4 h-4 text-indigo-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none rotate-180" />
+                                    </span>
+                                    工作能力。
                                 </div>
 
-                                {/* Step 3: Background */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">3</div>
-                                        <label className="text-sm font-bold text-slate-700">您的背景与专长</label>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="relative">
-                                            <input
-                                                ref={inputRef}
-                                                type="text"
-                                                value={formData.background.role}
-                                                onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
-                                                placeholder="职业/专业领域"
-                                                className="w-full bg-white border border-slate-200 text-slate-700 font-medium px-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all text-sm placeholder:font-normal"
-                                            />
-                                        </div>
-                                        <div className="relative">
-                                            <select
-                                                value={formData.background.language}
-                                                onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
-                                                className="w-full appearance-none bg-white border border-slate-200 text-slate-700 font-medium px-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all text-sm"
-                                            >
-                                                <option value="English">英语 (English)</option>
-                                                <option value="Japanese">日语 (Japanese)</option>
-                                                <option value="Chinese">中文 (Chinese)</option>
-                                                <option value="Other">其他 (Other)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Step 4: Resume */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">4</div>
-                                        <label className="text-sm font-bold text-slate-700">上传简历，AI 即刻分析</label>
-                                    </div>
+                                <div className="pt-2">
                                     <button
                                         type="button"
                                         onClick={() => resumeInputRef.current?.click()}
-                                        className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed transition-all text-sm font-medium ${
+                                        className={`w-full flex items-center justify-between px-5 py-4 rounded-xl border transition-all group ${
                                             resumeFileName 
-                                            ? 'border-emerald-400 bg-emerald-50 text-emerald-700' 
-                                            : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/30 hover:text-indigo-600'
+                                            ? 'border-emerald-200 bg-emerald-50/50 text-emerald-700' 
+                                            : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md'
                                         }`}
                                     >
-                                        {resumeFileName ? (
-                                            <>
-                                                <CheckCircle2 className="w-4 h-4" />
-                                                <span className="truncate">{resumeFileName}</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Upload className="w-4 h-4" />
-                                                <div className="flex flex-col items-start text-left">
-                                                    <span>上传简历 (PDF/Word)</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${resumeFileName ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-50 group-hover:text-indigo-600'} transition-colors`}>
+                                                {resumeFileName ? <CheckCircle2 className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
+                                            </div>
+                                            <div className="text-left">
+                                                <div className={`font-bold text-sm ${resumeFileName ? 'text-emerald-800' : 'text-slate-700'}`}>
+                                                    {resumeFileName ? '简历已上传' : '上传我的简历'}
                                                 </div>
-                                            </>
-                                        )}
+                                                <div className={`text-xs ${resumeFileName ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                    {resumeFileName ? resumeFileName : '支持 PDF / Word 格式，AI 自动分析匹配'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {!resumeFileName && <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />}
                                     </button>
                                     <input
                                         ref={resumeInputRef}
@@ -339,16 +308,16 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                 <button 
                                     onClick={handleGenerate}
                                     disabled={loading}
-                                    className="w-full mt-2 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
+                                    className="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold text-lg rounded-xl transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
                                 >
                                     {loading ? (
                                         <>
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            <span>正在生成...</span>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            <span>正在分析您的职业画像...</span>
                                         </>
                                     ) : (
                                         <>
-                                            <Sparkles className="w-4 h-4" />
+                                            <Sparkles className="w-5 h-5 text-indigo-400" />
                                             生成我的远程求职方案
                                         </>
                                     )}
@@ -356,61 +325,68 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             </div>
                         </div>
 
-                        {/* Right Side: Cleaner Roadmap Demo */}
-                        <div className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center">
-                            <div className="mb-8 flex items-center justify-between">
-                                <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">实时预览 / Demo</div>
-                                <div className="flex gap-1">
-                                    <div className="w-2 h-2 rounded-full bg-slate-200"></div>
-                                    <div className="w-2 h-2 rounded-full bg-slate-200"></div>
-                                    <div className="w-2 h-2 rounded-full bg-slate-200"></div>
-                                </div>
-                            </div>
-                            
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white shadow-sm">
-                                <h3 className="text-lg font-bold text-slate-900 mb-6">您的专属远程职业蓝图 (AI 预览)</h3>
-                                
-                                <div className="space-y-8 relative">
-                                    <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-slate-100">
+                        {/* Right Side: Realistic Demo */}
+                        <div className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center bg-slate-50/50">
+                            <div className="bg-white rounded-2xl p-8 shadow-[0_2px_40px_-10px_rgba(0,0,0,0.06)] border border-slate-100/50 relative overflow-hidden">
+                                {/* Decorative elements */}
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-50/50 to-transparent rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
+
+                                <div className="flex items-center justify-between mb-8">
+                                    <div>
+                                        <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">AI Copilot Demo</div>
+                                        <h3 className="text-xl font-bold text-slate-900">张伟的远程产品经理晋升路线</h3>
                                     </div>
+                                    <div className="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100 flex items-center gap-1.5">
+                                        <span className="relative flex h-2 w-2">
+                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                        </span>
+                                        匹配度 92%
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-6 relative">
+                                    <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-100"></div>
 
                                     {/* Step 1 */}
-                                    <div className="relative pl-10">
-                                        <div className="absolute left-0 top-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm border-4 border-white shadow-sm z-10">1</div>
-                                        <h4 className="font-bold text-slate-800 text-sm mb-2">第一周：产品经理简历深度优化 (针对欧美/亚太远程岗)</h4>
-                                        <div className="bg-slate-50 rounded-lg p-3 space-y-2 border border-slate-100">
-                                            <div className="flex items-center gap-2 text-xs text-slate-600">
-                                                <Sparkles className="w-3 h-3 text-indigo-500" />
-                                                <span>AI 分析亮点与提升建议</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs text-slate-600">
-                                                <FileText className="w-3 h-3 text-indigo-500" />
-                                                <span>远程岗位与关键词匹配</span>
+                                    <div className="relative pl-12 group">
+                                        <div className="absolute left-0 top-1 w-10 h-10 rounded-full bg-white text-indigo-600 flex items-center justify-center font-bold text-sm border-2 border-indigo-50 shadow-sm z-10 group-hover:border-indigo-500 transition-colors">1</div>
+                                        <h4 className="font-bold text-slate-800 text-base mb-1">简历竞争力诊断与优化</h4>
+                                        <p className="text-sm text-slate-500 mb-3">检测到您的简历缺少 "SaaS Metrics" 相关数据支撑，建议补充 ARR/Churn Rate 等量化指标。</p>
+                                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex gap-3">
+                                            <div className="h-full w-1 bg-indigo-400 rounded-full"></div>
+                                            <div className="space-y-1">
+                                                <div className="text-xs font-bold text-slate-700">优化建议：</div>
+                                                <div className="text-xs text-slate-500">"负责产品迭代" → "主导核心功能重构，将用户留存率提升 15%"</div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Step 2 */}
-                                    <div className="relative pl-10">
-                                        <div className="absolute left-0 top-0 w-8 h-8 rounded-full bg-indigo-50 text-indigo-400 flex items-center justify-center font-bold text-sm border-4 border-white shadow-sm z-10">2</div>
-                                        <h4 className="font-bold text-slate-800 text-sm mb-2">第二周：远程PM面试模拟 & 英语口语特训</h4>
-                                        <div className="bg-slate-50 rounded-lg p-3 space-y-2 border border-slate-100">
-                                            <div className="flex items-center gap-2 text-xs text-slate-600">
-                                                <User className="w-3 h-3 text-slate-400" />
-                                                <span>模拟面试与话术指导</span>
+                                    <div className="relative pl-12 group">
+                                        <div className="absolute left-0 top-1 w-10 h-10 rounded-full bg-white text-slate-400 flex items-center justify-center font-bold text-sm border-2 border-slate-100 shadow-sm z-10 group-hover:border-indigo-500 group-hover:text-indigo-600 transition-colors">2</div>
+                                        <h4 className="font-bold text-slate-800 text-base mb-1">目标岗位精准推送</h4>
+                                        <p className="text-sm text-slate-500 mb-3">基于您的 3 年电商经验，为您筛选出 5 家正在招聘远程 PM 的出海/外企。</p>
+                                        <div className="flex gap-2 overflow-hidden">
+                                            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 shadow-sm flex items-center gap-1.5">
+                                                <img src="https://logo.clearbit.com/shopify.com" className="w-3 h-3 rounded-full opacity-70" onError={(e) => e.currentTarget.style.display='none'} />
+                                                Shopify
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs text-slate-600">
-                                                <Briefcase className="w-3 h-3 text-slate-400" />
-                                                <span>薪资谈判策略建议</span>
+                                            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 shadow-sm flex items-center gap-1.5">
+                                                <img src="https://logo.clearbit.com/deel.com" className="w-3 h-3 rounded-full opacity-70" onError={(e) => e.currentTarget.style.display='none'} />
+                                                Deel
+                                            </div>
+                                            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 shadow-sm">
+                                                +3 More
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Step 3 */}
-                                    <div className="relative pl-10 opacity-60">
-                                        <div className="absolute left-0 top-0 w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-sm border-4 border-white z-10">3</div>
-                                        <h4 className="font-bold text-slate-800 text-sm mb-2">第三周：精准投递 (SaaS/Web3/AI 领域)</h4>
-                                        <div className="text-xs text-slate-500">为您推送全球优质远程机会...</div>
+                                    <div className="relative pl-12 opacity-70 group">
+                                        <div className="absolute left-0 top-1 w-10 h-10 rounded-full bg-white text-slate-300 flex items-center justify-center font-bold text-sm border-2 border-slate-100 shadow-sm z-10 group-hover:border-indigo-200 transition-colors">3</div>
+                                        <h4 className="font-bold text-slate-800 text-base mb-1">面试全真模拟 (英语/中文)</h4>
+                                        <p className="text-sm text-slate-500">针对 "Behavioral Question" 进行 1v1 模拟，提供 STAR 法则回答范例。</p>
                                     </div>
                                 </div>
                             </div>

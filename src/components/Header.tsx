@@ -173,29 +173,28 @@ export default function Header() {
 
   return (
     <header
-      className="absolute top-4 left-0 right-0 z-50 transition-all duration-300 pointer-events-none px-4 md:px-6 lg:px-8"
+      className="absolute top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none"
       role="banner"
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-8 pointer-events-auto transition-all duration-300 bg-white/80 backdrop-blur-md rounded-3xl shadow-lg border border-white/60">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto transition-all duration-300 bg-white/50 backdrop-blur-md border-b border-white/40">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center group">
             {/* Logo Image with Optical Adjustment */}
             <Link
               to="/"
-              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-3"
+              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-2"
               aria-label="Haigoo 首页"
             >
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
-                className="h-14 md:h-16 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
-                style={{ transform: 'translateX(-4px)' }} 
+                className="h-8 md:h-10 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
               />
 
               {/* Brand Name */}
-              <span className="font-semibold text-base tracking-wide leading-none text-[#1A365D]">
-                海狗远程俱乐部
+              <span className="font-bold text-lg tracking-tight text-slate-900">
+                Haigoo Remote
               </span>
             </Link>
 
