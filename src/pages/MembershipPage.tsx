@@ -228,10 +228,18 @@ const MembershipPage: React.FC = () => {
       <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
          {/* Hero Section */}
          <div className="relative overflow-hidden pt-32 pb-48 px-4 sm:px-6 lg:px-8">
-            {/* Background Effects */}
+            {/* Background Effects - Simplified for better control */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-               <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-purple-200/30 rounded-full blur-[100px] mix-blend-multiply opacity-60"></div>
-               <div className="absolute top-[10%] left-[-10%] w-[600px] h-[600px] bg-blue-200/30 rounded-full blur-[100px] mix-blend-multiply opacity-60"></div>
+               {/* Background Image - Using pic2.webp as requested (Visual Draft 2) */}
+               <img 
+                  src="/src/pic2.webp" 
+                  alt="Membership Hero Background" 
+                  className="absolute inset-0 w-full h-full object-cover object-[center_20%] opacity-100"
+               />
+               {/* Gradient Overlay for text readability and premium feel */}
+               <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/70 to-[#F8F9FC]"></div>
+               
+               {/* Subtle Noise Texture */}
                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
             </div>
 
