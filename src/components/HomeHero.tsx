@@ -1,10 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
-import { Sparkles, Briefcase, Clock, MessageSquare, ChevronUp, Star, Award, TrendingUp, Target, CalendarClock, GraduationCap, Languages, Upload, CheckCircle2, ArrowRight, Search } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Sparkles, ChevronUp, Upload, CheckCircle2, ArrowRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
-import { processedJobsService } from '../services/processed-jobs-service'
-import type { Job } from '../types'
 
 interface HomeHeroProps {
     stats?: {
@@ -27,6 +25,7 @@ interface CopilotFormData {
 }
 
 export default function HomeHero({ stats }: HomeHeroProps) {
+    // console.log(stats) // stats is available but currently unused in this design
     const navigate = useNavigate()
     const { isAuthenticated, user } = useAuth()
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
@@ -47,9 +46,6 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     const [resumeFileName, setResumeFileName] = useState<string | null>(null)
     const [resumeUploading, setResumeUploading] = useState(false)
     const [resumeId, setResumeId] = useState<string | null>(null)
-    const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([])
-    const [jobsLoading, setJobsLoading] = useState(true)
-    const [jobsError, setJobsError] = useState<string | null>(null)
 
     const handleGenerate = async () => {
         if (!isAuthenticated) {
@@ -166,68 +162,8 @@ export default function HomeHero({ stats }: HomeHeroProps) {
         }
     }
 
-    useEffect(() => {
-        let isMounted = true
-
-        const loadRecommendedJobs = async () => {
-            setJobsLoading(true)
-            setJobsError(null)
-            try {
-                const featured = await processedJobsService.getProcessedJobs(1, 3, { isFeatured: true })
-                const jobs = featured?.jobs?.length ? featured.jobs : (await processedJobsService.getProcessedJobs(1, 3)).jobs
-                if (isMounted) {
-                    setRecommendedJobs((jobs || []).slice(0, 3))
-                }
-            } catch (error: any) {
-                if (isMounted) {
-                    setJobsError(error?.message || '推荐岗位加载失败')
-                    showError('推荐岗位获取失败', error?.message)
-                }
-            } finally {
-                if (isMounted) {
-                    setJobsLoading(false)
-                }
-            }
-        }
-
-        loadRecommendedJobs()
-        return () => {
-            isMounted = false
-        }
-    }, [showError])
-
-    const formatSalary = (salary: Job['salary']) => {
-        if (!salary) return '薪资面议'
-        if (typeof salary === 'string') {
-            if (salary === 'null' || salary === 'Open' || salary === 'Competitive' || salary === 'Unspecified' || salary === '0' || salary === '0-0') return '薪资面议'
-            if (salary.trim().startsWith('{')) {
-                try {
-                    const parsed = JSON.parse(salary)
-                    if (parsed && typeof parsed === 'object') {
-                        return formatSalary(parsed)
-                    }
-                } catch (e) {
-                    return salary
-                }
-            }
-            return salary
-        }
-        if (salary.min === 0 && salary.max === 0) return '薪资面议'
-        const formatAmount = (amount: number) => {
-            if (amount >= 10000) {
-                return `${(amount / 10000).toFixed(1)}万`
-            }
-            return amount.toLocaleString()
-        }
-        const currencySymbol = salary.currency === 'CNY' ? '¥' : salary.currency === 'USD' ? '$' : '€'
-        if (salary.min === salary.max) {
-            return `${currencySymbol}${formatAmount(salary.min)}`
-        }
-        return `${currencySymbol}${formatAmount(salary.min)}-${formatAmount(salary.max)}`
-    }
-
     return (
-        <div className="relative min-h-[900px] flex items-center justify-center overflow-hidden bg-slate-50">
+        <div className="relative min-h-[900px] flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-20 pb-20">
             {/* Background - Bright & Future Feeling */}
             <div className="absolute inset-0 z-0">
                 <img 
@@ -243,147 +179,124 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.12] mix-blend-soft-light"></div>
             </div>
 
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-80px)] min-h-[700px] flex items-center pt-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center w-full">
-                    
-                    {/* Left Column: Content & Form */}
-                    <div className="max-w-xl animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        <h1 className="text-5xl lg:text-7xl font-bold text-slate-900 mb-6 leading-[1.05] tracking-tight">
-                            理想生活，<br/>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 pb-2">
-                                从远程工作开始
-                            </span>
-                        </h1>
-                        <p className="text-lg text-slate-600 max-w-xl leading-relaxed font-normal mb-8">
-                            不只是找工作。Haigoo Copilot 为您提供从简历评估、岗位匹配到面试策略的全流程 AI 辅助。
-                        </p>
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+                {/* Centered Title Section */}
+                <div className="text-center mb-16 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
+                    <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-[1.1] tracking-tight font-sans">
+                        理想生活，从构建您的<br/>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-800 to-slate-600">
+                            远程职业生涯
+                        </span>
+                        开始
+                    </h1>
+                    <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal">
+                        不仅仅是求职，Haigoo Copilot 为您提供全流程 AI 辅助，从简历优化到职业发展的每一步。
+                    </p>
+                </div>
 
-                        {/* Mad Libs Style Form */}
-                        <div className="bg-white/80 backdrop-blur-md border border-slate-200/70 rounded-2xl p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] hover:shadow-[0_25px_70px_-12px_rgba(0,0,0,0.15)] transition-all duration-300">
-                            <div className="text-lg leading-relaxed font-medium text-slate-700 space-y-3">
+                {/* Main Glass Panel */}
+                <div className="w-full max-w-6xl bg-white/40 backdrop-blur-2xl border border-white/60 rounded-[32px] shadow-[0_40px_100px_-20px_rgba(50,50,93,0.1)] p-2 md:p-3 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-2">
+                        {/* Left Side: Input Form */}
+                        <div className="lg:col-span-5 bg-white/60 rounded-[24px] p-6 md:p-8 flex flex-col justify-center border border-white/50 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                            
+                            <div className="flex items-center gap-2 mb-8 relative">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                                    <Sparkles className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-slate-900 leading-tight">Haigoo Copilot</h2>
+                                    <p className="text-xs text-slate-500 font-medium">AI 驱动的职业助手</p>
+                                </div>
+                            </div>
+
+                            {/* Input Form Content */}
+                            <div className="text-base leading-relaxed font-medium text-slate-700 space-y-4 relative">
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-                      <span>我拥有</span>
-                      <div className="relative inline-block">
-                        <select
-                          value={formData.background.education}
-                          onChange={(e) => setFormData({...formData, background: {...formData.background, education: e.target.value}})}
-                          className="appearance-none cursor-pointer inline-block bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-base"
-                        >
-                          <option value="Bachelor">本科学历</option>
-                          <option value="Master">硕士学历</option>
-                          <option value="PhD">博士学历</option>
-                          <option value="Associate">大专学历</option>
-                          <option value="Other">其他学历</option>
-                        </select>
-                        <ChevronUp className="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
-                      </div>
-                      <span>和</span>
-                      <div className="relative inline-block">
-                        <select
-                          value={formData.background.language}
-                          onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
-                          className="appearance-none cursor-pointer inline-block bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-base"
-                        >
-                          <option value="Native">母语水平</option>
-                          <option value="Fluent">流利沟通</option>
-                          <option value="Intermediate">日常交流</option>
-                          <option value="Basic">基础读写</option>
-                        </select>
-                        <ChevronUp className="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
-                      </div>
-                      <span>英语能力。</span>
-                    </div>
+                                    <span>我拥有</span>
+                                    <div className="relative inline-block">
+                                        <select
+                                            value={formData.background.education}
+                                            onChange={(e) => setFormData({...formData, background: {...formData.background, education: e.target.value}})}
+                                            className="appearance-none cursor-pointer inline-block bg-white border border-slate-200 hover:border-indigo-300 text-indigo-700 font-bold px-3 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-sm shadow-sm"
+                                        >
+                                            <option value="Bachelor">本科学历</option>
+                                            <option value="Master">硕士学历</option>
+                                            <option value="PhD">博士学历</option>
+                                            <option value="Associate">大专学历</option>
+                                            <option value="Other">其他学历</option>
+                                        </select>
+                                        <ChevronUp className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                                    </div>
+                                    <span>和</span>
+                                    <div className="relative inline-block">
+                                        <select
+                                            value={formData.background.language}
+                                            onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
+                                            className="appearance-none cursor-pointer inline-block bg-white border border-slate-200 hover:border-indigo-300 text-indigo-700 font-bold px-3 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-sm shadow-sm"
+                                        >
+                                            <option value="Native">母语水平</option>
+                                            <option value="Fluent">流利沟通</option>
+                                            <option value="Intermediate">日常交流</option>
+                                            <option value="Basic">基础读写</option>
+                                        </select>
+                                        <ChevronUp className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                                    </div>
+                                    <span>英语能力。</span>
+                                </div>
 
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-                      <span>希望能通过远程工作实现</span>
-                      <div className="relative inline-block">
-                        <select
-                          value={formData.purpose}
-                          onChange={(e) => setFormData({...formData, purpose: e.target.value as any})}
-                          className="appearance-none cursor-pointer inline-block bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-base"
-                        >
-                          <option value="remote-first">远程优先生活</option>
-                          <option value="income-up">收入提升</option>
-                          <option value="career-change">职业转型</option>
-                          <option value="flexibility">时间自由</option>
-                          <option value="global-exposure">全球化视野</option>
-                        </select>
-                        <ChevronUp className="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
-                      </div>
-                      <span>。</span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-                      <span>我正在寻找一份</span>
-                                    <div className="relative inline-block group">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+                                    <span>寻找一份</span>
+                                    <div className="relative inline-block group flex-1 min-w-[140px]">
                                         <input
                                             ref={inputRef}
                                             type="text"
                                             value={formData.background.role}
                                             onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
-                                            placeholder="输入职位名称"
-                                            className="inline-block w-[160px] bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-indigo-300 placeholder:font-normal rounded-lg text-base"
+                                            placeholder="输入职位 (e.g. Product Manager)"
+                                            className="inline-block w-full bg-white border border-slate-200 hover:border-indigo-300 text-indigo-700 font-bold px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 placeholder:font-normal rounded-lg text-sm shadow-sm"
                                         />
                                     </div>
-                                    <span>工作，</span>
                                 </div>
                                 
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-                                    <span>希望</span>
-                                    <div className="relative inline-block">
-                                        <select
-                                            value={formData.timeline}
-                                            onChange={(e) => setFormData({...formData, timeline: e.target.value as any})}
-                                            className="appearance-none cursor-pointer inline-block bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-base"
-                                        >
-                                            <option value="immediately">尽快</option>
-                                            <option value="1-3 months">1-3个月内</option>
-                                            <option value="3-6 months">3-6个月内</option>
-                                            <option value="flexible">时间灵活</option>
-                                        </select>
-                                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
-                                    </div>
-                                    <span>入职。</span>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
-                                    <span>我的经验水平是</span>
+                                    <span>经验水平</span>
                                     <div className="relative inline-block">
                                         <select
                                             value={formData.background.years}
                                             onChange={(e) => setFormData({...formData, background: {...formData.background, years: e.target.value}})}
-                                            className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
+                                            className="appearance-none cursor-pointer inline-block bg-white border border-slate-200 hover:border-indigo-300 text-indigo-700 font-bold px-3 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-sm shadow-sm"
                                         >
                                             <option value="Junior">初级 (1-3年)</option>
                                             <option value="Mid">中级 (3-5年)</option>
                                             <option value="Senior">资深 (5-8年)</option>
                                             <option value="Expert">专家 (8年以上)</option>
                                         </select>
-                                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                                        <ChevronUp className="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
                                     </div>
-                                    <span>，</span>
+                                    <span>。</span>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
-                                    <span>这是我的</span>
+                                <div className="pt-4 pb-2">
                                     <button
                                         type="button"
                                         onClick={() => resumeInputRef.current?.click()}
-                                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-dashed transition-all ${
+                                        className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed transition-all ${
                                             resumeFileName 
                                             ? 'border-emerald-400 bg-emerald-50 text-emerald-700' 
-                                            : 'border-indigo-200 bg-indigo-50/30 text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50'
+                                            : 'border-slate-200 bg-slate-50/50 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/30 hover:text-indigo-600'
                                         }`}
                                     >
                                         {resumeFileName ? (
                                             <>
                                                 <CheckCircle2 className="w-4 h-4" />
-                                                <span className="font-bold truncate max-w-[150px]">{resumeFileName}</span>
+                                                <span className="font-bold truncate">{resumeFileName}</span>
                                             </>
                                         ) : (
                                             <>
                                                 <Upload className="w-4 h-4" />
-                                                <span className="font-bold underline decoration-dotted underline-offset-4">上传简历 (PDF/DOCX)</span>
+                                                <span className="font-medium text-sm">上传简历获得更精准匹配 (可选)</span>
                                             </>
                                         )}
                                     </button>
@@ -397,17 +310,14 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                             if (file) handleResumeUpload(file)
                                         }}
                                     />
-                                    <span>。</span>
                                 </div>
-                            </div>
 
-                            <div className="mt-10">
                                 <button 
                                     onClick={handleGenerate}
                                     disabled={loading}
-                                    className="w-full md:w-auto px-8 py-4 bg-[#1A365D] hover:bg-[#2A4a7F] text-white font-bold text-lg rounded-2xl transition-all shadow-xl shadow-indigo-900/10 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group"
+                                    className="w-full mt-4 py-4 bg-[#0F172A] hover:bg-[#1E293B] text-white font-bold text-lg rounded-xl transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99] relative overflow-hidden group"
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-white/10 to-indigo-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                                     {loading ? (
                                         <>
                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -415,147 +325,96 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                         </>
                                     ) : (
                                         <>
-                                            <Sparkles className="w-5 h-5" />
+                                            <Sparkles className="w-5 h-5 text-indigo-300" />
                                             生成我的远程成功计划
                                         </>
                                     )}
                                 </button>
-                                <p className="mt-4 text-xs text-slate-500 text-center md:text-left">
-                                    AI 驱动的简历评估与个性化岗位匹配引擎
-                                </p>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Right Column: Glass Dashboard Visual */}
-                    <div className="hidden lg:block relative h-[500px] w-full perspective-[2000px]">
-                        <style>{`
-                            @keyframes float-slow {
-                                0%, 100% { transform: translateY(0px) rotateY(-8deg) rotateX(2deg); }
-                                50% { transform: translateY(-15px) rotateY(-8deg) rotateX(2deg); }
-                            }
-                            .animate-float-slow {
-                                animation: float-slow 8s ease-in-out infinite;
-                            }
-                        `}</style>
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100%] h-[100%] bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-full blur-[60px]"></div>
-                        
-                        {/* Main Floating Card */}
-                        <div className="animate-float-slow absolute inset-0 bg-white/60 backdrop-blur-xl border border-white/80 rounded-[32px] shadow-[0_30px_80px_-20px_rgba(50,50,93,0.15)] overflow-hidden flex transition-all duration-700 ease-out transform-style-3d hover:shadow-[0_40px_100px_-20px_rgba(50,50,93,0.2)]">
-                          
-                          {/* Sidebar (Dark Blue) */}
-                          <div className="w-16 bg-[#0F172A] flex flex-col items-center py-6 gap-6 flex-shrink-0 z-10">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30">H</div>
-                            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white/50">
-                                <div className="w-4 h-0.5 bg-white/50 rounded-full mb-1"></div>
-                                <div className="w-4 h-0.5 bg-white/50 rounded-full mb-1"></div>
-                                <div className="w-4 h-0.5 bg-white/50 rounded-full"></div>
+                        {/* Right Side: Roadmap Demo */}
+                        <div className="lg:col-span-7 p-6 md:p-8 flex flex-col bg-white/40 rounded-[24px] overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-4 opacity-50">
+                                <div className="flex gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                                </div>
                             </div>
-                          </div>
 
-                          {/* Main Content Area */}
-                          <div className="flex-1 p-6 flex flex-col gap-5 overflow-hidden bg-gradient-to-br from-white/40 to-white/10">
-                              
-                              {/* Header & Progress */}
-                              <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-bold text-slate-800 text-sm">我的远程成功计划</h3>
-                                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">85% Completed</span>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                实时预览 / Live Demo
+                            </div>
+                            
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex-1 flex flex-col relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 rounded-bl-full pointer-events-none"></div>
+                                
+                                <div className="flex items-center justify-between mb-8 relative z-10">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-900">您的专属远程职业蓝图</h3>
+                                        <p className="text-sm text-slate-500 mt-1">基于 AI 分析生成的个性化路径</p>
+                                    </div>
+                                    <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold border border-indigo-100">
+                                        Preview Mode
+                                    </div>
                                 </div>
-                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-full w-[85%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.3)]"></div>
+
+                                <div className="flex-1 relative space-y-6">
+                                    {/* Timeline Item 1 */}
+                                    <div className="flex gap-4 group">
+                                        <div className="flex flex-col items-center">
+                                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm ring-4 ring-white shadow-sm z-10 group-hover:bg-indigo-600 group-hover:text-white transition-colors">1</div>
+                                            <div className="w-0.5 flex-1 bg-slate-100 group-hover:bg-indigo-100 transition-colors my-1"></div>
+                                        </div>
+                                        <div className="flex-1 pb-4">
+                                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 group-hover:border-indigo-200 group-hover:bg-white group-hover:shadow-md transition-all">
+                                                <h4 className="font-bold text-slate-800 text-sm mb-1">简历智能优化</h4>
+                                                <p className="text-xs text-slate-500">检测到您的简历缺少 "Remote Collaboration" 相关关键词，建议增加 3 处描述...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Timeline Item 2 */}
+                                    <div className="flex gap-4 group">
+                                        <div className="flex flex-col items-center">
+                                            <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-sm ring-4 ring-white shadow-sm z-10 group-hover:bg-purple-600 group-hover:text-white transition-colors">2</div>
+                                            <div className="w-0.5 flex-1 bg-slate-100 group-hover:bg-purple-100 transition-colors my-1"></div>
+                                        </div>
+                                        <div className="flex-1 pb-4">
+                                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 group-hover:border-purple-200 group-hover:bg-white group-hover:shadow-md transition-all">
+                                                <h4 className="font-bold text-slate-800 text-sm mb-1">精准岗位匹配</h4>
+                                                <div className="flex gap-2 mt-2">
+                                                    <div className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-600 font-medium">Product Manager @ Linear</div>
+                                                    <div className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-600 font-medium">Product Owner @ Shopify</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Timeline Item 3 (Fade out) */}
+                                    <div className="flex gap-4 opacity-60">
+                                        <div className="flex flex-col items-center">
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-sm ring-4 ring-white z-10">3</div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 border-dashed">
+                                                <h4 className="font-bold text-slate-400 text-sm mb-1">面试准备 & 薪资谈判</h4>
+                                                <p className="text-xs text-slate-400">生成针对性的面试模拟题库...</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                              </div>
-
-                              {/* Middle Grid */}
-                              <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
-                                  {/* Priorities */}
-                                  <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50 flex flex-col">
-                                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">今日优先级</div>
-                                      <div className="space-y-2.5 flex-1 overflow-y-auto pr-1">
-                                        <div className="flex items-start gap-2.5">
-                                            <div className="mt-0.5 w-4 h-4 rounded bg-indigo-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
-                                                <CheckCircle2 className="w-3 h-3" />
-                                            </div>
-                                            <div className="text-xs font-medium text-slate-800 leading-snug">查看 "Product Manager at Linear"</div>
-                                        </div>
-                                        <div className="flex items-start gap-2.5 opacity-60">
-                                            <div className="mt-0.5 w-4 h-4 rounded border-2 border-slate-300 flex-shrink-0"></div>
-                                            <div className="text-xs font-medium text-slate-700 leading-snug">准备产品思维面试题</div>
-                                        </div>
-                                        <div className="flex items-start gap-2.5 opacity-60">
-                                            <div className="mt-0.5 w-4 h-4 rounded border-2 border-slate-300 flex-shrink-0"></div>
-                                            <div className="text-xs font-medium text-slate-700 leading-snug">优化 LinkedIn 个人资料</div>
-                                        </div>
-                                      </div>
-                                  </div>
-
-                                  {/* Match Stats */}
-                                  <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50 flex flex-col">
-                                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">匹配分析</div>
-                                      <div className="space-y-3 flex-1">
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
-                                                <span>简历评分</span>
-                                                <span className="text-emerald-600">92</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <div className="h-full w-[92%] bg-emerald-500 rounded-full"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
-                                                <span>技能匹配</span>
-                                                <span className="text-indigo-600">88</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <div className="h-full w-[88%] bg-indigo-500 rounded-full"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
-                                                <span>文化契合</span>
-                                                <span className="text-purple-600">90</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <div className="h-full w-[90%] bg-purple-500 rounded-full"></div>
-                                            </div>
-                                        </div>
-                                      </div>
-                                  </div>
-                              </div>
-
-                              {/* Bottom Jobs */}
-                              <div className="bg-white/60 rounded-2xl p-4 shadow-sm border border-white/50 h-[140px] overflow-hidden flex flex-col relative">
-                                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">推荐岗位</div>
-                                  <div className="space-y-2.5">
-                                      {[
-                                          { id: 'demo-1', title: 'Senior Product Manager', company: 'Linear', salary: '$160k - $220k', match: 98 },
-                                          { id: 'demo-2', title: 'Product Lead, Growth', company: 'Notion', salary: '$190k - $260k', match: 95 },
-                                      ].map((job) => (
-                                        <div key={job.id} className="flex items-center gap-3 p-2 rounded-xl bg-white/80 border border-white/60 shadow-sm">
-                                            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
-                                                <Briefcase className="w-4 h-4" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-xs font-bold text-slate-800 truncate">{job.title}</div>
-                                                <div className="text-[10px] text-slate-500 truncate">{job.company}</div>
-                                            </div>
-                                            <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100/50">
-                                                {job.match}%
-                                            </div>
-                                        </div>
-                                      ))}
-                                  </div>
-                                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white/80 to-transparent pointer-events-none"></div>
-                              </div>
-
-                          </div>
+                                
+                                {/* Overlay Gradient */}
+                                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent flex items-end justify-center pb-4">
+                                    <button onClick={handleGenerate} className="text-xs font-bold text-indigo-600 flex items-center gap-1 hover:gap-2 transition-all">
+                                        查看完整示例 <ArrowRight className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-
-                        {/* Decorative Elements */}
-                        <div className="absolute -right-10 top-20 w-24 h-24 bg-purple-400 rounded-2xl rotate-12 blur-2xl opacity-30 animate-pulse"></div>
-                        <div className="absolute -left-5 bottom-10 w-32 h-32 bg-indigo-400 rounded-full blur-3xl opacity-20 animate-pulse delay-700"></div>
                     </div>
                 </div>
             </div>

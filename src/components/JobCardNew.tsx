@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Zap } from 'lucide-react';
+import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Zap, Sparkles } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { getJobSourceType } from '../utils/job-source-helper';
@@ -96,6 +96,8 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
    const bgColor = useMemo(() => getPastelColor(job.company || 'default'), [job.company]);
    const textColor = useMemo(() => getDarkerColor(job.company || 'default'), [job.company]);
 
+   const isFeatured = job.isFeatured;
+
    const formatSalary = (salary: Job['salary']) => {
       // Handle missing/zero cases
       if (!salary) return '薪资Open';
@@ -180,6 +182,13 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
             className="flex-shrink-0 flex flex-col items-center justify-center px-3 py-4 rounded-xl transition-colors h-full w-[140px] relative overflow-hidden"
             style={{ backgroundColor: bgColor }}
          >
+             {/* Featured Badge for Grid View */}
+             {isFeatured && variant === 'grid' && (
+               <div className="absolute top-0 right-0 bg-gradient-to-bl from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 shadow-sm flex items-center gap-1">
+                 <Sparkles className="w-2.5 h-2.5" />
+               </div>
+             )}
+
              {/* Company Name (Top) */}
             <div 
                className="text-base font-bold text-center mb-2 line-clamp-2 w-full leading-snug break-words"
@@ -248,25 +257,27 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
 
    if (variant === 'list') {
       return (
-         <div
-            onClick={() => onClick?.(job)}
-            className={`group relative bg-white rounded-xl mb-3 border transition-all duration-200 cursor-pointer overflow-hidden
-            ${isActive
-                  ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md'
-                  : 'border-slate-100 hover:border-indigo-300 hover:shadow-md'
-               } ${className || ''}`}
-            id={`job-card-${job.id}`}
+         <div 
+            onClick={() => onClick && onClick(job)}
+            className={`
+               group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-start
+               ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10' : 'border-slate-100 hover:border-indigo-200'}
+               ${isFeatured ? 'bg-gradient-to-r from-white via-indigo-50/20 to-white border-indigo-100 ring-1 ring-indigo-500/10' : ''}
+               ${className}
+            `}
          >
-            <div className="flex flex-col md:flex-row p-4 gap-4 items-stretch">
-               {/* Left: New Company Card Style (Desktop Only) */}
-               <div className="hidden md:block flex-shrink-0 self-stretch">
-                  <CompanyCard />
+            {/* Featured Badge for List View */}
+            {isFeatured && (
+               <div className="absolute top-0 right-0 bg-gradient-to-bl from-indigo-500 to-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl shadow-sm flex items-center gap-1 z-10">
+                 <Sparkles className="w-3 h-3" />
+                 系统推荐
                </div>
+            )}
 
-               {/* Mobile Logo (Fallback to old style) */}
-               <div className="md:hidden flex-shrink-0 self-start">
-                  <CompanyLogoSmall size="md" />
-               </div>
+            {/* Left: Company Logo Card */}
+            <div className="flex-shrink-0 w-[100px] h-[100px]">
+               <CompanyCard size="sm" />
+            </div>
 
                {/* Content Area */}
                <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-8">
@@ -380,7 +391,6 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                      </div>
                   </div>
                </div>
-            </div>
          </div>
       );
    }
