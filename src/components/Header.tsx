@@ -377,11 +377,7 @@ export default function Header() {
                 >
                   <button
                     ref={userMenuButtonRef}
-                    className={`flex items-center space-x-2 p-2 rounded-lg transition-all duration-200 focus:outline-none ${
-                        isHome 
-                            ? 'text-white hover:bg-white/10' 
-                            : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
+                    className={`flex items-center space-x-2 p-2 rounded-lg transition-all duration-200 focus:outline-none text-slate-700 hover:text-slate-900 hover:bg-slate-50`}
                     onKeyDown={handleUserMenuKeyDown}
                     aria-expanded={isUserMenuOpen}
                     aria-haspopup="menu"
@@ -408,11 +404,7 @@ export default function Header() {
                     ) : (
                       <div className="relative">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${
-                              isHome 
-                                ? 'bg-white/20 backdrop-blur-md' 
-                                : 'bg-gradient-to-r from-haigoo-primary to-haigoo-secondary'
-                          } ${
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-r from-haigoo-primary to-haigoo-secondary ${
                               isMember 
                                 ? 'ring-2 ring-indigo-400 border-2 border-white'
                                 : ''
@@ -420,7 +412,7 @@ export default function Header() {
                           role="img"
                           aria-label="用户头像"
                         >
-                          <User className={`h-4 w-4 ${isHome ? 'text-white' : 'text-white'}`} aria-hidden="true" />
+                          <User className="h-4 w-4 text-white" aria-hidden="true" />
                         </div>
                         {isMember && (
                           <div className="absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm bg-indigo-100">
@@ -430,9 +422,7 @@ export default function Header() {
                       </div>
                     )}
                     <span className={`text-sm font-medium hidden sm:block ${
-                        isHome 
-                            ? 'text-white' 
-                            : (isMember ? 'text-indigo-600' : '')
+                        isMember ? 'text-indigo-600' : 'text-slate-700'
                     }`}>
                         {user?.username || '用户'}
                     </span>

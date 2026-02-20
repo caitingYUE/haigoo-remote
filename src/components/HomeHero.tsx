@@ -38,7 +38,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
         goal: 'full-time',
         timeline: 'immediately',
         purpose: 'remote-first',
-        background: { role: '', years: 'Mid', education: 'Bachelor', language: '英语沟通' }
+        background: { role: '', years: 'Mid', education: 'Bachelor', language: 'Fluent' }
     })
     
     const inputRef = useRef<HTMLInputElement>(null)
@@ -95,7 +95,8 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         education: formData.background.education, 
                         language: formData.background.language,
                         purpose: formData.purpose
-                    }
+                    },
+                    resumeId: resumeId
                 })
             })
 
@@ -226,23 +227,23 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     }
 
     return (
-        <div className="relative min-h-[850px] flex items-center overflow-hidden bg-slate-50 pt-20 lg:pt-0">
+        <div className="relative min-h-[900px] flex items-center justify-center overflow-hidden bg-slate-50">
             {/* Background - Bright & Future Feeling */}
             <div className="absolute inset-0 z-0">
                 <img 
                     src="/background.webp" 
                     alt="Background" 
-                    className={`w-full h-full object-cover object-[0%_20%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-30' : 'opacity-0'}`}
+                    className={`w-full h-full object-cover object-[0%_20%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-30' : 'opacity-0'} blur-[2px]`}
                     onLoad={() => setImageLoaded(true)}
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-slate-50/50"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-slate-50/70 to-white/90"></div>
                 <div className="absolute -top-40 right-[-10%] h-[520px] w-[520px] rounded-full bg-indigo-400/10 blur-[120px]"></div>
                 <div className="absolute top-10 left-[-10%] h-[420px] w-[420px] rounded-full bg-blue-400/10 blur-[110px]"></div>
                 <div className="absolute bottom-[-20%] left-[20%] h-[520px] w-[520px] rounded-full bg-purple-400/10 blur-[140px]"></div>
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.12] mix-blend-soft-light"></div>
             </div>
 
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-10">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                     
                     {/* Left Column: Content & Form */}
@@ -251,21 +252,73 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                             <Sparkles className="w-4 h-4 text-indigo-500" />
                             <span className="text-slate-700">AI 远程求职 Copilot 2.0</span>
                         </div>
-                        <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6 leading-[1.1] tracking-tight">
-                            现代化求职助手，<br/>
+                        <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-[1.1] tracking-tight">
+                            理想生活，<br/>
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
-                                您的远程工作 Copilot
+                                从远程工作开始
                             </span>
                         </h1>
-                        <p className="text-lg text-slate-600 mb-10 leading-relaxed font-normal">
-                            全流程 AI 辅助，从简历优化到精准岗位匹配，陪您走完远程求职的每一步。
+                        <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal mb-10">
+                            不只是找工作。Haigoo Copilot 为您提供从简历评估、岗位匹配到面试策略的全流程 AI 辅助。
                         </p>
 
                         {/* Mad Libs Style Form */}
                         <div className="bg-white/80 backdrop-blur-md border border-slate-200/70 rounded-3xl p-6 md:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] hover:shadow-[0_25px_70px_-12px_rgba(0,0,0,0.15)] transition-all duration-300">
                             <div className="text-xl md:text-2xl leading-relaxed font-medium text-slate-700 space-y-4">
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
-                                    <span>我正在寻找一份</span>
+                      <span>我拥有</span>
+                      <div className="relative inline-block">
+                        <select
+                          value={formData.background.education}
+                          onChange={(e) => setFormData({...formData, background: {...formData.background, education: e.target.value}})}
+                          className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
+                        >
+                          <option value="Bachelor">本科学历</option>
+                          <option value="Master">硕士学历</option>
+                          <option value="PhD">博士学历</option>
+                          <option value="Associate">大专学历</option>
+                          <option value="Other">其他学历</option>
+                        </select>
+                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                      </div>
+                      <span>和</span>
+                      <div className="relative inline-block">
+                        <select
+                          value={formData.background.language}
+                          onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
+                          className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
+                        >
+                          <option value="Native">母语水平</option>
+                          <option value="Fluent">流利沟通</option>
+                          <option value="Intermediate">日常交流</option>
+                          <option value="Basic">基础读写</option>
+                        </select>
+                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                      </div>
+                      <span>英语能力。</span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                      <span>希望能通过远程工作实现</span>
+                      <div className="relative inline-block">
+                        <select
+                          value={formData.purpose}
+                          onChange={(e) => setFormData({...formData, purpose: e.target.value as any})}
+                          className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
+                        >
+                          <option value="remote-first">远程优先生活</option>
+                          <option value="income-up">收入提升</option>
+                          <option value="career-change">职业转型</option>
+                          <option value="flexibility">时间自由</option>
+                          <option value="global-exposure">全球化视野</option>
+                        </select>
+                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                      </div>
+                      <span>。</span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                      <span>我正在寻找一份</span>
                                     <div className="relative inline-block group">
                                         <input
                                             ref={inputRef}
@@ -273,7 +326,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                             value={formData.background.role}
                                             onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
                                             placeholder="输入职位名称"
-                                            className="inline-block w-[180px] bg-indigo-50/50 border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50 transition-colors placeholder:text-indigo-300 placeholder:font-normal"
+                                            className="inline-block w-[180px] bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all placeholder:text-indigo-300 placeholder:font-normal rounded-t-md"
                                         />
                                         <span className="absolute -bottom-5 left-0 text-xs text-slate-400 opacity-0 group-focus-within:opacity-100 transition-opacity">例如：产品经理</span>
                                     </div>
@@ -286,7 +339,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                         <select
                                             value={formData.timeline}
                                             onChange={(e) => setFormData({...formData, timeline: e.target.value as any})}
-                                            className="appearance-none cursor-pointer inline-block bg-indigo-50/50 border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50 transition-colors"
+                                            className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
                                         >
                                             <option value="immediately">尽快</option>
                                             <option value="1-3 months">1-3个月内</option>
@@ -304,7 +357,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                         <select
                                             value={formData.background.years}
                                             onChange={(e) => setFormData({...formData, background: {...formData.background, years: e.target.value}})}
-                                            className="appearance-none cursor-pointer inline-block bg-indigo-50/50 border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50 transition-colors"
+                                            className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
                                         >
                                             <option value="Junior">初级 (1-3年)</option>
                                             <option value="Mid">中级 (3-5年)</option>
@@ -324,7 +377,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                         className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-dashed transition-all ${
                                             resumeFileName 
                                             ? 'border-emerald-400 bg-emerald-50 text-emerald-700' 
-                                            : 'border-indigo-200 bg-indigo-50/50 text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50'
+                                            : 'border-indigo-200 bg-indigo-50/30 text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50'
                                         }`}
                                     >
                                         {resumeFileName ? (
@@ -357,8 +410,9 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                 <button 
                                     onClick={handleGenerate}
                                     disabled={loading}
-                                    className="w-full md:w-auto px-8 py-4 bg-[#1A365D] hover:bg-[#2A4a7F] text-white font-bold text-lg rounded-2xl transition-all shadow-xl shadow-indigo-900/10 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
+                                    className="w-full md:w-auto px-8 py-4 bg-[#1A365D] hover:bg-[#2A4a7F] text-white font-bold text-lg rounded-2xl transition-all shadow-xl shadow-indigo-900/10 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group"
                                 >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-white/10 to-indigo-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                                     {loading ? (
                                         <>
                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -380,22 +434,31 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
                     {/* Right Column: Glass Dashboard Visual */}
                     <div className="hidden lg:block relative h-[600px] w-full perspective-[2000px]">
+                        <style>{`
+                            @keyframes float-slow {
+                                0%, 100% { transform: translateY(0px) rotateY(-12deg) rotateX(5deg); }
+                                50% { transform: translateY(-20px) rotateY(-12deg) rotateX(5deg); }
+                            }
+                            .animate-float-slow {
+                                animation: float-slow 8s ease-in-out infinite;
+                            }
+                        `}</style>
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-full blur-[80px]"></div>
                         
                         {/* Main Floating Card */}
-                        <div className="absolute inset-0 bg-white/40 backdrop-blur-xl border border-white/60 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(50,50,93,0.15)] p-6 flex flex-col gap-6 rotate-y-[-12deg] rotate-x-[5deg] hover:rotate-y-[-5deg] hover:rotate-x-[2deg] transition-all duration-700 ease-out transform-style-3d">
+                        <div className="animate-float-slow absolute inset-0 bg-white/40 backdrop-blur-xl border border-white/60 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(50,50,93,0.15)] p-6 flex flex-col gap-6 transition-all duration-700 ease-out transform-style-3d hover:shadow-[0_50px_120px_-20px_rgba(50,50,93,0.2)]">
                             
                             {/* Header */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-[#1A365D] flex items-center justify-center text-white font-bold text-xl">H</div>
+                                    <div className="w-10 h-10 rounded-xl bg-[#1A365D] flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-900/20">H</div>
                                     <div>
                                         <div className="text-sm font-bold text-slate-800">我的远程成功计划</div>
                                         <div className="text-xs text-slate-500">85% 已完成</div>
                                     </div>
                                 </div>
-                                <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-full w-[85%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
+                                <div className="h-2 w-24 bg-white/50 rounded-full overflow-hidden border border-white/20">
+                                    <div className="h-full w-[85%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
                                 </div>
                             </div>
 
