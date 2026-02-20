@@ -468,19 +468,23 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     return (
         <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-32 pb-20">
 
-            {/* ── Aurora Background ── */}
+            {/* ── Background ── */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                 <img
-                    src="/background.webp"
-                    alt=""
-                    className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${imageLoaded ? 'opacity-20' : 'opacity-0'}`}
+                    src="/src/pic2.webp"
+                    alt="Haigoo Hero Background"
+                    className={`absolute inset-0 w-full h-full object-cover object-[center_20%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/10 to-slate-50/90" />
-                {/* Aurora blobs */}
-                <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-indigo-200/25 blur-[100px] animate-[blobFloat_12s_ease-in-out_infinite]" />
-                <div className="absolute top-1/3 -right-48 w-[500px] h-[500px] rounded-full bg-purple-200/20 blur-[100px] animate-[blobFloat_16s_ease-in-out_infinite_reverse] [animation-delay:4s]" />
-                <div className="absolute -bottom-24 left-1/3 w-[400px] h-[400px] rounded-full bg-blue-200/20 blur-[90px] animate-[blobFloat_10s_ease-in-out_infinite] [animation-delay:2s]" />
+                {/* Gradient Overlay for text readability and premium feel */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/70 to-slate-50/90" />
+                
+                {/* Subtle Noise Texture */}
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+                
+                {/* Aurora blobs - Adjusted for premium feel */}
+                <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-indigo-200/20 blur-[120px] animate-[blobFloat_12s_ease-in-out_infinite]" />
+                <div className="absolute top-1/3 -right-48 w-[500px] h-[500px] rounded-full bg-purple-200/15 blur-[120px] animate-[blobFloat_16s_ease-in-out_infinite_reverse] [animation-delay:4s]" />
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
