@@ -30,7 +30,7 @@ interface PaymentInfo {
 const STATIC_PLANS: Plan[] = [
     {
         id: 'club_go_quarterly',
-        name: '海狗会员 (季度)',
+        name: 'HaigooRemote Member (季度)',
         price: 199,
         currency: 'CNY',
         duration_days: 90,
@@ -45,7 +45,7 @@ const STATIC_PLANS: Plan[] = [
     },
     {
         id: 'goo_plus_yearly',
-        name: '海狗会员 (年度)',
+        name: 'HaigooRemote Member (年度)',
         price: 999,
         currency: 'CNY',
         duration_days: 365,
@@ -225,50 +225,54 @@ const MembershipPage: React.FC = () => {
    }
 
    return (
-      <div className="min-h-screen bg-slate-50 font-sans selection:bg-indigo-500/30">
+      <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
          {/* Hero Section */}
-         <div className="relative overflow-hidden bg-gradient-to-b from-indigo-50 via-white to-slate-50 pt-32 pb-48 px-4 sm:px-6 lg:px-8">
+         <div className="relative overflow-hidden pt-32 pb-48 px-4 sm:px-6 lg:px-8">
             {/* Background Effects */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-               <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-indigo-100/40 rounded-full blur-[80px] mix-blend-multiply"></div>
-               <div className="absolute top-[10%] left-[-10%] w-[500px] h-[500px] bg-teal-100/40 rounded-full blur-[80px] mix-blend-multiply"></div>
-               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
+               <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-purple-200/30 rounded-full blur-[100px] mix-blend-multiply opacity-60"></div>
+               <div className="absolute top-[10%] left-[-10%] w-[600px] h-[600px] bg-blue-200/30 rounded-full blur-[100px] mix-blend-multiply opacity-60"></div>
+               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
             </div>
 
             <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
-               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-indigo-100 text-indigo-600 text-xs font-bold tracking-widest uppercase mb-8 shadow-sm animate-fade-in-up">
-                  <Crown className="w-3.5 h-3.5 fill-indigo-600" /> 
-                  Premium Membership
-               </div>
-
-               <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-8 leading-[1.1] text-slate-900">
+               <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1] text-slate-900">
                   <span className="block mb-2">Unlock Your Global</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-teal-500 drop-shadow-sm">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 drop-shadow-sm">
                      Remote Career
                   </span>
                </h1>
 
-               <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-12 leading-relaxed font-light">
-                  获取 AI 智能简历优化、海量内推机会及专属职业规划。<br className="hidden sm:block" />
-                  加入精英远程工作者社区，开启您的全球职业生涯。
+               <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+                  Accelerate your path to success with AI-powered tools, elite opportunities, and a supportive community. Your future, unrestricted by borders, starts here.
                </p>
+
+               <button 
+                  onClick={() => {
+                     const el = document.getElementById('pricing-plans');
+                     el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-full shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 transition-all text-sm"
+               >
+                  Explore Membership Plans
+               </button>
 
                {/* Current Status Card */}
                {isMember && (
-                  <div className="inline-flex items-center gap-5 bg-white border border-indigo-100 px-8 py-4 rounded-2xl shadow-xl shadow-indigo-100/50 hover:shadow-2xl hover:shadow-indigo-100/70 transition-all cursor-default">
-                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                        <Check className="w-6 h-6 text-white" />
+                  <div className="mt-12 inline-flex items-center gap-5 bg-white/80 backdrop-blur-md border border-white/50 px-8 py-4 rounded-2xl shadow-xl shadow-slate-200/50 hover:shadow-2xl transition-all cursor-default ring-1 ring-white">
+                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                        <Crown className="w-6 h-6 text-white" />
                      </div>
                      <div className="text-left">
-                        <p className="text-[10px] text-indigo-400 uppercase font-bold tracking-wider mb-0.5">Current Status</p>
+                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">Current Status</p>
                         <div className="flex items-center gap-3">
                            <p className="font-bold text-slate-900 text-lg">Haigoo Member</p>
-                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                               ACTIVE
                            </span>
                         </div>
                      </div>
-                     <div className="h-8 w-px bg-slate-100 mx-2"></div>
+                     <div className="h-8 w-px bg-slate-200 mx-2"></div>
                      <button
                         onClick={() => setShowCertificateModal(true)}
                         className="text-xs font-medium text-slate-500 hover:text-indigo-600 flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all group"
@@ -282,7 +286,7 @@ const MembershipPage: React.FC = () => {
          </div>
 
          {/* Pricing Plans Section */}
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 -mt-32 relative z-20">
+         <div id="pricing-plans" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 -mt-32 relative z-20">
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
                {plans.map((plan) => {
                   return (
@@ -291,11 +295,11 @@ const MembershipPage: React.FC = () => {
                         className={`relative rounded-[2.5rem] p-10 border transition-all duration-500 group flex flex-col ${
                            plan.isPlus 
                               ? 'bg-[#1E293B] text-white border-indigo-500/30 shadow-2xl shadow-indigo-900/40 hover:shadow-indigo-900/60 hover:-translate-y-2' 
-                              : 'bg-white text-slate-900 border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-2'
+                              : 'bg-white text-slate-900 border-white shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-2'
                         }`}
                      >
                         {plan.isPlus && (
-                           <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold px-6 py-2 rounded-full shadow-lg shadow-indigo-500/30 tracking-wide uppercase flex items-center gap-2">
+                           <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-bold px-6 py-2 rounded-full shadow-lg shadow-indigo-500/30 tracking-wide uppercase flex items-center gap-2">
                               <Star className="w-3 h-3 fill-white" />
                               Most Popular Choice
                            </div>
@@ -350,8 +354,8 @@ const MembershipPage: React.FC = () => {
                               isMember
                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                  : plan.isPlus
-                                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25'
-                                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-200'
+                                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25'
+                                    : 'bg-[#0F172A] hover:bg-slate-800 text-white shadow-lg shadow-slate-200'
                            }`}
                         >
                            {isMember ? (
