@@ -30,7 +30,7 @@ interface PaymentInfo {
 const STATIC_PLANS: Plan[] = [
     {
         id: 'club_go_quarterly',
-        name: '俱乐部Go会员 (季度)',
+        name: '海狗会员 (季度)',
         price: 199,
         currency: 'CNY',
         duration_days: 90,
@@ -45,16 +45,16 @@ const STATIC_PLANS: Plan[] = [
     },
     {
         id: 'goo_plus_yearly',
-        name: 'Goo+ 尊享会员 (年度)',
+        name: '海狗会员 (年度)',
         price: 999,
         currency: 'CNY',
         duration_days: 365,
         isPlus: true,
         features: [
-            '包含Go会员所有权益',
+            '包含季度会员所有权益',
+            '1V1 远程求职咨询（1次，60分钟以内）',
             '专家简历精修 或 模拟面试 (二选一)',
-            '1对1 职业生涯规划咨询 (1次)',
-            '支持成为俱乐部城市主理人',
+            '优先成为俱乐部城市主理人，共享收益',
             '优先获取高薪内推岗位'
         ],
         description: '适合致力于长期职业发展的专业人士，建立个人品牌'
@@ -137,7 +137,12 @@ const MembershipPage: React.FC = () => {
    // Simplified flow: Payment info is derived directly from state
    const currentPaymentInfo: PaymentInfo = {
       type: 'qrcode',
-      imageUrl: paymentMethod === 'alipay' ? '/alipay.jpg' : '/wechatpay.png',
+      imageUrl: (() => {
+          if (selectedPlan?.price === 999) {
+              return paymentMethod === 'alipay' ? '/alipay_999.jpg' : '/wechatpay_999.png';
+          }
+          return paymentMethod === 'alipay' ? '/alipay.jpg' : '/wechatpay.png';
+      })(),
       instruction: `请使用${paymentMethod === 'alipay' ? '支付宝' : '微信'}扫码支付`
    };
 
@@ -222,51 +227,51 @@ const MembershipPage: React.FC = () => {
    return (
       <div className="min-h-screen bg-slate-50 font-sans selection:bg-indigo-500/30">
          {/* Hero Section */}
-         <div className="relative overflow-hidden bg-[#0F172A] text-white pt-32 pb-48 px-4 sm:px-6 lg:px-8">
+         <div className="relative overflow-hidden bg-gradient-to-b from-indigo-50 via-white to-slate-50 pt-32 pb-48 px-4 sm:px-6 lg:px-8">
             {/* Background Effects */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
-               <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-indigo-600/20 rounded-full blur-[120px] opacity-50"></div>
-               <div className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] bg-teal-600/10 rounded-full blur-[120px] opacity-30"></div>
-               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+               <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-indigo-100/40 rounded-full blur-[80px] mix-blend-multiply"></div>
+               <div className="absolute top-[10%] left-[-10%] w-[500px] h-[500px] bg-teal-100/40 rounded-full blur-[80px] mix-blend-multiply"></div>
+               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
             </div>
 
             <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
-               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-indigo-300 text-xs font-bold tracking-widest uppercase mb-8 shadow-2xl backdrop-blur-md animate-fade-in-up">
-                  <Crown className="w-3.5 h-3.5 fill-indigo-300" /> 
+               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-indigo-100 text-indigo-600 text-xs font-bold tracking-widest uppercase mb-8 shadow-sm animate-fade-in-up">
+                  <Crown className="w-3.5 h-3.5 fill-indigo-600" /> 
                   Premium Membership
                </div>
 
-               <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
-                  <span className="block text-white mb-2">Unlock Your Global</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-teal-300 drop-shadow-sm">
+               <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-8 leading-[1.1] text-slate-900">
+                  <span className="block mb-2">Unlock Your Global</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-teal-500 drop-shadow-sm">
                      Remote Career
                   </span>
                </h1>
 
-               <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed font-light">
+               <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-12 leading-relaxed font-light">
                   获取 AI 智能简历优化、海量内推机会及专属职业规划。<br className="hidden sm:block" />
                   加入精英远程工作者社区，开启您的全球职业生涯。
                </p>
 
                {/* Current Status Card */}
                {isMember && (
-                  <div className="inline-flex items-center gap-5 bg-white/5 border border-white/10 px-8 py-4 rounded-2xl backdrop-blur-xl shadow-2xl hover:bg-white/10 transition-colors cursor-default">
-                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+                  <div className="inline-flex items-center gap-5 bg-white border border-indigo-100 px-8 py-4 rounded-2xl shadow-xl shadow-indigo-100/50 hover:shadow-2xl hover:shadow-indigo-100/70 transition-all cursor-default">
+                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
                         <Check className="w-6 h-6 text-white" />
                      </div>
                      <div className="text-left">
-                        <p className="text-[10px] text-teal-300 uppercase font-bold tracking-wider mb-0.5">Current Status</p>
+                        <p className="text-[10px] text-indigo-400 uppercase font-bold tracking-wider mb-0.5">Current Status</p>
                         <div className="flex items-center gap-3">
-                           <p className="font-bold text-white text-lg">Haigoo Member</p>
-                           <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+                           <p className="font-bold text-slate-900 text-lg">Haigoo Member</p>
+                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                               ACTIVE
                            </span>
                         </div>
                      </div>
-                     <div className="h-8 w-px bg-white/10 mx-2"></div>
+                     <div className="h-8 w-px bg-slate-100 mx-2"></div>
                      <button
                         onClick={() => setShowCertificateModal(true)}
-                        className="text-xs font-medium text-white/80 hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all group"
+                        className="text-xs font-medium text-slate-500 hover:text-indigo-600 flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all group"
                      >
                         <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
                         下载证书
