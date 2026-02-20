@@ -199,9 +199,11 @@
     left: -100%;
     opacity: 0;
   }
+
   50% {
     opacity: 0.5;
   }
+
   100% {
     left: 200%;
     opacity: 0;
@@ -209,8 +211,15 @@
 }
 
 @keyframes float-slow {
-  0%, 100% { transform: translateY(0) rotate(12deg); }
-  50% { transform: translateY(-15px) rotate(8deg); }
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(12deg);
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(8deg);
+  }
 }
 
 .animate-shine {
@@ -1499,4 +1508,67 @@
     @apply animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700;
     background-size: 200% 100%;
   }
+}
+
+/* ─── HomeHero: Aurora blob animation ─────────────────────────── */
+@keyframes blobFloat {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+
+  66% {
+    transform: translate(-20px, 15px) scale(0.97);
+  }
+}
+
+/* ─── HomeHero: Chip / step stagger appear ────────────────────── */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ─── HomeHero: Wizard step slide transitions ─────────────────── */
+@keyframes stepSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes stepSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-step-slide-in-right {
+  animation: stepSlideInRight 0.22s ease-out both;
+}
+
+.animate-step-slide-in-left {
+  animation: stepSlideInLeft 0.22s ease-out both;
 }

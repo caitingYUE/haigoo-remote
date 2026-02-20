@@ -1,6 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useRef } from 'react'
-import { Sparkles, ChevronUp, Upload, CheckCircle2, ArrowRight, Calendar, User, Briefcase, FileText } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import {
+    Sparkles, Upload, CheckCircle2, ArrowRight, ArrowLeft,
+    Target, TrendingUp, Eye, RefreshCw, ChevronDown
+} from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
 
@@ -12,9 +15,12 @@ interface HomeHeroProps {
     }
 }
 
+type GoalType = 'full-time' | 'side-income' | 'market-watch' | 'career-pivot' | ''
+type TimelineType = 'immediately' | '1-3 months' | '3-6 months' | 'flexible' | ''
+
 interface CopilotFormData {
-    goal: 'full-time' | 'part-time' | 'freelance' | 'internship' | ''
-    timeline: 'immediately' | '1-3 months' | '3-6 months' | 'flexible' | ''
+    goal: GoalType
+    timeline: TimelineType
     background: {
         role: string
         years: string
@@ -23,53 +29,364 @@ interface CopilotFormData {
     }
 }
 
-export default function HomeHero({ stats }: HomeHeroProps) {
-    // console.log(stats) // stats is available but currently unused in this design
+// ── Demo Frames ──────────────────────────────────────────────────────────────
+interface DemoFrame {
+    phase: 'profile' | 'resume' | 'jobs' | 'interview'
+    delay: number // ms to wait before starting this frame
+}
+
+const DEMO_FRAMES: DemoFrame[] = [
+    { phase: 'profile', delay: 0 },
+    { phase: 'resume', delay: 3200 },
+    { phase: 'jobs', delay: 7800 },
+    { phase: 'interview', delay: 12500 },
+]
+
+const DEMO_TOTAL_DURATION = 18000
+
+// ── Demo Panel ────────────────────────────────────────────────────────────────
+function DemoPanel({ paused }: { paused: boolean }) {
+    const [tick, setTick] = useState(0)
+    const [activePhase, setActivePhase] = useState<string>('profile')
+    const [matchScore, setMatchScore] = useState(0)
+    const [resumeText, setResumeText] = useState('')
+    const [jobChips, setJobChips] = useState<number>(0)
+    const [interviewVisible, setInterviewVisible] = useState(false)
+    const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([])
+
+    const FULL_RESUME_TEXT = '检测到简历缺少量化数据，建议将「负责产品增长」改为「主导 3 个核心功能迭代，DAU 提升 28%，留存率改善 12%」，增强竞争力。'
+
+    const JOBS = [
+        { name: 'Shopify', logo: 'shopify.com', role: '远程产品经理' },
+        { name: 'GitLab', logo: 'gitlab.com', role: '高级 PM' },
+        { name: 'Figma', logo: 'figma.com', role: '增长 PM' },
+        { name: 'Notion', logo: 'notion.so', role: '产品运营' },
+    ]
+
+    const reset = useCallback(() => {
+        timerRefs.current.forEach(t => clearTimeout(t))
+        timerRefs.current = []
+        setActivePhase('profile')
+        setMatchScore(0)
+        setResumeText('')
+        setJobChips(0)
+        setInterviewVisible(false)
+    }, [])
+
+    useEffect(() => {
+        if (paused) return
+        reset()
+
+        // Count-up match score
+        let score = 0
+        const scoreInterval = setInterval(() => {
+            score += 3
+            if (score >= 92) { clearInterval(scoreInterval); score = 92 }
+            setMatchScore(score)
+        }, 40)
+
+        // Resume phase
+        const t1 = setTimeout(() => {
+            if (paused) return
+            setActivePhase('resume')
+            let i = 0
+            const typeInterval = setInterval(() => {
+                i += 2
+                setResumeText(FULL_RESUME_TEXT.slice(0, i))
+                if (i >= FULL_RESUME_TEXT.length) clearInterval(typeInterval)
+            }, 25)
+            timerRefs.current.push(setTimeout(() => clearInterval(typeInterval), 6000))
+        }, 3200)
+
+        // Jobs phase
+        const t2 = setTimeout(() => {
+            if (paused) return
+            setActivePhase('jobs')
+            JOBS.forEach((_, idx) => {
+                const t = setTimeout(() => setJobChips(idx + 1), idx * 350)
+                timerRefs.current.push(t)
+            })
+        }, 7800)
+
+        // Interview phase
+        const t3 = setTimeout(() => {
+            if (paused) return
+            setActivePhase('interview')
+            setInterviewVisible(true)
+        }, 12500)
+
+        // Reset loop
+        const t4 = setTimeout(() => {
+            setTick(prev => prev + 1)
+        }, DEMO_TOTAL_DURATION)
+
+        timerRefs.current.push(t1, t2, t3, t4)
+        return () => {
+            clearInterval(scoreInterval)
+            timerRefs.current.forEach(t => clearTimeout(t))
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tick, paused])
+
+    return (
+        <div className="flex flex-col h-full">
+            {/* Demo Header */}
+            <div className="flex items-center justify-between mb-5">
+                <div>
+                    <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.15em] mb-0.5">
+                        AI Copilot · 实时演示
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                        林晓的远程求职方案
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">UI 设计师 · 4 年经验 · 英语 B2</p>
+                </div>
+                <div className="flex flex-col items-end gap-1.5">
+                    <div className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-100 flex items-center gap-1.5">
+                        <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                        </span>
+                        匹配度 {matchScore}%
+                    </div>
+                    <div className="text-[10px] text-slate-400">全职远程 · 3 个月内入职</div>
+                </div>
+            </div>
+
+            {/* Steps */}
+            <div className="space-y-3.5 flex-1 overflow-hidden relative">
+                {/* Connector line */}
+                <div className="absolute left-[17px] top-6 bottom-6 w-px bg-gradient-to-b from-indigo-200 via-slate-100 to-transparent pointer-events-none" />
+
+                {/* Step 1 - Resume */}
+                <div className={`relative pl-10 transition-all duration-500 ${activePhase === 'profile' ? 'opacity-60' : 'opacity-100'}`}>
+                    <div className={`absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm z-10 transition-all duration-300 ${activePhase === 'profile' ? 'bg-white border-slate-200 text-slate-400' :
+                            'bg-indigo-600 border-indigo-600 text-white'
+                        }`}>
+                        {activePhase !== 'profile' ? <CheckCircle2 className="w-3.5 h-3.5" /> : '1'}
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <div className="text-xs font-bold text-slate-700 mb-1.5">简历竞争力诊断</div>
+                        <div className="text-xs text-slate-500 leading-relaxed min-h-[40px]">
+                            {activePhase === 'profile' ? (
+                                <span className="text-slate-300 italic">等待分析...</span>
+                            ) : (
+                                <>
+                                    {resumeText}
+                                    {activePhase === 'resume' && resumeText.length < FULL_RESUME_TEXT.length && (
+                                        <span className="inline-block w-0.5 h-3 bg-indigo-500 ml-0.5 animate-pulse" />
+                                    )}
+                                </>
+                            )}
+                        </div>
+                        {activePhase !== 'profile' && activePhase !== 'resume' && (
+                            <div className="mt-2 flex items-center gap-1.5">
+                                <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-medium border border-indigo-100">
+                                    优化建议 ×3
+                                </span>
+                                <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-medium border border-amber-100">
+                                    关键词补充 ×5
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Step 2 - Jobs */}
+                <div className={`relative pl-10 transition-all duration-500 ${activePhase === 'profile' || activePhase === 'resume' ? 'opacity-40' : 'opacity-100'
+                    }`}>
+                    <div className={`absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm z-10 transition-all duration-300 ${activePhase === 'jobs' || activePhase === 'interview' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-400'
+                        }`}>
+                        {activePhase === 'interview' ? <CheckCircle2 className="w-3.5 h-3.5" /> : '2'}
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <div className="text-xs font-bold text-slate-700 mb-2">精准岗位匹配</div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {JOBS.slice(0, jobChips).map((job, i) => (
+                                <div key={i} className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-medium text-slate-600 shadow-sm animate-[fadeSlideIn_0.3s_ease-out]">
+                                    <img
+                                        src={`https://logo.clearbit.com/${job.logo}`}
+                                        className="w-3 h-3 rounded-full opacity-80"
+                                        onError={(e) => e.currentTarget.style.display = 'none'}
+                                        alt=""
+                                    />
+                                    {job.name}
+                                    <span className="text-slate-400">·</span>
+                                    <span className="text-indigo-500">{job.role}</span>
+                                </div>
+                            ))}
+                            {jobChips === 0 && <span className="text-[11px] text-slate-300 italic">扫描中...</span>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Step 3 - Interview */}
+                <div className={`relative pl-10 transition-all duration-500 ${interviewVisible ? 'opacity-100' : 'opacity-30'}`}>
+                    <div className={`absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm z-10 transition-all duration-300 ${interviewVisible ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-400'
+                        }`}>
+                        3
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <div className="text-xs font-bold text-slate-700 mb-1.5">面试模拟 & 复盘</div>
+                        {interviewVisible ? (
+                            <div className="space-y-1">
+                                <div className="text-xs text-slate-500">「Tell me about a time you led a redesign...」</div>
+                                <div className="text-[10px] text-indigo-500 font-medium">→ STAR 法则参考回答已生成</div>
+                            </div>
+                        ) : (
+                            <span className="text-[11px] text-slate-300 italic">待解锁...</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Demo Footer */}
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
+                    <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-pulse [animation-delay:0.2s]" />
+                    <div className="w-1.5 h-1.5 bg-indigo-200 rounded-full animate-pulse [animation-delay:0.4s]" />
+                    <span className="text-[10px] text-slate-400 ml-1">AI 分析中</span>
+                </div>
+                <div className="text-[10px] text-slate-400">
+                    预计完成 <span className="text-indigo-500 font-medium">3 天准备周期</span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ── Goal Options ──────────────────────────────────────────────────────────────
+const GOAL_OPTIONS = [
+    {
+        value: 'full-time' as GoalType,
+        icon: <Target className="w-5 h-5" />,
+        label: '找长期远程工作',
+        desc: '替代现有工作，享有全球薪资',
+        color: 'indigo',
+    },
+    {
+        value: 'side-income' as GoalType,
+        icon: <TrendingUp className="w-5 h-5" />,
+        label: '兼职/副业增收',
+        desc: '在现有收入基础上额外创收',
+        color: 'emerald',
+    },
+    {
+        value: 'market-watch' as GoalType,
+        icon: <Eye className="w-5 h-5" />,
+        label: '关注市场机会',
+        desc: '观望市场，等待合适时机',
+        color: 'amber',
+    },
+    {
+        value: 'career-pivot' as GoalType,
+        icon: <RefreshCw className="w-5 h-5" />,
+        label: '职业转型',
+        desc: '转换赛道，向新方向发展',
+        color: 'rose',
+    },
+]
+
+const COLOR_MAP: Record<string, string> = {
+    indigo: 'border-indigo-300 bg-indigo-50 text-indigo-700 shadow-indigo-100',
+    emerald: 'border-emerald-300 bg-emerald-50 text-emerald-700 shadow-emerald-100',
+    amber: 'border-amber-300 bg-amber-50 text-amber-700 shadow-amber-100',
+    rose: 'border-rose-300 bg-rose-50 text-rose-700 shadow-rose-100',
+}
+const COLOR_IDLE = 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:shadow-md'
+const ICON_MAP: Record<string, string> = {
+    indigo: 'text-indigo-500 bg-indigo-100',
+    emerald: 'text-emerald-500 bg-emerald-100',
+    amber: 'text-amber-500 bg-amber-100',
+    rose: 'text-rose-500 bg-rose-100',
+}
+
+const TIMELINE_OPTIONS: Array<{ value: TimelineType; label: string; sub: string }> = [
+    { value: 'immediately', label: '尽快', sub: '已准备好' },
+    { value: '1-3 months', label: '1-3 个月', sub: '正在准备' },
+    { value: '3-6 months', label: '3-6 个月', sub: '探索阶段' },
+    { value: 'flexible', label: '随时', sub: '机会合适再动' },
+]
+
+const SENIORITY_OPTIONS = ['实习生', '初级', '中级', '高级', '专家/负责人']
+const EDUCATION_OPTIONS = ['高中/职高', '大专', '本科', '硕士', '博士']
+const LANGUAGE_OPTIONS = ['英语', '日语', '西班牙语', '法语', '中文（仅）', '其他']
+
+// Map goal to API value
+const GOAL_TO_API: Record<GoalType, string> = {
+    'full-time': 'full-time',
+    'side-income': 'part-time',
+    'market-watch': 'flexible',
+    'career-pivot': 'freelance',
+    '': 'full-time',
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
+export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
     const { isAuthenticated, user } = useAuth()
-    const { showWarning, showError, showSuccess } = useNotificationHelpers()
-    
-    // Copilot State
-    const [loading, setLoading] = useState(false)
-    const [loadingStep, setLoadingStep] = useState(0)
+    const { showWarning, showError } = useNotificationHelpers()
+
+    // Wizard state
+    const [step, setStep] = useState(0) // 0-3
+    const [direction, setDirection] = useState<'forward' | 'back'>('forward')
+    const [animating, setAnimating] = useState(false)
+
     const [formData, setFormData] = useState<CopilotFormData>({
-        goal: 'full-time',
-        timeline: 'immediately',
-        background: { role: '', years: 'Mid', education: 'Bachelor', language: 'English' }
+        goal: '',
+        timeline: '',
+        background: { role: '', years: '中级', education: '本科', language: '英语' }
     })
-    
+
+    const [loading, setLoading] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
-    const [imageLoaded, setImageLoaded] = useState(false)
     const resumeInputRef = useRef<HTMLInputElement>(null)
     const [resumeFileName, setResumeFileName] = useState<string | null>(null)
     const [resumeUploading, setResumeUploading] = useState(false)
     const [resumeId, setResumeId] = useState<string | null>(null)
+    const [imageLoaded, setImageLoaded] = useState(false)
+    const [demoPaused, setDemoPaused] = useState(false)
+
+    const goTo = (nextStep: number, dir: 'forward' | 'back') => {
+        if (animating) return
+        setDirection(dir)
+        setAnimating(true)
+        setTimeout(() => {
+            setStep(nextStep)
+            setAnimating(false)
+        }, 220)
+    }
+
+    const nextStep = () => {
+        if (step === 0 && !formData.goal) {
+            showWarning('请选择目标', '告诉我们您希望通过远程工作达到什么目的')
+            return
+        }
+        if (step === 1 && !formData.timeline) {
+            showWarning('请选择时间', '我们需要了解您的计划时间来制定方案')
+            return
+        }
+        if (step < 3) goTo(step + 1, 'forward')
+    }
+
+    const prevStep = () => {
+        if (step > 0) goTo(step - 1, 'back')
+    }
 
     const handleGenerate = async () => {
         if (!isAuthenticated) {
-            showWarning('请先登录', '登录后即可免费使用 AI 远程求职助手')
+            showWarning('请先登录', '登录后即可免费生成一次 AI 远程求职方案')
             navigate('/login')
             return
         }
-
-        if (!formData.background.role) {
-            showWarning('请填写当前职位', 'AI 需要知道您的职业背景才能进行匹配')
+        if (!formData.background.role.trim()) {
+            showWarning('请填写职业方向', 'AI 需要了解您的职业背景')
             inputRef.current?.focus()
             return
         }
 
         setLoading(true)
-        
-        // Simulate AI Processing Steps
-        const steps = ['正在分析您的职业画像...', '正在扫描全球远程机会...', '正在生成个性化策略...']
-        let stepIdx = 0
-        setLoadingStep(0)
-        
-        const stepInterval = setInterval(() => {
-            stepIdx = (stepIdx + 1) % steps.length
-            setLoadingStep(stepIdx)
-        }, 1200)
-
         try {
             const token = localStorage.getItem('haigoo_auth_token')
             const res = await fetch('/api/copilot', {
@@ -80,15 +397,15 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 },
                 body: JSON.stringify({
                     userId: user?.user_id,
-                    goal: formData.goal,
+                    goal: GOAL_TO_API[formData.goal],
                     timeline: formData.timeline,
                     background: {
-                        industry: formData.background.role, 
+                        industry: formData.background.role,
                         seniority: formData.background.years,
-                        education: formData.background.education, 
+                        education: formData.background.education,
                         language: formData.background.language,
                     },
-                    resumeId: resumeId
+                    resumeId,
                 })
             })
 
@@ -96,67 +413,49 @@ export default function HomeHero({ stats }: HomeHeroProps) {
 
             if (!res.ok) {
                 if (res.status === 403) {
-                    showWarning('试用次数已用完', '请升级会员解锁无限次使用权限')
+                    showWarning('免费次数已用完', '免费用户可生成一次方案，升级会员解锁无限次使用')
                     navigate('/membership')
                 } else {
                     throw new Error(data.error || '生成失败')
                 }
                 return
             }
-            
-            // Construct navigation URL with robust filter mapping
-            let typeParam = 'Full-time'
-            if (formData.goal === 'part-time') typeParam = 'Part-time'
-            if (formData.goal === 'freelance') typeParam = 'Freelance' // Or Contract depending on DB
-            if (formData.goal === 'internship') typeParam = 'Internship'
 
+            const typeParam = formData.goal === 'side-income' ? 'Part-time'
+                : formData.goal === 'full-time' ? 'Full-time'
+                    : 'Full-time'
             navigate(`/jobs?search=${encodeURIComponent(formData.background.role)}&type=${typeParam}`)
-            
         } catch (err: any) {
             console.error(err)
             showError('服务暂时不可用', err.message)
         } finally {
-            clearInterval(stepInterval)
             setLoading(false)
         }
     }
 
     const handleResumeUpload = async (file: File) => {
         if (!isAuthenticated) {
-            showWarning('请先登录', '登录后可上传简历并进行后续优化')
+            showWarning('请先登录', '登录后可上传简历')
             navigate('/login')
             return
         }
-
-        if (!file) return
-
         setResumeUploading(true)
         setResumeFileName(file.name)
-
         try {
             const token = localStorage.getItem('haigoo_auth_token')
-            const formData = new FormData()
-            formData.append('file', file)
-            formData.append('metadata', JSON.stringify({ source: 'home_hero' }))
-
-            const uploadResp = await fetch('/api/resumes', {
+            const fd = new FormData()
+            fd.append('file', file)
+            fd.append('metadata', JSON.stringify({ source: 'home_hero' }))
+            const resp = await fetch('/api/resumes', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: fd
             })
-
-            const uploadResult = await uploadResp.json()
-            if (!uploadResp.ok || !uploadResult.success) {
-                throw new Error(uploadResult.error || '上传失败')
-            }
-
-            setResumeId(uploadResult.id || null)
-            showSuccess('简历上传成功', '可在生成初版方案后继续优化简历')
+            const result = await resp.json()
+            if (!resp.ok || !result.success) throw new Error(result.error || '上传失败')
+            setResumeId(result.id || null)
         } catch (error: any) {
-            console.error(error)
-            showError('简历上传失败', error.message || '请稍后重试')
+            showError('简历上传失败', error.message)
             setResumeFileName(null)
             setResumeId(null)
         } finally {
@@ -164,234 +463,359 @@ export default function HomeHero({ stats }: HomeHeroProps) {
         }
     }
 
+    const STEPS = ['选择目标', '规划时间', '职业背景', '生成方案']
+
     return (
-        <div className="relative min-h-[900px] flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-40 pb-20">
-            {/* Background - Soft Gradient & Image */}
-            <div className="absolute inset-0 z-0">
-                <img 
-                    src="/background.webp" 
-                    alt="Background" 
-                    className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${imageLoaded ? 'opacity-30' : 'opacity-0'}`}
+        <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-32 pb-20">
+
+            {/* ── Aurora Background ── */}
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                <img
+                    src="/background.webp"
+                    alt=""
+                    className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${imageLoaded ? 'opacity-20' : 'opacity-0'}`}
                     onLoad={() => setImageLoaded(true)}
                 />
-                <div className="absolute inset-0 bg-white/40"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-slate-50"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/10 to-slate-50/90" />
+                {/* Aurora blobs */}
+                <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-indigo-200/25 blur-[100px] animate-[blobFloat_12s_ease-in-out_infinite]" />
+                <div className="absolute top-1/3 -right-48 w-[500px] h-[500px] rounded-full bg-purple-200/20 blur-[100px] animate-[blobFloat_16s_ease-in-out_infinite_reverse] [animation-delay:4s]" />
+                <div className="absolute -bottom-24 left-1/3 w-[400px] h-[400px] rounded-full bg-blue-200/20 blur-[90px] animate-[blobFloat_10s_ease-in-out_infinite] [animation-delay:2s]" />
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-                {/* Centered Title Section */}
-                <div className="text-center mb-16 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
-                    <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-tight tracking-tight font-sans">
-                        理想生活，从远程工作开始
+
+                {/* ── Hero Text ── */}
+                <div className="text-center mb-12 max-w-4xl mx-auto">
+                    <h1 className="text-5xl md:text-[68px] font-bold text-slate-900 mb-5 leading-[1.1] tracking-tight">
+                        理想生活，<br className="hidden sm:block" />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-500 to-purple-600">
+                            从远程工作开始
+                        </span>
                     </h1>
-                    <p className="text-xl md:text-2xl text-slate-500 max-w-2xl mx-auto leading-relaxed font-medium tracking-wide">
-                        全球精选 <span className="mx-2 text-slate-300">|</span> 人工逐条审核 <span className="mx-2 text-slate-300">|</span> 仅收录国人可申岗位
+                    <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+                        不只是找工作 — Haigoo 陪你走好从规划准备、投递面试到适应远程生活的每一步。
                     </p>
+
+                    {/* Trust Chips */}
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
+                        {[
+                            '✓ 1k+ 国内可申的真实远程机会',
+                            '✓ 500+ 精选远程企业',
+                            '✓ 5k+ 远程同行人',
+                        ].map((chip) => (
+                            <span key={chip} className="px-3 py-1 text-xs font-medium text-slate-600 bg-white/70 backdrop-blur-sm border border-slate-200 rounded-full shadow-sm">
+                                {chip}
+                            </span>
+                        ))}
+                    </div>
                 </div>
 
-                {/* Main Glass Panel */}
-                <div className="w-full max-w-6xl bg-white/60 backdrop-blur-xl border border-white/60 rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] p-2 md:p-3 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-2">
-                        {/* Left Side: Input Form */}
-                        <div className="lg:col-span-5 bg-white/80 rounded-[24px] p-8 md:p-10 flex flex-col justify-center border border-white/50 shadow-sm relative overflow-hidden">
-                            <div className="flex flex-col mb-8">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm border border-slate-100">
-                                        <img src="/copilot.webp" alt="Copilot" className="w-full h-full object-cover scale-110" />
-                                    </div>
-                                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Haigoo 远程工作助手</h2>
+                {/* ── Main Panel ── */}
+                <div className="w-full max-w-6xl bg-white/70 backdrop-blur-xl border border-white/80 rounded-[32px] shadow-[0_24px_80px_-20px_rgba(99,102,241,0.12),0_8px_32px_-8px_rgba(0,0,0,0.06)] p-2 md:p-3">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-2 min-h-[600px]">
+
+                        {/* ── Left: Wizard ── */}
+                        <div className="lg:col-span-5 bg-white/90 rounded-[24px] p-7 md:p-9 flex flex-col border border-white/60 shadow-sm relative overflow-hidden">
+                            {/* Header */}
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm border border-slate-100 flex-shrink-0">
+                                    <img src="/copilot.webp" alt="Copilot" className="w-full h-full object-cover scale-110" />
                                 </div>
-                                <p className="text-base text-slate-500 leading-relaxed font-medium">Haigoo 为您提供全流程辅助，从简历优化到远程工作的每一步</p>
+                                <div>
+                                    <h2 className="text-lg font-bold text-slate-900 leading-tight">Haigoo 远程助手</h2>
+                                    <p className="text-xs text-slate-400 mt-0.5">告诉我你的情况，AI 为你定制方案</p>
+                                </div>
                             </div>
 
-                            <div className="space-y-8">
-                                <div className="text-lg leading-loose text-slate-700 font-medium">
-                                    我希望寻找一份
-                                    <span className="relative inline-block mx-1.5 align-middle">
-                                        <select
-                                            value={formData.goal}
-                                            onChange={(e) => setFormData({...formData, goal: e.target.value as any})}
-                                            className="appearance-none bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold py-1 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer hover:bg-indigo-100 transition-colors"
-                                        >
-                                            <option value="full-time">全职远程</option>
-                                            <option value="part-time">兼职/副业</option>
-                                            <option value="freelance">自由职业</option>
-                                            <option value="internship">实习/入门</option>
-                                        </select>
-                                        <ChevronUp className="w-4 h-4 text-indigo-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none rotate-180" />
-                                    </span>
-                                    工作，
-                                    <br className="hidden md:block" />
-                                    预期
-                                    <span className="relative inline-block mx-1.5 align-middle">
-                                        <select
-                                            value={formData.timeline}
-                                            onChange={(e) => setFormData({...formData, timeline: e.target.value as any})}
-                                            className="appearance-none bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold py-1 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer hover:bg-indigo-100 transition-colors"
-                                        >
-                                            <option value="immediately">尽快</option>
-                                            <option value="1-3 months">1-3个月内</option>
-                                            <option value="3-6 months">3-6个月内</option>
-                                            <option value="flexible">随时</option>
-                                        </select>
-                                        <ChevronUp className="w-4 h-4 text-indigo-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none rotate-180" />
-                                    </span>
-                                    入职。
-                                    <br />
-                                    我的专业领域是
-                                    <span className="relative inline-block mx-1.5 align-middle w-32 md:w-40">
-                                        <input
-                                            ref={inputRef}
-                                            type="text"
-                                            value={formData.background.role}
-                                            onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
-                                            placeholder="如: 产品经理"
-                                            className="w-full bg-white border-b-2 border-slate-200 text-slate-900 font-bold py-1 px-1 focus:outline-none focus:border-indigo-500 transition-colors placeholder:font-normal placeholder:text-slate-400 text-center"
-                                        />
-                                    </span>
-                                    ，
-                                    <br className="hidden md:block" />
-                                    具备
-                                    <span className="relative inline-block mx-1.5 align-middle">
-                                        <select
-                                            value={formData.background.language}
-                                            onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
-                                            className="appearance-none bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold py-1 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer hover:bg-indigo-100 transition-colors"
-                                        >
-                                            <option value="English">英语</option>
-                                            <option value="Japanese">日语</option>
-                                            <option value="Chinese">中文</option>
-                                            <option value="Other">其他语言</option>
-                                        </select>
-                                        <ChevronUp className="w-4 h-4 text-indigo-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none rotate-180" />
-                                    </span>
-                                    工作能力。
-                                </div>
-
-                                <div className="pt-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => resumeInputRef.current?.click()}
-                                        className={`w-full flex items-center justify-between px-5 py-4 rounded-xl border transition-all group ${
-                                            resumeFileName 
-                                            ? 'border-emerald-200 bg-emerald-50/50 text-emerald-700' 
-                                            : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md'
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${resumeFileName ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-50 group-hover:text-indigo-600'} transition-colors`}>
-                                                {resumeFileName ? <CheckCircle2 className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
-                                            </div>
-                                            <div className="text-left">
-                                                <div className={`font-bold text-sm ${resumeFileName ? 'text-emerald-800' : 'text-slate-700'}`}>
-                                                    {resumeFileName ? '简历已上传' : '上传我的简历'}
-                                                </div>
-                                                <div className={`text-xs ${resumeFileName ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                                    {resumeFileName ? resumeFileName : '支持 PDF / Word 格式，AI 自动分析匹配'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {!resumeFileName && <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />}
-                                    </button>
-                                    <input
-                                        ref={resumeInputRef}
-                                        type="file"
-                                        accept=".pdf,.doc,.docx,.txt"
-                                        className="hidden"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0]
-                                            if (file) handleResumeUpload(file)
-                                        }}
-                                    />
-                                </div>
-
-                                <button 
-                                    onClick={handleGenerate}
-                                    disabled={loading}
-                                    className="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold text-lg rounded-xl transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
-                                >
-                                    {loading ? (
-                                        <>
-                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            <span>正在分析您的职业画像...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles className="w-5 h-5 text-indigo-400" />
-                                            生成我的远程求职方案
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Right Side: Realistic Demo */}
-                        <div className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center bg-slate-50/50">
-                            <div className="bg-white rounded-2xl p-8 shadow-[0_2px_40px_-10px_rgba(0,0,0,0.06)] border border-slate-100/50 relative overflow-hidden">
-                                {/* Decorative elements */}
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-50/50 to-transparent rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
-
-                                <div className="flex items-center justify-between mb-8">
-                                    <div>
-                                        <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">AI Copilot Demo</div>
-                                        <h3 className="text-xl font-bold text-slate-900">张伟的远程产品经理晋升路线</h3>
-                                    </div>
-                                    <div className="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100 flex items-center gap-1.5">
-                                        <span className="relative flex h-2 w-2">
-                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            {/* Step Indicator */}
+                            <div className="flex items-center gap-1.5 mb-7">
+                                {STEPS.map((label, i) => (
+                                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                        <div className={`h-1 w-full rounded-full transition-all duration-400 ${i < step ? 'bg-indigo-500' :
+                                                i === step ? 'bg-indigo-300' :
+                                                    'bg-slate-100'
+                                            }`} />
+                                        <span className={`text-[9px] font-semibold tracking-wide transition-colors ${i === step ? 'text-indigo-600' :
+                                                i < step ? 'text-indigo-400' :
+                                                    'text-slate-300'
+                                            }`}>
+                                            {label}
                                         </span>
-                                        匹配度 92%
                                     </div>
-                                </div>
-                                
-                                <div className="space-y-6 relative">
-                                    <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-100"></div>
+                                ))}
+                            </div>
 
-                                    {/* Step 1 */}
-                                    <div className="relative pl-12 group">
-                                        <div className="absolute left-0 top-1 w-10 h-10 rounded-full bg-white text-indigo-600 flex items-center justify-center font-bold text-sm border-2 border-indigo-50 shadow-sm z-10 group-hover:border-indigo-500 transition-colors">1</div>
-                                        <h4 className="font-bold text-slate-800 text-base mb-1">简历竞争力诊断与优化</h4>
-                                        <p className="text-sm text-slate-500 mb-3">检测到您的简历缺少 "SaaS Metrics" 相关数据支撑，建议补充 ARR/Churn Rate 等量化指标。</p>
-                                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex gap-3">
-                                            <div className="h-full w-1 bg-indigo-400 rounded-full"></div>
-                                            <div className="space-y-1">
-                                                <div className="text-xs font-bold text-slate-700">优化建议：</div>
-                                                <div className="text-xs text-slate-500">"负责产品迭代" → "主导核心功能重构，将用户留存率提升 15%"</div>
+                            {/* Step Panel with slide animation */}
+                            <div className="flex-1 relative overflow-hidden">
+                                <div
+                                    key={step}
+                                    className={`absolute inset-0 transition-all duration-220 ease-out ${animating
+                                            ? direction === 'forward'
+                                                ? 'opacity-0 translate-x-4'
+                                                : 'opacity-0 -translate-x-4'
+                                            : 'opacity-100 translate-x-0'
+                                        }`}
+                                >
+
+                                    {/* ── Step 0: Goal ── */}
+                                    {step === 0 && (
+                                        <div className="flex flex-col h-full">
+                                            <p className="text-sm font-semibold text-slate-700 mb-4">
+                                                你希望通过远程工作达到什么目的？
+                                            </p>
+                                            <div className="grid grid-cols-2 gap-2.5">
+                                                {GOAL_OPTIONS.map((opt) => {
+                                                    const isSelected = formData.goal === opt.value
+                                                    return (
+                                                        <button
+                                                            key={opt.value}
+                                                            onClick={() => setFormData({ ...formData, goal: opt.value })}
+                                                            className={`flex flex-col items-start text-left p-3.5 rounded-xl border-2 transition-all duration-200 shadow-sm ${isSelected
+                                                                    ? `${COLOR_MAP[opt.color]} shadow-lg`
+                                                                    : COLOR_IDLE
+                                                                }`}
+                                                        >
+                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-all ${isSelected ? ICON_MAP[opt.color] : 'bg-slate-100 text-slate-400'
+                                                                }`}>
+                                                                {opt.icon}
+                                                            </div>
+                                                            <div className="text-xs font-bold leading-tight mb-0.5">{opt.label}</div>
+                                                            <div className="text-[10px] text-current opacity-60 leading-tight">{opt.desc}</div>
+                                                        </button>
+                                                    )
+                                                })}
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
 
-                                    {/* Step 2 */}
-                                    <div className="relative pl-12 group">
-                                        <div className="absolute left-0 top-1 w-10 h-10 rounded-full bg-white text-slate-400 flex items-center justify-center font-bold text-sm border-2 border-slate-100 shadow-sm z-10 group-hover:border-indigo-500 group-hover:text-indigo-600 transition-colors">2</div>
-                                        <h4 className="font-bold text-slate-800 text-base mb-1">目标岗位精准推送</h4>
-                                        <p className="text-sm text-slate-500 mb-3">基于您的 3 年电商经验，为您筛选出 5 家正在招聘远程 PM 的出海/外企。</p>
-                                        <div className="flex gap-2 overflow-hidden">
-                                            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 shadow-sm flex items-center gap-1.5">
-                                                <img src="https://logo.clearbit.com/shopify.com" className="w-3 h-3 rounded-full opacity-70" onError={(e) => e.currentTarget.style.display='none'} />
-                                                Shopify
-                                            </div>
-                                            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 shadow-sm flex items-center gap-1.5">
-                                                <img src="https://logo.clearbit.com/deel.com" className="w-3 h-3 rounded-full opacity-70" onError={(e) => e.currentTarget.style.display='none'} />
-                                                Deel
-                                            </div>
-                                            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 shadow-sm">
-                                                +3 More
+                                    {/* ── Step 1: Timeline ── */}
+                                    {step === 1 && (
+                                        <div className="flex flex-col h-full">
+                                            <p className="text-sm font-semibold text-slate-700 mb-1">
+                                                你预计什么时候开始？
+                                            </p>
+                                            <p className="text-xs text-slate-400 mb-5">AI 将根据你的时间线倒推准备计划</p>
+                                            <div className="space-y-2.5">
+                                                {TIMELINE_OPTIONS.map((opt) => {
+                                                    const isSelected = formData.timeline === opt.value
+                                                    return (
+                                                        <button
+                                                            key={opt.value}
+                                                            onClick={() => setFormData({ ...formData, timeline: opt.value })}
+                                                            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${isSelected
+                                                                    ? 'border-indigo-400 bg-indigo-50 shadow-md shadow-indigo-100'
+                                                                    : 'border-slate-200 bg-white hover:border-slate-300'
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                                                                    }`}>
+                                                                    {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                                                                </div>
+                                                                <span className={`text-sm font-bold ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>
+                                                                    {opt.label}
+                                                                </span>
+                                                            </div>
+                                                            <span className={`text-xs font-medium ${isSelected ? 'text-indigo-500' : 'text-slate-400'}`}>
+                                                                {opt.sub}
+                                                            </span>
+                                                        </button>
+                                                    )
+                                                })}
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
 
-                                    {/* Step 3 */}
-                                    <div className="relative pl-12 opacity-70 group">
-                                        <div className="absolute left-0 top-1 w-10 h-10 rounded-full bg-white text-slate-300 flex items-center justify-center font-bold text-sm border-2 border-slate-100 shadow-sm z-10 group-hover:border-indigo-200 transition-colors">3</div>
-                                        <h4 className="font-bold text-slate-800 text-base mb-1">面试全真模拟 (英语/中文)</h4>
-                                        <p className="text-sm text-slate-500">针对 "Behavioral Question" 进行 1v1 模拟，提供 STAR 法则回答范例。</p>
-                                    </div>
+                                    {/* ── Step 2: Background ── */}
+                                    {step === 2 && (
+                                        <div className="flex flex-col gap-4">
+                                            <p className="text-sm font-semibold text-slate-700">
+                                                简单告诉我你的职业情况
+                                            </p>
+
+                                            {/* Role */}
+                                            <div>
+                                                <label className="text-xs font-semibold text-slate-500 mb-1.5 block uppercase tracking-wide">
+                                                    职业方向 <span className="text-rose-400">*</span>
+                                                </label>
+                                                <input
+                                                    ref={inputRef}
+                                                    type="text"
+                                                    value={formData.background.role}
+                                                    onChange={(e) => setFormData({ ...formData, background: { ...formData.background, role: e.target.value } })}
+                                                    placeholder="如：产品经理、UI 设计师、前端工程师..."
+                                                    className="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-200 text-slate-900 rounded-xl focus:outline-none focus:border-indigo-400 focus:bg-white transition-all text-sm font-medium placeholder:font-normal placeholder:text-slate-400"
+                                                />
+                                            </div>
+
+                                            {/* Selects row */}
+                                            <div className="grid grid-cols-3 gap-2.5">
+                                                {[
+                                                    { label: '资历', key: 'years', opts: SENIORITY_OPTIONS },
+                                                    { label: '学历', key: 'education', opts: EDUCATION_OPTIONS },
+                                                    { label: '语言', key: 'language', opts: LANGUAGE_OPTIONS },
+                                                ].map(({ label, key, opts }) => (
+                                                    <div key={key}>
+                                                        <label className="text-xs font-semibold text-slate-500 mb-1.5 block uppercase tracking-wide">
+                                                            {label}
+                                                        </label>
+                                                        <div className="relative">
+                                                            <select
+                                                                value={(formData.background as any)[key]}
+                                                                onChange={(e) => setFormData({ ...formData, background: { ...formData.background, [key]: e.target.value } })}
+                                                                className="w-full appearance-none px-3 py-2.5 bg-slate-50 border-2 border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-indigo-400 focus:bg-white transition-all text-xs font-semibold cursor-pointer pr-7"
+                                                            >
+                                                                {opts.map(o => <option key={o} value={o}>{o}</option>)}
+                                                            </select>
+                                                            <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Info note */}
+                                            <div className="text-xs text-slate-400 bg-slate-50 border border-slate-100 rounded-xl p-3">
+                                                信息填得越详细，AI 生成的方案越个性化，也更具可操作性
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* ── Step 3: Resume + Generate ── */}
+                                    {step === 3 && (
+                                        <div className="flex flex-col gap-4">
+                                            <p className="text-sm font-semibold text-slate-700">
+                                                上传简历（可选）让 AI 诊断更精准
+                                            </p>
+
+                                            {/* Resume Upload */}
+                                            <button
+                                                type="button"
+                                                onClick={() => resumeInputRef.current?.click()}
+                                                className={`w-full flex items-center justify-between px-4 py-4 rounded-xl border-2 transition-all group ${resumeFileName
+                                                        ? 'border-emerald-300 bg-emerald-50'
+                                                        : 'border-dashed border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/30'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${resumeFileName ? 'bg-emerald-100 text-emerald-600' : 'bg-white text-slate-400 group-hover:text-indigo-500 border border-slate-200'
+                                                        }`}>
+                                                        {resumeUploading ? (
+                                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                        ) : resumeFileName ? (
+                                                            <CheckCircle2 className="w-5 h-5" />
+                                                        ) : (
+                                                            <Upload className="w-4 h-4" />
+                                                        )}
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <div className={`text-sm font-bold ${resumeFileName ? 'text-emerald-800' : 'text-slate-600'}`}>
+                                                            {resumeFileName ? '简历已上传 ✓' : '上传简历（可选）'}
+                                                        </div>
+                                                        <div className="text-xs text-slate-400 mt-0.5">
+                                                            {resumeFileName ? resumeFileName : '支持 PDF / Word · AI 自动分析'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {!resumeFileName && <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />}
+                                            </button>
+                                            <input
+                                                ref={resumeInputRef}
+                                                type="file"
+                                                accept=".pdf,.doc,.docx,.txt"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0]
+                                                    if (file) handleResumeUpload(file)
+                                                }}
+                                            />
+
+                                            {/* Free tier note */}
+                                            <div className="flex items-start gap-2 text-xs text-slate-400 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                                                <div>
+                                                    <span className="font-semibold text-amber-700">免费用户可生成 1 次</span> 完整 AI 方案。
+                                                    简历上传诊断、无限生成等高级功能需
+                                                    <button onClick={() => navigate('/membership')} className="underline text-amber-600 ml-0.5">升级会员</button>。
+                                                </div>
+                                            </div>
+
+                                            {/* Generate CTA */}
+                                            <button
+                                                onClick={handleGenerate}
+                                                disabled={loading}
+                                                className="w-full py-4 rounded-xl font-bold text-base text-white relative overflow-hidden group disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:scale-[1.015] active:scale-[0.99] shadow-xl shadow-indigo-500/20"
+                                                style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}
+                                            >
+                                                <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <span className="relative flex items-center justify-center gap-2.5">
+                                                    {loading ? (
+                                                        <>
+                                                            <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                            正在生成专属方案...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Sparkles className="w-4 h-4" />
+                                                            生成我的远程求职方案
+                                                        </>
+                                                    )}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* Navigation Buttons */}
+                            <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-100">
+                                <button
+                                    onClick={prevStep}
+                                    disabled={step === 0}
+                                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 disabled:opacity-0 disabled:pointer-events-none transition-all rounded-lg hover:bg-slate-100"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    返回
+                                </button>
+
+                                {step < 3 && (
+                                    <button
+                                        onClick={nextStep}
+                                        className="flex items-center gap-1.5 px-5 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-all shadow-sm shadow-indigo-300 hover:shadow-md hover:shadow-indigo-300 hover:-translate-y-0.5"
+                                    >
+                                        继续
+                                        <ArrowRight className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
+
+                        {/* ── Right: Demo ── */}
+                        <div
+                            className="lg:col-span-7 p-5 md:p-8 flex flex-col justify-center bg-gradient-to-br from-slate-50/60 to-indigo-50/30 rounded-[22px] relative overflow-hidden group"
+                            onMouseEnter={() => setDemoPaused(true)}
+                            onMouseLeave={() => setDemoPaused(false)}
+                        >
+                            {/* Hover overlay */}
+                            <div className={`absolute inset-0 rounded-[22px] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-all duration-300 ${demoPaused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                                <div className="text-center">
+                                    <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-3">
+                                        <Sparkles className="w-7 h-7 text-indigo-600" />
+                                    </div>
+                                    <p className="text-sm font-bold text-slate-800 mb-1">填写左侧信息</p>
+                                    <p className="text-xs text-slate-500">AI 将为你生成专属版本</p>
+                                </div>
+                            </div>
+
+                            <DemoPanel paused={demoPaused} />
+                        </div>
+
                     </div>
+                </div>
+
+                {/* Scroll hint */}
+                <div className="mt-10 flex flex-col items-center gap-1.5 text-slate-400">
+                    <span className="text-xs font-medium">查看精选岗位</span>
+                    <ChevronDown className="w-4 h-4 animate-bounce" />
                 </div>
             </div>
         </div>
