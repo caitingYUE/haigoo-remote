@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download, Briefcase, Settings, Sparkles, ArrowRight } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download, Briefcase, Settings, Sparkles, ArrowRight, Lock } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -1369,7 +1369,7 @@ export default function ProfileCenterPage() {
                       <div>
                         <h4 className="text-lg font-bold text-white mb-2">开通会员</h4>
                         <p className="text-xs text-indigo-100 leading-relaxed opacity-90">
-                          解锁无限次 AI 简历优化、内推直达通道及职位专属推荐权益。
+                          解锁无限次 AI 简历优化、内推直达通道及专家职业规划服务。
                         </p>
                       </div>
                       <button
@@ -1441,13 +1441,31 @@ export default function ProfileCenterPage() {
           <main className="flex-1 min-w-0">
             <div className="transition-all duration-300">
               {tab === 'custom-plan' && (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center min-h-[400px] flex flex-col items-center justify-center">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden">
+                  {!isMember && (
+                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-8">
+                        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-200/50">
+                           <Lock className="w-8 h-8 text-indigo-600" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-slate-900 mb-3">解锁您的专属 AI 职业规划</h3>
+                        <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+                           升级会员即可获取完整的 AI 职业分析报告，包括简历深度优化建议、岗位匹配度分析及面试辅导策略。
+                        </p>
+                        <button 
+                           onClick={() => navigate('/membership')}
+                           className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-teal-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all hover:-translate-y-0.5 flex items-center gap-2"
+                        >
+                           立即升级解锁 <Sparkles className="w-4 h-4" />
+                        </button>
+                     </div>
+                  )}
+                  
                   <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
                     <Sparkles className="w-10 h-10 text-indigo-600" />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-3">您的 AI 定制方案</h3>
                   <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
-                    完成首页的 AI Copilot 问答后，您的专属远程求职方案（包括简历优化、岗位推荐、面试辅导）将显示在这里。
+                    完成首页的 AI Copilot 问答后，您的专属远程求职方案（包括简历优化、岗位匹配、面试辅导）将显示在这里。
                   </p>
                   <Link 
                     to="/" 

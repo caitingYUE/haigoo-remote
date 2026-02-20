@@ -183,14 +183,15 @@ export default function Header() {
             {/* Logo Image with Optical Adjustment */}
             <Link
               to="/"
-              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-2"
+              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-3"
               aria-label="Haigoo 首页"
             >
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
-                className="h-10 md:h-12 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
+                className="h-12 md:h-14 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
               />
+              <span className="hidden md:block text-base font-bold text-slate-900 tracking-tight">海狗远程俱乐部</span>
             </Link>
           </div>
 
@@ -231,12 +232,13 @@ export default function Header() {
 
             <Link
               to="/membership"
-              className={`text-base transition-colors no-underline hover:no-underline ${
+              className={`text-base transition-colors no-underline hover:no-underline flex items-center gap-1 ${
                 location.pathname === '/membership'
-                  ? 'text-slate-900 font-bold'
-                  : 'text-slate-500 font-medium hover:text-slate-900'
+                  ? 'text-indigo-600 font-bold'
+                  : 'text-slate-500 font-medium hover:text-indigo-600'
               }`}
             >
+              <Crown className="w-4 h-4" />
               会员中心
             </Link>
 
