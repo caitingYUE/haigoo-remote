@@ -243,31 +243,31 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.12] mix-blend-soft-light"></div>
             </div>
 
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 mt-10">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-80px)] min-h-[700px] flex items-center pt-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center w-full">
                     
                     {/* Left Column: Content & Form */}
-                    <div className="max-w-2xl animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        <h1 className="text-6xl md:text-8xl font-bold text-slate-900 mb-8 leading-[1.05] tracking-tight">
+                    <div className="max-w-xl animate-in fade-in slide-in-from-bottom-6 duration-700">
+                        <h1 className="text-5xl lg:text-7xl font-bold text-slate-900 mb-6 leading-[1.05] tracking-tight">
                             理想生活，<br/>
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 pb-2">
                                 从远程工作开始
                             </span>
                         </h1>
-                        <p className="text-xl md:text-2xl text-slate-600 max-w-2xl leading-relaxed font-normal mb-12">
+                        <p className="text-lg text-slate-600 max-w-xl leading-relaxed font-normal mb-8">
                             不只是找工作。Haigoo Copilot 为您提供从简历评估、岗位匹配到面试策略的全流程 AI 辅助。
                         </p>
 
                         {/* Mad Libs Style Form */}
-                        <div className="bg-white/80 backdrop-blur-md border border-slate-200/70 rounded-3xl p-6 md:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] hover:shadow-[0_25px_70px_-12px_rgba(0,0,0,0.15)] transition-all duration-300">
-                            <div className="text-xl md:text-2xl leading-relaxed font-medium text-slate-700 space-y-4">
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                        <div className="bg-white/80 backdrop-blur-md border border-slate-200/70 rounded-2xl p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] hover:shadow-[0_25px_70px_-12px_rgba(0,0,0,0.15)] transition-all duration-300">
+                            <div className="text-lg leading-relaxed font-medium text-slate-700 space-y-3">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                       <span>我拥有</span>
                       <div className="relative inline-block">
                         <select
                           value={formData.background.education}
                           onChange={(e) => setFormData({...formData, background: {...formData.background, education: e.target.value}})}
-                          className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
+                          className="appearance-none cursor-pointer inline-block bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-base"
                         >
                           <option value="Bachelor">本科学历</option>
                           <option value="Master">硕士学历</option>
@@ -275,32 +275,32 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                           <option value="Associate">大专学历</option>
                           <option value="Other">其他学历</option>
                         </select>
-                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                        <ChevronUp className="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
                       </div>
                       <span>和</span>
                       <div className="relative inline-block">
                         <select
                           value={formData.background.language}
                           onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
-                          className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
+                          className="appearance-none cursor-pointer inline-block bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-base"
                         >
                           <option value="Native">母语水平</option>
                           <option value="Fluent">流利沟通</option>
                           <option value="Intermediate">日常交流</option>
                           <option value="Basic">基础读写</option>
                         </select>
-                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                        <ChevronUp className="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
                       </div>
                       <span>英语能力。</span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                       <span>希望能通过远程工作实现</span>
                       <div className="relative inline-block">
                         <select
                           value={formData.purpose}
                           onChange={(e) => setFormData({...formData, purpose: e.target.value as any})}
-                          className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
+                          className="appearance-none cursor-pointer inline-block bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-base"
                         >
                           <option value="remote-first">远程优先生活</option>
                           <option value="income-up">收入提升</option>
@@ -308,12 +308,12 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                           <option value="flexibility">时间自由</option>
                           <option value="global-exposure">全球化视野</option>
                         </select>
-                        <ChevronUp className="w-4 h-4 text-indigo-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
+                        <ChevronUp className="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 top-1/2 -translate-y-1/2 rotate-180 pointer-events-none" />
                       </div>
                       <span>。</span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                       <span>我正在寻找一份</span>
                                     <div className="relative inline-block group">
                                         <input
@@ -322,20 +322,19 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                             value={formData.background.role}
                                             onChange={(e) => setFormData({...formData, background: {...formData.background, role: e.target.value}})}
                                             placeholder="输入职位名称"
-                                            className="inline-block w-[180px] bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all placeholder:text-indigo-300 placeholder:font-normal rounded-t-md"
+                                            className="inline-block w-[160px] bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-indigo-300 placeholder:font-normal rounded-lg text-base"
                                         />
-                                        <span className="absolute -bottom-5 left-0 text-xs text-slate-400 opacity-0 group-focus-within:opacity-100 transition-opacity">例如：产品经理</span>
                                     </div>
                                     <span>工作，</span>
                                 </div>
                                 
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                                     <span>希望</span>
                                     <div className="relative inline-block">
                                         <select
                                             value={formData.timeline}
                                             onChange={(e) => setFormData({...formData, timeline: e.target.value as any})}
-                                            className="appearance-none cursor-pointer inline-block bg-transparent border-b-2 border-indigo-200 text-indigo-700 font-bold px-2 py-1 pr-8 focus:outline-none focus:border-indigo-500 focus:bg-indigo-50/30 transition-all rounded-t-md"
+                                            className="appearance-none cursor-pointer inline-block bg-indigo-50/80 hover:bg-indigo-100 border border-transparent hover:border-indigo-200 text-indigo-700 font-bold px-3 py-1 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all rounded-lg text-base"
                                         >
                                             <option value="immediately">尽快</option>
                                             <option value="1-3 months">1-3个月内</option>
@@ -429,125 +428,134 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     </div>
 
                     {/* Right Column: Glass Dashboard Visual */}
-                    <div className="hidden lg:block relative h-[600px] w-full perspective-[2000px]">
+                    <div className="hidden lg:block relative h-[500px] w-full perspective-[2000px]">
                         <style>{`
                             @keyframes float-slow {
-                                0%, 100% { transform: translateY(0px) rotateY(-12deg) rotateX(5deg); }
-                                50% { transform: translateY(-20px) rotateY(-12deg) rotateX(5deg); }
+                                0%, 100% { transform: translateY(0px) rotateY(-8deg) rotateX(2deg); }
+                                50% { transform: translateY(-15px) rotateY(-8deg) rotateX(2deg); }
                             }
                             .animate-float-slow {
                                 animation: float-slow 8s ease-in-out infinite;
                             }
                         `}</style>
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-full blur-[80px]"></div>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100%] h-[100%] bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-full blur-[60px]"></div>
                         
                         {/* Main Floating Card */}
-                <div className="animate-float-slow absolute inset-0 bg-white/40 backdrop-blur-2xl border border-white/60 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(50,50,93,0.15)] p-8 flex flex-col gap-6 transition-all duration-700 ease-out transform-style-3d hover:shadow-[0_50px_120px_-20px_rgba(50,50,93,0.2)]">
-                  
-                  {/* Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-[#1A365D] flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-indigo-900/20">H</div>
-                      <div>
-                        <div className="text-base font-bold text-slate-800">我的远程成功计划</div>
-                        <div className="text-sm text-slate-500">85% 已完成</div>
-                      </div>
-                    </div>
-                    <div className="h-2.5 w-32 bg-white/50 rounded-full overflow-hidden border border-white/20">
-                      <div className="h-full w-[85%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                    </div>
-                  </div>
-
-                  {/* Top Row Grid */}
-                  <div className="grid grid-cols-2 gap-5">
-                    {/* Priorities Card */}
-                    <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-white/50 space-y-4">
-                      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">今日优先级</div>
-                      <div className="space-y-3">
-                        <div className="flex items-start gap-3">
-                          <div className="mt-0.5 w-5 h-5 rounded-md bg-indigo-500 flex items-center justify-center text-white shadow-sm shadow-indigo-200">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          </div>
-                          <div className="text-sm font-medium text-slate-800 leading-snug">查看 "Product Manager at Linear"</div>
-                        </div>
-                        <div className="flex items-start gap-3 opacity-60">
-                          <div className="mt-0.5 w-5 h-5 rounded-md border-2 border-slate-300"></div>
-                          <div className="text-sm font-medium text-slate-700 leading-snug">准备产品思维面试题</div>
-                        </div>
-                        <div className="flex items-start gap-3 opacity-60">
-                          <div className="mt-0.5 w-5 h-5 rounded-md border-2 border-slate-300"></div>
-                          <div className="text-sm font-medium text-slate-700 leading-snug">优化 LinkedIn 个人资料</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Stats Card */}
-                    <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-white/50 space-y-4">
-                      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">岗位匹配进度</div>
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between text-[11px] font-medium text-slate-600 mb-1.5">
-                            <span>简历评分</span>
-                            <span>92/100</span>
-                          </div>
-                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full w-[92%] bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-[11px] font-medium text-slate-600 mb-1.5">
-                            <span>技能匹配</span>
-                            <span>88%</span>
-                          </div>
-                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full w-[88%] bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.4)]"></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-[11px] font-medium text-slate-600 mb-1.5">
-                            <span>文化契合</span>
-                            <span>90%</span>
-                          </div>
-                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full w-[90%] bg-purple-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.4)]"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Recommended Roles Section */}
-                  <div className="bg-white/60 rounded-2xl p-5 shadow-sm border border-white/50 flex-1 overflow-hidden flex flex-col">
-                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">推荐岗位</div>
-                    <div className="space-y-3 flex-1 overflow-hidden relative">
-                        {/* Static High-Quality Demo Jobs */}
-                        {[
-                            { id: 'demo-1', title: 'Senior Product Manager', company: 'Linear', salary: '$160k - $220k', match: 98 },
-                            { id: 'demo-2', title: 'Product Lead, Growth', company: 'Notion', salary: '$190k - $260k', match: 95 },
-                            { id: 'demo-3', title: 'Technical Product Manager', company: 'Stripe', salary: '$170k - $240k', match: 92 },
-                        ].map((job) => (
-                          <div key={job.id} className="flex items-center gap-4 p-3 rounded-xl bg-white/80 border border-white/60 shadow-sm hover:scale-[1.02] transition-transform cursor-default group">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm group-hover:shadow-md transition-shadow">
-                              <Briefcase className="w-5 h-5" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-bold text-slate-800 truncate">{job.title}</div>
-                              <div className="text-xs text-slate-500 truncate mt-0.5">{job.company} · {job.salary}</div>
-                            </div>
-                            <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100/50">
-                              {job.match}%
+                        <div className="animate-float-slow absolute inset-0 bg-white/60 backdrop-blur-xl border border-white/80 rounded-[32px] shadow-[0_30px_80px_-20px_rgba(50,50,93,0.15)] overflow-hidden flex transition-all duration-700 ease-out transform-style-3d hover:shadow-[0_40px_100px_-20px_rgba(50,50,93,0.2)]">
+                          
+                          {/* Sidebar (Dark Blue) */}
+                          <div className="w-16 bg-[#0F172A] flex flex-col items-center py-6 gap-6 flex-shrink-0 z-10">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30">H</div>
+                            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white/50">
+                                <div className="w-4 h-0.5 bg-white/50 rounded-full mb-1"></div>
+                                <div className="w-4 h-0.5 bg-white/50 rounded-full mb-1"></div>
+                                <div className="w-4 h-0.5 bg-white/50 rounded-full"></div>
                             </div>
                           </div>
-                        ))}
-                        {/* Fade at bottom */}
-                        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 to-transparent pointer-events-none"></div>
-                    </div>
-                  </div>
-                </div>
+
+                          {/* Main Content Area */}
+                          <div className="flex-1 p-6 flex flex-col gap-5 overflow-hidden bg-gradient-to-br from-white/40 to-white/10">
+                              
+                              {/* Header & Progress */}
+                              <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="font-bold text-slate-800 text-sm">我的远程成功计划</h3>
+                                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">85% Completed</span>
+                                </div>
+                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full w-[85%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.3)]"></div>
+                                </div>
+                              </div>
+
+                              {/* Middle Grid */}
+                              <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+                                  {/* Priorities */}
+                                  <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50 flex flex-col">
+                                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">今日优先级</div>
+                                      <div className="space-y-2.5 flex-1 overflow-y-auto pr-1">
+                                        <div className="flex items-start gap-2.5">
+                                            <div className="mt-0.5 w-4 h-4 rounded bg-indigo-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                                                <CheckCircle2 className="w-3 h-3" />
+                                            </div>
+                                            <div className="text-xs font-medium text-slate-800 leading-snug">查看 "Product Manager at Linear"</div>
+                                        </div>
+                                        <div className="flex items-start gap-2.5 opacity-60">
+                                            <div className="mt-0.5 w-4 h-4 rounded border-2 border-slate-300 flex-shrink-0"></div>
+                                            <div className="text-xs font-medium text-slate-700 leading-snug">准备产品思维面试题</div>
+                                        </div>
+                                        <div className="flex items-start gap-2.5 opacity-60">
+                                            <div className="mt-0.5 w-4 h-4 rounded border-2 border-slate-300 flex-shrink-0"></div>
+                                            <div className="text-xs font-medium text-slate-700 leading-snug">优化 LinkedIn 个人资料</div>
+                                        </div>
+                                      </div>
+                                  </div>
+
+                                  {/* Match Stats */}
+                                  <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50 flex flex-col">
+                                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">匹配分析</div>
+                                      <div className="space-y-3 flex-1">
+                                        <div>
+                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
+                                                <span>简历评分</span>
+                                                <span className="text-emerald-600">92</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-full w-[92%] bg-emerald-500 rounded-full"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
+                                                <span>技能匹配</span>
+                                                <span className="text-indigo-600">88</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-full w-[88%] bg-indigo-500 rounded-full"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
+                                                <span>文化契合</span>
+                                                <span className="text-purple-600">90</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-full w-[90%] bg-purple-500 rounded-full"></div>
+                                            </div>
+                                        </div>
+                                      </div>
+                                  </div>
+                              </div>
+
+                              {/* Bottom Jobs */}
+                              <div className="bg-white/60 rounded-2xl p-4 shadow-sm border border-white/50 h-[140px] overflow-hidden flex flex-col relative">
+                                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">推荐岗位</div>
+                                  <div className="space-y-2.5">
+                                      {[
+                                          { id: 'demo-1', title: 'Senior Product Manager', company: 'Linear', salary: '$160k - $220k', match: 98 },
+                                          { id: 'demo-2', title: 'Product Lead, Growth', company: 'Notion', salary: '$190k - $260k', match: 95 },
+                                      ].map((job) => (
+                                        <div key={job.id} className="flex items-center gap-3 p-2 rounded-xl bg-white/80 border border-white/60 shadow-sm">
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                                                <Briefcase className="w-4 h-4" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs font-bold text-slate-800 truncate">{job.title}</div>
+                                                <div className="text-[10px] text-slate-500 truncate">{job.company}</div>
+                                            </div>
+                                            <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100/50">
+                                                {job.match}%
+                                            </div>
+                                        </div>
+                                      ))}
+                                  </div>
+                                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white/80 to-transparent pointer-events-none"></div>
+                              </div>
+
+                          </div>
+                        </div>
 
                         {/* Decorative Elements */}
-                        <div className="absolute -right-10 top-20 w-24 h-24 bg-purple-400 rounded-2xl rotate-12 blur-2xl opacity-40 animate-pulse"></div>
-                        <div className="absolute -left-5 bottom-10 w-32 h-32 bg-indigo-400 rounded-full blur-3xl opacity-30 animate-pulse delay-700"></div>
+                        <div className="absolute -right-10 top-20 w-24 h-24 bg-purple-400 rounded-2xl rotate-12 blur-2xl opacity-30 animate-pulse"></div>
+                        <div className="absolute -left-5 bottom-10 w-32 h-32 bg-indigo-400 rounded-full blur-3xl opacity-20 animate-pulse delay-700"></div>
                     </div>
                 </div>
             </div>
