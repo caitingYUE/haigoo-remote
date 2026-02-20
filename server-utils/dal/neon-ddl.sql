@@ -57,3 +57,28 @@ CREATE TABLE IF NOT EXISTS copilot_sessions (
 
 CREATE INDEX IF NOT EXISTS idx_copilot_sessions_user_id ON copilot_sessions(user_id);
 
+-- 2026-02-20: Fix Missing Columns and Tables
+-- Description: Add missing job_bundles table and columns for favorites snapshots and hiring email
+
+-- 1. Job Bundles
+CREATE TABLE IF NOT EXISTS job_bundles (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    subtitle VARCHAR(255),
+    content TEXT,
+    job_ids JSONB DEFAULT '[]',
+    priority INT DEFAULT 10,
+    start_time TIMESTAMP WITH TIME ZONE,
+    end_time TIMESTAMP WITH TIME ZONE,
+    is_public BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. Favorites Snapshots
+ALTER TABLE user_job_interactions ADD COLUMN IF NOT EXISTS job_title_snapshot VARCHAR(255);
+ALTER TABLE user_job_interactions ADD COLUMN IF NOT EXISTS company_name_snapshot VARCHAR(255);
+
+-- 3. Trusted Companies Hiring Email
+ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS hiring_email VARCHAR(255);
