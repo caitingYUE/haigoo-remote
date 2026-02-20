@@ -248,17 +248,13 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                     
                     {/* Left Column: Content & Form */}
                     <div className="max-w-2xl animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-slate-200/70 text-slate-700 text-sm font-semibold mb-6 backdrop-blur-md shadow-sm">
-                            <Sparkles className="w-4 h-4 text-indigo-500" />
-                            <span className="text-slate-700">AI 远程求职 Copilot 2.0</span>
-                        </div>
-                        <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-[1.1] tracking-tight">
+                        <h1 className="text-6xl md:text-8xl font-bold text-slate-900 mb-8 leading-[1.05] tracking-tight">
                             理想生活，<br/>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 pb-2">
                                 从远程工作开始
                             </span>
                         </h1>
-                        <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal mb-10">
+                        <p className="text-xl md:text-2xl text-slate-600 max-w-2xl leading-relaxed font-normal mb-12">
                             不只是找工作。Haigoo Copilot 为您提供从简历评估、岗位匹配到面试策略的全流程 AI 辅助。
                         </p>
 
@@ -446,123 +442,108 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-full blur-[80px]"></div>
                         
                         {/* Main Floating Card */}
-                        <div className="animate-float-slow absolute inset-0 bg-white/40 backdrop-blur-xl border border-white/60 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(50,50,93,0.15)] p-6 flex flex-col gap-6 transition-all duration-700 ease-out transform-style-3d hover:shadow-[0_50px_120px_-20px_rgba(50,50,93,0.2)]">
-                            
-                            {/* Header */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-[#1A365D] flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-900/20">H</div>
-                                    <div>
-                                        <div className="text-sm font-bold text-slate-800">我的远程成功计划</div>
-                                        <div className="text-xs text-slate-500">85% 已完成</div>
-                                    </div>
-                                </div>
-                                <div className="h-2 w-24 bg-white/50 rounded-full overflow-hidden border border-white/20">
-                                    <div className="h-full w-[85%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                                </div>
-                            </div>
+                <div className="animate-float-slow absolute inset-0 bg-white/40 backdrop-blur-2xl border border-white/60 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(50,50,93,0.15)] p-8 flex flex-col gap-6 transition-all duration-700 ease-out transform-style-3d hover:shadow-[0_50px_120px_-20px_rgba(50,50,93,0.2)]">
+                  
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-[#1A365D] flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-indigo-900/20">H</div>
+                      <div>
+                        <div className="text-base font-bold text-slate-800">我的远程成功计划</div>
+                        <div className="text-sm text-slate-500">85% 已完成</div>
+                      </div>
+                    </div>
+                    <div className="h-2.5 w-32 bg-white/50 rounded-full overflow-hidden border border-white/20">
+                      <div className="h-full w-[85%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                    </div>
+                  </div>
 
-                            {/* Top Row Grid */}
-                            <div className="grid grid-cols-2 gap-4">
-                                {/* Priorities Card */}
-                                <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50 space-y-3">
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">今日优先级</div>
-                                    <div className="space-y-2">
-                                        <div className="flex items-start gap-2">
-                                            <div className="mt-0.5 w-4 h-4 rounded bg-indigo-500 flex items-center justify-center text-white">
-                                                <CheckCircle2 className="w-3 h-3" />
-                                            </div>
-                                            <div className="text-xs font-medium text-slate-700 leading-snug">查看 "Product Manager at Linear"</div>
-                                        </div>
-                                        <div className="flex items-start gap-2 opacity-50">
-                                            <div className="mt-0.5 w-4 h-4 rounded border border-slate-300"></div>
-                                            <div className="text-xs font-medium text-slate-700 leading-snug">准备行为面试问题</div>
-                                        </div>
-                                        <div className="flex items-start gap-2 opacity-50">
-                                            <div className="mt-0.5 w-4 h-4 rounded border border-slate-300"></div>
-                                            <div className="text-xs font-medium text-slate-700 leading-snug">优化 LinkedIn 个人资料</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Stats Card */}
-                                <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-white/50 space-y-3">
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">岗位匹配进度</div>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
-                                                <span>简历评分</span>
-                                                <span>92/100</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <div className="h-full w-[92%] bg-emerald-500 rounded-full"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
-                                                <span>技能匹配</span>
-                                                <span>88%</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <div className="h-full w-[88%] bg-indigo-500 rounded-full"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between text-[10px] font-medium text-slate-600 mb-1">
-                                                <span>文化契合</span>
-                                                <span>90%</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <div className="h-full w-[90%] bg-purple-500 rounded-full"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Recommended Roles Section */}
-                            <div className="bg-white/60 rounded-2xl p-4 shadow-sm border border-white/50 flex-1 overflow-hidden flex flex-col">
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">推荐岗位</div>
-                                <div className="space-y-3 flex-1 overflow-hidden relative">
-                                    {jobsLoading ? (
-                                        // Loading Skeletons
-                                        [1, 2, 3].map(i => (
-                                            <div key={i} className="flex items-center gap-3 p-2 rounded-xl bg-white/50 border border-white/60">
-                                                <div className="w-8 h-8 rounded-lg bg-slate-100 animate-pulse"></div>
-                                                <div className="flex-1 space-y-1">
-                                                    <div className="h-3 w-2/3 bg-slate-100 rounded animate-pulse"></div>
-                                                    <div className="h-2 w-1/2 bg-slate-100 rounded animate-pulse"></div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : recommendedJobs.length > 0 ? (
-                                        // Real Jobs
-                                        recommendedJobs.map((job) => (
-                                            <div key={job.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/80 border border-white/60 shadow-sm hover:scale-[1.02] transition-transform cursor-default">
-                                                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                                    <Briefcase className="w-4 h-4" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-xs font-bold text-slate-800 truncate">{job.title}</div>
-                                                    <div className="text-[10px] text-slate-500 truncate">{job.company || 'Unknown'} · {formatSalary(job.salary)}</div>
-                                                </div>
-                                                <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                                                    95%
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        // Fallback if no jobs
-                                        <div className="flex flex-col items-center justify-center h-full text-slate-400 text-xs gap-2">
-                                            <Search className="w-6 h-6 opacity-50" />
-                                            <span>暂无推荐岗位</span>
-                                        </div>
-                                    )}
-                                    {/* Fade at bottom */}
-                                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white/60 to-transparent pointer-events-none"></div>
-                                </div>
-                            </div>
+                  {/* Top Row Grid */}
+                  <div className="grid grid-cols-2 gap-5">
+                    {/* Priorities Card */}
+                    <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-white/50 space-y-4">
+                      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">今日优先级</div>
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 w-5 h-5 rounded-md bg-indigo-500 flex items-center justify-center text-white shadow-sm shadow-indigo-200">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="text-sm font-medium text-slate-800 leading-snug">查看 "Product Manager at Linear"</div>
                         </div>
+                        <div className="flex items-start gap-3 opacity-60">
+                          <div className="mt-0.5 w-5 h-5 rounded-md border-2 border-slate-300"></div>
+                          <div className="text-sm font-medium text-slate-700 leading-snug">准备产品思维面试题</div>
+                        </div>
+                        <div className="flex items-start gap-3 opacity-60">
+                          <div className="mt-0.5 w-5 h-5 rounded-md border-2 border-slate-300"></div>
+                          <div className="text-sm font-medium text-slate-700 leading-snug">优化 LinkedIn 个人资料</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats Card */}
+                    <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-white/50 space-y-4">
+                      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">岗位匹配进度</div>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-[11px] font-medium text-slate-600 mb-1.5">
+                            <span>简历评分</span>
+                            <span>92/100</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full w-[92%] bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[11px] font-medium text-slate-600 mb-1.5">
+                            <span>技能匹配</span>
+                            <span>88%</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full w-[88%] bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.4)]"></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[11px] font-medium text-slate-600 mb-1.5">
+                            <span>文化契合</span>
+                            <span>90%</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full w-[90%] bg-purple-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.4)]"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recommended Roles Section */}
+                  <div className="bg-white/60 rounded-2xl p-5 shadow-sm border border-white/50 flex-1 overflow-hidden flex flex-col">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">推荐岗位</div>
+                    <div className="space-y-3 flex-1 overflow-hidden relative">
+                        {/* Static High-Quality Demo Jobs */}
+                        {[
+                            { id: 'demo-1', title: 'Senior Product Manager', company: 'Linear', salary: '$160k - $220k', match: 98 },
+                            { id: 'demo-2', title: 'Product Lead, Growth', company: 'Notion', salary: '$190k - $260k', match: 95 },
+                            { id: 'demo-3', title: 'Technical Product Manager', company: 'Stripe', salary: '$170k - $240k', match: 92 },
+                        ].map((job) => (
+                          <div key={job.id} className="flex items-center gap-4 p-3 rounded-xl bg-white/80 border border-white/60 shadow-sm hover:scale-[1.02] transition-transform cursor-default group">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm group-hover:shadow-md transition-shadow">
+                              <Briefcase className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-bold text-slate-800 truncate">{job.title}</div>
+                              <div className="text-xs text-slate-500 truncate mt-0.5">{job.company} · {job.salary}</div>
+                            </div>
+                            <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100/50">
+                              {job.match}%
+                            </div>
+                          </div>
+                        ))}
+                        {/* Fade at bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 to-transparent pointer-events-none"></div>
+                    </div>
+                  </div>
+                </div>
 
                         {/* Decorative Elements */}
                         <div className="absolute -right-10 top-20 w-24 h-24 bg-purple-400 rounded-2xl rotate-12 blur-2xl opacity-40 animate-pulse"></div>
