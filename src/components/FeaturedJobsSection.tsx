@@ -13,11 +13,11 @@ interface FeaturedJobsSectionProps {
 
 const CATEGORIES = [
   { id: 'all', label: '全部精选', icon: Sparkles },
-  { id: 'Product Manager,Product Owner,Product Marketing,Head of Product', label: '产品经理', icon: Layers },
-  { id: 'Software Engineer,Frontend,Backend,Full Stack,DevOps,Data Engineer,Algorithm', label: '技术研发', icon: Code2 },
-  { id: 'Marketing,Digital Marketing,Content,Social Media,Growth,Operations,Project Manager', label: '营销运营', icon: TrendingUp },
-  { id: 'Sales,Account Manager,Business Development,Customer Success', label: '客户经理', icon: Megaphone },
-  { id: 'Customer Service,Virtual Assistant,AI Trainer,Data Entry,Translator', label: '远程入门', icon: PenTool },
+  { id: 'Product Manager,Product Owner,Product Marketing,Head of Product,产品经理,产品', label: '产品经理', icon: Layers },
+  { id: 'Software Engineer,Frontend,Backend,Full Stack,DevOps,Data Engineer,Algorithm,Developer,研发,前端,后端,全栈,算法,工程师', label: '技术研发', icon: Code2 },
+  { id: 'Marketing,Digital Marketing,Content,Social Media,Growth,Operations,Project Manager,市场,营销,运营,增长', label: '营销运营', icon: TrendingUp },
+  { id: 'Sales,Account Manager,Business Development,Customer Success,销售,客户经理,BD,商务', label: '客户经理', icon: Megaphone },
+  { id: 'Customer Service,Virtual Assistant,AI Trainer,Data Entry,Translator,客服,助理,翻译,录入,远程入门', label: '远程入门', icon: PenTool },
 ]
 
 export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: FeaturedJobsSectionProps) {

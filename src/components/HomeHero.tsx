@@ -13,7 +13,7 @@ interface HomeHeroProps {
 }
 
 interface CopilotFormData {
-    goal: 'full-time' | 'part-time' | 'freelance' | ''
+    goal: 'full-time' | 'part-time' | 'freelance' | 'internship' | ''
     timeline: 'immediately' | '1-3 months' | '3-6 months' | 'flexible' | ''
     background: {
         role: string
@@ -35,7 +35,7 @@ export default function HomeHero({ stats }: HomeHeroProps) {
     const [formData, setFormData] = useState<CopilotFormData>({
         goal: 'full-time',
         timeline: 'immediately',
-        background: { role: '', years: 'Mid', education: 'Bachelor', language: 'Fluent' }
+        background: { role: '', years: 'Mid', education: 'Bachelor', language: 'English' }
     })
     
     const inputRef = useRef<HTMLInputElement>(null)
@@ -104,7 +104,13 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                 return
             }
             
-            navigate(`/jobs?search=${encodeURIComponent(formData.background.role)}&type=${formData.goal === 'full-time' ? 'Full-time' : 'Contract'}`)
+            // Construct navigation URL with robust filter mapping
+            let typeParam = 'Full-time'
+            if (formData.goal === 'part-time') typeParam = 'Part-time'
+            if (formData.goal === 'freelance') typeParam = 'Freelance' // Or Contract depending on DB
+            if (formData.goal === 'internship') typeParam = 'Internship'
+
+            navigate(`/jobs?search=${encodeURIComponent(formData.background.role)}&type=${typeParam}`)
             
         } catch (err: any) {
             console.error(err)
@@ -228,8 +234,8 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                             自由职业
                                         </button>
                                         <button 
-                                            onClick={() => setFormData({...formData, goal: ''})} // Internship/Entry mapped to empty or specific logic if needed, treating as 'other' for now or update type
-                                            className={`px-2 py-2 rounded-lg text-sm font-medium border transition-all ${formData.goal === '' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'}`}
+                                            onClick={() => setFormData({...formData, goal: 'internship'})}
+                                            className={`px-2 py-2 rounded-lg text-sm font-medium border transition-all ${formData.goal === 'internship' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-200'}`}
                                         >
                                             实习/入门
                                         </button>
@@ -312,7 +318,9 @@ export default function HomeHero({ stats }: HomeHeroProps) {
                                         ) : (
                                             <>
                                                 <Upload className="w-4 h-4" />
-                                                <span>拖拽或点击上传 CV 文件</span>
+                                                <div className="flex flex-col items-start text-left">
+                                                    <span>上传简历 (PDF/Word)</span>
+                                                </div>
                                             </>
                                         )}
                                     </button>
