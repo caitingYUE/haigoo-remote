@@ -189,30 +189,9 @@ export default function Header() {
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
-                className="h-8 md:h-10 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
+                className="h-10 md:h-12 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
               />
-
-              {/* Brand Name */}
-              <span className="font-bold text-lg tracking-tight text-slate-900">
-                Haigoo Remote
-              </span>
             </Link>
-
-            {/* New Year Badge - Pill Style */}
-            <div className="relative flex items-center ml-3">
-              <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.dispatchEvent(new CustomEvent('open-happiness-card'));
-                  }}
-                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] font-bold shadow-sm border border-white/20 hover:scale-105 transition-transform flex items-center gap-1 cursor-pointer animate-in fade-in zoom-in"
-                  title="点击查看新年惊喜"
-              >
-                <Sparkles className="w-3 h-3 text-yellow-200" />
-                新年彩蛋
-              </button>
-            </div>
           </div>
 
           {/* Center Navigation - Right aligned */}

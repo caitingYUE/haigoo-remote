@@ -227,11 +227,11 @@ function DemoPanel({ paused }: { paused: boolean }) {
                         3
                     </div>
                     <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                        <div className="text-xs font-bold text-slate-700 mb-1.5">面试模拟 & 复盘</div>
+                        <div className="text-xs font-bold text-slate-700 mb-1.5">英文面试模拟 & 复盘</div>
                         {interviewVisible ? (
                             <div className="space-y-1">
                                 <div className="text-xs text-slate-500">「Tell me about a time you led a redesign...」</div>
-                                <div className="text-[10px] text-indigo-500 font-medium">→ STAR 法则参考回答已生成</div>
+                                <div className="text-[10px] text-indigo-500 font-medium">→ 英文 STAR 法则参考回答已生成</div>
                             </div>
                         ) : (
                             <span className="text-[11px] text-slate-300 italic">待解锁...</span>
@@ -311,7 +311,7 @@ const TIMELINE_OPTIONS: Array<{ value: TimelineType; label: string; sub: string 
 
 const SENIORITY_OPTIONS = ['实习生', '初级', '中级', '高级', '专家/负责人']
 const EDUCATION_OPTIONS = ['高中/职高', '大专', '本科', '硕士', '博士']
-const LANGUAGE_OPTIONS = ['英语', '日语', '西班牙语', '法语', '中文（仅）', '其他']
+const LANGUAGE_OPTIONS = ['英语-入门 (A1/A2)', '英语-日常 (B1)', '英语-工作 (B2)', '英语-流利 (C1)', '英语-母语 (C2)']
 
 // Map goal to API value
 const GOAL_TO_API: Record<GoalType, string> = {
@@ -493,7 +493,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             从远程工作开始
                         </span>
                     </h1>
-                    <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-lg md:text-xl text-slate-500 max-w-4xl mx-auto leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
                         不只是找工作 — Haigoo 陪你走好从规划准备、投递面试到适应远程生活的每一步。
                     </p>
 

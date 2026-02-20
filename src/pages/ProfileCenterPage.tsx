@@ -16,7 +16,7 @@ import MyApplicationsTab from '../components/MyApplicationsTab'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
-type TabKey = 'resume' | 'favorites' | 'applications' | 'feedback' | 'subscriptions' | 'membership' | 'settings'
+type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'subscriptions' | 'membership' | 'settings'
 
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember, logout } = useAuth()
@@ -26,7 +26,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'resume'
+    return t && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'custom-plan'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -35,7 +35,7 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
     const urlTab = searchParams.get('tab') as TabKey | null
-    if (urlTab && ['resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(urlTab)) {
+    if (urlTab && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(urlTab)) {
       setTab(urlTab)
     }
   }, [location.search])
@@ -1396,6 +1396,7 @@ export default function ProfileCenterPage() {
               </div>
               <nav className="space-y-1" role="tablist">
                 {[
+                  { id: 'custom-plan', label: '定制方案', icon: Sparkles, badge: 'AI' },
                   { id: 'resume', label: '我的简历', icon: FileText },
                   { id: 'favorites', label: '我的收藏', icon: Heart },
                   { id: 'applications', label: '我的申请', icon: Briefcase },
@@ -1418,7 +1419,14 @@ export default function ProfileCenterPage() {
                   >
                     <item.icon className={`w-5 h-5 transition-colors ${tab === item.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
                     {!isSidebarCollapsed && (
-                      <span>{item.label}</span>
+                      <span className="flex items-center gap-2">
+                        {item.label}
+                        {(item as any).badge && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-md shadow-sm">
+                            {(item as any).badge}
+                          </span>
+                        )}
+                      </span>
                     )}
                     {tab === item.id && !isSidebarCollapsed && (
                       <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
@@ -1432,6 +1440,23 @@ export default function ProfileCenterPage() {
           {/* Main Content Area */}
           <main className="flex-1 min-w-0">
             <div className="transition-all duration-300">
+              {tab === 'custom-plan' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center min-h-[400px] flex flex-col items-center justify-center">
+                  <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <Sparkles className="w-10 h-10 text-indigo-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">您的 AI 定制方案</h3>
+                  <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+                    完成首页的 AI Copilot 问答后，您的专属远程求职方案（包括简历优化、岗位推荐、面试辅导）将显示在这里。
+                  </p>
+                  <Link 
+                    to="/" 
+                    className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-xl shadow-slate-900/10"
+                  >
+                    去生成方案 <ArrowRight className="w-5 h-5" />
+                  </Link>
+                </div>
+              )}
               {tab === 'resume' && <ResumeTab />}
               {tab === 'favorites' && <FavoritesTab />}
               {tab === 'applications' && <MyApplicationsTab />}
