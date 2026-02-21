@@ -1,9 +1,9 @@
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Zap, Sparkles } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Sparkles } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
-import { getJobSourceType } from '../utils/job-source-helper';
+// import { getJobSourceType } from '../utils/job-source-helper';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
    'Entry': '初级',
@@ -144,6 +144,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
    // 1. Merge and deduplicate tags for display (Common for both variants)
    const displayTags = useMemo(() => {
       const tags: { text: string; type: 'skill' | 'benefit' | 'other' }[] = [];
+      const legacyTags = (job as any).tags;
 
       // 1. Skills (Priority)
       if (job.skills && job.skills.length > 0) {
@@ -152,9 +153,9 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                tags.push({ text: skill, type: 'skill' });
             }
          });
-      } else if ((job as any).tags && (job as any).tags.length > 0) {
+      } else if (legacyTags && legacyTags.length > 0) {
          // Fallback to 'tags' field if skills is empty
-         (job as any).tags.slice(0, 5).forEach((tag: string) => {
+         legacyTags.slice(0, 5).forEach((tag: string) => {
             if (tag.length < 15 && !tag.includes('年以上')) {
                tags.push({ text: tag, type: 'skill' });
             }
@@ -175,11 +176,11 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
 
    // Redesigned Company Logo Component
    // Matching reference: Large card style, dynamic background, centered logo, company name above
-   const CompanyCard = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
+   const CompanyCard = ({ size: _size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
       
       return (
          <div 
-            className="flex-shrink-0 flex flex-col items-center justify-center px-3 py-4 rounded-xl transition-colors h-full w-[140px] relative overflow-hidden"
+            className="flex-shrink-0 flex flex-col items-center justify-center px-3 py-4 rounded-xl transition-colors h-full w-full relative overflow-hidden"
             style={{ backgroundColor: bgColor }}
          >
              {/* Featured Badge for Grid View */}
@@ -268,7 +269,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
          >
             {/* Featured Badge for List View */}
             {isFeatured && (
-               <div className="absolute top-0 right-0 bg-gradient-to-bl from-indigo-500 to-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl shadow-sm flex items-center gap-1 z-10">
+               <div className="absolute top-0 right-0 bg-gradient-to-bl from-indigo-500 to-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-2xl shadow-sm flex items-center gap-1 z-10">
                  <Sparkles className="w-3 h-3" />
                  系统推荐
                </div>
@@ -295,7 +296,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                       </button>
                   )}
 
-                  {/* Row 1: Badges & Salary (Desktop) */}
+                  {/* Row 1: Badges (Salary moved to bottom to prevent overlap) */}
                   <div className="flex items-center justify-between gap-2">
                      <div className="flex flex-wrap items-center gap-2">
                         {/* Job Type (Amber) */}
@@ -329,11 +330,6 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                               {job.category}
                            </span>
                         )}
-                     </div>
-
-                     {/* Salary (Desktop) */}
-                     <div className={`hidden md:block text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
-                        {formatSalary(job.salary)}
                      </div>
                   </div>
 
@@ -372,7 +368,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                      </div>
                   </div>
 
-                  {/* Row 4: Tags & Mobile Salary */}
+                  {/* Row 4: Tags & Salary (Unified position) */}
                   <div className="flex items-center justify-between mt-auto pt-2">
                      <div className="flex flex-wrap items-center gap-2">
                         {displayTags.map((tag, i) => (
@@ -385,8 +381,8 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                         ))}
                      </div>
 
-                     {/* Salary (Mobile) */}
-                     <div className={`md:hidden text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                     {/* Salary (Always at bottom right) */}
+                     <div className={`text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
                         {formatSalary(job.salary)}
                      </div>
                   </div>

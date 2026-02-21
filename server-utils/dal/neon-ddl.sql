@@ -76,9 +76,15 @@ CREATE TABLE IF NOT EXISTS job_bundles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. Favorites Snapshots
-ALTER TABLE user_job_interactions ADD COLUMN IF NOT EXISTS job_title_snapshot VARCHAR(255);
-ALTER TABLE user_job_interactions ADD COLUMN IF NOT EXISTS company_name_snapshot VARCHAR(255);
+-- 6. Add index for match_score sorting
+CREATE INDEX IF NOT EXISTS idx_user_job_matches_score ON user_job_matches(match_score DESC);
 
--- 3. Trusted Companies Hiring Email
-ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS hiring_email VARCHAR(255);
+-- 2026-02-21: Add missing snapshot columns and hiring_email
+-- 1. Add snapshot columns to user_job_interactions
+ALTER TABLE user_job_interactions 
+ADD COLUMN IF NOT EXISTS job_title_snapshot VARCHAR(255),
+ADD COLUMN IF NOT EXISTS company_name_snapshot VARCHAR(255);
+
+-- 2. Add hiring_email to trusted_companies
+ALTER TABLE trusted_companies 
+ADD COLUMN IF NOT EXISTS hiring_email VARCHAR(255);

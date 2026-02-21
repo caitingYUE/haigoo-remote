@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react'
-import { ArrowRight, Check, Sparkles, Lock, Zap, Clock, Briefcase, GraduationCap, Languages, Users, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, Sparkles, Lock, Zap, Clock, Briefcase, GraduationCap, Languages, Users, CheckCircle2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotificationHelpers } from '../../components/NotificationSystem'
@@ -41,7 +41,7 @@ interface CopilotPlan {
 
 export default function CopilotSection() {
   const navigate = useNavigate()
-  const { isAuthenticated, isMember, user } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const { showWarning, showError } = useNotificationHelpers()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CopilotPlan | null>(null)
@@ -55,7 +55,7 @@ export default function CopilotSection() {
       education: '',
       industry: '',
       seniority: '',
-      language: ''
+      language: 'Conversational'
     }
   })
 
@@ -110,7 +110,7 @@ export default function CopilotSection() {
     
     // Simulate steps
     const steps = ['分析个人背景...', '匹配远程机会...', '生成行动计划...']
-    let stepInterval = setInterval(() => {
+    const stepInterval = setInterval(() => {
       setLoadingStep(prev => (prev + 1) % steps.length)
     }, 800)
 
@@ -447,9 +447,9 @@ export default function CopilotSection() {
                           className="w-full pl-9 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 text-sm text-slate-600"
                        >
                           <option value="">英语水平</option>
-                          <option value="Basic">基础读写</option>
-                          <option value="Conversational">日常沟通</option>
-                          <option value="Fluent">流利工作</option>
+                          <option value="Basic">基础读写 (A1-A2)</option>
+                          <option value="Conversational">日常沟通 (B1-B2)</option>
+                          <option value="Fluent">流利工作 (C1-C2)</option>
                           <option value="Native">母语水平</option>
                        </select>
                      </div>
