@@ -739,10 +739,10 @@ export default function JobsPage() {
           Let's keep a minimal header.
       */}
 
-        <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-0 gap-6 h-full">
+        <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 gap-6 h-full pt-0">
 
           {/* Top Section: Search & Filters */}
-          <div className="flex-shrink-0 z-50 relative pt-4">
+          <div className="flex-shrink-0 z-50 relative pt-6">
             <JobFilterBar
               filters={filters}
               onFilterChange={(newFilters: any) => {

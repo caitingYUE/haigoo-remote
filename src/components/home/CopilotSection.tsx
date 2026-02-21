@@ -116,6 +116,13 @@ export default function CopilotSection() {
 
     try {
       const token = localStorage.getItem('haigoo_auth_token')
+      // Ensure user ID is retrieved correctly from either user_id or id property, casting to any to bypass TS check if needed
+      const userId = user?.user_id || (user as any)?.id; 
+      
+      if (!userId) {
+        throw new Error('User ID not found');
+      }
+
       const res = await fetch('/api/copilot', {
         method: 'POST',
         headers: {
@@ -123,7 +130,7 @@ export default function CopilotSection() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          userId: user?.user_id,
+          userId: userId,
           ...formData
         })
       })
@@ -160,7 +167,7 @@ export default function CopilotSection() {
         education: '',
         industry: '',
         seniority: '',
-        language: ''
+        language: 'Work'
       }
     })
   }
