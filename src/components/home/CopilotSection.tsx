@@ -40,6 +40,7 @@ interface CopilotPlan {
 }
 
 export default function CopilotSection() {
+  console.log('[CopilotSection] Version: 2026-02-21 v2 - Default Language Fix');
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
   const { showWarning, showError } = useNotificationHelpers()
@@ -449,11 +450,11 @@ export default function CopilotSection() {
                      <div className="relative">
                        <Languages className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                        <select
-                          value={formData.background.language}
+                          value={formData.background.language || 'Work'}
                           onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
                           className="w-full pl-9 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 text-sm text-slate-600"
                        >
-                          <option value="">英语水平</option>
+                          <option value="" disabled>英语水平</option>
                           <option value="Basic">基础读写 (A1-A2)</option>
                           <option value="Conversational">日常沟通 (B1)</option>
                           <option value="Work">英语-工作 (B2)</option>
