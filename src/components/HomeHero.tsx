@@ -58,9 +58,9 @@ function DemoPanel({ paused }: { paused: boolean }) {
 
     const JOBS = [
         { name: 'Shopify', logo: 'shopify.com', role: '远程产品经理' },
-        { name: 'GitLab', logo: 'gitlab.com', role: '高级 PM' },
-        { name: 'Figma', logo: 'figma.com', role: '增长 PM' },
-        { name: 'Notion', logo: 'notion.so', role: '产品运营' },
+        { name: 'GitLab', logo: 'gitlab.com', role: '高级产品经理' },
+        { name: 'Figma', logo: 'figma.com', role: '增长产品经理' },
+        { name: 'Notion', logo: 'notion.so', role: '产品负责人' },
     ]
 
     const reset = useCallback(() => {
@@ -139,7 +139,7 @@ function DemoPanel({ paused }: { paused: boolean }) {
                     <h3 className="text-lg font-bold text-slate-900 leading-tight">
                         林晓的远程求职方案
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">UI 设计师 · 4 年经验 · 英语 B2</p>
+                    <p className="text-xs text-slate-400 mt-0.5">产品经理 · 4 年经验 · 英语 B2</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
                     <div className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-100 flex items-center gap-1.5">
@@ -161,7 +161,7 @@ function DemoPanel({ paused }: { paused: boolean }) {
                 {/* Step 1 - Resume */}
                 <div className={`relative pl-10 transition-all duration-500 ${activePhase === 'profile' ? 'opacity-60' : 'opacity-100'}`}>
                     <div className={`absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm z-10 transition-all duration-300 ${activePhase === 'profile' ? 'bg-white border-slate-200 text-slate-400' :
-                            'bg-indigo-600 border-indigo-600 text-white'
+                        'bg-indigo-600 border-indigo-600 text-white'
                         }`}>
                         {activePhase !== 'profile' ? <CheckCircle2 className="w-3.5 h-3.5" /> : '1'}
                     </div>
@@ -270,21 +270,21 @@ const GOAL_OPTIONS = [
         icon: <TrendingUp className="w-5 h-5" />,
         label: '兼职/副业增收',
         desc: '在现有收入基础上额外创收',
-        color: 'emerald',
+        color: 'indigo',
     },
     {
         value: 'market-watch' as GoalType,
         icon: <Eye className="w-5 h-5" />,
         label: '关注市场机会',
         desc: '观望市场，等待合适时机',
-        color: 'amber',
+        color: 'indigo',
     },
     {
         value: 'career-pivot' as GoalType,
         icon: <RefreshCw className="w-5 h-5" />,
         label: '职业转型',
         desc: '转换赛道，向新方向发展',
-        color: 'rose',
+        color: 'indigo',
     },
 ]
 
@@ -347,6 +347,23 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [resumeId, setResumeId] = useState<string | null>(null)
     const [imageLoaded, setImageLoaded] = useState(false)
     const [demoPaused, setDemoPaused] = useState(false)
+
+    // Debug controls
+    const [debugMode, setDebugMode] = useState(false)
+    const [bgPosition, setBgPosition] = useState({ x: 50, y: 50 }) // Center default
+    const [bgScale, setBgScale] = useState(100) // 100%
+    const [bgOpacity, setBgOpacity] = useState(90) // Percentage
+
+    // Toggle debug with 'Ctrl+Shift+D'
+    useEffect(() => {
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                setDebugMode(prev => !prev)
+            }
+        }
+        window.addEventListener('keydown', handleKey)
+        return () => window.removeEventListener('keydown', handleKey)
+    }, [])
 
     const goTo = (nextStep: number, dir: 'forward' | 'back') => {
         if (animating) return
@@ -468,47 +485,121 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     return (
         <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-32 pb-20">
 
-            {/* ── Background ── */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                <img
-                    src="/src/pic2.webp"
-                    alt="Haigoo Hero Background"
-                    className={`absolute inset-0 w-full h-full object-cover object-[center_20%] transition-opacity duration-1000 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                    onLoad={() => setImageLoaded(true)}
-                />
-                {/* Gradient Overlay for text readability and premium feel */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/70 to-slate-50/90" />
-                
-                {/* Subtle Noise Texture */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-                
-                {/* Aurora blobs - Adjusted for premium feel */}
-                <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-indigo-200/20 blur-[120px] animate-[blobFloat_12s_ease-in-out_infinite]" />
-                <div className="absolute top-1/3 -right-48 w-[500px] h-[500px] rounded-full bg-purple-200/15 blur-[120px] animate-[blobFloat_16s_ease-in-out_infinite_reverse] [animation-delay:4s]" />
+            {/* ── Background Image & Overlay (Fixed Visuals - Full Body Reveal) ── */}
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-slate-50">
+                <div
+                    className="absolute inset-0 w-full h-full overflow-hidden"
+                >
+                    <img
+                        src="/background.webp"
+                        alt=""
+                        style={{
+                            // Using standard transform translation instead of object-position for predictable movement
+                            // (X% - 50%) converts slider 0-100 to translate -50% to +50% relative to center
+                            transform: `translate(${bgPosition.x - 50}%, ${bgPosition.y - 50}%) scale(${bgScale / 100})`,
+                            opacity: imageLoaded ? bgOpacity / 100 : 0
+                        }}
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 origin-center`}
+                        onLoad={() => setImageLoaded(true)}
+                    />
+                </div>
+                {/* 
+                    Overlay Strategy:
+                    1. Top: Completely transparent to show head clearly.
+                    2. Middle: Very subtle fade to start blending.
+                    3. Bottom: Soft white transition to content.
+                */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-slate-50" />
+
+                {/* Side gradient to soften edges but keep central focus clear */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/20" />
+
+                {/* Edge Fading for shifted background image */}
+                {/* Right edge fade - to hide hard edge when image is shifted left */}
+                <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-slate-50 via-slate-50/50 to-transparent pointer-events-none" />
+                {/* Bottom edge fade - to hide hard edge when image is shifted up */}
+                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none" />
+
+                {/* Aurora blobs */}
+                <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-indigo-200/15 blur-[100px] animate-[blobFloat_12s_ease-in-out_infinite]" />
+                <div className="absolute top-1/3 -right-48 w-[500px] h-[500px] rounded-full bg-purple-200/15 blur-[100px] animate-[blobFloat_16s_ease-in-out_infinite_reverse] [animation-delay:4s]" />
+                <div className="absolute -bottom-24 left-1/3 w-[400px] h-[400px] rounded-full bg-blue-200/15 blur-[90px] animate-[blobFloat_10s_ease-in-out_infinite] [animation-delay:2s]" />
             </div>
+
+            {/* Debug Controls */}
+            {debugMode && (
+                <div className="fixed top-20 right-4 z-50 bg-white/90 p-4 rounded-lg shadow-xl border border-slate-200 w-64 text-xs font-mono">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="font-bold">BG Controls</span>
+                        <button onClick={() => setDebugMode(false)} className="text-slate-400 hover:text-red-500">×</button>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-slate-500 mb-1">Position X: {bgPosition.x}%</label>
+                            <input
+                                type="range" min="0" max="100"
+                                value={bgPosition.x}
+                                onChange={(e) => setBgPosition(p => ({ ...p, x: Number(e.target.value) }))}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-slate-500 mb-1">Position Y: {bgPosition.y}%</label>
+                            <input
+                                type="range" min="0" max="100"
+                                value={bgPosition.y}
+                                onChange={(e) => setBgPosition(p => ({ ...p, y: Number(e.target.value) }))}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-slate-500 mb-1">Scale: {bgScale}%</label>
+                            <input
+                                type="range" min="100" max="200"
+                                value={bgScale}
+                                onChange={(e) => setBgScale(Number(e.target.value))}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-slate-500 mb-1">Opacity: {bgOpacity}%</label>
+                            <input
+                                type="range" min="0" max="100"
+                                value={bgOpacity}
+                                onChange={(e) => setBgOpacity(Number(e.target.value))}
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-400">
+                            Press Ctrl+Shift+D to toggle
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
 
                 {/* ── Hero Text ── */}
-                <div className="text-center mb-12 max-w-4xl mx-auto">
-                    <h1 className="text-5xl md:text-[68px] font-bold text-slate-900 mb-5 leading-[1.1] tracking-tight">
-                        理想生活，<br className="hidden sm:block" />
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-500 to-purple-600">
+                <div className="text-center mb-10 max-w-5xl mx-auto">
+                    <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight drop-shadow-sm">
+                        理想生活，
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500 drop-shadow-sm">
                             从远程工作开始
                         </span>
                     </h1>
-                    <p className="text-lg md:text-xl text-slate-500 max-w-4xl mx-auto leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
+                    <p className="text-base md:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis font-medium">
                         不只是找工作 — Haigoo 陪你走好从规划准备、投递面试到适应远程生活的每一步。
                     </p>
 
                     {/* Trust Chips */}
-                    <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
                         {[
                             '✓ 1k+ 国内可申的真实远程机会',
                             '✓ 500+ 精选远程企业',
                             '✓ 5k+ 远程同行人',
                         ].map((chip) => (
-                            <span key={chip} className="px-3 py-1 text-xs font-medium text-slate-600 bg-white/70 backdrop-blur-sm border border-slate-200 rounded-full shadow-sm">
+                            <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/80 backdrop-blur-md border border-white/50 rounded-full shadow-sm">
                                 {chip}
                             </span>
                         ))}
@@ -516,33 +607,36 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 </div>
 
                 {/* ── Main Panel ── */}
-                <div className="w-full max-w-6xl bg-white/70 backdrop-blur-xl border border-white/80 rounded-[32px] shadow-[0_24px_80px_-20px_rgba(99,102,241,0.12),0_8px_32px_-8px_rgba(0,0,0,0.06)] p-2 md:p-3">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-2 min-h-[600px]">
+                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-2 relative overflow-hidden">
+                    {/* Glass sheen effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 min-h-[600px] relative z-10">
 
                         {/* ── Left: Wizard ── */}
-                        <div className="lg:col-span-5 bg-white/90 rounded-[24px] p-7 md:p-9 flex flex-col border border-white/60 shadow-sm relative overflow-hidden">
+                        <div className="lg:col-span-5 bg-white/60 backdrop-blur-xl rounded-[24px] p-8 md:p-10 flex flex-col border border-white/40 shadow-sm relative overflow-hidden">
                             {/* Header */}
-                            <div className="flex items-center gap-3 mb-6">
+                            <div className="flex items-center gap-3 mb-5">
                                 <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm border border-slate-100 flex-shrink-0">
                                     <img src="/copilot.webp" alt="Copilot" className="w-full h-full object-cover scale-110" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-slate-900 leading-tight">Haigoo 远程助手</h2>
+                                    <h2 className="text-lg font-bold text-slate-900 leading-tight">Haigoo 远程工作助手</h2>
                                     <p className="text-xs text-slate-400 mt-0.5">告诉我你的情况，AI 为你定制方案</p>
                                 </div>
                             </div>
 
                             {/* Step Indicator */}
-                            <div className="flex items-center gap-1.5 mb-7">
+                            <div className="flex items-center gap-1.5 mb-6">
                                 {STEPS.map((label, i) => (
                                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                                         <div className={`h-1 w-full rounded-full transition-all duration-400 ${i < step ? 'bg-indigo-500' :
-                                                i === step ? 'bg-indigo-300' :
-                                                    'bg-slate-100'
+                                            i === step ? 'bg-indigo-300' :
+                                                'bg-slate-100'
                                             }`} />
                                         <span className={`text-[9px] font-semibold tracking-wide transition-colors ${i === step ? 'text-indigo-600' :
-                                                i < step ? 'text-indigo-400' :
-                                                    'text-slate-300'
+                                            i < step ? 'text-indigo-400' :
+                                                'text-slate-300'
                                             }`}>
                                             {label}
                                         </span>
@@ -555,10 +649,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                 <div
                                     key={step}
                                     className={`absolute inset-0 transition-all duration-220 ease-out ${animating
-                                            ? direction === 'forward'
-                                                ? 'opacity-0 translate-x-4'
-                                                : 'opacity-0 -translate-x-4'
-                                            : 'opacity-100 translate-x-0'
+                                        ? direction === 'forward'
+                                            ? 'opacity-0 translate-x-4'
+                                            : 'opacity-0 -translate-x-4'
+                                        : 'opacity-100 translate-x-0'
                                         }`}
                                 >
 
@@ -576,15 +670,15 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                             key={opt.value}
                                                             onClick={() => setFormData({ ...formData, goal: opt.value })}
                                                             className={`flex flex-col items-start text-left p-3.5 rounded-xl border-2 transition-all duration-200 shadow-sm ${isSelected
-                                                                    ? `${COLOR_MAP[opt.color]} shadow-lg`
-                                                                    : COLOR_IDLE
+                                                                ? `${COLOR_MAP[opt.color]} shadow-lg`
+                                                                : COLOR_IDLE
                                                                 }`}
                                                         >
                                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-all ${isSelected ? ICON_MAP[opt.color] : 'bg-slate-100 text-slate-400'
                                                                 }`}>
                                                                 {opt.icon}
                                                             </div>
-                                                            <div className="text-xs font-bold leading-tight mb-0.5">{opt.label}</div>
+                                                            <div className="text-[13px] font-bold leading-tight mb-0.5">{opt.label}</div>
                                                             <div className="text-[10px] text-current opacity-60 leading-tight">{opt.desc}</div>
                                                         </button>
                                                     )
@@ -608,8 +702,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                             key={opt.value}
                                                             onClick={() => setFormData({ ...formData, timeline: opt.value })}
                                                             className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${isSelected
-                                                                    ? 'border-indigo-400 bg-indigo-50 shadow-md shadow-indigo-100'
-                                                                    : 'border-slate-200 bg-white hover:border-slate-300'
+                                                                ? 'border-indigo-400 bg-indigo-50 shadow-md shadow-indigo-100'
+                                                                : 'border-slate-200 bg-white hover:border-slate-300'
                                                                 }`}
                                                         >
                                                             <div className="flex items-center gap-3">
@@ -697,8 +791,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                 type="button"
                                                 onClick={() => resumeInputRef.current?.click()}
                                                 className={`w-full flex items-center justify-between px-4 py-4 rounded-xl border-2 transition-all group ${resumeFileName
-                                                        ? 'border-emerald-300 bg-emerald-50'
-                                                        : 'border-dashed border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/30'
+                                                    ? 'border-emerald-300 bg-emerald-50'
+                                                    : 'border-dashed border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/30'
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-3">
@@ -771,7 +865,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             </div>
 
                             {/* Navigation Buttons */}
-                            <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-100">
+                            <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
                                 <button
                                     onClick={prevStep}
                                     disabled={step === 0}
@@ -795,7 +889,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                         {/* ── Right: Demo ── */}
                         <div
-                            className="lg:col-span-7 p-5 md:p-8 flex flex-col justify-center bg-gradient-to-br from-slate-50/60 to-indigo-50/30 rounded-[22px] relative overflow-hidden group"
+                            className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center bg-white/50 backdrop-blur-2xl rounded-[24px] relative overflow-hidden group border border-white/50 shadow-sm transition-all hover:bg-white/60"
                             onMouseEnter={() => setDemoPaused(true)}
                             onMouseLeave={() => setDemoPaused(false)}
                         >
@@ -816,11 +910,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     </div>
                 </div>
 
-                {/* Scroll hint */}
-                <div className="mt-10 flex flex-col items-center gap-1.5 text-slate-400">
-                    <span className="text-xs font-medium">查看精选岗位</span>
-                    <ChevronDown className="w-4 h-4 animate-bounce" />
-                </div>
+                {/* Scroll hint (Removed as requested) */}
             </div>
         </div>
     )

@@ -19,6 +19,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const isJobsPage = pathname === '/jobs' || pathname.startsWith('/jobs/')
   const isHome = pathname === '/'
+  const isMembership = pathname === '/membership'
   const hideFooter = pathname.startsWith('/resume') || isJobsPage
   
   const showVerificationWarning = isAuthenticated && user && !user.emailVerified
@@ -86,7 +87,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       )}
 
-      <main className={`flex-1 relative ${isJobsPage ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'} ${!isHome && !showVerificationWarning ? 'pt-32' : ''}`}>
+      <main className={`flex-1 relative ${isJobsPage ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'} ${!isHome && !isMembership && !showVerificationWarning ? 'pt-32' : ''}`}>
         <div className={`relative z-10 ${isJobsPage ? 'h-full' : 'animate-in fade-in slide-in-from-bottom-2 duration-500'}`}>
           {children}
         </div>

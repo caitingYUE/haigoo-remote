@@ -9,7 +9,7 @@ import FeaturedJobsSection from '../components/FeaturedJobsSection'
 import JobDetailModal from '../components/JobDetailModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import HomeCompanyCard from '../components/HomeCompanyCard'
-import { ArrowRight, Building2, Zap, Users, Target, Globe, CheckCircle2, Crown, Download } from 'lucide-react'
+import { ArrowRight, Building2, Zap, Users, Target, Globe, CheckCircle2, Crown, Download, Sparkles } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { Job } from '../types'
@@ -288,13 +288,19 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
                 icon: <Globe className="w-6 h-6 text-white" />,
                 title: "中国可申",
                 desc: "严选全球范围内对中国人才友好的远程企业，无需出海，也可享有全球薪资。",
                 color: "bg-blue-500"
+              },
+              {
+                icon: <Sparkles className="w-6 h-6 text-white" />,
+                title: "AI 工作助手",
+                desc: "AI 驱动的远程求职 Copilot，为你定制专属求职方案，从简历优化到模拟面试，全程智能辅助。",
+                color: "bg-indigo-500"
               },
               {
                 icon: <Target className="w-6 h-6 text-white" />,
@@ -305,7 +311,7 @@ export default function LandingPage() {
               {
                 icon: <Users className="w-6 h-6 text-white" />,
                 title: "社群链接",
-                desc: "加入高质量远程工作者社群，与优秀的人同行，分享经验，拓展人脉。",
+                desc: "加入高质量远程工作者社区，与优秀的人同行，分享经验，拓展人脉。",
                 color: "bg-purple-500"
               }
             ].map((item, index) => (
