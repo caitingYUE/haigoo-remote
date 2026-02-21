@@ -13,6 +13,7 @@ import { MembershipApplicationModal } from '../components/MembershipApplicationM
 import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import MyApplicationsTab from '../components/MyApplicationsTab'
+import GeneratedPlanView from '../components/GeneratedPlanView'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
@@ -73,8 +74,10 @@ export default function ProfileCenterPage() {
   const { showSuccess, showError } = useNotificationHelpers()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
-   
+
   const [upgradeSource, setUpgradeSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
+  const [copilotPlan, setCopilotPlan] = useState<any>(null)
+  const [loadingPlan, setLoadingPlan] = useState(false)
 
   const handleRemoveFavorite = async (jobId: string) => {
     try {
@@ -329,6 +332,28 @@ export default function ProfileCenterPage() {
       }
     })()
   }, [authUser, token])
+
+  // Fetch Copilot Plan
+  useEffect(() => {
+    const fetchPlan = async () => {
+      if (!authUser || !token) return
+      try {
+        setLoadingPlan(true)
+        const res = await fetch('/api/copilot', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (res.ok && data.plan) {
+          setCopilotPlan(data.plan)
+        }
+      } catch (err) {
+        console.error('Failed to fetch copilot plan:', err)
+      } finally {
+        setLoadingPlan(false)
+      }
+    }
+    fetchPlan()
+  }, [authUser, token, tab])
 
 
   const favoritesWithStatus = useMemo(() => favorites, [favorites])
@@ -1090,21 +1115,21 @@ export default function ProfileCenterPage() {
       }
     }
 
-  const getTopicLabel = (topicStr: string, preferences?: any) => {
-    if (preferences && Object.keys(preferences).length > 0) {
+    const getTopicLabel = (topicStr: string, preferences?: any) => {
+      if (preferences && Object.keys(preferences).length > 0) {
         return <span className="text-indigo-600 font-medium">详细偏好订阅</span>
+      }
+      if (!topicStr) return '无'
+      const values = topicStr.split(',')
+      return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
     }
-    if (!topicStr) return '无'
-    const values = topicStr.split(',')
-    return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
-  }
 
-  const getEditLabel = () => {
-    // 简单编辑只支持 topic，不支持详细偏好
-    if (editTopics.length === 0) return '请选择'
-    if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
-    return `已选 ${editTopics.length} 个`
-  }
+    const getEditLabel = () => {
+      // 简单编辑只支持 topic，不支持详细偏好
+      if (editTopics.length === 0) return '请选择'
+      if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
+      return `已选 ${editTopics.length} 个`
+    }
 
     return (
       <div className="space-y-6">
@@ -1441,38 +1466,51 @@ export default function ProfileCenterPage() {
           <main className="flex-1 min-w-0">
             <div className="transition-all duration-300">
               {tab === 'custom-plan' && (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[400px] relative overflow-hidden">
                   {!isMember && (
-                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-8">
-                        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-200/50">
-                           <Lock className="w-8 h-8 text-indigo-600" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-slate-900 mb-3">解锁您的专属 AI 职业规划</h3>
-                        <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
-                           升级会员即可获取完整的 AI 职业分析报告，包括简历深度优化建议、岗位匹配度分析及面试辅导策略。
-                        </p>
-                        <button 
-                           onClick={() => navigate('/membership')}
-                           className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-teal-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all hover:-translate-y-0.5 flex items-center gap-2"
-                        >
-                           立即升级解锁 <Sparkles className="w-4 h-4" />
-                        </button>
-                     </div>
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-8">
+                      <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-200/50">
+                        <Lock className="w-8 h-8 text-indigo-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-3">解锁您的专属 AI 职业规划</h3>
+                      <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed text-center">
+                        升级会员即可获取完整的 AI 职业分析报告，包括简历深度优化建议、岗位匹配度分析及面试辅导策略。
+                      </p>
+                      <button
+                        onClick={() => navigate('/membership')}
+                        className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-teal-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all hover:-translate-y-0.5 flex items-center gap-2"
+                      >
+                        立即升级解锁 <Sparkles className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
-                  
-                  <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                    <Sparkles className="w-10 h-10 text-indigo-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-3">您的 AI 定制方案</h3>
-                  <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
-                    完成首页的 AI Copilot 问答后，您的专属远程求职方案（包括简历优化、岗位匹配、面试辅导）将显示在这里。
-                  </p>
-                  <Link 
-                    to="/" 
-                    className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-xl shadow-slate-900/10"
-                  >
-                    去生成方案 <ArrowRight className="w-5 h-5" />
-                  </Link>
+
+                  {loadingPlan ? (
+                    <div className="flex flex-col items-center justify-center h-full py-20">
+                      <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
+                      <p className="text-slate-500 text-sm">正在加载您的定制方案...</p>
+                    </div>
+                  ) : copilotPlan ? (
+                    <div className="max-w-4xl mx-auto">
+                      <GeneratedPlanView plan={copilotPlan} isGuest={false} />
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                        <Sparkles className="w-10 h-10 text-indigo-600" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-3">您的 AI 定制方案</h3>
+                      <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+                        完成首页的 AI Copilot 问答后，您的专属远程求职方案（包括简历优化、岗位匹配、面试辅导）将显示在这里。
+                      </p>
+                      <Link
+                        to="/"
+                        className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-xl shadow-slate-900/10"
+                      >
+                        去生成方案 <ArrowRight className="w-5 h-5" />
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
               {tab === 'resume' && <ResumeTab />}
