@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Sparkles } from 'lucide-react';
+import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Sparkles, Zap } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 // import { getJobSourceType } from '../utils/job-source-helper';
