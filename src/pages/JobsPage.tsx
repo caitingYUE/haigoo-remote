@@ -740,7 +740,7 @@ export default function JobsPage() {
           Let's keep a minimal header.
       */}
 
-        <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 gap-6 h-full pt-16 lg:pt-20">
+        <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 gap-6 h-full pt-0 mt-0">
 
           {/* Top Section: Search & Filters */}
           <div className="flex-shrink-0 z-50 relative pt-1">
