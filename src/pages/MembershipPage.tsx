@@ -231,6 +231,44 @@ const MembershipPage: React.FC = () => {
 
    return (
       <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
+         {/* Hero Section (Visible to all) */}
+         <div className="relative overflow-hidden pt-20 pb-0 px-4 sm:px-6 lg:px-8">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+               <img 
+                  src="/members.webp?v=2" 
+                  alt="Membership Hero Background" 
+                  className="w-full h-full object-cover object-center opacity-30"
+               />
+               <div className="absolute inset-0 bg-gradient-to-b from-slate-50/80 via-white/60 to-[#F8F9FC]"></div>
+            </div>
+
+            <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
+               <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
+                  <span className="block mb-2">解锁全球远程机遇</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
+                     开启无界职业生涯
+                  </span>
+               </h1>
+
+               <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+                  AI 驱动的求职工具、经人工核验的优质机会、互助成长的精英社区。<br className="hidden md:block" />
+                  打破地域限制，您的全球职业生涯从这里起航。
+               </p>
+
+               <button
+                  onClick={() => {
+                     const el = document.getElementById('pricing-plans');
+                     el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-base flex items-center gap-2 group"
+               >
+                  探索会员方案
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+               </button>
+            </div>
+         </div>
+
          {/* Member Dashboard (Prioritized for Members) */}
          {isAuthenticated && isMember && (
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
@@ -329,44 +367,6 @@ const MembershipPage: React.FC = () => {
                </div>
             </div>
          )}
-
-         {/* Hero Section (Visible to all) */}
-         <div className="relative overflow-hidden pt-20 pb-0 px-4 sm:px-6 lg:px-8">
-            {/* Background Image */}
-            <div className="absolute inset-0 z-0">
-               <img 
-                  src="/members.webp?v=2" 
-                  alt="Membership Hero Background" 
-                  className="w-full h-full object-cover object-center opacity-30"
-               />
-               <div className="absolute inset-0 bg-gradient-to-b from-slate-50/80 via-white/60 to-[#F8F9FC]"></div>
-            </div>
-
-            <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
-               <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
-                  <span className="block mb-2">解锁全球远程机遇</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
-                     开启无界职业生涯
-                  </span>
-               </h1>
-
-               <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                  AI 驱动的求职工具、经人工核验的优质机会、互助成长的精英社区。<br className="hidden md:block" />
-                  打破地域限制，您的全球职业生涯从这里起航。
-               </p>
-
-               <button
-                  onClick={() => {
-                     const el = document.getElementById('pricing-plans');
-                     el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-base flex items-center gap-2 group"
-               >
-                  探索会员方案
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-               </button>
-            </div>
-         </div>
 
          {/* Benefits Section */}
          <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
@@ -563,12 +563,6 @@ const MembershipPage: React.FC = () => {
                <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><Landmark className="w-6 h-6" /> Fintech社区</div>
             </div>
          </div>
-
-         {/* Member Dashboard */}
-         {isAuthenticated && isMember && (
-             // Already rendered above
-             <></>
-         )}
 
          {/* FAQ Section */}
          <div className="max-w-4xl mx-auto pb-32 px-4">
