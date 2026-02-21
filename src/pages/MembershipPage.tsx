@@ -36,6 +36,7 @@ const STATIC_PLANS: Plan[] = [
       price: 199,
       currency: 'CNY',
       duration_days: 90,
+      discountLabel: '灵活订阅 · 适合短期冲刺',
       features: [
          '解锁全部高薪远程职位（含内推）',
          'AI 远程工作助手 (无限次)',
@@ -308,7 +309,7 @@ const MembershipPage: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">AI 远程工作助手<br /><span className="text-base text-slate-700 font-semibold mt-1 block">智能求职 Copilot</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     AI 驱动的远程求职助手，为您提供简历诊断、模拟面试、职位匹配等全方位智能辅助。
+                     您的专属 AI 求职 Copilot。智能诊断简历竞争力，进行实战模拟面试，并提供 全天 24 小时 的全方位求职辅助，让技术为您赋能。
                   </p>
                </div>
                {/* Benefit 2 */}
@@ -318,7 +319,7 @@ const MembershipPage: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">精选高薪岗位直达<br /><span className="text-base text-slate-700 font-semibold mt-1 block">高薪岗位直达通道</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     优先获取未公开的高薪全球远程职位。专注于经过验证的远程机会，拒绝低质量信息。
+                     独家获取经人工严选的高薪远程机会。我们为您过滤低质量信息，直达经过验证的优质海外企业，让每一次申请都值得。
                   </p>
                </div>
                {/* Benefit 3 */}
@@ -328,7 +329,7 @@ const MembershipPage: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">个性化职业规划<br /><span className="text-base text-slate-700 font-semibold mt-1 block">专家级 1V1 职业规划</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     1对1 指导，明确您的远程职业路径，驾驭全球招聘文化，打造个人全球品牌。
+                     专家级 1V1 职业咨询，为您量身定制远程职业发展路径。从个人优势挖掘到全球品牌建设，助您在国际职场中脱颖而出。
                   </p>
                </div>
             </div>
@@ -695,52 +696,52 @@ const MembershipPage: React.FC = () => {
                   </div>
 
                   {/* Right Side: QR Code */}
-                  <div className="w-full md:w-7/12 bg-white p-8 md:p-12 flex flex-col items-center justify-center text-center relative overflow-y-auto">
+                  <div className="w-full md:w-7/12 bg-white p-6 md:p-10 flex flex-col items-center justify-center text-center relative overflow-y-auto">
                      <button
                         onClick={() => setShowPaymentModal(false)}
-                        className="absolute top-6 right-6 w-8 h-8 hidden md:flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                        className="absolute top-4 right-4 w-8 h-8 hidden md:flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
                      >
                         <span className="text-xl leading-none">&times;</span>
                      </button>
 
-                     <div className="mb-8 w-full max-w-xs mx-auto">
-                        <div className="bg-white p-4 rounded-3xl shadow-xl border border-slate-100 inline-block mb-6 transform transition-transform hover:scale-105 duration-300">
+                     <div className="mb-6 w-full max-w-xs mx-auto flex-shrink-0">
+                        <div className="bg-white p-3 rounded-2xl shadow-lg border border-slate-100 inline-block mb-4">
                            <img
                               src={currentPaymentInfo.imageUrl}
                               alt="Payment QR"
-                              className="w-48 h-48 object-contain rounded-xl"
+                              className="w-40 h-40 object-contain rounded-lg"
                            />
                         </div>
-                        <p className="text-slate-900 font-bold text-xl mb-2">{currentPaymentInfo.instruction}</p>
-                        <p className="text-slate-500 text-sm">请使用手机扫码完成支付</p>
+                        <p className="text-slate-900 font-bold text-lg mb-1">{currentPaymentInfo.instruction}</p>
+                        <p className="text-slate-400 text-xs">请使用手机扫码完成支付</p>
                      </div>
 
-                     <div className="w-full max-w-sm">
-                        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 text-sm text-amber-900 mb-8 text-left shadow-sm">
-                           <p className="font-bold mb-3 flex items-center gap-2 text-amber-700">
-                              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                     <div className="w-full max-w-sm flex-shrink-0">
+                        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-xs text-amber-900 mb-6 text-left shadow-sm">
+                           <p className="font-bold mb-2 flex items-center gap-2 text-amber-700">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                               重要：付款备注说明
                            </p>
-                           <p className="mb-3 text-amber-800/80 leading-relaxed">付款时请务必在【添加备注】处填入您的注册邮箱，以便系统自动核销：</p>
-                           <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-amber-200 shadow-sm group cursor-pointer hover:border-amber-300 transition-all hover:shadow-md"
+                           <p className="mb-2 text-amber-800/80 leading-relaxed">付款时请务必在【添加备注】处填入您的注册邮箱，以便系统自动核销：</p>
+                           <div className="flex items-center gap-2 bg-white p-2.5 rounded-lg border border-amber-200 shadow-sm group cursor-pointer hover:border-amber-300 transition-all hover:shadow-md"
                               onClick={() => {
                                  navigator.clipboard.writeText(user?.email || '');
                                  alert('邮箱已复制');
                               }}
                            >
-                              <code className="flex-1 font-mono text-slate-700 break-all font-bold select-all text-base">{user?.email || '您的邮箱'}</code>
-                              <Copy className="w-4 h-4 text-amber-400 group-hover:text-amber-600" />
+                              <code className="flex-1 font-mono text-slate-700 break-all font-bold select-all text-sm">{user?.email || '您的邮箱'}</code>
+                              <Copy className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-600" />
                            </div>
                         </div>
 
                         <button
                            onClick={handlePaymentComplete}
-                           className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98] text-lg"
+                           className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98] text-base"
                         >
                            <CheckCircle2 className="w-5 h-5" />
                            我已完成支付
                         </button>
-                        <p className="text-xs text-slate-400 mt-4 font-medium">
+                        <p className="text-[10px] text-slate-400 mt-3 font-medium">
                            * 支付后权益将在 24 小时内开通
                         </p>
 
