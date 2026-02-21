@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
-    Sparkles, Upload, CheckCircle2, ArrowRight, ArrowLeft,
+    Sparkles, Upload, CheckCircle2, ArrowRight, ArrowLeft, Lock,
     Target, TrendingUp, Eye, RefreshCw, ChevronDown
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -322,10 +322,110 @@ const GOAL_TO_API: Record<GoalType, string> = {
     '': 'full-time',
 }
 
+// ── Generated Plan View ────────────────────────────────────────────────────────
+function GeneratedPlanView({ plan }: { plan: any }) {
+    if (!plan) return null;
+    return (
+        <div className="flex flex-col h-full overflow-y-auto pr-2 custom-scrollbar relative z-30">
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.15em] mb-0.5">
+                        AI Copilot · 专属方案
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                        你的远程求职准备计划
+                    </h3>
+                </div>
+                {plan.readiness !== undefined && (
+                    <div className="flex flex-col items-end gap-1.5">
+                        <div className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-100">
+                            准备度 {plan.readiness}%
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="bg-white/80 rounded-xl p-4 border border-slate-100 mb-4 text-sm text-slate-700 shadow-sm leading-relaxed whitespace-pre-line">
+                {plan.summary || plan.overview || "AI 已成功为您生成求职诊断分析。"}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100">
+                    <div className="text-xs font-bold text-emerald-700 mb-2">核心优势</div>
+                    <ul className="text-xs text-slate-600 space-y-1.5">
+                        {(plan.strengths || []).map((s: string, i: number) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                                <span className="text-emerald-500 shrink-0">✦</span>
+                                <span>{s}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div className="bg-amber-50/50 rounded-xl p-3 border border-amber-100">
+                    <div className="text-xs font-bold text-amber-700 mb-2">挑战与建议</div>
+                    <ul className="text-xs text-slate-600 space-y-1.5">
+                        {(plan.weaknesses || []).map((w: string, i: number) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                                <span className="text-amber-500 shrink-0">✦</span>
+                                <span>{w}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+
+            <div className="space-y-3 mb-4">
+                <div className="text-sm font-bold text-slate-800">关键里程碑</div>
+                {(plan.milestones || []).map((m: any, i: number) => (
+                    <div key={i} className="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">阶段 {i + 1}</span>
+                            <span className="text-sm font-semibold text-slate-700">{m.month || m.focus} {m.month ? `- ${m.focus}` : ''}</span>
+                        </div>
+                        <ul className="text-xs text-slate-600 space-y-1">
+                            {(m.tasks || []).map((t: string, j: number) => (
+                                <li key={j} className="relative before:content-[''] before:absolute before:-left-2.5 before:top-1.5 before:w-1 before:h-1 before:bg-slate-300 before:rounded-full pl-2">
+                                    {t}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+            </div>
+
+            {(plan.recommendations && plan.recommendations.length > 0) && (
+                <div>
+                    <div className="text-sm font-bold text-slate-800 mb-3">推荐发展方向</div>
+                    <div className="grid gap-2">
+                        {plan.recommendations.map((rec: any, i: number) => (
+                            <div key={i} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-indigo-300 transition-colors">
+                                <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                                    <Target className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-bold text-slate-800">{rec.role || rec.title}</div>
+                                    <div className="text-xs text-slate-500 mt-0.5 leading-snug">{rec.reason}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <div className="mt-8 mb-4 flex justify-center">
+                <a href="/jobs" className="px-6 py-2.5 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-100 transition-colors">
+                    去岗位大厅发现机会 <ArrowRight className="w-4 h-4" />
+                </a>
+            </div>
+        </div>
+    )
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
     const { isAuthenticated, user } = useAuth()
+    const isVIP = (user as any)?.memberStatus === 'active' || (user as any)?.memberStatus === 'lifetime' || (user as any)?.memberStatus === 'pro'
     const { showWarning, showError } = useNotificationHelpers()
 
     // Wizard state
@@ -352,6 +452,32 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [bgPosition, setBgPosition] = useState({ x: 50, y: 50 }) // Center default
     const [bgScale, setBgScale] = useState(100) // 100%
     const [bgOpacity, setBgOpacity] = useState(90) // Percentage
+
+    // AI Generation Plan State
+    const [generatedPlan, setGeneratedPlan] = useState<any>(null)
+
+    // Load previous plan on mount
+    useEffect(() => {
+        const fetchExistingPlan = async () => {
+            if (!isAuthenticated) return;
+            try {
+                const token = localStorage.getItem('haigoo_auth_token')
+                if (!token) return;
+                const res = await fetch('/api/copilot', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                const data = await res.json()
+                if (res.ok && data.session && data.session.plan) {
+                    setGeneratedPlan(data.session.plan)
+                    // Jump to step 3 if there's a plan
+                    setStep(3);
+                }
+            } catch (err) {
+                console.error('Failed to restore copilot session:', err)
+            }
+        }
+        fetchExistingPlan()
+    }, [isAuthenticated])
 
     // Toggle debug with 'Ctrl+Shift+D'
     useEffect(() => {
@@ -391,11 +517,6 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }
 
     const handleGenerate = async () => {
-        if (!isAuthenticated) {
-            showWarning('请先登录', '登录后即可免费生成一次 AI 远程求职方案')
-            navigate('/login')
-            return
-        }
         if (!formData.background.role.trim()) {
             showWarning('请填写职业方向', 'AI 需要了解您的职业背景')
             inputRef.current?.focus()
@@ -409,10 +530,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({
-                    userId: user?.user_id,
+                    userId: user?.user_id, // Might be undefined for guests
                     goal: GOAL_TO_API[formData.goal],
                     timeline: formData.timeline,
                     background: {
@@ -428,7 +549,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             const data = await res.json()
 
             if (!res.ok) {
-                if (res.status === 403) {
+                if (res.status === 401) {
+                    // This route shouldn't hit 401 if we allow guests
+                    showWarning('请先登录', '登录后即可解锁完整 AI 远程求职方案')
+                    navigate('/login')
+                } else if (res.status === 403) {
                     showWarning('免费次数已用完', '免费用户可生成一次方案，升级会员解锁无限次使用')
                     navigate('/membership')
                 } else {
@@ -437,10 +562,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 return
             }
 
-            const typeParam = formData.goal === 'side-income' ? 'Part-time'
-                : formData.goal === 'full-time' ? 'Full-time'
-                    : 'Full-time'
-            navigate(`/jobs?search=${encodeURIComponent(formData.background.role)}&type=${typeParam}`)
+            if (data.plan) {
+                setGeneratedPlan(data.plan)
+                showWarning('方案已生成', '您的求职指导方案已生成。注册/登录获取更多推荐岗位！')
+            }
+
         } catch (err: any) {
             console.error(err)
             showError('服务暂时不可用', err.message)
@@ -785,49 +911,59 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                 上传简历（可选）让 AI 诊断更精准
                                             </p>
 
-                                            {/* Resume Upload */}
-                                            <button
-                                                type="button"
-                                                onClick={() => resumeInputRef.current?.click()}
-                                                className={`w-full flex items-center justify-between px-4 py-4 rounded-xl border-2 transition-all group ${resumeFileName
-                                                    ? 'border-emerald-300 bg-emerald-50'
-                                                    : 'border-dashed border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/30'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${resumeFileName ? 'bg-emerald-100 text-emerald-600' : 'bg-white text-slate-400 group-hover:text-indigo-500 border border-slate-200'
-                                                        }`}>
-                                                        {resumeUploading ? (
-                                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                                        ) : resumeFileName ? (
-                                                            <CheckCircle2 className="w-5 h-5" />
-                                                        ) : (
-                                                            <Upload className="w-4 h-4" />
-                                                        )}
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <div className={`text-sm font-bold ${resumeFileName ? 'text-emerald-800' : 'text-slate-600'}`}>
-                                                            {resumeFileName ? '简历已上传 ✓' : '上传简历（可选）'}
+                                            {/* Resume Upload Box */}
+                                            <div className={`relative rounded-xl border p-4 transition-all duration-300 ${isVIP ? 'border-indigo-500/20 bg-indigo-500/5 hover:border-indigo-500/40' : 'border-slate-200 bg-slate-50/50'}`}>
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex items-center gap-4 flex-1">
+                                                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${isVIP ? 'bg-indigo-500/10 text-indigo-500' : 'bg-slate-100 text-slate-400'}`}>
+                                                            {resumeId ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Upload className="w-5 h-5" />}
                                                         </div>
-                                                        <div className="text-xs text-slate-400 mt-0.5">
-                                                            {resumeFileName ? resumeFileName : '支持 PDF / Word · AI 自动分析'}
+                                                        <div className="flex-1">
+                                                            <h4 className="font-medium text-slate-900 mb-1 flex items-center gap-2">
+                                                                上传简历诊断
+                                                                {!isVIP && <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">会员专享</span>}
+                                                            </h4>
+                                                            <p className="text-sm text-slate-500">
+                                                                {resumeFileName ? resumeFileName : '支持 PDF / Word · AI 自动分析'}
+                                                            </p>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                {!resumeFileName && <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />}
-                                            </button>
-                                            <input
-                                                ref={resumeInputRef}
-                                                type="file"
-                                                accept=".pdf,.doc,.docx,.txt"
-                                                className="hidden"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0]
-                                                    if (file) handleResumeUpload(file)
-                                                }}
-                                            />
 
-                                            {/* Free tier note */}
+                                                    {!isVIP ? (
+                                                        <Lock className="w-5 h-5 text-slate-300 ml-4 flex-shrink-0" />
+                                                    ) : resumeId ? (
+                                                        <div />
+                                                    ) : (
+                                                        <ArrowRight className="w-5 h-5 text-indigo-500 ml-4 flex-shrink-0 transition-transform group-hover:translate-x-1" />
+                                                    )}
+                                                </div>
+
+                                                {isVIP && (
+                                                    <input
+                                                        type="file"
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        accept=".pdf,.doc,.docx"
+                                                        onChange={(e) => {
+                                                            if (e.target.files?.[0]) {
+                                                                handleResumeUpload(e.target.files[0])
+                                                                e.target.value = ''
+                                                            }
+                                                        }}
+                                                        disabled={resumeUploading}
+                                                    />
+                                                )}
+                                                {!isVIP && (
+                                                    <div
+                                                        className="absolute inset-0 w-full h-full cursor-pointer z-10"
+                                                        onClick={() => {
+                                                            showWarning('会员特权', '升级会员解锁“简历分析”与“无限次方案生成”权限。');
+                                                            navigate('/membership');
+                                                        }}
+                                                    />
+                                                )}
+                                            </div>
+
+                                            {/* Free Tier Info */}
                                             <div className="flex items-start gap-2 text-xs text-slate-400 bg-amber-50 border border-amber-100 rounded-xl p-3">
                                                 <div>
                                                     <span className="font-semibold text-amber-700">免费用户可生成 1 次</span> 完整 AI 方案。
@@ -888,22 +1024,28 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                         {/* ── Right: Demo ── */}
                         <div
-                            className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center bg-white/50 backdrop-blur-2xl rounded-[24px] relative overflow-hidden group border border-white/50 shadow-sm transition-all hover:bg-white/60"
+                            className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center bg-white/50 backdrop-blur-2xl rounded-[24px] relative overflow-hidden group border border-white/50 shadow-sm transition-all hover:bg-white/60 min-h-[500px]"
                             onMouseEnter={() => setDemoPaused(true)}
                             onMouseLeave={() => setDemoPaused(false)}
                         >
-                            {/* Hover overlay */}
-                            <div className={`absolute inset-0 rounded-[22px] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-all duration-300 ${demoPaused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                                <div className="text-center">
-                                    <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-3">
-                                        <Sparkles className="w-7 h-7 text-indigo-600" />
+                            {/* Hover overlay only when no plan generated */}
+                            {!generatedPlan && (
+                                <div className={`absolute inset-0 rounded-[22px] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-all duration-300 ${demoPaused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                                    <div className="text-center">
+                                        <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-3">
+                                            <Sparkles className="w-7 h-7 text-indigo-600" />
+                                        </div>
+                                        <p className="text-sm font-bold text-slate-800 mb-1">填写左侧信息</p>
+                                        <p className="text-xs text-slate-500">AI 将为你生成专属版本</p>
                                     </div>
-                                    <p className="text-sm font-bold text-slate-800 mb-1">填写左侧信息</p>
-                                    <p className="text-xs text-slate-500">AI 将为你生成专属版本</p>
                                 </div>
-                            </div>
+                            )}
 
-                            <DemoPanel paused={demoPaused} />
+                            {generatedPlan ? (
+                                <GeneratedPlanView plan={generatedPlan} />
+                            ) : (
+                                <DemoPanel paused={demoPaused} />
+                            )}
                         </div>
 
                     </div>
