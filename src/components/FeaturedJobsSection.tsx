@@ -65,7 +65,7 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
 
   return (
     <div id="featured-jobs" className="py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Tabs */}
         <div className="flex flex-col items-center mb-10">
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 border-b border-slate-200 pb-1 w-full max-w-3xl">
@@ -95,7 +95,7 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
 
       {/* Jobs Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {[...Array(6)].map((_, i) => (
             <JobCardSkeleton key={i} />
           ))}
@@ -112,7 +112,7 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in duration-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-in fade-in duration-500">
           {jobs.map((job) => (
             <JobCardNew
               key={job.id}
