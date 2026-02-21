@@ -336,7 +336,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [formData, setFormData] = useState<CopilotFormData>({
         goal: '',
         timeline: '',
-        background: { role: '', years: '中级', education: '本科', language: '英语' }
+        background: { role: '', years: '中级', education: '本科', language: '英语-工作 (B2)' }
     })
 
     const [loading, setLoading] = useState(false)
@@ -609,7 +609,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-2 relative overflow-hidden">
                     {/* Glass sheen effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
-                    
+
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 min-h-[600px] relative z-10">
 
                         {/* ── Left: Wizard ── */}
