@@ -55,7 +55,7 @@ export default function CopilotSection() {
       education: '',
       industry: '',
       seniority: '',
-      language: 'Conversational'
+      language: 'Work'
     }
   })
 
@@ -448,9 +448,10 @@ export default function CopilotSection() {
                        >
                           <option value="">英语水平</option>
                           <option value="Basic">基础读写 (A1-A2)</option>
-                          <option value="Conversational">日常沟通 (B1-B2)</option>
-                          <option value="Fluent">流利工作 (C1-C2)</option>
-                          <option value="Native">母语水平</option>
+                          <option value="Conversational">日常沟通 (B1)</option>
+                          <option value="Work">英语-工作 (B2)</option>
+                          <option value="Fluent">流利工作 (C1)</option>
+                          <option value="Native">母语水平 (C2)</option>
                        </select>
                      </div>
                    </div>
