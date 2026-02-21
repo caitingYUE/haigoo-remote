@@ -5,6 +5,12 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Haigoo Remote Assistant - 海外远程工作助手</title>
+    <meta name="description" content="Haigoo Remote Assistant 是一款专为中国求职者打造的海外远程工作助手，提供全球优质远程岗位推荐、简历优化、AI 求职 Copilot 等一站式服务，助您轻松开启理想的远程职业生涯。" />
+    <meta property="og:title" content="Haigoo Remote Assistant - 海外远程工作助手" />
+    <meta property="og:description" content="连接全球优质远程机会，开启您的理想生活。Haigoo 提供 AI 驱动的求职服务，让远程工作触手可及。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://haigooremote.com" />
+    <meta property="og:image" content="/assets/brandlogo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Nunito:wght@700;800&family=Rubik:wght@700;800&family=Cinzel:wght@400;700;900&family=Great+Vibes&display=swap" rel="stylesheet">
@@ -14,11 +20,13 @@
   <body>
     <div id="root"></div>
     <!-- PDF.js CDN for resume parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
     <script>
-      if (window.pdfjsLib) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      }
+      window.addEventListener('load', function() {
+        if (window.pdfjsLib) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+      });
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

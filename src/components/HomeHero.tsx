@@ -345,7 +345,6 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [resumeFileName, setResumeFileName] = useState<string | null>(null)
     const [resumeUploading, setResumeUploading] = useState(false)
     const [resumeId, setResumeId] = useState<string | null>(null)
-    const [imageLoaded, setImageLoaded] = useState(false)
     const [demoPaused, setDemoPaused] = useState(false)
 
     // Debug controls
@@ -492,15 +491,15 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 >
                     <img
                         src="/background.webp?v=2"
-                        alt=""
+                        alt="Ideal remote work lifestyle"
+                        fetchPriority="high"
+                        width="1920"
+                        height="1080"
                         style={{
-                            // Using standard transform translation instead of object-position for predictable movement
-                            // (X% - 50%) converts slider 0-100 to translate -50% to +50% relative to center
                             transform: `translate(${bgPosition.x - 50}%, ${bgPosition.y - 50}%) scale(${bgScale / 100})`,
-                            opacity: imageLoaded ? bgOpacity / 100 : 0
+                            opacity: bgOpacity / 100
                         }}
-                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 origin-center`}
-                        onLoad={() => setImageLoaded(true)}
+                        className={`absolute inset-0 w-full h-full object-cover origin-center`}
                     />
                 </div>
                 {/* 
