@@ -65,6 +65,7 @@ import { MobileRestricted } from '../components/MobileRestricted'
 import { JobCardSkeleton } from '../components/skeletons/JobCardSkeleton'
 
 export default function JobsPage() {
+  console.log('[JobsPage] Version: Preview Fix Applied 2026-02-21 v3 - Layout & Auth Fixes');
   const navigate = useNavigate()
   const location = useLocation()
   const { token, isAuthenticated } = useAuth()
