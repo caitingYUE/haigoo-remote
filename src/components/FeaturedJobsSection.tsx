@@ -65,8 +65,9 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
 
   return (
     <div id="featured-jobs" className="py-12">
-      {/* Tabs */}
-      <div className="flex flex-col items-center mb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Tabs */}
+        <div className="flex flex-col items-center mb-10">
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 border-b border-slate-200 pb-1 w-full max-w-3xl">
           {CATEGORIES.map((tab) => {
             const isActive = activeTab === tab.id
@@ -94,8 +95,8 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
 
       {/* Jobs Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[...Array(6)].map((_, i) => (
             <JobCardSkeleton key={i} />
           ))}
         </div>
@@ -132,6 +133,7 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
           浏览所有岗位
           <ArrowRight className="w-4 h-4" />
         </button>
+      </div>
       </div>
     </div>
   )
