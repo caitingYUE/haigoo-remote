@@ -309,7 +309,7 @@ const MembershipPage: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">AI 远程工作助手<br /><span className="text-base text-slate-700 font-semibold mt-1 block">智能求职 Copilot</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     您的专属 AI 求职 Copilot。智能诊断简历竞争力，进行实战模拟面试，并提供 全天 24 小时 的全方位求职辅助，让技术为您赋能。
+                     您的专属 AI 求职 Copilot。智能生成个性化求职方案与行动计划，提供简历优化建议及面试回答思路。全天 24 小时智能辅助，让您在每个环节都准备充分。
                   </p>
                </div>
                {/* Benefit 2 */}

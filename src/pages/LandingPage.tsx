@@ -297,12 +297,6 @@ export default function LandingPage() {
                 color: "bg-blue-500"
               },
               {
-                icon: <Sparkles className="w-6 h-6 text-white" />,
-                title: "AI 工作助手",
-                desc: "AI 驱动的远程求职 Copilot，为你定制专属求职方案，从简历优化到模拟面试，全程智能辅助。",
-                color: "bg-indigo-500"
-              },
-              {
                 icon: <Target className="w-6 h-6 text-white" />,
                 title: "优质文化",
                 desc: "深入了解企业背景和招聘需求，选择开放有远见的企业，在远程中也能收获自我价值和成长。",
@@ -313,6 +307,12 @@ export default function LandingPage() {
                 title: "社群链接",
                 desc: "加入高质量远程工作者社区，与优秀的人同行，分享经验，拓展人脉。",
                 color: "bg-purple-500"
+              },
+              {
+                icon: <Sparkles className="w-6 h-6 text-white" />,
+                title: "AI 工作助手",
+                desc: "AI 驱动的远程求职 Copilot，为你定制专属求职方案，从简历优化到面试思路，全程智能辅助。",
+                color: "bg-indigo-500"
               }
             ].map((item, index) => (
               <div key={index} className="group p-8 rounded-3xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300">
