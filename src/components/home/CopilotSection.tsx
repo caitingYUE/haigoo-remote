@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react'
-import { ArrowRight, Sparkles, Lock, Zap, Clock, Briefcase, GraduationCap, Languages, Users, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, Sparkles, Lock, Zap, Clock, Briefcase, GraduationCap, Languages, Users, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotificationHelpers } from '../../components/NotificationSystem'
@@ -22,25 +22,28 @@ interface CopilotPlan {
     score: number
     strengths: string[]
     improvements: string[]
+    summary?: string
   }
   interviewPrep: {
     focusAreas: string[]
     commonQuestions: string[]
+    languageTip?: string
   }
   applicationPlan?: {
     timeline: string
-    steps: { week: number; action: string; priority: string }[]
-    strategy: string
+    steps: { week: string | number; action: string; priority: string }[]
+    strategy?: string
   }
   recommendations: {
     title: string
     company: string
     match: string
   }[]
+  summary?: string // Add summary to type
 }
 
 export default function CopilotSection() {
-  console.log('[CopilotSection] Version: 2026-02-21 v2 - Default Language Fix');
+  console.log('[CopilotSection] Version: 2026-02-21 v3 - Collapsible View');
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
   const { showWarning, showError } = useNotificationHelpers()
@@ -48,6 +51,7 @@ export default function CopilotSection() {
   const [result, setResult] = useState<CopilotPlan | null>(null)
   const [isTrial, setIsTrial] = useState(false)
   const [loadingStep, setLoadingStep] = useState(0)
+  const [isCollapsed, setIsCollapsed] = useState(true) // Collapsed state for result view
 
   const [formData, setFormData] = useState<CopilotFormData>({
     goal: '',
@@ -109,11 +113,13 @@ export default function CopilotSection() {
     setLoading(true)
     setLoadingStep(0)
     
-    // Simulate steps
-    const steps = ['分析个人背景...', '匹配远程机会...', '生成行动计划...']
+    const steps = ['分析个人背景...', '匹配远程机会...', '生成行动计划...', '完成']
     const stepInterval = setInterval(() => {
-      setLoadingStep(prev => (prev + 1) % steps.length)
-    }, 800)
+      setLoadingStep(prev => {
+        if (prev >= steps.length - 1) return prev
+        return prev + 1
+      })
+    }, 2000)
 
     try {
       const token = localStorage.getItem('haigoo_auth_token')
@@ -177,158 +183,117 @@ export default function CopilotSection() {
     return (
       <div className="py-16 border-b border-slate-100 bg-gradient-to-br from-indigo-50/50 to-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-indigo-600" />
               您的专属远程求职方案
             </h2>
-            <button 
-              onClick={resetForm}
-              className="text-sm text-slate-500 hover:text-indigo-600"
-            >
-              重新生成
-            </button>
+            <div className="flex gap-4">
+               <button 
+                onClick={resetForm}
+                className="text-sm text-slate-500 hover:text-indigo-600 underline"
+              >
+                重新生成
+              </button>
+              <button 
+                onClick={() => navigate('/profile?tab=custom-plan')}
+                className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+              >
+                查看完整版 <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Resume & Interview */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Resume Eval */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-slate-900">简历竞争力评估</h3>
+          {/* Collapsible Content Area */}
+          <div className={`space-y-6 transition-all duration-500 overflow-hidden ${isCollapsed ? 'max-h-[600px]' : 'max-h-[2000px]'}`}>
+             
+             {/* 1. Summary Card */}
+             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-bold text-slate-900">分析结论</h3>
                   <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">
-                    得分: {result.resumeEval.score}
+                    准备度: {result.resumeEval.score}
                   </span>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-500 mb-2">核心优势</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {result.resumeEval.strengths.map((s, i) => (
-                        <span key={i} className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-lg">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-500 mb-2">改进建议</h4>
-                    <ul className="space-y-2">
-                      {result.resumeEval.improvements.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                          <Zap className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
+                <p className="text-slate-600 leading-relaxed text-sm">
+                   {result.summary || result.resumeEval.summary || "根据您的背景分析，您具备较强的远程工作潜力。"}
+                </p>
+             </div>
 
-              {/* Interview Prep */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <h3 className="font-bold text-slate-900 mb-4">面试准备重点</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div>
-                     <h4 className="text-sm font-medium text-slate-500 mb-2">关注领域</h4>
-                     <ul className="list-disc list-inside text-sm text-slate-700 space-y-1">
-                        {result.interviewPrep.focusAreas.map((area, i) => (
-                          <li key={i}>{area}</li>
-                        ))}
-                     </ul>
-                   </div>
-                   <div>
-                     <h4 className="text-sm font-medium text-slate-500 mb-2">必问高频题</h4>
-                     <ul className="space-y-2">
-                        {result.interviewPrep.commonQuestions.map((q, i) => (
-                          <li key={i} className="text-sm text-slate-700 bg-slate-50 p-2 rounded-lg">
-                            "{q}"
-                          </li>
-                        ))}
-                     </ul>
-                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Application Plan & Jobs */}
-            <div className="space-y-6">
-              {/* Application Plan (Member Only) */}
-              <div className={`bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden ${isTrial ? 'opacity-90' : ''}`}>
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="font-bold text-slate-900">投递行动计划</h3>
-                  {isTrial && <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded">会员专享</span>}
-                </div>
-                
-                {isTrial ? (
-                  <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-center p-6 z-10">
-                    <Lock className="w-8 h-8 text-indigo-400 mb-2" />
-                    <h4 className="font-bold text-slate-900 mb-1">解锁完整求职计划</h4>
-                    <p className="text-sm text-slate-500 mb-4">升级会员获取详细的时间线与策略</p>
-                    <button 
-                      onClick={() => navigate('/membership')}
-                      className="px-6 py-2 bg-indigo-600 text-white rounded-full text-sm font-medium hover:bg-indigo-700 transition-colors"
-                    >
-                      开通会员
-                    </button>
+             {/* 2. Timeline Plan */}
+             {result.applicationPlan && (
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <h3 className="font-bold text-slate-900">关键里程碑</h3>
+                    <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{result.applicationPlan.timeline}</span>
                   </div>
-                ) : (
                   <div className="space-y-4">
-                    <div className="text-sm text-slate-600">
-                      <span className="font-medium">预计周期：</span> {result.applicationPlan?.timeline}
-                    </div>
-                    <div className="space-y-3">
-                      {result.applicationPlan?.steps.map((step, i) => (
-                        <div key={i} className="flex gap-3 items-start">
-                           <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold shrink-0">
-                             {step.week}
-                           </div>
-                           <div>
-                             <p className="text-sm text-slate-800 font-medium">{step.action}</p>
-                             <span className={`text-[10px] px-1.5 py-0.5 rounded ${step.priority === 'High' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                               {step.priority} Priority
-                             </span>
-                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Placeholder content for blur effect if trial */}
-                {isTrial && (
-                   <div className="space-y-4 opacity-50 blur-sm pointer-events-none" aria-hidden="true">
-                      <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                      <div className="h-12 bg-slate-100 rounded w-full"></div>
-                      <div className="h-12 bg-slate-100 rounded w-full"></div>
-                   </div>
-                )}
-              </div>
-
-              {/* Recommended Jobs */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <h3 className="font-bold text-slate-900 mb-4">推荐岗位方向</h3>
-                <div className="space-y-3">
-                  {result.recommendations.map((job, i) => (
-                    <div key={i} className="p-3 bg-slate-50 rounded-xl hover:bg-indigo-50 transition-colors cursor-pointer" onClick={() => navigate('/jobs')}>
-                      <div className="flex justify-between items-start mb-1">
-                        <h4 className="font-bold text-slate-900 text-sm">{job.title}</h4>
-                        <span className="text-xs font-bold text-green-600">{job.match}</span>
+                    {result.applicationPlan.steps.slice(0, isCollapsed ? 3 : undefined).map((step, i) => (
+                      <div key={i} className="flex gap-4 items-start group">
+                         <div className="w-16 shrink-0 text-right">
+                            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded block w-full text-center truncate">
+                               {step.week}
+                            </span>
+                         </div>
+                         <div className="relative pb-4 border-l-2 border-slate-100 pl-4 last:border-0 last:pb-0">
+                            <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-indigo-200 group-hover:border-indigo-500 transition-colors"></div>
+                            <p className="text-sm font-bold text-slate-800 mb-0.5">{step.action}</p>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${step.priority === 'High' || step.priority === '高' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                              P{step.priority === 'High' ? '0' : step.priority === '高' ? '0' : '1'} 优先级
+                            </span>
+                         </div>
                       </div>
-                      <p className="text-xs text-slate-500">{job.company}</p>
-                    </div>
-                  ))}
+                    ))}
+                    {isCollapsed && result.applicationPlan.steps.length > 3 && (
+                       <div className="text-center pt-2">
+                          <span className="text-xs text-slate-400">... 更多步骤请展开或前往个人中心查看</span>
+                       </div>
+                    )}
+                  </div>
                 </div>
-                <button 
-                  onClick={() => navigate(`/jobs?search=${encodeURIComponent(formData.background.industry || '')}&type=${formData.goal === 'full-time' ? 'Full-time' : formData.goal === 'part-time' ? 'Part-time' : 'Contract'}`)} 
-                  className="w-full mt-4 text-center text-sm text-indigo-600 font-medium hover:text-indigo-700"
-                >
-                  查看更多岗位 &rarr;
-                </button>
-              </div>
-            </div>
+             )}
+             
+             {/* 3. Job Recommendations (Collapsed Preview) */}
+             {!isCollapsed && (
+               <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <h3 className="font-bold text-slate-900 mb-4">推荐岗位方向</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {result.recommendations.map((job, i) => (
+                      <div key={i} className="p-3 bg-slate-50 rounded-xl hover:bg-indigo-50 transition-colors cursor-pointer border border-slate-100" onClick={() => navigate('/jobs')}>
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className="font-bold text-slate-900 text-sm truncate pr-2">{job.title}</h4>
+                          <span className="text-xs font-bold text-green-600 whitespace-nowrap">{job.match}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 truncate">{job.company}</p>
+                      </div>
+                    ))}
+                  </div>
+               </div>
+             )}
+
           </div>
+
+          {/* Toggle Button */}
+          <div className="mt-6 flex justify-center">
+             <button 
+               onClick={() => setIsCollapsed(!isCollapsed)}
+               className="flex items-center gap-2 px-6 py-2 bg-white border border-slate-200 rounded-full text-sm font-medium text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm"
+             >
+               {isCollapsed ? (
+                 <>展开详细方案 <ChevronDown className="w-4 h-4" /></>
+               ) : (
+                 <>收起方案 <ChevronUp className="w-4 h-4" /></>
+               )}
+             </button>
+          </div>
+
+          <div className="mt-4 text-center">
+             <p className="text-xs text-slate-400">
+                完整版方案（含简历深度评估、面试题库、语言建议）已保存至 
+                <button onClick={() => navigate('/profile?tab=custom-plan')} className="text-indigo-500 hover:underline ml-1">个人中心</button>
+             </p>
+          </div>
+
         </div>
       </div>
     )
@@ -491,7 +456,7 @@ export default function CopilotSection() {
              </div>
           </div>
 
-          {/* Right: Demo Visual */}
+          {/* Right: Demo Visual or Progress */}
           <div className="hidden lg:block relative">
             <div className="relative z-10 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 p-2 overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500">
                {/* Mock UI Header */}
@@ -504,80 +469,120 @@ export default function CopilotSection() {
                   <div className="ml-4 text-xs font-mono text-slate-400">Copilot Workflow</div>
                </div>
                
-               {/* Mock Content */}
+               {/* Content Area */}
                <div className="bg-slate-900 p-6 space-y-6">
-                  {/* Step 1: Analyze */}
-                  <div className={`flex gap-4 transition-opacity duration-500 ${demoStep >= 0 ? 'opacity-100' : 'opacity-30'}`}>
-                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${demoStep >= 0 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                        1
-                     </div>
-                     <div className="space-y-2 w-full">
-                        <div className="text-slate-300 font-medium text-sm">AI 深度解析您的背景与目标</div>
-                        <div className={`h-20 w-full bg-slate-800 rounded border border-slate-700 p-3 transition-all duration-500 ${demoStep === 0 ? 'ring-2 ring-indigo-500 bg-slate-800/80' : ''}`}>
-                           <div className="h-2 w-1/2 bg-slate-600 rounded mb-2" />
-                           <div className="flex gap-2">
-                              <div className="h-6 w-16 bg-green-500/20 rounded border border-green-500/30 text-[10px] text-green-400 flex items-center justify-center">简历评估</div>
-                              <div className="h-6 w-16 bg-blue-500/20 rounded border border-blue-500/30 text-[10px] text-blue-400 flex items-center justify-center">技能分析</div>
-                           </div>
+                  {loading ? (
+                    // Loading Progress View
+                    <div className="py-10 space-y-8">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${loadingStep >= 0 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                           {loadingStep > 0 ? <CheckCircle2 className="w-5 h-5" /> : '1'}
                         </div>
-                     </div>
-                  </div>
+                        <div className="space-y-1 w-full">
+                           <div className={`text-sm font-medium transition-colors ${loadingStep >= 0 ? 'text-white' : 'text-slate-500'}`}>分析个人背景</div>
+                           {loadingStep === 0 && <div className="h-1 w-full bg-slate-800 rounded overflow-hidden"><div className="h-full bg-indigo-500 animate-progress"></div></div>}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${loadingStep >= 1 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                           {loadingStep > 1 ? <CheckCircle2 className="w-5 h-5" /> : '2'}
+                        </div>
+                        <div className="space-y-1 w-full">
+                           <div className={`text-sm font-medium transition-colors ${loadingStep >= 1 ? 'text-white' : 'text-slate-500'}`}>匹配远程机会</div>
+                           {loadingStep === 1 && <div className="h-1 w-full bg-slate-800 rounded overflow-hidden"><div className="h-full bg-indigo-500 animate-progress"></div></div>}
+                        </div>
+                      </div>
 
-                  {/* Step 2: Match */}
-                  <div className={`flex gap-4 transition-opacity duration-500 ${demoStep >= 1 ? 'opacity-100' : 'opacity-30'}`}>
-                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${demoStep >= 1 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                        2
-                     </div>
-                     <div className="space-y-2 w-full">
-                        <div className="text-slate-300 font-medium text-sm">精准匹配全网远程机会</div>
-                        <div className={`space-y-2 transition-all duration-500 ${demoStep === 1 ? 'scale-105 origin-left' : ''}`}>
-                           {[
-                             { text: 'Senior React Developer', match: '98%' },
-                             { text: 'Frontend Engineer (Remote)', match: '95%' },
-                             { text: 'Full Stack Developer', match: '92%' }
-                           ].map((job, i) => (
-                             <div key={i} className={`flex items-center justify-between p-2 rounded bg-slate-800/50 border border-slate-800 transition-all duration-300 ${demoStep >= 1 ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'}`} style={{ transitionDelay: `${i * 100}ms` }}>
-                                <div className="flex items-center gap-2">
-                                  <CheckCircle2 className="w-3 h-3 text-green-500" />
-                                  <span className="text-xs text-slate-400">{job.text}</span>
-                                </div>
-                                <span className="text-[10px] text-green-500 font-mono">{job.match}</span>
-                             </div>
-                           ))}
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${loadingStep >= 2 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                           {loadingStep > 2 ? <CheckCircle2 className="w-5 h-5" /> : '3'}
                         </div>
-                     </div>
-                  </div>
+                        <div className="space-y-1 w-full">
+                           <div className={`text-sm font-medium transition-colors ${loadingStep >= 2 ? 'text-white' : 'text-slate-500'}`}>生成行动计划</div>
+                           {loadingStep === 2 && <div className="h-1 w-full bg-slate-800 rounded overflow-hidden"><div className="h-full bg-indigo-500 animate-progress"></div></div>}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Demo Content
+                    <div className="space-y-6">
+                      {/* Step 1: Analyze */}
+                      <div className={`flex gap-4 transition-opacity duration-500 ${demoStep >= 0 ? 'opacity-100' : 'opacity-30'}`}>
+                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${demoStep >= 0 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                            1
+                         </div>
+                         <div className="space-y-2 w-full">
+                            <div className="text-slate-300 font-medium text-sm">AI 深度解析您的背景与目标</div>
+                            <div className={`h-20 w-full bg-slate-800 rounded border border-slate-700 p-3 transition-all duration-500 ${demoStep === 0 ? 'ring-2 ring-indigo-500 bg-slate-800/80' : ''}`}>
+                               <div className="h-2 w-1/2 bg-slate-600 rounded mb-2" />
+                               <div className="flex gap-2">
+                                  <div className="h-6 w-16 bg-green-500/20 rounded border border-green-500/30 text-[10px] text-green-400 flex items-center justify-center">简历评估</div>
+                                  <div className="h-6 w-16 bg-blue-500/20 rounded border border-blue-500/30 text-[10px] text-blue-400 flex items-center justify-center">技能分析</div>
+                               </div>
+                            </div>
+                         </div>
+                      </div>
 
-                  {/* Step 3: Plan */}
-                  <div className={`flex gap-4 transition-opacity duration-500 ${demoStep >= 2 ? 'opacity-100' : 'opacity-30'}`}>
-                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${demoStep >= 2 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                        3
-                     </div>
-                     <div className="space-y-2 w-full">
-                        <div className="text-slate-300 font-medium text-sm">生成面试策略与投递计划</div>
-                        <div className="grid grid-cols-2 gap-2">
-                           <div className={`h-20 bg-slate-800 rounded border border-slate-700 p-2 transition-all duration-500 ${demoStep === 2 ? 'bg-indigo-900/20 border-indigo-500/50' : ''}`}>
-                              <div className="w-6 h-6 rounded bg-slate-700 mb-2 flex items-center justify-center">
-                                <Zap className="w-3 h-3 text-amber-400" />
-                              </div>
-                              <div className="h-1.5 w-16 bg-slate-600 rounded" />
-                           </div>
-                           <div className={`h-20 bg-slate-800 rounded border border-slate-700 p-2 transition-all duration-500 ${demoStep === 2 ? 'bg-indigo-900/20 border-indigo-500/50' : ''}`}>
-                              <div className="w-6 h-6 rounded bg-slate-700 mb-2 flex items-center justify-center">
-                                <Clock className="w-3 h-3 text-blue-400" />
-                              </div>
-                              <div className="h-1.5 w-16 bg-slate-600 rounded" />
-                           </div>
-                        </div>
-                     </div>
-                  </div>
+                      {/* Step 2: Match */}
+                      <div className={`flex gap-4 transition-opacity duration-500 ${demoStep >= 1 ? 'opacity-100' : 'opacity-30'}`}>
+                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${demoStep >= 1 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                            2
+                         </div>
+                         <div className="space-y-2 w-full">
+                            <div className="text-slate-300 font-medium text-sm">精准匹配全网远程机会</div>
+                            <div className={`space-y-2 transition-all duration-500 ${demoStep === 1 ? 'scale-105 origin-left' : ''}`}>
+                               {[
+                                 { text: 'Senior React Developer', match: '98%' },
+                                 { text: 'Frontend Engineer (Remote)', match: '95%' },
+                                 { text: 'Full Stack Developer', match: '92%' }
+                               ].map((job, i) => (
+                                 <div key={i} className={`flex items-center justify-between p-2 rounded bg-slate-800/50 border border-slate-800 transition-all duration-300 ${demoStep >= 1 ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'}`} style={{ transitionDelay: `${i * 100}ms` }}>
+                                    <div className="flex items-center gap-2">
+                                      <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                      <span className="text-xs text-slate-400">{job.text}</span>
+                                    </div>
+                                    <span className="text-[10px] text-green-500 font-mono">{job.match}</span>
+                                 </div>
+                               ))}
+                            </div>
+                         </div>
+                      </div>
+
+                      {/* Step 3: Plan */}
+                      <div className={`flex gap-4 transition-opacity duration-500 ${demoStep >= 2 ? 'opacity-100' : 'opacity-30'}`}>
+                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${demoStep >= 2 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                            3
+                         </div>
+                         <div className="space-y-2 w-full">
+                            <div className="text-slate-300 font-medium text-sm">生成面试策略与投递计划</div>
+                            <div className="grid grid-cols-2 gap-2">
+                               <div className={`h-20 bg-slate-800 rounded border border-slate-700 p-2 transition-all duration-500 ${demoStep === 2 ? 'bg-indigo-900/20 border-indigo-500/50' : ''}`}>
+                                  <div className="w-6 h-6 rounded bg-slate-700 mb-2 flex items-center justify-center">
+                                    <Zap className="w-3 h-3 text-amber-400" />
+                                  </div>
+                                  <div className="h-1.5 w-16 bg-slate-600 rounded" />
+                               </div>
+                               <div className={`h-20 bg-slate-800 rounded border border-slate-700 p-2 transition-all duration-500 ${demoStep === 2 ? 'bg-indigo-900/20 border-indigo-500/50' : ''}`}>
+                                  <div className="w-6 h-6 rounded bg-slate-700 mb-2 flex items-center justify-center">
+                                    <Clock className="w-3 h-3 text-blue-400" />
+                                  </div>
+                                  <div className="h-1.5 w-16 bg-slate-600 rounded" />
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+                    </div>
+                  )}
                </div>
 
                {/* Floating Badge */}
-               <div className={`absolute bottom-8 right-8 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-bold flex items-center gap-2 transition-all duration-500 transform ${demoStep === 3 ? 'translate-y-0 opacity-100 scale-110' : 'translate-y-4 opacity-0 scale-90'}`}>
-                  <Sparkles className="w-4 h-4" />
-                  已生成个性化方案
-               </div>
+               {!loading && (
+                 <div className={`absolute bottom-8 right-8 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-bold flex items-center gap-2 transition-all duration-500 transform ${demoStep === 3 ? 'translate-y-0 opacity-100 scale-110' : 'translate-y-4 opacity-0 scale-90'}`}>
+                    <Sparkles className="w-4 h-4" />
+                    已生成个性化方案
+                 </div>
+               )}
             </div>
             
             {/* Background Blob behind image */}

@@ -1,7 +1,10 @@
--- SQL script to create test users in Neon DB
--- Run this in the Neon SQL Editor or via psql
+-- SQL script to reset/ensure existence of canonical test users
+-- Run this in the Neon SQL Editor if you need to restore these accounts
+-- Password for all accounts: Haigoo2026!
+-- Note: The password_hash below needs to be a valid bcrypt hash for 'Haigoo2026!'. 
+-- If you need to reset passwords, please use the Forgot Password flow or update with a known hash.
 
--- 1. Create Admin User (admin@haigoo.com)
+-- 1. Admin User (test_admin@haigoo.com)
 INSERT INTO users (
     user_id, 
     email, 
@@ -12,15 +15,17 @@ INSERT INTO users (
     updated_at
 ) VALUES (
     'test-admin-id-001', 
-    'admin@haigoo.com', 
-    '$2b$10$EpIx.i.v.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E', -- Placeholder hash (needs real bcrypt hash)
+    'test_admin@haigoo.com', 
+    '$2b$10$EpIx.i.v.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E', -- Placeholder: Replace with actual bcrypt hash of 'Haigoo2026!'
     '{"admin": true}', 
     'active', 
     NOW(), 
     NOW()
-) ON CONFLICT (email) DO NOTHING;
+) ON CONFLICT (email) DO UPDATE SET 
+    roles = '{"admin": true}',
+    member_status = 'active';
 
--- 2. Create Member User (member@haigoo.com)
+-- 2. Member User (test_member@haigoo.com)
 INSERT INTO users (
     user_id, 
     email, 
@@ -32,16 +37,18 @@ INSERT INTO users (
     updated_at
 ) VALUES (
     'test-member-id-001', 
-    'member@haigoo.com', 
-    '$2b$10$EpIx.i.v.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E', -- Placeholder hash
+    'test_member@haigoo.com', 
+    '$2b$10$EpIx.i.v.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E', -- Placeholder
     '{}', 
     'active', 
     NOW() + INTERVAL '1 year', 
     NOW(), 
     NOW()
-) ON CONFLICT (email) DO NOTHING;
+) ON CONFLICT (email) DO UPDATE SET 
+    member_status = 'active',
+    member_expire_at = NOW() + INTERVAL '1 year';
 
--- 3. Create Free User (free@haigoo.com)
+-- 3. Free User (test_free@haigoo.com)
 INSERT INTO users (
     user_id, 
     email, 
@@ -52,14 +59,11 @@ INSERT INTO users (
     updated_at
 ) VALUES (
     'test-free-id-001', 
-    'free@haigoo.com', 
-    '$2b$10$EpIx.i.v.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E', -- Placeholder hash
+    'test_free@haigoo.com', 
+    '$2b$10$EpIx.i.v.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E.E', -- Placeholder
     '{}', 
     'inactive', 
     NOW(), 
     NOW()
-) ON CONFLICT (email) DO NOTHING;
-
--- Note: The password_hash above is a dummy. 
--- To log in, you may need to reset the password via the "Forgot Password" flow 
--- or manually update the hash with a known bcrypt hash.
+) ON CONFLICT (email) DO UPDATE SET 
+    member_status = 'inactive';

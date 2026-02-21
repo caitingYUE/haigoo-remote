@@ -1313,7 +1313,7 @@ export default function ProfileCenterPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-10">
         <div className="mb-8">
           <button
             className="flex items-center text-slate-500 hover:text-slate-900 transition-colors group"

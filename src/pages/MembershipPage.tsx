@@ -345,15 +345,16 @@ const MembershipPage: React.FC = () => {
                         </button>
                      </div>
 
-                     <div className="grid gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {recommendedJobs.length > 0 ? (
                            recommendedJobs.map(job => (
                               <JobCardNew
                                  key={job.id}
                                  job={job}
-                                 variant="list"
+                                 variant="grid"
                                  matchScore={job.matchScore || undefined}
                                  onClick={() => navigate(`/jobs?jobId=${job.id}`)}
+                                 className="h-full"
                               />
                            ))
                         ) : (
