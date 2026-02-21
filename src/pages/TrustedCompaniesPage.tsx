@@ -160,7 +160,7 @@ export default function TrustedCompaniesPage() {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Hero Section */}
-            <div className="relative bg-white pt-8 sm:pt-12 pb-20">
+            <div className="relative bg-white pt-20 pb-20">
                 {/* Background Decoration - contained to avoid overflow issues affecting dropdowns */}
                 <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50/80 via-white to-transparent opacity-70"></div>

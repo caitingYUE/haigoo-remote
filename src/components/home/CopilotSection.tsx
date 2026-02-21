@@ -450,7 +450,7 @@ export default function CopilotSection() {
                      <div className="relative">
                        <Languages className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                        <select
-                          value={formData.background.language || 'Work'}
+                          value={formData.background.language}
                           onChange={(e) => setFormData({...formData, background: {...formData.background, language: e.target.value}})}
                           className="w-full pl-9 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 text-sm text-slate-600"
                        >

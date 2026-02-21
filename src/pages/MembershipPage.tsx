@@ -330,9 +330,8 @@ const MembershipPage: React.FC = () => {
             </div>
          )}
 
-         {/* Hero Section (Hidden for Members) */}
-         {(!isAuthenticated || !isMember) && (
-         <div className="relative overflow-hidden pt-28 pb-0 px-4 sm:px-6 lg:px-8">
+         {/* Hero Section (Visible to all) */}
+         <div className="relative overflow-hidden pt-20 pb-0 px-4 sm:px-6 lg:px-8">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                <img 
@@ -368,7 +367,6 @@ const MembershipPage: React.FC = () => {
                </button>
             </div>
          </div>
-         )}
 
          {/* Benefits Section */}
          <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
