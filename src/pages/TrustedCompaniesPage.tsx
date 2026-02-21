@@ -15,7 +15,7 @@ import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 
 export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
-    const { user, isMember } = useAuth()
+    const { isMember } = useAuth()
 
 
     // Filters

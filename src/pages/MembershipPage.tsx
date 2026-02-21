@@ -231,7 +231,107 @@ const MembershipPage: React.FC = () => {
 
    return (
       <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
-         {/* Hero Section */}
+         {/* Member Dashboard (Prioritized for Members) */}
+         {isAuthenticated && isMember && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+               <div className="space-y-8">
+                  {/* Status Info */}
+                  <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden p-8 md:p-12 relative group">
+                     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Crown className="w-32 h-32 text-indigo-500 transform rotate-12" />
+                     </div>
+
+                     <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-8">
+                           <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 rotate-3">
+                              <Crown className="w-7 h-7 text-white" />
+                           </div>
+                           <div>
+                              <h2 className="text-2xl font-bold text-slate-900">尊贵会员权益已生效</h2>
+                              <p className="text-slate-500 font-medium">Haigoo Premium Member</p>
+                           </div>
+                        </div>
+
+                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4 mb-8">
+                           <div className="flex items-center gap-3 text-slate-700">
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              </div>
+                              <span className="font-medium">您的会员申请已通过，所有高级权益已解锁</span>
+                           </div>
+
+                           <div className="flex items-center gap-3 text-slate-700">
+                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                 <Calendar className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <span className="font-medium">
+                                 有效期至：
+                                 {currentMembership?.expireAt
+                                    ? new Date(currentMembership.expireAt).toLocaleDateString()
+                                    : (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString() : '永久有效')}
+                              </span>
+                           </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-4">
+                           <button
+                              onClick={() => navigate('/jobs')}
+                              className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all hover:-translate-y-0.5 inline-flex items-center gap-2 shadow-lg shadow-slate-900/20"
+                           >
+                              直通全站岗位
+                              <ArrowRight className="w-4 h-4" />
+                           </button>
+                           <button
+                              onClick={() => setShowCertificateModal(true)}
+                              className="px-8 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
+                           >
+                              <Download className="w-4 h-4" />
+                              下载会员证书
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Recommended Jobs */}
+                  <div>
+                     <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                           <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
+                           会员专属推荐
+                        </h3>
+                        <button
+                           onClick={() => navigate('/jobs')}
+                           className="text-sm text-indigo-600 font-bold hover:text-indigo-700 hover:underline flex items-center gap-1 transition-colors"
+                        >
+                           查看更多 <ChevronRight className="w-4 h-4" />
+                        </button>
+                     </div>
+
+                     <div className="grid gap-4">
+                        {recommendedJobs.length > 0 ? (
+                           recommendedJobs.map(job => (
+                              <JobCardNew
+                                 key={job.id}
+                                 job={job}
+                                 variant="list"
+                                 matchScore={job.matchScore || undefined}
+                                 onClick={() => navigate(`/jobs?jobId=${job.id}`)}
+                              />
+                           ))
+                        ) : (
+                           <div className="w-full text-center py-16 bg-white rounded-3xl border border-slate-100 border-dashed">
+                              <Loader2 className="w-10 h-10 text-slate-300 animate-spin mx-auto mb-4" />
+                              <p className="text-slate-500 font-medium">正在利用 AI 为您匹配最适合的岗位...</p>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+               </div>
+            </div>
+         )}
+
+         {/* Hero Section (Hidden for Members) */}
+         {(!isAuthenticated || !isMember) && (
          <div className="relative overflow-hidden pt-28 pb-0 px-4 sm:px-6 lg:px-8">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
@@ -266,34 +366,9 @@ const MembershipPage: React.FC = () => {
                   探索会员方案
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                </button>
-
-               {/* Current Status Card */}
-               {isMember && (
-                  <div className="mt-12 inline-flex items-center gap-5 bg-white/80 backdrop-blur-md border border-white/50 px-8 py-4 rounded-2xl shadow-xl shadow-slate-200/50 hover:shadow-2xl transition-all cursor-default ring-1 ring-white">
-                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                        <Crown className="w-6 h-6 text-white" />
-                     </div>
-                     <div className="text-left">
-                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">当前状态</p>
-                        <div className="flex items-center gap-3">
-                           <p className="font-bold text-slate-900 text-lg">海狗会员</p>
-                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                              生效中
-                           </span>
-                        </div>
-                     </div>
-                     <div className="h-8 w-px bg-slate-200 mx-2"></div>
-                     <button
-                        onClick={() => setShowCertificateModal(true)}
-                        className="text-xs font-medium text-slate-500 hover:text-indigo-600 flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all group"
-                     >
-                        <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
-                        下载证书
-                     </button>
-                  </div>
-               )}
             </div>
          </div>
+         )}
 
          {/* Benefits Section */}
          <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
@@ -493,101 +568,8 @@ const MembershipPage: React.FC = () => {
 
          {/* Member Dashboard */}
          {isAuthenticated && isMember && (
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 relative z-20">
-               <div className="space-y-8">
-                  {/* Status Info */}
-                  <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden p-8 md:p-12 relative group">
-                     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Crown className="w-32 h-32 text-indigo-500 transform rotate-12" />
-                     </div>
-
-                     <div className="relative z-10">
-                        <div className="flex items-center gap-4 mb-8">
-                           <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 rotate-3">
-                              <Crown className="w-7 h-7 text-white" />
-                           </div>
-                           <div>
-                              <h2 className="text-2xl font-bold text-slate-900">尊贵会员权益已生效</h2>
-                              <p className="text-slate-500 font-medium">Haigoo Premium Member</p>
-                           </div>
-                        </div>
-
-                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4 mb-8">
-                           <div className="flex items-center gap-3 text-slate-700">
-                              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                              </div>
-                              <span className="font-medium">您的会员申请已通过，所有高级权益已解锁</span>
-                           </div>
-
-                           <div className="flex items-center gap-3 text-slate-700">
-                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                 <Calendar className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <span className="font-medium">
-                                 有效期至：
-                                 {currentMembership?.expireAt
-                                    ? new Date(currentMembership.expireAt).toLocaleDateString()
-                                    : (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString() : '永久有效')}
-                              </span>
-                           </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-4">
-                           <button
-                              onClick={() => navigate('/jobs')}
-                              className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all hover:-translate-y-0.5 inline-flex items-center gap-2 shadow-lg shadow-slate-900/20"
-                           >
-                              直通全站岗位
-                              <ArrowRight className="w-4 h-4" />
-                           </button>
-                           <button
-                              onClick={() => setShowCertificateModal(true)}
-                              className="px-8 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
-                           >
-                              <Download className="w-4 h-4" />
-                              下载会员证书
-                           </button>
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Recommended Jobs */}
-                  <div>
-                     <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                           <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
-                           会员专属推荐
-                        </h3>
-                        <button
-                           onClick={() => navigate('/jobs')}
-                           className="text-sm text-indigo-600 font-bold hover:text-indigo-700 hover:underline flex items-center gap-1 transition-colors"
-                        >
-                           查看更多 <ChevronRight className="w-4 h-4" />
-                        </button>
-                     </div>
-
-                     <div className="grid gap-4">
-                        {recommendedJobs.length > 0 ? (
-                           recommendedJobs.map(job => (
-                              <JobCardNew
-                                 key={job.id}
-                                 job={job}
-                                 variant="list"
-                                 matchScore={job.matchScore || undefined}
-                                 onClick={() => navigate(`/jobs?jobId=${job.id}`)}
-                              />
-                           ))
-                        ) : (
-                           <div className="w-full text-center py-16 bg-white rounded-3xl border border-slate-100 border-dashed">
-                              <Loader2 className="w-10 h-10 text-slate-300 animate-spin mx-auto mb-4" />
-                              <p className="text-slate-500 font-medium">正在利用 AI 为您匹配最适合的岗位...</p>
-                           </div>
-                        )}
-                     </div>
-                  </div>
-               </div>
-            </div>
+             // Already rendered above
+             <></>
          )}
 
          {/* FAQ Section */}
@@ -600,7 +582,7 @@ const MembershipPage: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-6">
                {[
                   { q: "什么是内推直达？", a: "您可以在岗位申请页面选择邮箱直申，包括招聘邮箱、高管邮箱等（已经过认证的企业内部邮箱），让您的简历超过90%+候选人更快一步到达企业。" },
-                  { q: "怎么加入会员？", a: "您可以选择上方的会员方案直接订阅，支付完成后，管理员将在24小时内为您开通权益。" },
+                  { q: "会员方案是否可以变更或退款？", a: "会员支付后48小时内可以申请变更方案或退款，可以发邮件到「hi@haigooremote.com」写明原因并发送申请。我们将在审核后3个工作日内联系您退款或变更方案。建议在邮件里留下微信ID或联系方式便于交流。" },
                   { q: "这里的岗位可靠吗？", a: "当前所有岗位都经过了人工审核，对于会员用户还会通过历史申请记录的追踪来增强岗位可信度的判断。" },
                   { q: "远程岗位的薪资如何保障", a: "远程岗位里有全职、实习、合同工等多种情况，会依据具体企业、具体岗位来定，有些会在岗位详情页说明，有些需要在面试中沟通。" }
                ].map((faq, i) => (
