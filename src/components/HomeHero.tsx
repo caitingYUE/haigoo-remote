@@ -491,7 +491,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     className="absolute inset-0 w-full h-full overflow-hidden"
                 >
                     <img
-                        src="/background.webp"
+                        src="/background.webp?v=2"
                         alt=""
                         style={{
                             // Using standard transform translation instead of object-position for predictable movement

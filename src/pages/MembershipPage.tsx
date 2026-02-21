@@ -13,6 +13,8 @@ interface Plan {
    id: string;
    name: string;
    price: number;
+   originalPrice?: number;
+   discountLabel?: string;
    currency: string;
    features: string[];
    duration_days: number;
@@ -47,6 +49,8 @@ const STATIC_PLANS: Plan[] = [
       id: 'goo_plus_yearly',
       name: '海狗远程俱乐部会员 (年度)',
       price: 999,
+      originalPrice: 1999,
+      discountLabel: '早鸟价 · 6月1日恢复原价',
       currency: 'CNY',
       duration_days: 365,
       isPlus: true,
@@ -231,7 +235,7 @@ const MembershipPage: React.FC = () => {
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                <img 
-                  src="/members.webp" 
+                  src="/members.webp?v=2" 
                   alt="Membership Hero Background" 
                   className="w-full h-full object-cover object-center opacity-30"
                />
@@ -357,12 +361,31 @@ const MembershipPage: React.FC = () => {
                            <h3 className={`text-2xl font-extrabold mb-3 text-slate-900`}>
                               {plan.name}
                            </h3>
-                           <div className="flex justify-center items-baseline gap-1 mb-4">
+                           <div className="flex justify-center items-baseline gap-1 mb-2">
+                              {plan.originalPrice && (
+                                 <span className="text-lg text-slate-400 line-through mr-1 font-medium">
+                                    ¥{plan.originalPrice}
+                                 </span>
+                              )}
                               <span className="text-5xl font-extrabold tracking-tight text-slate-900">¥{plan.price}</span>
                               <span className="text-sm font-bold text-slate-500">
                                  /{plan.duration_days > 90 ? '年' : '季度'}
                               </span>
                            </div>
+                           
+                           <div className="mb-4 flex flex-col items-center gap-2 min-h-[3.5rem]">
+                              {plan.discountLabel && (
+                                 <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-medium border border-slate-200">
+                                    {plan.discountLabel}
+                                 </span>
+                              )}
+                              {plan.originalPrice && plan.originalPrice > plan.price && (
+                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                                    限时立省 ¥{plan.originalPrice - plan.price}
+                                 </span>
+                              )}
+                           </div>
+
                            <p className="text-sm text-slate-500 font-medium px-4">
                               {plan.isPlus ? '适合致力于长期职业发展与个人品牌建设' : '适合专注短期成长与快速求职'}
                            </p>
@@ -431,7 +454,7 @@ const MembershipPage: React.FC = () => {
                      "在这里遇到了自己非常喜欢的工作，跟专业背景对口，薪资很满意，还帮我拓展了海外客户。非常感谢海狗远程俱乐部。"
                   </p>
                   <div className="flex items-center gap-4">
-                     <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Flora&hairColor=202020" alt="Flora" className="w-12 h-12 rounded-full object-cover bg-indigo-50" />
+                     <img src="/flora.jpg" alt="Flora" className="w-12 h-12 rounded-full object-cover bg-slate-100" />
                      <div>
                         <div className="font-bold text-slate-900">Flora</div>
                         <div className="text-sm text-slate-500">心理咨询师</div>
@@ -445,7 +468,7 @@ const MembershipPage: React.FC = () => {
                      "很满意通过这个找到了工作，也顺利入职了。如果遇到和自己匹配的岗位，各位不妨试一试及时出手。"
                   </p>
                   <div className="flex items-center gap-4">
-                     <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Li&hairColor=202020" alt="福多多" className="w-12 h-12 rounded-full object-cover bg-blue-50" />
+                     <img src="/fuduoduo.jpg" alt="福多多" className="w-12 h-12 rounded-full object-cover bg-slate-100" />
                      <div>
                         <div className="font-bold text-slate-900">福多多</div>
                         <div className="text-sm text-slate-500">粤语客服</div>
