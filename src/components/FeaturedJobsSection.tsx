@@ -112,7 +112,7 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-in fade-in duration-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in duration-500">
           {jobs.map((job) => (
             <JobCardNew
               key={job.id}
