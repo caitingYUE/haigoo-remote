@@ -349,7 +349,7 @@ export default function LandingPage() {
             </h2>
 
             <p className="text-lg text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
-              解锁企业背景信息、高管内推直达通道、简历优化等专属特权，<br className="hidden md:block" />
+              解锁企业背景信息、内推直达通道、AI 工作助手、职业咨询等专属特权，<br className="hidden md:block" />
               让你的远程求职之路更加顺畅。
             </p>
 

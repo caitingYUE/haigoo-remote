@@ -115,7 +115,7 @@ export default function GeneratedPlanView({ plan, isGuest }: { plan: any, isGues
             <div className="mt-4 pt-4 border-t border-slate-100 flex-shrink-0 flex flex-col items-center gap-3">
                 {isGuest && (
                     <div className="text-xs text-amber-600 bg-amber-50 rounded-lg px-4 py-2 border border-amber-100 font-medium w-full text-center">
-                        <span className="inline-block mr-1">⚠️</span> 方案仅缓存 5 分钟，<Link to="/login" className="underline font-bold">立即登录</Link> 永久保存并解锁所有后续功能。
+                        <span className="inline-block mr-1">⚠️</span> 方案仅缓存 5 分钟，<Link to="/login" className="text-amber-700 hover:text-amber-800 font-medium hover:underline">立即登录</Link> 保存并解锁更多功能。
                     </div>
                 )}
                 <div className="flex w-full gap-2">

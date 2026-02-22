@@ -85,7 +85,7 @@ export default function Footer() {
                         <a href="mailto:hi@haigooremote.com" className="hover:text-indigo-600 transition-colors block font-medium no-underline hover:no-underline">
                             hi@haigooremote.com
                         </a>
-                        <p className="text-slate-400 text-xs mt-1">周一至周五 9:00-18:00</p>
+                        <p className="text-slate-400 text-xs mt-1">周一至周日 9:00-22:00</p>
                     </div>
                 </div>
              </div>

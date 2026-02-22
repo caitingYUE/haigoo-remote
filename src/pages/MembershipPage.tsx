@@ -577,7 +577,7 @@ const MembershipPage: React.FC = () => {
                   { q: "什么是内推直达？", a: "您可以在岗位申请页面选择邮箱直申，包括招聘邮箱、高管邮箱等（已经过认证的企业内部邮箱），让您的简历超过90%+候选人更快一步到达企业。" },
                   { q: "会员方案是否可以变更或退款？", a: "会员支付后48小时内可以申请变更方案或退款，可以发邮件到「hi@haigooremote.com」写明原因并发送申请。我们将在审核后3个工作日内联系您退款或变更方案。建议在邮件里留下微信ID或联系方式便于交流。" },
                   { q: "这里的岗位可靠吗？", a: "当前所有岗位都经过了人工审核，对于会员用户还会通过历史申请记录的追踪来增强岗位可信度的判断。" },
-                  { q: "远程岗位的薪资如何保障", a: "远程岗位里有全职、实习、合同工等多种情况，会依据具体企业、具体岗位来定，有些会在岗位详情页说明，有些需要在面试中沟通。" }
+                  { q: "怎么加入会员？", a: "付费后24小时内权益会生效。如有疑问可以邮件咨询。" }
                ].map((faq, i) => (
                   <div key={i} className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
                      <h3 className="font-bold text-slate-900 mb-4 flex items-start gap-3 text-lg">
