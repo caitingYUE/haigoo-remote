@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download, Briefcase, Settings, Sparkles, ArrowRight, Lock } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -9,7 +9,6 @@ import { usePageCache } from '../hooks/usePageCache'
 import { Job } from '../types'
 import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
-import { MembershipApplicationModal } from '../components/MembershipApplicationModal'
 import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import MyApplicationsTab from '../components/MyApplicationsTab'
@@ -1313,7 +1312,7 @@ export default function ProfileCenterPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
         <div className="mb-8">
           <button
             className="flex items-center text-slate-500 hover:text-slate-900 transition-colors group"
@@ -1475,23 +1474,23 @@ export default function ProfileCenterPage() {
                   ) : copilotPlan ? (
                     <div className="max-w-4xl mx-auto">
                       {!isMember && (
-                         <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                               <div className="p-2 bg-white rounded-lg shadow-sm">
-                                  <Crown className="w-5 h-5 text-indigo-600" />
-                               </div>
-                               <div>
-                                  <h4 className="font-bold text-indigo-900 text-sm">升级会员解锁更多权益</h4>
-                                  <p className="text-xs text-indigo-700/80">获取无限次 AI 优化、内推通道及专家服务</p>
-                               </div>
+                        <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white rounded-lg shadow-sm">
+                              <Crown className="w-5 h-5 text-indigo-600" />
                             </div>
-                            <button 
-                               onClick={() => navigate('/membership')}
-                               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
-                            >
-                               立即升级
-                            </button>
-                         </div>
+                            <div>
+                              <h4 className="font-bold text-indigo-900 text-sm">升级会员解锁更多权益</h4>
+                              <p className="text-xs text-indigo-700/80">获取无限次 AI 优化、内推通道及专家服务</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => navigate('/membership')}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                          >
+                            立即升级
+                          </button>
+                        </div>
                       )}
                       <GeneratedPlanView plan={copilotPlan} isGuest={false} />
                     </div>
@@ -1500,15 +1499,15 @@ export default function ProfileCenterPage() {
                       <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-xl shadow-indigo-200 transform rotate-3 hover:rotate-0 transition-all duration-500">
                         <Sparkles className="w-12 h-12 text-white" />
                       </div>
-                      
+
                       <h3 className="text-3xl font-bold text-slate-900 mb-4 text-center">
                         开启您的 AI 职业导航
                       </h3>
-                      
+
                       <p className="text-slate-500 mb-10 max-w-lg mx-auto leading-relaxed text-center text-lg">
                         还没有生成的方案？立即体验 Copilot，让 AI 为您量身定制远程求职路径，从简历到面试，全流程护航。
                       </p>
-                      
+
                       <Link
                         to="/"
                         className="group relative inline-flex items-center gap-3 px-10 py-4 bg-slate-900 text-white font-bold rounded-full hover:bg-indigo-600 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/30 hover:-translate-y-1"
@@ -1519,24 +1518,24 @@ export default function ProfileCenterPage() {
                       </Link>
 
                       <div className="mt-12 grid grid-cols-3 gap-8 text-center max-w-2xl w-full">
-                         <div className="flex flex-col items-center gap-2">
-                            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-1">
-                               <FileText className="w-5 h-5" />
-                            </div>
-                            <span className="text-sm font-medium text-slate-600">简历诊断</span>
-                         </div>
-                         <div className="flex flex-col items-center gap-2">
-                            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 mb-1">
-                               <Briefcase className="w-5 h-5" />
-                            </div>
-                            <span className="text-sm font-medium text-slate-600">精准匹配</span>
-                         </div>
-                         <div className="flex flex-col items-center gap-2">
-                            <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 mb-1">
-                               <MessageSquare className="w-5 h-5" />
-                            </div>
-                            <span className="text-sm font-medium text-slate-600">面试辅导</span>
-                         </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-1">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-600">简历诊断</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 mb-1">
+                            <Briefcase className="w-5 h-5" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-600">精准匹配</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 mb-1">
+                            <MessageSquare className="w-5 h-5" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-600">面试辅导</span>
+                        </div>
                       </div>
                     </div>
                   )}

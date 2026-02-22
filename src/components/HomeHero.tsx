@@ -257,6 +257,83 @@ function DemoPanel({ paused, isGenerating }: { paused: boolean, isGenerating?: b
     )
 }
 
+// ── Generating Progress Panel ──────────────────────────────────────────────────
+// Shown while AI is generating — displays user's actual inputs + animated progress steps
+function GeneratingProgressPanel({ formData }: { formData: CopilotFormData }) {
+    const GOAL_LABEL: Record<string, string> = {
+        'full-time': '找长期远程工作',
+        'side-income': '兼职/副业增收',
+        'market-watch': '关注市场机会',
+        'career-pivot': '职业转型',
+    }
+    const TIMELINE_LABEL: Record<string, string> = {
+        'immediately': '尽快入职',
+        '1-3 months': '1-3 个月内',
+        '3-6 months': '3-6 个月内',
+        'flexible': '时机合适随时',
+    }
+
+    const analysisSteps = [
+        { label: '解析职业背景', detail: formData.background.role ? `方向：${formData.background.role} · ${formData.background.years}` : '正在读取...', active: true },
+        { label: '制定求职路线图', detail: `目标：${GOAL_LABEL[formData.goal] || '综合匹配'} · ${TIMELINE_LABEL[formData.timeline] || '时间规划中'}`, active: true },
+        { label: '匹配精选远程岗位', detail: '根据背景与目标筛选最匹配的岗位...', active: false },
+        { label: '生成个性化行动计划', detail: '制定准备路径和关键里程碑...', active: false },
+    ]
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.15em] mb-0.5">
+                        AI Copilot · 专属生成中
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                        正在为您生成专属求职方案...
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                        {formData.background.role
+                            ? `${formData.background.role} · ${formData.background.years} · ${formData.background.language}`
+                            : 'AI 分析中'}
+                    </p>
+                </div>
+                <div className="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 flex items-center gap-1.5">
+                    <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-500" />
+                    </span>
+                    AI 分析中
+                </div>
+            </div>
+
+            <div className="space-y-3.5 flex-1 overflow-hidden relative">
+                <div className="absolute left-[17px] top-6 bottom-6 w-px bg-gradient-to-b from-indigo-200 via-slate-100 to-transparent pointer-events-none" />
+                {analysisSteps.map((s, i) => (
+                    <div key={i} className={`relative pl-10 transition-all duration-500 ${s.active ? 'opacity-100' : 'opacity-40'}`}>
+                        <div className={`absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm z-10 ${s.active ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-400'
+                            }`}>
+                            {s.active
+                                ? <div className="w-3 h-3 rounded-full bg-white/80 animate-pulse" />
+                                : i + 1
+                            }
+                        </div>
+                        <div className={`rounded-xl p-3 border ${s.active ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'}`}>
+                            <div className={`text-xs font-bold mb-1 ${s.active ? 'text-indigo-700' : 'text-slate-400'}`}>{s.label}</div>
+                            <div className="text-xs text-slate-500 leading-relaxed">{s.detail}</div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
+                <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-pulse [animation-delay:0.2s]" />
+                <div className="w-1.5 h-1.5 bg-indigo-200 rounded-full animate-pulse [animation-delay:0.4s]" />
+                <span className="text-[10px] text-slate-400 ml-1">AI 深度分析中，通常需要 20-40 秒</span>
+            </div>
+        </div>
+    )
+}
+
 // ── Goal Options ──────────────────────────────────────────────────────────────
 const GOAL_OPTIONS = [
     {
@@ -360,25 +437,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     // AI Generation Plan State
     const [generatedPlan, setGeneratedPlan] = useState<any>(null)
 
-    // Load previous plan on mount
+    // Load previous plan on mount (authenticated users only, no guest cache)
     useEffect(() => {
         const fetchExistingPlan = async () => {
-            // First check local storage for guest cache (5min)
-            const cachedPlan = localStorage.getItem('copilot_guest_plan')
-            const cachedTimestamp = localStorage.getItem('copilot_guest_plan_timestamp')
-
-            if (cachedPlan && cachedTimestamp) {
-                const age = Date.now() - parseInt(cachedTimestamp, 10);
-                if (age < 5 * 60 * 1000) {
-                    setGeneratedPlan(JSON.parse(cachedPlan))
-                    setStep(3);
-                    return;
-                } else {
-                    localStorage.removeItem('copilot_guest_plan');
-                    localStorage.removeItem('copilot_guest_plan_timestamp');
-                }
-            }
-
             if (!isAuthenticated) return;
             try {
                 const token = localStorage.getItem('haigoo_auth_token')
@@ -389,7 +450,6 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 const data = await res.json()
                 if (res.ok && data.plan) {
                     setGeneratedPlan(data.plan)
-                    // Jump to step 3 if there's a plan
                     setStep(3);
                 }
             } catch (err) {
@@ -437,7 +497,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }
 
     const handleGenerate = async () => {
-        if (!formData.background.role.trim()) {
+        // Skip role validation when regenerating (user already filled it before)
+        if (!generatedPlan && !formData.background.role.trim()) {
             showWarning('请填写职业方向', 'AI 需要了解您的职业背景')
             inputRef.current?.focus()
             return
@@ -453,7 +514,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({
-                    userId: user?.user_id, // Might be undefined for guests
+                    userId: user?.user_id,
                     goal: GOAL_TO_API[formData.goal],
                     timeline: formData.timeline,
                     background: {
@@ -470,7 +531,6 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
             if (!res.ok) {
                 if (res.status === 401) {
-                    // This route shouldn't hit 401 if we allow guests
                     showWarning('请先登录', '登录后即可解锁完整 AI 远程求职方案')
                     navigate('/login')
                 } else if (res.status === 403) {
@@ -485,10 +545,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             if (data.plan) {
                 setGeneratedPlan(data.plan)
                 if (!isAuthenticated) {
-                    localStorage.setItem('copilot_guest_plan', JSON.stringify(data.plan))
-                    localStorage.setItem('copilot_guest_plan_timestamp', Date.now().toString())
+                    showWarning('体验版方案已生成', '注册/登录后可保存方案并获取更多岗位推荐！')
                 }
-                showWarning('方案已生成', '您的求职指导方案已生成。注册/登录获取更多推荐岗位！')
             }
 
         } catch (err: any) {
@@ -831,6 +889,24 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                     {/* ── Step 3: Resume + Generate ── */}
                                     {step === 3 && (
                                         <div className="flex flex-col gap-4">
+                                            {/* When plan already exists, show user's info summary */}
+                                            {generatedPlan && (
+                                                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
+                                                    <div className="text-xs font-semibold text-indigo-700 mb-2">你的求职信息</div>
+                                                    <div className="space-y-1 text-xs text-slate-600">
+                                                        {formData.goal && <div>🎯 目标：{GOAL_OPTIONS.find(o => o.value === formData.goal)?.label || formData.goal}</div>}
+                                                        {formData.timeline && <div>📅 时间：{TIMELINE_OPTIONS.find(o => o.value === formData.timeline)?.label || formData.timeline}</div>}
+                                                        {formData.background.role && <div>💼 方向：{formData.background.role}</div>}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => prevStep()}
+                                                        className="mt-2 text-[11px] text-indigo-500 hover:text-indigo-700 underline"
+                                                    >
+                                                        修改信息
+                                                    </button>
+                                                </div>
+                                            )}
+
                                             <p className="text-sm font-semibold text-slate-700">
                                                 上传简历（可选）让 AI 诊断更精准
                                             </p>
@@ -843,20 +919,21 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                     <div className="flex-1 flex flex-col justify-center">
                                                         <h4 className="font-bold text-slate-900 mb-0.5 flex items-center gap-2 text-sm">
                                                             {resumeId ? '简历已上传' : '上传简历诊断'}
-                                                            {!isVIP && <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">会员专享</span>}
+                                                            {isAuthenticated && !isVIP && <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">会员专享</span>}
+                                                            {!isAuthenticated && <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">登录后可用</span>}
                                                         </h4>
                                                         <p className="text-xs text-slate-500">
-                                                            {resumeFileName ? <span className="text-emerald-600 font-medium truncate max-w-[150px] inline-block align-bottom">{resumeFileName}</span> : '支持 PDF / Word · AI 自动分析'}
+                                                            {resumeFileName
+                                                                ? <span className="text-emerald-600 font-medium truncate max-w-[150px] inline-block align-bottom">{resumeFileName}</span>
+                                                                : !isAuthenticated ? '登录后上传简历，AI 诊断更精准'
+                                                                    : '支持 PDF / Word · AI 自动分析'}
                                                         </p>
                                                     </div>
-
-                                                    {!isVIP && (
-                                                        <Lock className="w-4 h-4 text-slate-300 ml-2 flex-shrink-0" />
-                                                    )}
+                                                    {(!isVIP || !isAuthenticated) && <Lock className="w-4 h-4 text-slate-300 ml-2 flex-shrink-0" />}
                                                 </div>
 
                                                 {/* Overlay interaction handling */}
-                                                {isVIP && (
+                                                {isVIP && isAuthenticated && (
                                                     <input
                                                         type="file"
                                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
@@ -870,13 +947,19 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                         disabled={resumeUploading}
                                                     />
                                                 )}
-                                                {!isVIP && (
+                                                {isAuthenticated && !isVIP && (
                                                     <div
                                                         className="absolute inset-0 w-full h-full cursor-pointer z-20"
                                                         onClick={() => {
-                                                            showWarning('会员特权', '升级会员解锁“简历深度分析”功能。');
+                                                            showWarning('会员特权', '升级会员解锁"简历深度分析"功能。');
                                                             navigate('/membership');
                                                         }}
+                                                    />
+                                                )}
+                                                {!isAuthenticated && (
+                                                    <div
+                                                        className="absolute inset-0 w-full h-full cursor-pointer z-20"
+                                                        onClick={() => navigate('/login')}
                                                     />
                                                 )}
                                             </div>
@@ -888,12 +971,19 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                         <span className="font-semibold text-indigo-700">尊敬的会员，已为您解锁全部 AI 功能</span>，您可以多次上传简历迭代替换方案并获得专属定制分析。
                                                     </div>
                                                 </div>
-                                            ) : (
+                                            ) : isAuthenticated ? (
                                                 <div className="flex items-start gap-2 text-xs text-slate-400 bg-amber-50 border border-amber-100 rounded-xl p-3">
                                                     <div>
                                                         <span className="font-semibold text-amber-700">免费用户可生成 1 次</span> 完整 AI 方案。
                                                         简历上传诊断、无限生成等高级功能需
                                                         <button onClick={() => navigate('/membership')} className="underline text-amber-600 ml-0.5">升级会员</button>。
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-start gap-2 text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                                    <div>
+                                                        <span className="font-semibold text-slate-600">体验版方案</span>：可完整体验 AI 方案生成。
+                                                        <button onClick={() => navigate('/login')} className="underline text-indigo-600 ml-0.5">登录</button>后可保存方案并解锁更多精准岗位推荐。
                                                     </div>
                                                 </div>
                                             )}
@@ -915,7 +1005,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                     ) : (
                                                         <>
                                                             <Sparkles className="w-4 h-4" />
-                                                            生成我的远程求职方案
+                                                            {generatedPlan ? '重新生成方案' : '生成我的远程求职方案'}
                                                         </>
                                                     )}
                                                 </span>
@@ -924,6 +1014,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                     )}
                                 </div>
                             </div>
+
 
                             {/* Navigation Buttons */}
                             <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
@@ -948,14 +1039,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             </div>
                         </div>
 
-                        {/* ── Right: Demo ── */}
+                        {/* ── Right: Demo / Generating / Plan ── */}
                         <div
                             className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center bg-white/50 backdrop-blur-2xl rounded-[24px] relative overflow-hidden group border border-white/50 shadow-sm transition-all hover:bg-white/60 min-h-[500px]"
-                            onMouseEnter={() => setDemoPaused(true)}
+                            onMouseEnter={() => !loading && setDemoPaused(true)}
                             onMouseLeave={() => setDemoPaused(false)}
                         >
-                            {/* Hover overlay only when no plan generated */}
-                            {!generatedPlan && (
+                            {/* Hover overlay only when idle (no plan, not loading) */}
+                            {!generatedPlan && !loading && (
                                 <div className={`absolute inset-0 rounded-[22px] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-all duration-300 ${demoPaused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
                                     <div className="text-center">
                                         <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-3">
@@ -969,8 +1060,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                             {generatedPlan ? (
                                 <GeneratedPlanView plan={generatedPlan} isGuest={!isAuthenticated} />
+                            ) : loading ? (
+                                <GeneratingProgressPanel formData={formData} />
                             ) : (
-                                <DemoPanel paused={demoPaused && !loading} isGenerating={loading} />
+                                <DemoPanel paused={demoPaused} isGenerating={false} />
                             )}
                         </div>
 
