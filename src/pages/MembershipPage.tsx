@@ -271,81 +271,63 @@ const MembershipPage: React.FC = () => {
 
          {/* Member Dashboard (Prioritized for Members) */}
          {isAuthenticated && isMember && (
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
-               <div className="space-y-8">
-                  {/* Status Info */}
-                  <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden p-8 relative group">
-                     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Crown className="w-32 h-32 text-indigo-500 transform rotate-12" />
-                     </div>
-
-                     <div className="relative z-10">
-                        <div className="flex items-center gap-4 mb-6">
-                           <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 rotate-3">
-                              <Crown className="w-7 h-7 text-white" />
-                           </div>
-                           <div>
-                              <h2 className="text-2xl font-bold text-slate-900">尊贵会员权益已生效</h2>
-                              <p className="text-slate-500 font-medium">Haigoo Premium Member</p>
-                           </div>
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-20">
+               <div className="space-y-6">
+                  {/* Status Info — compact horizontal banner */}
+                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-6 py-4 flex flex-wrap items-center gap-4 justify-between">
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-300/30 shrink-0">
+                           <Crown className="w-5 h-5 text-white" />
                         </div>
-
-                        <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3 mb-6">
-                           <div className="flex items-center gap-3 text-slate-700">
-                              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                              </div>
-                              <span className="font-medium">您的会员申请已通过，所有高级权益已解锁</span>
-                           </div>
-
-                           <div className="flex items-center gap-3 text-slate-700">
-                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                 <Calendar className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <span className="font-medium">
-                                 有效期至：
-                                 {currentMembership?.expireAt
+                        <div>
+                           <div className="font-bold text-slate-900 leading-tight">尊贵会员权益已生效</div>
+                           <div className="text-xs text-slate-400 flex items-center gap-3 mt-0.5">
+                              <span className="flex items-center gap-1">
+                                 <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                 所有高级权益已解锁
+                              </span>
+                              <span className="flex items-center gap-1">
+                                 <Calendar className="w-3 h-3 text-blue-400" />
+                                 有效期至：{currentMembership?.expireAt
                                     ? new Date(currentMembership.expireAt).toLocaleDateString()
                                     : (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString() : '永久有效')}
                               </span>
                            </div>
                         </div>
-
-                        <div className="flex flex-wrap gap-4">
-                           <button
-                              onClick={() => navigate('/jobs')}
-                              className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all hover:-translate-y-0.5 inline-flex items-center gap-2 shadow-lg shadow-slate-900/20"
-                           >
-                              直通全站岗位
-                              <ArrowRight className="w-4 h-4" />
-                           </button>
-                           <button
-                              onClick={() => setShowCertificateModal(true)}
-                              className="px-8 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all hover:-translate-y-0.5 inline-flex items-center gap-2"
-                           >
-                              <Download className="w-4 h-4" />
-                              下载会员证书
-                           </button>
-                        </div>
+                     </div>
+                     <div className="flex items-center gap-3 shrink-0">
+                        <button
+                           onClick={() => navigate('/jobs')}
+                           className="px-5 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-all inline-flex items-center gap-1.5 shadow-sm"
+                        >
+                           浏览岗位 <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                           onClick={() => setShowCertificateModal(true)}
+                           className="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-all inline-flex items-center gap-1.5"
+                        >
+                           <Download className="w-3.5 h-3.5" />
+                           会员证书
+                        </button>
                      </div>
                   </div>
 
-                  {/* Recommended Jobs */}
+                  {/* Recommended Jobs — 2-col grid */}
                   <div>
-                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                           <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
+                     <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                           <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                            会员专属推荐
                         </h3>
                         <button
                            onClick={() => navigate('/jobs')}
-                           className="text-sm text-indigo-600 font-bold hover:text-indigo-700 hover:underline flex items-center gap-1 transition-colors"
+                           className="text-sm text-indigo-600 font-medium hover:text-indigo-700 hover:underline flex items-center gap-1 transition-colors"
                         >
                            查看更多 <ChevronRight className="w-4 h-4" />
                         </button>
                      </div>
 
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {recommendedJobs.length > 0 ? (
                            recommendedJobs.map(job => (
                               <JobCardNew
@@ -358,9 +340,9 @@ const MembershipPage: React.FC = () => {
                               />
                            ))
                         ) : (
-                           <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-100 border-dashed">
-                              <Loader2 className="w-10 h-10 text-slate-300 animate-spin mx-auto mb-4" />
-                              <p className="text-slate-500 font-medium">正在利用 AI 为您匹配最适合的岗位...</p>
+                           <div className="col-span-full text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
+                              <Loader2 className="w-8 h-8 text-slate-300 animate-spin mx-auto mb-3" />
+                              <p className="text-slate-500 text-sm">正在利用 AI 为您匹配最适合的岗位...</p>
                            </div>
                         )}
                      </div>
