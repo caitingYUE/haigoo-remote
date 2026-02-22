@@ -231,48 +231,50 @@ const MembershipPage: React.FC = () => {
 
    return (
       <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
-         {/* Hero Section (Visible to all) */}
-         <div className="relative overflow-hidden pt-8 pb-0 px-4 sm:px-6 lg:px-8">
-            {/* Background Image */}
-            <div className="absolute inset-0 z-0">
-               <img
-                  src="/members.webp?v=2"
-                  alt="Membership Hero Background"
-                  className="w-full h-full object-cover object-center opacity-30"
-               />
-               <div className="absolute inset-0 bg-gradient-to-b from-slate-50/80 via-white/60 to-[#F8F9FC]"></div>
+         {/* Hero Section (Visible to non-members) */}
+         {!(isAuthenticated && isMember) && (
+            <div className="relative overflow-hidden pt-8 pb-0 px-4 sm:px-6 lg:px-8">
+               {/* Background Image */}
+               <div className="absolute inset-0 z-0">
+                  <img
+                     src="/members.webp?v=2"
+                     alt="Membership Hero Background"
+                     className="w-full h-full object-cover object-center opacity-30"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-slate-50/80 via-white/60 to-[#F8F9FC]"></div>
+               </div>
+
+               <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
+                  <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
+                     <span className="block mb-2">解锁全球远程机遇</span>
+                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
+                        开启无界职业生涯
+                     </span>
+                  </h1>
+
+                  <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+                     AI 驱动的求职工具、经人工核验的优质机会、互助成长的精英社区。<br className="hidden md:block" />
+                     打破地域限制，您的全球职业生涯从这里起航。
+                  </p>
+
+                  <button
+                     onClick={() => {
+                        const el = document.getElementById('pricing-plans');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                     }}
+                     className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-base flex items-center gap-2 group"
+                  >
+                     探索会员方案
+                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
+               </div>
             </div>
-
-            <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
-               <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
-                  <span className="block mb-2">解锁全球远程机遇</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
-                     开启无界职业生涯
-                  </span>
-               </h1>
-
-               <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                  AI 驱动的求职工具、经人工核验的优质机会、互助成长的精英社区。<br className="hidden md:block" />
-                  打破地域限制，您的全球职业生涯从这里起航。
-               </p>
-
-               <button
-                  onClick={() => {
-                     const el = document.getElementById('pricing-plans');
-                     el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-base flex items-center gap-2 group"
-               >
-                  探索会员方案
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-               </button>
-            </div>
-         </div>
+         )}
 
          {/* Member Hero Banner — gradient status bar (production design) */}
          {isAuthenticated && isMember && (
             <div className="relative z-20 w-full bg-gradient-to-r from-blue-700 via-indigo-600 to-teal-500 py-10 px-4 sm:px-6 lg:px-8">
-               <div className="max-w-3xl mx-auto flex items-center justify-center">
+               <div className="max-w-5xl mx-auto flex items-center justify-center">
                   <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-5 py-2.5 text-white">
                      <div className="w-7 h-7 rounded-full bg-emerald-400 flex items-center justify-center shrink-0">
                         <CheckCircle2 className="w-4 h-4 text-white" />
@@ -290,8 +292,8 @@ const MembershipPage: React.FC = () => {
 
          {/* Member Dashboard (Prioritized for Members) */}
          {isAuthenticated && isMember && (
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
-               <div className="space-y-6">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+               <div className="space-y-8">
                   {/* Member Status Card — 2-column: info left, QR right */}
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                      <div className="flex gap-6">

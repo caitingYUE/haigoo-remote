@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
     Sparkles, Upload, CheckCircle2, ArrowRight, ArrowLeft, Lock,
-    Target, TrendingUp, Eye, RefreshCw, ChevronDown, ChevronUp
+    Target, TrendingUp, Eye, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, Send
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
@@ -405,9 +405,31 @@ const GOAL_TO_API: Record<GoalType, string> = {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
-    const { isAuthenticated, user } = useAuth()
+    const { isAuthenticated, user, sendVerificationEmail } = useAuth()
     const isVIP = (user as any)?.memberStatus === 'active' || (user as any)?.memberStatus === 'lifetime' || (user as any)?.memberStatus === 'pro'
     const { showWarning, showError } = useNotificationHelpers()
+
+    // Verification banner state
+    const showVerificationWarning = !!(isAuthenticated && user && !user?.emailVerified)
+    const [resending, setResending] = useState(false)
+    const [resendMsg, setResendMsg] = useState('')
+
+    const handleResend = async () => {
+        if (!user?.email || !sendVerificationEmail) return;
+        setResending(true);
+        try {
+            const res = await sendVerificationEmail(user.email);
+            if (res && res.success) {
+                setResendMsg('验证邮件已发送，请查收');
+            } else {
+                setResendMsg(res?.message || '发送失败');
+            }
+        } catch (e) {
+            setResendMsg('发送失败');
+        } finally {
+            setResending(false);
+        }
+    }
 
     // Wizard state
     const [step, setStep] = useState(0) // 0-3
@@ -688,6 +710,35 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
 
+                {/* ── Email Verification Banner ── */}
+                {showVerificationWarning && (
+                    <div className="w-full bg-amber-50 md:bg-amber-50/90 backdrop-blur-md border border-amber-200/50 rounded-2xl px-5 py-3.5 mb-8 shadow-sm text-amber-800 text-sm flex flex-col md:flex-row items-center justify-between gap-4 max-w-5xl transition-all">
+                        <div className="flex items-center gap-2.5">
+                            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                            <span className="font-medium text-center md:text-left leading-relaxed">
+                                当前账号 <strong>{user?.email}</strong> 尚未验证。请尽快验证您的邮箱，否则注册 24 小时后将无法登录。
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0 mt-2 md:mt-0">
+                            {resendMsg ? (
+                                <span className="text-emerald-600 font-medium flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]"></span>
+                                    {resendMsg}
+                                </span>
+                            ) : (
+                                <button
+                                    onClick={handleResend}
+                                    disabled={resending}
+                                    className="text-amber-700 hover:text-amber-900 flex items-center gap-1.5 font-bold transition-all disabled:opacity-50 px-4 py-1.5 bg-amber-100/50 hover:bg-amber-200/50 rounded-full border border-amber-200"
+                                >
+                                    {resending ? '发送中...' : '重新发送验证邮件'}
+                                    {!resending && <Send className="w-3.5 h-3.5" />}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* ── Hero Text ── */}
                 <div className="text-center mb-10 max-w-5xl mx-auto">
                     <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight drop-shadow-sm">
@@ -719,7 +770,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     {/* Glass sheen effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
 
-                    <div className={`grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 relative z-10 overflow-hidden transition-all duration-500 ease-in-out origin-top ${isWizardCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[1000px] opacity-100 min-h-[600px]'
+                    <div className={`grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 relative z-10 overflow-hidden transition-all duration-700 ease-in-out origin-top ${isWizardCollapsed ? 'max-h-[600px] min-h-[600px]' : 'max-h-[3000px] opacity-100 min-h-[600px]'
                         }`}>
 
                         {/* ── Left: Wizard ── */}
@@ -1061,7 +1112,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             )}
 
                             {generatedPlan ? (
-                                <GeneratedPlanView plan={generatedPlan} isGuest={!isAuthenticated} />
+                                <>
+                                    <GeneratedPlanView plan={generatedPlan} isGuest={!isAuthenticated} />
+                                    {isWizardCollapsed && (
+                                        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white/95 to-transparent z-10 pointer-events-none rounded-b-[24px]" />
+                                    )}
+                                </>
                             ) : loading ? (
                                 <GeneratingProgressPanel formData={formData} />
                             ) : (
