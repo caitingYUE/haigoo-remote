@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react'
-import { ArrowRight, Sparkles, Lock, Zap, Clock, Briefcase, GraduationCap, Languages, Users, CheckCircle2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import { ArrowRight, Sparkles, Zap, Clock, Briefcase, GraduationCap, Languages, Users, CheckCircle2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotificationHelpers } from '../../components/NotificationSystem'
