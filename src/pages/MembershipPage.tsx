@@ -233,7 +233,7 @@ const MembershipPage: React.FC = () => {
       <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
          {/* Hero Section (Visible to non-members) */}
          {!(isAuthenticated && isMember) && (
-            <div className="relative overflow-hidden pt-8 pb-0 px-4 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden pt-24 md:pt-32 pb-0 px-4 sm:px-6 lg:px-8">
                {/* Background Image */}
                <div className="absolute inset-0 z-0">
                   <img
@@ -273,9 +273,9 @@ const MembershipPage: React.FC = () => {
 
          {/* Member Hero Banner — gradient status bar (production design) */}
          {isAuthenticated && isMember && (
-            <div className="relative z-20 w-full bg-gradient-to-r from-blue-700 via-indigo-600 to-teal-500 py-10 px-4 sm:px-6 lg:px-8">
-               <div className="max-w-5xl mx-auto flex items-center justify-center">
-                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-5 py-2.5 text-white">
+            <div className="relative z-0 w-full bg-gradient-to-r from-blue-700 via-indigo-600 to-teal-500 pt-32 pb-32 px-4 sm:px-6 lg:px-8">
+               <div className="max-w-5xl mx-auto flex items-center justify-center -mt-6">
+                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-6 py-3 text-white shadow-sm hover:bg-white/15 transition-all">
                      <div className="w-7 h-7 rounded-full bg-emerald-400 flex items-center justify-center shrink-0">
                         <CheckCircle2 className="w-4 h-4 text-white" />
                      </div>
@@ -292,11 +292,13 @@ const MembershipPage: React.FC = () => {
 
          {/* Member Dashboard (Prioritized for Members) */}
          {isAuthenticated && isMember && (
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 relative z-20 -mt-24">
                <div className="space-y-8">
                   {/* Member Status Card — 2-column: info left, QR right */}
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                     <div className="flex gap-6">
+                  <div className="bg-white/95 backdrop-blur-xl rounded-3xl border border-white/50 shadow-xl shadow-indigo-900/5 p-8 md:p-10 flex flex-col sm:flex-row gap-8 lg:gap-12 relative overflow-hidden">
+                     {/* Decorative background element */}
+                     <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-[80px] -mr-20 -mt-20 pointer-events-none"></div>
+                     <div className="flex flex-col sm:flex-row gap-8 lg:gap-12 w-full">
                         {/* Left: member info */}
                         <div className="flex-1 flex flex-col">
                            {/* Title */}
@@ -376,34 +378,34 @@ const MembershipPage: React.FC = () => {
                      </div>
                   </div>
 
-                  {/* Recommended Jobs — single-column list */}
-                  <div>
-                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                           <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  {/* Recommended Jobs — Grid format to match layout width */}
+                  <div className="mt-4">
+                     <div className="flex items-center justify-between mb-5">
+                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                           <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                            会员专属推荐
                         </h3>
                         <button
                            onClick={() => navigate('/jobs')}
-                           className="text-sm text-indigo-600 font-medium hover:text-indigo-700 flex items-center gap-0.5 transition-colors"
+                           className="text-sm text-indigo-600 font-medium hover:text-indigo-700 hover:underline flex items-center gap-1 transition-colors"
                         >
                            查看更多 <ChevronRight className="w-4 h-4" />
                         </button>
                      </div>
 
-                     <div className="flex flex-col gap-3">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {recommendedJobs.length > 0 ? (
                            recommendedJobs.map(job => (
                               <JobCardNew
                                  key={job.id}
                                  job={job}
-                                 variant="list"
+                                 variant="grid"
                                  matchScore={job.matchScore || undefined}
                                  onClick={() => navigate(`/jobs?jobId=${job.id}`)}
                               />
                            ))
                         ) : (
-                           <div className="text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
+                           <div className="col-span-full text-center py-12 bg-white/90 backdrop-blur-md rounded-2xl border border-white/50 border-dashed">
                               <Loader2 className="w-8 h-8 text-slate-300 animate-spin mx-auto mb-3" />
                               <p className="text-slate-500 text-sm">正在利用 AI 为您匹配最适合的岗位...</p>
                            </div>
