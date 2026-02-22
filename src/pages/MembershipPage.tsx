@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, ChevronRight, Loader2, CheckCircle2, Calendar, Download, Copy, Sparkles, Landmark, Building, GraduationCap, HardDrive, CircuitBoard, Target, Quote, Briefcase } from 'lucide-react';
+import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, ChevronRight, Loader2, CheckCircle2, Calendar, Download, Copy, Sparkles, Landmark, Building, GraduationCap, HardDrive, CircuitBoard, Target, Quote, Briefcase, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -271,76 +271,119 @@ const MembershipPage: React.FC = () => {
 
          {/* Member Dashboard (Prioritized for Members) */}
          {isAuthenticated && isMember && (
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-20">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-20">
                <div className="space-y-6">
-                  {/* Status Info — compact horizontal banner */}
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-6 py-4 flex flex-wrap items-center gap-4 justify-between">
-                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-300/30 shrink-0">
-                           <Crown className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                           <div className="font-bold text-slate-900 leading-tight">尊贵会员权益已生效</div>
-                           <div className="text-xs text-slate-400 flex items-center gap-3 mt-0.5">
-                              <span className="flex items-center gap-1">
-                                 <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                                 所有高级权益已解锁
-                              </span>
-                              <span className="flex items-center gap-1">
-                                 <Calendar className="w-3 h-3 text-blue-400" />
+                  {/* Member Status Card — 2-column: info left, QR right */}
+                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+                     <div className="flex gap-6">
+                        {/* Left: member info */}
+                        <div className="flex-1 flex flex-col">
+                           {/* Title */}
+                           <div className="flex items-center gap-3 mb-5">
+                              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-md shrink-0">
+                                 <Crown className="w-6 h-6 text-white" />
+                              </div>
+                              <div>
+                                 <div className="text-xl font-bold text-slate-900">尊贵会员</div>
+                                 <div className="text-sm text-slate-400">Haigoo Member</div>
+                              </div>
+                           </div>
+
+                           {/* Status rows */}
+                           <div className="bg-slate-50/80 rounded-xl p-4 space-y-3 mb-5 border border-slate-100">
+                              <div className="flex items-center gap-3 text-sm text-slate-700">
+                                 <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                 </div>
+                                 申请已通过，会员权益已生效
+                              </div>
+                              <div className="flex items-center gap-3 text-sm text-slate-700">
+                                 <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                    <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                                 </div>
                                  有效期至：{currentMembership?.expireAt
                                     ? new Date(currentMembership.expireAt).toLocaleDateString()
                                     : (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString() : '永久有效')}
-                              </span>
+                              </div>
+                              <div className="flex items-center gap-3 text-sm text-slate-700">
+                                 <div className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
+                                    <Sparkles className="w-3.5 h-3.5 text-violet-500" />
+                                 </div>
+                                 今日剩余翻译次数：无限次
+                              </div>
+                           </div>
+
+                           {/* Actions */}
+                           <div className="flex items-center gap-3">
+                              <button
+                                 onClick={() => navigate('/jobs')}
+                                 className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-full hover:bg-slate-800 transition-all inline-flex items-center gap-2 shadow-sm"
+                              >
+                                 直通全站岗位 <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                 onClick={() => setShowCertificateModal(true)}
+                                 className="px-4 py-2.5 bg-white border border-slate-200 text-slate-500 text-sm rounded-full hover:bg-slate-50 transition-all inline-flex items-center gap-1.5"
+                              >
+                                 <Download className="w-3.5 h-3.5" />
+                                 证书
+                              </button>
                            </div>
                         </div>
-                     </div>
-                     <div className="flex items-center gap-3 shrink-0">
-                        <button
-                           onClick={() => navigate('/jobs')}
-                           className="px-5 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-all inline-flex items-center gap-1.5 shadow-sm"
-                        >
-                           浏览岗位 <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                           onClick={() => setShowCertificateModal(true)}
-                           className="px-5 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-all inline-flex items-center gap-1.5"
-                        >
-                           <Download className="w-3.5 h-3.5" />
-                           会员证书
-                        </button>
+
+                        {/* Right: DingTalk QR */}
+                        <div className="w-44 shrink-0 bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col items-center gap-2 hidden sm:flex">
+                           <div className="flex items-center gap-1.5 text-sm font-bold text-slate-800 w-full">
+                              <Users className="w-4 h-4 text-indigo-400 shrink-0" />
+                              会员专属服务群
+                           </div>
+                           <div className="w-28 h-28 bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
+                              {/* Replace src with real DingTalk QR image when available */}
+                              <img
+                                 src="/qr-member-group.png"
+                                 alt="钉钉群二维码"
+                                 className="w-full h-full object-cover"
+                                 onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="text-[10px] text-slate-400 text-center px-2">二维码\n待上传</div>';
+                                 }}
+                              />
+                           </div>
+                           <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                              请使用钉钉扫码加入<br />快速获取响应和支持
+                           </p>
+                        </div>
                      </div>
                   </div>
 
-                  {/* Recommended Jobs — 2-col grid */}
+                  {/* Recommended Jobs — single-column list */}
                   <div>
                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                           <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                           <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                            会员专属推荐
                         </h3>
                         <button
                            onClick={() => navigate('/jobs')}
-                           className="text-sm text-indigo-600 font-medium hover:text-indigo-700 hover:underline flex items-center gap-1 transition-colors"
+                           className="text-sm text-indigo-600 font-medium hover:text-indigo-700 flex items-center gap-0.5 transition-colors"
                         >
                            查看更多 <ChevronRight className="w-4 h-4" />
                         </button>
                      </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="flex flex-col gap-3">
                         {recommendedJobs.length > 0 ? (
                            recommendedJobs.map(job => (
                               <JobCardNew
                                  key={job.id}
                                  job={job}
-                                 variant="grid"
+                                 variant="list"
                                  matchScore={job.matchScore || undefined}
                                  onClick={() => navigate(`/jobs?jobId=${job.id}`)}
-                                 className="h-full"
                               />
                            ))
                         ) : (
-                           <div className="col-span-full text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
+                           <div className="text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
                               <Loader2 className="w-8 h-8 text-slate-300 animate-spin mx-auto mb-3" />
                               <p className="text-slate-500 text-sm">正在利用 AI 为您匹配最适合的岗位...</p>
                            </div>
