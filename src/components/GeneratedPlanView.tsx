@@ -119,7 +119,7 @@ export default function GeneratedPlanView({ plan, isGuest }: { plan: any, isGues
                     </div>
                 )}
                 <div className="flex w-full gap-2">
-                    <Link to="/jobs" className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-indigo-700 transition-colors shadow-sm">
+                    <Link to="/jobs" className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-indigo-500 hover:text-white transition-colors shadow-sm no-underline hover:no-underline">
                         去大厅查看更多岗位 <ArrowRight className="w-4 h-4" />
                     </Link>
                     {!isGuest && (

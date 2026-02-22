@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react'
-import { ArrowRight, Sparkles, Lock, Zap, Clock, Briefcase, GraduationCap, Languages, Users, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowRight, Sparkles, Lock, Zap, Clock, Briefcase, GraduationCap, Languages, Users, CheckCircle2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotificationHelpers } from '../../components/NotificationSystem'
@@ -472,37 +472,92 @@ export default function CopilotSection() {
                {/* Content Area */}
                <div className="bg-slate-900 p-6 space-y-6">
                   {loading ? (
-                    // Loading Progress View
-                    <div className="py-10 space-y-8">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${loadingStep >= 0 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                           {loadingStep > 0 ? <CheckCircle2 className="w-5 h-5" /> : '1'}
-                        </div>
-                        <div className="space-y-1 w-full">
-                           <div className={`text-sm font-medium transition-colors ${loadingStep >= 0 ? 'text-white' : 'text-slate-500'}`}>分析个人背景</div>
-                           {loadingStep === 0 && <div className="h-1 w-full bg-slate-800 rounded overflow-hidden"><div className="h-full bg-indigo-500 animate-progress"></div></div>}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-4">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${loadingStep >= 1 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                           {loadingStep > 1 ? <CheckCircle2 className="w-5 h-5" /> : '2'}
-                        </div>
-                        <div className="space-y-1 w-full">
-                           <div className={`text-sm font-medium transition-colors ${loadingStep >= 1 ? 'text-white' : 'text-slate-500'}`}>匹配远程机会</div>
-                           {loadingStep === 1 && <div className="h-1 w-full bg-slate-800 rounded overflow-hidden"><div className="h-full bg-indigo-500 animate-progress"></div></div>}
-                        </div>
-                      </div>
+                    // Loading Progress View (Real-time Analysis Simulation)
+                    <div className="py-6 space-y-6">
+                       <div className="flex items-center gap-2 mb-2">
+                          <span className="relative flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                          </span>
+                          <span className="text-indigo-400 text-xs font-bold uppercase tracking-wider">正在为您生成专属远程求职方案...</span>
+                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${loadingStep >= 2 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                           {loadingStep > 2 ? <CheckCircle2 className="w-5 h-5" /> : '3'}
-                        </div>
-                        <div className="space-y-1 w-full">
-                           <div className={`text-sm font-medium transition-colors ${loadingStep >= 2 ? 'text-white' : 'text-slate-500'}`}>生成行动计划</div>
-                           {loadingStep === 2 && <div className="h-1 w-full bg-slate-800 rounded overflow-hidden"><div className="h-full bg-indigo-500 animate-progress"></div></div>}
-                        </div>
-                      </div>
+                       {/* Step 1: Diagnosis */}
+                       <div className={`bg-slate-800/50 rounded-xl p-4 border transition-all duration-500 ${loadingStep >= 0 ? 'border-indigo-500/50 shadow-lg shadow-indigo-900/20' : 'border-slate-800 opacity-50'}`}>
+                          <div className="flex items-start gap-3">
+                             <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${loadingStep > 0 ? 'bg-green-500 text-white' : 'bg-indigo-600 text-white'}`}>
+                                {loadingStep > 0 ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                             </div>
+                             <div className="flex-1 space-y-2">
+                                <div className="text-sm font-bold text-slate-200">简历竞争力诊断</div>
+                                {loadingStep === 0 && (
+                                   <div className="space-y-1.5 animate-in fade-in duration-700">
+                                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                                         <span className="w-1 h-1 bg-slate-500 rounded-full" />
+                                         正在分析教育背景与工作年限...
+                                      </div>
+                                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                                         <span className="w-1 h-1 bg-slate-500 rounded-full" />
+                                         正在评估远程工作适配度...
+                                      </div>
+                                      <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden mt-2">
+                                         <div className="h-full bg-indigo-500 animate-progress"></div>
+                                      </div>
+                                   </div>
+                                )}
+                                {loadingStep > 0 && (
+                                   <div className="flex gap-2 mt-1">
+                                      <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/30">已完成评估</span>
+                                      <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded">发现3个亮点</span>
+                                   </div>
+                                )}
+                             </div>
+                          </div>
+                       </div>
+
+                       {/* Step 2: Matching */}
+                       <div className={`bg-slate-800/50 rounded-xl p-4 border transition-all duration-500 ${loadingStep >= 1 ? 'border-indigo-500/50 shadow-lg shadow-indigo-900/20' : 'border-slate-800 opacity-50'}`}>
+                          <div className="flex items-start gap-3">
+                             <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${loadingStep > 1 ? 'bg-green-500 text-white' : loadingStep === 1 ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
+                                {loadingStep > 1 ? <CheckCircle2 className="w-3.5 h-3.5" /> : loadingStep === 1 ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '2'}
+                             </div>
+                             <div className="flex-1 space-y-2">
+                                <div className="text-sm font-bold text-slate-200">精准岗位匹配</div>
+                                {loadingStep === 1 && (
+                                   <div className="space-y-2 animate-in fade-in duration-500">
+                                      <div className="flex flex-wrap gap-2">
+                                         {['Shopify', 'GitLab', 'Deel', 'Remote'].map((c, i) => (
+                                            <span key={i} className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded animate-pulse" style={{ animationDelay: `${i * 200}ms` }}>{c}</span>
+                                         ))}
+                                      </div>
+                                      <div className="text-xs text-indigo-300">正在检索全球 2000+ 远程企业数据库...</div>
+                                   </div>
+                                )}
+                                {loadingStep > 1 && (
+                                   <div className="flex gap-2 mt-1">
+                                      <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">匹配到 5+ 核心岗位</span>
+                                   </div>
+                                )}
+                             </div>
+                          </div>
+                       </div>
+
+                       {/* Step 3: Interview Prep */}
+                       <div className={`bg-slate-800/50 rounded-xl p-4 border transition-all duration-500 ${loadingStep >= 2 ? 'border-indigo-500/50 shadow-lg shadow-indigo-900/20' : 'border-slate-800 opacity-50'}`}>
+                          <div className="flex items-start gap-3">
+                             <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${loadingStep > 2 ? 'bg-green-500 text-white' : loadingStep === 2 ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
+                                {loadingStep > 2 ? <CheckCircle2 className="w-3.5 h-3.5" /> : loadingStep === 2 ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '3'}
+                             </div>
+                             <div className="flex-1 space-y-2">
+                                <div className="text-sm font-bold text-slate-200">英文面试模拟 & 复盘</div>
+                                {loadingStep === 2 && (
+                                   <div className="text-xs text-slate-400 animate-pulse">
+                                      正在生成针对性 STAR 法则回答建议...
+                                   </div>
+                                )}
+                             </div>
+                          </div>
+                       </div>
                     </div>
                   ) : (
                     // Demo Content
