@@ -420,12 +420,12 @@ const MembershipPage: React.FC = () => {
                   return (
                      <div
                         key={plan.id}
-                        className={`relative rounded-[2.5rem] p-10 transition-all duration-500 group flex flex-col bg-white ${plan.isPlus
+                        className={`relative rounded-[2.5rem] p-10 transition-all duration-500 group flex flex-col bg-white ${plan.isPlus && plan.id !== 'goo_plus_yearly'
                               ? 'border-2 border-indigo-200 shadow-2xl shadow-indigo-200/50 hover:-translate-y-2 z-10 md:scale-105'
                               : 'border shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1 border-slate-200'
                            }`}
                      >
-                        {plan.isPlus && (
+                        {plan.isPlus && plan.id !== 'goo_plus_yearly' && (
                            <div className="absolute -top-4 right-8 bg-gradient-to-r from-indigo-600 to-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-indigo-500/30 tracking-widest uppercase flex items-center gap-1.5">
                               <Star className="w-3.5 h-3.5 fill-white" />
                               最受欢迎
