@@ -231,32 +231,32 @@ const MembershipPage: React.FC = () => {
 
    return (
       <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
-         {/* Hero Section (Visible to non-members) */}
-         {!(isAuthenticated && isMember) && (
-            <div className="relative overflow-hidden pt-24 md:pt-32 pb-0 px-4 sm:px-6 lg:px-8">
-               {/* Background Image */}
-               <div className="absolute inset-0 z-0">
-                  <img
-                     src="/members.webp?v=2"
-                     alt="Membership Hero Background"
-                     className="w-full h-full object-cover object-center opacity-30"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-slate-50/80 via-white/60 to-[#F8F9FC]"></div>
-               </div>
+         {/* Hero Section (Visible to EVERYONE) */}
+         <div className="relative overflow-hidden pt-24 md:pt-32 pb-0 px-4 sm:px-6 lg:px-8">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+               <img
+                  src="/members.webp?v=2"
+                  alt="Membership Hero Background"
+                  className="w-full h-full object-cover object-center opacity-30"
+               />
+               <div className="absolute inset-0 bg-gradient-to-b from-slate-50/80 via-white/60 to-[#F8F9FC]"></div>
+            </div>
 
-               <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
-                  <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
-                     <span className="block mb-2">解锁全球远程机遇</span>
-                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
-                        开启无界职业生涯
-                     </span>
-                  </h1>
+            <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
+               <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
+                  <span className="block mb-2">解锁全球远程机遇</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
+                     开启无界职业生涯
+                  </span>
+               </h1>
 
-                  <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                     AI 驱动的求职工具、经人工核验的优质机会、互助成长的精英社区。<br className="hidden md:block" />
-                     打破地域限制，您的全球职业生涯从这里起航。
-                  </p>
+               <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+                  AI 驱动的求职工具、经人工核验的优质机会、互助成长的精英社区。<br className="hidden md:block" />
+                  打破地域限制，您的全球职业生涯从这里起航。
+               </p>
 
+               {!(isAuthenticated && isMember) && (
                   <button
                      onClick={() => {
                         const el = document.getElementById('pricing-plans');
@@ -267,37 +267,18 @@ const MembershipPage: React.FC = () => {
                      探索会员方案
                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
-               </div>
+               )}
             </div>
-         )}
+         </div>
 
-         {/* Member Hero Banner — gradient status bar (production design) */}
-         {isAuthenticated && isMember && (
-            <div className="relative z-0 w-full bg-gradient-to-r from-blue-700 via-indigo-600 to-teal-500 pt-32 pb-32 px-4 sm:px-6 lg:px-8">
-               <div className="max-w-5xl mx-auto flex items-center justify-center -mt-6">
-                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-6 py-3 text-white shadow-sm hover:bg-white/15 transition-all">
-                     <div className="w-7 h-7 rounded-full bg-emerald-400 flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                     </div>
-                     <div className="text-[11px] font-semibold text-white/60 uppercase tracking-widest">CURRENT STATUS</div>
-                     <div className="font-bold text-white">Haigoo Member</div>
-                     <span className="px-2.5 py-0.5 bg-emerald-400/30 text-emerald-200 text-xs font-bold rounded-full border border-emerald-400/30">Active</span>
-                     <button onClick={() => setShowCertificateModal(true)} className="flex items-center gap-1 px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-full border border-white/20 transition-all">
-                        <Download className="w-3 h-3" /> 证书
-                     </button>
-                  </div>
-               </div>
-            </div>
-         )}
+         {/* The old gradient status bar has been permanently removed based on user feedback. */}
 
          {/* Member Dashboard (Prioritized for Members) */}
          {isAuthenticated && isMember && (
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 relative z-20 -mt-24">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-20">
                <div className="space-y-8">
                   {/* Member Status Card — 2-column: info left, QR right */}
-                  <div className="bg-white/95 backdrop-blur-xl rounded-3xl border border-white/50 shadow-xl shadow-indigo-900/5 p-8 md:p-10 flex flex-col sm:flex-row gap-8 lg:gap-12 relative overflow-hidden">
-                     {/* Decorative background element */}
-                     <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-[80px] -mr-20 -mt-20 pointer-events-none"></div>
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8 md:p-10 flex flex-col sm:flex-row gap-8 lg:gap-12 relative overflow-hidden">
                      <div className="flex flex-col sm:flex-row gap-8 lg:gap-12 w-full">
                         {/* Left: member info */}
                         <div className="flex-1 flex flex-col">
@@ -355,9 +336,9 @@ const MembershipPage: React.FC = () => {
                         </div>
 
                         {/* Right: DingTalk QR */}
-                        <div className="w-44 shrink-0 bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col items-center gap-2 hidden sm:flex">
-                           <div className="flex items-center gap-1.5 text-sm font-bold text-slate-800 w-full">
-                              <Users className="w-4 h-4 text-indigo-400 shrink-0" />
+                        <div className="w-56 shrink-0 bg-indigo-50/40 border border-indigo-100/50 rounded-2xl p-5 flex flex-col items-center gap-3 hidden sm:flex">
+                           <div className="flex items-center gap-1.5 text-sm font-bold text-slate-800 w-full justify-center">
+                              <Users className="w-4 h-4 text-indigo-500 shrink-0" />
                               会员专属服务群
                            </div>
                            <div className="w-28 h-28 bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
@@ -378,11 +359,11 @@ const MembershipPage: React.FC = () => {
                      </div>
                   </div>
 
-                  {/* Recommended Jobs — Grid format to match layout width */}
-                  <div className="mt-4">
+                  {/* Recommended Jobs — single-column list format */}
+                  <div>
                      <div className="flex items-center justify-between mb-5">
-                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                           <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                           <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
                            会员专属推荐
                         </h3>
                         <button
@@ -393,19 +374,19 @@ const MembershipPage: React.FC = () => {
                         </button>
                      </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="flex flex-col gap-4">
                         {recommendedJobs.length > 0 ? (
                            recommendedJobs.map(job => (
                               <JobCardNew
                                  key={job.id}
                                  job={job}
-                                 variant="grid"
+                                 variant="list"
                                  matchScore={job.matchScore || undefined}
                                  onClick={() => navigate(`/jobs?jobId=${job.id}`)}
                               />
                            ))
                         ) : (
-                           <div className="col-span-full text-center py-12 bg-white/90 backdrop-blur-md rounded-2xl border border-white/50 border-dashed">
+                           <div className="w-full text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
                               <Loader2 className="w-8 h-8 text-slate-300 animate-spin mx-auto mb-3" />
                               <p className="text-slate-500 text-sm">正在利用 AI 为您匹配最适合的岗位...</p>
                            </div>
