@@ -232,7 +232,7 @@ const MembershipPage: React.FC = () => {
    return (
       <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
          {/* Hero Section (Visible to all) */}
-         <div className="relative overflow-hidden pt-28 pb-0 px-4 sm:px-6 lg:px-8">
+         <div className="relative overflow-hidden pt-8 pb-0 px-4 sm:px-6 lg:px-8">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                <img
@@ -269,9 +269,28 @@ const MembershipPage: React.FC = () => {
             </div>
          </div>
 
+         {/* Member Hero Banner — gradient status bar (production design) */}
+         {isAuthenticated && isMember && (
+            <div className="relative z-20 w-full bg-gradient-to-r from-blue-700 via-indigo-600 to-teal-500 py-10 px-4 sm:px-6 lg:px-8">
+               <div className="max-w-3xl mx-auto flex items-center justify-center">
+                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-5 py-2.5 text-white">
+                     <div className="w-7 h-7 rounded-full bg-emerald-400 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-4 h-4 text-white" />
+                     </div>
+                     <div className="text-[11px] font-semibold text-white/60 uppercase tracking-widest">CURRENT STATUS</div>
+                     <div className="font-bold text-white">Haigoo Member</div>
+                     <span className="px-2.5 py-0.5 bg-emerald-400/30 text-emerald-200 text-xs font-bold rounded-full border border-emerald-400/30">Active</span>
+                     <button onClick={() => setShowCertificateModal(true)} className="flex items-center gap-1 px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-full border border-white/20 transition-all">
+                        <Download className="w-3 h-3" /> 证书
+                     </button>
+                  </div>
+               </div>
+            </div>
+         )}
+
          {/* Member Dashboard (Prioritized for Members) */}
          {isAuthenticated && isMember && (
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-20">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
                <div className="space-y-6">
                   {/* Member Status Card — 2-column: info left, QR right */}
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
@@ -338,9 +357,8 @@ const MembershipPage: React.FC = () => {
                               会员专属服务群
                            </div>
                            <div className="w-28 h-28 bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
-                              {/* Replace src with real DingTalk QR image when available */}
                               <img
-                                 src="/qr-member-group.png"
+                                 src="/dingtalk.jpg"
                                  alt="钉钉群二维码"
                                  className="w-full h-full object-cover"
                                  onError={(e) => {

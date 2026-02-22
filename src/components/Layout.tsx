@@ -20,6 +20,7 @@ export default function Layout({ children }: LayoutProps) {
   const isJobsPage = pathname === '/jobs' || pathname.startsWith('/jobs/')
   const isHome = pathname === '/'
   const isMembership = pathname === '/membership'
+  const isCompanies = pathname === '/companies' || pathname.startsWith('/companies/')
   const hideFooter = pathname.startsWith('/resume') || isJobsPage
 
   const showVerificationWarning = isAuthenticated && user && !user.emailVerified
@@ -89,7 +90,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* main: pt accounts for fixed header + optional banner */}
       <main className={`flex-1 relative ${isJobsPage ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
-        <div className={`relative z-10 ${isJobsPage ? `h-full ${showVerificationWarning ? 'pt-28' : 'pt-16'}` : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership) ? '' : showVerificationWarning ? 'pt-28' : 'pt-20'}`}`}>
+        <div className={`relative z-10 ${isJobsPage ? `h-full ${showVerificationWarning ? 'pt-28' : 'pt-16'}` : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership || isCompanies) ? '' : showVerificationWarning ? 'pt-28' : 'pt-20'}`}`}>
           {children}
         </div>
       </main>
