@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
     Sparkles, Upload, CheckCircle2, ArrowRight, ArrowLeft, Lock,
-    Target, TrendingUp, Eye, RefreshCw, ChevronDown
+    Target, TrendingUp, Eye, RefreshCw, ChevronDown, ChevronUp
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
@@ -427,6 +427,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [resumeUploading, setResumeUploading] = useState(false)
     const [resumeId, setResumeId] = useState<string | null>(null)
     const [demoPaused, setDemoPaused] = useState(false)
+    const [isWizardCollapsed, setIsWizardCollapsed] = useState(false)
 
     // Debug controls
     const [debugMode, setDebugMode] = useState(false)
@@ -718,10 +719,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     {/* Glass sheen effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 min-h-[600px] relative z-10">
+                    <div className={`grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 relative z-10 overflow-hidden transition-all duration-500 ease-in-out origin-top ${isWizardCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[1000px] opacity-100 min-h-[600px]'
+                        }`}>
 
                         {/* ── Left: Wizard ── */}
                         <div className="lg:col-span-5 bg-white/60 backdrop-blur-xl rounded-[24px] p-8 md:p-10 flex flex-col border border-white/40 shadow-sm relative overflow-hidden">
+
                             {/* Header */}
                             <div className="flex items-center gap-3 mb-5">
                                 <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm border border-slate-100 flex-shrink-0">
@@ -894,9 +897,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                 <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
                                                     <div className="text-xs font-semibold text-indigo-700 mb-2">你的求职信息</div>
                                                     <div className="space-y-1 text-xs text-slate-600">
-                                                        {formData.goal && <div>🎯 目标：{GOAL_OPTIONS.find(o => o.value === formData.goal)?.label || formData.goal}</div>}
-                                                        {formData.timeline && <div>📅 时间：{TIMELINE_OPTIONS.find(o => o.value === formData.timeline)?.label || formData.timeline}</div>}
-                                                        {formData.background.role && <div>💼 方向：{formData.background.role}</div>}
+                                                        {formData.goal && <div>目标：{GOAL_OPTIONS.find(o => o.value === formData.goal)?.label || formData.goal}</div>}
+                                                        {formData.timeline && <div>时间：{TIMELINE_OPTIONS.find(o => o.value === formData.timeline)?.label || formData.timeline}</div>}
+                                                        {formData.background.role && <div>方向：{formData.background.role}</div>}
                                                     </div>
                                                     <button
                                                         onClick={() => prevStep()}
@@ -919,13 +922,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                     <div className="flex-1 flex flex-col justify-center">
                                                         <h4 className="font-bold text-slate-900 mb-0.5 flex items-center gap-2 text-sm">
                                                             {resumeId ? '简历已上传' : '上传简历诊断'}
-                                                            {isAuthenticated && !isVIP && <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">会员专享</span>}
-                                                            {!isAuthenticated && <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">登录后可用</span>}
+                                                            {!isVIP && <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">会员专享</span>}
                                                         </h4>
                                                         <p className="text-xs text-slate-500">
                                                             {resumeFileName
                                                                 ? <span className="text-emerald-600 font-medium truncate max-w-[150px] inline-block align-bottom">{resumeFileName}</span>
-                                                                : !isAuthenticated ? '登录后上传简历，AI 诊断更精准'
+                                                                : !isAuthenticated ? '需登录 · 简历深度诊断为会员功能'
                                                                     : '支持 PDF / Word · AI 自动分析'}
                                                         </p>
                                                     </div>
@@ -982,8 +984,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                             ) : (
                                                 <div className="flex items-start gap-2 text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-xl p-3">
                                                     <div>
-                                                        <span className="font-semibold text-slate-600">体验版方案</span>：可完整体验 AI 方案生成。
-                                                        <button onClick={() => navigate('/login')} className="underline text-indigo-600 ml-0.5">登录</button>后可保存方案并解锁更多精准岗位推荐。
+                                                        <span className="font-semibold text-slate-600">体验版方案</span>：仅可体验 AI 简版方案。
+                                                        <button onClick={() => navigate('/login')} className="underline text-indigo-600 ml-0.5">登录</button>后可保存并体验更多功能。
                                                     </div>
                                                 </div>
                                             )}
@@ -1070,7 +1072,20 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     </div>
                 </div>
 
-                {/* Scroll hint (Removed as requested) */}
+                {/* Collapse button — appears after plan is generated */}
+                {generatedPlan && (
+                    <div className="flex justify-center pt-3 pb-1 relative z-20">
+                        <button
+                            onClick={() => setIsWizardCollapsed(c => !c)}
+                            className="flex items-center gap-1.5 px-5 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 bg-white/70 hover:bg-white/95 backdrop-blur-sm border border-white/50 rounded-full shadow-sm transition-all"
+                        >
+                            {isWizardCollapsed
+                                ? <><ChevronDown className="w-3.5 h-3.5" />展开 Copilot</>
+                                : <><ChevronUp className="w-3.5 h-3.5" />收起 Copilot</>
+                            }
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )

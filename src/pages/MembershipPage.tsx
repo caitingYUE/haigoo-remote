@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, Gift, Users, ChevronRight, Loader2, Send, CheckCircle2, Calendar, Download, X, Copy, FileText, Briefcase, Target, Globe, Award, Quote, Sparkles, Landmark, Building, GraduationCap, Bot, Cpu, Brain, HardDrive, CircuitBoard } from 'lucide-react';
+import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, ChevronRight, Loader2, CheckCircle2, Calendar, Download, Copy, Sparkles, Landmark, Building, GraduationCap, HardDrive, CircuitBoard, Target, Quote, Briefcase } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import JobCardNew from '../components/JobCardNew';
 import { processedJobsService } from '../services/processed-jobs-service';
@@ -235,9 +235,9 @@ const MembershipPage: React.FC = () => {
          <div className="relative overflow-hidden pt-28 pb-0 px-4 sm:px-6 lg:px-8">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
-               <img 
-                  src="/members.webp?v=2" 
-                  alt="Membership Hero Background" 
+               <img
+                  src="/members.webp?v=2"
+                  alt="Membership Hero Background"
                   className="w-full h-full object-cover object-center opacity-30"
                />
                <div className="absolute inset-0 bg-gradient-to-b from-slate-50/80 via-white/60 to-[#F8F9FC]"></div>
@@ -271,16 +271,16 @@ const MembershipPage: React.FC = () => {
 
          {/* Member Dashboard (Prioritized for Members) */}
          {isAuthenticated && isMember && (
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
                <div className="space-y-8">
                   {/* Status Info */}
-                  <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden p-8 md:p-12 relative group">
+                  <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden p-8 relative group">
                      <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Crown className="w-32 h-32 text-indigo-500 transform rotate-12" />
                      </div>
 
                      <div className="relative z-10">
-                        <div className="flex items-center gap-4 mb-8">
+                        <div className="flex items-center gap-4 mb-6">
                            <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 rotate-3">
                               <Crown className="w-7 h-7 text-white" />
                            </div>
@@ -290,7 +290,7 @@ const MembershipPage: React.FC = () => {
                            </div>
                         </div>
 
-                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4 mb-8">
+                        <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3 mb-6">
                            <div className="flex items-center gap-3 text-slate-700">
                               <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
                                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -332,7 +332,7 @@ const MembershipPage: React.FC = () => {
 
                   {/* Recommended Jobs */}
                   <div>
-                     <div className="flex items-center justify-between mb-8">
+                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                            <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
                            会员专属推荐
@@ -345,7 +345,7 @@ const MembershipPage: React.FC = () => {
                         </button>
                      </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {recommendedJobs.length > 0 ? (
                            recommendedJobs.map(job => (
                               <JobCardNew
@@ -358,7 +358,7 @@ const MembershipPage: React.FC = () => {
                               />
                            ))
                         ) : (
-                           <div className="w-full text-center py-16 bg-white rounded-3xl border border-slate-100 border-dashed">
+                           <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-100 border-dashed">
                               <Loader2 className="w-10 h-10 text-slate-300 animate-spin mx-auto mb-4" />
                               <p className="text-slate-500 font-medium">正在利用 AI 为您匹配最适合的岗位...</p>
                            </div>
@@ -368,6 +368,7 @@ const MembershipPage: React.FC = () => {
                </div>
             </div>
          )}
+
 
          {/* Benefits Section */}
          <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
@@ -421,8 +422,8 @@ const MembershipPage: React.FC = () => {
                      <div
                         key={plan.id}
                         className={`relative rounded-[2.5rem] p-10 transition-all duration-500 group flex flex-col bg-white ${plan.isPlus && plan.id !== 'goo_plus_yearly'
-                              ? 'border-2 border-indigo-200 shadow-2xl shadow-indigo-200/50 hover:-translate-y-2 z-10 md:scale-105'
-                              : 'border shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1 border-slate-200'
+                           ? 'border-2 border-indigo-200 shadow-2xl shadow-indigo-200/50 hover:-translate-y-2 z-10 md:scale-105'
+                           : 'border shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1 border-slate-200'
                            }`}
                      >
                         {plan.isPlus && plan.id !== 'goo_plus_yearly' && (
@@ -447,7 +448,7 @@ const MembershipPage: React.FC = () => {
                                  /{plan.duration_days > 90 ? '年' : '季度'}
                               </span>
                            </div>
-                           
+
                            <div className="mb-4 flex flex-col items-center gap-2 min-h-[3.5rem]">
                               {plan.discountLabel && (
                                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-medium border border-slate-200">
@@ -486,10 +487,10 @@ const MembershipPage: React.FC = () => {
                            onClick={() => handleSubscribe(plan)}
                            disabled={isMember || (plan.id === 'goo_plus_yearly')}
                            className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 relative overflow-hidden group/btn ${isMember
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                              : (plan.id === 'goo_plus_yearly')
                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                                 : (plan.id === 'goo_plus_yearly')
-                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' 
-                                    : plan.isPlus
+                                 : plan.isPlus
                                     ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-xl shadow-indigo-500/30'
                                     : 'bg-[#0F172A] hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20'
                               }`}
