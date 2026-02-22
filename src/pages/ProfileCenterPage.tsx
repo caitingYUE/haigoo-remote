@@ -1313,7 +1313,7 @@ export default function ProfileCenterPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10">
         <div className="mb-8">
           <button
             className="flex items-center text-slate-500 hover:text-slate-900 transition-colors group"
@@ -1467,24 +1467,6 @@ export default function ProfileCenterPage() {
             <div className="transition-all duration-300">
               {tab === 'custom-plan' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[400px] relative overflow-hidden">
-                  {!isMember && (
-                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-8">
-                      <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-200/50">
-                        <Lock className="w-8 h-8 text-indigo-600" />
-                      </div>
-                      <h3 className="text-2xl font-bold text-slate-900 mb-3">解锁您的专属 AI 职业规划</h3>
-                      <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed text-center">
-                        升级会员即可获取完整的 AI 职业分析报告，包括简历深度优化建议、岗位匹配度分析及面试辅导策略。
-                      </p>
-                      <button
-                        onClick={() => navigate('/membership')}
-                        className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-teal-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all hover:-translate-y-0.5 flex items-center gap-2"
-                      >
-                        立即升级解锁 <Sparkles className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-
                   {loadingPlan ? (
                     <div className="flex flex-col items-center justify-center h-full py-20">
                       <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
@@ -1492,23 +1474,70 @@ export default function ProfileCenterPage() {
                     </div>
                   ) : copilotPlan ? (
                     <div className="max-w-4xl mx-auto">
+                      {!isMember && (
+                         <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                               <div className="p-2 bg-white rounded-lg shadow-sm">
+                                  <Crown className="w-5 h-5 text-indigo-600" />
+                               </div>
+                               <div>
+                                  <h4 className="font-bold text-indigo-900 text-sm">升级会员解锁更多权益</h4>
+                                  <p className="text-xs text-indigo-700/80">获取无限次 AI 优化、内推通道及专家服务</p>
+                               </div>
+                            </div>
+                            <button 
+                               onClick={() => navigate('/membership')}
+                               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                            >
+                               立即升级
+                            </button>
+                         </div>
+                      )}
                       <GeneratedPlanView plan={copilotPlan} isGuest={false} />
                     </div>
                   ) : (
-                    <div className="text-center py-10">
-                      <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                        <Sparkles className="w-10 h-10 text-indigo-600" />
+                    <div className="flex flex-col items-center justify-center py-16 px-4">
+                      <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-xl shadow-indigo-200 transform rotate-3 hover:rotate-0 transition-all duration-500">
+                        <Sparkles className="w-12 h-12 text-white" />
                       </div>
-                      <h3 className="text-2xl font-bold text-slate-900 mb-3">您的 AI 定制方案</h3>
-                      <p className="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
-                        完成首页的 AI Copilot 问答后，您的专属远程求职方案（包括简历优化、岗位匹配、面试辅导）将显示在这里。
+                      
+                      <h3 className="text-3xl font-bold text-slate-900 mb-4 text-center">
+                        开启您的 AI 职业导航
+                      </h3>
+                      
+                      <p className="text-slate-500 mb-10 max-w-lg mx-auto leading-relaxed text-center text-lg">
+                        还没有生成的方案？立即体验 Copilot，让 AI 为您量身定制远程求职路径，从简历到面试，全流程护航。
                       </p>
+                      
                       <Link
                         to="/"
-                        className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-all hover:scale-105 shadow-xl shadow-slate-900/10"
+                        className="group relative inline-flex items-center gap-3 px-10 py-4 bg-slate-900 text-white font-bold rounded-full hover:bg-indigo-600 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/30 hover:-translate-y-1"
                       >
-                        去生成方案 <ArrowRight className="w-5 h-5" />
+                        <span className="relative z-10">立即生成方案</span>
+                        <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </Link>
+
+                      <div className="mt-12 grid grid-cols-3 gap-8 text-center max-w-2xl w-full">
+                         <div className="flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-1">
+                               <FileText className="w-5 h-5" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-600">简历诊断</span>
+                         </div>
+                         <div className="flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 mb-1">
+                               <Briefcase className="w-5 h-5" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-600">精准匹配</span>
+                         </div>
+                         <div className="flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 mb-1">
+                               <MessageSquare className="w-5 h-5" />
+                            </div>
+                            <span className="text-sm font-medium text-slate-600">面试辅导</span>
+                         </div>
+                      </div>
                     </div>
                   )}
                 </div>

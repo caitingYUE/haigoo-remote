@@ -232,7 +232,7 @@ const MembershipPage: React.FC = () => {
    return (
       <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
          {/* Hero Section (Visible to all) */}
-         <div className="relative overflow-hidden pt-20 pb-0 px-4 sm:px-6 lg:px-8">
+         <div className="relative overflow-hidden pt-28 pb-0 px-4 sm:px-6 lg:px-8">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                <img 
