@@ -189,7 +189,14 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
         {/* Logo */}
         <div className="w-12 h-12 rounded-lg border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0 bg-white mt-1">
           {logoUrl ? (
-            <img src={logoUrl} alt="company logo" className="w-full h-full object-cover" />
+            <img 
+              src={logoUrl} 
+              alt="company logo" 
+              width={48}
+              height={48}
+              className="w-full h-full object-cover" 
+              loading="lazy"
+            />
           ) : (
             <span className="text-base font-bold" style={{ backgroundColor: palette.bg, color: palette.text, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {companyInitial}

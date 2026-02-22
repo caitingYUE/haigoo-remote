@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, ThumbsUp, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Zap, Download, Briefcase, Settings } from 'lucide-react'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -9,14 +9,14 @@ import { usePageCache } from '../hooks/usePageCache'
 import { Job } from '../types'
 import JobCardNew from '../components/JobCardNew'
 import JobDetailModal from '../components/JobDetailModal'
-import { MembershipApplicationModal } from '../components/MembershipApplicationModal'
 import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import MyApplicationsTab from '../components/MyApplicationsTab'
+import GeneratedPlanView from '../components/GeneratedPlanView'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
-type TabKey = 'resume' | 'favorites' | 'applications' | 'feedback' | 'subscriptions' | 'membership' | 'settings'
+type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'subscriptions' | 'membership' | 'settings'
 
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember, logout } = useAuth()
@@ -26,7 +26,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'resume'
+    return t && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'custom-plan'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -35,7 +35,7 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
     const urlTab = searchParams.get('tab') as TabKey | null
-    if (urlTab && ['resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(urlTab)) {
+    if (urlTab && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(urlTab)) {
       setTab(urlTab)
     }
   }, [location.search])
@@ -73,8 +73,10 @@ export default function ProfileCenterPage() {
   const { showSuccess, showError } = useNotificationHelpers()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
-   
+
   const [upgradeSource, setUpgradeSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
+  const [copilotPlan, setCopilotPlan] = useState<any>(null)
+  const [loadingPlan, setLoadingPlan] = useState(false)
 
   const handleRemoveFavorite = async (jobId: string) => {
     try {
@@ -329,6 +331,28 @@ export default function ProfileCenterPage() {
       }
     })()
   }, [authUser, token])
+
+  // Fetch Copilot Plan
+  useEffect(() => {
+    const fetchPlan = async () => {
+      if (!authUser || !token) return
+      try {
+        setLoadingPlan(true)
+        const res = await fetch('/api/copilot', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (res.ok && data.plan) {
+          setCopilotPlan(data.plan)
+        }
+      } catch (err) {
+        console.error('Failed to fetch copilot plan:', err)
+      } finally {
+        setLoadingPlan(false)
+      }
+    }
+    fetchPlan()
+  }, [authUser, token, tab])
 
 
   const favoritesWithStatus = useMemo(() => favorites, [favorites])
@@ -1090,21 +1114,21 @@ export default function ProfileCenterPage() {
       }
     }
 
-  const getTopicLabel = (topicStr: string, preferences?: any) => {
-    if (preferences && Object.keys(preferences).length > 0) {
+    const getTopicLabel = (topicStr: string, preferences?: any) => {
+      if (preferences && Object.keys(preferences).length > 0) {
         return <span className="text-indigo-600 font-medium">详细偏好订阅</span>
+      }
+      if (!topicStr) return '无'
+      const values = topicStr.split(',')
+      return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
     }
-    if (!topicStr) return '无'
-    const values = topicStr.split(',')
-    return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
-  }
 
-  const getEditLabel = () => {
-    // 简单编辑只支持 topic，不支持详细偏好
-    if (editTopics.length === 0) return '请选择'
-    if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
-    return `已选 ${editTopics.length} 个`
-  }
+    const getEditLabel = () => {
+      // 简单编辑只支持 topic，不支持详细偏好
+      if (editTopics.length === 0) return '请选择'
+      if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
+      return `已选 ${editTopics.length} 个`
+    }
 
     return (
       <div className="space-y-6">
@@ -1288,7 +1312,7 @@ export default function ProfileCenterPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
         <div className="mb-8">
           <button
             className="flex items-center text-slate-500 hover:text-slate-900 transition-colors group"
@@ -1369,7 +1393,7 @@ export default function ProfileCenterPage() {
                       <div>
                         <h4 className="text-lg font-bold text-white mb-2">开通会员</h4>
                         <p className="text-xs text-indigo-100 leading-relaxed opacity-90">
-                          解锁无限次 AI 简历优化、内推直达通道及职位专属推荐权益。
+                          解锁无限次 AI 简历优化、内推直达通道及专家职业规划服务。
                         </p>
                       </div>
                       <button
@@ -1396,6 +1420,7 @@ export default function ProfileCenterPage() {
               </div>
               <nav className="space-y-1" role="tablist">
                 {[
+                  { id: 'custom-plan', label: '定制方案', icon: Sparkles, badge: 'AI' },
                   { id: 'resume', label: '我的简历', icon: FileText },
                   { id: 'favorites', label: '我的收藏', icon: Heart },
                   { id: 'applications', label: '我的申请', icon: Briefcase },
@@ -1418,7 +1443,14 @@ export default function ProfileCenterPage() {
                   >
                     <item.icon className={`w-5 h-5 transition-colors ${tab === item.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
                     {!isSidebarCollapsed && (
-                      <span>{item.label}</span>
+                      <span className="flex items-center gap-2">
+                        {item.label}
+                        {(item as any).badge && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-md shadow-sm">
+                            {(item as any).badge}
+                          </span>
+                        )}
+                      </span>
                     )}
                     {tab === item.id && !isSidebarCollapsed && (
                       <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
@@ -1432,6 +1464,83 @@ export default function ProfileCenterPage() {
           {/* Main Content Area */}
           <main className="flex-1 min-w-0">
             <div className="transition-all duration-300">
+              {tab === 'custom-plan' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[400px] relative overflow-hidden">
+                  {loadingPlan ? (
+                    <div className="flex flex-col items-center justify-center h-full py-20">
+                      <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
+                      <p className="text-slate-500 text-sm">正在加载您的定制方案...</p>
+                    </div>
+                  ) : copilotPlan ? (
+                    <div className="max-w-4xl mx-auto">
+                      {!isMember && (
+                        <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white rounded-lg shadow-sm">
+                              <Crown className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-indigo-900 text-sm">升级会员解锁更多权益</h4>
+                              <p className="text-xs text-indigo-700/80">获取无限次 AI 优化、内推通道及专家服务</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => navigate('/membership')}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                          >
+                            立即升级
+                          </button>
+                        </div>
+                      )}
+                      <GeneratedPlanView plan={copilotPlan} isGuest={false} />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 px-4">
+                      <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-xl shadow-indigo-200 transform rotate-3 hover:rotate-0 transition-all duration-500">
+                        <Sparkles className="w-12 h-12 text-white" />
+                      </div>
+
+                      <h3 className="text-3xl font-bold text-slate-900 mb-4 text-center">
+                        开启您的 AI 职业导航
+                      </h3>
+
+                      <p className="text-slate-500 mb-10 max-w-lg mx-auto leading-relaxed text-center text-lg">
+                        还没有生成的方案？立即体验 Copilot，让 AI 为您量身定制远程求职路径，从简历到面试，全流程护航。
+                      </p>
+
+                      <Link
+                        to="/"
+                        className="group relative inline-flex items-center gap-3 px-10 py-4 bg-slate-900 text-white font-bold rounded-full hover:bg-indigo-600 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/30 hover:-translate-y-1"
+                      >
+                        <span className="relative z-10">立即生成方案</span>
+                        <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </Link>
+
+                      <div className="mt-12 grid grid-cols-3 gap-8 text-center max-w-2xl w-full">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-1">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-600">简历诊断</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 mb-1">
+                            <Briefcase className="w-5 h-5" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-600">精准匹配</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 mb-1">
+                            <MessageSquare className="w-5 h-5" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-600">面试辅导</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               {tab === 'resume' && <ResumeTab />}
               {tab === 'favorites' && <FavoritesTab />}
               {tab === 'applications' && <MyApplicationsTab />}

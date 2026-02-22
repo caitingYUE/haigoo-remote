@@ -1,21 +1,19 @@
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import HomeHero from '../components/HomeHero'
-import JobCardNew from '../components/JobCardNew'
+import FeaturedJobsSection from '../components/FeaturedJobsSection'
 import JobDetailModal from '../components/JobDetailModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import HomeCompanyCard from '../components/HomeCompanyCard'
-import NewYearBlessingSection from '../components/NewYearBlessingSection'
-import { ArrowRight, TrendingUp, Building2, Zap, Users, Target, Globe, Sparkles, CheckCircle2, Crown, Download } from 'lucide-react'
+import { ArrowRight, Building2, Zap, Users, Target, Globe, CheckCircle2, Crown, Download, Sparkles } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { Job } from '../types'
 
-import { JobCardSkeleton } from '../components/skeletons/JobCardSkeleton'
 import { CompanyCardSkeleton } from '../components/skeletons/CompanyCardSkeleton'
 
 export default function LandingPage() {
@@ -24,6 +22,21 @@ export default function LandingPage() {
   const { showSuccess, showWarning, showError } = useNotificationHelpers()
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
+  
+  // Cache busting and version check
+  useEffect(() => {
+    const CURRENT_VERSION = '2026.02.14.01' // Increment this to force cache clear
+    const lastVersion = localStorage.getItem('haigoo_version')
+    
+    if (lastVersion !== CURRENT_VERSION) {
+      console.log('Detecting new version, clearing critical caches...')
+      localStorage.removeItem('haigoo_home_featured_jobs')
+      localStorage.removeItem('haigoo_home_trusted_companies')
+      localStorage.setItem('haigoo_version', CURRENT_VERSION)
+      // Force reload if we suspect strict caching issues, but let's try just clearing data first
+    }
+  }, [])
+
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>(() => {
     try {
       const cached = localStorage.getItem('haigoo_home_featured_jobs')
@@ -40,15 +53,15 @@ export default function LandingPage() {
     } catch { return [] }
   })
   const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<{ totalJobs: number | null, companiesCount: number | null, dailyJobs: number | null }>({ totalJobs: null, companiesCount: null, dailyJobs: null })
+  // const [loading, setLoading] = useState(true)
+  // const [stats, setStats] = useState<{ totalJobs: number | null, companiesCount: number | null, dailyJobs: number | null }>({ totalJobs: null, companiesCount: null, dailyJobs: null })
   
   // Only show loading state if we don't have cached data
-  const [jobsLoading, setJobsLoading] = useState(() => {
-    try {
-      return !localStorage.getItem('haigoo_home_featured_jobs')
-    } catch { return true }
-  })
+  // const [jobsLoading, setJobsLoading] = useState(() => {
+  //   try {
+  //     return !localStorage.getItem('haigoo_home_featured_jobs')
+  //   } catch { return true }
+  // })
   const [companiesLoading, setCompaniesLoading] = useState(() => {
     try {
       return !localStorage.getItem('haigoo_home_trusted_companies')
@@ -151,19 +164,19 @@ export default function LandingPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true)
+        // setLoading(true)
 
         // 1. Fetch real stats from backend
         try {
-          const statsResp = await fetch('/api/stats')
-          const statsData = await statsResp.json()
-          if (statsData.success && statsData.stats) {
-            setStats({
-              totalJobs: statsData.stats.totalJobs, // Use global total to match daily jobs
-              companiesCount: statsData.stats.companiesCount,
-              dailyJobs: statsData.stats.dailyJobs || 0
-            })
-          }
+          // const statsResp = await fetch('/api/stats')
+          // const statsData = await statsResp.json()
+          // if (statsData.success && statsData.stats) {
+          //   setStats({
+          //     totalJobs: statsData.stats.totalJobs, // Use global total to match daily jobs
+          //     companiesCount: statsData.stats.companiesCount,
+          //     dailyJobs: statsData.stats.dailyJobs || 0
+          //   })
+          // }
         } catch (e) {
           console.error('Failed to fetch stats:', e)
         }
@@ -173,13 +186,13 @@ export default function LandingPage() {
         processedJobsService.getFeaturedHomeJobs()
           .then(featuredJobsData => {
             setFeaturedJobs(featuredJobsData)
-            setJobsLoading(false)
+            // setJobsLoading(false)
             // Cache the result
             localStorage.setItem('haigoo_home_featured_jobs', JSON.stringify(featuredJobsData))
           })
           .catch(error => {
             console.error('Failed to load featured jobs:', error)
-            setJobsLoading(false)
+            // setJobsLoading(false)
           })
 
         // 精选企业数据
@@ -200,7 +213,7 @@ export default function LandingPage() {
         console.error('Failed to load data:', error)
       } finally {
         // 设置整体loading为false，让页面可以开始渲染
-        setLoading(false)
+        // setLoading(false)
       }
     }
 
@@ -212,8 +225,11 @@ export default function LandingPage() {
       {/* Premium Dark Hero Section */}
       <HomeHero stats={undefined} />
 
-      {/* New Year Blessing Section (Hidden for now) */}
-      {/* <NewYearBlessingSection /> */}
+      {/* Featured Jobs Section */}
+      <FeaturedJobsSection 
+        initialJobs={featuredJobs} 
+        onJobClick={handleJobClick} 
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         {/* Featured Companies Section */}
@@ -259,54 +275,6 @@ export default function LandingPage() {
           )}
         </div>
 
-        {/* Featured Jobs Section */}
-        {(jobsLoading || featuredJobs.length > 0) && (
-        <div id="featured-jobs" className="py-16 border-t border-slate-100">
-          <div className="flex items-center justify-between mb-12">
-            <div className="flex flex-col gap-2">
-              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">精选岗位</h2>
-              <p className="text-slate-500">人工逐条筛选的高薪/高增长/好文化的优质远程机会</p>
-            </div>
-            <button
-              onClick={() => navigate('/jobs?region=domestic')}
-              className="hidden md:flex px-6 py-2.5 bg-white text-slate-700 font-medium rounded-full border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 items-center gap-2 group"
-            >
-              浏览所有岗位
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-
-          {jobsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {[...Array(6)].map((_, i) => (
-                <JobCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {featuredJobs.map((job) => (
-                <JobCardNew
-                  key={job.id}
-                  job={job}
-                  variant="list"
-                  onClick={() => handleJobClick(job)}
-                />
-              ))}
-            </div>
-          )}
-
-          <div className="mt-8 text-center md:hidden">
-            <button
-              onClick={() => navigate('/jobs?region=domestic')}
-              className="px-8 py-3 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 transition-all duration-200 inline-flex items-center gap-2 shadow-sm"
-            >
-              浏览所有岗位
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-        )}
-
         {/* Brand Promise Section - "Why Haigoo?" */}
         <div className="py-24 border-t border-slate-100">
           <div className="text-center mb-16 max-w-3xl mx-auto">
@@ -320,7 +288,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
                 icon: <Globe className="w-6 h-6 text-white" />,
@@ -337,8 +305,14 @@ export default function LandingPage() {
               {
                 icon: <Users className="w-6 h-6 text-white" />,
                 title: "社群链接",
-                desc: "加入高质量远程工作者社群，与优秀的人同行，分享经验，拓展人脉。",
+                desc: "加入高质量远程工作者社区，与优秀的人同行，分享经验，拓展人脉。",
                 color: "bg-purple-500"
+              },
+              {
+                icon: <Sparkles className="w-6 h-6 text-white" />,
+                title: "AI 工作助手",
+                desc: "AI 驱动的远程求职 Copilot，为你定制专属求职方案，从简历优化到面试思路，全程智能辅助。",
+                color: "bg-indigo-500"
               }
             ].map((item, index) => (
               <div key={index} className="group p-8 rounded-3xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300">
@@ -375,7 +349,7 @@ export default function LandingPage() {
             </h2>
 
             <p className="text-lg text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
-              解锁企业背景信息、高管内推直达通道、简历优化等专属特权，<br className="hidden md:block" />
+              解锁企业背景信息、内推直达通道、AI 工作助手、职业咨询等专属特权，<br className="hidden md:block" />
               让你的远程求职之路更加顺畅。
             </p>
 

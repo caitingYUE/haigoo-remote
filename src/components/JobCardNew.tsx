@@ -1,9 +1,9 @@
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Zap } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Sparkles, Zap } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
-import { getJobSourceType } from '../utils/job-source-helper';
+// import { getJobSourceType } from '../utils/job-source-helper';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
    'Entry': '初级',
@@ -96,6 +96,8 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
    const bgColor = useMemo(() => getPastelColor(job.company || 'default'), [job.company]);
    const textColor = useMemo(() => getDarkerColor(job.company || 'default'), [job.company]);
 
+   const isFeatured = job.isFeatured;
+
    const formatSalary = (salary: Job['salary']) => {
       // Handle missing/zero cases
       if (!salary) return '薪资Open';
@@ -142,6 +144,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
    // 1. Merge and deduplicate tags for display (Common for both variants)
    const displayTags = useMemo(() => {
       const tags: { text: string; type: 'skill' | 'benefit' | 'other' }[] = [];
+      const legacyTags = (job as any).tags;
 
       // 1. Skills (Priority)
       if (job.skills && job.skills.length > 0) {
@@ -150,9 +153,9 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                tags.push({ text: skill, type: 'skill' });
             }
          });
-      } else if ((job as any).tags && (job as any).tags.length > 0) {
+      } else if (legacyTags && legacyTags.length > 0) {
          // Fallback to 'tags' field if skills is empty
-         (job as any).tags.slice(0, 5).forEach((tag: string) => {
+         legacyTags.slice(0, 5).forEach((tag: string) => {
             if (tag.length < 15 && !tag.includes('年以上')) {
                tags.push({ text: tag, type: 'skill' });
             }
@@ -173,16 +176,23 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
 
    // Redesigned Company Logo Component
    // Matching reference: Large card style, dynamic background, centered logo, company name above
-   const CompanyCard = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
+   const CompanyCard = ({ size: _size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
       
       return (
          <div 
-            className="flex-shrink-0 flex flex-col items-center justify-center px-3 py-4 rounded-xl transition-colors h-full w-[140px] relative overflow-hidden"
+            className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-3 rounded-xl transition-colors h-full w-full relative overflow-hidden"
             style={{ backgroundColor: bgColor }}
          >
+             {/* Featured Badge for Grid View */}
+             {isFeatured && variant === 'grid' && (
+               <div className="absolute top-0 right-0 bg-gradient-to-bl from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 shadow-sm flex items-center gap-1">
+                 <Sparkles className="w-2.5 h-2.5" />
+               </div>
+             )}
+
              {/* Company Name (Top) */}
             <div 
-               className="text-base font-bold text-center mb-2 line-clamp-2 w-full leading-snug break-words"
+               className="text-xs font-bold text-center mb-1.5 line-clamp-2 w-full leading-tight break-words"
                style={{ color: textColor }}
                title={job.translations?.company || job.company}
             >
@@ -190,7 +200,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
             </div>
 
             {/* Logo (Centered) */}
-            <div className="w-20 h-20 bg-white rounded-2xl shadow-sm flex items-center justify-center p-3 overflow-hidden">
+            <div className="w-16 h-16 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 overflow-hidden">
                {job.logo ? (
                   <img
                      src={job.logo}
@@ -200,12 +210,12 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         if (target.parentElement) {
-                           target.parentElement.innerHTML = `<span class="text-3xl font-bold" style="color:${textColor}">${companyInitial}</span>`;
+                           target.parentElement.innerHTML = `<span class="text-2xl font-bold" style="color:${textColor}">${companyInitial}</span>`;
                         }
                      }}
                   />
                ) : (
-                  <span className="text-3xl font-bold" style={{ color: textColor }}>{companyInitial}</span>
+                  <span className="text-2xl font-bold" style={{ color: textColor }}>{companyInitial}</span>
                )}
             </div>
          </div>
@@ -248,28 +258,30 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
 
    if (variant === 'list') {
       return (
-         <div
-            onClick={() => onClick?.(job)}
-            className={`group relative bg-white rounded-xl mb-3 border transition-all duration-200 cursor-pointer overflow-hidden
-            ${isActive
-                  ? 'border-indigo-600 ring-1 ring-indigo-600 shadow-md'
-                  : 'border-slate-100 hover:border-indigo-300 hover:shadow-md'
-               } ${className || ''}`}
-            id={`job-card-${job.id}`}
+         <div 
+            onClick={() => onClick && onClick(job)}
+            className={`
+               group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-start
+               ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10' : 'border-slate-100 hover:border-indigo-200'}
+               ${isFeatured ? 'bg-gradient-to-r from-white via-indigo-50/20 to-white border-indigo-100 ring-1 ring-indigo-500/10' : ''}
+               ${className}
+            `}
          >
-            <div className="flex flex-col md:flex-row p-4 gap-4 items-stretch">
-               {/* Left: New Company Card Style (Desktop Only) */}
-               <div className="hidden md:block flex-shrink-0 self-stretch">
-                  <CompanyCard />
+            {/* Featured Badge for List View - Removed absolute ribbon */}
+            {/* {isFeatured && (
+               <div className="absolute top-0 right-0 bg-gradient-to-bl from-indigo-500 to-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-2xl shadow-sm flex items-center gap-1 z-10">
+                 <Sparkles className="w-3 h-3" />
+                 系统推荐
                </div>
+            )} */}
 
-               {/* Mobile Logo (Fallback to old style) */}
-               <div className="md:hidden flex-shrink-0 self-start">
-                  <CompanyLogoSmall size="md" />
-               </div>
+            {/* Left: Company Logo Card */}
+            <div className="flex-shrink-0 w-[120px] self-stretch flex">
+               <CompanyCard size="sm" />
+            </div>
 
                {/* Content Area */}
-               <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-8">
+               <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-4">
                   {/* Delete Button (List View) */}
                   {onDelete && (
                       <button 
@@ -320,7 +332,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                         )}
                      </div>
 
-                     {/* Salary (Desktop) */}
+                     {/* Salary (Desktop - Restored to Top Right) */}
                      <div className={`hidden md:block text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
                         {formatSalary(job.salary)}
                      </div>
@@ -361,7 +373,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                      </div>
                   </div>
 
-                  {/* Row 4: Tags & Mobile Salary */}
+                  {/* Row 4: Tags & System Recommended */}
                   <div className="flex items-center justify-between mt-auto pt-2">
                      <div className="flex flex-wrap items-center gap-2">
                         {displayTags.map((tag, i) => (
@@ -374,13 +386,20 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                         ))}
                      </div>
 
-                     {/* Salary (Mobile) */}
+                     {/* System Recommended (Bottom Right) */}
+                     {isFeatured && (
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100">
+                           <Sparkles className="w-3.5 h-3.5 fill-indigo-100" />
+                           <span>系统推荐</span>
+                        </div>
+                     )}
+
+                     {/* Salary (Mobile Only) */}
                      <div className={`md:hidden text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
                         {formatSalary(job.salary)}
                      </div>
                   </div>
                </div>
-            </div>
          </div>
       );
    }

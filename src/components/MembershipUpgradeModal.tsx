@@ -28,21 +28,21 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
   const content = {
     referral: {
       title: "解锁内推直达通道",
-      description: "该岗位支持 Haigoo 特邀会员专属内推，直达 HR 邮箱或内推系统，面试机会提升 3 倍。",
+      description: "获取企业内部招聘邮箱或高管直连方式，让您的简历跳过筛选系统，直达决策者手中。",
       icon: <Zap className="w-12 h-12 text-yellow-300 drop-shadow-lg" />,
-      highlight: "内推成功率提升 300%"
+      highlight: "简历回复率提升 300%"
     },
     ai_resume: {
       title: "开启 AI 简历深度优化",
-      description: "使用大模型分析您的简历与目标岗位的匹配度，获得具体的修改建议和优化后的表达。",
+      description: "基于大模型分析人岗匹配度，提供针对性的修改建议和润色，支持无限次优化直到满意。",
       icon: <Star className="w-12 h-12 text-purple-300 drop-shadow-lg" />,
-      highlight: "简历通过率提升 200%"
+      highlight: "通过 AI 打造满分简历"
     },
     general: {
       title: "升级 Haigoo 特邀会员",
-      description: "加入 Haigoo 远程工作俱乐部，获取独家岗位、内推机会和求职辅导。",
+      description: "加入精英远程工作者社区，获取独家岗位内推、AI 职业规划及专家指导服务。",
       icon: <Crown className="w-12 h-12 text-indigo-300 drop-shadow-lg" />,
-      highlight: "全方位助力远程求职"
+      highlight: "全方位助力远程求职上岸"
     }
   }[triggerSource];
 

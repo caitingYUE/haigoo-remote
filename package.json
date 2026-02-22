@@ -12,7 +12,8 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx,js --report-unused-disable-directives",
     "preview": "vite preview",
-    "server": "node local-server.js"
+    "server": "node local-server.js",
+    "vercel-build": "echo '--- VERCEL BUILD START ---' && npm run build && echo '--- VERCEL BUILD END ---'"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
@@ -70,6 +71,7 @@
     "@typescript-eslint/parser": "^6.10.0",
     "@vitejs/plugin-react": "^4.1.1",
     "autoprefixer": "^10.4.16",
+    "baseline-browser-mapping": "^2.9.19",
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",

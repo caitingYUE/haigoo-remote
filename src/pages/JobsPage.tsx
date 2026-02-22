@@ -37,19 +37,19 @@ const CATEGORY_OPTIONS = [
   '后端开发', '前端开发', '全栈开发', '移动开发', '数据开发', '服务器开发',
   '算法工程师', '测试/QA', '运维/SRE', '网络安全', '操作系统/内核',
   '技术支持', '硬件开发', '架构师', 'CTO/技术管理',
-  
+
   // 产品 & 设计
   '产品经理', '产品设计', 'UI/UX设计', '视觉设计', '平面设计', '用户研究',
-  
+
   // 业务 & 运营
   '市场营销', '销售', '客户经理', '客户服务', '运营', '增长黑客', '内容创作',
-  
+
   // 职能
   '人力资源', '招聘', '财务', '法务', '行政', '管理',
-  
+
   // 数据
   '数据分析', '商业分析', '数据科学',
-  
+
   // 其他
   '教育培训', '咨询', '投资', '其他'
 ].map(v => ({ label: v, value: v }));
@@ -65,6 +65,7 @@ import { MobileRestricted } from '../components/MobileRestricted'
 import { JobCardSkeleton } from '../components/skeletons/JobCardSkeleton'
 
 export default function JobsPage() {
+  console.log('[JobsPage] Version: Preview Fix Applied 2026-02-21 v3 - Layout & Auth Fixes');
   const navigate = useNavigate()
   const location = useLocation()
   const { token, isAuthenticated } = useAuth()
@@ -118,20 +119,20 @@ export default function JobsPage() {
   })
 
   // Dynamic Filter Options State
-  const [categoryOptions, setCategoryOptions] = useState<{label: string, value: string, count?: number}[]>(CATEGORY_OPTIONS);
-  const [industryOptions, setIndustryOptions] = useState<{label: string, value: string, count?: number}[]>(INDUSTRY_OPTIONS);
-  const [jobTypeOptions, setJobTypeOptions] = useState<{label: string, value: string, count?: number}[]>(JOB_TYPE_OPTIONS);
-  const [locationOptions, setLocationOptions] = useState<{label: string, value: string, count?: number}[]>([]); 
-  const [timezoneOptions, setTimezoneOptions] = useState<{label: string, value: string, count?: number}[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<{ label: string, value: string, count?: number }[]>(CATEGORY_OPTIONS);
+  const [industryOptions, setIndustryOptions] = useState<{ label: string, value: string, count?: number }[]>(INDUSTRY_OPTIONS);
+  const [jobTypeOptions, setJobTypeOptions] = useState<{ label: string, value: string, count?: number }[]>(JOB_TYPE_OPTIONS);
+  const [locationOptions, setLocationOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
+  const [timezoneOptions, setTimezoneOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
 
   // P0 Fix: Reset options when search term changes or filters are cleared (to avoid getting stuck with empty options)
   useEffect(() => {
     if (!searchTerm && !filters.category.length && !filters.industry.length && !filters.location.length) {
-        // Reset to full list if no filters active
-        setCategoryOptions(CATEGORY_OPTIONS);
-        setIndustryOptions(INDUSTRY_OPTIONS);
-        setJobTypeOptions(JOB_TYPE_OPTIONS);
-        // Location remains dynamic
+      // Reset to full list if no filters active
+      setCategoryOptions(CATEGORY_OPTIONS);
+      setIndustryOptions(INDUSTRY_OPTIONS);
+      setJobTypeOptions(JOB_TYPE_OPTIONS);
+      // Location remains dynamic
     }
   }, [searchTerm, filters]);
 
@@ -246,16 +247,16 @@ export default function JobsPage() {
           // Filter public and check time
           const now = new Date();
           const validBundles = data.data.filter((b: any) => {
-             if (!b.is_public) return false;
-             if (b.start_time && new Date(b.start_time) > now) return false;
-             if (b.end_time && new Date(b.end_time) < now) return false;
-             return true;
+            if (!b.is_public) return false;
+            if (b.start_time && new Date(b.start_time) > now) return false;
+            if (b.end_time && new Date(b.end_time) < now) return false;
+            return true;
           });
-          
+
           if (validBundles.length > 0) {
-              // Sort by priority (asc) and pick first
-              validBundles.sort((a: any, b: any) => a.priority - b.priority);
-              setActiveBundle(validBundles[0]);
+            // Sort by priority (asc) and pick first
+            validBundles.sort((a: any, b: any) => a.priority - b.priority);
+            setActiveBundle(validBundles[0]);
           }
         }
       } catch (e) {
@@ -355,13 +356,13 @@ export default function JobsPage() {
       }
 
       const data = await response.json()
-      
+
       // Debug Aggregations
       console.log('[loadJobsWithFilters] Response Data:', {
-         total: data.total,
-         jobsCount: data.jobs?.length,
-         hasAggregations: !!data.aggregations,
-         aggregations: data.aggregations
+        total: data.total,
+        jobsCount: data.jobs?.length,
+        hasAggregations: !!data.aggregations,
+        aggregations: data.aggregations
       });
 
       // 设置岗位数据和分页信息
@@ -404,46 +405,46 @@ export default function JobsPage() {
       setTotalJobs(data.total || 0)
       setCurrentPage(page)
       setLoadingStage('idle')
-      
+
       // Update Dynamic Filter Options from Aggregations
       if (!loadMore && data.aggregations) {
         const { category, industry, jobType, location, timezone } = data.aggregations;
-        
+
         // Helper to merge with static options
-         const mergeOptions = (staticOpts: any[], dynamicOpts: any[], selectedValues: string[] = []) => {
-             // 修正：如果 dynamicOpts 存在但为空数组（表示当前条件下无数据），则应返回空，而不是回退到静态全量
-             // 但为了防止筛选死锁（选中了某个值但不在列表中导致无法取消），我们需要保留已选中的值
-             if (!dynamicOpts) return staticOpts;
-             
-             const combined = [...dynamicOpts];
-             
-             // Ensure selected values are present (so they can be unchecked)
-             selectedValues.forEach(val => {
-                 if (!combined.find(c => c.value === val)) {
-                     combined.push({ value: val, count: 0 });
-                 }
-             });
-             
-             return combined.map((d: any) => {
-                 const staticMatch = staticOpts.find(s => s.value === d.value);
-                 return {
-                     label: staticMatch ? staticMatch.label : d.value,
-                     value: d.value,
-                     count: d.count
-                 };
-             });
-         };
+        const mergeOptions = (staticOpts: any[], dynamicOpts: any[], selectedValues: string[] = []) => {
+          // 修正：如果 dynamicOpts 存在但为空数组（表示当前条件下无数据），则应返回空，而不是回退到静态全量
+          // 但为了防止筛选死锁（选中了某个值但不在列表中导致无法取消），我们需要保留已选中的值
+          if (!dynamicOpts) return staticOpts;
+
+          const combined = [...dynamicOpts];
+
+          // Ensure selected values are present (so they can be unchecked)
+          selectedValues.forEach(val => {
+            if (!combined.find(c => c.value === val)) {
+              combined.push({ value: val, count: 0 });
+            }
+          });
+
+          return combined.map((d: any) => {
+            const staticMatch = staticOpts.find(s => s.value === d.value);
+            return {
+              label: staticMatch ? staticMatch.label : d.value,
+              value: d.value,
+              count: d.count
+            };
+          });
+        };
 
         setCategoryOptions(mergeOptions(CATEGORY_OPTIONS, category, filters.category));
         setIndustryOptions(mergeOptions(INDUSTRY_OPTIONS, industry, filters.industry));
         setJobTypeOptions(mergeOptions(JOB_TYPE_OPTIONS, jobType, filters.jobType));
-        
+
         if (location) {
-            setLocationOptions(location.map((l: any) => ({ label: l.value, value: l.value, count: l.count })));
+          setLocationOptions(location.map((l: any) => ({ label: l.value, value: l.value, count: l.count })));
         }
-        
+
         if (timezone) {
-            setTimezoneOptions(timezone.map((t: any) => ({ label: t.value, value: t.value, count: t.count })));
+          setTimezoneOptions(timezone.map((t: any) => ({ label: t.value, value: t.value, count: t.count })));
         }
       }
 
@@ -739,10 +740,10 @@ export default function JobsPage() {
           Let's keep a minimal header.
       */}
 
-        <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 gap-6 h-full">
+        <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 gap-6 h-full pt-0 mt-0">
 
           {/* Top Section: Search & Filters */}
-          <div className="flex-shrink-0 z-50 relative">
+          <div className="flex-shrink-0 z-50 relative pt-1">
             <JobFilterBar
               filters={filters}
               onFilterChange={(newFilters: any) => {
@@ -787,14 +788,14 @@ export default function JobsPage() {
                   <div className="p-0">
                     {[...Array(5)].map((_, i) => (
                       <div key={i} className="border-b border-slate-50 last:border-0">
-                         {/* Wrapper to match JobCardNew list variant spacing if needed, 
+                        {/* Wrapper to match JobCardNew list variant spacing if needed, 
                              JobCardSkeleton has its own border/padding. 
                              JobCardNew usually has border-b in list view or similar.
                              Let's just render the skeleton. 
                          */}
-                         <div className="p-4">
-                            <JobCardSkeleton />
-                         </div>
+                        <div className="p-4">
+                          <JobCardSkeleton />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -824,9 +825,9 @@ export default function JobsPage() {
                 ) : (
                   <div>
                     {activeBundle && !loadingMore && currentPage === 1 && (
-                        <div className="mb-4">
-                            <JobBundleBanner bundle={activeBundle} />
-                        </div>
+                      <div className="mb-4">
+                        <JobBundleBanner bundle={activeBundle} />
+                      </div>
                     )}
 
                     {distributedJobs.map((job, index) => (

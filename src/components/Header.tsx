@@ -2,9 +2,9 @@ import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown, Sparkles } from 'l
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import logoPng from '../assets/logo.png'
+import brandLogoPng from '../assets/brandlogo.png'
 
-const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || logoPng
+const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || brandLogoPng
 const BETA_END_DATE = new Date('2025-01-24').getTime()
 
 export default function Header() {
@@ -30,13 +30,13 @@ export default function Header() {
       fetch('/api/user-profile?action=notifications', {
         headers: { Authorization: `Bearer ${token}` }
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setNotifications(data.notifications || [])
-        }
-      })
-      .catch(console.error)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setNotifications(data.notifications || [])
+          }
+        })
+        .catch(console.error)
     }
   }, [isAuthenticated, token])
 
@@ -50,7 +50,7 @@ export default function Header() {
         body: JSON.stringify({ id })
       })
       if (res.ok) {
-        setNotifications(prev => prev.map(n => 
+        setNotifications(prev => prev.map(n =>
           (!id || n.id === id) ? { ...n, isRead: true } : n
         ))
       }
@@ -68,9 +68,9 @@ export default function Header() {
       })
       if (res.ok) {
         if (id) {
-            setNotifications(prev => prev.filter(n => n.id !== id))
+          setNotifications(prev => prev.filter(n => n.id !== id))
         } else {
-            setNotifications([])
+          setNotifications([])
         }
       }
     } catch (e) {
@@ -173,15 +173,11 @@ export default function Header() {
 
   return (
     <header
-      className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none ${isHome ? 'pt-6' : 'top-6 px-4 md:px-6 lg:px-8'}`}
+      className="absolute top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none"
       role="banner"
     >
-      <div className={`max-w-7xl mx-auto px-6 md:px-8 pointer-events-auto transition-all duration-300 ${
-        isHome 
-          ? 'bg-transparent border-transparent' 
-          : 'bg-white/90 backdrop-blur-md rounded-3xl shadow-lg border border-white/40'
-      }`}>
-        <div className="flex items-center justify-between h-20">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto transition-all duration-300 bg-white/70 backdrop-blur-2xl border-b border-white/20 shadow-sm shadow-white/10">
+        <div className="flex items-center justify-between h-14 w-full">
           {/* Logo */}
           <div className="flex items-center group">
             {/* Logo Image with Optical Adjustment */}
@@ -193,87 +189,61 @@ export default function Header() {
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
-                className={`h-14 md:h-16 w-auto object-contain transition-all duration-300 group-hover:opacity-90 ${isHome ? 'brightness-0 invert' : ''}`}
-                // Using transform instead of margin to avoid affecting layout flow
-                style={{ transform: 'translateX(-4px)' }} 
+                className="h-10 md:h-12 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
               />
-
-              {/* Brand Name */}
-              <span className={`font-semibold text-base tracking-wide leading-none ${isHome ? 'text-white' : 'text-[#1A365D]'}`}>
-                海狗远程俱乐部
-              </span>
+              <span className="hidden md:block text-sm font-bold text-slate-900 tracking-tight">海狗远程俱乐部</span>
             </Link>
-
-            {/* New Year Badge - Pill Style */}
-            <div className="relative flex items-center ml-3">
-              <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.dispatchEvent(new CustomEvent('open-happiness-card'));
-                  }}
-                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] font-bold shadow-sm border border-white/20 hover:scale-105 transition-transform flex items-center gap-1 cursor-pointer animate-in fade-in zoom-in"
-                  title="点击查看新年惊喜"
-              >
-                <Sparkles className="w-3 h-3 text-yellow-200" />
-                新年彩蛋
-              </button>
-            </div>
           </div>
 
           {/* Center Navigation - Right aligned */}
-          <div className="hidden md:flex items-center gap-8 ml-auto mr-8">
+          <div className="hidden md:flex items-center gap-6 ml-auto mr-8">
             <Link
               to="/"
-              className={`text-base transition-colors no-underline hover:no-underline ${
-                location.pathname === '/'
-                  ? (isHome ? 'text-white font-bold' : 'text-slate-900 font-bold')
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
-              }`}
+              className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname === '/'
+                  ? 'text-slate-900 font-bold'
+                  : 'text-slate-500 font-medium hover:text-indigo-600'
+                }`}
             >
               首页
             </Link>
 
             <Link
               to="/jobs"
-              className={`text-base transition-colors no-underline hover:no-underline ${
-                location.pathname === '/jobs'
+              className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname === '/jobs'
                   ? 'text-slate-900 font-bold'
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
-              }`}
+                  : 'text-slate-500 font-medium hover:text-indigo-600'
+                }`}
             >
               远程岗位
             </Link>
 
             <Link
               to="/trusted-companies"
-              className={`text-base transition-colors no-underline hover:no-underline ${
-                location.pathname.startsWith('/trusted-companies')
+              className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
                   ? 'text-slate-900 font-bold'
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
-              }`}
+                  : 'text-slate-500 font-medium hover:text-indigo-600'
+                }`}
             >
               精选企业
             </Link>
 
             <Link
               to="/membership"
-              className={`text-base transition-colors no-underline hover:no-underline ${
-                location.pathname === '/membership'
-                  ? 'text-slate-900 font-bold'
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
-              }`}
+              className={`text-sm transition-colors no-underline hover:no-underline flex items-center gap-1 ${location.pathname === '/membership'
+                  ? 'text-indigo-600 font-bold'
+                  : 'text-slate-500 font-medium hover:text-indigo-600'
+                }`}
             >
+              <Crown className="w-4 h-4" />
               会员中心
             </Link>
 
             <Link
               to="/profile"
-              className={`text-base transition-colors no-underline hover:no-underline ${
-                location.pathname.startsWith('/profile')
+              className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/profile')
                   ? 'text-slate-900 font-bold'
-                  : (isHome ? 'text-white/80 hover:text-white font-medium' : 'text-slate-500 font-medium hover:text-slate-900')
-              }`}
+                  : 'text-slate-500 font-medium hover:text-indigo-600'
+                }`}
             >
               个人中心
             </Link>
@@ -286,13 +256,13 @@ export default function Header() {
               <>
                 <Link
                   to="/login"
-                  className={`px-4 py-2 text-sm font-medium transition-colors no-underline hover:no-underline ${isHome ? 'text-white hover:text-white/80' : 'text-slate-600 hover:text-slate-900'}`}
+                  className="px-4 py-2 text-sm font-medium transition-colors no-underline hover:no-underline text-slate-600 hover:text-slate-900"
                 >
                   登录
                 </Link>
                 <Link
                   to="/register"
-                  className={`px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline ${isHome ? 'bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                  className="px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline bg-indigo-600 hover:bg-indigo-700"
                 >
                   注册
                 </Link>
@@ -306,11 +276,7 @@ export default function Header() {
                 <div ref={notificationRef} className="relative">
                   <button
                     onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                    className={`p-3 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center ${
-                      isHome 
-                        ? 'text-white/80 hover:text-white' 
-                        : 'text-slate-400 hover:text-slate-600'
-                    }`}
+                    className="p-3 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-slate-600"
                     aria-label={`通知，有 ${unreadCount} 条新消息`}
                     title="通知"
                   >
@@ -330,12 +296,12 @@ export default function Header() {
                       <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
                         <h3 className="text-sm font-semibold text-slate-900">消息通知</h3>
                         <div className="flex gap-2">
-                            <button onClick={() => handleMarkRead()} className="text-xs text-indigo-600 hover:text-indigo-800" title="全部已读">
-                                <Check className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDelete()} className="text-xs text-slate-400 hover:text-red-600" title="清空全部">
-                                <Trash2 className="w-4 h-4" />
-                            </button>
+                          <button onClick={() => handleMarkRead()} className="text-xs text-indigo-600 hover:text-indigo-800" title="全部已读">
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete()} className="text-xs text-slate-400 hover:text-red-600" title="清空全部">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                       <div className="max-h-80 overflow-y-auto">
@@ -347,27 +313,26 @@ export default function Header() {
                           notifications.map(notification => (
                             <div key={notification.id} className={`px-4 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 relative group ${!notification.isRead ? 'bg-indigo-50/30' : ''}`}>
                               <div className="flex justify-between items-start mb-1">
-                                <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                                    notification.type === 'feedback_reply' ? 'bg-blue-100 text-blue-700' : 
-                                    notification.type === 'application_update' ? 'bg-green-100 text-green-700' : 
-                                    'bg-slate-100 text-slate-600'
-                                }`}>
-                                    {notification.type === 'feedback_reply' ? '反馈回复' : notification.type === 'application_update' ? '申请更新' : '系统消息'}
+                                <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${notification.type === 'feedback_reply' ? 'bg-blue-100 text-blue-700' :
+                                    notification.type === 'application_update' ? 'bg-green-100 text-green-700' :
+                                      'bg-slate-100 text-slate-600'
+                                  }`}>
+                                  {notification.type === 'feedback_reply' ? '反馈回复' : notification.type === 'application_update' ? '申请更新' : '系统消息'}
                                 </span>
                                 <span className="text-xs text-slate-400">{new Date(notification.createdAt).toLocaleDateString()}</span>
                               </div>
                               <h4 className={`text-sm font-medium mb-1 ${!notification.isRead ? 'text-slate-900' : 'text-slate-700'}`}>{notification.title}</h4>
                               <p className="text-xs text-slate-600 leading-relaxed">{notification.content}</p>
-                              
+
                               <div className="absolute top-2 right-2 hidden group-hover:flex gap-1 bg-white/80 rounded shadow-sm p-1">
-                                  {!notification.isRead && (
-                                      <button onClick={(e) => { e.stopPropagation(); handleMarkRead(notification.id) }} className="p-1 hover:text-indigo-600 text-slate-400" title="标为已读">
-                                          <Check className="w-3 h-3" />
-                                      </button>
-                                  )}
-                                  <button onClick={(e) => { e.stopPropagation(); handleDelete(notification.id) }} className="p-1 hover:text-red-600 text-slate-400" title="删除">
-                                      <Trash2 className="w-3 h-3" />
+                                {!notification.isRead && (
+                                  <button onClick={(e) => { e.stopPropagation(); handleMarkRead(notification.id) }} className="p-1 hover:text-indigo-600 text-slate-400" title="标为已读">
+                                    <Check className="w-3 h-3" />
                                   </button>
+                                )}
+                                <button onClick={(e) => { e.stopPropagation(); handleDelete(notification.id) }} className="p-1 hover:text-red-600 text-slate-400" title="删除">
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
                               </div>
                             </div>
                           ))
@@ -386,11 +351,7 @@ export default function Header() {
                 >
                   <button
                     ref={userMenuButtonRef}
-                    className={`flex items-center space-x-2 p-2 rounded-lg transition-all duration-200 focus:outline-none ${
-                        isHome 
-                            ? 'text-white hover:bg-white/10' 
-                            : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
+                    className={`flex items-center space-x-2 p-2 rounded-lg transition-all duration-200 focus:outline-none text-slate-700 hover:text-slate-900 hover:bg-slate-50`}
                     onKeyDown={handleUserMenuKeyDown}
                     aria-expanded={isUserMenuOpen}
                     aria-haspopup="menu"
@@ -402,11 +363,10 @@ export default function Header() {
                         <img
                           src={user.avatar}
                           alt={user.username}
-                          className={`w-8 h-8 rounded-full shadow-sm ${
-                              isMember 
-                                ? 'ring-2 ring-indigo-400 border-2 border-white'
-                                : ''
-                          }`}
+                          className={`w-8 h-8 rounded-full shadow-sm ${isMember
+                              ? 'ring-2 ring-indigo-400 border-2 border-white'
+                              : ''
+                            }`}
                         />
                         {isMember && (
                           <div className="absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm bg-indigo-100">
@@ -417,19 +377,14 @@ export default function Header() {
                     ) : (
                       <div className="relative">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${
-                              isHome 
-                                ? 'bg-white/20 backdrop-blur-md' 
-                                : 'bg-gradient-to-r from-haigoo-primary to-haigoo-secondary'
-                          } ${
-                              isMember 
-                                ? 'ring-2 ring-indigo-400 border-2 border-white'
-                                : ''
-                          }`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-r from-haigoo-primary to-haigoo-secondary ${isMember
+                              ? 'ring-2 ring-indigo-400 border-2 border-white'
+                              : ''
+                            }`}
                           role="img"
                           aria-label="用户头像"
                         >
-                          <User className={`h-4 w-4 ${isHome ? 'text-white' : 'text-white'}`} aria-hidden="true" />
+                          <User className="h-4 w-4 text-white" aria-hidden="true" />
                         </div>
                         {isMember && (
                           <div className="absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm bg-indigo-100">
@@ -438,12 +393,9 @@ export default function Header() {
                         )}
                       </div>
                     )}
-                    <span className={`text-sm font-medium hidden sm:block ${
-                        isHome 
-                            ? 'text-white' 
-                            : (isMember ? 'text-indigo-600' : '')
-                    }`}>
-                        {user?.username || '用户'}
+                    <span className={`text-sm font-medium hidden sm:block ${isMember ? 'text-indigo-600' : 'text-slate-700'
+                      }`}>
+                      {user?.username || '用户'}
                     </span>
                     <ChevronDown
                       className={`h-4 w-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
@@ -485,7 +437,7 @@ export default function Header() {
                       </div>
 
                       {/* 简化的菜单选项 - 这里可以放其他普通菜单项，暂时为空或保留其他非敏感项 */}
-                      
+
                       {/* 账户操作区域 */}
                       <div className="pt-1" role="group" aria-label="账户操作">
                         {/* 退出登录 - 调整为常规颜色 */}
@@ -562,6 +514,16 @@ export default function Header() {
                 精选企业
               </Link>
               <Link
+                to="/about"
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/about'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                关于我们
+              </Link>
+              <Link
                 to="/membership"
                 className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/membership'
                   ? 'bg-indigo-50 text-indigo-700'
@@ -614,11 +576,10 @@ export default function Header() {
                         <Link
                           key={item.id}
                           to={item.href}
-                          className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${
-                            isActive
+                          className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${isActive
                               ? 'bg-indigo-50 text-indigo-700'
                               : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-                          }`}
+                            }`}
                           onClick={() => setIsMenuOpen(false)}
                         >
                           {item.label}

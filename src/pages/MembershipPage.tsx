@@ -1,20 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, Gift, Users, ChevronRight, Loader2, Send, CheckCircle2, Calendar, Download, X } from 'lucide-react';
+import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, ChevronRight, Loader2, CheckCircle2, Calendar, Download, Copy, Sparkles, Landmark, Building, GraduationCap, HardDrive, CircuitBoard, Target, Quote, Briefcase, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import JobCardNew from '../components/JobCardNew';
 import { processedJobsService } from '../services/processed-jobs-service';
 import { trackingService } from '../services/tracking-service';
+import { MembershipCertificateModal } from '../components/MembershipCertificateModal';
 
 interface Plan {
    id: string;
    name: string;
    price: number;
+   originalPrice?: number;
+   discountLabel?: string;
    currency: string;
    features: string[];
    duration_days: number;
+   description?: string;
+   isPlus?: boolean;
 }
 
 interface PaymentInfo {
@@ -24,17 +29,51 @@ interface PaymentInfo {
    instruction: string;
 }
 
-import { MembershipCertificateModal } from '../components/MembershipCertificateModal';
+const STATIC_PLANS: Plan[] = [
+   {
+      id: 'club_go_quarterly',
+      name: '海狗远程俱乐部会员 (季度)',
+      price: 199,
+      currency: 'CNY',
+      duration_days: 90,
+      discountLabel: '灵活订阅 · 适合短期冲刺',
+      features: [
+         '解锁全部高薪远程职位（含内推）',
+         '解锁全部企业认证信息及联系方式',
+         'AI 远程工作助手 (无限次)',
+         'AI 简历优化（无限次）',
+         '加入精英远程工作者社区'
+      ],
+      description: '适合短期冲刺的求职者，快速获得内推机会'
+   },
+   {
+      id: 'goo_plus_yearly',
+      name: '海狗远程俱乐部会员 (年度)',
+      price: 999,
+      originalPrice: 1999,
+      discountLabel: '早鸟价 · 6月1日恢复原价',
+      currency: 'CNY',
+      duration_days: 365,
+      isPlus: true,
+      features: [
+         '包含季度会员所有权益',
+         '1V1 远程求职咨询（1次，60分钟以内）',
+         '专家简历精修 或 模拟面试 (二选一)',
+         '优先成为俱乐部城市主理人，共享收益',
+         '合作企业优先定向直推'
+      ],
+      description: '适合致力于长期职业发展的专业人士，建立个人品牌'
+   }
+];
 
 const MembershipPage: React.FC = () => {
-   const { user, isAuthenticated, isMember } = useAuth();
+   const { user, isAuthenticated } = useAuth();
    const navigate = useNavigate();
-   const [plans, setPlans] = useState<Plan[]>([]);
+   const [plans, setPlans] = useState<Plan[]>(STATIC_PLANS);
    const [loading, setLoading] = useState(true);
    const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-   const [paymentMethod, setPaymentMethod] = useState<'wechat' | 'alipay' | 'xiaohongshu' | 'wechat_transfer'>('wechat');
+   const [paymentMethod, setPaymentMethod] = useState<'wechat' | 'alipay'>('alipay');
    const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
-   const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
    const [showPaymentModal, setShowPaymentModal] = useState(false);
    const [currentMembership, setCurrentMembership] = useState<any>(null);
    const [showCertificateModal, setShowCertificateModal] = useState(false);
@@ -42,28 +81,12 @@ const MembershipPage: React.FC = () => {
 
    // Application Logic (Deprecated, but kept for legacy data display if needed)
    const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
-   const [formData, setFormData] = useState({
-      nickname: '',
-      contact: '',
-      experience: '',
-      career_ideal: '',
-      contact_type: 'wechat'
-   });
-   const [submitting, setSubmitting] = useState(false);
-   const [submitSuccess, setSubmitSuccess] = useState(false);
-   const [error, setError] = useState('');
 
    useEffect(() => {
-      if (user) {
-         setFormData(prev => ({
-            ...prev,
-            nickname: user.username || user.profile?.fullName || prev.nickname
-         }));
-      }
-   }, [user]);
+      // Use static plans immediately, but try to fetch in background if needed
+      // setPlans(STATIC_PLANS); 
+      setLoading(false);
 
-   useEffect(() => {
-      fetchPlans();
       if (isAuthenticated) {
          fetchStatus();
          fetchApplicationStatus();
@@ -73,59 +96,16 @@ const MembershipPage: React.FC = () => {
 
    const fetchApplicationStatus = async () => {
       try {
-          const token = localStorage.getItem('haigoo_auth_token');
-          if (!token) return;
-          const res = await fetch('/api/applications?action=my_status', {
-               headers: { Authorization: `Bearer ${token}` }
-          });
-          const data = await res.json();
-          if (data.success) {
-               setApplicationStatus(data.status);
-          }
-      } catch (e) { console.error(e) }
-  };
-
-   const handleApplicationSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!formData.nickname || !formData.contact || !formData.experience || !formData.career_ideal) {
-        setError('请填写所有必填项');
-        return;
-      }
-      setSubmitting(true);
-      setError('');
-      try {
          const token = localStorage.getItem('haigoo_auth_token');
-         const res = await fetch('/api/user-profile?action=submit_application', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-             body: JSON.stringify(formData)
+         if (!token) return;
+         const res = await fetch('/api/applications?action=my_status', {
+            headers: { Authorization: `Bearer ${token}` }
          });
          const data = await res.json();
          if (data.success) {
-             setSubmitSuccess(true);
-             setApplicationStatus('pending');
-             trackingService.track('submit_membership_application', {
-                 nickname: formData.nickname,
-                 career_ideal_length: formData.career_ideal.length
-             });
-         } else {
-             setError(data.error || '提交失败');
+            setApplicationStatus(data.status);
          }
-      } catch (err) { setError('网络错误'); } finally { setSubmitting(false); }
-  };
-
-
-   const fetchPlans = async () => {
-      try {
-         const res = await axios.get('/api/membership?action=plans');
-         if (res.data.success) {
-            setPlans(res.data.plans);
-         }
-      } catch (error) {
-         console.error('Failed to fetch plans', error);
-      } finally {
-         setLoading(false);
-      }
+      } catch (e) { console.error(e) }
    };
 
    const fetchStatus = async () => {
@@ -150,103 +130,81 @@ const MembershipPage: React.FC = () => {
          return;
       }
       setSelectedPlan(plan);
-      // Direct to Payment Modal
+      setPaymentMethod('alipay'); // Reset default
       setShowPaymentModal(true);
       trackingService.track('click_subscribe', {
-          plan_id: plan.id,
-          plan_name: plan.name,
-          price: plan.price
+         plan_id: plan.id,
+         plan_name: plan.name,
+         price: plan.price
       });
    };
 
-   const handleCreatePayment = async () => {
-      if (!selectedPlan) return;
-
-      try {
-         const res = await axios.post('/api/membership?action=checkout', {
-            planId: selectedPlan.id,
-            paymentMethod
-         }, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('haigoo_auth_token')}` }
-         });
-
-         if (res.data.success) {
-            const info = res.data.paymentInfo;
-            setPaymentInfo(info);
-            setCurrentPaymentId(res.data.paymentId);
-            trackingService.track('initiate_payment', {
-                plan_id: selectedPlan.id,
-                payment_method: paymentMethod,
-                amount: selectedPlan.price
-            });
-
-            // If it's a URL redirect type (WeChat/Alipay)
-            if (info.type === 'url' && info.url) {
-               window.location.href = info.url;
-            }
+   // Simplified flow: Payment info is derived directly from state
+   const currentPaymentInfo: PaymentInfo = {
+      type: 'qrcode',
+      imageUrl: (() => {
+         if (selectedPlan?.price === 999) {
+            return paymentMethod === 'alipay' ? '/alipay_999.jpg' : '/wechatpay_999.png';
          }
-      } catch (error) {
-         console.error('Payment creation failed', error);
-         alert('创建支付订单失败，请重试');
-      }
+         return paymentMethod === 'alipay' ? '/alipay.jpg' : '/wechatpay.png';
+      })(),
+      instruction: `请使用${paymentMethod === 'alipay' ? '支付宝' : '微信'}扫码支付`
    };
 
-   const handlePaymentComplete = () => {
+   const handlePaymentComplete = async () => {
+      // Optional: Notify server about the payment claim
+      try {
+         const token = localStorage.getItem('haigoo_auth_token');
+         if (token) {
+            await axios.post('/api/membership?action=claim_payment', {
+               planId: selectedPlan?.id,
+               paymentMethod,
+               amount: selectedPlan?.price,
+               email: user?.email
+            }, { headers: { Authorization: `Bearer ${token}` } });
+         }
+      } catch (e) {
+         console.error('Failed to report payment claim', e);
+      }
+
       setShowPaymentModal(false);
-      alert('感谢您的支付！请等待管理员确认开通，或联系客服加快处理。');
+      alert('感谢您的支付！权益将在24小时内开通。如有疑问请联系 hi@haigooremote.com');
       fetchStatus(); // Refresh status
       trackingService.track('complete_payment_client_claim', {
-          plan_id: selectedPlan?.id
+         plan_id: selectedPlan?.id
       });
    };
-
-   // Development helper to auto-confirm
-   const handleDevConfirm = async (paymentId: string) => {
-      try {
-         await axios.post('/api/membership?action=confirm-payment', { paymentId }, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('haigoo_auth_token')}` }
-         });
-         alert('Dev: Membership activated!');
-         handlePaymentComplete();
-      } catch (e) {
-         console.error(e);
-      }
-   }
 
    // Fetch Recommended Jobs for Members
    useEffect(() => {
       const fetchRecommended = async () => {
          // Check user membership status correctly
          const isMember = (currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
-         
+
          if (isMember) {
             try {
-               // 1. Get Member Exclusive Referral Jobs sorted by Relevance (High Priority)
-               const referralRes = await processedJobsService.getProcessedJobs(1, 6, { 
+               const referralRes = await processedJobsService.getProcessedJobs(1, 6, {
                   sourceFilter: 'referral',
                   sortBy: 'relevance'
                });
 
                let finalJobs = referralRes.jobs;
 
-               // 2. If less than 6, fill with Trusted Jobs (Fallback)
                if (finalJobs.length < 6) {
-                   const needed = 6 - finalJobs.length;
-                   const trustedRes = await processedJobsService.getProcessedJobs(1, needed, {
-                       sourceFilter: 'trusted',
-                       sortBy: 'relevance'
-                   });
-                   
-                   // Avoid duplicates
-                   const existingIds = new Set(finalJobs.map(j => j.id));
-                   const newJobs = trustedRes.jobs.filter(j => !existingIds.has(j.id));
-                   
-                   finalJobs = [...finalJobs, ...newJobs];
+                  const needed = 6 - finalJobs.length;
+                  const trustedRes = await processedJobsService.getProcessedJobs(1, needed, {
+                     sourceFilter: 'trusted',
+                     sortBy: 'relevance'
+                  });
+
+                  const existingIds = new Set(finalJobs.map(j => j.id));
+                  const newJobs = trustedRes.jobs.filter(j => !existingIds.has(j.id));
+
+                  finalJobs = [...finalJobs, ...newJobs];
                }
 
-               // Strict limit enforcement to ensure UI consistency
                if (finalJobs.length > 6) {
-                   finalJobs = finalJobs.slice(0, 6);
+                  finalJobs = finalJobs.slice(0, 6);
                }
 
                setRecommendedJobs(finalJobs);
@@ -261,6 +219,8 @@ const MembershipPage: React.FC = () => {
       }
    }, [isAuthenticated, user, currentMembership]);
 
+   const isMember = (currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
+
    if (loading) {
       return (
          <div className="min-h-screen flex items-center justify-center bg-white">
@@ -270,269 +230,156 @@ const MembershipPage: React.FC = () => {
    }
 
    return (
-      <div className="min-h-screen bg-slate-50 font-sans">
-         {/* Hero Section */}
-         <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 text-white pt-24 pb-32 px-4 sm:px-6 lg:px-8">
-            {/* Background Effects */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
-               {/* Main spotlight */}
-               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent"></div>
-               
-               {/* Accent orbs */}
-               <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-400/20 rounded-full blur-[100px] animate-pulse"></div>
-               <div className="absolute top-40 right-1/4 w-80 h-80 bg-teal-400/20 rounded-full blur-[100px] animate-pulse delay-1000"></div>
-               
-               {/* Grid pattern overlay */}
-               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-               <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+      <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
+         {/* Hero Section (Visible to EVERYONE) */}
+         <div className="relative overflow-hidden pt-24 md:pt-32 pb-0 px-4 sm:px-6 lg:px-8">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+               <img
+                  src="/members.webp?v=2"
+                  alt="Membership Hero Background"
+                  className="w-full h-full object-cover object-center opacity-30"
+               />
+               <div className="absolute inset-0 bg-gradient-to-b from-slate-50/80 via-white/60 to-[#F8F9FC]"></div>
             </div>
 
-            <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
-               {/* Premium Badge */}
-               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/90 text-xs font-bold tracking-widest uppercase mb-8 shadow-lg backdrop-blur-md">
-                  <Crown className="w-3.5 h-3.5 fill-white/80" /> 
-                  Upgrade to Premium
-               </div>
-
-               {/* Main Headline */}
-               <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
-                  <span className="block text-white/80 text-2xl sm:text-3xl font-medium mb-3 tracking-normal">Join the Elite</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-teal-100 drop-shadow-sm">
-                     Haigoo Member
+            <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
+               <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
+                  <span className="block mb-2">解锁全球远程机遇</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
+                     开启无界职业生涯
                   </span>
                </h1>
 
-               {/* Subtitle */}
-               <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-                  开启您的全球远程职业生涯。<br className="hidden sm:block" />
-                  解锁海量内推机会，获取 AI 智能简历优化，加入精英远程工作者社区。
+               <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+                  AI 驱动的求职工具、经人工核验的优质机会、互助成长的精英社区。<br className="hidden md:block" />
+                  打破地域限制，您的全球职业生涯从这里起航。
                </p>
 
-               {/* Current Status Card (if member) */}
-               {((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date())) && (
-                  <div className="inline-flex items-center gap-4 bg-white/10 border border-white/20 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl">
-                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-lg">
-                        <Check className="w-5 h-5 text-white" />
-                     </div>
-                     <div className="text-left">
-                        <p className="text-[10px] text-white/60 uppercase font-bold tracking-wider">Current Status</p>
-                        <p className="font-bold text-white text-base flex items-center gap-3">
-                           {currentMembership?.level === 'club_go' ? 'Haigoo Member' : 'Haigoo Member'}
-                           <span className="text-xs font-normal text-teal-100 bg-teal-500/20 px-2 py-0.5 rounded border border-teal-400/30">
-                              Active
-                           </span>
-                           <button
-                              onClick={() => setShowCertificateModal(true)}
-                              className="text-xs flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded border border-white/20 transition-colors"
-                              title="下载会员证书"
-                           >
-                              <Download className="w-3 h-3" />
-                              证书
-                           </button>
-                        </p>
-                     </div>
-                  </div>
-               )}
-
-               {/* Pending Status Card (if application is pending) */}
-               {!((currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date())) && applicationStatus === 'pending' && (
-                  <div className="inline-flex items-center gap-4 bg-white/10 border border-white/20 px-6 py-3 rounded-2xl backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
-                        <Loader2 className="w-5 h-5 text-white animate-spin" />
-                     </div>
-                     <div className="text-left">
-                        <p className="text-[10px] text-white/60 uppercase font-bold tracking-wider">Current Status</p>
-                        <p className="font-bold text-white text-base flex items-center gap-3">
-                           Haigoo Member
-                           <span className="text-xs font-normal text-amber-100 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-400/30">
-                              Under Review
-                           </span>
-                        </p>
-                     </div>
-                  </div>
+               {!(isAuthenticated && isMember) && (
+                  <button
+                     onClick={() => {
+                        const el = document.getElementById('pricing-plans');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                     }}
+                     className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-base flex items-center gap-2 group"
+                  >
+                     探索会员方案
+                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
                )}
             </div>
          </div>
 
-         {/* Pricing Plans Section */}
-         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 -mt-20 relative z-20">
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-               {plans.map((plan) => {
-                  const isPlus = plan.id.includes('plus');
-                  return (
-                     <div 
-                        key={plan.id}
-                        className={`relative rounded-[2rem] p-8 border transition-all duration-300 hover:-translate-y-2 ${
-                           isPlus 
-                              ? 'bg-slate-900 text-white border-slate-800 shadow-2xl shadow-indigo-500/20' 
-                              : 'bg-white text-slate-900 border-slate-100 shadow-xl'
-                        }`}
-                     >
-                        {isPlus && (
-                           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-200 to-yellow-400 text-amber-900 text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                              MOST POPULAR
-                           </div>
-                        )}
+         {/* The old gradient status bar has been permanently removed based on user feedback. */}
 
-                        <div className="mb-8">
-                           <h3 className={`text-lg font-bold mb-2 ${isPlus ? 'text-indigo-300' : 'text-slate-500'}`}>
-                              {plan.name}
-                           </h3>
-                           <div className="flex items-baseline gap-1">
-                              <span className="text-4xl font-bold">¥{plan.price}</span>
-                              <span className={`text-sm ${isPlus ? 'text-slate-400' : 'text-slate-500'}`}>/年</span>
+         {/* Member Dashboard (Prioritized for Members) */}
+         {isAuthenticated && isMember && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-20">
+               <div className="space-y-8">
+                  {/* Member Status Card — 2-column: info left, QR right */}
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8 md:p-10 flex flex-col sm:flex-row gap-8 lg:gap-12 relative overflow-hidden">
+                     <div className="flex flex-col sm:flex-row gap-8 lg:gap-12 w-full">
+                        {/* Left: member info */}
+                        <div className="flex-1 flex flex-col">
+                           {/* Title */}
+                           <div className="flex items-center gap-3 mb-5">
+                              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-md shrink-0">
+                                 <Crown className="w-6 h-6 text-white" />
+                              </div>
+                              <div>
+                                 <div className="text-xl font-bold text-slate-900">尊贵会员</div>
+                                 <div className="text-sm text-slate-400">Haigoo Member</div>
+                              </div>
                            </div>
-                           <p className={`text-sm mt-4 ${isPlus ? 'text-slate-400' : 'text-slate-500'}`}>
-                              {isPlus ? '适合希望通过社区获得更多机会的专业人士' : '适合正在寻找远程工作的求职者'}
+
+                           {/* Status rows */}
+                           <div className="bg-slate-50/80 rounded-xl p-4 space-y-3 mb-5 border border-slate-100">
+                              <div className="flex items-center gap-3 text-sm text-slate-700">
+                                 <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                 </div>
+                                 申请已通过，会员权益已生效
+                              </div>
+                              <div className="flex items-center gap-3 text-sm text-slate-700">
+                                 <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                    <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                                 </div>
+                                 有效期至：{currentMembership?.expireAt
+                                    ? new Date(currentMembership.expireAt).toLocaleDateString()
+                                    : (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString() : '永久有效')}
+                              </div>
+                              <div className="flex items-center gap-3 text-sm text-slate-700">
+                                 <div className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
+                                    <Sparkles className="w-3.5 h-3.5 text-violet-500" />
+                                 </div>
+                                 今日剩余翻译次数：无限次
+                              </div>
+                           </div>
+
+                           {/* Actions */}
+                           <div className="flex items-center gap-3">
+                              <button
+                                 onClick={() => navigate('/jobs')}
+                                 className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-full hover:bg-slate-800 transition-all inline-flex items-center gap-2 shadow-sm"
+                              >
+                                 直通全站岗位 <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                 onClick={() => setShowCertificateModal(true)}
+                                 className="px-4 py-2.5 bg-white border border-slate-200 text-slate-500 text-sm rounded-full hover:bg-slate-50 transition-all inline-flex items-center gap-1.5"
+                              >
+                                 <Download className="w-3.5 h-3.5" />
+                                 证书
+                              </button>
+                           </div>
+                        </div>
+
+                        {/* Right: DingTalk QR */}
+                        <div className="w-56 shrink-0 bg-indigo-50/40 border border-indigo-100/50 rounded-2xl p-5 flex flex-col items-center gap-3 hidden sm:flex">
+                           <div className="flex items-center gap-1.5 text-sm font-bold text-slate-800 w-full justify-center">
+                              <Users className="w-4 h-4 text-indigo-500 shrink-0" />
+                              会员专属服务群
+                           </div>
+                           <div className="w-28 h-28 bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
+                              <img
+                                 src="/dingtalk.jpg"
+                                 alt="钉钉群二维码"
+                                 className="w-full h-full object-cover"
+                                 onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="text-[10px] text-slate-400 text-center px-2">二维码\n待上传</div>';
+                                 }}
+                              />
+                           </div>
+                           <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                              请使用钉钉扫码加入<br />快速获取响应和支持
                            </p>
                         </div>
-
-                        <ul className="space-y-4 mb-8">
-                           {plan.features.map((feature, idx) => (
-                              <li key={idx} className="flex items-start gap-3">
-                                 <div className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                    isPlus ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600'
-                                 }`}>
-                                    <Check className="w-3 h-3" />
-                                 </div>
-                                 <span className={`text-sm ${isPlus ? 'text-slate-300' : 'text-slate-600'}`}>
-                                    {feature}
-                                 </span>
-                              </li>
-                           ))}
-                        </ul>
-
-                        <button
-                           onClick={() => handleSubscribe(plan)}
-                           disabled={isMember}
-                           className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
-                              isMember
-                                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                 : isPlus
-                                    ? 'bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/30'
-                                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-200'
-                           }`}
-                        >
-                           {isMember ? (
-                              <>
-                                 <CheckCircle2 className="w-5 h-5" />
-                                 当前会员
-                              </>
-                           ) : (
-                              <>
-                                 立即升级
-                                 <ArrowRight className="w-5 h-5" />
-                              </>
-                           )}
-                        </button>
-                     </div>
-                  );
-               })}
-            </div>
-         </div>
-
-         {/* Member Dashboard (Restored) */}
-         {isAuthenticated && ((currentMembership?.isActive) || isMember) && (
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 relative z-20">
-               <div className="space-y-8">
-                  {/* 1. Member Status & Group */}
-                  <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
-                     <div className="p-8 md:p-10">
-                        <div className="flex flex-col md:flex-row gap-8 items-start">
-                           {/* Status Info */}
-                           <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-6">
-                                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200">
-                                    <Crown className="w-6 h-6 text-white" />
-                                 </div>
-                                 <div>
-                                    <h2 className="text-2xl font-bold text-slate-900">尊贵会员</h2>
-                                    <p className="text-slate-500">Haigoo Member</p>
-                                 </div>
-                              </div>
-
-                              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4">
-                                 <div className="flex items-center gap-3 text-slate-700">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                    </div>
-                                    <span className="font-medium">申请已通过，会员权益已生效</span>
-                                 </div>
-                                 
-                                 <div className="flex items-center gap-3 text-slate-700">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                       <Calendar className="w-4 h-4 text-blue-600" />
-                                    </div>
-                                    <span className="font-medium">
-                                       有效期至：
-                                       {currentMembership?.expireAt 
-                                          ? new Date(currentMembership.expireAt).toLocaleDateString() 
-                                          : (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString() : '永久有效')}
-                                    </span>
-                                 </div>
-
-                                 <div className="flex items-center gap-3 text-slate-700">
-                                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                                       <Zap className="w-4 h-4 text-purple-600" />
-                                    </div>
-                                    <span className="font-medium">今日剩余翻译次数：无限次</span>
-                                 </div>
-                              </div>
-                              
-                              <div className="mt-6 flex gap-3">
-                                 <button 
-                                    onClick={() => navigate('/jobs')}
-                                    className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors inline-flex items-center gap-2 shadow-lg shadow-slate-200"
-                                 >
-                                    直通全站岗位
-                                    <ArrowRight className="w-4 h-4" />
-                                 </button>
-                              </div>
-                           </div>
-
-                           {/* Group QR Code */}
-                           <div className="w-full md:w-auto flex flex-col items-center bg-indigo-50/50 rounded-2xl p-6 border border-indigo-100">
-                              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                 <Users className="w-5 h-5 text-indigo-600" />
-                                 会员专属服务群
-                              </h3>
-                              <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-3">
-                                 {/* Feishu Group QR */}
-                                 <img 
-                                    src="/dingtalk.jpg" 
-                                    alt="DingTalk Group QR" 
-                                    className="w-32 h-32 object-contain rounded-lg"
-                                 />
-                              </div>
-                              <p className="text-xs text-slate-500 text-center max-w-[160px]">
-                                 请使用钉钉扫码加入<br/>快速获取响应和支持
-                              </p>
-                           </div>
-                        </div>
                      </div>
                   </div>
 
-                  {/* 2. Recommended Jobs */}
+                  {/* Recommended Jobs — single-column list format */}
                   <div>
-                     <div className="flex items-center justify-between mb-6">
+                     <div className="flex items-center justify-between mb-5">
                         <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
                            会员专属推荐
                         </h3>
-                        <button 
+                        <button
                            onClick={() => navigate('/jobs')}
-                           className="text-sm text-indigo-600 font-medium hover:underline flex items-center gap-1"
+                           className="text-sm text-indigo-600 font-medium hover:text-indigo-700 hover:underline flex items-center gap-1 transition-colors"
                         >
                            查看更多 <ChevronRight className="w-4 h-4" />
                         </button>
                      </div>
-                     
+
                      <div className="flex flex-col gap-4">
                         {recommendedJobs.length > 0 ? (
                            recommendedJobs.map(job => (
-                              <JobCardNew 
-                                 key={job.id} 
-                                 job={job} 
+                              <JobCardNew
+                                 key={job.id}
+                                 job={job}
                                  variant="list"
                                  matchScore={job.matchScore || undefined}
                                  onClick={() => navigate(`/jobs?jobId=${job.id}`)}
@@ -540,8 +387,8 @@ const MembershipPage: React.FC = () => {
                            ))
                         ) : (
                            <div className="w-full text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
-                              <Loader2 className="w-8 h-8 text-slate-300 animate-spin mx-auto mb-2" />
-                              <p className="text-slate-500">正在为您生成推荐...</p>
+                              <Loader2 className="w-8 h-8 text-slate-300 animate-spin mx-auto mb-3" />
+                              <p className="text-slate-500 text-sm">正在利用 AI 为您匹配最适合的岗位...</p>
                            </div>
                         )}
                      </div>
@@ -551,30 +398,232 @@ const MembershipPage: React.FC = () => {
          )}
 
 
-            {/* FAQ / Trust Section */}
-            <div className="mt-24 max-w-4xl mx-auto">
-               <div className="text-center mb-12">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-4">常见问题解答</h2>
-                  <p className="text-slate-500">了解更多关于会员权益的细节</p>
+         {/* Benefits Section */}
+         <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
+            <div className="text-center mb-12">
+               <h2 className="text-3xl font-bold text-slate-900 mb-3">会员权益 & 职业加速</h2>
+               <p className="text-slate-500 text-lg">专享俱乐部核心权益，为您铺展成功之路</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+               {/* Benefit 1 */}
+               <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] border border-white shadow-xl shadow-slate-200/40 hover:-translate-y-1 transition-transform">
+                  <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
+                     <Sparkles className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">AI 远程工作助手<br /><span className="text-base text-slate-700 font-semibold mt-1 block">智能求职 Copilot</span></h3>
+                  <p className="text-slate-500 leading-relaxed text-sm">
+                     您的专属 AI 求职 Copilot。智能生成个性化求职方案与行动计划，提供简历优化建议及面试回答思路。全天 24 小时智能辅助，让您在每个环节都准备充分。
+                  </p>
                </div>
-
-               <div className="grid md:grid-cols-2 gap-6">
-                  {[
-                     { q: "什么是内推直达？", a: "您可以在岗位申请页面选择邮箱直申，包括招聘邮箱、高管邮箱等（已经过认证的企业内部邮箱），让您的简历超过90%+候选人更快一步到达企业。" },
-                     { q: "怎么加入会员？", a: "当前处于内测阶段，会员仅限邀请，在当前页面填写申请后，我们将在3天内回复，请注意填写正确的联系方式。" },
-                     { q: "这里的岗位可靠吗？", a: "当前所有岗位都经过了人工审核，对于会员用户还会通过历史申请记录的追踪来增强岗位可信度的判断。" },
-                     { q: "远程岗位的薪资如何保障", a: "远程岗位里有全职、实习、合同工等多种情况，会依据具体企业、具体岗位来定，有些会在岗位详情页说明，有些需要在面试中沟通。" }
-                  ].map((faq, i) => (
-                     <div key={i} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                        <h3 className="font-bold text-slate-900 mb-3 flex items-start gap-2">
-                           <span className="text-indigo-600 text-lg">Q.</span>
-                           {faq.q}
-                        </h3>
-                        <p className="text-slate-500 text-sm leading-relaxed pl-6 border-l-2 border-slate-100">{faq.a}</p>
-                     </div>
-                  ))}
+               {/* Benefit 2 */}
+               <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] border border-white shadow-xl shadow-slate-200/40 hover:-translate-y-1 transition-transform">
+                  <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                     <Briefcase className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">精选高薪岗位直达<br /><span className="text-base text-slate-700 font-semibold mt-1 block">高薪岗位直达通道</span></h3>
+                  <p className="text-slate-500 leading-relaxed text-sm">
+                     独家获取经人工严选的高薪远程机会。我们为您过滤低质量信息，直达经过验证的优质海外企业，让每一次申请都值得。
+                  </p>
+               </div>
+               {/* Benefit 3 */}
+               <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] border border-white shadow-xl shadow-slate-200/40 hover:-translate-y-1 transition-transform">
+                  <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                     <Target className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">个性化职业规划<br /><span className="text-base text-slate-700 font-semibold mt-1 block">专家级 1V1 职业规划</span></h3>
+                  <p className="text-slate-500 leading-relaxed text-sm">
+                     专家级 1V1 职业咨询，为您量身定制远程职业发展路径。从个人优势挖掘到全球品牌建设，助您在国际职场中脱颖而出。
+                  </p>
                </div>
             </div>
+         </div>
+
+         {/* Pricing Plans Section */}
+         <div id="pricing-plans" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-20">
+            <div className="text-center mb-16">
+               <h2 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">选择您的全球成功之路</h2>
+               <p className="text-slate-500 text-lg">选择最适合您的探索方案，即刻启程</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-center">
+               {plans.map((plan) => {
+                  return (
+                     <div
+                        key={plan.id}
+                        className={`relative rounded-[2.5rem] p-10 transition-all duration-500 group flex flex-col bg-white ${plan.isPlus && plan.id !== 'goo_plus_yearly'
+                           ? 'border-2 border-indigo-200 shadow-2xl shadow-indigo-200/50 hover:-translate-y-2 z-10 md:scale-105'
+                           : 'border shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1 border-slate-200'
+                           }`}
+                     >
+                        {plan.isPlus && plan.id !== 'goo_plus_yearly' && (
+                           <div className="absolute -top-4 right-8 bg-gradient-to-r from-indigo-600 to-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-indigo-500/30 tracking-widest uppercase flex items-center gap-1.5">
+                              <Star className="w-3.5 h-3.5 fill-white" />
+                              最受欢迎
+                           </div>
+                        )}
+
+                        <div className="mb-8 text-center border-b border-slate-100 pb-8">
+                           <h3 className={`text-2xl font-extrabold mb-3 text-slate-900`}>
+                              {plan.name}
+                           </h3>
+                           <div className="flex justify-center items-baseline gap-1 mb-2">
+                              {plan.originalPrice && (
+                                 <span className="text-lg text-slate-400 line-through mr-1 font-medium">
+                                    ¥{plan.originalPrice}
+                                 </span>
+                              )}
+                              <span className="text-5xl font-extrabold tracking-tight text-slate-900">¥{plan.price}</span>
+                              <span className="text-sm font-bold text-slate-500">
+                                 /{plan.duration_days > 90 ? '年' : '季度'}
+                              </span>
+                           </div>
+
+                           <div className="mb-4 flex flex-col items-center gap-2 min-h-[3.5rem]">
+                              {plan.discountLabel && (
+                                 <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-medium border border-slate-200">
+                                    {plan.discountLabel}
+                                 </span>
+                              )}
+                              {plan.originalPrice && plan.originalPrice > plan.price && (
+                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                                    限时立省 ¥{plan.originalPrice - plan.price}
+                                 </span>
+                              )}
+                           </div>
+
+                           <p className="text-sm text-slate-500 font-medium px-4">
+                              {plan.isPlus ? '适合致力于长期职业发展与个人品牌建设' : '适合专注短期成长与快速求职'}
+                           </p>
+                           <p className="text-xs text-slate-400 mt-2 px-4 line-clamp-2 min-h-8">
+                              {plan.description}
+                           </p>
+                        </div>
+
+                        <ul className="space-y-4 mb-10 flex-1 px-2">
+                           {plan.features.map((feature, idx) => (
+                              <li key={idx} className="flex items-start gap-4">
+                                 <div className="mt-0.5 w-6 h-6 flex items-center justify-center flex-shrink-0">
+                                    <Check className="w-5 h-5 text-indigo-500" strokeWidth={3} />
+                                 </div>
+                                 <span className="text-[15px] font-medium leading-relaxed text-slate-700">
+                                    {feature}
+                                 </span>
+                              </li>
+                           ))}
+                        </ul>
+
+                        <button
+                           onClick={() => handleSubscribe(plan)}
+                           disabled={isMember || (plan.id === 'goo_plus_yearly')}
+                           className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 relative overflow-hidden group/btn ${isMember
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                              : (plan.id === 'goo_plus_yearly')
+                                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                                 : plan.isPlus
+                                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-xl shadow-indigo-500/30'
+                                    : 'bg-[#0F172A] hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20'
+                              }`}
+                        >
+                           {isMember ? (
+                              <>
+                                 <CheckCircle2 className="w-5 h-5" />
+                                 当前会员 (生效中)
+                              </>
+                           ) : (plan.id === 'goo_plus_yearly') ? (
+                              <>
+                                 3月1日开放
+                              </>
+                           ) : plan.isPlus ? (
+                              <>
+                                 解锁高级权益
+                                 <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                              </>
+                           ) : (
+                              <>
+                                 立即加入
+                                 <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                              </>
+                           )}
+                        </button>
+                     </div>
+                  );
+               })}
+            </div>
+         </div>
+
+         {/* Social Proof: Success Stories */}
+         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div className="text-center mb-12">
+               <h2 className="text-3xl font-extrabold text-slate-900 mb-3">来自社区的成功故事</h2>
+               <p className="text-slate-500 text-lg">来自海狗远程俱乐部的一线反馈</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+               <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative">
+                  <Quote className="absolute top-6 left-6 w-10 h-10 text-indigo-100 fill-indigo-50" />
+                  <p className="text-slate-700 leading-relaxed font-medium mb-8 relative z-10 pl-6 pt-2">
+                     "在这里遇到了自己非常喜欢的工作，跟专业背景对口，薪资很满意，还帮我拓展了海外客户。非常感谢海狗远程俱乐部。"
+                  </p>
+                  <div className="flex items-center gap-4">
+                     <img src="/flora.jpg" alt="Flora" className="w-12 h-12 rounded-full object-cover bg-slate-100" />
+                     <div>
+                        <div className="font-bold text-slate-900">Flora</div>
+                        <div className="text-sm text-slate-500">心理咨询师</div>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative">
+                  <Quote className="absolute top-6 left-6 w-10 h-10 text-blue-100 fill-blue-50" />
+                  <p className="text-slate-700 leading-relaxed font-medium mb-8 relative z-10 pl-6 pt-2">
+                     "很满意通过这个找到了工作，也顺利入职了。如果遇到和自己匹配的岗位，各位不妨试一试及时出手。"
+                  </p>
+                  <div className="flex items-center gap-4">
+                     <img src="/fuduoduo.jpg" alt="福多多" className="w-12 h-12 rounded-full object-cover bg-slate-100" />
+                     <div>
+                        <div className="font-bold text-slate-900">福多多</div>
+                        <div className="text-sm text-slate-500">粤语客服</div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         {/* Trusted Partners */}
+         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center mt-8 mb-16">
+            <h3 className="text-base font-bold text-slate-400 uppercase tracking-widest mb-10">全球合作伙伴信赖</h3>
+            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+               <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><HardDrive className="w-6 h-6" /> Red Mountain</div>
+               <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><Building className="w-6 h-6" /> Bodhitree Group</div>
+               <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><GraduationCap className="w-6 h-6" /> VitaStep</div>
+               <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><CircuitBoard className="w-6 h-6" /> ClarityInfra</div>
+               <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><Landmark className="w-6 h-6" /> Fintech社区</div>
+            </div>
+         </div>
+
+         {/* FAQ Section */}
+         <div className="max-w-4xl mx-auto pb-32 px-4">
+            <div className="text-center mb-16">
+               <h2 className="text-3xl font-bold text-slate-900 mb-4">常见问题解答</h2>
+               <p className="text-slate-500 text-lg">了解更多关于会员权益的细节</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+               {[
+                  { q: "这里的岗位可靠吗？", a: "当前所有岗位都经过了人工审核，对于会员用户还会通过历史申请记录的追踪来增强岗位可信度的判断。" },
+                  { q: "加入会员后如有疑问联系谁？", a: "支付后24小时内权益会生效。会员生效后页面有会员社群可以加入，以提供会员服务和答疑支持。" },
+                  { q: "什么是内推直达？", a: "您可以在岗位申请页面选择邮箱直申，包括招聘邮箱、高管邮箱等（已经过认证的企业内部邮箱），让您的简历超过90%+候选人更快一步到达企业。" },
+                  { q: "会员方案是否可以变更或退款？", a: "会员支付后48小时内可以申请变更方案或退款，可以发邮件到「hi@haigooremote.com」写明原因并发送申请。我们将在审核后3个工作日内联系您退款或变更方案。建议在邮件里留下微信ID或联系方式便于交流。" }
+               ].map((faq, i) => (
+                  <div key={i} className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                     <h3 className="font-bold text-slate-900 mb-4 flex items-start gap-3 text-lg">
+                        <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">?</span>
+                        {faq.q}
+                     </h3>
+                     <p className="text-slate-500 leading-relaxed pl-9">{faq.a}</p>
+                  </div>
+               ))}
+            </div>
+         </div>
 
          {/* Certificate Modal */}
          {user && (
@@ -590,169 +639,128 @@ const MembershipPage: React.FC = () => {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setShowPaymentModal(false)}></div>
 
-               <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300 scale-100">
-                  {/* Header */}
-                  <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                     <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <Zap className="w-5 h-5 text-indigo-500 fill-indigo-500" />
-                        确认订单
-                     </h3>
-                     <button
-                        onClick={() => setShowPaymentModal(false)}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
-                     >
-                        <span className="text-xl leading-none">&times;</span>
-                     </button>
-                  </div>
+               <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-300 scale-100 flex flex-col md:flex-row max-h-[90vh] md:max-h-[600px]">
+                  {/* Left Side: Order Details */}
+                  <div className="w-full md:w-5/12 bg-slate-50 border-r border-slate-100 p-8 flex flex-col">
+                     <div className="flex justify-between items-center mb-8 md:hidden">
+                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                           <Zap className="w-5 h-5 text-indigo-500 fill-indigo-500" />
+                           确认订单
+                        </h3>
+                        <button
+                           onClick={() => setShowPaymentModal(false)}
+                           className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+                        >
+                           <span className="text-xl leading-none">&times;</span>
+                        </button>
+                     </div>
 
-                  <div className="p-6 md:p-8">
-                     {/* Order Summary Card */}
-                     <div className="flex justify-between items-center mb-8 bg-gradient-to-br from-indigo-50 to-slate-50 p-5 rounded-2xl border border-indigo-100/50">
-                        <div>
-                           <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">订阅方案</p>
-                           <p className="font-bold text-slate-900 text-lg">{selectedPlan.name}</p>
-                        </div>
-                        <div className="text-right">
-                           <p className="text-xs text-slate-500 mb-1">支付金额</p>
-                           <p className="text-3xl font-bold text-indigo-600">¥{selectedPlan.price}</p>
+                     <div className="mb-10">
+                        <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-2">订阅方案</p>
+                        <h4 className="font-bold text-slate-900 text-3xl mb-3 leading-tight">{selectedPlan.name}</h4>
+                        <div className="flex items-baseline gap-1">
+                           <span className="text-4xl font-bold text-slate-900">¥{selectedPlan.price}</span>
+                           <span className="text-sm font-medium text-slate-500">/{selectedPlan.duration_days > 90 ? '年' : '季度'}</span>
                         </div>
                      </div>
 
-                     {!paymentInfo ? (
-                        <div className="space-y-6">
-                           <div>
-                              <p className="font-medium text-slate-900 mb-3 text-sm">选择支付方式</p>
-                              <div className="grid grid-cols-2 gap-4">
-                                 <button
-                                    onClick={() => setPaymentMethod('wechat')}
-                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'wechat'
-                                       ? 'border-green-500 bg-green-50/30'
-                                       : 'border-slate-100 hover:border-green-100 hover:bg-green-50/10'
-                                       }`}
-                                 >
-                                    {paymentMethod === 'wechat' && (
-                                       <div className="absolute top-2 right-2 text-green-500">
-                                          <Check className="w-4 h-4" />
-                                       </div>
-                                    )}
-                                    <span className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
-                                       <ShieldCheck className="w-5 h-5" />
-                                    </span>
-                                    <span className="text-slate-900 font-bold text-sm">微信支付</span>
-                                 </button>
-
-                                 <button
-                                    onClick={() => setPaymentMethod('alipay')}
-                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'alipay'
-                                       ? 'border-blue-500 bg-blue-50/30'
-                                       : 'border-slate-100 hover:border-blue-100 hover:bg-blue-50/10'
-                                       }`}
-                                 >
-                                    {paymentMethod === 'alipay' && (
-                                       <div className="absolute top-2 right-2 text-blue-500">
-                                          <Check className="w-4 h-4" />
-                                       </div>
-                                    )}
-                                    <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
-                                       <Zap className="w-5 h-5" />
-                                    </span>
-                                    <span className="text-slate-900 font-bold text-sm">支付宝</span>
-                                 </button>
-                                 
-                                 {/* Legacy / Manual Options */}
-                                 <button
-                                    onClick={() => setPaymentMethod('xiaohongshu')}
-                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'xiaohongshu'
-                                       ? 'border-red-500 bg-red-50/30'
-                                       : 'border-slate-100 hover:border-red-100 hover:bg-red-50/10'
-                                       }`}
-                                 >
-                                    {paymentMethod === 'xiaohongshu' && (
-                                       <div className="absolute top-2 right-2 text-red-500">
-                                          <Check className="w-4 h-4" />
-                                       </div>
-                                    )}
-                                    <span className="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
-                                       <Gift className="w-5 h-5" />
-                                    </span>
-                                    <span className="text-slate-900 font-bold text-sm">小红书</span>
-                                 </button>
-
-                                 <button
-                                    onClick={() => setPaymentMethod('wechat_transfer')}
-                                    className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 group ${paymentMethod === 'wechat_transfer'
-                                       ? 'border-emerald-500 bg-emerald-50/30'
-                                       : 'border-slate-100 hover:border-emerald-100 hover:bg-emerald-50/10'
-                                       }`}
-                                 >
-                                    {paymentMethod === 'wechat_transfer' && (
-                                       <div className="absolute top-2 right-2 text-emerald-500">
-                                          <Check className="w-4 h-4" />
-                                       </div>
-                                    )}
-                                    <span className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
-                                       <Users className="w-5 h-5" />
-                                    </span>
-                                    <span className="text-slate-900 font-bold text-sm">人工转账</span>
-                                 </button>
-                              </div>
-                           </div>
+                     <div className="flex-1">
+                        <p className="font-bold text-slate-900 mb-4 text-sm">选择支付方式</p>
+                        <div className="space-y-3">
+                           <button
+                              onClick={() => setPaymentMethod('alipay')}
+                              className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 group ${paymentMethod === 'alipay'
+                                 ? 'border-blue-500 bg-blue-50/50 shadow-sm'
+                                 : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'
+                                 }`}
+                           >
+                              <span className="w-10 h-10 rounded-full bg-[#1677FF] text-white flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                                 <Zap className="w-5 h-5 fill-current" />
+                              </span>
+                              <span className="text-slate-900 font-bold text-sm flex-1 text-left">支付宝</span>
+                              {paymentMethod === 'alipay' && <CheckCircle2 className="w-5 h-5 text-blue-500" />}
+                           </button>
 
                            <button
-                              onClick={handleCreatePayment}
-                              className="w-full py-4 bg-slate-900 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-slate-200 hover:shadow-indigo-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
+                              onClick={() => setPaymentMethod('wechat')}
+                              className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 group ${paymentMethod === 'wechat'
+                                 ? 'border-green-500 bg-green-50/50 shadow-sm'
+                                 : 'border-slate-200 bg-white hover:border-green-200 hover:bg-slate-50'
+                                 }`}
                            >
-                              立即支付 <span className="text-indigo-200">¥{selectedPlan.price}</span>
+                              <span className="w-10 h-10 rounded-full bg-[#07C160] text-white flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                                 <ShieldCheck className="w-5 h-5" />
+                              </span>
+                              <span className="text-slate-900 font-bold text-sm flex-1 text-left">微信支付</span>
+                              {paymentMethod === 'wechat' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
                            </button>
                         </div>
-                     ) : (
-                        <div className="text-center">
-                           <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                              {paymentInfo.imageUrl ? (
-                                 <>
-                                    <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 inline-block mb-4">
-                                       <img src={paymentInfo.imageUrl} alt="Payment QR" className="w-40 h-40 object-contain rounded-lg" />
-                                    </div>
-                                    <p className="text-xs text-slate-400 mb-4">请使用{paymentMethod === 'xiaohongshu' ? '小红书' : '微信'}扫码支付</p>
-                                 </>
-                              ) : null}
+                     </div>
 
-                              <p className="text-slate-800 font-medium mb-2">{paymentInfo.instruction}</p>
+                     <div className="mt-8 pt-6 border-t border-slate-200 hidden md:block">
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                           如有任何支付问题，请联系客服邮箱：<br />
+                           <a href="mailto:hi@haigooremote.com" className="text-indigo-600 font-medium hover:underline">hi@haigooremote.com</a>
+                        </p>
+                     </div>
+                  </div>
 
-                              {paymentInfo.url && (
-                                 <a
-                                    href={paymentInfo.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-indigo-600 font-bold hover:underline hover:text-indigo-700 transition-colors"
-                                 >
-                                    点击跳转支付链接 <ArrowRight className="w-4 h-4" />
-                                 </a>
-                              )}
-                           </div>
+                  {/* Right Side: QR Code */}
+                  <div className="w-full md:w-7/12 bg-white p-6 md:p-10 flex flex-col items-center justify-center text-center relative overflow-y-auto">
+                     <button
+                        onClick={() => setShowPaymentModal(false)}
+                        className="absolute top-4 right-4 w-8 h-8 hidden md:flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                     >
+                        <span className="text-xl leading-none">&times;</span>
+                     </button>
 
-                           {/* Dev Helper - Only show in dev */}
-                           {currentPaymentId && process.env.NODE_ENV === 'development' && (
-                              <button onClick={() => currentPaymentId && handleDevConfirm(currentPaymentId)} className="mb-4 text-xs text-amber-500 hover:text-amber-600 underline">Dev Only: Auto Confirm Payment</button>
-                           )}
+                     <div className="mb-6 w-full max-w-xs mx-auto flex-shrink-0">
+                        <div className="bg-white p-3 rounded-2xl shadow-lg border border-slate-100 inline-block mb-4">
+                           <img
+                              src={currentPaymentInfo.imageUrl}
+                              alt="Payment QR"
+                              className="w-40 h-40 object-contain rounded-lg"
+                           />
+                        </div>
+                        <p className="text-slate-900 font-bold text-lg mb-1">{currentPaymentInfo.instruction}</p>
+                        <p className="text-slate-400 text-xs">请使用手机扫码完成支付</p>
+                     </div>
 
-                           <div className="space-y-3">
-                              <button
-                                 onClick={handlePaymentComplete}
-                                 className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2"
-                              >
-                                 <Check className="w-5 h-5" />
-                                 我已完成支付
-                              </button>
-                              <button
-                                 onClick={() => setPaymentInfo(null)}
-                                 className="text-slate-400 text-sm hover:text-slate-600 py-2 transition-colors"
-                              >
-                                 返回重新选择支付方式
-                              </button>
+                     <div className="w-full max-w-sm flex-shrink-0">
+                        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-xs text-amber-900 mb-6 text-left shadow-sm">
+                           <p className="font-bold mb-2 flex items-center gap-2 text-amber-700">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                              重要：付款备注说明
+                           </p>
+                           <p className="mb-2 text-amber-800/80 leading-relaxed">付款时请务必在【添加备注】处填入您的注册邮箱，以便系统自动核销：</p>
+                           <div className="flex items-center gap-2 bg-white p-2.5 rounded-lg border border-amber-200 shadow-sm group cursor-pointer hover:border-amber-300 transition-all hover:shadow-md"
+                              onClick={() => {
+                                 navigator.clipboard.writeText(user?.email || '');
+                                 alert('邮箱已复制');
+                              }}
+                           >
+                              <code className="flex-1 font-mono text-slate-700 break-all font-bold select-all text-sm">{user?.email || '您的邮箱'}</code>
+                              <Copy className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-600" />
                            </div>
                         </div>
-                     )}
+
+                        <button
+                           onClick={handlePaymentComplete}
+                           className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98] text-base"
+                        >
+                           <CheckCircle2 className="w-5 h-5" />
+                           我已完成支付
+                        </button>
+                        <p className="text-[10px] text-slate-400 mt-3 font-medium">
+                           * 支付后权益将在 24 小时内开通
+                        </p>
+
+                        <div className="mt-6 pt-6 border-t border-slate-100 md:hidden text-center">
+                           <p className="text-xs text-slate-400">
+                              客服邮箱：<a href="mailto:hi@haigooremote.com" className="text-indigo-600 font-medium">hi@haigooremote.com</a>
+                           </p>
+                        </div>
+                     </div>
                   </div>
                </div>
             </div>

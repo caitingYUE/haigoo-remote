@@ -38,3 +38,53 @@ CREATE INDEX IF NOT EXISTS idx_trusted_companies_source ON trusted_companies(sou
 -- 2026-02-02: Unified Subscription System
 -- Description: Add preferences column to subscriptions table to store detailed job tracking criteria
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS preferences JSONB;
+
+-- 2026-02-19: Remote Work Copilot
+-- Description: Store user copilot sessions and ensure resume URL in users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS resume_url VARCHAR(1024);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS has_used_copilot_trial BOOLEAN DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS copilot_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+    goal VARCHAR(50), -- 'full-time', 'part-time', 'freelance'
+    timeline VARCHAR(50), -- 'immediately', '1-3 months', etc.
+    background JSONB, -- { education, industry, seniority, language }
+    plan_data JSONB, -- Generated AI plan
+    is_trial BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_copilot_sessions_user_id ON copilot_sessions(user_id);
+
+-- 2026-02-20: Fix Missing Columns and Tables
+-- Description: Add missing job_bundles table and columns for favorites snapshots and hiring email
+
+-- 1. Job Bundles
+CREATE TABLE IF NOT EXISTS job_bundles (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    subtitle VARCHAR(255),
+    content TEXT,
+    job_ids JSONB DEFAULT '[]',
+    priority INT DEFAULT 10,
+    start_time TIMESTAMP WITH TIME ZONE,
+    end_time TIMESTAMP WITH TIME ZONE,
+    is_public BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 6. Add index for match_score sorting
+CREATE INDEX IF NOT EXISTS idx_user_job_matches_score ON user_job_matches(match_score DESC);
+
+-- 2026-02-21: Add missing snapshot columns and hiring_email
+-- 1. Add snapshot columns to user_job_interactions
+ALTER TABLE user_job_interactions 
+ADD COLUMN IF NOT EXISTS job_title_snapshot VARCHAR(255),
+ADD COLUMN IF NOT EXISTS company_name_snapshot VARCHAR(255);
+
+-- 2. Add hiring_email to trusted_companies
+ALTER TABLE trusted_companies 
+ADD COLUMN IF NOT EXISTS hiring_email VARCHAR(255);
