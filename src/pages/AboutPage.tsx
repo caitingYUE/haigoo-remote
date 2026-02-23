@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Users, Globe, Briefcase, Heart, Share2, Target, Rocket, ArrowRight, Zap, Building2 } from 'lucide-react'
+import { Users, Globe, Briefcase, Heart, Share2, Target, Rocket, ArrowRight, Zap, Building2, Linkedin } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { XiaohongshuLogo } from '../components/SocialIcons'
@@ -258,6 +258,111 @@ export default function AboutPage() {
                 className="w-full rounded-2xl shadow-2xl object-cover aspect-[4/5] transform -rotate-2 hover:rotate-0 transition-transform duration-500"
               />
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Key Contributors Section */}
+      <div className="py-24 sm:py-32 bg-[#F8F9FC]">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl mb-4">
+              我们重要的贡献者与伙伴
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Haigoo 社区的成长离不开每一位核心贡献者的倾情建言与支持。
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
+            {[
+              {
+                name: '张小刀',
+                title: '全栈工程师，Haigoo 联创及技术顾问',
+                image: '/contributors/1.jpg',
+                social: 'https://xhslink.com/m/r4e0z3tC9z',
+                socialType: 'xiaohongshu'
+              },
+              {
+                name: 'Priscilla',
+                title: '金融投资人，Haigoo 早期联创',
+                image: '/contributors/2.jpg',
+                social: 'https://xhslink.com/m/3qM51xfogQy',
+                socialType: 'xiaohongshu'
+              },
+              {
+                name: 'Jason',
+                title: '产品专家，Haigoo 早期联创',
+                image: '/contributors/3.jpg',
+                social: 'https://xhslink.com/m/1roMyikbrEq',
+                socialType: 'xiaohongshu'
+              },
+              {
+                name: '吴槿彦',
+                title: '工程经理，俱乐部早期共建者',
+                image: '/contributors/4.jpg',
+                social: 'https://xhslink.com/m/63TkmmRSA8',
+                socialType: 'xiaohongshu'
+              },
+              {
+                name: 'Suzy',
+                title: '产品经理，俱乐部早期共建者',
+                image: '/contributors/5.jpg',
+                social: null,
+                socialType: null
+              },
+              {
+                name: 'Kia',
+                title: '营销专家，俱乐部早期共建者',
+                image: '/contributors/6.jpg',
+                social: 'https://xhslink.com/m/1DsvfxTMRcK',
+                socialType: 'xiaohongshu'
+              },
+              {
+                name: 'Ada Xu',
+                title: '海外人力资源专家，俱乐部特邀嘉宾',
+                image: '/contributors/7.jpeg',
+                social: 'https://www.linkedin.com/in/ada-xu-08308469/',
+                socialType: 'linkedin'
+              },
+              {
+                name: 'David',
+                title: '增长营销专家，俱乐部特邀嘉宾',
+                image: '/contributors/8.jpg',
+                social: 'https://www.linkedin.com/in/daoud-bouacha/',
+                socialType: 'linkedin'
+              }
+            ].map((contributor, index) => (
+              <div key={index} className="flex flex-col items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                <img
+                  src={contributor.image}
+                  alt={contributor.name}
+                  className="w-24 h-24 rounded-full object-cover object-center ring-4 ring-indigo-50 shadow-sm mb-4"
+                />
+                <h3 className="text-lg font-bold text-slate-900 mb-1">{contributor.name}</h3>
+                <p className="text-sm text-slate-500 text-center mb-4 min-h-[40px] leading-relaxed">
+                  {contributor.title}
+                </p>
+                {contributor.social ? (
+                  <a
+                    href={contributor.social}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center justify-center p-2 rounded-full transition-colors ${contributor.socialType === 'xiaohongshu'
+                        ? 'bg-red-50 text-[#FF2442] hover:bg-red-100'
+                        : 'bg-blue-50 text-[#0A66C2] hover:bg-blue-100'
+                      }`}
+                  >
+                    {contributor.socialType === 'xiaohongshu' ? (
+                      <XiaohongshuLogo className="w-5 h-5" />
+                    ) : (
+                      <Linkedin className="w-5 h-5" />
+                    )}
+                  </a>
+                ) : (
+                  <div className="h-9"></div> /* Placeholder to keep alignment */
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
