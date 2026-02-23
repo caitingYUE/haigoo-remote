@@ -22,106 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.VSCodeCounter
+
+# Vercel
+.vercel
 
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+!.env.development.example
+!.env.production.example
 
-# API keys and secrets
-*.key
-*.pem
-secrets/
+# Trae AI
+.trae/
 
-# Build outputs
-build/
-out/
-
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
-node_modules/
-jspm_packages/
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-dist
-
-# Storybook build outputs
-.out
-.storybook-out
-
-# Temporary folders
-tmp/
-temp/
-.vercel
-
-# Test and development files
-*.test.js
-*.test.ts
-*.test.tsx
-*.spec.js
-*.spec.ts
-*.spec.tsx
-test-results/
-coverage/
-
-# IDE and editor files
-*.swp
-*.swo
-*~
-.vscode/settings.json
-.vscode/launch.json
-.vscode/tasks.json
-
-# OS generated files
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Prototype and design files
-UI_html/
-*.html.backup
-*.prototype.html
-code.html
-
-# API examples and test scripts
-api_example.py
-test_*.py
-example_*.py
+# Generated docs/assets that should not be in git
+archive/trusted-companies/
+archive/trusted-companies-export/
