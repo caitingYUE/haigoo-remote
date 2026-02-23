@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import {
-    BarChart3, Briefcase, ListTodo, Target, Loader2,
+    BarChart3, Briefcase, ListTodo, Target, Loader2, FileText,
     ChevronRight, AlertCircle, CheckCircle2, Clock, ArrowRight, RefreshCw, Sparkles
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -27,6 +27,10 @@ function CopilotPageInner() {
     const [activeTab, setActiveTab] = useState<TabKey>('readiness')
     const [initialized, setInitialized] = useState(false)
 
+    // Persist goal/timeline across tabs for plan generation
+    const [userGoal, setUserGoal] = useState('')
+    const [userTimeline, setUserTimeline] = useState('')
+
     useEffect(() => {
         if (!user) {
             navigate('/login')
@@ -38,6 +42,27 @@ function CopilotPageInner() {
     }, [user, initialized])
 
     if (!user) return null
+
+    // Loading skeleton
+    if (!initialized && loading) {
+        return (
+            <Layout>
+                <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+                    <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white">
+                        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+                            <div className="h-8 w-64 bg-white/20 rounded-lg animate-pulse" />
+                            <div className="h-4 w-96 bg-white/10 rounded-lg animate-pulse mt-3" />
+                        </div>
+                    </div>
+                    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+                        <div className="space-y-4">
+                            {[1, 2, 3].map(i => <div key={i} className="h-24 bg-slate-100 rounded-2xl animate-pulse" />)}
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        )
+    }
 
     return (
         <Layout>
@@ -64,8 +89,8 @@ function CopilotPageInner() {
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key)}
                                     className={`flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg border-b-2 whitespace-nowrap transition-colors ${activeTab === tab.key
-                                            ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
-                                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                                        ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
+                                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                                         }`}
                                 >
                                     <tab.icon className="w-4 h-4" />
@@ -85,9 +110,9 @@ function CopilotPageInner() {
                         </div>
                     )}
 
-                    {activeTab === 'readiness' && <ReadinessPanel />}
+                    {activeTab === 'readiness' && <ReadinessPanel onGoalSet={(g, t) => { setUserGoal(g); setUserTimeline(t) }} />}
                     {activeTab === 'jobs' && <JobMatchPanel />}
-                    {activeTab === 'plan' && <ActionPlanPanel />}
+                    {activeTab === 'plan' && <ActionPlanPanel userGoal={userGoal} userTimeline={userTimeline} />}
                 </div>
             </div>
         </Layout>
@@ -106,7 +131,7 @@ export default function CopilotPage() {
 // Panel: Readiness Assessment (M1)
 // ═══════════════════════════════════════════════════════════════════════════
 
-function ReadinessPanel() {
+function ReadinessPanel({ onGoalSet }: { onGoalSet?: (goal: string, timeline: string) => void }) {
     const { state, loading, callAction } = useCopilot()
     const readiness = state?.readinessData
     const [localLoading, setLocalLoading] = useState(false)
@@ -127,6 +152,8 @@ function ReadinessPanel() {
                 timeline,
                 background: { education, industry, seniority, language },
             })
+            // Persist goal & timeline for plan generation tab
+            onGoalSet?.(goal, timeline)
         } catch (e) { }
         setLocalLoading(false)
     }
@@ -163,8 +190,8 @@ function ReadinessPanel() {
                         </div>
                         <div>
                             <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${readiness.readiness_level === 'high' ? 'bg-green-100 text-green-700' :
-                                    readiness.readiness_level === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                        'bg-red-100 text-red-700'
+                                readiness.readiness_level === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
                                 }`}>
                                 {readiness.readiness_level === 'high' ? '高适配度' : readiness.readiness_level === 'medium' ? '中适配度' : '低适配度'}
                             </div>
@@ -330,6 +357,7 @@ function ReadinessPanel() {
 function JobMatchPanel() {
     const { state, jobMatches, loading, callAction } = useCopilot()
     const [localLoading, setLocalLoading] = useState(false)
+    const [extracting, setExtracting] = useState(false)
 
     const handleMatch = async () => {
         setLocalLoading(true)
@@ -339,10 +367,45 @@ function JobMatchPanel() {
         setLocalLoading(false)
     }
 
+    const handleExtractResume = async () => {
+        setExtracting(true)
+        try {
+            // This will use the user's latest resume
+            await callAction('extract-resume', { resumeId: null })
+        } catch (e) { }
+        setExtracting(false)
+    }
+
     const hasResume = state?.resumeStructured != null
 
     return (
         <div className="space-y-6">
+            {/* Resume status card */}
+            {!hasResume && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+                    <div className="flex items-start gap-3">
+                        <FileText className="w-5 h-5 text-amber-600 flex-none mt-0.5" />
+                        <div className="flex-1">
+                            <h3 className="font-medium text-amber-800 text-sm">需要先解析简历</h3>
+                            <p className="text-xs text-amber-600 mt-1">岗位匹配需要你的技能和经验数据。请先在「个人中心」上传简历，然后点击下方按钮进行解析。</p>
+                            <div className="flex gap-2 mt-3">
+                                <Link to="/profile" className="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition-colors">
+                                    前往上传简历
+                                </Link>
+                                <button
+                                    onClick={handleExtractResume}
+                                    disabled={extracting}
+                                    className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-1"
+                                >
+                                    {extracting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                                    解析已有简历
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-slate-900">智能岗位匹配</h2>
@@ -356,23 +419,18 @@ function JobMatchPanel() {
                     </button>
                 </div>
 
-                {!hasResume ? (
+                {jobMatches.length === 0 ? (
                     <div className="text-center py-12 text-slate-500">
                         <Briefcase className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                        <p className="text-sm">请先在「个人中心」上传简历，然后点击刷新匹配</p>
-                    </div>
-                ) : jobMatches.length === 0 ? (
-                    <div className="text-center py-12 text-slate-500">
-                        <Briefcase className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                        <p className="text-sm">点击「开始匹配」，AI 将基于你的简历为你找到最合适的远程岗位</p>
+                        <p className="text-sm">{hasResume ? '点击「开始匹配」查看最合适的远程岗位' : '完成简历解析后即可开始匹配'}</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        <p className="text-xs text-slate-400">基于你的技能和背景，从 {jobMatches.length} 个活跃岗位中匹配</p>
+                        <p className="text-xs text-slate-400">基于你的技能和背景，命中 {jobMatches.length} 个岗位</p>
                         {jobMatches.map((job: any, i: number) => (
                             <Link
                                 key={job.job_id || i}
-                                to={`/jobs/${job.job_id}`}
+                                to={`/job/${job.job_id}`}
                                 className="block p-4 bg-slate-50 rounded-xl hover:bg-indigo-50 transition-colors border border-slate-100 hover:border-indigo-200"
                             >
                                 <div className="flex items-start justify-between">
@@ -386,7 +444,7 @@ function JobMatchPanel() {
                                     </div>
                                     <div className="flex-none ml-4 text-right">
                                         <div className={`text-lg font-bold ${job.match_score >= 70 ? 'text-indigo-600' :
-                                                job.match_score >= 40 ? 'text-amber-600' : 'text-slate-400'
+                                            job.match_score >= 40 ? 'text-amber-600' : 'text-slate-400'
                                             }`}>
                                             {job.match_score}%
                                         </div>
@@ -406,16 +464,18 @@ function JobMatchPanel() {
 // Panel: Action Plan (M3)
 // ═══════════════════════════════════════════════════════════════════════════
 
-function ActionPlanPanel() {
+function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTimeline: string }) {
     const { state, tasks, loading, callAction } = useCopilot()
     const [localLoading, setLocalLoading] = useState(false)
+    const [planGoal, setPlanGoal] = useState(userGoal || 'full-time')
+    const [planTimeline, setPlanTimeline] = useState(userTimeline || '1-3 months')
 
     const handleCreate = async () => {
         setLocalLoading(true)
         try {
             await callAction('create-plan', {
-                goal: 'full-time',
-                timeline: '1-3 months',
+                goal: planGoal,
+                timeline: planTimeline,
             })
         } catch (e) { }
         setLocalLoading(false)
@@ -441,16 +501,38 @@ function ActionPlanPanel() {
     if (!planData || phases.length === 0) {
         return (
             <div className="max-w-2xl mx-auto">
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm text-center">
-                    <ListTodo className="w-12 h-12 mx-auto mb-4 text-indigo-300" />
-                    <h2 className="text-xl font-bold text-slate-900 mb-2">生成你的行动计划</h2>
-                    <p className="text-sm text-slate-500 mb-6">
-                        AI 会根据你的适配度评估结果，为你量身定制分阶段的远程求职行动计划，并支持任务跟踪。
-                    </p>
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+                    <div className="text-center mb-6">
+                        <ListTodo className="w-12 h-12 mx-auto mb-4 text-indigo-300" />
+                        <h2 className="text-xl font-bold text-slate-900 mb-2">生成你的行动计划</h2>
+                        <p className="text-sm text-slate-500">
+                            AI 会基于你的适配度评估结果，为你量身定制分阶段的远程求职行动计划。
+                        </p>
+                    </div>
+                    <div className="space-y-4 mb-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">求职目标</label>
+                            <select value={planGoal} onChange={e => setPlanGoal(e.target.value)} className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="full-time">全职远程工作</option>
+                                <option value="part-time">兼职/副业远程增收</option>
+                                <option value="freelance">职业转型/换赛道</option>
+                                <option value="market-watch">先了解远程市场</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">时间规划</label>
+                            <select value={planTimeline} onChange={e => setPlanTimeline(e.target.value)} className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="immediately">尽快入职（4周）</option>
+                                <option value="1-3 months">1-3个月（12周）</option>
+                                <option value="3-6 months">3-6个月（24周）</option>
+                                <option value="flexible">灵活安排（16周）</option>
+                            </select>
+                        </div>
+                    </div>
                     <button
                         onClick={handleCreate}
                         disabled={localLoading}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
                     >
                         {localLoading ? (
                             <><Loader2 className="w-5 h-5 animate-spin" /> 生成中...</>
@@ -458,7 +540,7 @@ function ActionPlanPanel() {
                             <><Sparkles className="w-5 h-5" /> 生成行动计划</>
                         )}
                     </button>
-                    <p className="text-xs text-slate-400 mt-3">此功能仅限会员使用</p>
+                    <p className="text-xs text-slate-400 mt-3 text-center">此功能仅限会员使用</p>
                 </div>
             </div>
         )
@@ -510,8 +592,8 @@ function ActionPlanPanel() {
                                         {task.task_name}
                                     </span>
                                     <span className={`text-xs px-2 py-0.5 rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                            task.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                                'bg-slate-100 text-slate-500'
+                                        task.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                            'bg-slate-100 text-slate-500'
                                         }`}>
                                         {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
                                     </span>
