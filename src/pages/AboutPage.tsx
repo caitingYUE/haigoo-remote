@@ -277,57 +277,57 @@ export default function AboutPage() {
             {[
               {
                 name: '张小刀',
-                title: '全栈工程师，Haigoo 联创及技术顾问',
-                image: '/contributors/1.jpg',
+                title: '全栈工程师，联创及技术顾问',
+                image: '/contributors/1.webp',
                 social: 'https://xhslink.com/m/r4e0z3tC9z',
                 socialType: 'xiaohongshu'
               },
               {
                 name: 'Priscilla',
-                title: '金融投资人，Haigoo 早期联创',
-                image: '/contributors/2.jpg',
+                title: '十年投资人，早期联创',
+                image: '/contributors/2.webp',
                 social: 'https://xhslink.com/m/3qM51xfogQy',
                 socialType: 'xiaohongshu'
               },
               {
                 name: 'Jason',
-                title: '产品专家，Haigoo 早期联创',
-                image: '/contributors/3.jpg',
+                title: '产品专家，早期联创',
+                image: '/contributors/3.webp',
                 social: 'https://xhslink.com/m/1roMyikbrEq',
                 socialType: 'xiaohongshu'
               },
               {
                 name: '吴槿彦',
-                title: '工程经理，俱乐部早期共建者',
-                image: '/contributors/4.jpg',
+                title: '工程经理，社群共建者',
+                image: '/contributors/4.webp',
                 social: 'https://xhslink.com/m/63TkmmRSA8',
                 socialType: 'xiaohongshu'
               },
               {
                 name: 'Suzy',
-                title: '产品经理，俱乐部早期共建者',
-                image: '/contributors/5.jpg',
+                title: '产品经理，社群共建者',
+                image: '/contributors/5.webp',
                 social: null,
                 socialType: null
               },
               {
                 name: 'Kia',
-                title: '营销专家，俱乐部早期共建者',
-                image: '/contributors/6.jpg',
+                title: '营销专家，社群共建者',
+                image: '/contributors/6.webp',
                 social: 'https://xhslink.com/m/1DsvfxTMRcK',
                 socialType: 'xiaohongshu'
               },
               {
                 name: 'Ada Xu',
-                title: '海外人力资源专家，俱乐部特邀嘉宾',
-                image: '/contributors/7.jpeg',
+                title: '海外人力资源专家，特邀分享嘉宾',
+                image: '/contributors/7.webp',
                 social: 'https://www.linkedin.com/in/ada-xu-08308469/',
                 socialType: 'linkedin'
               },
               {
                 name: 'David',
-                title: '增长营销专家，俱乐部特邀嘉宾',
-                image: '/contributors/8.jpg',
+                title: '增长营销专家，特邀分享嘉宾',
+                image: '/contributors/8.webp',
                 social: 'https://www.linkedin.com/in/daoud-bouacha/',
                 socialType: 'linkedin'
               }
@@ -348,8 +348,8 @@ export default function AboutPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`inline-flex items-center justify-center p-2 rounded-full transition-colors ${contributor.socialType === 'xiaohongshu'
-                        ? 'bg-red-50 text-[#FF2442] hover:bg-red-100'
-                        : 'bg-blue-50 text-[#0A66C2] hover:bg-blue-100'
+                      ? 'bg-red-50 text-[#FF2442] hover:bg-red-100'
+                      : 'bg-blue-50 text-[#0A66C2] hover:bg-blue-100'
                       }`}
                   >
                     {contributor.socialType === 'xiaohongshu' ? (
