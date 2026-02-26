@@ -298,6 +298,11 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                               {matchLevelLabel}
                            </span>
                         )}
+                        {job.aiRecommended && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border border-indigo-100 bg-indigo-50 text-indigo-600">
+                              AI推荐
+                           </span>
+                        )}
                         {/* Job Type (Amber) */}
                         {job.type && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
@@ -497,6 +502,11 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   {resolvedMatchLevel !== 'none' && (
                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${matchLevelClass}`}>
                         {matchLevelLabel}
+                     </span>
+                  )}
+                  {job.aiRecommended && (
+                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border border-indigo-100 bg-indigo-50 text-indigo-600">
+                        AI推荐
                      </span>
                   )}
                </div>

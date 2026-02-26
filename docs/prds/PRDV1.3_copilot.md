@@ -1,437 +1,255 @@
-# Copilot升级方案
+# PRD V1.3 Copilot（优化版）
 
-## 一、核心问题：
+## 0. 文档信息
+- 版本：V1.3-Rev2
+- 更新时间：2026-02-26
+- 状态：待评审
+- 目标发布：分阶段灰度上线（P0 -> P1 -> P2）
 
-现在的copilot流程是：输入 → 一次性生成一份「完整方案」
+---
+
+## 1. 背景与问题复盘
 
-问题是：
-	1.	这是一次性文档，不是长期陪跑系统
-	2.	没有状态记忆推进
-	3.	没有岗位数据动态绑定
-	4.	简历分析没有结构化抽取
-	5.	面试与投递没有形成闭环系统
+当前 Copilot 已具备基础能力，但在真实测试中暴露出核心问题：
+
+1. **目标错配**：用户选择“兼职/副业增收”时，推荐结果仍可能优先出现全职岗位。  
+2. **结论不前置**：用户最关心“我是否适合远程、差距在哪”，但方案未在首位给出清晰判断。  
+3. **站内融合不足**：Copilot 结果没有充分反映到岗位列表与详情页，用户感知断层。  
+4. **一次性输出过重**：首页与个人中心信息层次不清，缺少“先简后深、按需扩展”的节奏。  
+5. **方案缺少活力**：缺乏可持续推进的状态感与互动点（如“生成更多问题”“模拟回答”）。
 
-它更像一份规划书，不是一个远程求职操作系统。
-我们实际真正想做的是：一个有状态、有进度、有岗位匹配、能持续更新的远程求职作战系统。
+---
 
+## 2. 产品目标（本次优化）
 
-## 二、整体架构：
+### 2.1 核心目标
+1. **推荐与目标一致**：副业/兼职目标用户优先看到兼职、合同工、自由职业等岗位。  
+2. **首屏给出远程适配结论**：明确“适合/可转型/暂不适合”及关键差距。  
+3. **结果全站可见**：Copilot 推荐信号进入岗位列表与详情，形成统一体验。  
+4. **分段式生成**：首页展示轻量结果，个人中心按模块深度扩展。  
+5. **性能可控**：在不牺牲首页体验前提下提升方案质量。
+
+### 2.2 非目标（本期不做）
+1. 不重构全站信息架构。  
+2. 不在本期引入新的复杂外部向量服务（可后续评估）。  
+3. 不改动会员体系本身，仅调整 Copilot 能力门控。
+
+---
+
+## 3. 成功指标（KPI）
 
-从文档生成升级为状态驱动型Copilot
+### 3.1 业务与体验指标
+1. `side_income_goal_match_rate`：副业目标用户 Top3 推荐中，兼职/合同/自由职业占比 >= 80%。  
+2. `copilot_to_job_click_ctr`：Copilot 推荐岗位点击率提升 >= 20%。  
+3. `copilot_to_apply_conversion`：Copilot 到投递转化率提升 >= 15%。  
+4. `module_expand_rate`：个人中心深度模块二次触发率 >= 30%。
+
+### 3.2 性能指标
+1. 首页简版方案接口 `p95 <= 2.5s`（有缓存 `p95 <= 1.2s`）。  
+2. 模块扩展接口 `p95 <= 4.0s`。  
+3. 刷新推荐接口 `p95 <= 1.8s`。  
+4. AI 调用失败时，保底返回规则版结构化结果（不可空白）。
+
+---
+
+## 4. 用户场景与核心需求
+
+### 4.1 关键用户场景
+1. 用户输入目标“兼职/副业增收”，希望快速看到可执行岗位方向。  
+2. 用户上传简历后，希望知道自己是否适合远程以及缺口。  
+3. 用户在首页看到简版方案，进入个人中心后获得更细化计划。  
+4. 用户在岗位列表中希望识别“符合 Copilot 方案”的岗位。
+
+### 4.2 核心需求映射
+1. 推荐必须考虑：**目标 + 背景 + 语言能力 + 简历特征**。  
+2. 方案首位必须输出远程适配结论。  
+3. 首页只展示 Top3-5 推荐与简要行动。  
+4. 个人中心支持深度模块与二次触发扩展。  
+5. 列表页和详情页可感知 Copilot 信号（`AI推荐`、推荐理由）。
 
-✅ 结构化模块化生成 + 状态推进
+---
 
-## 三、Copilot最优结构
+## 5. 总体方案（算法到产品）
 
-拆成 5 个核心子模块（每个模块独立生成，独立调用）
+### 5.1 双层引擎
+1. **规则/统计引擎（主干）**：候选召回、目标约束、匹配打分、阈值过滤。  
+2. **AI 生成引擎（解释层）**：远程适配结论、推荐理由、行动方案文本化。
 
-### 模块1: 远程适配度评估（轻量高价值）
+### 5.2 分段式生成
+1. **Lite（首页）**：远程适配结论 + Top3-5 推荐 + 3 个行动。  
+2. **Deep（个人中心）**：语言准备、面试准备、投递计划模块。  
+3. **Expand（按需）**：用户点击后生成更多问题、模拟回答、学习资源等。
+
+---
+
+## 6. 算法策略设计
+
+### 6.1 输入信号标准化
+1. 目标：`full-time / side-income / market-watch / career-pivot`。  
+2. 背景：岗位方向、年限、学历。  
+3. 语言：等级与跨语言沟通能力。  
+4. 简历结构化：技能、项目、量化成果、远程协作经验。  
+5. 岗位结构化：jobType、skills、experienceLevel、languageRequirement、remoteType。
 
-目标
-解决用户最关心的问题：
-	•	我适不适合远程？
-	•	距离远程差什么？
+### 6.2 目标感知打分（核心）
+推荐分改为动态组合，默认：
 
-实现方式：让AI输出一个结构化JSON：
-{
-  "remote_readiness_score": 72,
-  "strengths": [],
-  "gaps": [],
-  "priority_improvements": [],
-  "risk_level": "low / medium / high"
-}
+`score = GoalFit*0.30 + SkillFit*0.25 + SkillAdjacency*0.20 + LanguageFit*0.10 + ExperienceFit*0.10 + RemoteFit*0.05`
+
+### 6.3 关键机制
+1. **Goal Fit 强约束**  
+   - side-income：优先 `part-time/freelance/contract/project-based`。  
+   - full-time 岗位若无“弹性/可兼顾副业”信号，则降权或剔除 TopN。  
+2. **Skill Adjacency 邻近匹配**  
+   - 允许“非同岗但技能栈接近”的岗位进入候选。  
+3. **分级展示机制**  
+   - 维持高/中/低三级。  
+   - 低于底线不展示。  
+4. **高匹配解释机制**  
+   - 高匹配岗位可输出 `match_details`；会员可见全文，非会员提示升级。
+
+### 6.4 远程适配性评估（首位输出）
+输出结构：
+1. `readiness_level`: `fit / transformable / not-ready`  
+2. `readiness_score`: 0-100  
+3. `key_gaps`: Top3 差距（语言、异步协作、作品证明、时区协作等）  
+4. `next_actions`: 对应改进动作
+
+---
+
+## 7. Prompt 与生成策略
+
+### 7.1 Prompt 分层
+1. **Prompt-A（结构化规划）**：严格 JSON，生成轻量方案骨架。  
+2. **Prompt-B（解释层）**：把算法结果转可读理由，字数受控。  
+3. **Prompt-C（模块扩展）**：面试/语言/投递按需生成。
+
+### 7.2 调用时机
+1. 首次生成：A + B。  
+2. 用户点击模块扩展：仅调用对应 C。  
+3. 用户刷新推荐：规则引擎重算 + 轻量解释，不重跑全量深度生成。  
+4. 用户更新简历/目标：失效相关缓存，重建基础方案。
+
+### 7.3 Token/成本策略
+1. 首页只生成简版；深度内容延迟到个人中心或二次触发。  
+2. 优先复用结构化中间结果，不重复喂整段简历/JD。  
+3. 模块缓存独立，避免“一个按钮重算整套方案”。
+
+---
+
+## 8. 网站融合策略（体验落地）
+
+### 8.1 首页 Copilot
+1. 展示：远程适配结论 + Top3 推荐 + 3步行动。  
+2. 空推荐时提示：  
+   - 暂无特别匹配岗位，建议稍后再看；  
+   - 引导去设置岗位追踪；  
+   - 同时展示通用入门远程岗位。
+
+### 8.2 个人中心 Copilot
+1. 展示完整方案（语言/面试/投递分模块）。  
+2. 每个模块支持“生成更多”与“模拟回答”等二次触发。  
+3. 模块内结果支持折叠，避免信息过载。
+
+### 8.3 岗位列表页
+1. 对符合 Copilot 方案的岗位增加 `AI推荐` 标签。  
+2. 支持“按 Copilot 目标匹配排序”与“仅看 AI 推荐”。  
+3. 列表匹配度与 Copilot 评分规则对齐，避免前后矛盾。
+
+### 8.4 岗位详情页
+1. 在认证说明下方展示 `[AI匹配分析]`。  
+2. 仅高匹配岗位展示；会员可看完整分析，非会员展示升级提示。
+
+---
+
+## 9. 会员策略
+
+1. 免费用户：简版方案、Top3 推荐、基础刷新。  
+2. 会员用户：Top5 推荐、完整 `match_details`、深度模块扩展能力、更多生成次数。  
+3. 非会员在高匹配岗位处明确引导升级，不阻断基础浏览。
+
+---
+
+## 10. 数据与接口约束（产品视角）
+
+### 10.1 关键返回字段（建议）
+1. `remoteReadiness`: `{ level, score, gaps[], actions[] }`  
+2. `recommendations[]`:  
+   - `matchLevel`  
+   - `goalFitScore`  
+   - `skillAdjacencyScore`  
+   - `aiRecommended`  
+   - `matchDetails` / `matchDetailsLocked`
+3. `modules`: `language | interview | apply` 的简版与扩展状态。
+
+### 10.2 版本兼容
+1. 新结构为 `plan_v2`，前端保留旧字段兼容期。  
+2. 兼容期内优先读 `plan_v2`，旧字段作为 fallback。
+
+---
+
+## 11. 埋点与实验
+
+### 11.1 核心埋点
+1. `copilot_goal_mismatch_detected`  
+2. `copilot_recommendation_refresh_clicked`  
+3. `copilot_module_expand_clicked`  
+4. `ai_recommended_job_clicked`  
+5. `match_details_upgrade_clicked`
+
+### 11.2 实验建议
+1. A/B 测试目标约束权重（side-income 用户）。  
+2. A/B 测试首页简版卡片文案与入口位置。  
+3. 评估推荐点击率、投递转化率与停留时长。
+
+---
+
+## 12. 分阶段计划（清晰里程碑）
+
+### P0（优先级最高，预计 1-1.5 周）
+1. 修复目标错配（Goal Fit 强约束 + 动态权重）。  
+2. 远程适配结论首位输出。  
+3. Copilot TopN 与列表匹配规则统一。  
+4. 完成关键埋点与灰度开关。
+
+### P1（预计 1.5-2 周）
+1. 分段式生成（Lite/Deep）。  
+2. 个人中心模块化深度方案。  
+3. 面试/语言/投递模块二次触发（生成更多、模拟回答）。
+
+### P2（预计 1-1.5 周）
+1. 列表页 `AI推荐` 标签与排序/筛选能力。  
+2. 详情页 AI 推荐理由体验打磨。  
+3. “流动感”优化（状态推进、模块刷新反馈、微动效节奏）。
+
+---
+
+## 13. 风险与应对
+
+1. **风险：推荐质量提升但延迟变高**  
+   - 应对：规则主干优先、AI解释后置、缓存分层。  
+2. **风险：模型输出不稳定**  
+   - 应对：严格 JSON schema 校验 + fallback 方案。  
+3. **风险：前后端字段不一致**  
+   - 应对：`plan_v2` 版本化与兼容期策略。  
+4. **风险：会员门控影响基础体验**  
+   - 应对：非会员保留可用信息，仅锁定高价值解释层。
+
+---
+
+## 14. 验收标准（Go/No-Go）
+
+1. 副业目标用户 Top3 推荐中，兼职/合同/自由职业占比达到目标。  
+2. 首屏稳定展示远程适配结论与差距项。  
+3. 首页简版、个人中心深版、模块扩展链路全部可用。  
+4. 列表页可看到 `AI推荐` 且点击行为可追踪。  
+5. 性能指标与降级策略满足约束（无空白、无阻塞）。
+
+---
+
+## 15. 结论
+
+本次 Copilot V1.3 优化不再是“生成更长文案”，而是升级为：  
+**目标感知推荐 + 远程适配前置 + 分段式生成 + 全站融合闭环**。  
+通过 P0/P1/P2 渐进落地，在保证性能的基础上提升匹配质量、用户感知与转化效率。
 
-然后前端渲染成：
-	•	雷达图
-	•	差距标签
-	•	优先改进清单
-
-Token优化策略
-	•	第一次生成
-	•	之后只在用户更新信息或上传新简历时重新生成
-	•	不需要每次进入网站都调用模型
-
-这个模块用 qwen plus 模型即可。
-
-
-### 模块2: 动态岗位匹配引擎
-
-这里非常关键，岗位匹配不用大模型，用：
-	•	向量embedding + 相似度匹配
-	•	或关键词权重评分
-
-流程：
-	1.	把用户职业方向、技能、经历提取成结构化tags
-	2.	岗位库提前embedding
-	3.	每次用户进入网站时：
-	•	不调用大模型
-	•	用本地算法算Top20匹配岗位
-	•	只在解释原因时调用模型
-
-
-### 模块3: 行动推进系统
-
-不要再生成一份计划书，改为生成：
-{
-  "phases": [
-    {
-      "name": "简历优化阶段",
-      "duration": "2周",
-      "tasks": [
-        {"task": "...", "type": "resume", "estimated_time": "2h"}
-      ]
-    }
-  ]
-}
-
-用户可以：
-	•	手动标记完成
-	•	调整进度
-	•	修改时间线
-当用户完成某阶段时，触发：小模型调用 → 生成下一阶段具体执行建议
-
-
-### 模块4: 简历与JD对齐引擎
-
-这里可以做高价值付费功能。
-
-技术思路
-	1.	用户选择5个岗位
-	2.	后端提取岗位JD核心要求（关键词抽取）
-	3.	把简历做结构化提取：
-
-{
-  "skills": [],
-  "experience": [],
-  "metrics": [],
-  "tools": []
-}
-
-	4.	用大模型做对齐分析：
-
-输出：
-
-{
-  "match_score": 78,
-  "missing_keywords": [],
-  "resume_rewrite_suggestions": [],
-  "cover_letter_outline": [],
-  "email_template": "..."
-}
-
-Token控制策略
-	•	JD先做摘要（不要直接喂完整JD）
-	•	简历做结构化抽取后再分析
-	•	分两次调用模型，而不是一次性塞全部
-
-会员用max模型
-普通用户不支持高级功能
-
-
-### 模块5: 面试与英语提升
-
-不要生成长篇英语学习计划。
-
-改为生成：
-{
-  "interview_focus_areas": [],
-  "common_questions": [],
-  "answer_frameworks": [],
-  "daily_speaking_plan": []
-}
-
-然后用户可以点击：
-	•	生成模拟面试问题
-	•	生成针对某岗位的问答
-
-这时候才调用模型。
-平时只展示结构化内容。
-
-
-## 四、让Copilot活起来的关键：状态系统
-
-必须加一个：用户状态表
-
-记录：
-	•	当前阶段
-	•	已投递数量
-	•	已面试数量
-	•	面试反馈
-	•	简历版本号
-	•	上次生成时间
-
-当用户再次进入时，不要重新生成。
-而是：
-	1.	读取状态
-	2.	更新岗位推荐
-	3.	仅在关键节点调用模型
-
-
-## 五、Prompt优化方案参考
-
-### 1. 总原则，所有Prompt通用
-系统提示（System Prompt）统一：
-{
-你是一名专业的远程职业规划顾问和招聘专家。
-请严格按照指定JSON格式输出。
-不要输出解释说明。
-不要输出多余文字。
-不要添加代码块标记。
-确保JSON可被直接解析。
-}
-
-### 模块1: 远程适配度评估
-模型建议：qwen-plus 
-调用时机：
-	•	用户首次生成方案
-	•	用户更新职业信息
-	•	用户上传新简历
-
-Prompt 模板:
-{
-根据以下用户信息，评估其远程工作适配度。
-
-用户信息：
-目标类型：{{goal_type}}
-规划时间：{{timeline}}
-职业方向：{{career_direction}}
-工作年限：{{years_experience}}
-学历：{{education}}
-英语水平：{{english_level}}
-核心技能：{{skills}}
-（如有）简历结构化信息：
-{{resume_structured_json}}
-
-输出以下JSON：
-
-{
-  "remote_readiness_score": 0-100的整数,
-  "readiness_level": "low / medium / high",
-  "strengths": [
-    {"point": "...", "reason": "..."}
-  ],
-  "gaps": [
-    {"gap": "...", "impact": "..."}
-  ],
-  "priority_improvements": [
-    {"action": "...", "expected_benefit": "..."}
-  ],
-  "estimated_offer_time_if_execute_well": "时间预估"
-}
-}
-
-前端建议
-	•	做雷达图
-	•	做优先改进置顶卡片
-	•	不展示长段文本
-
-
-### 模块2: 简历结构化抽取
-这是所有后续模块的基础。
-模型：plus即可
-
-Prompt
-{
-请将以下简历内容结构化提取。
-
-简历内容：
-{{resume_text}}
-
-输出JSON：
-{
-  "career_level": "",
-  "years_of_experience": "",
-  "industries": [],
-  "roles": [],
-  "skills": [],
-  "tools": [],
-  "achievements_with_metrics": [],
-  "management_experience": true/false,
-  "english_related_experience": [],
-  "remote_related_experience": []
-}
-}
-
-### 模块3: 岗位JD结构化抽取（预处理）
-
-备注：这个后台应该已经具备了，可以从已有的数据库里获取，字段可以使用数据库已有字段，prompt仅参考。
-
-Prompt
-{
-提取以下JD核心要求：
-{{job_description}}
-
-输出JSON：
-{
-  "role": "",
-  "required_skills": [],
-  "preferred_skills": [],
-  "experience_level": "",
-  "industry": "",
-  "tools": [],
-  "language_requirement": "",
-  "remote_type": ""
-}
-}
-
-### 模块4: 简历 vs 5个JD对齐分析（会员核心功能）
-模型：qwen-max
-
-Prompt
-{
-你是一名招聘经理。
-候选人简历结构化信息：
-{{resume_structured_json}}
-目标岗位信息（最多5个）：
-{{job_structured_array}}
-分析匹配情况。
-
-输出JSON：
-{
-  "overall_match_score": 0-100,
-  "strong_matches": [],
-  "missing_keywords": [],
-  "experience_gaps": [],
-  "rewrite_suggestions": [
-    {
-      "original_problem": "",
-      "optimized_version_example": ""
-    }
-  ],
-  "cover_letter_outline": [
-    "开头策略",
-    "中段价值匹配",
-    "结尾策略"
-  ],
-  "cold_email_template": "英文模板"
-}
-}
-
-Token优化技巧
-	•	不传完整JD，只传结构化版本
-	•	不传完整简历，只传结构化版
-
-
-### 模块5: 行动推进系统生成
-模型：plus即可
-
-Prompt
-{
-根据用户目标与时间规划，生成阶段性远程求职行动计划。
-
-用户信息：
-目标：{{goal}}
-时间规划：{{timeline}}
-远程适配评分：{{score}}
-核心差距：{{gaps_array}}
-
-输出JSON：
-{
-  "phases": [
-    {
-      "phase_name": "",
-      "duration_weeks": "",
-      "focus": "",
-      "tasks": [
-        {
-          "task_name": "",
-          "type": "resume / apply / network / interview / english",
-          "priority": "high / medium / low"
-        }
-      ]
-    }
-  ]
-}
-}
-
-### 模块6: 面试准备方案
-
-模型：
-plus（普通规划）
-max（生成模拟问答）
-
-Prompt（规划版）
-{
-根据以下信息生成远程英文面试准备方案。
-
-职业方向：{{career}}
-英语水平：{{english_level}}
-目标岗位：{{target_role}}
-
-输出JSON：
-{
-  "key_interview_topics": [],
-  "common_questions": [],
-  "answer_frameworks": [],
-  "daily_speaking_plan": [],
-  "improvement_priority": []
-}
-}
-
-Prompt（模拟问答版本）
-{
-根据以下岗位与候选人背景生成3个模拟英文面试问题及参考答案。
-岗位：
-{{job_structured}}
-候选人：
-{{resume_structured}}
-
-输出JSON：
-{
-  "mock_questions": [
-    {
-      "question": "",
-      "sample_answer": "",
-      "improvement_tip": ""
-    }
-  ]
-}
-}
-
-### 模块7: 投递节奏优化器
-Prompt
-{
-用户目标在{{timeline}}内拿到远程offer。
-当前远程适配度：{{score}}
-每周可投入时间：{{hours}}
-
-请生成投递与面试节奏规划。
-
-输出JSON：
-{
-  "weekly_application_target": "",
-  "recommended_application_channels": [],
-  "interview_pipeline_strategy": [],
-  "risk_warnings": []
-}
-}
-
-### 八、状态驱动增强Prompt（关键）
-
-每次用户回来时：不要重新生成全部内容。
-只调用：根据用户当前完成情况更新下一阶段建议。
-
-当前阶段：{{current_phase}}
-已完成任务：{{completed_tasks}}
-未完成任务：{{pending_tasks}}
-当前投递数量：{{applied_count}}
-当前面试数量：{{interview_count}}
-
-输出JSON：
-{
-  "next_focus": "",
-  "adjustment_suggestions": [],
-  "motivation_message": ""
-}
-
-这才是活的Copilot。
-
-## 六、Token控制总结
-
-模块	调用频率	模型
-适配度	低	plus
-岗位匹配	无模型	本地算法
-计划生成	低	plus
-简历对齐	付费	max
-面试模拟	按需	max
-进度更新	高频	plus

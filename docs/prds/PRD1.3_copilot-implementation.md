@@ -1,389 +1,278 @@
-# Copilot V1.3 技术方案：从「文档生成器」到「状态驱动型求职操作系统」
+# Copilot V1.3 技术实现方案（对齐 PRD V1.3-Rev2）
 
-## 一、现状分析与差距识别
-
-### 现有能力（已验证可用）
-
-| 能力 | 当前实现 | 所在文件 |
-|------|----------|----------|
-| 百炼 API 调用 | [callBailianAPIWithModel()](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/api-handlers/copilot.js#493-548) 支持 qwen-plus / qwen-max 双模型切换 | [copilot.js](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/api-handlers/copilot.js#L493-L547) |
-| 权限分层 | guest / free (一次试用) / member (无限制) | [copilot.js](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/api-handlers/copilot.js#L65-L112) |
-| 岗位关键词匹配 | [fetchCandidateJobs()](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/api-handlers/copilot.js#184-234) → ILIKE 搜索 + Jaccard 相似度排序 | [copilot.js](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/api-handlers/copilot.js#L184-L261) |
-| 简历文本提取 | [getResumes()](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/server-utils/resume-storage.js#9-64) → `contentText` / `parseResult.text` | [resume-storage.js](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/server-utils/resume-storage.js) |
-| Session 持久化 | `copilot_sessions` 表（goal / timeline / background / plan_data） | [neon-ddl.sql](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/server-utils/dal/neon-ddl.sql#L47-L56) |
-| 岗位分类体系 | `JOB_KEYWORDS` → [classifyJob()](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/services/classification-service.js#200-221) / `CATEGORY_REVERSE_MAP` | [classification-service.js](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/services/classification-service.js) |
-| 岗位结构化字段 | `jobs` 表已有 title / category / experience_level / salary / location / job_type / description | DB 已有 |
-
-### PRD 要求 vs 现状差距
-
-| PRD 模块 | 差距 | 改造程度 |
-|----------|------|----------|
-| M1-远程适配度评估 | 当前 `resumeEval.score` 已存在但不够结构化（缺少 gaps/improvements 的 reason 字段）| 🟡 Prompt 重构 |
-| M2-动态岗位匹配 | 已有 Jaccard 匹配，但每次都重新查 DB，**无缓存**；匹配结果未持久化 | 🟡 加缓存层 |
-| M3-行动推进系统 | 当前只输出一次性 milestones，**无任务状态跟踪** | 🔴 新增表+API |
-| M4-简历JD对齐 | 当前无结构化简历抽取，无 JD 对齐功能 | 🔴 新增模块 |
-| M5-面试准备 | 当前 `interviewPrep` 是一次性输出，**无按需模拟** | 🟡 增加独立 API |
-| 状态系统 | **完全不存在**，每次进入都重新读最新 session | 🔴 核心新增 |
+## 0. 文档信息
+- 版本：V1.3-Impl-Rev2
+- 更新时间：2026-02-26
+- 对应产品文档：`docs/prds/PRDV1.3_copilot.md`
+- 实施原则：用户体验优先、性能可控、低成本增量落地
 
 ---
 
-## 二、整体架构设计
+## 1. 目标与技术边界
 
-### 架构演进
+## 1.1 本次必须达成
+1. 修复“副业目标却推荐全职”为主的错配问题。  
+2. 在方案首位输出远程适配结论（是否适合远程 + 核心差距）。  
+3. 首页轻量结果、个人中心深度结果、模块按需扩展。  
+4. Copilot 结果可融入岗位列表和详情（`AI推荐` + 推荐解释）。  
+5. 具备可灰度、可回滚、可观测能力。
 
-```mermaid
-graph LR
-    subgraph "V1.2 (当前)"
-        A[用户输入] --> B[一次性 AI 调用]
-        B --> C[完整方案 JSON]
-        C --> D[前端渲染]
-    end
-    
-    subgraph "V1.3 (目标)"
-        E[用户输入] --> F[简历结构化抽取]
-        F --> G[适配度评估 M1]
-        G --> H[行动计划生成 M3]
-        H --> I[状态持久化]
-        I --> J[用户回访]
-        J --> K{状态检查}
-        K -->|有变化| L[增量更新]
-        K -->|无变化| M[读取缓存]
-        N[岗位匹配 M2] -.->|本地算法| J
-        O[JD对齐 M4] -.->|按需付费| J
-        P[面试模拟 M5] -.->|按需调用| J
-    end
-```
-
-### API 路由设计
-
-> [!IMPORTANT]
-> 所有新 API 均挂载在 `/api/copilot` 下，通过 `action` 参数路由，**不新增 Vercel Serverless 函数文件**，避免冷启动成本。
-
-| Action | 方法 | 描述 | 模型 | 会员等级 |
-|--------|------|------|------|----------|
-| [generate](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/api-handlers/copilot.js#265-492) | POST | 现有主入口（保留，微调 Prompt） | plus/max | all |
-| `assess` | POST | M1: 远程适配度评估 | plus | all |
-| `match-jobs` | POST | M2: 动态岗位匹配（本地算法） | **无模型** | all |
-| `create-plan` | POST | M3: 生成阶段计划 | plus | member |
-| `update-progress` | POST | M3: 更新任务进度 + 触发增量建议 | plus | member |
-| `align-resume` | POST | M4: 简历 vs JD 对齐分析 | max | member |
-| `extract-resume` | POST | M2前置: 简历结构化抽取 | plus | all |
-| `interview-prep` | POST | M5: 面试准备规划 | plus | member |
-| `mock-interview` | POST | M5: 模拟面试问答 | max | member |
-| `get-state` | GET | 读取用户完整状态 | **无模型** | all |
+## 1.2 技术边界（控成本）
+1. **不新增独立 Serverless Function**，继续复用 `/api/copilot?action=...` 路由。  
+2. **不引入外部向量数据库**（本期使用规则+统计匹配）。  
+3. **不做大规模数据迁移**，优先复用现有表和字段。  
+4. AI 仅用于“解释/方案生成”，不放在主匹配链路。
 
 ---
 
-## 三、数据库变更方案
+## 2. 当前实现现状（与新版目标对齐）
 
-### 新增表 1：`copilot_user_state`（核心状态表）
+## 2.1 已有能力（可复用）
+1. `lib/api-handlers/copilot.js` 已有：
+   - 目标/会员分层；
+   - `refresh-recommendations`；
+   - 匹配分阈值与高中低分层；
+   - 推荐缓存（内存 TTL）。
+2. `lib/services/matching-engine.js` 已有：
+   - 结构化评分（skill/keyword/experience/preference）；
+   - 缓存表 `user_job_matches`；
+   - 用户画像与岗位特征提取。
+3. `lib/api-handlers/processed-jobs.js` 已有：
+   - `jobs_with_match_score` 个性化分数；
+   - `match_details` 回填与会员锁逻辑；
+   - 匹配底线过滤与分级映射。
+4. 前端已具备：
+   - `GeneratedPlanView` 推荐展示与刷新；
+   - `JobDetailPanel` 中 `[AI匹配分析]` 模块；
+   - 空推荐场景引导（岗位追踪/通用岗位）。
 
-```sql
-CREATE TABLE IF NOT EXISTS copilot_user_state (
-    user_id VARCHAR(255) PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-    
-    -- 简历结构化数据（M1/M2/M4共用）
-    resume_structured JSONB,          -- 结构化简历 { career_level, skills, tools, ... }
-    resume_version INT DEFAULT 0,     -- 简历版本号，每次上传/解析递增
-    
-    -- 适配度评估结果（M1）
-    readiness_data JSONB,             -- { score, strengths, gaps, improvements, ... }
-    readiness_generated_at TIMESTAMPTZ,
-    
-    -- 当前阶段（M3）
-    current_phase VARCHAR(50) DEFAULT 'not_started',  -- not_started / resume / apply / interview / offer
-    plan_data JSONB,                  -- 阶段计划 { phases: [...] }
-    
-    -- 进度统计
-    applied_count INT DEFAULT 0,
-    interview_count INT DEFAULT 0,
-    
-    -- 时间追踪
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-### 新增表 2：`copilot_tasks`（任务跟踪表）
-
-```sql
-CREATE TABLE IF NOT EXISTS copilot_tasks (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR(255) REFERENCES users(user_id) ON DELETE CASCADE,
-    phase VARCHAR(50) NOT NULL,       -- resume / apply / network / interview / english
-    task_name VARCHAR(255) NOT NULL,
-    priority VARCHAR(10) DEFAULT 'medium', -- high / medium / low
-    status VARCHAR(20) DEFAULT 'pending',  -- pending / in_progress / completed / skipped
-    completed_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_copilot_tasks_user ON copilot_tasks(user_id, status);
-```
-
-### 新增表 3：`copilot_job_matches`（匹配缓存表）
-
-```sql
-CREATE TABLE IF NOT EXISTS copilot_job_matches (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR(255) REFERENCES users(user_id) ON DELETE CASCADE,
-    job_id VARCHAR(255),
-    match_score INT,                  -- 0-100
-    match_reason TEXT,                -- 可选：AI 生成的匹配理由
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_copilot_job_matches_user ON copilot_job_matches(user_id, match_score DESC);
-```
-
-### 现有表变更
-
-```sql
--- copilot_sessions: 增加 module 字段区分不同模块的调用记录
-ALTER TABLE copilot_sessions ADD COLUMN IF NOT EXISTS module VARCHAR(30) DEFAULT 'generate';
--- 可选值: generate / assess / align / interview / mock / progress
-```
-
-> [!NOTE]
-> `copilot_sessions` 保留作为 **调用日志表**，记录每次 AI 调用的输入/输出/模型/token消耗，用于计费和审计。`copilot_user_state` 作为**单行状态表**（每用户一行），用于快速读取状态，避免每次查询 sessions 的最新记录。
+## 2.2 当前差距
+1. “目标一致性”在推荐主链路权重不足（side-income 未做强约束）。  
+2. 首页/个人中心仍偏“一次性计划”，分段生成策略未完全打通。  
+3. 列表页尚未系统化标注 `AI推荐`。  
+4. `copilot-v1.3.js` 中部分状态表（`copilot_user_state` 等）缺统一迁移文档，落地风险高。
 
 ---
 
-## 四、各模块详细设计
+## 3. 总体架构（低成本可落地）
 
-### M1: 远程适配度评估
+## 3.1 双层引擎架构
+1. **规则主干引擎（必须快）**
+   - 输入：goal/background/language/resume profile/job features；
+   - 输出：`goalFit`, `skillFit`, `skillAdjacency`, `languageFit`, `matchLevel`；
+   - 不依赖 AI，支持缓存与批量计算。
+2. **AI 解释引擎（可延后）**
+   - 输入：规则引擎结果；
+   - 输出：远程适配结论、推荐理由、行动建议、模块扩展内容。
 
-#### 触发时机
-1. 用户**首次**进入 Copilot 页面（无 `readiness_data`）
-2. 用户上传新简历（`resume_version` 变化）
-3. 用户手动点击「重新评估」
-
-#### 实现逻辑
-
-```
-前端请求 → POST /api/copilot { action: 'assess' }
-           ↓
-后端检查 copilot_user_state.readiness_generated_at
-   ├── 若 < 7天 且 resume_version 未变 → 直接返回缓存
-   └── 否则 → 调用 qwen-plus 生成
-           ↓
-Prompt 入参: goal + timeline + background + resume_structured（如有）
-           ↓
-输出 JSON → 写入 copilot_user_state.readiness_data
-           ↓
-返回前端 → 渲染雷达图 + 差距卡片
-```
-
-#### Prompt 优化（对比 PRD，适配现有字段）
-
-System Prompt 沿用 PRD 建议的**纯 JSON 输出约束**。User Prompt 复用现有 `background` 对象的字段名（`education / industry / seniority / language`），避免前端改造。
-
-#### 模型与 Token 预算
-- **模型**: qwen-plus
-- **预估 Token**: 入参 ~300 + 出参 ~500 = **~800 tokens/次**
-- **调用频率**: 极低（每用户仅在简历变更时）
+## 3.2 分段生成架构
+1. Lite（首页）：
+   - 远程适配结论；
+   - Top3-5 推荐；
+   - 3 个关键行动。
+2. Deep（个人中心）：
+   - 语言准备；
+   - 面试准备；
+   - 投递计划。
+3. Expand（二次触发）：
+   - 面试“生成更多问题/模拟回答”；
+   - 语言“扩展30天计划/学习资源”。
 
 ---
 
-### M2: 动态岗位匹配引擎
+## 4. 核心算法改造（P0 必做）
 
-#### 核心变化：不再每次调 AI
+## 4.1 目标感知评分模型
+统一评分（默认）：
 
-```
-前端请求 → POST /api/copilot { action: 'match-jobs' }
-           ↓
-后端读取 copilot_user_state.resume_structured
-   ├── 若无 → 先触发 extract-resume
-   └── 有 → 提取 skills + roles + industries 为关键词
-           ↓
-复用现有 fetchCandidateJobs() + calculateSimilarity()
-但改进为：
-  1. 搜索池扩大到 60 条（从当前 40）
-  2. 匹配维度增加 skills 关键词权重
-  3. 结果写入 copilot_job_matches 缓存表
-           ↓
-返回 Top 20 匹配岗位（含 score + 基本信息）
-```
+`S = GoalFit*0.30 + SkillFit*0.25 + SkillAdjacency*0.20 + LanguageFit*0.10 + ExperienceFit*0.10 + RemoteFit*0.05`
 
-#### 匹配算法升级（保持零模型调用）
+## 4.2 Goal Fit 规则（关键）
+1. `goal=side-income`：
+   - jobType 为 `part-time/freelance/contract/project-based`：高分；
+   - `full-time` 仅在存在弹性信号（如 flexible/part-time possible）时给中分；
+   - 否则降档或排除 TopN。
+2. `goal=full-time`：
+   - 全职优先，兼职可作为补充。
+3. `goal=career-pivot/market-watch`：
+   - 强化 SkillAdjacency 权重。
 
-现有 [calculateSimilarity](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/services/job-sync-service.js#7-42) 是纯 Jaccard，对中文分词不够敏感。升级方案：
+## 4.3 Skill Adjacency（邻近匹配）
+1. 基于技能词典和角色映射做“可迁移岗位”加分。  
+2. 不要求同岗，但要求技能集交集达到阈值。  
+3. 输出 `skillAdjacencyScore`，用于推荐解释与 `AI推荐` 标识。
 
-```javascript
-function enhancedSimilarity(userProfile, jobText) {
-  const jaccard = calculateSimilarity(userProfile, jobText);  // 复用现有
-  
-  // 加权：技能关键词命中加分
-  const userSkills = userProfile.skills || [];
-  const jobLower = jobText.toLowerCase();
-  let skillHits = 0;
-  for (const skill of userSkills) {
-    if (jobLower.includes(skill.toLowerCase())) skillHits++;
-  }
-  const skillScore = userSkills.length > 0 ? skillHits / userSkills.length : 0;
-  
-  // 综合得分：Jaccard 60% + 技能命中 40%
-  return jaccard * 0.6 + skillScore * 0.4;
+## 4.4 远程适配结论输出
+1. `readiness_level`: `fit / transformable / not-ready`。  
+2. `key_gaps`: Top3 缺口（语言、异步协作、作品证明、时区协作）。  
+3. `next_actions`: 每个缺口至少一个可执行动作。
+
+---
+
+## 5. 接口设计（基于现有路由增量）
+
+## 5.1 `/api/copilot` action 路由
+1. 保留：`generate`, `refresh-recommendations`, `get-state`, `assess`, `match-jobs`, `create-plan`, `update-progress`。  
+2. 新增（P1）：`expand-module`，参数：
+   - `module=interview|language|apply`
+   - `intent=more-questions|mock-answer|deep-plan|resources`
+3. 输出结构升级：`plan_v2`（兼容旧结构）。
+
+## 5.2 推荐结果结构（建议）
+```json
+{
+  "id": "job_id",
+  "title": "职位名",
+  "company": "公司名",
+  "matchLevel": "high|medium|low|none",
+  "matchLabel": "高匹配|中匹配|低匹配",
+  "goalFitScore": 0,
+  "skillAdjacencyScore": 0,
+  "aiRecommended": true,
+  "reason": "推荐理由",
+  "matchDetails": {},
+  "matchDetailsLocked": false
 }
 ```
 
-#### 缓存策略
-- 匹配结果写入 `copilot_job_matches`，有效期 24 小时
-- 若 `resume_version` 变更，自动失效并重新计算
-- 新岗位入库时（爬虫同步后），标记所有缓存为 stale
+## 5.3 列表页融合接口
+1. 复用 `processed-jobs?action=jobs_with_match_score`。  
+2. 增加可选参数：
+   - `copilotGoal=side-income|full-time|...`
+   - `copilotContext=1`
+3. 返回附加字段：
+   - `aiRecommended`（满足目标与匹配阈值）；
+   - `goalFitScore`（可用于排序解释）。
 
 ---
 
-### M3: 行动推进系统
+## 6. 数据层方案（可落地、低迁移成本）
 
-#### 两阶段实现
+## 6.1 优先复用
+1. 匹配缓存复用 `user_job_matches`（已在线使用）。  
+2. 历史方案复用 `copilot_sessions`（加 `module` 字段）。  
+3. 简历结构化优先写入 `copilot_user_state.resume_structured`。
 
-**阶段 A: 计划生成**
+## 6.2 最小新增表（仅在不存在时创建）
+1. `copilot_user_state`：单用户状态（resume structured、readiness、phase、plan）。  
+2. `copilot_tasks`：行动计划任务状态。  
 
-```
-POST /api/copilot { action: 'create-plan' }
-  → 入参: readiness_data.gaps + goal + timeline
-  → qwen-plus 生成分阶段计划
-  → 写入 copilot_user_state.plan_data + 批量插入 copilot_tasks
-```
+> 不再新增 `copilot_job_matches`，避免与 `user_job_matches` 重复维护。
 
-**阶段 B: 进度推进**
-
-```
-POST /api/copilot { action: 'update-progress', taskId, status: 'completed' }
-  → 更新 copilot_tasks 状态
-  → 检查当前 phase 完成度
-  → 若 phase 完成率 > 80%：
-      调用 qwen-plus → 生成下一阶段建议
-      写入 copilot_sessions (module: 'progress')
-  → 返回 { next_focus, suggestions, motivation }
-```
-
-#### 模型与 Token 预算
-- **计划生成**: qwen-plus, ~600 tokens/次, 仅生成一次
-- **进度更新**: qwen-plus, ~300 tokens/次, 仅在阶段转换时调用
-- **任务标记**: 零模型调用（纯 DB UPDATE）
+## 6.3 迁移策略
+1. 新增一份幂等 migration（`IF NOT EXISTS`）。  
+2. 不改历史数据结构，在线平滑扩展。  
+3. 新表不可用时，接口自动降级到旧 `generate` 路径，保证可用性。
 
 ---
 
-### M4: 简历与 JD 对齐引擎（会员核心付费功能）
+## 7. 前端实现策略（体验与性能并重）
 
-#### 前置依赖
-- `resume_structured`（由 `extract-resume` 生成）
-- 岗位 JD 已有字段（`jobs` 表的 category / experience_level / description）
+## 7.1 首页（Lite）
+1. 仅展示：readiness + Top3-5 + 3 steps。  
+2. “刷新岗位”只刷新推荐模块，不刷新整页计划。  
+3. 无匹配时显示引导（岗位追踪 + 通用岗位）。
 
-#### 实现逻辑
+## 7.2 个人中心（Deep）
+1. 默认展示详细方案骨架。  
+2. 模块内容按需加载（点击展开才请求 `expand-module`）。  
+3. 每个模块独立 loading/error，避免全页阻塞。
 
-```
-POST /api/copilot { action: 'align-resume', jobIds: [最多5个] }
-  → 权限检查: 仅 member
-  → 从 DB 读取 5 个岗位的结构化信息
-  → 从 copilot_user_state 读取 resume_structured
-  → 调用 qwen-max（Token 预算：入参 ~1200 + 出参 ~1500 = ~2700）
-  → 输出: match_score / missing_keywords / rewrite_suggestions / cover_letter / email_template
-  → 写入 copilot_sessions (module: 'align')
-```
-
-#### Token 优化策略（采纳 PRD 建议）
-1. **JD 预处理**: 不传完整 description，仅传 `{ title, category, experience_level, salary, requirements摘要(前500字) }`
-2. **简历预处理**: 使用 `resume_structured` 而非原文
-3. **分两次调用**（可选优化，V1.3 暂不实现，留作 V1.4）
+## 7.3 岗位列表与详情融合
+1. 列表卡片显示 `AI推荐` 标签（符合 Copilot 目标约束且高/中匹配）。  
+2. 详情页保留 `[AI匹配分析]`，会员门控与折叠逻辑不变。  
+3. 排序新增“按我的目标匹配”。
 
 ---
 
-### M5: 面试与英语提升
+## 8. 性能与成本控制
 
-#### 两个子 API
+## 8.1 性能预算
+1. 首页 Lite：`p95 <= 2.5s`（缓存命中 <= 1.2s）。  
+2. 刷新推荐：`p95 <= 1.8s`。  
+3. 模块扩展：`p95 <= 4.0s`。
 
-**规划版（低频）**:
-```
-POST /api/copilot { action: 'interview-prep' }
-  → qwen-plus, ~500 tokens
-  → 输出结构化面试主题 + 常见问题 + 回答框架
-  → 缓存到 copilot_user_state（附加字段或 sessions）
-```
+## 8.2 缓存设计
+1. 推荐缓存 key：`userId + goal + role + seniority + isMember + resumeVersion`。  
+2. 计划缓存 key：`userId + goal + timeline + resumeVersion`。  
+3. 模块缓存 key：`userId + module + planVersion`。
 
-**模拟问答版（按需）**:
-```
-POST /api/copilot { action: 'mock-interview', jobId }
-  → qwen-max, ~800 tokens
-  → 根据特定岗位 JD + 用户简历生成 3 道模拟题
-  → 写入 copilot_sessions (module: 'mock')
-```
+## 8.3 Token 控制
+1. 主推荐链路不依赖 AI。  
+2. 首页只跑轻量 prompt。  
+3. 深度模块按需触发。  
+4. 复用结构化中间结果，避免重复喂整段简历/JD。
 
 ---
 
-## 五、前端改造方案
+## 9. 可靠性、灰度与回滚
 
-### 页面结构
+## 9.1 灰度开关
+1. `COPILOT_GOAL_AWARE_SCORING_ENABLED`  
+2. `COPILOT_PLAN_V2_ENABLED`  
+3. `COPILOT_AI_RECOMMENDED_TAG_ENABLED`
 
-将现有的 [CopilotSection](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/src/components/home/CopilotSection.tsx#45-652)（首页嵌入式表单）改为**独立页面** `/copilot`，采用 Tab 导航：
+## 9.2 回滚策略
+1. 任何异常可切回旧 `generate` 与旧推荐排序。  
+2. 新字段为可选字段，不影响旧前端渲染。  
+3. 模块接口失败不影响岗位浏览主路径。
 
-| Tab | 对应模块 | 组件 |
-|-----|----------|------|
-| 📊 适配度 | M1 | `ReadinessPanel` — 雷达图 + 差距卡片 |
-| 💼 岗位匹配 | M2 | `JobMatchPanel` — Top 20 列表 + 匹配度标签 |
-| 📋 行动计划 | M3 | `ActionPlanPanel` — 阶段面板 + 任务勾选 |
-| 📄 简历对齐 | M4 | `ResumeAlignPanel` — 选择岗位 → 对齐报告 |
-| 🎤 面试准备 | M5 | `InterviewPanel` — 准备清单 + 模拟问答按钮 |
-
-### 状态管理
-
-使用 React Context（`CopilotContext`）统一管理用户状态，进入 `/copilot` 页面时一次性拉取 `get-state`，后续各 Tab 按需触发对应 API。
-
----
-
-## 六、Token 成本预估与控制
-
-| 模块 | 模型 | 单次 Token | 调用频率 | 月均成本预估(100活跃用户) |
-|------|------|-----------|----------|--------------------------|
-| M1 适配度评估 | plus | ~800 | 1次/用户/月 | ¥0.8 |
-| M2 岗位匹配 | **无** | 0 | 不限 | ¥0 |
-| M3 计划生成 | plus | ~600 | 1次/用户 | ¥0.6 |
-| M3 进度更新 | plus | ~300 | 3次/用户/月 | ¥0.9 |
-| M4 简历对齐 | max | ~2700 | 2次/会员/月 | ¥10.8 (仅会员) |
-| M5 面试规划 | plus | ~500 | 1次/用户/月 | ¥0.5 |
-| M5 模拟问答 | max | ~800 | 3次/会员/月 | ¥4.8 (仅会员) |
-| **合计** | | | | **~¥18.4/月** |
-
-> [!TIP]
-> 对比 V1.2（每次生成完整方案 2000-2800 tokens），V1.3 通过模块化 + 缓存 + 本地算法，**在功能大幅增强的同时，总 token 消耗反而降低约 40%**。
+## 9.3 容错策略
+1. AI 超时/失败：返回规则版保底结果。  
+2. 新状态表缺失：自动退回 legacy path 并记录告警。  
+3. JSON 解析失败：schema 校验失败后走 fallback。
 
 ---
 
-## 七、实施分期建议
+## 10. 监控与埋点
 
-### Phase 1（核心基础，建议优先实施）
-1. 新增 DB 表（`copilot_user_state` + `copilot_tasks`）
-2. 实现 `extract-resume` — 简历结构化抽取
-3. 实现 `assess` — 远程适配度评估（替换现有 resumeEval）
-4. 实现 `get-state` — 状态读取 API
-5. 前端：`ReadinessPanel` 雷达图 + 差距卡片
+## 10.1 必备埋点
+1. `copilot_goal_mismatch_detected`  
+2. `copilot_recommendation_refresh_clicked`  
+3. `copilot_module_expand_clicked`  
+4. `ai_recommended_job_clicked`  
+5. `copilot_to_apply_conversion`
 
-### Phase 2（岗位匹配 + 行动系统）
-1. 升级 [fetchCandidateJobs](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/api-handlers/copilot.js#184-234)，加入结构化关键词匹配
-2. 实现 `create-plan` + `update-progress`
-3. 新增 `copilot_job_matches` 缓存表
-4. 前端：`JobMatchPanel` + `ActionPlanPanel`
-
-### Phase 3（付费高级功能）
-1. 实现 `align-resume`（会员专属）
-2. 实现 `interview-prep` + `mock-interview`
-3. 前端：`ResumeAlignPanel` + `InterviewPanel`
+## 10.2 技术监控
+1. 接口响应时间（p50/p95/p99）。  
+2. 缓存命中率。  
+3. AI 失败率与 fallback 比例。  
+4. 目标错配率（side-income 用户 TopN 的 jobType 分布）。
 
 ---
 
-## 八、验证计划
+## 11. 分阶段落地计划（技术视角）
 
-### 自动化验证
-- 对每个新 API 编写 curl 测试脚本，覆盖权限分层（guest / free / member）
-- JSON 输出格式校验（确保 AI 返回可被 `JSON.parse()` 直接解析）
+## P0（1-1.5 周）
+1. Goal Fit 强约束 + 动态权重接入 `fetchCandidateJobs`/匹配主链路。  
+2. `plan_v2` Lite 输出（含 readiness 首位结论）。  
+3. 列表与详情使用统一 match 规则；埋点与灰度开关接入。  
 
-### 手动验证
-- 在 Preview 环境完成全流程 E2E 测试
-- 逐步灰度到生产环境
+## P1（1.5-2 周）
+1. Deep 模块骨架 + `expand-module`。  
+2. 面试/语言/投递模块按需生成。  
+3. 模块缓存与局部刷新。
+
+## P2（1-1.5 周）
+1. 列表 `AI推荐` 标签 + 目标匹配排序/筛选。  
+2. 交互“流动感”优化（状态推进、过渡反馈）。  
+3. A/B 与参数调优。
 
 ---
 
-> [!CAUTION]
-> **破坏性变更风险**: 本方案**不拆除**现有 [generate](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/lib/api-handlers/copilot.js#265-492) action 和 [CopilotSection](file:///Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/src/components/home/CopilotSection.tsx#45-652) 组件。新模块以增量方式添加，通过 `action` 参数路由。现有用户体验零影响，新功能在 `/copilot` 独立页面承载。
+## 12. 验收标准（技术实现）
+
+1. side-income 用户 Top3 推荐岗位类型符合预期（兼职/合同/自由职业占比达标）。  
+2. 首页首屏展示远程适配结论且稳定返回。  
+3. 模块扩展为增量请求，失败不影响主流程。  
+4. 列表页可展示 `AI推荐`，详情页可展示对应推荐解释。  
+5. 性能与可靠性指标达到预算。
+
+---
+
+## 13. 结论
+
+本方案采用“规则主干 + AI解释 + 分段生成 + 全站融合”的低成本路径：  
+先解决最影响体验的目标错配，再逐步增强深度内容与互动能力。  
+在不引入重型基础设施的前提下，实现可落地、可观测、可扩展的 Copilot V1.3。
+

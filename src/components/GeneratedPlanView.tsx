@@ -21,6 +21,8 @@ export default function GeneratedPlanView({
     if (!plan) return null;
 
     const recommendations = useMemo(() => (Array.isArray(plan.recommendations) ? plan.recommendations : []), [plan.recommendations])
+    const remoteReadiness = useMemo(() => (plan?.plan_v2?.remoteReadiness || plan?.remoteReadiness || null), [plan])
+    const readinessScore = plan?.readiness ?? remoteReadiness?.score
     const hasRecommendations = recommendations.length > 0
     const [genericJobs, setGenericJobs] = useState<Array<{ id: string; title: string; company?: string; location?: string }>>([])
     const [loadingGenericJobs, setLoadingGenericJobs] = useState(false)
@@ -79,14 +81,14 @@ export default function GeneratedPlanView({
                         你的远程求职准备计划
                     </h3>
                 </div>
-                {plan.readiness !== undefined && (
+                {readinessScore !== undefined && readinessScore !== null && (
                     <div className="flex flex-col items-end gap-1.5">
                         <div className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-100 flex items-center gap-1.5 shadow-sm">
                             <span className="relative flex h-1.5 w-1.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                             </span>
-                            准备度 {plan.readiness}%
+                            准备度 {readinessScore}%
                         </div>
                     </div>
                 )}
@@ -104,6 +106,12 @@ export default function GeneratedPlanView({
                     </div>
                     <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
                         <div className="text-sm font-bold text-slate-800 mb-2">背景与竞争力诊断</div>
+                        {remoteReadiness?.summary && (
+                            <div className="mb-2.5 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-2 leading-relaxed">
+                                <span className="font-semibold mr-1">远程适配结论：</span>
+                                {remoteReadiness.summary}
+                            </div>
+                        )}
                         <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
                             {plan.summary || "AI 已成功为您生成求职诊断分析。"}
                         </div>
@@ -139,7 +147,14 @@ export default function GeneratedPlanView({
                                 {hasRecommendations ? recommendations.map((rec: any, i: number) => (
                                     <div key={i} className="flex flex-col p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm">
                                         <div className="flex items-center justify-between mb-1">
-                                            <div className="text-xs font-bold text-slate-800">{rec.role || rec.title}</div>
+                                            <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                                <span>{rec.role || rec.title}</span>
+                                                {rec.aiRecommended && (
+                                                    <span className="px-1.5 py-0.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600 text-[10px] font-semibold">
+                                                        AI推荐
+                                                    </span>
+                                                )}
+                                            </div>
                                             {(rec.company || rec.matchLevel || rec.matchScore || rec.matchLabel) && (
                                                 <div className="text-[10px] text-indigo-500 font-medium bg-indigo-50 px-1.5 py-0.5 rounded flex items-center gap-1">
                                                     {rec.company}

@@ -170,6 +170,8 @@ class ProcessedJobsService {
         matchLabel: job.matchLabel || job.match_label || undefined,
         matchDetails: job.matchDetails || job.match_details || null,
         matchDetailsLocked: Boolean(job.matchDetailsLocked || job.match_details_locked),
+        aiRecommended: Boolean(job.aiRecommended || job.ai_recommended),
+        goalFitScore: job.goalFitScore || job.goal_fit_score || undefined,
         // 🆕 保留翻译字段，让前端组件可以使用
         translations: job.translations || undefined,
         isTranslated: job.isTranslated || false,

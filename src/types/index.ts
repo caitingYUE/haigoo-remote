@@ -84,6 +84,8 @@ export interface Job {
     }
   } | null
   matchDetailsLocked?: boolean
+  aiRecommended?: boolean
+  goalFitScore?: number
 
   // Haigoo Member Fields
   riskRating?: {
