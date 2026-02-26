@@ -99,13 +99,13 @@ class ProcessedJobsService {
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         // Use legacy API path for jobs
         params.append('resource', 'processed-jobs');
         // params.append('target', 'processed-jobs'); // Not needed for api/data.js routing
-        response = await fetch(`${this.baseUrl}/data?${params}`, { 
+        response = await fetch(`${this.baseUrl}/data?${params}`, {
           headers,
-          signal: controller.signal 
+          signal: controller.signal
         })
       } catch (e) {
         console.warn('[processed-jobs-service] 本地API请求失败，尝试回退到预发环境', e)
@@ -163,6 +163,7 @@ class ProcessedJobsService {
         status: job.status,
         isRemote: job.isRemote,
         category: job.category,
+        experienceLevel: job.experienceLevel || job.experience_level,
         recommendationScore: job.matchScore || job.match_score || 0,
         matchScore: job.matchScore || job.match_score || 0,
         // 🆕 保留翻译字段，让前端组件可以使用
@@ -238,12 +239,12 @@ class ProcessedJobsService {
         action: 'featured_home',
         _t: Date.now().toString()
       })
-      
+
       const response = await fetch(`${this.baseUrl}/data?${params}`)
       if (!response.ok) throw new Error('Failed to fetch featured jobs')
-      
+
       const data = await response.json()
-      
+
       return data.jobs.map((job: any) => ({
         id: job.id,
         title: job.title,

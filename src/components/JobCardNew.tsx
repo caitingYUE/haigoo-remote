@@ -50,7 +50,7 @@ const getPastelColor = (str: string) => {
    for (let i = 0; i < str.length; i++) {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
    }
-   
+
    // Generate HSL color with high lightness and low saturation for pastel look
    // Use hash to pick Hue (0-360)
    const h = Math.abs(hash) % 360;
@@ -58,7 +58,7 @@ const getPastelColor = (str: string) => {
    const s = 70 + (Math.abs(hash) % 20);
    // Lightness 90-96% (Very light background)
    const l = 93 + (Math.abs(hash) % 5);
-   
+
    return `hsl(${h}, ${s}%, ${l}%)`;
 };
 
@@ -76,7 +76,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
    const isTranslated = !!job.translations?.title;
-   
+
    // Check if job is new (published within 3 days)
    const isNew = useMemo(() => {
       if (!job.publishedAt) return false;
@@ -89,7 +89,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
          return false;
       }
    }, [job.publishedAt]);
-   
+
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
    // Dynamic Background Color Logic
@@ -177,21 +177,21 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
    // Redesigned Company Logo Component
    // Matching reference: Large card style, dynamic background, centered logo, company name above
    const CompanyCard = ({ size: _size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
-      
+
       return (
-         <div 
+         <div
             className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-3 rounded-xl transition-colors h-full w-full relative overflow-hidden"
             style={{ backgroundColor: bgColor }}
          >
-             {/* Featured Badge for Grid View */}
-             {isFeatured && variant === 'grid' && (
+            {/* Featured Badge for Grid View */}
+            {isFeatured && variant === 'grid' && (
                <div className="absolute top-0 right-0 bg-gradient-to-bl from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 shadow-sm flex items-center gap-1">
-                 <Sparkles className="w-2.5 h-2.5" />
+                  <Sparkles className="w-2.5 h-2.5" />
                </div>
-             )}
+            )}
 
-             {/* Company Name (Top) */}
-            <div 
+            {/* Company Name (Top) */}
+            <div
                className="text-xs font-bold text-center mb-1.5 line-clamp-2 w-full leading-tight break-words"
                style={{ color: textColor }}
                title={job.translations?.company || job.company}
@@ -224,7 +224,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
 
    // Legacy Small Logo (for mobile or specific variants if needed)
    const CompanyLogoSmall = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
-       const sizeClasses = {
+      const sizeClasses = {
          sm: 'w-10 h-10 p-1.5',
          md: 'w-12 h-12 p-2',
          lg: 'w-14 h-14 p-2',
@@ -258,7 +258,7 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
 
    if (variant === 'list') {
       return (
-         <div 
+         <div
             onClick={() => onClick && onClick(job)}
             className={`
                group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-start
@@ -280,112 +280,99 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                <CompanyCard size="sm" />
             </div>
 
-               {/* Content Area */}
-               <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-4">
-                  {/* Delete Button (List View) */}
-                  {onDelete && (
-                      <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(job.id);
-                        }}
-                        className="absolute right-0 top-0 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors z-10"
-                        title="删除记录"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                  )}
-
-                  {/* Row 1: Badges & Salary (Desktop) */}
-                  <div className="flex items-center justify-between gap-2">
-                     <div className="flex flex-wrap items-center gap-2">
-                        {/* Job Type (Amber) */}
-                        {job.type && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
-                              <Calendar className="w-3 h-3 mr-1" />
-                              {JOB_TYPE_MAP[job.type] || job.type}
-                           </span>
-                        )}
-
-                        {/* Experience Level (Emerald - New) */}
-                        {job.experienceLevel && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
-                              <TrendingUp className="w-3 h-3 mr-1" />
-                              {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
-                           </span>
-                        )}
-
-                        {/* Industry (Purple - Differentiated from Category) */}
-                        {job.companyIndustry && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100/50">
-                              <Building2 className="w-3 h-3 mr-1" />
-                              {job.companyIndustry}
-                           </span>
-                        )}
-                        
-                        {/* Category (Blue/Indigo - Role related) */}
-                        {job.category && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
-                              <Briefcase className="w-3 h-3 mr-1" />
-                              {job.category}
-                           </span>
-                        )}
-                     </div>
-
-                     {/* Salary (Desktop - Restored to Top Right) */}
-                     <div className={`hidden md:block text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
-                        {formatSalary(job.salary)}
-                     </div>
-                  </div>
-
-                  {/* Row 2: Title */}
-                  <div className="flex items-center gap-2 mt-1">
-                     <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
-                        {job.translations?.title || job.title}
-                     </h3>
-                     {isTranslated && (
-                        <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-[10px] text-slate-500" title="已翻译">
-                           译
+            {/* Content Area */}
+            <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-4">
+               {/* Row 1: Badges & Salary (Desktop) */}
+               <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                     {/* Job Type (Amber) */}
+                     {job.type && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
+                           <Calendar className="w-3 h-3 mr-1" />
+                           {JOB_TYPE_MAP[job.type] || job.type}
                         </span>
                      )}
-                     {isNew && (
-                        <span className="flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
-                           New
+
+                     {/* Experience Level (Emerald - New) */}
+                     {job.experienceLevel && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
+                           <TrendingUp className="w-3 h-3 mr-1" />
+                           {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
+                        </span>
+                     )}
+
+                     {/* Industry (Purple - Differentiated from Category) */}
+                     {job.companyIndustry && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100/50">
+                           <Building2 className="w-3 h-3 mr-1" />
+                           {job.companyIndustry}
+                        </span>
+                     )}
+
+                     {/* Category (Blue/Indigo - Role related) */}
+                     {job.category && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
+                           <Briefcase className="w-3 h-3 mr-1" />
+                           {job.category}
                         </span>
                      )}
                   </div>
 
-                  {/* Row 3: Meta Info */}
-                  <div className="flex flex-wrap items-center text-sm text-slate-500 gap-x-6 gap-y-1 mt-1">
-                     {/* Company Name (Mobile Only - since desktop has it in the card) */}
-                     <span className="font-medium text-slate-700 md:hidden" title={job.translations?.company || job.company}>
-                        {job.translations?.company || job.company}
+                  {/* Salary (Desktop - Restored to Top Right) */}
+                  <div className={`hidden md:block text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                     {formatSalary(job.salary)}
+                  </div>
+               </div>
+
+               {/* Row 2: Title */}
+               <div className="flex items-center gap-2 mt-1">
+                  <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
+                     {job.translations?.title || job.title}
+                  </h3>
+                  {isTranslated && (
+                     <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-[10px] text-slate-500" title="已翻译">
+                        译
                      </span>
-                     
-                     <div className="flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4 text-slate-400" />
-                        <span className="truncate max-w-[200px]">{job.translations?.location || job.location}</span>
-                     </div>
+                  )}
+                  {isNew && (
+                     <span className="flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
+                        New
+                     </span>
+                  )}
+               </div>
 
-                     <div className="flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-slate-400" />
-                        <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
-                     </div>
+               {/* Row 3: Meta Info */}
+               <div className="flex flex-wrap items-center text-sm text-slate-500 gap-x-6 gap-y-1 mt-1">
+                  {/* Company Name (Mobile Only - since desktop has it in the card) */}
+                  <span className="font-medium text-slate-700 md:hidden" title={job.translations?.company || job.company}>
+                     {job.translations?.company || job.company}
+                  </span>
+
+                  <div className="flex items-center gap-1.5">
+                     <MapPin className="w-4 h-4 text-slate-400" />
+                     <span className="truncate max-w-[200px]">{job.translations?.location || job.location}</span>
                   </div>
 
-                  {/* Row 4: Tags & System Recommended */}
-                  <div className="flex items-center justify-between mt-auto pt-2">
-                     <div className="flex flex-wrap items-center gap-2">
-                        {displayTags.map((tag, i) => (
-                           <span
-                              key={i}
-                              className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100/80 hover:bg-slate-200 transition-colors"
-                           >
-                              {tag.text}
-                           </span>
-                        ))}
-                     </div>
+                  <div className="flex items-center gap-1.5">
+                     <Clock className="w-4 h-4 text-slate-400" />
+                     <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
+                  </div>
+               </div>
 
+               {/* Row 4: Tags & System Recommended */}
+               <div className="flex items-center justify-between mt-auto pt-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                     {displayTags.map((tag, i) => (
+                        <span
+                           key={i}
+                           className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100/80 hover:bg-slate-200 transition-colors"
+                        >
+                           {tag.text}
+                        </span>
+                     ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-auto">
                      {/* System Recommended (Bottom Right) */}
                      {isFeatured && (
                         <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100">
@@ -398,8 +385,23 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
                      <div className={`md:hidden text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
                         {formatSalary(job.salary)}
                      </div>
+
+                     {/* Delete Button */}
+                     {onDelete && (
+                        <button
+                           onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(job.id);
+                           }}
+                           className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors z-10"
+                           title="删除记录"
+                        >
+                           <Trash2 className="w-4 h-4" />
+                        </button>
+                     )}
                   </div>
                </div>
+            </div>
          </div>
       );
    }

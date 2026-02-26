@@ -9,7 +9,7 @@ export default function ForgotPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState('')
-  
+
   const { requestPasswordReset } = useAuth()
   const navigate = useNavigate()
 
@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -55,9 +55,9 @@ export default function ForgotPasswordPage() {
               <p className="text-slate-600 mb-6">
                 如果 <strong>{email}</strong> 已注册，我们已向其发送了重置密码的说明，请查收邮件（包括垃圾邮件箱）。
               </p>
-              <Link 
+              <Link
                 to="/login"
-                className="inline-block w-full bg-violet-600 text-white py-3 rounded-lg font-medium hover:bg-violet-700 transition-all"
+                className="inline-block w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg"
               >
                 返回登录
               </Link>
@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     placeholder="your@email.com"
                   />
                 </div>
@@ -96,7 +96,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? '发送中...' : '发送重置链接'}
               </button>

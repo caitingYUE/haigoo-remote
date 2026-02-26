@@ -246,7 +246,7 @@ const MembershipPage: React.FC = () => {
             <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
                <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
                   <span className="block mb-2">解锁全球远程机遇</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600">
                      开启无界职业生涯
                   </span>
                </h1>
@@ -262,7 +262,7 @@ const MembershipPage: React.FC = () => {
                         const el = document.getElementById('pricing-plans');
                         el?.scrollIntoView({ behavior: 'smooth' });
                      }}
-                     className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-base flex items-center gap-2 group"
+                     className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-base flex items-center gap-2 group"
                   >
                      探索会员方案
                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -284,7 +284,7 @@ const MembershipPage: React.FC = () => {
                         <div className="flex-1 flex flex-col">
                            {/* Title */}
                            <div className="flex items-center gap-3 mb-5">
-                              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-md shrink-0">
+                              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-500 rounded-full flex items-center justify-center shadow-md shrink-0">
                                  <Crown className="w-6 h-6 text-white" />
                               </div>
                               <div>
@@ -310,8 +310,8 @@ const MembershipPage: React.FC = () => {
                                     : (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString() : '永久有效')}
                               </div>
                               <div className="flex items-center gap-3 text-sm text-slate-700">
-                                 <div className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
-                                    <Sparkles className="w-3.5 h-3.5 text-violet-500" />
+                                 <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                                    <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
                                  </div>
                                  今日剩余翻译次数：无限次
                               </div>
@@ -427,7 +427,7 @@ const MembershipPage: React.FC = () => {
                </div>
                {/* Benefit 3 */}
                <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] border border-white shadow-xl shadow-slate-200/40 hover:-translate-y-1 transition-transform">
-                  <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                  <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
                      <Target className="w-7 h-7" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">个性化职业规划<br /><span className="text-base text-slate-700 font-semibold mt-1 block">专家级 1V1 职业规划</span></h3>

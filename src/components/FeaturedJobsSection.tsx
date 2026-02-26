@@ -13,11 +13,11 @@ interface FeaturedJobsSectionProps {
 
 const CATEGORIES = [
   { id: 'all', label: '全部精选', icon: Sparkles },
+  { id: 'Customer Service,Virtual Assistant,AI Trainer,Data Entry,Translator,Writer,Content,HR,Human Resources,Finance,Admin,Assistant,客服,客户服务,助理,行政,文员,人事,人力资源,财务,会计,内容创作,作家,文案,新媒体,社群,运营,标注,数据标注,AI训练师,翻译,录入,远程入门', label: '远程入门', icon: PenTool },
   { id: 'Product Manager,Product Owner,Product Marketing,Head of Product,产品经理,产品', label: '产品经理', icon: Layers },
   { id: 'Software Engineer,Frontend,Backend,Full Stack,DevOps,Data Engineer,Algorithm,Developer,研发,前端,后端,全栈,算法,工程师', label: '技术研发', icon: Code2 },
   { id: 'Marketing,Digital Marketing,Content,Social Media,Growth,Operations,Project Manager,市场,营销,运营,增长', label: '营销运营', icon: TrendingUp },
   { id: 'Sales,Account Manager,Business Development,Customer Success,销售,客户经理,BD,商务', label: '客户经理', icon: Megaphone },
-  { id: 'Customer Service,Virtual Assistant,AI Trainer,Data Entry,Translator,Writer,Content,HR,Human Resources,Finance,Admin,Assistant,客服,客户服务,助理,行政,文员,人事,人力资源,财务,会计,内容创作,作家,文案,新媒体,社群,运营,标注,数据标注,AI训练师,翻译,录入,远程入门', label: '远程入门', icon: PenTool },
 ]
 
 export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: FeaturedJobsSectionProps) {
@@ -42,17 +42,32 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
 
       setLoading(true)
       try {
+        let fetchLimit = 6;
+        if (activeTab === CATEGORIES[1].id) {
+          fetchLimit = 20; // 扩大拉取范围以便于后续在客户端做级别过滤
+        }
+
         const filters: any = {
           isFeatured: true,
-          limit: 6
+          limit: fetchLimit
         }
 
         if (activeTab !== 'all') {
           filters.category = activeTab
         }
 
-        const res = await processedJobsService.getProcessedJobs(1, 6, filters)
-        setJobs(res.jobs)
+        const res = await processedJobsService.getProcessedJobs(1, fetchLimit, filters)
+        let finalJobs = res.jobs;
+
+        if (activeTab === CATEGORIES[1].id) {
+          const allowedLevels = ['Entry', 'entry', 'Mid', 'mid', '初级', '中级'];
+          // 仅保留未填写经验或属于初/中级的岗位，并截断为6条
+          finalJobs = finalJobs.filter(j =>
+            !j.experienceLevel || allowedLevels.includes(j.experienceLevel as string)
+          ).slice(0, 6);
+        }
+
+        setJobs(finalJobs)
       } catch (error) {
         console.error('Failed to fetch jobs for tab:', activeTab, error)
       } finally {

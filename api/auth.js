@@ -19,7 +19,7 @@ import {
   sanitizeUser,
   isTokenExpired
 } from '../server-utils/auth-helpers.js'
-import { getUserByEmail, getUserById, saveUser, updateUser } from '../server-utils/user-helper.js'
+import { getUserByEmail, getUserById, saveUser, updateUser, deleteUserById } from '../server-utils/user-helper.js'
 import { sendVerificationEmail, sendSubscriptionWelcomeEmail, sendPasswordResetEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
@@ -88,7 +88,18 @@ async function handleRegister(req, res) {
 
   const emailExists = await getUserByEmail(email)
   if (emailExists) {
-    return res.status(409).json({ success: false, error: '该邮箱已被注册' })
+    if (!emailExists.emailVerified) {
+      if (isTokenExpired(emailExists.verificationExpires)) {
+        // Delete expired unverified account and proceed as new user
+        await deleteUserById(emailExists.user_id)
+        console.log(`[auth] Deleted expired unverified account: ${email}`)
+        // Fall through to register
+      } else {
+        return res.status(409).json({ success: false, error: '该邮箱已注册但尚未验证，请查看您的收件箱。如需重新注册请等待24小时验证过期。' })
+      }
+    } else {
+      return res.status(409).json({ success: false, error: '该邮箱已被注册' })
+    }
   }
 
   const userId = crypto.randomUUID()
@@ -129,8 +140,8 @@ async function handleRegister(req, res) {
     await sendVerificationEmail(email, finalUsername, verificationToken)
   }
 
-  const token = generateToken({ 
-    userId, 
+  const token = generateToken({
+    userId,
     email,
     role: user.roles?.admin ? 'admin' : 'user',
     isAdmin: !!user.roles?.admin
@@ -183,7 +194,7 @@ async function handleLogin(req, res) {
   if (email === 'caitlinyct@gmail.com') {
     console.log('[Auth] Force updating super admin privileges for caitlinyct@gmail.com')
     let needsUpdate = false
-    
+
     // Ensure admin role
     if (!user.roles || !user.roles.admin) {
       user.roles = { ...user.roles, admin: true }
@@ -193,11 +204,11 @@ async function handleLogin(req, res) {
     // Ensure VIP membership
     const now = new Date()
     const nextYear = new Date(now.setFullYear(now.getFullYear() + 1))
-    
+
     if (user.membership_level !== 'vip') {
-        user.membership_level = 'vip'
-        user.membership_expire_at = nextYear.toISOString()
-        needsUpdate = true
+      user.membership_level = 'vip'
+      user.membership_expire_at = nextYear.toISOString()
+      needsUpdate = true
     }
 
     if (needsUpdate) {
@@ -208,9 +219,9 @@ async function handleLogin(req, res) {
       // Let's use updateUser to be safe with DB schema.
       try {
         await updateUser(user.user_id, {
-           roles: user.roles,
-           membershipLevel: 'vip',
-           membershipExpireAt: nextYear.toISOString()
+          roles: user.roles,
+          membershipLevel: 'vip',
+          membershipExpireAt: nextYear.toISOString()
         })
         console.log('[Auth] Super admin privileges updated and saved')
       } catch (err) {
@@ -228,8 +239,8 @@ async function handleLogin(req, res) {
 
   console.log(`[auth] User logged in: ${email}`)
 
-  const token = generateToken({ 
-    userId: user.user_id, 
+  const token = generateToken({
+    userId: user.user_id,
     email: user.email,
     role: user.roles?.admin ? 'admin' : 'user',
     isAdmin: !!user.roles?.admin
@@ -264,10 +275,10 @@ async function handleGoogleLogin(req, res) {
 
   if (user) {
     if (user.auth_provider !== 'google') {
-    return res.status(400).json({ success: false, error: `该邮箱已使用 ${user.auth_provider} 方式注册` })
-  }
+      return res.status(400).json({ success: false, error: `该邮箱已使用 ${user.auth_provider} 方式注册` })
+    }
     // 使用统一的更新函数更新最后登录时间 (不再覆盖头像，保持 Haigoo 系列头像)
-    await updateUser(user.user_id, { 
+    await updateUser(user.user_id, {
       lastLoginAt: true
     })
   } else {
@@ -291,8 +302,8 @@ async function handleGoogleLogin(req, res) {
     await saveUser(user)
   }
 
-  const token = generateToken({ 
-    userId: user.user_id, 
+  const token = generateToken({
+    userId: user.user_id,
     email: user.email,
     role: user.roles?.admin ? 'admin' : 'user',
     isAdmin: !!user.roles?.admin
@@ -366,7 +377,7 @@ async function handleUpdateProfile(req, res) {
     phone,
     bio
   })
-  
+
   if (!success) {
     return res.status(500).json({ success: false, error: '更新失败，请稍后重试' })
   }
@@ -419,7 +430,7 @@ async function handleVerifyEmail(req, res) {
     verificationToken: null,
     verificationExpires: null
   })
-  
+
   if (!success) {
     return res.status(500).json({ success: false, error: '验证失败' })
   }
@@ -479,7 +490,7 @@ async function handleResendVerification(req, res) {
 async function handleGetSubscriptions(req, res) {
   const token = extractToken(req)
   if (!token) return res.status(401).json({ success: false, error: '未授权' })
-  
+
   const payload = verifyToken(token)
   if (!payload) return res.status(401).json({ success: false, error: '无效令牌' })
 
@@ -495,7 +506,7 @@ async function handleGetSubscriptions(req, res) {
       ORDER BY created_at DESC
     `
     const result = await neonHelper.query(query, [user.user_id, user.email])
-    
+
     return res.status(200).json({ success: true, subscriptions: result || [] })
   } catch (error) {
     console.error('[auth] Get subscriptions error:', error)
@@ -509,7 +520,7 @@ async function handleGetSubscriptions(req, res) {
 async function handleUpdateSubscription(req, res) {
   const token = extractToken(req)
   if (!token) return res.status(401).json({ success: false, error: '未授权' })
-  
+
   const payload = verifyToken(token)
   if (!payload) return res.status(401).json({ success: false, error: '无效令牌' })
 
@@ -520,7 +531,7 @@ async function handleUpdateSubscription(req, res) {
     // 验证所有权
     const user = await getUserById(payload.userId)
     const sub = await neonHelper.select('subscriptions', { subscription_id: id })
-    
+
     if (!sub || sub.length === 0) {
       return res.status(404).json({ success: false, error: '订阅不存在' })
     }
@@ -534,7 +545,7 @@ async function handleUpdateSubscription(req, res) {
     const updates = { updated_at: new Date().toISOString() }
     if (topic) updates.topic = topic
     if (status) updates.status = status
-    
+
     // 如果订阅没有 user_id，顺便关联上
     if (!subscription.user_id) updates.user_id = user.user_id
 
@@ -552,7 +563,7 @@ async function handleUpdateSubscription(req, res) {
 async function handleDeleteSubscription(req, res) {
   const token = extractToken(req)
   if (!token) return res.status(401).json({ success: false, error: '未授权' })
-  
+
   const payload = verifyToken(token)
   if (!payload) return res.status(401).json({ success: false, error: '无效令牌' })
 
@@ -562,7 +573,7 @@ async function handleDeleteSubscription(req, res) {
   try {
     const user = await getUserById(payload.userId)
     const sub = await neonHelper.select('subscriptions', { subscription_id: id })
-    
+
     if (!sub || sub.length === 0) {
       return res.status(404).json({ success: false, error: '订阅不存在' })
     }
@@ -579,7 +590,7 @@ async function handleDeleteSubscription(req, res) {
     // 这里我们直接 DELETE 吧，简单。
     const query = `DELETE FROM subscriptions WHERE subscription_id = $1`
     await neonHelper.query(query, [id])
-    
+
     return res.status(200).json({ success: true, message: '已取消订阅' })
   } catch (error) {
     console.error('[auth] Delete subscription error:', error)
@@ -592,7 +603,7 @@ async function handleDeleteSubscription(req, res) {
  */
 async function handleSubscribe(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
-  
+
   const { channel, identifier, topic, nickname, preferences } = req.body || {}
   if (!channel || !identifier) {
     return res.status(400).json({ success: false, error: '缺少必要字段' })
@@ -610,40 +621,40 @@ async function handleSubscribe(req, res) {
     // 尝试查找用户以关联 user_id
     let userId = null
     if (channel === 'email') {
-        const user = await getUserByEmail(identifier)
-        if (user) userId = user.user_id
+      const user = await getUserByEmail(identifier)
+      if (user) userId = user.user_id
     } else if (channel === 'feishu') {
-        // 尝试通过手机号查找用户 (手机号存储在 profile JSON 中)
-        const query = `SELECT user_id FROM users WHERE profile->>'phone' = $1 LIMIT 1`
-        const result = await neonHelper.query(query, [identifier])
-        if (result && result.length > 0) {
-            userId = result[0].user_id
-        }
+      // 尝试通过手机号查找用户 (手机号存储在 profile JSON 中)
+      const query = `SELECT user_id FROM users WHERE profile->>'phone' = $1 LIMIT 1`
+      const result = await neonHelper.query(query, [identifier])
+      if (result && result.length > 0) {
+        userId = result[0].user_id
+      }
     }
 
     // 检查订阅是否已存在
-    const existingSubscription = await neonHelper.select('subscriptions', { 
-      channel, 
-      identifier 
+    const existingSubscription = await neonHelper.select('subscriptions', {
+      channel,
+      identifier
     })
 
     if (existingSubscription && existingSubscription.length > 0) {
       // 清理重复订阅 (如果存在多个，保留第一个，删除其他的)
       if (existingSubscription.length > 1) {
-         console.log(`[auth] Found ${existingSubscription.length} duplicate subscriptions for ${identifier}, cleaning up...`)
-         const idsToDelete = existingSubscription.slice(1).map(s => s.subscription_id)
-         for (const id of idsToDelete) {
-             await neonHelper.query('DELETE FROM subscriptions WHERE subscription_id = $1', [id])
-         }
+        console.log(`[auth] Found ${existingSubscription.length} duplicate subscriptions for ${identifier}, cleaning up...`)
+        const idsToDelete = existingSubscription.slice(1).map(s => s.subscription_id)
+        for (const id of idsToDelete) {
+          await neonHelper.query('DELETE FROM subscriptions WHERE subscription_id = $1', [id])
+        }
       }
 
       // 更新现有订阅
       const subscriptionId = existingSubscription[0].subscription_id
-      const updates = { 
-          status: 'active', // 重新激活
-          updated_at: new Date().toISOString() 
+      const updates = {
+        status: 'active', // 重新激活
+        updated_at: new Date().toISOString()
       }
-      
+
       // 根据渠道更新特定字段
       if (channel === 'email') {
         if (topic) updates.topic = topic
@@ -652,7 +663,7 @@ async function handleSubscribe(req, res) {
       if (channel === 'feishu') updates.nickname = nickname
 
       if (userId && !existingSubscription[0].user_id) {
-          updates.user_id = userId
+        updates.user_id = userId
       }
 
       await neonHelper.update('subscriptions', updates, { subscription_id: subscriptionId })
@@ -680,12 +691,12 @@ async function handleSubscribe(req, res) {
 
     // 发送欢迎邮件 (仅当渠道为 email 时)
     if (channel === 'email' && isEmailServiceConfigured()) {
-        try {
-            await sendSubscriptionWelcomeEmail(identifier, topic)
-            console.log(`[auth] Subscription welcome email sent to ${identifier}`)
-        } catch (emailError) {
-            console.error('[auth] Failed to send subscription welcome email:', emailError)
-        }
+      try {
+        await sendSubscriptionWelcomeEmail(identifier, topic)
+        console.log(`[auth] Subscription welcome email sent to ${identifier}`)
+      } catch (emailError) {
+        console.error('[auth] Failed to send subscription welcome email:', emailError)
+      }
     }
 
     return res.status(200).json({ success: true, message: '订阅成功' })
@@ -725,7 +736,7 @@ async function handleCopilot(req, res) {
  */
 async function handleUnsubscribeByEmail(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
-  
+
   const { email } = req.body
   if (!email) return res.status(400).json({ success: false, error: 'Email is required' })
 
@@ -737,7 +748,7 @@ async function handleUnsubscribeByEmail(req, res) {
       OR user_id IN (SELECT user_id FROM users WHERE email = $1)
     `
     await neonHelper.query(query, [email])
-    
+
     return res.status(200).json({ success: true, message: '已取消所有订阅' })
   } catch (error) {
     console.error('[auth] Unsubscribe by email error:', error)
@@ -774,18 +785,18 @@ async function handleRequestPasswordReset(req, res) {
   // 查看 neon-ddl.sql 会更好，但为了快速实现，我们先尝试更新 user 表的 verification 字段
   // 风险：这会覆盖邮箱验证 token。但考虑到重置密码通常意味着重新验证身份，这是可以接受的。
   // 或者，我们检查一下 userHelper.updateUser 是否支持自定义字段。
-  
+
   // 让我们复用 verification_token，但在 token 中加个前缀或者 context? 
   // 不，Token 只是随机字符串。
   // 我们就在 reset-password 接口里检查 verification_token。
-  
+
   // 更好的做法：使用 update，存入 `reset_token` (假设表支持 json 或者我们修改表)
   // 如果表不支持，存 profile?
   // 让我们看看 neon-helper 的 update.
-  
+
   // 假设我们复用 verification_token 和 verification_expires
   // 这样比较简单，不需要改表结构。
-  
+
   await updateUser(user.user_id, {
     verificationToken: resetToken,
     verificationExpires: resetExpires

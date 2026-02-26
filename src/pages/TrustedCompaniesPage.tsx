@@ -11,7 +11,6 @@ import { TrustedStandardsBanner } from '../components/TrustedStandardsBanner'
 import { CompanyNominationBanner } from '../components/CompanyNominationBanner'
 import { CompanyNominationModal } from '../components/CompanyNominationModal'
 import { useAuth } from '../contexts/AuthContext'
-import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
 
 export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
@@ -47,7 +46,6 @@ export default function TrustedCompaniesPage() {
     const [totalActiveJobs, setTotalActiveJobs] = useState(0)
     const [availableJobCategories, setAvailableJobCategories] = useState<string[]>([]) // New State
     const [isNominationModalOpen, setIsNominationModalOpen] = useState(false)
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
     // Pagination State
     const [page, setPage] = useState(1)
@@ -222,7 +220,7 @@ export default function TrustedCompaniesPage() {
                         <TrustedStandardsBanner
                             context="company"
                             isMember={isMember}
-                            onShowUpgrade={() => setShowUpgradeModal(true)}
+                            onShowUpgrade={() => navigate('/membership')}
                         />
                         <CompanyNominationBanner onClick={() => setIsNominationModalOpen(true)} />
                     </div>
@@ -266,7 +264,7 @@ export default function TrustedCompaniesPage() {
                             </div>
 
                             <button
-                                onClick={() => setShowUpgradeModal(true)}
+                                onClick={() => navigate('/membership')}
                                 className="px-10 py-4 bg-slate-900 hover:bg-indigo-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 mx-auto w-full sm:w-auto"
                             >
                                 <Crown className="w-5 h-5" />
@@ -352,11 +350,6 @@ export default function TrustedCompaniesPage() {
             <CompanyNominationModal
                 isOpen={isNominationModalOpen}
                 onClose={() => setIsNominationModalOpen(false)}
-            />
-            <MembershipUpgradeModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
-                triggerSource="general"
             />
         </div >
     )

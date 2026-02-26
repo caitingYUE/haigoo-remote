@@ -71,7 +71,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         setFeedbackAccuracy('unknown')
         setFeedbackContent('')
         setFeedbackMessage('')
-        
+
         // Reset translation state - Auto-enable for members
         setShowTranslation(isMember)
 
@@ -94,29 +94,29 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 fetch('/api/users?resource=translation-usage', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        setTranslationUsageCount(data.usage);
-                        // Sync local storage for fallback
-                        localStorage.setItem('translation_usage_count', data.usage.toString());
-                        localStorage.setItem('translation_usage_date', new Date().toDateString());
-                    }
-                })
-                .catch(err => console.error('Failed to fetch translation usage:', err));
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            setTranslationUsageCount(data.usage);
+                            // Sync local storage for fallback
+                            localStorage.setItem('translation_usage_count', data.usage.toString());
+                            localStorage.setItem('translation_usage_date', new Date().toDateString());
+                        }
+                    })
+                    .catch(err => console.error('Failed to fetch translation usage:', err));
             }
         } else if (!isAuthenticated) {
-             // Fallback for guest users (still use local storage or just rely on session)
-             const storedDate = localStorage.getItem('translation_usage_date')
-             const today = new Date().toDateString()
-             if (storedDate !== today) {
-                 setTranslationUsageCount(0)
-                 localStorage.setItem('translation_usage_count', '0')
-                 localStorage.setItem('translation_usage_date', today)
-             } else {
-                 const count = parseInt(localStorage.getItem('translation_usage_count') || '0', 10)
-                 setTranslationUsageCount(count)
-             }
+            // Fallback for guest users (still use local storage or just rely on session)
+            const storedDate = localStorage.getItem('translation_usage_date')
+            const today = new Date().toDateString()
+            if (storedDate !== today) {
+                setTranslationUsageCount(0)
+                localStorage.setItem('translation_usage_count', '0')
+                localStorage.setItem('translation_usage_date', today)
+            } else {
+                const count = parseInt(localStorage.getItem('translation_usage_count') || '0', 10)
+                setTranslationUsageCount(count)
+            }
         }
     }, [isAuthenticated, isMember]);
 
@@ -193,9 +193,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 // Check if ApplyInterceptModal has a "Member View" which is just informational?
                 // The current ApplyInterceptModal shows info for members on Trusted jobs.
                 // We'll keep showing it for members, but strictly BLOCK non-members.
-                setShowApplyInterceptModal(true); 
+                setShowApplyInterceptModal(true);
             } else {
-                 setShowApplyInterceptModal(true);
+                setShowApplyInterceptModal(true);
             }
             return;
         }
@@ -220,7 +220,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             });
 
             window.location.href = `mailto:${companyInfo.hiringEmail}?subject=${encodeURIComponent(`Application for ${job.title}`)}`;
-            
+
             if (isAuthenticated) {
                 try {
                     const token = localStorage.getItem('haigoo_auth_token');
@@ -246,7 +246,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         const url = job.url || job.sourceUrl;
-        
+
         trackingService.track('click_apply', {
             job_id: job.id,
             job_title: job.title,
@@ -261,7 +261,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             if (isAuthenticated) {
                 try {
                     const token = localStorage.getItem('haigoo_auth_token');
-                    
+
                     await fetch('/api/user-profile?action=record_interaction', {
                         method: 'POST',
                         headers: {
@@ -444,16 +444,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 mb-5">
-                        <div className="flex items-center gap-1.5">
-                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="truncate max-w-[200px] font-medium">{displayText(job.company || '')}</span>
-                            {job.isTrusted && isMember && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 flex-shrink-0">
-                                    <Sparkles className="w-3 h-3" />
-                                    认证
-                                </span>
-                            )}
-                        </div>
+                    <div className="flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate max-w-[200px] font-medium">{displayText(job.company || '')}</span>
+                        {job.isTrusted && isMember && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 flex-shrink-0">
+                                <Sparkles className="w-3 h-3" />
+                                认证
+                            </span>
+                        )}
+                    </div>
 
                     <div className="flex items-center gap-1.5">
                         <div className="w-1 h-1 rounded-full bg-slate-300"></div>
@@ -462,7 +462,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             const locText = displayText(job.location || '', job.translations?.location);
                             // Only show tooltip if text is truncated (simplified logic: check length)
                             const isLongText = locText.length > 30;
-                            
+
                             return (
                                 <div className="relative">
                                     <span
@@ -505,7 +505,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 if (!job.salary) return '薪资面议';
                                 if (typeof job.salary === 'string') {
                                     if (job.salary === 'null' || job.salary === 'Open' || job.salary === 'Competitive' || job.salary === 'Unspecified' || job.salary === '0' || job.salary === '0-0') return '薪资面议';
-                                    
+
                                     // Try parse JSON
                                     if (job.salary.trim().startsWith('{')) {
                                         try {
@@ -513,7 +513,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             if (parsed && typeof parsed === 'object' && parsed.min > 0) {
                                                 return `${parsed.currency === 'USD' ? '$' : '¥'}${parsed.min.toLocaleString()} - ${parsed.max.toLocaleString()}`;
                                             }
-                                        } catch (e) {}
+                                        } catch (e) { }
                                     }
 
                                     return job.salary;
@@ -557,7 +557,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <button
                                 onClick={() => {
                                     if (!isAuthenticated) {
-                                        if (window.confirm('登录后可免费试用翻译功能（每日3次）\n\n是否前往登录？')) {
+                                        if (window.confirm('登录后可免费试用翻译功能（共3次）\\n\\n是否前往登录？')) {
                                             navigate('/login')
                                         }
                                         return
@@ -573,7 +573,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             // Optimistically increment
                                             const newCount = translationUsageCount + 1
                                             setTranslationUsageCount(newCount)
-                                            
+
                                             // Call API to persist usage
                                             const token = localStorage.getItem('haigoo_auth_token')
                                             if (token) {
@@ -581,22 +581,22 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     method: 'POST',
                                                     headers: { 'Authorization': `Bearer ${token}` }
                                                 })
-                                                .then(res => res.json())
-                                                .then(data => {
-                                                    if (data.success) {
-                                                        // Sync accurate count from server
-                                                        setTranslationUsageCount(data.usage)
-                                                        localStorage.setItem('translation_usage_count', data.usage.toString())
-                                                        localStorage.setItem('translation_usage_date', new Date().toDateString())
-                                                    } else if (data.error === 'Translation limit reached') {
-                                                        // Revert if limit reached (edge case)
-                                                        setTranslationUsageCount(TRANSLATION_FREE_LIMIT)
-                                                        setShowUpgradeModal(true)
-                                                        setShowTranslation(false) // Hide translation
-                                                        return // Stop here
-                                                    }
-                                                })
-                                                .catch(console.error)
+                                                    .then(res => res.json())
+                                                    .then(data => {
+                                                        if (data.success) {
+                                                            // Sync accurate count from server
+                                                            setTranslationUsageCount(data.usage)
+                                                            localStorage.setItem('translation_usage_count', data.usage.toString())
+                                                            localStorage.setItem('translation_usage_date', new Date().toDateString())
+                                                        } else if (data.error === 'Translation limit reached') {
+                                                            // Revert if limit reached (edge case)
+                                                            setTranslationUsageCount(TRANSLATION_FREE_LIMIT)
+                                                            setShowUpgradeModal(true)
+                                                            setShowTranslation(false) // Hide translation
+                                                            return // Stop here
+                                                        }
+                                                    })
+                                                    .catch(console.error)
                                             } else {
                                                 // Local fallback
                                                 localStorage.setItem('translation_usage_count', newCount.toString())
@@ -664,11 +664,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         className="mb-6"
                     />
 
-                        {job.isTrusted && isMember && (
-                            <div className="mb-6">
-                                <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => setShowUpgradeModal(true)} />
-                            </div>
-                        )}
+                    {job.isTrusted && isMember && (
+                        <div className="mb-6">
+                            <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => setShowUpgradeModal(true)} />
+                        </div>
+                    )}
 
                     {/* Job Description Sections */}
                     {jobDescriptionData.sections.map((section, index) => (
@@ -726,89 +726,89 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover/card:text-indigo-600 transition-colors">
-                                        {displayText(job.company || '')}
-                                    </h3>
-                                    {job.isTrusted && isMember && (
-                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-white text-[10px] font-bold shadow-sm">
-                                            <Crown className="w-3 h-3 text-amber-400" />
-                                            <span>会员专属信息</span>
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
-                                    <span>{companyInfo?.industry || job.companyIndustry || job.category || '未分类'}</span>
-                                    {companyInfo?.companyRating && isMember && (
-                                        <>
-                                            <span className="text-slate-300">•</span>
-                                            <span className="flex items-center gap-0.5 text-amber-500 font-medium">
-                                                <Star className="w-3.5 h-3.5 fill-current" />
-                                                {companyInfo.companyRating}
-                                            </span>
-                                        </>
-                                    )}
-                                </div>
-
-                                {/* Enhanced Company Info Grid */}
-                                <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-100 shadow-sm relative overflow-hidden">
-                                    {!isMember && (
-                                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center text-center p-4">
-                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mb-2">
-                                                <Lock className="w-4 h-4 text-slate-400" />
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover/card:text-indigo-600 transition-colors">
+                                            {displayText(job.company || '')}
+                                        </h3>
+                                        {job.isTrusted && isMember && (
+                                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-white text-[10px] font-bold shadow-sm">
+                                                <Crown className="w-3 h-3 text-amber-400" />
+                                                <span>会员专属信息</span>
                                             </div>
-                                            <span className="text-slate-500 font-medium">企业认证信息仅会员可见</span>
-                                        </div>
-                                    )}
-                                    <div className={`flex items-center gap-2 ${!isMember ? 'blur-[3px] opacity-60 select-none' : ''}`}>
-                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-                                            <Users className="w-3 h-3 text-indigo-600" />
-                                        </div>
-                                        <span className="truncate font-medium text-slate-600">
-                                            {isMember ? (companyInfo?.employeeCount || '规模未知') : '500-1000人'}
-                                        </span>
+                                        )}
                                     </div>
-                                    <div className={`flex items-center gap-2 ${!isMember ? 'blur-[3px] opacity-60 select-none' : ''}`}>
-                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-                                            <MapPin className="w-3 h-3 text-indigo-600" />
-                                        </div>
-                                        <span className="truncate font-medium text-slate-600" title={isMember ? (companyInfo?.address || '总部未知') : ''}>
-                                            {isMember ? (companyInfo?.address || '总部未知') : '北京市海淀区'}
-                                        </span>
-                                    </div>
-                                    <div className={`flex items-center gap-2 ${!isMember ? 'blur-[3px] opacity-60 select-none' : ''}`}>
-                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-                                            <Calendar className="w-3 h-3 text-indigo-600" />
-                                        </div>
-                                        <span className="font-medium text-slate-600">
-                                            {isMember ? (companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知') : '2015年成立'}
-                                        </span>
-                                    </div>
-                                    <div className={`flex items-center gap-2 ${!isMember ? 'blur-[3px] opacity-60 select-none' : ''}`}>
-                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-                                            <Mail className="w-3 h-3 text-indigo-600" />
-                                        </div>
-                                        <span className="text-indigo-600 font-bold">
-                                            {isMember ? (companyInfo?.hiringEmail || companyInfo?.emailType || '通用邮箱') : 'HR直招邮箱'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        {isMember && (
-                            <div className="flex items-center justify-between text-xs text-slate-500 mt-3 px-1">
-                                <span className="flex items-center gap-1.5">
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                                    Haigoo 已核验企业真实性
-                                </span>
-                                <div className="flex items-center gap-1 text-indigo-600 font-medium group-hover:translate-x-1 transition-transform">
-                                    查看详情
-                                    <ChevronRight className="w-3.5 h-3.5" />
+                                    <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
+                                        <span>{companyInfo?.industry || job.companyIndustry || job.category || '未分类'}</span>
+                                        {companyInfo?.companyRating && isMember && (
+                                            <>
+                                                <span className="text-slate-300">•</span>
+                                                <span className="flex items-center gap-0.5 text-amber-500 font-medium">
+                                                    <Star className="w-3.5 h-3.5 fill-current" />
+                                                    {companyInfo.companyRating}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Enhanced Company Info Grid */}
+                                    <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-100 shadow-sm relative overflow-hidden">
+                                        {!isMember && (
+                                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center text-center p-4">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+                                                    <Lock className="w-4 h-4 text-slate-400" />
+                                                </div>
+                                                <span className="text-slate-500 font-medium">企业认证信息仅会员可见</span>
+                                            </div>
+                                        )}
+                                        <div className={`flex items-center gap-2 ${!isMember ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                            <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                                <Users className="w-3 h-3 text-indigo-600" />
+                                            </div>
+                                            <span className="truncate font-medium text-slate-600">
+                                                {isMember ? (companyInfo?.employeeCount || '规模未知') : '500-1000人'}
+                                            </span>
+                                        </div>
+                                        <div className={`flex items-center gap-2 ${!isMember ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                            <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                                <MapPin className="w-3 h-3 text-indigo-600" />
+                                            </div>
+                                            <span className="truncate font-medium text-slate-600" title={isMember ? (companyInfo?.address || '总部未知') : ''}>
+                                                {isMember ? (companyInfo?.address || '总部未知') : '北京市海淀区'}
+                                            </span>
+                                        </div>
+                                        <div className={`flex items-center gap-2 ${!isMember ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                            <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                                <Calendar className="w-3 h-3 text-indigo-600" />
+                                            </div>
+                                            <span className="font-medium text-slate-600">
+                                                {isMember ? (companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知') : '2015年成立'}
+                                            </span>
+                                        </div>
+                                        <div className={`flex items-center gap-2 ${!isMember ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                            <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                                <Mail className="w-3 h-3 text-indigo-600" />
+                                            </div>
+                                            <span className="text-indigo-600 font-bold">
+                                                {isMember ? (companyInfo?.hiringEmail || companyInfo?.emailType || '通用邮箱') : 'HR直招邮箱'}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        )}
+
+                            {isMember && (
+                                <div className="flex items-center justify-between text-xs text-slate-500 mt-3 px-1">
+                                    <span className="flex items-center gap-1.5">
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                        Haigoo 已核验企业真实性
+                                    </span>
+                                    <div className="flex items-center gap-1 text-indigo-600 font-medium group-hover:translate-x-1 transition-transform">
+                                        查看详情
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </section>
 
@@ -825,7 +825,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 </p>
                             </>
                         ) : null}
-                        
+
                         {/* Hidden as requested: Official & Trusted Platform badges
                         : sourceType === 'official' ? (
                             <>
@@ -896,11 +896,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     setShowUpgradeModal(true)
                                 }
                             }}
-                            className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${
-                                isMember 
-                                    ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5' 
+                            className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${isMember
+                                    ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5'
                                     : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50 cursor-pointer'
-                            }`}
+                                }`}
                         >
                             {isMember ? (
                                 <>
@@ -912,13 +911,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 </>
                             ) : (
                                 <>
-                        <div className="flex items-center gap-2 mb-0.5">
-                            <Lock className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-indigo-500 transition-colors" />
-                            <span className="text-slate-600 font-semibold group-hover/btn:text-indigo-600 transition-colors">邮箱直申 (会员)</span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-normal group-hover/btn:text-indigo-400 transition-colors">
-                            解锁会员专属高效通道
-                        </div>
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <Lock className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-indigo-500 transition-colors" />
+                                        <span className="text-slate-600 font-semibold group-hover/btn:text-indigo-600 transition-colors">邮箱直申 (会员)</span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-normal group-hover/btn:text-indigo-400 transition-colors">
+                                        解锁会员专属高效通道
+                                    </div>
                                 </>
                             )}
                         </button>
@@ -989,9 +988,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 onSubmitSuccess={handleReferralSuccess}
             />
             {/* Share Modal */}
-            <ShareJobModal 
-                isOpen={isShareModalOpen} 
-                onClose={() => setIsShareModalOpen(false)} 
+            <ShareJobModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
                 jobId={job.id}
                 jobTitle={job.translations?.title || job.title}
                 companyName={job.translations?.company || job.company || ''}

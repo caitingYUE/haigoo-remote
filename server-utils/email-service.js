@@ -91,7 +91,7 @@ export async function sendEmail(to, subject, html) {
 export async function sendVerificationEmail(to, username, token) {
   const siteUrl = (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
   const verificationLink = `${siteUrl}/verify-email?token=${token}&email=${encodeURIComponent(to)}`
-  
+
   const subject = '验证您的 Haigoo 账户'
   const html = `
 <!DOCTYPE html>
@@ -103,9 +103,10 @@ export async function sendVerificationEmail(to, username, token) {
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .header { text-align: center; margin-bottom: 30px; }
     .logo { height: 40px; margin-bottom: 10px; }
-    .button { display: inline-block; background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+    .button { display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; transition: background-color 0.2s; }
+    .button:hover { background-color: #4338CA; }
     .footer { margin-top: 40px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
-    .link { color: #7c3aed; word-break: break-all; }
+    .link { color: #4F46E5; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -141,7 +142,7 @@ export async function sendVerificationEmail(to, username, token) {
 export async function sendPasswordResetEmail(to, username, token) {
   const siteUrl = (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
   const resetLink = `${siteUrl}/reset-password?token=${token}&email=${encodeURIComponent(to)}`
-  
+
   const subject = '重置您的 Haigoo 密码'
   const html = `
 <!DOCTYPE html>
@@ -152,9 +153,10 @@ export async function sendPasswordResetEmail(to, username, token) {
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .header { text-align: center; margin-bottom: 30px; }
-    .button { display: inline-block; background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+    .button { display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; transition: background-color 0.2s; }
+    .button:hover { background-color: #4338CA; }
     .footer { margin-top: 40px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
-    .link { color: #7c3aed; word-break: break-all; }
+    .link { color: #4F46E5; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -198,7 +200,7 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .header { background: linear-gradient(135deg, #818cf8 0%, #4F46E5 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
     .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
     .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
   </style>
@@ -235,7 +237,7 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
  */
 export async function sendDailyDigestEmail(to, jobs, topic) {
   if (!jobs || jobs.length === 0) return false
-  
+
   const label = getTopicLabel(topic)
   const jobsHtml = jobs.map(job => `
     <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
@@ -263,7 +265,7 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f6f8fc; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 16px 16px 0 0; }
+    .header { background: linear-gradient(135deg, #818cf8 0%, #4F46E5 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 16px 16px 0 0; }
     .logo { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; display: block; text-decoration: none; color: white; }
     .subtitle { font-size: 16px; opacity: 0.9; font-weight: 500; }
     .content { background: #ffffff; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
