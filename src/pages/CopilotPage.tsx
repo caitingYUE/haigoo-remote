@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { CopilotProvider, useCopilot } from '../contexts/CopilotContext'
 import Layout from '../components/Layout'
+import { trackingService } from '../services/tracking-service'
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Main Page
@@ -472,6 +473,7 @@ function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTim
 
     const handleCreate = async () => {
         setLocalLoading(true)
+        trackingService.track('click_generate_copilot_plan', { source: 'copilot_page' })
         try {
             await callAction('create-plan', {
                 goal: planGoal,
