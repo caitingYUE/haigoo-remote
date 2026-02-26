@@ -56,20 +56,14 @@ export default defineConfig({
       }
     }
   },
+  esbuild: {
+    // 使用高速的 esbuild 抛弃 console 和 debugger，速度是 terser 的 20~40 倍
+    drop: ['console', 'debugger'],
+  },
   build: {
     outDir: 'dist',
     sourcemap: false, // 生产环境关闭 sourcemap
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,      // 生产环境移除所有 console
-        drop_debugger: true,      // 移除 debugger
-      },
-      mangle: {
-        toplevel: false,          // ❗不要混淆顶层变量（避免破坏 Vercel 入口）
-        properties: false         // ❗不要混淆属性名（避免破坏 Node 内部属性）
-      }
-    },
+    minify: 'esbuild', // 换回默认的高极速 esbuild
     rollupOptions: {
       output: {
         manualChunks: {

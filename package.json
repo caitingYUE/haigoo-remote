@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx,js --report-unused-disable-directives",
     "preview": "vite preview",
