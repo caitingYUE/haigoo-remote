@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
 import GeneratedPlanView from './GeneratedPlanView'
+import { trackingService } from '../services/tracking-service'
 
 interface HomeHeroProps {
     stats?: {
@@ -1043,7 +1044,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                                             {/* Generate CTA */}
                                             <button
-                                                onClick={handleGenerate}
+                                                onClick={() => {
+                                                    trackingService.track('click_generate_copilot_plan');
+                                                    handleGenerate();
+                                                }}
                                                 disabled={loading}
                                                 className="w-full py-4 rounded-xl font-bold text-base text-white relative overflow-hidden group disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:scale-[1.015] active:scale-[0.99] shadow-xl shadow-indigo-500/20"
                                                 style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}

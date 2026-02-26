@@ -102,7 +102,7 @@ const AdminTeamPage: React.FC = () => {
   const [resumeSearchTerm, setResumeSearchTerm] = useState('');
   const [resumeLoading, setResumeLoading] = useState(false);
   const [storageProvider, setStorageProvider] = useState<string>('');
-  
+
   // 简历筛选状态
   const [resumeSourceFilter, setResumeSourceFilter] = useState<string>('all');
   const [resumeUserTypeFilter, setResumeUserTypeFilter] = useState<string>('all');
@@ -151,7 +151,7 @@ const AdminTeamPage: React.FC = () => {
       // Ensure we get the latest sources after refresh
       const sources = rssService.getRSSSources();
       console.log('Loaded RSS Sources:', sources);
-      
+
       // 转换为ExtendedRSSSource格式
       const extendedSources: ExtendedRSSSource[] = sources.map((source, index) => ({
         ...source,
@@ -188,15 +188,15 @@ const AdminTeamPage: React.FC = () => {
         const rawResumes = data.data || [];
         // 处理数据：修复乱码，补充字段
         const processedResumes = rawResumes.map((resume: any) => ({
-            ...resume,
-            fileName: fixEncoding(resume.fileName),
-            source: resume.metadata?.source || 'unknown',
-            // 如果 user_id 存在，尝试关联用户昵称（这里需要后端支持，暂时用 user_id 代替）
-            // 可以通过 user_id 判断是 registered 还是 lead
-            userType: resume.userId?.startsWith('lead_') || resume.userId?.startsWith('anon_') ? 'Lead' : 'Registered',
-            uploadedAt: resume.createdAt || resume.uploadedAt || new Date().toISOString()
+          ...resume,
+          fileName: fixEncoding(resume.fileName),
+          source: resume.metadata?.source || 'unknown',
+          // 如果 user_id 存在，尝试关联用户昵称（这里需要后端支持，暂时用 user_id 代替）
+          // 可以通过 user_id 判断是 registered 还是 lead
+          userType: resume.userId?.startsWith('lead_') || resume.userId?.startsWith('anon_') ? 'Lead' : 'Registered',
+          uploadedAt: resume.createdAt || resume.uploadedAt || new Date().toISOString()
         }));
-        
+
         setResumes(processedResumes);
         setStorageProvider(data.provider || 'unknown');
       } else {
@@ -215,17 +215,17 @@ const AdminTeamPage: React.FC = () => {
       const token = localStorage.getItem('haigoo_auth_token');
       const res = await fetch('/api/users', {
         headers: {
-            'Authorization': `Bearer ${token || ''}`
+          'Authorization': `Bearer ${token || ''}`
         }
       });
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.users)) {
-            const map: Record<string, any> = {};
-            data.users.forEach((u: any) => {
-                map[u.id] = u; // Store full user object
-            });
-            setUserMap(map);
+          const map: Record<string, any> = {};
+          data.users.forEach((u: any) => {
+            map[u.id] = u; // Store full user object
+          });
+          setUserMap(map);
         }
       }
     } catch (e) {
@@ -274,7 +274,7 @@ const AdminTeamPage: React.FC = () => {
         const sources = rssService.getRSSSources();
         const index = sources.findIndex(s => s.id === editingRSSSource.id);
         if (index !== -1) {
-             await rssService.updateRSSSource(index, { ...rssFormData, isActive: (editingRSSSource as ExtendedRSSSource).isActive });
+          await rssService.updateRSSSource(index, { ...rssFormData, isActive: (editingRSSSource as ExtendedRSSSource).isActive });
         }
       } else {
         await rssService.addRSSSource(rssFormData);
@@ -295,8 +295,8 @@ const AdminTeamPage: React.FC = () => {
       const sources = rssService.getRSSSources();
       const index = sources.findIndex(s => s.id === sourceId);
       if (index !== -1) {
-          await rssService.deleteRSSSource(index);
-          await loadData();
+        await rssService.deleteRSSSource(index);
+        await loadData();
       }
     } catch (error) {
       console.error('删除RSS源失败:', error);
@@ -536,17 +536,17 @@ const AdminTeamPage: React.FC = () => {
       const matchesSearch = fileName.includes(term) || userId.includes(term) || email.includes(term);
 
       // Filters
-      const matchesSource = resumeSourceFilter === 'all' || 
+      const matchesSource = resumeSourceFilter === 'all' ||
         (resumeSourceFilter === 'christmas' && resume.source === 'christmas_tree') ||
         (resumeSourceFilter === 'personal' && resume.source === 'personal_center') ||
         (resumeSourceFilter === 'application' && resume.source === 'job_application') ||
         (resumeSourceFilter === 'unknown' && !resume.source);
 
-      const matchesUserType = resumeUserTypeFilter === 'all' || 
+      const matchesUserType = resumeUserTypeFilter === 'all' ||
         (resumeUserTypeFilter === 'lead' && resume.userType === 'Lead') ||
         (resumeUserTypeFilter === 'registered' && resume.userType === 'Registered');
 
-      const matchesTalentPool = resumeTalentPoolFilter === 'all' || 
+      const matchesTalentPool = resumeTalentPoolFilter === 'all' ||
         (resumeTalentPoolFilter === 'yes' && resume.metadata?.joinTalentPool === true) ||
         (resumeTalentPoolFilter === 'no' && resume.metadata?.joinTalentPool !== true);
 
@@ -579,10 +579,10 @@ const AdminTeamPage: React.FC = () => {
       if (source === 'christmas_tree') return <span className="status-badge high">圣诞树活动</span>;
       if (source === 'personal_center') return <span className="status-badge medium">个人中心</span>;
       if (source === 'job_application') return <span className="status-badge low">职位申请</span>;
-      
+
       // Inference fallback
       if (userType === 'Registered') return <span className="status-badge medium">个人中心(推测)</span>;
-      
+
       return <span className="status-badge text-slate-500 bg-slate-100">未知来源</span>;
     };
 
@@ -611,7 +611,7 @@ const AdminTeamPage: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             {/* 筛选工具栏 */}
             <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
               {/* 搜索 */}
@@ -629,7 +629,7 @@ const AdminTeamPage: React.FC = () => {
               </div>
 
               {/* 来源筛选 */}
-              <select 
+              <select
                 className="form-select text-sm py-2"
                 value={resumeSourceFilter}
                 onChange={(e) => setResumeSourceFilter(e.target.value)}
@@ -642,7 +642,7 @@ const AdminTeamPage: React.FC = () => {
               </select>
 
               {/* 用户类型筛选 */}
-              <select 
+              <select
                 className="form-select text-sm py-2"
                 value={resumeUserTypeFilter}
                 onChange={(e) => setResumeUserTypeFilter(e.target.value)}
@@ -653,7 +653,7 @@ const AdminTeamPage: React.FC = () => {
               </select>
 
               {/* 排序 */}
-              <select 
+              <select
                 className="form-select text-sm py-2"
                 value={resumeSort}
                 onChange={(e) => setResumeSort(e.target.value as 'newest' | 'oldest')}
@@ -666,13 +666,13 @@ const AdminTeamPage: React.FC = () => {
 
           <div className="card-content">
             <div className="flex justify-between items-center mb-4 text-sm text-slate-500">
-               <div>
-                 <span className="mr-4">总计: <span className="font-medium text-slate-900">{resumes.length}</span></span>
-                 <span>筛选结果: <span className="font-medium text-slate-900">{filteredResumes.length}</span></span>
-               </div>
-               <div>
-                 存储提供者: <span className="font-medium text-slate-900">{storageProvider}</span>
-               </div>
+              <div>
+                <span className="mr-4">总计: <span className="font-medium text-slate-900">{resumes.length}</span></span>
+                <span>筛选结果: <span className="font-medium text-slate-900">{filteredResumes.length}</span></span>
+              </div>
+              <div>
+                存储提供者: <span className="font-medium text-slate-900">{storageProvider}</span>
+              </div>
             </div>
 
             {/* 简历表格 */}
@@ -709,58 +709,57 @@ const AdminTeamPage: React.FC = () => {
                       const userObj = userMap[resume.userId];
                       const displayEmail = resume.metadata?.email || userObj?.email || '无邮箱';
                       const isTalentPool = resume.metadata?.joinTalentPool === true;
-                      
+
                       return (
-                      <tr key={resume.id}>
-                        <td className="font-mono text-xs text-slate-500">
-                          {resume.userId ? (
-                            <div title={resume.userId}>
-                              {resume.userId.slice(0, 8)}...
-                            </div>
-                          ) : '无ID'}
-                        </td>
-                        <td>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            resume.userType === 'Lead' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {resume.userType === 'Lead' ? '潜在' : '注册'}
-                          </span>
-                        </td>
-                        <td className="text-sm text-slate-700">
-                          {displayEmail}
-                        </td>
-                        <td>
-                          {getSourceLabel(resume.source, resume.userType)}
-                        </td>
-                        <td>
-                          {isTalentPool ? (
-                            <span className="text-green-600 flex items-center text-xs font-medium">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              已加入
+                        <tr key={resume.id}>
+                          <td className="font-mono text-xs text-slate-500">
+                            {resume.userId ? (
+                              <div title={resume.userId}>
+                                {resume.userId.slice(0, 8)}...
+                              </div>
+                            ) : '无ID'}
+                          </td>
+                          <td>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${resume.userType === 'Lead' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                              }`}>
+                              {resume.userType === 'Lead' ? '潜在' : '注册'}
                             </span>
-                          ) : (
-                            <span className="text-slate-400 text-xs">-</span>
-                          )}
-                        </td>
-                        <td>
-                          <div className="text-sm font-medium text-slate-900 truncate max-w-[200px]" title={resume.fileName}>
-                            {resume.fileName}
-                          </div>
-                          <div className="text-xs text-slate-500">{formatSize(resume.size)}</div>
-                        </td>
-                        <td className="text-sm text-slate-500">
-                          {formatDate(resume.uploadedAt)}
-                        </td>
-                        <td>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => setSelectedResume(resume)}
-                              className="action-btn"
-                              title="查看详情"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
+                          </td>
+                          <td className="text-sm text-slate-700">
+                            {displayEmail}
+                          </td>
+                          <td>
+                            {getSourceLabel(resume.source, resume.userType)}
+                          </td>
+                          <td>
+                            {isTalentPool ? (
+                              <span className="text-green-600 flex items-center text-xs font-medium">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                已加入
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 text-xs">-</span>
+                            )}
+                          </td>
+                          <td>
+                            <div className="text-sm font-medium text-slate-900 truncate max-w-[200px]" title={resume.fileName}>
+                              {resume.fileName}
+                            </div>
+                            <div className="text-xs text-slate-500">{formatSize(resume.size)}</div>
+                          </td>
+                          <td className="text-sm text-slate-500">
+                            {formatDate(resume.uploadedAt)}
+                          </td>
+                          <td>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => setSelectedResume(resume)}
+                                className="action-btn"
+                                title="查看详情"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => {
                                   const token = localStorage.getItem('haigoo_auth_token');
                                   window.open(`/api/resumes?action=download&id=${resume.id}&token=${token}`, '_blank');
@@ -770,17 +769,18 @@ const AdminTeamPage: React.FC = () => {
                               >
                                 <Download className="w-4 h-4" />
                               </button>
-                            <button
-                              onClick={() => handleDeleteResume(resume.id)}
-                              className="action-btn danger"
-                              title="删除"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )})
+                              <button
+                                onClick={() => handleDeleteResume(resume.id)}
+                                className="action-btn danger"
+                                title="删除"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>
@@ -875,6 +875,7 @@ const AdminTeamPage: React.FC = () => {
 
   const tabs = [
     { id: 'dashboard', label: '数据概览', icon: BarChart3 },
+    { id: 'core-metrics', label: '核心看板', icon: Activity },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
     { id: 'job-bundles', label: '职位组合', icon: Tag },
@@ -888,7 +889,6 @@ const AdminTeamPage: React.FC = () => {
     { id: 'job-applications', label: '岗位申请', icon: Briefcase },
     { id: 'member-applications', label: '会员申请', icon: FileText },
     { id: 'analytics', label: '数据分析', icon: TrendingUp },
-    { id: 'core-metrics', label: '核心看板', icon: Activity },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'settings', label: '系统设置', icon: Settings },
     { id: 'tracking', label: '埋点管理', icon: Activity }
@@ -1048,9 +1048,9 @@ const AdminTeamPage: React.FC = () => {
                     <label className="text-sm text-slate-500">来源</label>
                     <div className="font-medium">
                       {selectedResume.source === 'christmas_tree' ? '圣诞树活动' :
-                       selectedResume.source === 'personal_center' ? '个人中心' :
-                       selectedResume.source === 'job_application' ? '职位申请' :
-                       selectedResume.source || '未知'}
+                        selectedResume.source === 'personal_center' ? '个人中心' :
+                          selectedResume.source === 'job_application' ? '职位申请' :
+                            selectedResume.source || '未知'}
                     </div>
                   </div>
                   <div>
@@ -1072,16 +1072,16 @@ const AdminTeamPage: React.FC = () => {
                 </div>
 
                 {/* 解析结果 (如果有) - 已弃用，不再展示 */}
-                
+
                 {/* 原始文本预览 (如果存在) */}
                 {selectedResume.contentText && (
-                   <div>
+                  <div>
                     <label className="text-sm text-slate-500 mb-2 block">文本内容预览 (前500字符)</label>
                     <div className="bg-slate-50 p-4 rounded-lg text-xs text-slate-600 border border-slate-200 whitespace-pre-wrap font-mono">
                       {selectedResume.contentText.slice(0, 500)}
                       {selectedResume.contentText.length > 500 && '...'}
                     </div>
-                   </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -1094,14 +1094,14 @@ const AdminTeamPage: React.FC = () => {
               </button>
               {selectedResume.id && (
                 <button
-                    onClick={() => {
-                      const token = localStorage.getItem('haigoo_auth_token');
-                      window.open(`/api/resumes?action=download&id=${selectedResume.id}&token=${token}`, '_blank');
-                    }}
-                    className="btn-primary"
+                  onClick={() => {
+                    const token = localStorage.getItem('haigoo_auth_token');
+                    window.open(`/api/resumes?action=download&id=${selectedResume.id}&token=${token}`, '_blank');
+                  }}
+                  className="btn-primary"
                 >
-                    <Download className="w-4 h-4 mr-2" />
-                    下载原文件
+                  <Download className="w-4 h-4 mr-2" />
+                  下载原文件
                 </button>
               )}
             </div>

@@ -232,7 +232,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         },
                         body: JSON.stringify({
                             jobId: job.id,
-                            type: 'apply_redirect',
+                            type: 'email',
                             notes: 'Applied via Email'
                         })
                     });
@@ -818,7 +818,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <>
                                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-md border border-indigo-100">
                                     <Target className="w-3.5 h-3.5" />
-                                    Haigoo 内推 (会员专属)
+                                    邮箱申请 (会员专属)
                                 </div>
                                 <p className="text-[10px] text-slate-500">
                                     * 由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）
@@ -897,8 +897,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 }
                             }}
                             className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${isMember
-                                    ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5'
-                                    : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50 cursor-pointer'
+                                ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5'
+                                : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50 cursor-pointer'
                                 }`}
                         >
                             {isMember ? (

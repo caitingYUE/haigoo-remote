@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react'
-import { 
-    Search, Filter, CheckCircle, XCircle, Clock, 
-    MoreHorizontal, FileText, ExternalLink, 
+import {
+    Search, Filter, CheckCircle, XCircle, Clock,
+    MoreHorizontal, FileText, ExternalLink,
     MessageSquare, Briefcase, Building2, Globe
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -37,20 +37,21 @@ interface Application {
     success?: number
 }
 
-type TabType = 'referral' | 'official' | 'trusted_platform'
+type TabType = 'email' | 'official' | 'trusted_platform'
 
 export default function AdminApplicationsPage() {
     const { token, isSuperAdmin } = useAuth()
     const { showSuccess, showError } = useNotificationHelpers()
-    
-    const [activeTab, setActiveTab] = useState<TabType>('referral')
-    // applications can be individual (referral) or aggregated (official/platform)
+
+    const [activeTab, setActiveTab] = useState<TabType>('email')
+    // applications can be individual (email) or aggregated (official/platform)
     const [applications, setApplications] = useState<Application[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
-    const [stats, setStats] = useState({ referral_count: 0, official_count: 0, platform_count: 0 })
+    const [stats, setStats] = useState({ email_count: 0, official_count: 0, platform_count: 0 })
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'updated_at', direction: 'desc' })
 
     useEffect(() => {
         fetchApplications()
@@ -79,7 +80,9 @@ export default function AdminApplicationsPage() {
                 type: activeTab,
                 page: page.toString(),
                 limit: '20',
-                search
+                search,
+                sortBy: sortConfig.key,
+                sortDir: sortConfig.direction
             })
             const res = await fetch(`/api/admin-ops?${params}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -104,7 +107,7 @@ export default function AdminApplicationsPage() {
             const params = new URLSearchParams({
                 action: 'application_delete',
                 id: id.toString(),
-                type: 'referral' // Currently assumes referral, can be expanded if needed
+                type: 'email' // Changed from referral
             });
             const res = await fetch(`/api/admin-ops?${params}`, {
                 method: 'DELETE',
@@ -159,7 +162,7 @@ export default function AdminApplicationsPage() {
             'failed': 'bg-red-50 text-red-900',
             'offer': 'bg-green-100 text-green-800'
         }
-        
+
         const labels: Record<string, string> = {
             'pending': '待处理',
             'applied': '已申请',
@@ -183,7 +186,7 @@ export default function AdminApplicationsPage() {
     }
 
     return (
-        <div className="p-6 max-w-[1600px] mx-auto">
+        <div className="p-6 max-w-[1600px] mx-auto overflow-hidden flex flex-col h-[calc(100vh-64px)]">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                     <Briefcase className="w-6 h-6" />
@@ -194,26 +197,24 @@ export default function AdminApplicationsPage() {
             {/* Tabs */}
             <div className="flex gap-1 mb-6 border-b border-gray-200">
                 <button
-                    onClick={() => { setActiveTab('referral'); setPage(1); }}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                        activeTab === 'referral' 
-                        ? 'border-indigo-600 text-indigo-600' 
+                    onClick={() => { setActiveTab('email'); setPage(1); }}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'email'
+                        ? 'border-indigo-600 text-indigo-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
+                        }`}
                 >
                     <Briefcase className="w-4 h-4" />
                     内推申请
                     <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                        {stats.referral_count}
+                        {stats.email_count}
                     </span>
                 </button>
                 <button
                     onClick={() => { setActiveTab('official'); setPage(1); }}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                        activeTab === 'official' 
-                        ? 'border-indigo-600 text-indigo-600' 
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'official'
+                        ? 'border-indigo-600 text-indigo-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
+                        }`}
                 >
                     <Building2 className="w-4 h-4" />
                     企业官网
@@ -223,11 +224,10 @@ export default function AdminApplicationsPage() {
                 </button>
                 <button
                     onClick={() => { setActiveTab('trusted_platform'); setPage(1); }}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                        activeTab === 'trusted_platform' 
-                        ? 'border-indigo-600 text-indigo-600' 
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'trusted_platform'
+                        ? 'border-indigo-600 text-indigo-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
+                        }`}
                 >
                     <Globe className="w-4 h-4" />
                     三方平台
@@ -252,23 +252,45 @@ export default function AdminApplicationsPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'referral' ? '申请用户' : '岗位信息'}
+                                {activeTab === 'email' ? '申请用户' : '岗位信息'}
                             </th>
-                            {activeTab === 'referral' && (
+                            {activeTab === 'email' && (
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位/公司</th>
                             )}
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'referral' ? '状态' : '统计数据 (总申请/待面试/面试中/已录用)'}
+                            <th
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => activeTab !== 'email' && setSortConfig(prev => ({
+                                    key: 'total_applications',
+                                    direction: prev.key === 'total_applications' && prev.direction === 'desc' ? 'asc' : 'desc'
+                                }))}
+                            >
+                                <div className="flex items-center gap-1">
+                                    {activeTab === 'email' ? '状态' : '统计数据 (总申请/待面试/面试中/已录用)'}
+                                    {activeTab !== 'email' && sortConfig.key === 'total_applications' && (
+                                        <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                    )}
+                                </div>
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'referral' ? '时间' : '最后更新'}
+                            <th
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => activeTab !== 'email' && setSortConfig(prev => ({
+                                    key: 'updated_at',
+                                    direction: prev.key === 'updated_at' && prev.direction === 'desc' ? 'asc' : 'desc'
+                                }))}
+                            >
+                                <div className="flex items-center gap-1">
+                                    {activeTab === 'email' ? '时间' : '最后更新'}
+                                    {activeTab !== 'email' && sortConfig.key === 'updated_at' && (
+                                        <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                    )}
+                                </div>
                             </th>
-                            {activeTab === 'referral' && (
+                            {activeTab === 'email' && (
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">简历/备注</th>
                             )}
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
@@ -291,7 +313,7 @@ export default function AdminApplicationsPage() {
                             applications.map((app, idx) => (
                                 <tr key={app.id || idx} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        {activeTab === 'referral' ? (
+                                        {activeTab === 'email' ? (
                                             <div className="flex flex-col">
                                                 <span className="font-medium text-gray-900">{app.username || app.userNickname || '未知用户'}</span>
                                                 <span className="text-xs text-gray-500">{app.email || app.userEmail}</span>
@@ -306,7 +328,7 @@ export default function AdminApplicationsPage() {
                                             </div>
                                         )}
                                     </td>
-                                    {activeTab === 'referral' && (
+                                    {activeTab === 'email' && (
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className="font-medium text-gray-900">{app.job_title || app.jobTitle}</span>
@@ -315,7 +337,7 @@ export default function AdminApplicationsPage() {
                                         </td>
                                     )}
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        {activeTab === 'referral' ? (
+                                        {activeTab === 'email' ? (
                                             getStatusBadge(app.status)
                                         ) : (
                                             <div className="flex gap-2 text-sm">
@@ -340,13 +362,13 @@ export default function AdminApplicationsPage() {
                                             <span className="text-xs text-gray-400">{new Date(app.updated_at).toLocaleTimeString()}</span>
                                         </div>
                                     </td>
-                                    {activeTab === 'referral' && (
+                                    {activeTab === 'email' && (
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1">
                                                 {(app.resume_name || app.resumeName) && (
-                                                    <a 
-                                                        href={`/api/resumes/${app.resume_id}/download`} 
-                                                        target="_blank" 
+                                                    <a
+                                                        href={`/api/resumes/${app.resume_id}/download`}
+                                                        target="_blank"
                                                         className="text-indigo-600 hover:underline text-sm flex items-center gap-1"
                                                     >
                                                         <FileText className="w-3 h-3" />
@@ -363,7 +385,7 @@ export default function AdminApplicationsPage() {
                                     )}
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex flex-col gap-2 justify-end">
-                                            {activeTab === 'referral' ? (
+                                            {activeTab === 'email' ? (
                                                 <select
                                                     value={app.status}
                                                     onChange={(e) => handleUpdateStatus(app.id, e.target.value)}
@@ -385,7 +407,7 @@ export default function AdminApplicationsPage() {
                                                     更新统计
                                                 </button>
                                             )}
-                                            {activeTab === 'referral' && isSuperAdmin && (
+                                            {activeTab === 'email' && isSuperAdmin && (
                                                 <button
                                                     onClick={() => handleDeleteApplication(app.id)}
                                                     className="text-gray-400 hover:text-red-600 text-xs self-end"
