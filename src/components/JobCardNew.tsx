@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Sparkles, Zap } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
+import { getMatchLevelClassName, getMatchLevelLabel, resolveMatchLevel } from '../utils/match-display';
 // import { getJobSourceType } from '../utils/job-source-helper';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
@@ -72,7 +73,7 @@ const getDarkerColor = (str: string) => {
    return `hsl(${h}, 70%, 30%)`;
 };
 
-export default function JobCardNew({ job, onClick, onDelete, className, variant = 'grid', isActive = false }: JobCardNewProps) {
+export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
    const isTranslated = !!job.translations?.title;
@@ -97,6 +98,13 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
    const textColor = useMemo(() => getDarkerColor(job.company || 'default'), [job.company]);
 
    const isFeatured = job.isFeatured;
+   const resolvedMatchLevel = useMemo(() => {
+      const raw = Number(matchScore ?? (job as any).matchScore ?? (job as any).recommendationScore ?? 0);
+      return resolveMatchLevel(raw, (job as any).matchLevel);
+   }, [job, matchScore]);
+
+   const matchLevelLabel = useMemo(() => getMatchLevelLabel(resolvedMatchLevel), [resolvedMatchLevel]);
+   const matchLevelClass = useMemo(() => getMatchLevelClassName(resolvedMatchLevel), [resolvedMatchLevel]);
 
    const formatSalary = (salary: Job['salary']) => {
       // Handle missing/zero cases
@@ -284,9 +292,14 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
             <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-4">
                {/* Row 1: Badges & Salary (Desktop) */}
                <div className="flex items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                     {/* Job Type (Amber) */}
-                     {job.type && (
+                     <div className="flex flex-wrap items-center gap-2">
+                        {resolvedMatchLevel !== 'none' && (
+                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${matchLevelClass}`}>
+                              {matchLevelLabel}
+                           </span>
+                        )}
+                        {/* Job Type (Amber) */}
+                        {job.type && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
                            <Calendar className="w-3 h-3 mr-1" />
                            {JOB_TYPE_MAP[job.type] || job.type}
@@ -477,8 +490,15 @@ export default function JobCardNew({ job, onClick, onDelete, className, variant 
 
             {/* Footer */}
             <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
-               <div className={`text-base ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-indigo-600'}`}>
-                  {formatSalary(job.salary)}
+               <div className="flex items-center gap-2">
+                  <div className={`text-base ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-indigo-600'}`}>
+                     {formatSalary(job.salary)}
+                  </div>
+                  {resolvedMatchLevel !== 'none' && (
+                     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${matchLevelClass}`}>
+                        {matchLevelLabel}
+                     </span>
+                  )}
                </div>
                <span className="text-xs text-slate-400 font-medium">
                   {DateFormatter.formatPublishTime(job.publishedAt)}

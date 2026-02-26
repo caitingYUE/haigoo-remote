@@ -40,8 +40,20 @@ export default function JobDetailPage() {
       setLoading(true)
       try {
         const resolvedId = decodeJobId(id);
-        // Fetch job details
-        const resp = await fetch(`/api/data/processed-jobs?id=${resolvedId}`)
+        // 登录态优先走个性化匹配接口，确保详情页能拿到 matchLevel/matchDetails
+        let resp: Response
+        if (isAuthenticated && token) {
+          const personalizedUrl = `/api/data/processed-jobs?action=jobs_with_match_score&id=${resolvedId}&page=1&pageSize=1&sortBy=relevance`
+          resp = await fetch(personalizedUrl, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          if (!resp.ok) {
+            resp = await fetch(`/api/data/processed-jobs?id=${resolvedId}`)
+          }
+        } else {
+          resp = await fetch(`/api/data/processed-jobs?id=${resolvedId}`)
+        }
+
         if (!resp.ok) throw new Error('职位不存在或已下线')
         const data = await resp.json()
         if (data.jobs && data.jobs.length > 0) {
@@ -67,7 +79,7 @@ export default function JobDetailPage() {
     }
 
     fetchJob()
-  }, [id])
+  }, [id, isAuthenticated, token])
 
   const startRedirectCountdown = () => {
     setCountdown(5)

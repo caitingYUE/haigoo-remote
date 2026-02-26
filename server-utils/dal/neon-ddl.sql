@@ -88,3 +88,8 @@ ADD COLUMN IF NOT EXISTS company_name_snapshot VARCHAR(255);
 -- 2. Add hiring_email to trusted_companies
 ALTER TABLE trusted_companies 
 ADD COLUMN IF NOT EXISTS hiring_email VARCHAR(255);
+
+-- 2026-02-26: Add last_verified_at for job liveliness pinging
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS last_verified_at TIMESTAMPTZ;
+UPDATE jobs SET last_verified_at = published_at WHERE last_verified_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_jobs_last_verified_at ON jobs(last_verified_at ASC);

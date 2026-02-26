@@ -17,6 +17,89 @@ import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
 type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'subscriptions' | 'membership' | 'settings'
+type SubscriptionTopicValue = (typeof SUBSCRIPTION_TOPICS)[number]['value']
+
+const SUBSCRIPTION_TOPIC_LABEL_MAP = new Map<SubscriptionTopicValue, string>(
+  SUBSCRIPTION_TOPICS.map((topic) => [topic.value, topic.label] as [SubscriptionTopicValue, string])
+)
+
+const PREFILL_ROLE_TOPIC_RULES: Array<{ topic: SubscriptionTopicValue; keywords: string[] }> = [
+  { topic: 'full-stack', keywords: ['full stack', 'full-stack', 'fullstack', '全栈'] },
+  { topic: 'frontend', keywords: ['frontend', 'front-end', '前端', 'react', 'vue', 'angular'] },
+  { topic: 'backend', keywords: ['backend', 'back-end', '后端', 'java', 'spring', 'golang', 'node', 'api', '服务端'] },
+  { topic: 'mobile', keywords: ['mobile', 'ios', 'android', 'flutter', 'react native', '移动开发'] },
+  { topic: 'devops', keywords: ['devops', 'sre', 'platform engineer', 'kubernetes', 'k8s', 'docker', '运维', '云原生'] },
+  { topic: 'data', keywords: ['data', 'analyst', 'analytics', 'bi', 'sql', 'etl', '数据分析', '数据科学'] },
+  { topic: 'ai-ml', keywords: ['ai', 'ml', 'machine learning', 'llm', '人工智能', '机器学习', '算法工程师'] },
+  { topic: 'qa', keywords: ['qa', 'test', 'testing', 'sdet', '测试', '质量保障'] },
+  { topic: 'security', keywords: ['security', 'cyber', '网络安全', '信息安全', '合规安全', '渗透'] },
+  { topic: 'ui-ux', keywords: ['ui/ux', 'ui', 'ux', 'designer', 'design', '产品设计', '交互设计', '视觉设计'] },
+  { topic: 'product-management', keywords: ['product manager', 'pm', 'product owner', '产品经理', '产品负责人'] },
+  { topic: 'project-management', keywords: ['project manager', '项目经理', '项目管理', 'scrum master', 'delivery manager'] },
+  { topic: 'marketing', keywords: ['marketing', 'growth', 'brand', '市场', '增长', '投放', '运营'] },
+  { topic: 'sales', keywords: ['sales', 'business development', 'bd', '销售', '商务拓展'] },
+  { topic: 'content', keywords: ['content', 'copywriter', 'writer', '内容', '文案', '编辑', '新媒体'] },
+  { topic: 'customer-support', keywords: ['customer support', 'support', '客服', '客户成功', '售后', 'helpdesk'] },
+  { topic: 'hr', keywords: ['hr', 'human resources', 'recruiter', '招聘', '人力资源'] },
+  { topic: 'finance', keywords: ['finance', 'financial', 'accountant', '财务', '会计', '审计'] },
+  { topic: 'legal', keywords: ['legal', 'lawyer', 'compliance', '法务', '律师'] }
+]
+
+function normalizeRoleText(rawRole: string): string {
+  return rawRole
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5+\s/-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function keywordMatched(normalizedText: string, tokens: Set<string>, keyword: string): boolean {
+  const normalizedKeyword = keyword.trim().toLowerCase()
+  if (!normalizedKeyword) return false
+  if (/^[a-z]{1,3}$/.test(normalizedKeyword)) return tokens.has(normalizedKeyword)
+  return normalizedText.includes(normalizedKeyword)
+}
+
+function inferTopicsFromRole(role: string): SubscriptionTopicValue[] {
+  const normalized = normalizeRoleText(role)
+  if (!normalized) return []
+
+  const tokens = new Set(normalized.split(' ').filter(Boolean))
+  const scoredTopics = new Map<SubscriptionTopicValue, number>()
+
+  PREFILL_ROLE_TOPIC_RULES.forEach((rule) => {
+    const matches = rule.keywords.reduce((count, keyword) => (
+      keywordMatched(normalized, tokens, keyword) ? count + 1 : count
+    ), 0)
+    if (matches > 0) {
+      scoredTopics.set(rule.topic, (scoredTopics.get(rule.topic) || 0) + matches)
+    }
+  })
+
+  if (scoredTopics.size === 0) {
+    if (normalized.includes('开发') || normalized.includes('工程师') || normalized.includes('developer') || normalized.includes('engineer')) {
+      return ['full-stack']
+    }
+    if (normalized.includes('设计') || normalized.includes('designer')) {
+      return ['ui-ux']
+    }
+    if (normalized.includes('产品')) {
+      return ['product-management']
+    }
+    if (normalized.includes('运营') || normalized.includes('增长')) {
+      return ['marketing']
+    }
+    if (normalized.includes('客服') || normalized.includes('support')) {
+      return ['customer-support']
+    }
+    return []
+  }
+
+  return [...scoredTopics.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([topic]) => topic)
+    .slice(0, MAX_SUBSCRIPTION_TOPICS)
+}
 
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember, logout } = useAuth()
@@ -30,6 +113,7 @@ export default function ProfileCenterPage() {
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
+  const prefillRole = useMemo(() => new URLSearchParams(location.search).get('prefillRole')?.trim() || '', [location.search])
 
   // Sync tab with URL query parameter
   useEffect(() => {
@@ -142,6 +226,14 @@ export default function ProfileCenterPage() {
     const sp = new URLSearchParams(location.search)
     sp.set('tab', t)
     navigate({ pathname: '/profile', search: `?${sp.toString()}` }, { replace: true })
+  }
+
+  const clearPrefillRole = () => {
+    const sp = new URLSearchParams(location.search)
+    if (!sp.has('prefillRole')) return
+    sp.delete('prefillRole')
+    const query = sp.toString()
+    navigate({ pathname: '/profile', search: query ? `?${query}` : '' }, { replace: true })
   }
 
   const { data: _jobs } = usePageCache<Job[]>('profile-jobs-source', {
@@ -1021,7 +1113,28 @@ export default function ProfileCenterPage() {
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editTopics, setEditTopics] = useState<string[]>([])
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const [isApplyingPrefill, setIsApplyingPrefill] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
+    const prefillTopics = useMemo(() => inferTopicsFromRole(prefillRole), [prefillRole])
+    const prefillTopicLabels = useMemo(
+      () => prefillTopics.map((topic) => SUBSCRIPTION_TOPIC_LABEL_MAP.get(topic) || topic),
+      [prefillTopics]
+    )
+    const emailSubscription = useMemo(() => (
+      subscriptions.find((subscription) => (
+        subscription.channel === 'email' && subscription.identifier === authUser?.email
+      ))
+    ), [authUser?.email, subscriptions])
+    const prefillAlreadyApplied = useMemo(() => {
+      if (!emailSubscription || prefillTopics.length === 0) return false
+      const existing = String(emailSubscription.topic || '')
+        .split(',')
+        .map((item: string) => item.trim())
+        .filter(Boolean)
+        .sort()
+      const suggested = [...prefillTopics].sort()
+      return existing.length === suggested.length && existing.every((topic: string, index: number) => topic === suggested[index])
+    }, [emailSubscription, prefillTopics])
 
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -1054,6 +1167,50 @@ export default function ProfileCenterPage() {
     useEffect(() => {
       fetchSubscriptions()
     }, [])
+
+    const handleApplyPrefill = async () => {
+      if (!authUser?.email) {
+        showError('请先登录', '登录后可设置岗位追踪')
+        return
+      }
+      if (prefillTopics.length === 0) {
+        showError('未识别方向', '请手动选择订阅主题')
+        return
+      }
+
+      try {
+        setIsApplyingPrefill(true)
+        const res = await fetch('/api/auth?action=subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            channel: 'email',
+            identifier: authUser.email,
+            topic: prefillTopics.join(',')
+          })
+        })
+        const data = await res.json()
+        if (!res.ok || !data.success) {
+          throw new Error(data?.error || '设置失败')
+        }
+
+        trackingService.track('subscription_prefill_applied', {
+          role: prefillRole,
+          topics: prefillTopics.join(','),
+          topics_count: prefillTopics.length
+        })
+        showSuccess('岗位追踪已配置', `已根据「${prefillRole}」更新订阅主题`)
+        await fetchSubscriptions()
+        clearPrefillRole()
+      } catch (error: any) {
+        showError('设置失败', error?.message || '请稍后重试')
+      } finally {
+        setIsApplyingPrefill(false)
+      }
+    }
 
     const startEditing = (sub: any) => {
       setEditingId(sub.subscription_id)
@@ -1138,6 +1295,48 @@ export default function ProfileCenterPage() {
             <p className="text-slate-500 mt-1">管理您的岗位推送订阅。</p>
           </div>
         </div>
+        {prefillRole && (
+          <div className={`rounded-xl border p-4 sm:p-5 ${prefillTopics.length > 0 ? 'bg-gradient-to-r from-indigo-50 to-sky-50 border-indigo-100' : 'bg-amber-50 border-amber-200'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-slate-900">
+                  {prefillTopics.length > 0 ? '基于职业方向的追踪建议' : '暂未识别到可用追踪主题'}
+                </p>
+                <p className="text-xs text-slate-600 mt-1">
+                  当前方向：<span className="font-semibold text-slate-800">{prefillRole}</span>
+                </p>
+                {prefillTopics.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {prefillTopicLabels.map((label) => (
+                      <span key={label} className="px-2 py-0.5 rounded-full text-xs font-medium bg-white text-indigo-700 border border-indigo-100">
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-amber-700 mt-2">你可以在下方手动选择最关注的岗位类型。</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {prefillTopics.length > 0 && (
+                  <button
+                    onClick={handleApplyPrefill}
+                    disabled={isApplyingPrefill || prefillAlreadyApplied}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {prefillAlreadyApplied ? '已应用' : isApplyingPrefill ? '应用中...' : '一键应用岗位追踪'}
+                  </button>
+                )}
+                <button
+                  onClick={clearPrefillRole}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  忽略
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
           {loading ? (
             <div className="p-8 text-center text-slate-500">加载中...</div>
@@ -1492,7 +1691,7 @@ export default function ProfileCenterPage() {
                           </button>
                         </div>
                       )}
-                      <GeneratedPlanView plan={copilotPlan} isGuest={false} />
+                      <GeneratedPlanView plan={copilotPlan} isGuest={false} isMember={isMember} />
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-16 px-4">

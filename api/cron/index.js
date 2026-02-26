@@ -42,6 +42,10 @@ export default async function handler(req, res) {
         const { default: streamCrawlTrustedJobsHandler } = await import('../../lib/cron-handlers/stream-crawl-trusted-jobs.js');
         return await streamCrawlTrustedJobsHandler(req, res);
       }
+      case 'stream-verify-links': {
+        const { default: streamVerifyLinksHandler } = await import('../../lib/cron-handlers/stream-verify-links.js');
+        return await streamVerifyLinksHandler(req, res);
+      }
       case 'rotate-featured': {
         const { default: rotateFeaturedHandler } = await import('../../lib/cron-handlers/rotate-featured.js');
         return await rotateFeaturedHandler(req, res);
@@ -78,6 +82,7 @@ export default async function handler(req, res) {
             'stream-translate-jobs',
             'stream-enrich-companies',
             'stream-crawl-trusted-jobs',
+            'stream-verify-links',
             'daily-digest',
             'daily-ingest',
             'daily-enrich'

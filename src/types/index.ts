@@ -70,6 +70,20 @@ export interface Job {
   timezone?: string // 时区要求
 
   matchScore?: number
+  matchLevel?: 'high' | 'medium' | 'low' | 'none'
+  matchLabel?: string
+  matchDetails?: {
+    summary?: string
+    strengths?: string[]
+    suggestions?: string[]
+    breakdown?: {
+      skillMatch?: number
+      keywordSimilarity?: number
+      experienceMatch?: number
+      preferenceMatch?: number
+    }
+  } | null
+  matchDetailsLocked?: boolean
 
   // Haigoo Member Fields
   riskRating?: {

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
     Sparkles, Upload, CheckCircle2, ArrowRight, ArrowLeft, Lock,
     Target, TrendingUp, Eye, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, Send
@@ -406,8 +406,8 @@ const GOAL_TO_API: Record<GoalType, string> = {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
-    const { isAuthenticated, user, sendVerificationEmail } = useAuth()
-    const isVIP = (user as any)?.memberStatus === 'active' || (user as any)?.memberStatus === 'lifetime' || (user as any)?.memberStatus === 'pro'
+    const { isAuthenticated, isMember, user, sendVerificationEmail } = useAuth()
+    const isVIP = isMember
     const { showWarning, showError } = useNotificationHelpers()
 
     // Verification banner state
@@ -460,6 +460,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
     // AI Generation Plan State
     const [generatedPlan, setGeneratedPlan] = useState<any>(null)
+    const [refreshingRecommendations, setRefreshingRecommendations] = useState(false)
+    const trackingSetupUrl = useMemo(() => {
+        const params = new URLSearchParams({ tab: 'subscriptions' })
+        const role = formData.background.role.trim()
+        if (role) params.set('prefillRole', role)
+        return `/profile?${params.toString()}`
+    }, [formData.background.role])
 
     // Load previous plan on mount (authenticated users only, no guest cache)
     useEffect(() => {
@@ -608,6 +615,53 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             setResumeId(null)
         } finally {
             setResumeUploading(false)
+        }
+    }
+
+    const handleRefreshRecommendations = async () => {
+        if (!generatedPlan) return
+
+        if (!isAuthenticated || !user?.user_id) {
+            showWarning('请先登录', '登录后可刷新个性化岗位推荐')
+            navigate('/login')
+            return
+        }
+
+        setRefreshingRecommendations(true)
+        try {
+            const token = localStorage.getItem('haigoo_auth_token')
+            const res = await fetch('/api/copilot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    action: 'refresh-recommendations',
+                    userId: user.user_id,
+                    goal: GOAL_TO_API[formData.goal],
+                    background: {
+                        industry: formData.background.role,
+                        seniority: formData.background.years,
+                        education: formData.background.education,
+                        language: formData.background.language
+                    }
+                })
+            })
+
+            const data = await res.json()
+            if (!res.ok) {
+                throw new Error(data?.error || '刷新推荐失败')
+            }
+
+            setGeneratedPlan((prev: any) => ({
+                ...(prev || {}),
+                recommendations: data?.recommendations || []
+            }))
+        } catch (error: any) {
+            showError('刷新失败', error?.message || '请稍后重试')
+        } finally {
+            setRefreshingRecommendations(false)
         }
     }
 
@@ -1117,7 +1171,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                             {generatedPlan ? (
                                 <>
-                                    <GeneratedPlanView plan={generatedPlan} isGuest={!isAuthenticated} />
+                                    <GeneratedPlanView
+                                        plan={generatedPlan}
+                                        isGuest={!isAuthenticated}
+                                        isMember={isVIP}
+                                        trackingSetupUrl={trackingSetupUrl}
+                                        onRefreshRecommendations={handleRefreshRecommendations}
+                                        refreshingRecommendations={refreshingRecommendations}
+                                    />
                                     {isWizardCollapsed && (
                                         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white/95 to-transparent z-10 pointer-events-none rounded-b-[24px]" />
                                     )}

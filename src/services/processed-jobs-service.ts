@@ -166,6 +166,10 @@ class ProcessedJobsService {
         experienceLevel: job.experienceLevel || job.experience_level,
         recommendationScore: job.matchScore || job.match_score || 0,
         matchScore: job.matchScore || job.match_score || 0,
+        matchLevel: job.matchLevel || job.match_level || undefined,
+        matchLabel: job.matchLabel || job.match_label || undefined,
+        matchDetails: job.matchDetails || job.match_details || null,
+        matchDetailsLocked: Boolean(job.matchDetailsLocked || job.match_details_locked),
         // 🆕 保留翻译字段，让前端组件可以使用
         translations: job.translations || undefined,
         isTranslated: job.isTranslated || false,

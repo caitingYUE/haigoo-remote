@@ -12,11 +12,13 @@ import { TrustedStandardsBanner } from './TrustedStandardsBanner'
 import { ApplyInterceptModal } from './ApplyInterceptModal'
 import { ReferralApplicationModal } from './ReferralApplicationModal'
 import { RiskRatingDisplay } from './RiskRatingDisplay'
+import { MatchDetailsPanel } from './MatchDetailsPanel'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { useNotificationHelpers } from './NotificationSystem'
 import { getJobSourceType } from '../utils/job-source-helper'
 import { trackingService } from '../services/tracking-service'
 import { ShareJobModal } from './ShareJobModal'
+import { getMatchLevelClassName, getMatchLevelLabel, resolveMatchLevel } from '../utils/match-display'
 
 interface JobDetailPanelProps {
     job: Job
@@ -132,6 +134,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const riskRating = (job as any).riskRating;
     const haigooComment = (job as any).haigooComment;
     const hiddenFields = (job as any).hiddenFields;
+    const matchLevel = useMemo(() => {
+        return resolveMatchLevel((job as any)?.matchScore, (job as any)?.matchLevel)
+    }, [job])
+    const matchLevelLabel = getMatchLevelLabel(matchLevel)
+    const matchLevelClass = getMatchLevelClassName(matchLevel)
+    const matchDetails = (job as any)?.matchDetails
+    const matchDetailsLocked = Boolean((job as any)?.matchDetailsLocked) || (matchLevel === 'high' && !isMember)
 
     const [logoError, setLogoError] = useState(false);
 
@@ -455,6 +464,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         )}
                     </div>
 
+                    {matchLevel !== 'none' && (
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${matchLevelClass}`}>
+                                {matchLevelLabel}
+                            </span>
+                        </div>
+                    )}
+
                     <div className="flex items-center gap-1.5">
                         <div className="w-1 h-1 rounded-full bg-slate-300"></div>
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
@@ -667,6 +685,18 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     {job.isTrusted && isMember && (
                         <div className="mb-6">
                             <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => setShowUpgradeModal(true)} />
+                        </div>
+                    )}
+
+                    {matchLevel === 'high' && (
+                        <div className="mb-6">
+                            <MatchDetailsPanel
+                                matchLevel={matchLevel}
+                                matchDetails={matchDetails}
+                                matchDetailsLocked={matchDetailsLocked}
+                                isMember={isMember}
+                                onShowUpgrade={() => setShowUpgradeModal(true)}
+                            />
                         </div>
                     )}
 
