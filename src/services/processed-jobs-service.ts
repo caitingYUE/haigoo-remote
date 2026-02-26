@@ -275,7 +275,12 @@ class ProcessedJobsService {
         canRefer: job.canRefer,
         isFeatured: job.isFeatured,
         companyIndustry: job.companyIndustry,
-        companyWebsite: job.companyWebsite || job.trusted_website // Use trusted website if available
+        companyWebsite: job.companyWebsite || job.trusted_website, // Use trusted website if available
+        companyId: job.companyId,
+        sourceType: job.sourceType ? job.sourceType.toLowerCase() : undefined,
+        translations: job.translations || undefined,
+        isTranslated: job.isTranslated || false,
+        translatedAt: job.translatedAt || undefined
       }))
     } catch (error) {
       console.error('获取首页精选职位失败:', error)
