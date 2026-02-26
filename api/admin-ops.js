@@ -3,6 +3,7 @@ import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'
 import subscriptionsHandler from '../lib/api-handlers/subscriptions.js'
 import bugReportsHandler from '../lib/api-handlers/bug-reports.js'
 import contactMinerHandler from '../lib/api-handlers/contact-miner.js'
+import adminMessagesHandler from '../lib/api-handlers/admin-messages.js'
 import { systemSettingsService } from '../lib/services/system-settings-service.js'
 
 export default async function handler(req, res) {
@@ -32,6 +33,11 @@ export default async function handler(req, res) {
     // Dispatch to Contact Miner Handler
     if (action === 'contact_mining') {
         return await contactMinerHandler(req, res)
+    }
+
+    // Dispatch to Admin Messages Handler
+    if (action === 'admin_messages' || action === 'admin_messages_delete') {
+        return await adminMessagesHandler(req, res)
     }
 
     // === Application Stats (Merged from admin-applications.js) ===

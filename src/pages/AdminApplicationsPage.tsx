@@ -169,8 +169,6 @@ export default function AdminApplicationsPage() {
             'reviewed': '简历已阅',
             'referred': '已内推',
             'interviewing': '面试中',
-            'success': '内推成功',
-            'rejected': '已拒绝',
             'failed': '内推失败',
             'offer': '已录用',
             'redirected': '已跳转'
@@ -204,10 +202,7 @@ export default function AdminApplicationsPage() {
                         }`}
                 >
                     <Briefcase className="w-4 h-4" />
-                    内推申请
-                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                        {stats.email_count}
-                    </span>
+                    邮箱申请
                 </button>
                 <button
                     onClick={() => { setActiveTab('official'); setPage(1); }}
@@ -218,9 +213,6 @@ export default function AdminApplicationsPage() {
                 >
                     <Building2 className="w-4 h-4" />
                     企业官网
-                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                        {stats.official_count}
-                    </span>
                 </button>
                 <button
                     onClick={() => { setActiveTab('trusted_platform'); setPage(1); }}
@@ -231,9 +223,6 @@ export default function AdminApplicationsPage() {
                 >
                     <Globe className="w-4 h-4" />
                     三方平台
-                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                        {stats.platform_count}
-                    </span>
                 </button>
             </div>
 
@@ -384,22 +373,9 @@ export default function AdminApplicationsPage() {
                                         </td>
                                     )}
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div className="flex flex-col gap-2 justify-end">
-                                            {activeTab === 'email' ? (
-                                                <select
-                                                    value={app.status}
-                                                    onChange={(e) => handleUpdateStatus(app.id, e.target.value)}
-                                                    className="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                >
-                                                    <option value="applied">已申请</option>
-                                                    <option value="reviewed">简历已阅</option>
-                                                    <option value="referred">已内推</option>
-                                                    <option value="interviewing">面试中</option>
-                                                    <option value="success">内推成功</option>
-                                                    <option value="failed">内推失败</option>
-                                                    <option value="rejected">已拒绝</option>
-                                                </select>
-                                            ) : (
+                                        <div className="flex flex-col gap-2 items-end justify-center h-full min-h-[40px]">
+                                            {/* 已移除干预状态的操作 */}
+                                            {activeTab !== 'email' && (
                                                 <button
                                                     className="text-indigo-600 hover:text-indigo-900 text-xs"
                                                     onClick={() => alert('此功能正在开发中：手动更新该岗位的统计数据')}
@@ -410,7 +386,7 @@ export default function AdminApplicationsPage() {
                                             {activeTab === 'email' && isSuperAdmin && (
                                                 <button
                                                     onClick={() => handleDeleteApplication(app.id)}
-                                                    className="text-gray-400 hover:text-red-600 text-xs self-end"
+                                                    className="text-gray-400 hover:text-red-600 text-xs"
                                                 >
                                                     删除记录
                                                 </button>

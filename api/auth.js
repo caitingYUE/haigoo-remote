@@ -136,6 +136,17 @@ async function handleRegister(req, res) {
 
   console.log(`[auth] New user registered: ${email}`)
 
+  if (neonHelper.isConfigured) {
+    try {
+      await neonHelper.query(
+        'INSERT INTO admin_messages (type, title, content) VALUES ($1, $2, $3)',
+        ['user_register', '新用户注册', `用户邮箱: ${email}\n用户名: ${finalUsername}`]
+      )
+    } catch (e) {
+      console.error('[auth] Failed to insert admin message for user register', e)
+    }
+  }
+
   if (isEmailServiceConfigured()) {
     await sendVerificationEmail(email, finalUsername, verificationToken)
   }

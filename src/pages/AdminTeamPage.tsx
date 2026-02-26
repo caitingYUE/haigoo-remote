@@ -114,6 +114,41 @@ const AdminTeamPage: React.FC = () => {
   // 简历详情模态框状态
   const [selectedResume, setSelectedResume] = useState<any | null>(null);
 
+  // 消息汇总状态
+  const [adminMessages, setAdminMessages] = useState<any[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+
+  const fetchAdminMessages = useCallback(async () => {
+    try {
+      setMessagesLoading(true);
+      const res = await fetch('/api/admin-ops?action=admin_messages');
+      if (res.ok) {
+        const data = await res.json();
+        setAdminMessages(data.messages || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch admin messages', e);
+    } finally {
+      setMessagesLoading(false);
+    }
+  }, []);
+
+  const handleDeleteAdminMessage = async (id: number) => {
+    try {
+      const res = await fetch('/api/admin-ops?action=admin_messages_delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      if (res.ok) {
+        setAdminMessages(prev => prev.filter(m => m.id !== id));
+      }
+    } catch (e) {
+      console.error('Failed to delete message', e);
+      alert('删除失败');
+    }
+  };
+
   // 修复乱码的辅助函数
   const fixEncoding = (str: string) => {
     try {
@@ -169,7 +204,8 @@ const AdminTeamPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    fetchAdminMessages();
+  }, [loadData, fetchAdminMessages]);
 
   // 获取简历数据
   const fetchResumes = useCallback(async () => {
@@ -393,6 +429,66 @@ const AdminTeamPage: React.FC = () => {
               同步RSS数据
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* 实时消息 */}
+      <div className="card">
+        <div className="card-header">
+          <h2>实时消息模块</h2>
+          <button
+            onClick={fetchAdminMessages}
+            className="btn-secondary"
+            disabled={messagesLoading}
+          >
+            <RefreshCw className={`w-4 h-4 ${messagesLoading ? 'animate-spin' : ''}`} />
+            刷新消息
+          </button>
+        </div>
+        <div className="card-content">
+          {messagesLoading && adminMessages.length === 0 ? (
+            <div className="flex justify-center py-8">
+              <Loader className="w-6 h-6 animate-spin text-indigo-500" />
+            </div>
+          ) : adminMessages.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-100">
+              <MessageSquare className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+              暂无新消息
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+              {adminMessages.map(msg => (
+                <div key={msg.id} className="flex items-start gap-4 p-4 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                  <div className={`p-2 rounded-full flex-shrink-0 ${msg.type === 'system_error' ? 'bg-red-100 text-red-600' :
+                      msg.type === 'user_feedback' ? 'bg-amber-100 text-amber-600' :
+                        'bg-blue-100 text-blue-600'
+                    }`}>
+                    {msg.type === 'system_error' ? <AlertCircle className="w-5 h-5" /> :
+                      msg.type === 'user_feedback' ? <MessageSquare className="w-5 h-5" /> :
+                        <Users className="w-5 h-5" />}
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="font-semibold text-gray-900 truncate pr-4">{msg.title}</h4>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          {new Date(msg.created_at).toLocaleString('zh-CN')}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteAdminMessage(msg.id)}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          title="删除消息"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap break-words">{msg.content}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
