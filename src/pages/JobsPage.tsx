@@ -102,7 +102,8 @@ export default function JobsPage() {
       jobType: [] as string[],
       salary: [] as string[],
       isTrusted: false,
-      isNew: false
+      isNew: false,
+      aiRecommended: false
     }
 
     try {
@@ -333,6 +334,7 @@ export default function JobsPage() {
       if (filters.salary?.length > 0) queryParams.append('salary', filters.salary.join(','))
       if (filters.isTrusted) queryParams.append('isTrusted', 'true')
       if (filters.isNew) queryParams.append('isNew', 'true')
+      if (filters.aiRecommended) queryParams.append('aiRecommended', 'true')
       // ⚠️ P0 Fix: Always enforce approval check for C-side job list
       queryParams.append('isApproved', 'true')
 
@@ -805,24 +807,37 @@ export default function JobsPage() {
                   </div>
                 ) : distributedJobs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-                      <Search className="w-6 h-6 text-slate-300" />
-                    </div>
-                    <p className="text-slate-900 font-medium mb-1">未找到相关职位</p>
-                    <button onClick={clearAllFilters} className="text-indigo-600 text-sm hover:underline mb-8">清除筛选</button>
+                    {filters.aiRecommended ? (
+                      <>
+                        <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mb-3">
+                          <Sparkles className="w-6 h-6 text-indigo-400" />
+                        </div>
+                        <p className="text-slate-900 font-medium mb-1">当前条件下暂未发现 AI 强推荐的职位</p>
+                        <p className="text-slate-500 text-xs mb-4 max-w-[240px]">为了保证内推质量，AI 只会推荐与你高度匹配的优质机会。建议稍微放宽筛选条件，或稍后再来。</p>
+                        <button onClick={() => setFilters((prev: any) => ({ ...prev, aiRecommended: false }))} className="text-indigo-600 text-sm font-medium hover:underline mb-8 bg-indigo-50 px-4 py-2 rounded-lg">返回普通列表</button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                          <Search className="w-6 h-6 text-slate-300" />
+                        </div>
+                        <p className="text-slate-900 font-medium mb-1">未找到相关职位</p>
+                        <button onClick={clearAllFilters} className="text-indigo-600 text-sm hover:underline mb-8">清除筛选</button>
+                      </>
+                    )}
 
                     {/* Job Tracking Promo for Empty State */}
                     <div className="w-full max-w-sm bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col items-center gap-3">
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-indigo-600" />
-                        <span className="font-bold text-slate-900 text-sm">没找到心仪的职位？</span>
+                        <span className="font-bold text-slate-900 text-sm">不错过未来好机会？</span>
                       </div>
-                      <p className="text-xs text-slate-500 text-center">告诉我们您的需求，有合适机会第一时间通知您</p>
+                      <p className="text-xs text-slate-500 text-center">告诉我们您的求职偏好，有合适的高匹配职位第一时间为您内推</p>
                       <button
                         onClick={() => setIsPreferenceModalOpen(true)}
-                        className="px-6 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors w-full"
+                        className="px-6 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors w-full tracking-wide"
                       >
-                        开启职位追踪
+                        开启精准职位推送
                       </button>
                     </div>
                   </div>

@@ -15,6 +15,7 @@ export interface Job {
   responsibilities: string[]
   benefits?: string[]
   skills: string[]
+  tags?: string[]
   publishedAt: string
   expiresAt?: string  // 可选，避免虚假过期时间
   source: string
@@ -89,16 +90,16 @@ export interface Job {
 
   // Haigoo Member Fields
   riskRating?: {
-    friendliness: number
-    replyRate: '低' | '中' | '高'
-    avgResponseTime?: string
-    risks?: string[]
+    friendly_score?: number
+    reply_rate?: 'low' | 'mid' | 'high'
+    avg_feedback_days?: number
+    risk_tags?: string[]
   }
   haigooComment?: string
   hiddenFields?: {
-    timezone?: string
-    englishLevel?: string
-    contractType?: string
+    timezone_pref?: string
+    english_req?: string
+    contract_type?: string
   }
 }
 

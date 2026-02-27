@@ -131,16 +131,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job?.companyId])
 
     // Member-only fields (from PRD)
-    const riskRating = (job as any).riskRating;
-    const haigooComment = (job as any).haigooComment;
-    const hiddenFields = (job as any).hiddenFields;
+    const riskRating = job.riskRating;
+    const haigooComment = job.haigooComment;
+    const hiddenFields = job.hiddenFields;
     const matchLevel = useMemo(() => {
-        return resolveMatchLevel((job as any)?.matchScore, (job as any)?.matchLevel)
+        return resolveMatchLevel(job?.matchScore, job?.matchLevel)
     }, [job])
     const matchLevelLabel = getMatchLevelLabel(matchLevel)
     const matchLevelClass = getMatchLevelClassName(matchLevel)
-    const matchDetails = (job as any)?.matchDetails
-    const matchDetailsLocked = Boolean((job as any)?.matchDetailsLocked) || (matchLevel === 'high' && !isMember)
+    const matchDetails = job?.matchDetails
+    const matchDetailsLocked = Boolean(job?.matchDetailsLocked) || (matchLevel === 'high' && !isMember)
 
     const [logoError, setLogoError] = useState(false);
 
@@ -470,7 +470,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${matchLevelClass}`}>
                                 {matchLevelLabel}
                             </span>
-                            {(job as any)?.aiRecommended && (
+                            {job?.aiRecommended && (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border border-indigo-100 bg-indigo-50 text-indigo-600">
                                     AI推荐
                                 </span>
@@ -719,14 +719,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     ))}
 
                     {/* Skills/Tags */}
-                    {(((job as any).tags && (job as any).tags.length > 0) || (job.skills && job.skills.length > 0)) && (
+                    {((job.tags && job.tags.length > 0) || (job.skills && job.skills.length > 0)) && (
                         <section className="py-4 border-b border-slate-100">
                             <h3 className="text-base font-semibold text-slate-900 mb-3">
                                 技能要求
                             </h3>
                             <SingleLineTags
-                                tags={(Array.isArray((job as any).tags) && (job as any).tags.length > 0
-                                    ? (job as any).tags
+                                tags={(Array.isArray(job.tags) && job.tags.length > 0
+                                    ? job.tags
                                     : (job.skills || [])) as string[]}
                                 size="sm"
                             />

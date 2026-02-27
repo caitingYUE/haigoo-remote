@@ -444,7 +444,7 @@ export default function ProfileCenterPage() {
       }
     }
     fetchPlan()
-  }, [authUser, token, tab])
+  }, [authUser, token])
 
 
   const favoritesWithStatus = useMemo(() => favorites, [favorites])
@@ -1691,7 +1691,29 @@ export default function ProfileCenterPage() {
                           </button>
                         </div>
                       )}
-                      <GeneratedPlanView plan={copilotPlan} isGuest={false} isMember={isMember} />
+                      <GeneratedPlanView
+                        plan={copilotPlan}
+                        isGuest={false}
+                        isMember={isMember}
+                        deepMode
+                        onModuleDataUpdate={(module, data) => {
+                          setCopilotPlan((prev: any) => {
+                            const base = prev || {}
+                            const planV2 = base.plan_v2 || {}
+                            const modules = planV2.modules || {}
+                            return {
+                              ...base,
+                              plan_v2: {
+                                ...planV2,
+                                modules: {
+                                  ...modules,
+                                  [module]: data
+                                }
+                              }
+                            }
+                          })
+                        }}
+                      />
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-16 px-4">

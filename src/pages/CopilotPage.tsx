@@ -470,6 +470,21 @@ function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTim
     const [localLoading, setLocalLoading] = useState(false)
     const [planGoal, setPlanGoal] = useState(userGoal || 'full-time')
     const [planTimeline, setPlanTimeline] = useState(userTimeline || '1-3 months')
+    const [loadingStep, setLoadingStep] = useState(0)
+
+    useEffect(() => {
+        let interval: any;
+        if (localLoading) {
+            setLoadingStep(0)
+            interval = setInterval(() => {
+                setLoadingStep(s => Math.min(s + 1, 3))
+            }, 1500)
+        }
+        return () => clearInterval(interval)
+    }, [localLoading])
+
+    const loadingSteps = ['正在分析你的求职背景...', '深入匹配全网精选远程岗位...', '正在定制专属高转化求职路线...', '最后完善细节，即将呈现...']
+
 
     const handleCreate = async () => {
         setLocalLoading(true)
@@ -531,18 +546,48 @@ function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTim
                             </select>
                         </div>
                     </div>
-                    <button
-                        onClick={handleCreate}
-                        disabled={localLoading}
-                        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                    >
-                        {localLoading ? (
-                            <><Loader2 className="w-5 h-5 animate-spin" /> 生成中...</>
-                        ) : (
-                            <><Sparkles className="w-5 h-5" /> 生成行动计划</>
-                        )}
-                    </button>
-                    <p className="text-xs text-slate-400 mt-3 text-center">此功能仅限会员使用</p>
+                    {localLoading ? (
+                        <div className="text-center py-6 px-4 bg-indigo-50 border border-indigo-100 rounded-xl mb-4">
+                            <h3 className="text-lg font-bold text-indigo-900 mb-6 relative">
+                                AI 正在全速生成您的求职方案
+                                <Sparkles className="w-5 h-5 text-indigo-500 absolute -top-1 -right-4 animate-pulse" />
+                            </h3>
+                            <div className="space-y-4 max-w-sm mx-auto">
+                                {[0, 1, 2].map(stepIndex => (
+                                    <div key={stepIndex} className="flex items-center gap-3">
+                                        <div className="relative flex-none">
+                                            {loadingStep > stepIndex ? (
+                                                <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                                    <CheckCircle2 className="w-4 h-4" />
+                                                </div>
+                                            ) : loadingStep === stepIndex ? (
+                                                <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-6 h-6 rounded-full border-2 border-slate-200" />
+                                            )}
+                                            {stepIndex < 2 && (
+                                                <div className={`absolute top-6 left-3 w-px h-4 -translate-x-1/2 ${loadingStep > stepIndex ? 'bg-emerald-200' : 'bg-slate-200'}`} />
+                                            )}
+                                        </div>
+                                        <div className={`text-sm font-medium text-left transition-colors duration-300 ${loadingStep > stepIndex ? 'text-slate-600' : loadingStep === stepIndex ? 'text-indigo-700' : 'text-slate-400'}`}>
+                                            {loadingSteps[stepIndex]}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleCreate}
+                            disabled={localLoading}
+                            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-50 shadow-sm hover:shadow"
+                        >
+                            <Sparkles className="w-5 h-5" /> 生成专属行动计划
+                        </button>
+                    )}
+                    {!localLoading && <p className="text-xs text-slate-400 mt-3 text-center">此功能仅限高级会员体验</p>}
                 </div>
             </div>
         )
@@ -557,7 +602,11 @@ function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTim
                 const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0
 
                 return (
-                    <div key={pi} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <div
+                        key={pi}
+                        className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm animate-[fadeSlideIn_0.4s_ease-out_both]"
+                        style={{ animationDelay: `${pi * 0.15}s` }}
+                    >
                         <div className="flex items-center justify-between mb-4">
                             <div>
                                 <h3 className="font-bold text-slate-900">{phase.phase_name}</h3>

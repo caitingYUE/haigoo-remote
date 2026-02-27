@@ -39,6 +39,7 @@ interface JobFilterBarProps {
     timezone: string[];
     isTrusted: boolean;
     isNew: boolean;
+    aiRecommended: boolean;
   };
   onFilterChange: (newFilters: any) => void;
   categoryOptions: { label: string, value: string }[];
@@ -115,9 +116,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         // If clicking outside, trigger apply if available, otherwise just close
         if (onApply) {
-            onApply();
+          onApply();
         } else {
-            onClose();
+          onClose();
         }
       }
     };
@@ -154,9 +155,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
         onClick={(e) => {
           console.log(`[FilterDropdown] Button clicked: ${label}`);
           if (isOpen && onApply) {
-             onApply(); // Apply on toggle close
+            onApply(); // Apply on toggle close
           } else {
-             onToggle();
+            onToggle();
           }
         }}
         className={buttonClass}
@@ -172,9 +173,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
           <div
             className="fixed inset-0 z-[9990] bg-black/20 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none cursor-default"
             onClick={(e) => {
-               console.log('[FilterDropdown] Backdrop clicked');
-               e.stopPropagation();
-               if (onApply) onApply(); else onClose();
+              console.log('[FilterDropdown] Backdrop clicked');
+              e.stopPropagation();
+              if (onApply) onApply(); else onClose();
             }}
           />
 
@@ -189,12 +190,12 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
             md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:w-auto md:min-w-[240px] md:max-w-[300px] md:rounded-xl md:shadow-xl md:border md:border-slate-100
              md:animate-in md:fade-in md:zoom-in-95
            "
-           style={{ pointerEvents: 'auto' }}
-           onClick={(e) => {
-             console.log('[FilterDropdown] Content container clicked (propagation stopped)');
-             e.stopPropagation();
-           }} 
-           >
+            style={{ pointerEvents: 'auto' }}
+            onClick={(e) => {
+              console.log('[FilterDropdown] Content container clicked (propagation stopped)');
+              e.stopPropagation();
+            }}
+          >
             <div className="p-2 pb-8 md:pb-2 max-h-[60vh] md:max-h-[320px] overflow-y-auto custom-scrollbar">
               {/* Mobile Handle */}
               <div className="md:hidden flex justify-center pb-2 pt-1" onClick={onApply || onClose}>
@@ -208,35 +209,34 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
                 return child;
               })}
             </div>
-            
+
             {/* Action Footer */}
             {(onApply || onClear) && (
-                <div className="p-3 border-t border-slate-100 bg-slate-50/80 backdrop-blur-sm flex justify-between items-center gap-4">
-                    <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (onClear) onClear();
-                        }}
-                        className="text-xs text-slate-500 hover:text-slate-800 font-medium px-2 py-1 rounded hover:bg-slate-200/50 transition-colors"
-                    >
-                        清空
-                    </button>
-                    <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (onApply) onApply();
-                        }}
-                        className={`flex-1 px-3 py-1.5 text-xs font-semibold text-white rounded-md shadow-sm shadow-${colorTheme}-500/20 hover:shadow-md transition-all ${
-                            colorTheme === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' :
-                            colorTheme === 'amber' ? 'bg-amber-500 hover:bg-amber-600' :
-                            colorTheme === 'emerald' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                            colorTheme === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
-                            'bg-slate-800 hover:bg-slate-900'
-                        }`}
-                    >
-                        应用筛选
-                    </button>
-                </div>
+              <div className="p-3 border-t border-slate-100 bg-slate-50/80 backdrop-blur-sm flex justify-between items-center gap-4">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onClear) onClear();
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-800 font-medium px-2 py-1 rounded hover:bg-slate-200/50 transition-colors"
+                >
+                  清空
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onApply) onApply();
+                  }}
+                  className={`flex-1 px-3 py-1.5 text-xs font-semibold text-white rounded-md shadow-sm shadow-${colorTheme}-500/20 hover:shadow-md transition-all ${colorTheme === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' :
+                    colorTheme === 'amber' ? 'bg-amber-500 hover:bg-amber-600' :
+                      colorTheme === 'emerald' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                        colorTheme === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
+                          'bg-slate-800 hover:bg-slate-900'
+                    }`}
+                >
+                  应用筛选
+                </button>
+              </div>
             )}
           </div>
         </>
@@ -247,7 +247,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
 
 const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, count, emphasized, colorTheme = 'slate' }) => {
   const theme = THEME_STYLES[colorTheme];
-  
+
   return (
     <div
       className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full select-none"
@@ -294,7 +294,7 @@ export default function JobFilterBar({
   onOpenTracking
 }: JobFilterBarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  
+
   // Temp filters for deferred application
   const [tempFilters, setTempFilters] = useState(filters);
 
@@ -310,15 +310,15 @@ export default function JobFilterBar({
     // Simple deep check for the specific key
     const currentVal = filters[key as keyof typeof filters];
     const newVal = tempFilters[key as keyof typeof filters];
-    
+
     if (JSON.stringify(currentVal) !== JSON.stringify(newVal)) {
-        onFilterChange({ [key]: newVal });
+      onFilterChange({ [key]: newVal });
     }
     setOpenDropdown(null);
   };
 
   const clearTempFilter = (key: string) => {
-      setTempFilters(prev => ({ ...prev, [key]: [] }));
+    setTempFilters(prev => ({ ...prev, [key]: [] }));
   };
 
   const toggleDropdown = (key: string) => {
@@ -334,23 +334,23 @@ export default function JobFilterBar({
 
   const handleCheckboxChange = (section: keyof typeof filters, value: string, checked: boolean) => {
     console.log(`[JobFilterBar] Checkbox changed: section=${section}, value=${value}, checked=${checked}`);
-    
+
     // Update TEMP state only
     setTempFilters(prev => {
-        const current = (prev[section] as string[]) || [];
-        let updated;
+      const current = (prev[section] as string[]) || [];
+      let updated;
 
-        if (checked) {
-            if (section === 'regionType') {
-                updated = [value]; // Single select behavior
-            } else {
-                updated = [...current, value];
-            }
+      if (checked) {
+        if (section === 'regionType') {
+          updated = [value]; // Single select behavior
         } else {
-            updated = current.filter(item => item !== value);
+          updated = [...current, value];
         }
-        
-        return { ...prev, [section]: updated };
+      } else {
+        updated = current.filter(item => item !== value);
+      }
+
+      return { ...prev, [section]: updated };
     });
   };
 
@@ -380,12 +380,13 @@ export default function JobFilterBar({
       location: [],
       timezone: [],
       isTrusted: false,
-      isNew: false
+      isNew: false,
+      aiRecommended: false
     });
     onSearchChange('');
   };
 
-  const hasActiveFilters = 
+  const hasActiveFilters =
     (filters.category?.length || 0) > 0 ||
     (filters.experienceLevel?.length || 0) > 0 ||
     (filters.industry?.length || 0) > 0 ||
@@ -394,8 +395,9 @@ export default function JobFilterBar({
     (filters.salary?.length || 0) > 0 ||
     (filters.location?.length || 0) > 0 ||
     (filters.timezone?.length || 0) > 0 ||
-    filters.isTrusted || 
-    filters.isNew;
+    filters.isTrusted ||
+    filters.isNew ||
+    filters.aiRecommended;
 
   return (
     <div className="flex flex-col gap-4 mb-2">
@@ -411,18 +413,32 @@ export default function JobFilterBar({
             className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-sm font-medium transition-all"
           />
           {searchTerm && (
-             <button 
-                onClick={() => onSearchChange('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
-             >
-                <X className="w-3 h-3" />
-             </button>
+            <button
+              onClick={() => onSearchChange('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+            >
+              <X className="w-3 h-3" />
+            </button>
           )}
         </div>
 
         {/* Filter Row - Scrollable on mobile, wrap on desktop */}
         <div className="flex flex-wrap items-center gap-2 flex-1 w-full pb-1 xl:pb-0">
-          
+
+          {/* AI Recommended Toggle */}
+          <button
+            onClick={() => onFilterChange({ aiRecommended: !filters.aiRecommended })}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border whitespace-nowrap
+              ${filters.aiRecommended
+                ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm'
+                : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 shadow-sm'
+              }`}
+            title="仅显示符合我求职目标的 AI 推荐岗位"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${filters.aiRecommended ? 'text-indigo-500 fill-indigo-100' : 'text-slate-400 fill-none'}`} />
+            仅看 AI 推荐
+          </button>
+
           {/* Job Type (Renamed from Commitment) */}
           <FilterDropdown
             label="工作类型"
@@ -470,7 +486,7 @@ export default function JobFilterBar({
           </FilterDropdown>
 
           {/* Industry - Moved before Role */}
-           <FilterDropdown
+          <FilterDropdown
             label="行业"
             activeLabel={getActiveLabel('industry', industryOptions, '行业')}
             isActive={(filters.industry?.length || 0) > 0}
@@ -556,12 +572,12 @@ export default function JobFilterBar({
             onClick={onSortChange}
             className={`flex items-center gap-2 px-3 py-2 border rounded-lg shadow-sm text-sm font-medium transition-all whitespace-nowrap ${sortBy === 'recent'
               ? 'bg-slate-900 border-slate-900 text-white'
-              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+              : 'bg-white border-slate-200 text-slate-700 hover:bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold'
               }`}
-            title={sortBy === 'recent' ? '当前：最新发布' : '当前：相关度排序'}
+            title={sortBy === 'recent' ? '当前：最新发布' : '当前：按 AI 目标匹配度排序'}
           >
             <SortAsc className="w-4 h-4" />
-            <span className="hidden sm:inline">{sortBy === 'recent' ? '最新' : '相关'}</span>
+            <span className="hidden sm:inline">{sortBy === 'recent' ? '最新' : 'AI匹配'}</span>
           </button>
 
           <button

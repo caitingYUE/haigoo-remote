@@ -99,8 +99,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
    const isFeatured = job.isFeatured;
    const resolvedMatchLevel = useMemo(() => {
-      const raw = Number(matchScore ?? (job as any).matchScore ?? (job as any).recommendationScore ?? 0);
-      return resolveMatchLevel(raw, (job as any).matchLevel);
+      const raw = Number(matchScore ?? job.matchScore ?? job.recommendationScore ?? 0);
+      return resolveMatchLevel(raw, job.matchLevel);
    }, [job, matchScore]);
 
    const matchLevelLabel = useMemo(() => getMatchLevelLabel(resolvedMatchLevel), [resolvedMatchLevel]);
@@ -180,7 +180,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       }
 
       return tags.slice(0, 5); // Reduce max tags for cleaner look
-   }, [job.skills, (job as any).tags, job.companyTags]);
+   }, [job.skills, job.tags, job.companyTags]);
 
    // Redesigned Company Logo Component
    // Matching reference: Large card style, dynamic background, centered logo, company name above
@@ -292,19 +292,19 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-4">
                {/* Row 1: Badges & Salary (Desktop) */}
                <div className="flex items-center justify-between gap-2">
-                     <div className="flex flex-wrap items-center gap-2">
-                        {resolvedMatchLevel !== 'none' && (
-                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${matchLevelClass}`}>
-                              {matchLevelLabel}
-                           </span>
-                        )}
-                        {job.aiRecommended && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border border-indigo-100 bg-indigo-50 text-indigo-600">
-                              AI推荐
-                           </span>
-                        )}
-                        {/* Job Type (Amber) */}
-                        {job.type && (
+                  <div className="flex flex-wrap items-center gap-2">
+                     {resolvedMatchLevel !== 'none' && (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${matchLevelClass}`}>
+                           {matchLevelLabel}
+                        </span>
+                     )}
+                     {job.aiRecommended && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border border-indigo-100 bg-indigo-50 text-indigo-600">
+                           AI推荐
+                        </span>
+                     )}
+                     {/* Job Type (Amber) */}
+                     {job.type && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
                            <Calendar className="w-3 h-3 mr-1" />
                            {JOB_TYPE_MAP[job.type] || job.type}
