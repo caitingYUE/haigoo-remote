@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, ArrowRight, RefreshCw, Crown, Lock, Bell, Compass, Loader2, Languages, MessageSquare, Send, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { CheckCircle2, ArrowRight, RefreshCw, Crown, Lock, Bell, Compass, Loader2, Languages, MessageSquare, Send, ChevronDown, ChevronUp, Check, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getMatchLevelClassName, getMatchLevelLabel, resolveMatchLevel } from '../utils/match-display'
 import { useAuth } from '../contexts/AuthContext'
@@ -13,7 +13,8 @@ export default function GeneratedPlanView({
     onModuleDataUpdate,
     trackingSetupUrl = '/profile?tab=subscriptions',
     onRefreshRecommendations,
-    refreshingRecommendations = false
+    refreshingRecommendations = false,
+    compactMode = false
 }: {
     plan: any
     isGuest: boolean
@@ -23,6 +24,7 @@ export default function GeneratedPlanView({
     trackingSetupUrl?: string
     onRefreshRecommendations?: () => void
     refreshingRecommendations?: boolean
+    compactMode?: boolean
 }) {
     if (!plan) return null;
 
@@ -296,54 +298,70 @@ export default function GeneratedPlanView({
                                 )}
                             </div>
                             <div className={`flex flex-col gap-2 transition-opacity duration-300 ${refreshingRecommendations ? 'opacity-40 pointer-events-none' : ''}`}>
-                                {hasRecommendations ? recommendations.map((rec: any, i: number) => (
-                                    <div key={i} className="flex flex-col p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-indigo-200 transition-colors">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                                <span>{rec.role || rec.title}</span>
-                                                {rec.aiRecommended && (
-                                                    <span className="px-1.5 py-0.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600 text-[10px] font-semibold">
-                                                        AI推荐
-                                                    </span>
+                                {hasRecommendations ? recommendations.map((rec: any, i: number) => {
+                                    const jobCardContent = (
+                                        <div className={`flex flex-col p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-indigo-200 transition-colors ${compactMode ? 'hover:bg-indigo-50/30' : ''}`}>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="text-xs font-bold text-slate-800 flex flex-wrap items-center gap-1.5">
+                                                    <span>{rec.role || rec.title}</span>
+                                                    {rec.aiRecommended && (
+                                                        <span className="px-1.5 py-0.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600 text-[10px] font-semibold whitespace-nowrap">
+                                                            AI推荐
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {(rec.company || rec.matchLevel || rec.matchScore || rec.matchLabel) && (
+                                                    <div className="text-[10px] text-indigo-500 font-medium bg-indigo-50 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 ml-2">
+                                                        <span className="truncate max-w-[80px]">{rec.company}</span>
+                                                        {(() => {
+                                                            const numericScore = Number(String(rec.matchScore || '').replace(/[^0-9]/g, '')) || 0
+                                                            const level = rec.matchLevel || resolveMatchLevel(numericScore, rec.matchLevel || rec.match_label || rec.level)
+                                                            const levelText = rec.matchLabel || rec.match || getMatchLevelLabel(level) || rec.matchScore
+                                                            const levelClass = getMatchLevelClassName(level)
+                                                            return levelText ? (
+                                                                <span className={`px-1.5 py-0.5 rounded border ${levelClass} ml-1`}>
+                                                                    {levelText}
+                                                                </span>
+                                                            ) : null
+                                                        })()}
+                                                    </div>
                                                 )}
                                             </div>
-                                            {(rec.company || rec.matchLevel || rec.matchScore || rec.matchLabel) && (
-                                                <div className="text-[10px] text-indigo-500 font-medium bg-indigo-50 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                                    {rec.company}
-                                                    {(() => {
-                                                        const numericScore = Number(String(rec.matchScore || '').replace(/[^0-9]/g, '')) || 0
-                                                        const level = rec.matchLevel || resolveMatchLevel(numericScore, rec.matchLevel || rec.match_label || rec.level)
-                                                        const levelText = rec.matchLabel || rec.match || getMatchLevelLabel(level) || rec.matchScore
-                                                        const levelClass = getMatchLevelClassName(level)
-                                                        return levelText ? (
-                                                            <span className={`px-1.5 py-0.5 rounded border ${levelClass}`}>
-                                                                {levelText}
-                                                            </span>
-                                                        ) : null
-                                                    })()}
-                                                </div>
+                                            {!compactMode && (
+                                                <>
+                                                    <div className="text-[11px] text-slate-500 leading-snug">
+                                                        {rec.reason || rec.matchDetails?.summary || '该岗位与您的背景方向匹配，建议优先关注。'}
+                                                    </div>
+                                                    {(rec.matchLevel === 'high' || rec.matchLabel === '高匹配') && (
+                                                        <div className="mt-1.5 text-[10px] text-slate-500 bg-slate-50 border border-slate-100 rounded px-2 py-1 flex items-center gap-1.5">
+                                                            {isMember ? (
+                                                                <>
+                                                                    <Crown className="w-3 h-3 text-amber-500" />
+                                                                    <span>{rec.matchDetails?.summary ? '[AI匹配分析] 已纳入推荐理由' : '[AI匹配分析] 已启用'}</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Lock className="w-3 h-3 text-slate-400" />
+                                                                    <span>会员可查看完整 AI 匹配分析结论</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
-                                        <div className="text-[11px] text-slate-500 leading-snug">
-                                            {rec.reason || rec.matchDetails?.summary || '该岗位与您的背景方向匹配，建议优先关注。'}
+                                    );
+
+                                    return compactMode && rec.id ? (
+                                        <Link key={i} to={copilotGoal ? `/job/${rec.id}?copilotGoal=${encodeURIComponent(copilotGoal)}` : `/job/${rec.id}`} className="block select-none">
+                                            {jobCardContent}
+                                        </Link>
+                                    ) : (
+                                        <div key={i}>
+                                            {jobCardContent}
                                         </div>
-                                        {(rec.matchLevel === 'high' || rec.matchLabel === '高匹配') && (
-                                            <div className="mt-1.5 text-[10px] text-slate-500 bg-slate-50 border border-slate-100 rounded px-2 py-1 flex items-center gap-1.5">
-                                                {isMember ? (
-                                                    <>
-                                                        <Crown className="w-3 h-3 text-amber-500" />
-                                                        <span>{rec.matchDetails?.summary ? '[AI匹配分析] 已纳入推荐理由' : '[AI匹配分析] 已启用'}</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Lock className="w-3 h-3 text-slate-400" />
-                                                        <span>会员可查看完整 AI 匹配分析结论</span>
-                                                    </>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )) : (
+                                    );
+                                }) : (
                                     <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
                                         <div className="text-sm font-bold text-slate-800 mb-1">暂无特别匹配的岗位</div>
                                         <p className="text-xs text-slate-500 leading-relaxed">
@@ -402,7 +420,7 @@ export default function GeneratedPlanView({
                         </div>
                         <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
-                                <div className="text-sm font-bold text-slate-800">深度模块扩展</div>
+                                <div className="text-sm font-bold text-slate-800">求职方案拓展</div>
                                 <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full">个人中心专属</span>
                             </div>
 
@@ -420,9 +438,9 @@ export default function GeneratedPlanView({
 
                             <div className="space-y-2.5">
                                 {[
-                                    { key: 'language', title: '语言准备方案', icon: Languages, primaryIntent: 'deep-plan', primaryLabel: '展开方案', secondaryIntent: 'resources', secondaryLabel: '扩展资源' },
-                                    { key: 'interview', title: '面试准备方案', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '更多问题', secondaryIntent: 'mock-answer', secondaryLabel: '模拟回答' },
-                                    { key: 'apply', title: '投递执行计划', icon: Send, primaryIntent: 'deep-plan', primaryLabel: '展开计划', secondaryIntent: 'sprint', secondaryLabel: '两周冲刺' }
+                                    { key: 'language', title: '语言准备方案', icon: Languages, primaryIntent: 'deep-plan', primaryLabel: '生成针对性方案' },
+                                    { key: 'interview', title: '面试准备方案', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '生成实战模拟题' },
+                                    { key: 'apply', title: '投递执行计划', icon: Send, primaryIntent: 'sprint', primaryLabel: '生成冲刺排期' }
                                 ].map((item) => {
                                     const key = item.key as 'language' | 'interview' | 'apply'
                                     const detail = moduleResults[key] || null
@@ -486,29 +504,13 @@ export default function GeneratedPlanView({
                                             <div className="mt-2.5 pl-9 flex flex-wrap items-center gap-2">
                                                 <button
                                                     disabled={!isMember || loading}
-                                                    onClick={() => fetchExpandedModule(key, item.primaryIntent)}
-                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md hover:bg-indigo-100 disabled:opacity-50"
+                                                    onClick={() => fetchExpandedModule(key, item.primaryIntent, true)}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md hover:bg-indigo-100 disabled:opacity-50"
                                                 >
-                                                    {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                                                    {item.primaryLabel}
+                                                    {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : (detail ? <RefreshCw className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />)}
+                                                    {detail ? '重新生成' : item.primaryLabel}
                                                 </button>
-                                                <button
-                                                    disabled={!isMember || loading}
-                                                    onClick={() => fetchExpandedModule(key, item.secondaryIntent)}
-                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded-md hover:bg-slate-200 disabled:opacity-50"
-                                                >
-                                                    {item.secondaryLabel}
-                                                </button>
-                                                {detail && (
-                                                    <button
-                                                        disabled={!isMember || loading}
-                                                        onClick={() => fetchExpandedModule(key, detail?.lastIntent || item.primaryIntent, true)}
-                                                        className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-50"
-                                                    >
-                                                        <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                                                        刷新
-                                                    </button>
-                                                )}
+
                                                 {detail?.generatedAt && (
                                                     <span className="text-[10px] text-slate-400">
                                                         更新于 {new Date(detail.generatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}

@@ -1178,6 +1178,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         trackingSetupUrl={trackingSetupUrl}
                                         onRefreshRecommendations={handleRefreshRecommendations}
                                         refreshingRecommendations={refreshingRecommendations}
+                                        compactMode={true}
                                     />
                                     {isWizardCollapsed && (
                                         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white/95 to-transparent z-10 pointer-events-none rounded-b-[24px]" />

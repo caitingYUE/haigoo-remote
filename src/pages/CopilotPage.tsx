@@ -627,30 +627,36 @@ function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTim
                         </div>
 
                         {/* Tasks */}
-                        <div className="space-y-2">
-                            {phaseTasks.map((task: any) => (
-                                <button
-                                    key={task.id}
-                                    onClick={() => handleToggleTask(task.id, task.status)}
-                                    className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-slate-50 transition-colors"
-                                >
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-none ${task.status === 'completed' ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'
-                                        }`}>
-                                        {task.status === 'completed' && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                                    </div>
-                                    <span className={`text-sm flex-1 ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-700'
-                                        }`}>
-                                        {task.task_name}
-                                    </span>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                        task.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                            'bg-slate-100 text-slate-500'
-                                        }`}>
-                                        {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
+                        {phaseTasks.length > 0 ? (
+                            <div className="space-y-2">
+                                {phaseTasks.map((task: any) => (
+                                    <button
+                                        key={task.id}
+                                        onClick={() => handleToggleTask(task.id, task.status)}
+                                        className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-slate-50 transition-colors"
+                                    >
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-none ${task.status === 'completed' ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'
+                                            }`}>
+                                            {task.status === 'completed' && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                                        </div>
+                                        <span className={`text-sm flex-1 ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-700'
+                                            }`}>
+                                            {task.task_name}
+                                        </span>
+                                        <span className={`text-xs px-2 py-0.5 rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                            task.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                                'bg-slate-100 text-slate-500'
+                                            }`}>
+                                            {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-4 bg-slate-50 rounded-lg border border-slate-100">
+                                <p className="text-sm text-slate-500">本阶段暂无具体任务拆解</p>
+                            </div>
+                        )}
                     </div>
                 )
             })}
