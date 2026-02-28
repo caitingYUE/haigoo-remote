@@ -470,11 +470,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${matchLevelClass}`}>
                                 {matchLevelLabel}
                             </span>
-                            {job?.aiRecommended && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border border-indigo-100 bg-indigo-50 text-indigo-600">
-                                    AI推荐
-                                </span>
-                            )}
                         </div>
                     )}
 

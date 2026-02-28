@@ -39,7 +39,6 @@ interface JobFilterBarProps {
     timezone: string[];
     isTrusted: boolean;
     isNew: boolean;
-    aiRecommended: boolean;
   };
   onFilterChange: (newFilters: any) => void;
   categoryOptions: { label: string, value: string }[];
@@ -380,8 +379,7 @@ export default function JobFilterBar({
       location: [],
       timezone: [],
       isTrusted: false,
-      isNew: false,
-      aiRecommended: false
+      isNew: false
     });
     onSearchChange('');
   };
@@ -396,8 +394,7 @@ export default function JobFilterBar({
     (filters.location?.length || 0) > 0 ||
     (filters.timezone?.length || 0) > 0 ||
     filters.isTrusted ||
-    filters.isNew ||
-    filters.aiRecommended;
+    filters.isNew;
 
   return (
     <div className="flex flex-col gap-4 mb-2">
@@ -424,20 +421,6 @@ export default function JobFilterBar({
 
         {/* Filter Row - Scrollable on mobile, wrap on desktop */}
         <div className="flex flex-wrap items-center gap-2 flex-1 w-full pb-1 xl:pb-0">
-
-          {/* AI Recommended Toggle */}
-          <button
-            onClick={() => onFilterChange({ aiRecommended: !filters.aiRecommended })}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border whitespace-nowrap
-              ${filters.aiRecommended
-                ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm'
-                : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 shadow-sm'
-              }`}
-            title="仅显示符合我求职目标的 AI 推荐岗位"
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${filters.aiRecommended ? 'text-indigo-500 fill-indigo-100' : 'text-slate-400 fill-none'}`} />
-            仅看 AI 推荐
-          </button>
 
           {/* Job Type (Renamed from Commitment) */}
           <FilterDropdown

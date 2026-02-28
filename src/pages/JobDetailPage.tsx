@@ -40,8 +40,6 @@ export default function JobDetailPage() {
       setLoading(true)
       try {
         const resolvedId = decodeJobId(id);
-        const params = new URLSearchParams(location.search)
-        const copilotGoal = params.get('copilotGoal')
         // 登录态优先走个性化匹配接口，确保详情页能拿到 matchLevel/matchDetails
         let resp: Response
         if (isAuthenticated && token) {
@@ -52,9 +50,6 @@ export default function JobDetailPage() {
             pageSize: '1',
             sortBy: 'relevance'
           })
-          if (copilotGoal) {
-            personalizedParams.set('copilotGoal', copilotGoal)
-          }
           const personalizedUrl = `/api/data/processed-jobs?${personalizedParams.toString()}`
           resp = await fetch(personalizedUrl, {
             headers: { Authorization: `Bearer ${token}` }

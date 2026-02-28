@@ -102,8 +102,7 @@ export default function JobsPage() {
       jobType: [] as string[],
       salary: [] as string[],
       isTrusted: false,
-      isNew: false,
-      aiRecommended: false
+      isNew: false
     }
 
     try {
@@ -296,16 +295,12 @@ export default function JobsPage() {
 
       // 构建查询参数
       const queryParams = new URLSearchParams()
-      const copilotGoal = new URLSearchParams(location.search).get('copilotGoal')
 
       // 智能判断：如果已登录且有Token，尝试获取带匹配分数的列表；否则获取普通列表
       // 如果后端返回 401 (Token失效)，会自动降级为普通列表
       const shouldUseMatchScore = isAuthenticated && token;
       if (shouldUseMatchScore) {
         queryParams.append('action', 'jobs_with_match_score')
-        if (copilotGoal) {
-          queryParams.append('copilotGoal', copilotGoal)
-        }
       }
 
       queryParams.append('page', page.toString())
@@ -334,7 +329,6 @@ export default function JobsPage() {
       if (filters.salary?.length > 0) queryParams.append('salary', filters.salary.join(','))
       if (filters.isTrusted) queryParams.append('isTrusted', 'true')
       if (filters.isNew) queryParams.append('isNew', 'true')
-      if (filters.aiRecommended) queryParams.append('aiRecommended', 'true')
       // ⚠️ P0 Fix: Always enforce approval check for C-side job list
       queryParams.append('isApproved', 'true')
 
