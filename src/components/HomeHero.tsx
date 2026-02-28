@@ -1002,7 +1002,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                             {generatedPlan && (
                                                 <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 shadow-sm mb-4">
                                                     <div className="flex items-center justify-between mb-3">
-                                                        <div className="text-sm font-bold text-indigo-900">已生成的方案参数</div>
+                                                        <div className="text-sm font-bold text-indigo-900">你的定制需求</div>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.preventDefault();

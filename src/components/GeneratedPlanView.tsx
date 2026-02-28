@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { getMatchLevelClassName, getMatchLevelLabel, resolveMatchLevel } from '../utils/match-display'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
+import JobDetailModal from './JobDetailModal'
 
 export default function GeneratedPlanView({
     plan,
@@ -44,8 +45,6 @@ export default function GeneratedPlanView({
         apply: plan?.plan_v2?.modules?.apply?.summary || plan?.applicationPlan?.timeline || '建议建立每周投递节奏并持续复盘转化数据。'
     }), [plan])
     const hasRecommendations = recommendations.length > 0
-    const [genericJobs, setGenericJobs] = useState<Array<{ id: string; title: string; company?: string; location?: string }>>([])
-    const [loadingGenericJobs, setLoadingGenericJobs] = useState(false)
     const [moduleResults, setModuleResults] = useState<Record<string, any>>({})
     const [moduleLoading, setModuleLoading] = useState<Record<string, boolean>>({})
     const [moduleError, setModuleError] = useState<Record<string, string>>({})
@@ -62,6 +61,29 @@ export default function GeneratedPlanView({
         suggestions?: string[];
         motivation?: string;
     } | null>(null);
+
+    const [selectedJob, setSelectedJob] = useState<any | null>(null)
+    const [isJobModalOpen, setIsJobModalOpen] = useState(false)
+    const [loadingJobId, setLoadingJobId] = useState<string | null>(null)
+
+    const handleOpenJob = async (jobId: string) => {
+        if (!jobId) return;
+        setLoadingJobId(jobId);
+        try {
+            const resp = await fetch(`/api/data/processed-jobs?id=${jobId}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.job) {
+                    setSelectedJob(data.job);
+                    setIsJobModalOpen(true);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load job details', error);
+        } finally {
+            setLoadingJobId(null);
+        }
+    };
 
     const toggleTaskStatus = async (phase: string, task: string, isCompleted: boolean) => {
         if (!token || !isMember) return;
@@ -106,47 +128,7 @@ export default function GeneratedPlanView({
         }
     };
 
-    useEffect(() => {
-        let mounted = true
 
-        const fetchGenericJobs = async () => {
-            if (hasRecommendations) {
-                if (mounted) setGenericJobs([])
-                return
-            }
-
-            setLoadingGenericJobs(true)
-            try {
-                const params = new URLSearchParams({
-                    page: '1',
-                    limit: '3',
-                    location: 'Remote',
-                    experienceLevel: 'entry,junior',
-                    sortBy: 'recent',
-                    isApproved: 'true'
-                })
-                const res = await fetch(`/api/data/processed-jobs?${params.toString()}`)
-                const data = await res.json()
-                if (!mounted) return
-                const jobs = Array.isArray(data?.jobs) ? data.jobs : []
-                setGenericJobs(
-                    jobs.slice(0, 3).map((job: any) => ({
-                        id: String(job.id),
-                        title: job.title,
-                        company: job.company,
-                        location: job.location
-                    }))
-                )
-            } catch (_err) {
-                if (mounted) setGenericJobs([])
-            } finally {
-                if (mounted) setLoadingGenericJobs(false)
-            }
-        }
-
-        fetchGenericJobs()
-        return () => { mounted = false }
-    }, [hasRecommendations])
 
     useEffect(() => {
         const baseModules = plan?.plan_v2?.modules
@@ -352,12 +334,12 @@ export default function GeneratedPlanView({
                                         </div>
                                     );
 
-                                    return compactMode && rec.id ? (
-                                        <Link key={i} to={copilotGoal ? `/job/${rec.id}?copilotGoal=${encodeURIComponent(copilotGoal)}` : `/job/${rec.id}`} className="block select-none">
-                                            {jobCardContent}
-                                        </Link>
-                                    ) : (
-                                        <div key={i}>
+                                    return (
+                                        <div
+                                            key={i}
+                                            onClick={() => { if (rec.id || rec.jobId) handleOpenJob(rec.id || rec.jobId); }}
+                                            className="block select-none cursor-pointer"
+                                        >
                                             {jobCardContent}
                                         </div>
                                     );
@@ -367,45 +349,6 @@ export default function GeneratedPlanView({
                                         <p className="text-xs text-slate-500 leading-relaxed">
                                             建议过 1-2 天再来看看，我们会持续更新岗位池并重新匹配你的背景。
                                         </p>
-
-                                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                                            <Link
-                                                to={isGuest ? '/login' : trackingSetupUrl}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors"
-                                            >
-                                                <Bell className="w-3.5 h-3.5" />
-                                                添加岗位追踪
-                                            </Link>
-                                            <Link
-                                                to="/jobs?search=entry%20level%20remote"
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition-colors"
-                                            >
-                                                <Compass className="w-3.5 h-3.5" />
-                                                查看通用岗位
-                                            </Link>
-                                        </div>
-
-                                        <div className="mt-3">
-                                            <div className="text-[11px] font-semibold text-slate-500 mb-1.5">入门级远程岗位推荐</div>
-                                            {loadingGenericJobs ? (
-                                                <div className="text-[11px] text-slate-400">正在加载通用岗位...</div>
-                                            ) : genericJobs.length > 0 ? (
-                                                <div className="space-y-1.5">
-                                                    {genericJobs.map((job) => (
-                                                        <Link
-                                                            key={job.id}
-                                                            to={copilotGoal ? `/job/${job.id}?copilotGoal=${encodeURIComponent(copilotGoal)}` : `/job/${job.id}`}
-                                                            className="block p-2 rounded-lg border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/40 transition-colors"
-                                                        >
-                                                            <div className="text-xs font-semibold text-slate-800 line-clamp-1">{job.title}</div>
-                                                            <div className="text-[11px] text-slate-500 line-clamp-1">{job.company || '未知公司'} {job.location ? `· ${job.location}` : ''}</div>
-                                                        </Link>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="text-[11px] text-slate-400">当前暂无可展示的通用岗位，请稍后再试。</div>
-                                            )}
-                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -507,8 +450,7 @@ export default function GeneratedPlanView({
                                                     onClick={() => fetchExpandedModule(key, item.primaryIntent, true)}
                                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md hover:bg-indigo-100 disabled:opacity-50"
                                                 >
-                                                    {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : (detail ? <RefreshCw className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />)}
-                                                    {detail ? '重新生成' : item.primaryLabel}
+                                                    {detail ? '拓展方案' : item.primaryLabel}
                                                 </button>
 
                                                 {detail?.generatedAt && (
@@ -616,6 +558,13 @@ export default function GeneratedPlanView({
                     )}
                 </div>
             </div>
+            {/* Job Detail Modal */}
+            <JobDetailModal
+                job={selectedJob}
+                isOpen={isJobModalOpen}
+                onClose={() => setIsJobModalOpen(false)}
+                variant="center"
+            />
         </div>
     )
 }
