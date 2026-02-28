@@ -821,15 +821,15 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 </div>
 
                 {/* ── Main Panel ── */}
-                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-2 relative overflow-hidden">
+                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-2 relative">
                     {/* Glass sheen effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
 
-                    <div className={`grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 relative z-10 overflow-hidden transition-all duration-700 ease-in-out origin-top ${isWizardCollapsed ? 'max-h-[600px] min-h-[600px]' : 'max-h-[3000px] opacity-100 min-h-[600px]'
+                    <div className={`grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 relative z-10 transition-all duration-700 ease-in-out origin-top ${isWizardCollapsed ? 'max-h-[600px] min-h-[600px] overflow-hidden' : 'max-h-[5000px] opacity-100 min-h-[600px]'
                         }`}>
 
                         {/* ── Left: Wizard ── */}
-                        <div className="lg:col-span-5 bg-white/60 backdrop-blur-xl rounded-[24px] p-8 md:p-10 flex flex-col border border-white/40 shadow-sm relative overflow-hidden">
+                        <div className="lg:col-span-5 bg-white/60 backdrop-blur-xl rounded-[24px] p-8 md:p-10 flex flex-col border border-white/40 shadow-sm relative overflow-hidden self-start lg:sticky lg:top-24 z-20">
 
                             {/* Header */}
                             <div className="flex items-center gap-3 mb-5">
@@ -861,7 +861,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             </div>
 
                             {/* Step Panel with slide animation */}
-                            <div className="flex-1 relative overflow-hidden">
+                            <div className="relative overflow-hidden h-[420px] shrink-0">
                                 <div
                                     key={step}
                                     className={`absolute inset-0 transition-all duration-220 ease-out ${animating
@@ -1000,19 +1000,27 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         <div className="flex flex-col gap-4">
                                             {/* When plan already exists, show user's info summary */}
                                             {generatedPlan && (
-                                                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
-                                                    <div className="text-xs font-semibold text-indigo-700 mb-2">你的求职信息</div>
-                                                    <div className="space-y-1 text-xs text-slate-600">
-                                                        {formData.goal && <div>目标：{GOAL_OPTIONS.find(o => o.value === formData.goal)?.label || formData.goal}</div>}
-                                                        {formData.timeline && <div>时间：{TIMELINE_OPTIONS.find(o => o.value === formData.timeline)?.label || formData.timeline}</div>}
-                                                        {formData.background.role && <div>方向：{formData.background.role}</div>}
+                                                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 shadow-sm mb-4">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <div className="text-sm font-bold text-indigo-900">已生成的方案参数</div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                setStep(0);
+                                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                            }}
+                                                            className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold bg-white/80 px-2.5 py-1.5 rounded-lg shadow-sm transition-all hover:bg-white hover:shadow"
+                                                            title="返回第一步修改参数"
+                                                        >
+                                                            <ArrowLeft className="w-3.5 h-3.5" />
+                                                            修改需求
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        onClick={() => prevStep()}
-                                                        className="mt-2 text-[11px] text-indigo-500 hover:text-indigo-700 underline"
-                                                    >
-                                                        修改信息
-                                                    </button>
+                                                    <div className="space-y-1.5 text-xs text-indigo-700/80">
+                                                        {formData.goal && <div><span className="font-semibold text-indigo-800">目标：</span>{GOAL_OPTIONS.find(o => o.value === formData.goal)?.label || formData.goal}</div>}
+                                                        {formData.timeline && <div><span className="font-semibold text-indigo-800">时间：</span>{TIMELINE_OPTIONS.find(o => o.value === formData.timeline)?.label || formData.timeline}</div>}
+                                                        {formData.background.role && <div><span className="font-semibold text-indigo-800">方向：</span>{formData.background.role}</div>}
+                                                    </div>
                                                 </div>
                                             )}
 
