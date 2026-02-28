@@ -259,17 +259,21 @@ export default function CopilotSection() {
             {/* 3. Job Recommendations (Collapsed Preview) */}
             {!isCollapsed && (
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500">
-                <h3 className="font-bold text-slate-900 mb-4">推荐岗位方向</h3>
+                <h3 className="font-bold text-slate-900 mb-4">定制岗位推荐</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {result.recommendations.map((job, i) => (
-                    <div key={i} className="p-3 bg-slate-50 rounded-xl hover:bg-indigo-50 transition-colors cursor-pointer border border-slate-100" onClick={() => navigate('/jobs')}>
-                      <div className="flex justify-between items-start mb-1">
-                        <h4 className="font-bold text-slate-900 text-sm truncate pr-2">{job.title}</h4>
-                        <span className="text-xs font-bold text-green-600 whitespace-nowrap">{job.match}</span>
+                  {result.recommendations.map((job, i) => {
+                    const matchLabel = job.match === '低匹配' ? '一般匹配' : job.match;
+                    const matchColor = job.match === '高匹配' ? 'text-indigo-600' : job.match === '中匹配' ? 'text-amber-600' : 'text-slate-500';
+                    return (
+                      <div key={i} className="p-3 bg-slate-50 rounded-xl hover:bg-indigo-50 transition-colors cursor-pointer border border-slate-100" onClick={() => navigate('/jobs')}>
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className="font-bold text-slate-900 text-sm truncate pr-2">{job.title}</h4>
+                          <span className={`text-xs font-bold whitespace-nowrap ${matchColor}`}>{matchLabel}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 truncate">{job.company}</p>
                       </div>
-                      <p className="text-xs text-slate-500 truncate">{job.company}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -312,7 +316,7 @@ export default function CopilotSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
           {/* Left: Input Form */}
-          <div>
+          <div className="min-w-0 flex flex-col">
             <div className="mb-8">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold mb-4">
                 <Sparkles className="w-3.5 h-3.5" />

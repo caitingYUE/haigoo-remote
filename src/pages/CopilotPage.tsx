@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import {
     BarChart3, Briefcase, ListTodo, Target, Loader2, FileText,
-    ChevronRight, AlertCircle, CheckCircle2, Clock, ArrowRight, RefreshCw, Sparkles
+    ChevronRight, AlertCircle, CheckCircle2, Clock, ArrowRight, RefreshCw, Sparkles,
+    MessageSquare, ChevronDown, ChevronUp
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -17,6 +18,7 @@ const TABS = [
     { key: 'readiness', label: '适配度评估', icon: BarChart3 },
     { key: 'jobs', label: '岗位匹配', icon: Briefcase },
     { key: 'plan', label: '行动计划', icon: ListTodo },
+    { key: 'interview', label: '面试准备', icon: MessageSquare },
 ] as const
 
 type TabKey = typeof TABS[number]['key']
@@ -114,6 +116,7 @@ function CopilotPageInner() {
                     {activeTab === 'readiness' && <ReadinessPanel onGoalSet={(g, t) => { setUserGoal(g); setUserTimeline(t) }} />}
                     {activeTab === 'jobs' && <JobMatchPanel />}
                     {activeTab === 'plan' && <ActionPlanPanel userGoal={userGoal} userTimeline={userTimeline} />}
+                    {activeTab === 'interview' && <InterviewPanel />}
                 </div>
             </div>
         </Layout>
@@ -194,7 +197,7 @@ function ReadinessPanel({ onGoalSet }: { onGoalSet?: (goal: string, timeline: st
                                 readiness.readiness_level === 'medium' ? 'bg-yellow-100 text-yellow-700' :
                                     'bg-red-100 text-red-700'
                                 }`}>
-                                {readiness.readiness_level === 'high' ? '高适配度' : readiness.readiness_level === 'medium' ? '中适配度' : '低适配度'}
+                                {readiness.readiness_level === 'high' ? '高适配度' : readiness.readiness_level === 'medium' ? '中适配度' : '一般适配'}
                             </div>
                             {readiness.estimated_timeline && (
                                 <p className="text-sm text-slate-500 mt-2 flex items-center gap-1">
@@ -470,6 +473,7 @@ function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTim
     const [localLoading, setLocalLoading] = useState(false)
     const [planGoal, setPlanGoal] = useState(userGoal || 'full-time')
     const [planTimeline, setPlanTimeline] = useState(userTimeline || '1-3 months')
+    const [investedHours, setInvestedHours] = useState('')
     const [loadingStep, setLoadingStep] = useState(0)
 
     useEffect(() => {
@@ -493,6 +497,7 @@ function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTim
             await callAction('create-plan', {
                 goal: planGoal,
                 timeline: planTimeline,
+                investedHours,
             })
         } catch (e) { }
         setLocalLoading(false)
@@ -545,6 +550,16 @@ function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTim
                                 <option value="flexible">灵活安排（16周）</option>
                             </select>
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">每周可投入时间</label>
+                            <select value={investedHours} onChange={e => setInvestedHours(e.target.value)} className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">请选择</option>
+                                <option value="5小时以内">5小时以内（碎片时间）</option>
+                                <option value="5-10小时">5-10小时（每天约1小时）</option>
+                                <option value="10-20小时">10-20小时（每天2-3小时）</option>
+                                <option value="20小时以上">20小时以上（全力冲刺）</option>
+                            </select>
+                        </div>
                     </div>
                     {localLoading ? (
                         <div className="text-center py-6 px-4 bg-indigo-50 border border-indigo-100 rounded-xl mb-4">
@@ -594,72 +609,240 @@ function ActionPlanPanel({ userGoal, userTimeline }: { userGoal: string; userTim
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {phases.map((phase: any, pi: number) => {
                 const phaseTasks = tasksByPhase[phase.phase_key] || []
                 const doneCount = phaseTasks.filter((t: any) => t.status === 'completed').length
                 const totalCount = phaseTasks.length
                 const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0
-
+                const typeColors: Record<string, string> = {
+                    resume: 'bg-violet-100 text-violet-700',
+                    apply: 'bg-blue-100 text-blue-700',
+                    interview: 'bg-amber-100 text-amber-700',
+                    network: 'bg-green-100 text-green-700',
+                    english: 'bg-pink-100 text-pink-700',
+                    offer: 'bg-emerald-100 text-emerald-700',
+                }
                 return (
-                    <div
-                        key={pi}
-                        className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm animate-[fadeSlideIn_0.4s_ease-out_both]"
-                        style={{ animationDelay: `${pi * 0.15}s` }}
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 className="font-bold text-slate-900">{phase.phase_name}</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">{phase.focus} · {phase.duration_weeks}周</p>
-                            </div>
-                            <div className="text-right">
-                                <span className="text-lg font-bold text-indigo-600">{progress}%</span>
-                                <p className="text-xs text-slate-400">{doneCount}/{totalCount} 完成</p>
+                    <div key={pi} className="relative flex gap-4">
+                        {/* Timeline line */}
+                        <div className="flex flex-col items-center">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-none z-10 ${progress === 100 ? 'bg-emerald-500 text-white' : pi === 0 ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 border-2 border-slate-200'
+                                }`}>{progress === 100 ? '✓' : pi + 1}</div>
+                            {pi < phases.length - 1 && <div className="w-0.5 flex-1 bg-slate-200 mt-1 mb-1" />}
+                        </div>
+                        {/* Phase card */}
+                        <div className="flex-1 pb-6 min-w-0">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-slate-900 text-sm leading-snug">{phase.phase_name}</h3>
+                                        {phase.focus && <p className="text-xs text-indigo-600 mt-0.5">🎯 {phase.focus}</p>}
+                                    </div>
+                                    {totalCount > 0 && (
+                                        <span className="text-xs font-bold text-slate-400 ml-2 flex-none">{doneCount}/{totalCount}</span>
+                                    )}
+                                </div>
+                                {totalCount > 0 && (
+                                    <div className="w-full bg-slate-100 rounded-full h-1.5 mb-3">
+                                        <div className="bg-indigo-500 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                                    </div>
+                                )}
+                                {phaseTasks.length > 0 ? (
+                                    <div className="space-y-1.5">
+                                        {phaseTasks.map((task: any) => (
+                                            <button
+                                                key={task.id}
+                                                onClick={() => handleToggleTask(task.id, task.status)}
+                                                className="w-full flex items-center gap-2.5 p-2 rounded-lg text-left hover:bg-slate-50 transition-colors"
+                                            >
+                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-none ${task.status === 'completed' ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'
+                                                    }`}>
+                                                    {task.status === 'completed' && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                                </div>
+                                                <span className={`text-xs flex-1 leading-snug ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-700'
+                                                    }`}>{task.task_name}</span>
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-none ${typeColors[task.phase] || 'bg-slate-100 text-slate-500'
+                                                    }`}>{task.priority === 'high' ? '高优' : task.priority === 'medium' ? '中' : '低'}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-400 py-2">本阶段任务加载中...</p>
+                                )}
                             </div>
                         </div>
-
-                        {/* Progress bar */}
-                        <div className="w-full bg-slate-100 rounded-full h-2 mb-4">
-                            <div
-                                className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-
-                        {/* Tasks */}
-                        {phaseTasks.length > 0 ? (
-                            <div className="space-y-2">
-                                {phaseTasks.map((task: any) => (
-                                    <button
-                                        key={task.id}
-                                        onClick={() => handleToggleTask(task.id, task.status)}
-                                        className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-slate-50 transition-colors"
-                                    >
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-none ${task.status === 'completed' ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'
-                                            }`}>
-                                            {task.status === 'completed' && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                                        </div>
-                                        <span className={`text-sm flex-1 ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-700'
-                                            }`}>
-                                            {task.task_name}
-                                        </span>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                            task.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                                'bg-slate-100 text-slate-500'
-                                            }`}>
-                                            {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-4 bg-slate-50 rounded-lg border border-slate-100">
-                                <p className="text-sm text-slate-500">本阶段暂无具体任务拆解</p>
-                            </div>
-                        )}
                     </div>
                 )
             })}
         </div>
     )
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Panel: Interview Prep (M6)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function InterviewPanel() {
+    const { state, callAction } = useCopilot()
+    const { user } = useAuth()
+    const [localLoading, setLocalLoading] = useState(false)
+    const [questions, setQuestions] = useState<any[]>([])
+    const [answerLoading, setAnswerLoading] = useState<number | null>(null)
+    const [answers, setAnswers] = useState<Record<number, any>>({})
+    const [expandedAnswer, setExpandedAnswer] = useState<number | null>(null)
+
+    const resumeStructured = state?.resumeStructured
+    const role = resumeStructured?.roles?.[0] || ''
+    const industry = resumeStructured?.industries?.[0] || ''
+
+    const handleGenerate = async () => {
+        setLocalLoading(true)
+        try {
+            const res = await callAction('generate-interview-plan', {
+                goal: 'full-time',
+                role,
+                industry,
+                seniority: resumeStructured?.career_level || '',
+                language: '商务英语',
+            })
+            if (res?.questions) setQuestions(res.questions)
+        } catch (e) { }
+        setLocalLoading(false)
+    }
+
+    const handleGenerateAnswer = async (q: any) => {
+        setAnswerLoading(q.index)
+        try {
+            const res = await callAction('generate-answer', {
+                question: q.question,
+                questionType: q.questionType,
+                questionIndex: q.index,
+                role,
+            })
+            if (res?.sampleAnswer) {
+                setAnswers(prev => ({ ...prev, [q.index]: res }))
+                setExpandedAnswer(q.index)
+            }
+        } catch (e) { }
+        setAnswerLoading(null)
+    }
+
+    const typeColor: Record<string, string> = {
+        '自我介绍': 'bg-indigo-100 text-indigo-700',
+        '项目经历': 'bg-blue-100 text-blue-700',
+        '行为问题': 'bg-amber-100 text-amber-700',
+        '专业领域': 'bg-violet-100 text-violet-700',
+        '未来规划': 'bg-emerald-100 text-emerald-700',
+        '反问面试官': 'bg-slate-100 text-slate-600',
+    }
+
+    const getTypeKey = (qType: string) => {
+        for (const key of Object.keys(typeColor)) {
+            if (qType?.includes(key)) return key
+        }
+        return '综合'
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900">英文面试题库</h2>
+                        <p className="text-xs text-slate-500 mt-0.5">根据你的简历和求职目标，AI 生成 10 道个性化英文面试题</p>
+                    </div>
+                    <button
+                        onClick={handleGenerate}
+                        disabled={localLoading}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                    >
+                        {localLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        {questions.length > 0 ? '重新生成' : '生成面试题'}
+                    </button>
+                </div>
+
+                {!resumeStructured && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700 mb-4">
+                        💡 上传并解析简历后，面试题将更加个性化。可先在「岗位匹配」Tab 完成简历解析。
+                    </div>
+                )}
+
+                {questions.length === 0 && !localLoading && (
+                    <div className="text-center py-12 text-slate-400">
+                        <MessageSquare className="w-10 h-10 mx-auto mb-3 text-slate-200" />
+                        <p className="text-sm">点击「生成面试题」获取 10 道个性化英文面试题</p>
+                    </div>
+                )}
+
+                {localLoading && (
+                    <div className="text-center py-12">
+                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500 mx-auto mb-3" />
+                        <p className="text-sm text-slate-500">AI 正在根据你的背景生成面试题...</p>
+                    </div>
+                )}
+
+                {questions.length > 0 && (
+                    <div className="space-y-3">
+                        {questions.map((q: any, i: number) => {
+                            const typeKey = getTypeKey(q.questionType || '')
+                            const colorClass = typeColor[typeKey] || 'bg-slate-100 text-slate-600'
+                            const answer = answers[q.index]
+                            const isExpanded = expandedAnswer === q.index
+                            return (
+                                <div key={q.index || i} className="border border-slate-100 rounded-xl overflow-hidden">
+                                    <div className="p-4 bg-slate-50">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1.5">
+                                                    <span className="text-xs font-bold text-slate-400">Q{q.index || i + 1}</span>
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${colorClass}`}>{typeKey}</span>
+                                                </div>
+                                                <p className="text-sm font-semibold text-slate-900 mb-1">{q.question}</p>
+                                                {q.answerHint && <p className="text-xs text-slate-500">💡 {q.answerHint}</p>}
+                                            </div>
+                                            <button
+                                                onClick={() => answer ? setExpandedAnswer(isExpanded ? null : q.index) : handleGenerateAnswer(q)}
+                                                disabled={answerLoading === q.index}
+                                                className="flex-none flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                                            >
+                                                {answerLoading === q.index ? <Loader2 className="w-3 h-3 animate-spin" /> : <MessageSquare className="w-3 h-3" />}
+                                                {answer ? (isExpanded ? '收起' : '参考回答') : '参考回答'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {isExpanded && answer && (
+                                        <div className="p-4 bg-white border-t border-slate-100 animate-in fade-in duration-300">
+                                            <div className="mb-3">
+                                                <p className="text-xs font-semibold text-slate-500 mb-1.5">📝 英文参考回答示例</p>
+                                                <p className="text-sm text-slate-800 italic bg-indigo-50 rounded-lg p-3 leading-relaxed">"{answer.sampleAnswer}"</p>
+                                            </div>
+                                            {answer.starBreakdown && (
+                                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                                    {Object.entries(answer.starBreakdown).map(([key, val]: [string, any]) => (
+                                                        <div key={key} className="bg-slate-50 rounded-lg p-2.5">
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">{key}</p>
+                                                            <p className="text-xs text-slate-700">{val}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {answer.tips && answer.tips.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {answer.tips.map((tip: string, ti: number) => (
+                                                        <span key={ti} className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full">✓ {tip}</span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
