@@ -21,7 +21,7 @@ export default function GeneratedPlanView({
     isGuest: boolean
     isMember?: boolean
     deepMode?: boolean
-    onModuleDataUpdate?: (module: 'language' | 'interview' | 'apply', data: any) => void
+    onModuleDataUpdate?: (module: 'interview' | 'apply', data: any) => void
     trackingSetupUrl?: string
     onRefreshRecommendations?: () => void
     refreshingRecommendations?: boolean
@@ -40,8 +40,7 @@ export default function GeneratedPlanView({
         return `/jobs?${params.toString()}`
     }, [copilotGoal])
     const moduleSummaries = useMemo(() => ({
-        language: plan?.plan_v2?.modules?.language?.summary || plan?.interviewPrep?.languageTip || '补齐语言表达短板后，远程面试与跨时区协作成功率会明显提升。',
-        interview: plan?.plan_v2?.modules?.interview?.summary || (Array.isArray(plan?.interviewPrep?.commonQuestions) && plan.interviewPrep.commonQuestions.length > 0 ? `已识别 ${plan.interviewPrep.commonQuestions.length} 条高频面试问题，建议先做结构化回答演练。` : '建议先完成行为题和项目题的 STAR 结构回答准备。'),
+        interview: plan?.plan_v2?.modules?.interview?.summary || (Array.isArray(plan?.interviewPrep?.commonQuestions) && plan.interviewPrep.commonQuestions.length > 0 ? `已识别 ${plan.interviewPrep.commonQuestions.length} 条高频面试问题，建议先做结构化回答演练。` : '建议先评估当前英语使用瓶颈，并完成行为题和项目题的 STAR 结构回答准备。'),
         apply: plan?.plan_v2?.modules?.apply?.summary || plan?.applicationPlan?.timeline || '建议建立每周投递节奏并持续复盘转化数据。'
     }), [plan])
     const hasRecommendations = recommendations.length > 0
@@ -49,7 +48,6 @@ export default function GeneratedPlanView({
     const [moduleLoading, setModuleLoading] = useState<Record<string, boolean>>({})
     const [moduleError, setModuleError] = useState<Record<string, string>>({})
     const [moduleCollapsed, setModuleCollapsed] = useState<Record<string, boolean>>({
-        language: false,
         interview: false,
         apply: false
     })
@@ -58,8 +56,8 @@ export default function GeneratedPlanView({
     const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set())
     const [progressSuggestion, setProgressSuggestion] = useState<{
         next_focus?: string;
-        suggestions?: string[];
-        motivation?: string;
+        adjustment_suggestions?: string[];
+        motivation_message?: string;
     } | null>(null);
 
     const [selectedJob, setSelectedJob] = useState<any | null>(null)
@@ -137,7 +135,7 @@ export default function GeneratedPlanView({
             return
         }
         const normalized: Record<string, any> = {}
-            ; (['language', 'interview', 'apply'] as const).forEach((key) => {
+            ; (['interview', 'apply'] as const).forEach((key) => {
                 if (baseModules[key]) {
                     normalized[key] = baseModules[key]
                 }
@@ -145,7 +143,7 @@ export default function GeneratedPlanView({
         setModuleResults(normalized)
     }, [plan?.plan_v2?.modules])
 
-    const fetchExpandedModule = async (module: 'language' | 'interview' | 'apply', intent: string, forceRefresh = false) => {
+    const fetchExpandedModule = async (module: 'interview' | 'apply', intent: string, forceRefresh = false) => {
         if (!token) return
         if (!isMember) return
 
@@ -201,7 +199,7 @@ export default function GeneratedPlanView({
         }
     }
 
-    const toggleModuleCollapsed = (module: 'language' | 'interview' | 'apply') => {
+    const toggleModuleCollapsed = (module: 'interview' | 'apply') => {
         setModuleCollapsed(prev => ({ ...prev, [module]: !prev[module] }))
     }
 
@@ -371,7 +369,7 @@ export default function GeneratedPlanView({
                                 <div className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-2">
                                         <Crown className="w-3.5 h-3.5 text-amber-500" />
-                                        开通会员可解锁语言准备、面试扩展与投递计划的深度生成。
+                                        开通会员可解锁面试沟通扩展与投递计划的深度生成。
                                     </div>
                                     <Link to="/membership" className="px-2 py-1 rounded-md bg-amber-100 border border-amber-200 text-[10px] font-semibold text-amber-700 hover:bg-amber-200">
                                         去开通
@@ -381,11 +379,10 @@ export default function GeneratedPlanView({
 
                             <div className="space-y-2.5">
                                 {[
-                                    { key: 'language', title: '语言准备方案', icon: Languages, primaryIntent: 'deep-plan', primaryLabel: '生成针对性方案' },
-                                    { key: 'interview', title: '面试准备方案', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '生成实战模拟题' },
+                                    { key: 'interview', title: '面试与沟通突破方案', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '生成实战模拟题' },
                                     { key: 'apply', title: '投递执行计划', icon: Send, primaryIntent: 'sprint', primaryLabel: '生成冲刺排期' }
                                 ].map((item) => {
-                                    const key = item.key as 'language' | 'interview' | 'apply'
+                                    const key = item.key as 'interview' | 'apply'
                                     const detail = moduleResults[key] || null
                                     const loading = Boolean(moduleLoading[key])
                                     const collapsed = Boolean(moduleCollapsed[key])
@@ -525,16 +522,16 @@ export default function GeneratedPlanView({
                                             核心聚焦: {progressSuggestion.next_focus}
                                         </div>
                                     )}
-                                    {progressSuggestion.suggestions && progressSuggestion.suggestions.length > 0 && (
+                                    {progressSuggestion.adjustment_suggestions && progressSuggestion.adjustment_suggestions.length > 0 && (
                                         <ul className="text-[11px] text-indigo-600 space-y-1 ml-4 list-disc marker:text-indigo-400">
-                                            {progressSuggestion.suggestions.map((s, idx) => (
+                                            {progressSuggestion.adjustment_suggestions.map((s, idx) => (
                                                 <li key={idx} className="pl-0.5">{s}</li>
                                             ))}
                                         </ul>
                                     )}
-                                    {progressSuggestion.motivation && (
+                                    {progressSuggestion.motivation_message && (
                                         <div className="mt-2 text-[10px] text-indigo-500 italic block border-l-2 border-indigo-200 pl-2">
-                                            “{progressSuggestion.motivation}”
+                                            “{progressSuggestion.motivation_message}”
                                         </div>
                                     )}
                                 </div>
