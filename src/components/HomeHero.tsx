@@ -19,10 +19,12 @@ interface HomeHeroProps {
 
 type GoalType = 'full-time' | 'side-income' | 'market-watch' | 'career-pivot' | ''
 type TimelineType = 'immediately' | '1-3 months' | '3-6 months' | 'flexible' | ''
+type InvestedHoursType = '5小时以内' | '5-10小时' | '10-20小时' | '20小时以上' | ''
 
 interface CopilotFormData {
     goal: GoalType
     timeline: TimelineType
+    investedHours: InvestedHoursType
     background: {
         role: string
         years: string
@@ -433,13 +435,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }
 
     // Wizard state
-    const [step, setStep] = useState(0) // 0-3
+    const [step, setStep] = useState(0) // 0-4
     const [direction, setDirection] = useState<'forward' | 'back'>('forward')
     const [animating, setAnimating] = useState(false)
 
     const [formData, setFormData] = useState<CopilotFormData>({
         goal: '',
         timeline: '',
+        investedHours: '',
         background: { role: '', years: '中级', education: '本科', language: '英语-工作 (B2)' }
     })
 
@@ -481,7 +484,15 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 const data = await res.json()
                 if (res.ok && data.plan) {
                     setGeneratedPlan(data.plan)
-                    setStep(3);
+                    if (data.session) {
+                        setFormData({
+                            goal: data.session.goal || '',
+                            timeline: data.session.timeline || '',
+                            investedHours: data.session.investedHours || '',
+                            background: data.session.background || { role: '', years: '中级', education: '本科', language: '英语-工作 (B2)' }
+                        })
+                    }
+                    setStep(4);
                 }
             } catch (err) {
                 console.error('Failed to restore copilot session:', err)
@@ -520,7 +531,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             showWarning('请选择时间', '我们需要了解您的计划时间来制定方案')
             return
         }
-        if (step < 3) goTo(step + 1, 'forward')
+        if (step === 2 && !formData.investedHours) {
+            showWarning('请选择投入时间', '告诉我们您每周可安排的准备时间')
+            return
+        }
+        if (step < 4) goTo(step + 1, 'forward')
     }
 
     const prevStep = () => {
@@ -548,6 +563,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     userId: user?.user_id,
                     goal: GOAL_TO_API[formData.goal],
                     timeline: formData.timeline,
+                    investedHours: formData.investedHours,
                     background: {
                         industry: formData.background.role,
                         seniority: formData.background.years,
@@ -941,8 +957,51 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         </div>
                                     )}
 
-                                    {/* ── Step 2: Background ── */}
+                                    {/* ── Step 2: Invested Hours ── */}
                                     {step === 2 && (
+                                        <div className="flex flex-col h-full">
+                                            <p className="text-sm font-semibold text-slate-700 mb-1">
+                                                每周能投入多少时间准备？
+                                            </p>
+                                            <p className="text-xs text-slate-400 mb-5">投入时间决定了行动计划的节奏与颗粒度</p>
+                                            <div className="space-y-2.5">
+                                                {[
+                                                    { value: '5小时以内', label: '5小时以内', sub: '碎片化准备，稳扎稳打' },
+                                                    { value: '5-10小时', label: '5 - 10 小时', sub: '标准的副业/转型准备节奏' },
+                                                    { value: '10-20小时', label: '10 - 20 小时', sub: '沉浸式准备，快速突破' },
+                                                    { value: '20小时以上', label: '20小时以上', sub: '全职投入，高强度冲刺' }
+                                                ].map((opt) => {
+                                                    const isSelected = formData.investedHours === opt.value
+                                                    return (
+                                                        <button
+                                                            key={opt.value}
+                                                            onClick={() => setFormData({ ...formData, investedHours: opt.value as InvestedHoursType })}
+                                                            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${isSelected
+                                                                ? 'border-indigo-400 bg-indigo-50 shadow-md shadow-indigo-100'
+                                                                : 'border-slate-200 bg-white hover:border-slate-300'
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                                                                    }`}>
+                                                                    {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                                                                </div>
+                                                                <span className={`text-sm font-bold ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>
+                                                                    {opt.label}
+                                                                </span>
+                                                            </div>
+                                                            <span className={`text-xs font-medium ${isSelected ? 'text-indigo-500' : 'text-slate-400'}`}>
+                                                                {opt.sub}
+                                                            </span>
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* ── Step 3: Background ── */}
+                                    {step === 3 && (
                                         <div className="flex flex-col gap-4">
                                             <p className="text-sm font-semibold text-slate-700">
                                                 简单告诉我你的职业情况
@@ -995,8 +1054,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         </div>
                                     )}
 
-                                    {/* ── Step 3: Resume + Generate ── */}
-                                    {step === 3 && (
+                                    {/* ── Step 4: Resume + Generate ── */}
+                                    {step === 4 && (
                                         <div className="flex flex-col gap-4">
                                             {/* When plan already exists, show user's info summary */}
                                             {generatedPlan && (
@@ -1019,6 +1078,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                     <div className="space-y-1.5 text-xs text-indigo-700/80">
                                                         {formData.goal && <div><span className="font-semibold text-indigo-800">目标：</span>{GOAL_OPTIONS.find(o => o.value === formData.goal)?.label || formData.goal}</div>}
                                                         {formData.timeline && <div><span className="font-semibold text-indigo-800">时间：</span>{TIMELINE_OPTIONS.find(o => o.value === formData.timeline)?.label || formData.timeline}</div>}
+                                                        {formData.investedHours && <div><span className="font-semibold text-indigo-800">投入：</span>每周 {formData.investedHours}</div>}
                                                         {formData.background.role && <div><span className="font-semibold text-indigo-800">方向：</span>{formData.background.role}</div>}
                                                     </div>
                                                 </div>
@@ -1146,7 +1206,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                     返回
                                 </button>
 
-                                {step < 3 && (
+                                {step < 4 && (
                                     <button
                                         onClick={nextStep}
                                         className="flex items-center gap-1.5 px-5 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-all shadow-sm shadow-indigo-300 hover:shadow-md hover:shadow-indigo-300 hover:-translate-y-0.5"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X, CheckCircle, Info, Star, ArrowDown, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, CheckCircle, Info, Star, ArrowDown, Loader2, Sparkles } from 'lucide-react';
 import { ProcessedJobData } from '../services/data-management-service';
 import { JobCategory } from '../types/rss-types';
 
@@ -14,15 +14,15 @@ interface EditJobModalProps {
   availableTags?: string[];
 }
 
-export const EditJobModal: React.FC<EditJobModalProps> = ({ 
-  job, 
-  onSave, 
-  onClose, 
-  onNavigate, 
-  hasPrev, 
-  hasNext, 
-  availableCategories = [], 
-  availableTags = [] 
+export const EditJobModal: React.FC<EditJobModalProps> = ({
+  job,
+  onSave,
+  onClose,
+  onNavigate,
+  hasPrev,
+  hasNext,
+  availableCategories = [],
+  availableTags = []
 }) => {
   // Helper to format date for datetime-local input
   const formatDateForInput = (isoString?: string) => {
@@ -133,7 +133,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       '人工智能': ['Machine Learning', 'Deep Learning', 'PyTorch', 'TensorFlow', 'NLP', 'Computer Vision'],
       'Web3/区块链': ['Solidity', 'Smart Contracts', 'Ethereum', 'DeFi', 'Web3.js', 'Rust']
     };
-    
+
     return [...(categoryTags[category] || []), ...commonTags];
   };
 
@@ -171,33 +171,33 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 </div>
               )}
             </div>
-            
+
             <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSaving}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      保存中...
-                    </>
-                  ) : '保存'}
-                </button>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors ml-2"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={isSaving}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    保存中...
+                  </>
+                ) : '保存'}
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors ml-2"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
@@ -224,11 +224,10 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 const newStatus = !formData.isApproved;
                 setFormData(prev => ({ ...prev, isApproved: newStatus }));
               }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                formData.isApproved 
-                  ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' 
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${formData.isApproved
+                ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
+                }`}
             >
               {formData.isApproved ? '撤销审核' : '通过审核'}
             </button>
@@ -246,20 +245,20 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               />
               {(formData as any).translations?.title && (
                 <div className="mt-1.5 flex items-center justify-between bg-slate-50 px-2 py-1.5 rounded border border-slate-200">
-                   <span className="text-xs text-slate-600 truncate mr-2" title={(formData as any).translations.title}>
-                     翻译: {(formData as any).translations.title}
-                   </span>
-                   <button 
-                     type="button"
-                     onClick={() => {
-                        const newTrans = { ...(formData as any).translations };
-                        delete newTrans.title;
-                        setFormData({ ...formData, translations: newTrans });
-                     }}
-                     className="text-xs text-red-600 hover:text-red-700 font-medium whitespace-nowrap"
-                   >
-                     清除翻译
-                   </button>
+                  <span className="text-xs text-slate-600 truncate mr-2" title={(formData as any).translations.title}>
+                    翻译: {(formData as any).translations.title}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newTrans = { ...(formData as any).translations };
+                      delete newTrans.title;
+                      setFormData({ ...formData, translations: newTrans });
+                    }}
+                    className="text-xs text-red-600 hover:text-red-700 font-medium whitespace-nowrap"
+                  >
+                    清除翻译
+                  </button>
                 </div>
               )}
             </div>
@@ -281,8 +280,20 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 mb-2"
               />
+              <div className="flex flex-wrap gap-1.5">
+                {['全球远程', '中国远程', '亚太远程', '香港远程', '台湾远程'].map(loc => (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, location: loc })}
+                    className="text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-colors"
+                  >
+                    {loc}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -413,7 +424,54 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">技能标签（用逗号分隔）</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-slate-700">技能标签（用逗号分隔）</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Extract text source
+                    const sourceText = String((formData as any).translations?.description || formData.description || '').toLowerCase();
+                    if (!sourceText) return;
+
+                    // Simple local dictionary
+                    const dictionary = [
+                      'React', 'Vue', 'Angular', 'Node.js', 'Python', 'Java', 'Go', 'Golang', 'Rust',
+                      'AWS', 'Docker', 'Kubernetes', 'CI/CD', 'SQL', 'MongoDB', 'Redis', 'API', 'REST', 'GraphQL',
+                      'DevOps', 'Agile', 'Scrum', 'Jira', 'Git', 'Linux', 'Windows', 'MacOS', 'iOS', 'Android',
+                      'Flutter', 'React Native', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'SASS', 'TailwindCSS',
+                      'Webpack', 'Next.js', 'Nuxt.js', 'Nest.js', 'Express', 'Spring Boot', 'Django', 'Flask', 'FastAPI',
+                      'C#', 'C++', 'PHP', 'Ruby', 'Swift', 'Kotlin', 'Scala', 'TensorFlow', 'PyTorch', 'Machine Learning', 'AI', 'NLP',
+                      'Data Analysis', 'Tableau', 'Excel', 'Figma', 'Sketch', 'UI/UX', 'Product Management', 'SEO',
+                      'Solidity', 'Smart Contracts', 'Web3', 'Ethereum', 'DeFi',
+                      '双语', '英语', 'English', '沟通', 'Communication', '远程', 'Remote', '独立', 'Proactive'
+                    ];
+
+                    const currentTags = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
+                    const newTags = new Set(currentTags);
+                    let addedCount = 0;
+
+                    for (const dictWord of dictionary) {
+                      const lowerDict = dictWord.toLowerCase();
+                      if (sourceText.includes(lowerDict)) {
+                        // Avoid duplicates case-insensitively before adding true case version
+                        if (!currentTags.some(t => t.toLowerCase() === lowerDict)) {
+                          newTags.add(dictWord);
+                          addedCount++;
+                        }
+                      }
+                    }
+
+                    if (addedCount > 0) {
+                      setFormData({ ...formData, tags: Array.from(newTags).join(', ') });
+                    }
+                  }}
+                  className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1.5 rounded-md transition-colors font-medium border border-indigo-100"
+                  title="自动扫描职位描述并提取常见关键词"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  从详情智能提取
+                </button>
+              </div>
               <div className="space-y-2">
                 <input
                   type="text"
