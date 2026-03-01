@@ -44,6 +44,17 @@ export default function GeneratedPlanView({
         apply: plan?.plan_v2?.modules?.apply?.summary || plan?.applicationPlan?.timeline || '建议建立每周投递节奏并持续复盘转化数据。'
     }), [plan])
     const hasRecommendations = recommendations.length > 0
+    const milestonesDisplay = useMemo(() => {
+        if (plan.milestones && plan.milestones.length > 0) return plan.milestones;
+        if (Array.isArray(plan.applicationPlan?.steps) && plan.applicationPlan.steps.length > 0) {
+            return plan.applicationPlan.steps.map((s: any, i: number) => ({
+                month: s.week || `阶段 ${i + 1}`,
+                focus: s.action || s.focus || '',
+                tasks: []
+            }));
+        }
+        return [];
+    }, [plan.milestones, plan.applicationPlan])
     const [moduleResults, setModuleResults] = useState<Record<string, any>>({})
     const [moduleLoading, setModuleLoading] = useState<Record<string, boolean>>({})
     const [moduleError, setModuleError] = useState<Record<string, string>>({})
@@ -110,11 +121,18 @@ export default function GeneratedPlanView({
                 })
             });
             const data = await res.json();
-            if (res.ok && data.success && data.answer) {
+            if (res.ok && data.success && (data.sampleAnswer || data.answer)) {
+                // Format the generated answer for display
+                const formattedAnswer = [
+                    data.sampleAnswer || data.answer,
+                    data.starBreakdown ? `\n【情境】${data.starBreakdown.situation || ''}\n【任务】${data.starBreakdown.task || ''}\n【行动】${data.starBreakdown.action || ''}\n【结果】${data.starBreakdown.result || ''}` : '',
+                    data.tips?.length ? `\n💡 进阶建议：${(data.tips as string[]).join('；')}` : ''
+                ].filter(Boolean).join('');
+
                 setModuleResults(prev => {
                     const interviewData = prev['interview'] || {};
                     const newQuestions = (interviewData.questions || []).map((q: any) =>
-                        q.question === question ? { ...q, generatedAnswer: data.answer } : q
+                        q.question === question ? { ...q, generatedAnswer: formattedAnswer } : q
                     );
                     return {
                         ...prev,
@@ -279,279 +297,280 @@ export default function GeneratedPlanView({
 
             {/* Scrollable Timeline Steps */}
             <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar relative pr-2 pb-4">
-                {/* Connector line (shared absolute bg) */}
-                <div className="absolute left-[15px] top-6 bottom-6 w-px bg-gradient-to-b from-indigo-200 via-slate-100 to-transparent pointer-events-none z-0" />
+                    {/* Connector line (shared absolute bg) */}
+                    <div className="absolute left-[15px] top-6 bottom-6 w-px bg-gradient-to-b from-indigo-200 via-slate-100 to-transparent pointer-events-none z-0" />
 
-                {/* Step 1 - Diagnosis / Summary */}
-                <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.4s_ease-out]">
-                    <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
-                        <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                    <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
-                        <div className="text-sm font-bold text-slate-800 mb-2">背景与竞争力诊断</div>
-                        {remoteReadiness?.summary && (
-                            <div className="mb-2.5 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-2 leading-relaxed">
-                                <span className="font-semibold mr-1">远程适配结论：</span>
-                                {remoteReadiness.summary}
-                            </div>
-                        )}
-                        <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
-                            {plan.summary || "AI 已成功为您生成求职诊断分析。"}
-                        </div>
-                        {(!plan.strengths || plan.strengths.length === 0) && (
-                            <div className="mt-3 text-[11px] text-slate-400 italic">
-                                提示：未上传简历或数据不足，当前仅提供通用职业基础分析。
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Step 2 - Recommendations */}
-                {(
-                    <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.5s_ease-out]">
+                    {/* Step 1 - Diagnosis / Summary */}
+                    <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.4s_ease-out]">
                         <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
                             <CheckCircle2 className="w-4 h-4" />
                         </div>
                         <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
-                            <div className="flex items-center justify-between gap-3 mb-3">
-                                <div className="text-sm font-bold text-slate-800">专属岗位推荐</div>
-                                {onRefreshRecommendations && (
-                                    <button
-                                        onClick={onRefreshRecommendations}
-                                        disabled={refreshingRecommendations}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-indigo-600 bg-white border border-indigo-100 rounded-lg hover:bg-indigo-50 transition-colors disabled:opacity-60"
-                                    >
-                                        <RefreshCw className={`w-3.5 h-3.5 ${refreshingRecommendations ? 'animate-spin' : ''}`} />
-                                        刷新岗位
-                                    </button>
-                                )}
+                            <div className="text-sm font-bold text-slate-800 mb-2">背景与竞争力诊断</div>
+                            {remoteReadiness?.summary && (
+                                <div className="mb-2.5 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-2 leading-relaxed">
+                                    <span className="font-semibold mr-1">远程适配结论：</span>
+                                    {remoteReadiness.summary}
+                                </div>
+                            )}
+                            <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                                {plan.summary || "AI 已成功为您生成求职诊断分析。"}
                             </div>
-                            <div className={`flex flex-col gap-2 transition-opacity duration-300 ${refreshingRecommendations ? 'opacity-40 pointer-events-none' : ''}`}>
-                                {hasRecommendations ? recommendations.map((rec: any, i: number) => {
-                                    const jobCardContent = (
-                                        <div className={`flex flex-col p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-indigo-200 transition-colors ${compactMode ? 'hover:bg-indigo-50/30' : ''}`}>
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="text-xs font-bold text-slate-800 flex flex-wrap items-center gap-1.5">
-                                                    <span>{rec.role || rec.title}</span>
-                                                    {rec.aiRecommended && (
-                                                        <span className="px-1.5 py-0.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600 text-[10px] font-semibold whitespace-nowrap">
-                                                            AI推荐
+                            {(!plan.strengths || plan.strengths.length === 0) && (
+                                <div className="mt-3 text-[11px] text-slate-400 italic">
+                                    提示：未上传简历或数据不足，当前仅提供通用职业基础分析。
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Step 2 - Recommendations */}
+                    {(
+                        <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.5s_ease-out]">
+                            <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
+                                <CheckCircle2 className="w-4 h-4" />
+                            </div>
+                            <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
+                                <div className="flex items-center justify-between gap-3 mb-3">
+                                    <div className="text-sm font-bold text-slate-800">专属岗位推荐</div>
+                                    {onRefreshRecommendations && (
+                                        <button
+                                            onClick={onRefreshRecommendations}
+                                            disabled={refreshingRecommendations}
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-indigo-600 bg-white border border-indigo-100 rounded-lg hover:bg-indigo-50 transition-colors disabled:opacity-60"
+                                        >
+                                            <RefreshCw className={`w-3.5 h-3.5 ${refreshingRecommendations ? 'animate-spin' : ''}`} />
+                                            刷新岗位
+                                        </button>
+                                    )}
+                                </div>
+                                <div className={`flex flex-col gap-2 transition-opacity duration-300 ${refreshingRecommendations ? 'opacity-40 pointer-events-none' : ''}`}>
+                                    {hasRecommendations ? recommendations.map((rec: any, i: number) => {
+                                        const jobCardContent = (
+                                            <div className={`flex flex-col p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-indigo-200 transition-colors ${compactMode ? 'hover:bg-indigo-50/30' : ''}`}>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <div className="text-xs font-bold text-slate-800 flex flex-wrap items-center gap-1.5">
+                                                        <span>{rec.role || rec.title}</span>
+                                                        {rec.aiRecommended && (
+                                                            <span className="px-1.5 py-0.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600 text-[10px] font-semibold whitespace-nowrap">
+                                                                AI推荐
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {(rec.company || rec.matchLevel || rec.matchScore || rec.matchLabel) && (
+                                                        <div className="text-[10px] text-indigo-500 font-medium bg-indigo-50 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 ml-2">
+                                                            <span className="truncate max-w-[80px]">{rec.company}</span>
+                                                            {(() => {
+                                                                const numericScore = Number(String(rec.matchScore || '').replace(/[^0-9]/g, '')) || 0
+                                                                const level = rec.matchLevel || resolveMatchLevel(numericScore, rec.matchLevel || rec.match_label || rec.level)
+                                                                const levelText = rec.matchLabel || rec.match || getMatchLevelLabel(level) || rec.matchScore
+                                                                const levelClass = getMatchLevelClassName(level)
+                                                                return levelText ? (
+                                                                    <span className={`px-1.5 py-0.5 rounded border ${levelClass} ml-1`}>
+                                                                        {levelText}
+                                                                    </span>
+                                                                ) : null
+                                                            })()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {!compactMode && (
+                                                    <>
+                                                        <div className="text-[11px] text-slate-500 leading-snug">
+                                                            {rec.reason || rec.matchDetails?.summary || '该岗位与您的背景方向匹配，建议优先关注。'}
+                                                        </div>
+                                                        {(rec.matchLevel === 'high' || rec.matchLabel === '高匹配') && (
+                                                            <div className="mt-1.5 text-[10px] text-slate-500 bg-slate-50 border border-slate-100 rounded px-2 py-1 flex items-center gap-1.5">
+                                                                {isMember ? (
+                                                                    <>
+                                                                        <Crown className="w-3 h-3 text-amber-500" />
+                                                                        <span>{rec.matchDetails?.summary ? '[AI匹配分析] 已纳入推荐理由' : '[AI匹配分析] 已启用'}</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Lock className="w-3 h-3 text-slate-400" />
+                                                                        <span>会员可查看完整 AI 匹配分析结论</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+
+                                        return (
+                                            <div
+                                                key={i}
+                                                onClick={() => { if (rec.id || rec.jobId) handleOpenJob(rec.id || rec.jobId); }}
+                                                className="block select-none cursor-pointer"
+                                            >
+                                                {jobCardContent}
+                                            </div>
+                                        );
+                                    }) : (
+                                        <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                            <div className="text-sm font-bold text-slate-800 mb-1">暂无特别匹配的岗位</div>
+                                            <p className="text-xs text-slate-500 leading-relaxed">
+                                                建议过 1-2 天再来看看，我们会持续更新岗位池并重新匹配你的背景。
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {deepMode && (
+                        <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.55s_ease-out]">
+                            <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
+                                <CheckCircle2 className="w-4 h-4" />
+                            </div>
+                            <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="text-sm font-bold text-slate-800">求职方案拓展</div>
+                                    <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full">个人中心专属</span>
+                                </div>
+
+                                {!isMember && (
+                                    <div className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <Crown className="w-3.5 h-3.5 text-amber-500" />
+                                            开通会员可解锁面试沟通扩展与投递计划的深度生成。
+                                        </div>
+                                        <Link to="/membership" className="px-2 py-1 rounded-md bg-amber-100 border border-amber-200 text-[10px] font-semibold text-amber-700 hover:bg-amber-200">
+                                            去开通
+                                        </Link>
+                                    </div>
+                                )}
+
+                                <div className="space-y-2.5">
+                                    {[
+                                        { key: 'interview', title: '面试模拟问答', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '生成实战模拟题' },
+                                    ].map((item) => {
+                                        const key = item.key as 'interview'
+                                        const detail = moduleResults[key] || null
+                                        const loading = Boolean(moduleLoading[key])
+                                        const collapsed = Boolean(moduleCollapsed[key])
+                                        const error = moduleError[key]
+                                        const Icon = item.icon
+                                        const summary = detail?.summary || moduleSummaries[key]
+
+                                        return (
+                                            <div key={key} className="bg-white border border-slate-200 rounded-lg px-3 py-2.5">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="flex items-start gap-2.5 min-w-0">
+                                                        <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center flex-none">
+                                                            <Icon className="w-3.5 h-3.5" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="text-xs font-semibold text-slate-800">{item.title}</div>
+                                                            {loading ? (
+                                                                <div className="mt-2 space-y-2 animate-pulse mb-2">
+                                                                    <div className="h-2.5 bg-indigo-100 rounded w-5/6"></div>
+                                                                    <div className="h-2.5 bg-slate-100 rounded w-4/6"></div>
+                                                                    <div className="flex items-center gap-1.5 mt-2">
+                                                                        <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />
+                                                                        <span className="text-[10px] text-indigo-500 font-medium tracking-wide">AI 正在为您深度生成专属方案，由于需要深度检索，平均约需 5~10 秒，请稍候...</span>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <p className={`text-[11px] text-slate-500 leading-relaxed mt-1 ${collapsed ? 'line-clamp-2' : ''}`}>
+                                                                    {summary}
+                                                                </p>
+                                                            )}
+                                                            {error && (
+                                                                <div className="text-[10px] text-rose-600 mt-1 bg-rose-50 border border-rose-100 rounded px-2 py-1">{error}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => toggleModuleCollapsed(key)}
+                                                        className="text-[10px] text-slate-500 hover:text-slate-700 inline-flex items-center gap-1"
+                                                    >
+                                                        {collapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+                                                        {collapsed ? '展开' : '收起'}
+                                                    </button>
+                                                </div>
+
+                                                {!collapsed && detail && (
+                                                    <div className="mt-3 pl-9 space-y-3">
+                                                        {Array.isArray(detail?.roadmap) && (
+                                                            <div className="space-y-2">
+                                                                {detail.roadmap.map((step: any, idx: number) => (
+                                                                    <div key={`roadmap-${idx}`} className="text-[11px] text-slate-600">
+                                                                        <div className="font-semibold text-slate-700">{step?.phase || `阶段${idx + 1}`}：{step?.focus || ''}</div>
+                                                                        {Array.isArray(step?.tasks) && (
+                                                                            <ul className="list-disc pl-4 mt-1 space-y-0.5 opacity-80">
+                                                                                {step.tasks.map((t: string, tidx: number) => <li key={tidx}>{t}</li>)}
+                                                                            </ul>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {Array.isArray(detail?.questions) && (
+                                                            <div className="space-y-3">
+                                                                {detail.questions.map((q: any, idx: number) => (
+                                                                    <div key={`q-${idx}`} className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg">
+                                                                        <div className="text-[11px] text-slate-700 font-medium mb-2">Q{idx + 1}: {q?.question || ''}</div>
+                                                                        {q?.generatedAnswer ? (
+                                                                            <div className="mt-2 text-[10px] text-slate-600 bg-white p-2 rounded border border-indigo-50 leading-relaxed whitespace-pre-wrap">
+                                                                                <span className="font-bold text-indigo-600 mb-1 block">💡 参考回答 (STAR):</span>
+                                                                                {q.generatedAnswer}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <button
+                                                                                onClick={() => handleGenerateAnswer(q.question)}
+                                                                                disabled={generatingAnswerFor === q.question}
+                                                                                className="text-[10px] text-indigo-600 bg-white border border-indigo-100 hover:bg-indigo-50 px-2.5 py-1 rounded transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                                                                            >
+                                                                                {generatingAnswerFor === q.question ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                                                                                {generatingAnswerFor === q.question ? '正在生成个性化回答...' : '参考回答'}
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                    </div>
+                                                )}
+
+                                                <div className="mt-2.5 pl-9 flex flex-wrap items-center gap-2">
+                                                    {(() => {
+                                                        const questionCount = Array.isArray(detail?.questions) ? detail.questions.length : 0;
+                                                        const atCap = questionCount >= 20;
+                                                        return (
+                                                            <button
+                                                                disabled={!isMember || loading || atCap}
+                                                                onClick={() => fetchExpandedModule(key, item.primaryIntent, true)}
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md hover:bg-indigo-100 disabled:opacity-50"
+                                                                title={atCap ? '已达到20题上限' : ''}
+                                                            >
+                                                                {detail ? (atCap ? `已达上限（${questionCount}/20题）` : `生成更多问题（${questionCount}/20题）`) : item.primaryLabel}
+                                                            </button>
+                                                        );
+                                                    })()}
+
+                                                    {detail?.generatedAt && (
+                                                        <span className="text-[10px] text-slate-400">
+                                                            更新于 {new Date(detail.generatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     )}
                                                 </div>
-                                                {(rec.company || rec.matchLevel || rec.matchScore || rec.matchLabel) && (
-                                                    <div className="text-[10px] text-indigo-500 font-medium bg-indigo-50 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 ml-2">
-                                                        <span className="truncate max-w-[80px]">{rec.company}</span>
-                                                        {(() => {
-                                                            const numericScore = Number(String(rec.matchScore || '').replace(/[^0-9]/g, '')) || 0
-                                                            const level = rec.matchLevel || resolveMatchLevel(numericScore, rec.matchLevel || rec.match_label || rec.level)
-                                                            const levelText = rec.matchLabel || rec.match || getMatchLevelLabel(level) || rec.matchScore
-                                                            const levelClass = getMatchLevelClassName(level)
-                                                            return levelText ? (
-                                                                <span className={`px-1.5 py-0.5 rounded border ${levelClass} ml-1`}>
-                                                                    {levelText}
-                                                                </span>
-                                                            ) : null
-                                                        })()}
-                                                    </div>
-                                                )}
                                             </div>
-                                            {!compactMode && (
-                                                <>
-                                                    <div className="text-[11px] text-slate-500 leading-snug">
-                                                        {rec.reason || rec.matchDetails?.summary || '该岗位与您的背景方向匹配，建议优先关注。'}
-                                                    </div>
-                                                    {(rec.matchLevel === 'high' || rec.matchLabel === '高匹配') && (
-                                                        <div className="mt-1.5 text-[10px] text-slate-500 bg-slate-50 border border-slate-100 rounded px-2 py-1 flex items-center gap-1.5">
-                                                            {isMember ? (
-                                                                <>
-                                                                    <Crown className="w-3 h-3 text-amber-500" />
-                                                                    <span>{rec.matchDetails?.summary ? '[AI匹配分析] 已纳入推荐理由' : '[AI匹配分析] 已启用'}</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Lock className="w-3 h-3 text-slate-400" />
-                                                                    <span>会员可查看完整 AI 匹配分析结论</span>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    );
-
-                                    return (
-                                        <div
-                                            key={i}
-                                            onClick={() => { if (rec.id || rec.jobId) handleOpenJob(rec.id || rec.jobId); }}
-                                            className="block select-none cursor-pointer"
-                                        >
-                                            {jobCardContent}
-                                        </div>
-                                    );
-                                }) : (
-                                    <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
-                                        <div className="text-sm font-bold text-slate-800 mb-1">暂无特别匹配的岗位</div>
-                                        <p className="text-xs text-slate-500 leading-relaxed">
-                                            建议过 1-2 天再来看看，我们会持续更新岗位池并重新匹配你的背景。
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {deepMode && (
-                    <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.55s_ease-out]">
-                        <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
-                            <CheckCircle2 className="w-4 h-4" />
-                        </div>
-                        <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="text-sm font-bold text-slate-800">求职方案拓展</div>
-                                <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full">个人中心专属</span>
-                            </div>
-
-                            {!isMember && (
-                                <div className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <Crown className="w-3.5 h-3.5 text-amber-500" />
-                                        开通会员可解锁面试沟通扩展与投递计划的深度生成。
-                                    </div>
-                                    <Link to="/membership" className="px-2 py-1 rounded-md bg-amber-100 border border-amber-200 text-[10px] font-semibold text-amber-700 hover:bg-amber-200">
-                                        去开通
-                                    </Link>
+                                        )
+                                    })}
                                 </div>
-                            )}
-
-                            <div className="space-y-2.5">
-                                {[
-                                    { key: 'interview', title: '面试模拟问答', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '生成实战模拟题' },
-                                ].map((item) => {
-                                    const key = item.key as 'interview'
-                                    const detail = moduleResults[key] || null
-                                    const loading = Boolean(moduleLoading[key])
-                                    const collapsed = Boolean(moduleCollapsed[key])
-                                    const error = moduleError[key]
-                                    const Icon = item.icon
-                                    const summary = detail?.summary || moduleSummaries[key]
-
-                                    return (
-                                        <div key={key} className="bg-white border border-slate-200 rounded-lg px-3 py-2.5">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="flex items-start gap-2.5 min-w-0">
-                                                    <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center flex-none">
-                                                        <Icon className="w-3.5 h-3.5" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <div className="text-xs font-semibold text-slate-800">{item.title}</div>
-                                                        {loading ? (
-                                                            <div className="mt-2 space-y-2 animate-pulse mb-2">
-                                                                <div className="h-2.5 bg-indigo-100 rounded w-5/6"></div>
-                                                                <div className="h-2.5 bg-slate-100 rounded w-4/6"></div>
-                                                                <div className="flex items-center gap-1.5 mt-2">
-                                                                    <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />
-                                                                    <span className="text-[10px] text-indigo-500 font-medium tracking-wide">AI 正在为您深度生成专属方案，由于需要深度检索，平均约需 5~10 秒，请稍候...</span>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <p className={`text-[11px] text-slate-500 leading-relaxed mt-1 ${collapsed ? 'line-clamp-2' : ''}`}>
-                                                                {summary}
-                                                            </p>
-                                                        )}
-                                                        {error && (
-                                                            <div className="text-[10px] text-rose-600 mt-1 bg-rose-50 border border-rose-100 rounded px-2 py-1">{error}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() => toggleModuleCollapsed(key)}
-                                                    className="text-[10px] text-slate-500 hover:text-slate-700 inline-flex items-center gap-1"
-                                                >
-                                                    {collapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-                                                    {collapsed ? '展开' : '收起'}
-                                                </button>
-                                            </div>
-
-                                            {!collapsed && detail && (
-                                                <div className="mt-3 pl-9 space-y-3">
-                                                    {Array.isArray(detail?.roadmap) && (
-                                                        <div className="space-y-2">
-                                                            {detail.roadmap.map((step: any, idx: number) => (
-                                                                <div key={`roadmap-${idx}`} className="text-[11px] text-slate-600">
-                                                                    <div className="font-semibold text-slate-700">{step?.phase || `阶段${idx + 1}`}：{step?.focus || ''}</div>
-                                                                    {Array.isArray(step?.tasks) && (
-                                                                        <ul className="list-disc pl-4 mt-1 space-y-0.5 opacity-80">
-                                                                            {step.tasks.map((t: string, tidx: number) => <li key={tidx}>{t}</li>)}
-                                                                        </ul>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                    {Array.isArray(detail?.questions) && (
-                                                        <div className="space-y-3">
-                                                            {detail.questions.map((q: any, idx: number) => (
-                                                                <div key={`q-${idx}`} className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg">
-                                                                    <div className="text-[11px] text-slate-700 font-medium mb-2">Q{idx + 1}: {q?.question || ''}</div>
-                                                                    {q?.generatedAnswer ? (
-                                                                        <div className="mt-2 text-[10px] text-slate-600 bg-white p-2 rounded border border-indigo-50 leading-relaxed whitespace-pre-wrap">
-                                                                            <span className="font-bold text-indigo-600 mb-1 block">💡 参考回答 (STAR):</span>
-                                                                            {q.generatedAnswer}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <button
-                                                                            onClick={() => handleGenerateAnswer(q.question)}
-                                                                            disabled={generatingAnswerFor === q.question}
-                                                                            className="text-[10px] text-indigo-600 bg-white border border-indigo-100 hover:bg-indigo-50 px-2.5 py-1 rounded transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                                                                        >
-                                                                            {generatingAnswerFor === q.question ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                                                                            {generatingAnswerFor === q.question ? '正在生成个性化回答...' : '参考回答'}
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                </div>
-                                            )}
-
-                                            <div className="mt-2.5 pl-9 flex flex-wrap items-center gap-2">
-                                                {(() => {
-                                                    const questionCount = Array.isArray(detail?.questions) ? detail.questions.length : 0;
-                                                    const atCap = questionCount >= 20;
-                                                    return (
-                                                        <button
-                                                            disabled={!isMember || loading || atCap}
-                                                            onClick={() => fetchExpandedModule(key, item.primaryIntent, true)}
-                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md hover:bg-indigo-100 disabled:opacity-50"
-                                                            title={atCap ? '已达到20题上限' : ''}
-                                                        >
-                                                            {detail ? (atCap ? `已达上限（${questionCount}/20题）` : `生成更多问题（${questionCount}/20题）`) : item.primaryLabel}
-                                                        </button>
-                                                    );
-                                                })()}
-
-                                                {detail?.generatedAt && (
-                                                    <span className="text-[10px] text-slate-400">
-                                                        更新于 {new Date(detail.generatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
                 {/* Step 3 - Milestones */}
-                {plan.milestones && plan.milestones.length > 0 && (
+                {milestonesDisplay.length > 0 && (
                     <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.6s_ease-out]">
                         <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
                             <CheckCircle2 className="w-4 h-4" />
@@ -559,7 +578,7 @@ export default function GeneratedPlanView({
                         <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
                             <div className="text-sm font-bold text-slate-800 mb-3">关键行动路线</div>
                             <div className="space-y-4">
-                                {plan.milestones.map((m: any, i: number) => (
+                                {milestonesDisplay.map((m: any, i: number) => (
                                     <div key={i} className="flex flex-col">
                                         <div className="flex items-center gap-2 mb-1.5">
                                             <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
@@ -573,16 +592,12 @@ export default function GeneratedPlanView({
                                                 const taskKey = `${phase}-${t}`;
                                                 const isCompleted = completedTasks.has(taskKey);
                                                 const isUpdating = updatingTasks.has(taskKey);
-
                                                 return (
                                                     <li key={j} className="flex items-start gap-2.5 group">
                                                         <button
                                                             onClick={() => toggleTaskStatus(phase, t, !isCompleted)}
                                                             disabled={isUpdating || !isMember}
-                                                            className={`mt-0.5 flex-shrink-0 w-3.5 h-3.5 rounded border ${isCompleted
-                                                                ? 'bg-indigo-600 border-indigo-600'
-                                                                : 'bg-white border-slate-300 group-hover:border-indigo-400'
-                                                                } flex items-center justify-center transition-colors disabled:opacity-50`}
+                                                            className={`mt-0.5 flex-shrink-0 w-3.5 h-3.5 rounded border ${isCompleted ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300 group-hover:border-indigo-400'} flex items-center justify-center transition-colors disabled:opacity-50`}
                                                             title={isMember ? (isCompleted ? "取消完成" : "标记完成") : "会员专属功能"}
                                                         >
                                                             {isCompleted && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
@@ -617,7 +632,7 @@ export default function GeneratedPlanView({
                                     )}
                                     {progressSuggestion.motivation_message && (
                                         <div className="mt-2 text-[10px] text-indigo-500 italic block border-l-2 border-indigo-200 pl-2">
-                                            “{progressSuggestion.motivation_message}”
+                                            "{progressSuggestion.motivation_message}"
                                         </div>
                                     )}
                                 </div>
@@ -625,29 +640,28 @@ export default function GeneratedPlanView({
                         </div>
                     </div>
                 )}
-            </div>
 
-            {/* Footer / CTA Actions */}
-            <div className="mt-4 pt-4 border-t border-slate-100 flex-shrink-0 flex flex-col items-center gap-3">
+                {/* Footer / CTA Actions */}
+                <div className="mt-4 pt-4 border-t border-slate-100 flex-shrink-0 flex flex-col items-center gap-3">
 
-                <div className="flex w-full gap-2">
-                    <Link to={jobsBrowseUrl} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-indigo-500 hover:text-white transition-colors shadow-sm no-underline hover:no-underline">
-                        去大厅查看更多岗位 <ArrowRight className="w-4 h-4" />
-                    </Link>
-                    {!isGuest && !deepMode && (
-                        <Link to="/profile?tab=custom-plan" className="flex-1 py-2.5 bg-slate-50 text-slate-700 rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-slate-100 border border-slate-200 transition-colors">
-                            前往个人中心查看完整版
+                    <div className="flex w-full gap-2">
+                        <Link to={jobsBrowseUrl} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-indigo-500 hover:text-white transition-colors shadow-sm no-underline hover:no-underline">
+                            去大厅查看更多岗位 <ArrowRight className="w-4 h-4" />
                         </Link>
-                    )}
+                        {!isGuest && !deepMode && (
+                            <Link to="/profile?tab=custom-plan" className="flex-1 py-2.5 bg-slate-50 text-slate-700 rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-slate-100 border border-slate-200 transition-colors">
+                                前往个人中心查看完整版
+                            </Link>
+                        )}
+                    </div>
                 </div>
+                {/* Job Detail Modal */}
+                <JobDetailModal
+                    job={selectedJob}
+                    isOpen={isJobModalOpen}
+                    onClose={() => setIsJobModalOpen(false)}
+                    variant="center"
+                />
             </div>
-            {/* Job Detail Modal */}
-            <JobDetailModal
-                job={selectedJob}
-                isOpen={isJobModalOpen}
-                onClose={() => setIsJobModalOpen(false)}
-                variant="center"
-            />
-        </div>
-    )
+            )
 }
