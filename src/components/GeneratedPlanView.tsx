@@ -69,11 +69,14 @@ export default function GeneratedPlanView({
         if (!jobId) return;
         setLoadingJobId(jobId);
         try {
-            const resp = await fetch(`/api/data/processed-jobs?id=${jobId}`);
+            // Using the correct resource API route
+            const resp = await fetch(`/api/data?resource=processed-jobs&id=${jobId}`);
             if (resp.ok) {
                 const data = await resp.json();
-                if (data.job) {
-                    setSelectedJob(data.job);
+                // The API ?id= query returns a list if treated like standard GET, or the single item
+                const job = Array.isArray(data.jobs) ? data.jobs[0] : (data.job || data);
+                if (job) {
+                    setSelectedJob(job);
                     setIsJobModalOpen(true);
                 }
             }
@@ -84,11 +87,11 @@ export default function GeneratedPlanView({
         }
     };
 
-    
+
     const handleGenerateAnswer = async (question: string) => {
         if (!token || !isMember) return;
         setGeneratingAnswerFor(question);
-        
+
         try {
             const res = await fetch('/api/copilot', {
                 method: 'POST',
@@ -110,7 +113,7 @@ export default function GeneratedPlanView({
             if (res.ok && data.success && data.answer) {
                 setModuleResults(prev => {
                     const interviewData = prev['interview'] || {};
-                    const newQuestions = (interviewData.questions || []).map((q: any) => 
+                    const newQuestions = (interviewData.questions || []).map((q: any) =>
                         q.question === question ? { ...q, generatedAnswer: data.answer } : q
                     );
                     return {
@@ -311,7 +314,7 @@ export default function GeneratedPlanView({
                         </div>
                         <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
                             <div className="flex items-center justify-between gap-3 mb-3">
-                                <div className="text-sm font-bold text-slate-800">高匹配度方向推荐</div>
+                                <div className="text-sm font-bold text-slate-800">专属岗位推荐</div>
                                 {onRefreshRecommendations && (
                                     <button
                                         onClick={onRefreshRecommendations}
@@ -426,9 +429,8 @@ export default function GeneratedPlanView({
                             <div className="space-y-2.5">
                                 {[
                                     { key: 'interview', title: '面试与沟通突破方案', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '生成实战模拟题' },
-                                    { key: 'apply', title: '投递执行计划', icon: Send, primaryIntent: 'sprint', primaryLabel: '生成冲刺排期' }
                                 ].map((item) => {
-                                    const key = item.key as 'interview' | 'apply'
+                                    const key = item.key as 'interview'
                                     const detail = moduleResults[key] || null
                                     const loading = Boolean(moduleLoading[key])
                                     const collapsed = Boolean(moduleCollapsed[key])
@@ -489,24 +491,24 @@ export default function GeneratedPlanView({
                                                             ))}
                                                         </div>
                                                     )}
-                                                    
+
                                                     {Array.isArray(detail?.questions) && (
                                                         <div className="space-y-3">
                                                             {detail.questions.map((q: any, idx: number) => (
                                                                 <div key={`q-${idx}`} className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg">
-                                                                    <div className="text-[11px] text-slate-700 font-medium mb-2">Q{idx+1}: {q?.question || ''}</div>
+                                                                    <div className="text-[11px] text-slate-700 font-medium mb-2">Q{idx + 1}: {q?.question || ''}</div>
                                                                     {q?.generatedAnswer ? (
                                                                         <div className="mt-2 text-[10px] text-slate-600 bg-white p-2 rounded border border-indigo-50 leading-relaxed whitespace-pre-wrap">
                                                                             <span className="font-bold text-indigo-600 mb-1 block">💡 参考回答 (STAR):</span>
                                                                             {q.generatedAnswer}
                                                                         </div>
                                                                     ) : (
-                                                                        <button 
+                                                                        <button
                                                                             onClick={() => handleGenerateAnswer(q.question)}
                                                                             disabled={generatingAnswerFor === q.question}
                                                                             className="text-[10px] text-indigo-600 bg-white border border-indigo-100 hover:bg-indigo-50 px-2.5 py-1 rounded transition-colors disabled:opacity-50 flex items-center gap-1.5"
                                                                         >
-                                                                            {generatingAnswerFor === q.question ? <Loader2 className="w-3 h-3 animate-spin"/> : <Sparkles className="w-3 h-3"/>}
+                                                                            {generatingAnswerFor === q.question ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                                                                             {generatingAnswerFor === q.question ? '正在生成个性化回答...' : '参考回答'}
                                                                         </button>
                                                                     )}
@@ -514,31 +516,7 @@ export default function GeneratedPlanView({
                                                             ))}
                                                         </div>
                                                     )}
-                                                    
-                                                    {Array.isArray(detail?.weeklyPlan) && (
-                                                        <div className="space-y-2.5">
-                                                            {detail.weeklyPlan.map((w: any, idx: number) => (
-                                                                <div key={`weekly-${idx}`} className="text-[11px] text-slate-600 bg-white border border-slate-100 p-2.5 rounded shadow-sm">
-                                                                    <div className="font-semibold text-slate-700 flex justify-between items-center mb-1.5">
-                                                                        <span>🗓️ {w?.week || `Week ${idx + 1}`}</span>
-                                                                        {w?.targetCount && <span className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded">建议投递: {w.targetCount} 个</span>}
-                                                                    </div>
-                                                                    {Array.isArray(w?.tasks) && (
-                                                                        <ul className="list-disc pl-4 space-y-1 opacity-90 mt-1">
-                                                                            {w.tasks.map((t: string, tidx: number) => <li key={tidx}>{t}</li>)}
-                                                                        </ul>
-                                                                    )}
-                                                                    {Array.isArray(w?.channels) && w.channels.length > 0 && (
-                                                                        <div className="mt-2 flex flex-wrap gap-1.5">
-                                                                            {w.channels.map((c: string, cidx: number) => (
-                                                                                <span key={cidx} className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100">{c}</span>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
+
                                                 </div>
                                             )}
 
@@ -548,7 +526,7 @@ export default function GeneratedPlanView({
                                                     onClick={() => fetchExpandedModule(key, item.primaryIntent, true)}
                                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md hover:bg-indigo-100 disabled:opacity-50"
                                                 >
-                                                    {detail ? '拓展方案' : item.primaryLabel}
+                                                    {detail ? '参考回答' : item.primaryLabel}
                                                 </button>
 
                                                 {detail?.generatedAt && (

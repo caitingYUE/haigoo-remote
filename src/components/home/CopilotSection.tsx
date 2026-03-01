@@ -262,7 +262,7 @@ export default function CopilotSection() {
                 <h3 className="font-bold text-slate-900 mb-4">定制岗位推荐</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {result.recommendations.map((job, i) => {
-                    const matchLabel = job.match === '低匹配' ? '一般匹配' : job.match;
+                    const matchLabel = (job as any).matchLevel === 'low' || job.match === '低匹配' ? '一般匹配' : (job.match || (job as any).matchLabel);
                     const matchColor = job.match === '高匹配' ? 'text-indigo-600' : job.match === '中匹配' ? 'text-amber-600' : 'text-slate-500';
                     return (
                       <div key={i} className="p-3 bg-slate-50 rounded-xl hover:bg-indigo-50 transition-colors cursor-pointer border border-slate-100" onClick={() => navigate('/jobs')}>

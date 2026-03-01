@@ -29,7 +29,7 @@ const userHelper = {
                 return null
             }
 
-            const result = await neonHelper.select('users', { email })
+            const result = await neonHelper.query('SELECT * FROM users WHERE email ILIKE $1', [email])
             const user = result?.[0] || null
 
             if (user) {
@@ -194,16 +194,16 @@ const userHelper = {
                 await neonHelper.delete('favorites', { user_id: userId })
                 await neonHelper.delete('resumes', { user_id: userId })
                 await neonHelper.delete('subscriptions', { user_id: userId })
-                
+
                 // 2. 互动数据
                 await neonHelper.delete('feedbacks', { user_id: userId })
                 await neonHelper.delete('recommendations', { user_id: userId })
                 await neonHelper.delete('bug_reports', { user_id: userId })
-                
+
                 // 3. 会员与支付数据
                 await neonHelper.delete('club_applications', { user_id: userId })
                 await neonHelper.delete('payment_records', { user_id: userId })
-                
+
                 // 4. 分析数据
                 await neonHelper.delete('analytics_events', { user_id: userId })
 
@@ -269,7 +269,7 @@ const userHelper = {
                         // 获取用户收藏的职位
                         const favResult = await neonHelper.select('favorites', { user_id: userId })
                         const favorites = favResult || []
-                        
+
                         // 转换字段名为驼峰格式
                         const mappedUser = {
                             ...user,
@@ -465,7 +465,7 @@ const userHelper = {
                 if (status && ['active', 'suspended'].includes(status)) {
                     updateFields.status = status
                 }
-                
+
                 // Member System Updates
                 if (updates.memberStatus) updateFields.member_status = updates.memberStatus
                 if (updates.memberExpireAt !== undefined) updateFields.member_expire_at = updates.memberExpireAt

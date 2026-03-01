@@ -86,7 +86,7 @@ async function handleRegister(req, res) {
     return res.status(400).json({ success: false, error: '密码至少8位，且包含字母和数字' })
   }
 
-  const emailExists = await getUserByEmail(email)
+  const emailExists = await getUserByEmail(email.toLowerCase())
   if (emailExists) {
     if (!emailExists.emailVerified) {
       if (isTokenExpired(emailExists.verificationExpires)) {
@@ -111,7 +111,7 @@ async function handleRegister(req, res) {
 
   const user = {
     user_id: userId,
-    email,
+    email: email.toLowerCase(),
     username: finalUsername,
     avatar,
     auth_provider: 'email',
@@ -179,7 +179,7 @@ async function handleLogin(req, res) {
     return res.status(400).json({ success: false, error: '邮箱格式无效' })
   }
 
-  const user = await getUserByEmail(email)
+  const user = await getUserByEmail(email.toLowerCase())
   if (!user) {
     return res.status(401).json({ success: false, error: '邮箱或密码错误' })
   }
@@ -414,7 +414,7 @@ async function handleVerifyEmail(req, res) {
     return res.status(400).json({ success: false, error: '邮箱格式无效' })
   }
 
-  const user = await getUserByEmail(email)
+  const user = await getUserByEmail(email.toLowerCase())
   if (!user) {
     return res.status(404).json({ success: false, error: '用户不存在' })
   }
@@ -467,7 +467,7 @@ async function handleResendVerification(req, res) {
     return res.status(400).json({ success: false, error: '邮箱格式无效' })
   }
 
-  const user = await getUserByEmail(email)
+  const user = await getUserByEmail(email.toLowerCase())
   if (!user) {
     return res.status(200).json({
       success: true,
@@ -783,7 +783,7 @@ async function handleRequestPasswordReset(req, res) {
     return res.status(400).json({ success: false, error: '邮箱不能为空' })
   }
 
-  const user = await getUserByEmail(email)
+  const user = await getUserByEmail(email.toLowerCase())
   if (!user) {
     // 为了安全，即使邮箱不存在也返回成功，避免枚举用户
     // 但为了用户体验，这里可以稍微提示一下，或者就统一提示已发送
@@ -836,7 +836,7 @@ async function handleResetPassword(req, res) {
     return res.status(400).json({ success: false, error: '缺少必要参数' })
   }
 
-  const user = await getUserByEmail(email)
+  const user = await getUserByEmail(email.toLowerCase())
   if (!user) {
     return res.status(404).json({ success: false, error: '用户不存在' })
   }

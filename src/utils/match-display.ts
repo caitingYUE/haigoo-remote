@@ -19,7 +19,7 @@ export function resolveMatchLevel(score?: number | null, fallbackLevel?: string 
 export function getMatchLevelLabel(level: MatchLevel): string {
   if (level === 'high') return '高匹配'
   if (level === 'medium') return '中匹配'
-  if (level === 'low') return '低匹配'
+  if (level === 'low') return '一般匹配'
   return ''
 }
 

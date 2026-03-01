@@ -13,7 +13,7 @@ interface FeaturedJobsSectionProps {
 
 const CATEGORIES = [
   { id: 'all', label: '全部精选', icon: Sparkles },
-  { id: 'Customer Service,Virtual Assistant,AI Trainer,Data Entry,Translator,Writer,Content,HR,Human Resources,Finance,Admin,Assistant,客服,客户服务,助理,行政,文员,人事,人力资源,财务,会计,内容创作,作家,文案,新媒体,社群,运营,标注,数据标注,AI训练师,翻译,录入,远程入门', label: '远程入门', icon: PenTool },
+  { id: 'Customer Service,Sales,Operations,Technical Support,AI Trainer,Writer,Admin,Virtual Assistant,Marketing,客服,客户服务,销售,运营,技术支持,AI训练师,作家,文案,行政,助理,虚拟助理,市场营销,远程入门', label: '远程入门', icon: PenTool },
   { id: 'Product Manager,Product Owner,Product Marketing,Head of Product,产品经理,产品', label: '产品经理', icon: Layers },
   { id: 'Software Engineer,Frontend,Backend,Full Stack,DevOps,Data Engineer,Algorithm,Developer,研发,前端,后端,全栈,算法,工程师', label: '技术研发', icon: Code2 },
   { id: 'Marketing,Digital Marketing,Content,Social Media,Growth,Operations,Project Manager,市场,营销,运营,增长', label: '营销运营', icon: TrendingUp },
@@ -60,21 +60,22 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
         if (activeTab === CATEGORIES[1].id) {
           // 条件一: CATEGORY ALREADY APPLIED IN THE QUERY String.
           // 条件二: 级别为【初级】
-          const juniorKeywords = ['entry', 'junior', '初级', '实习', 'intern', '助理', 'assistant'];
-          // Also explicitly exclude middle/senior
-          const excludeKeywords = ['mid', 'senior', 'lead', 'manager', 'director', '中级', '高级', '资深', '专家', '管理'];
+          const juniorKeywords = ['entry', 'junior', '初级', '实习', 'intern'];
+          const excludeKeywords = ['mid', 'senior', 'lead', 'manager', 'director', '中级', '高级', '资深', '专家', '管理', '架构师', 'architect', 'head of'];
 
           finalJobs = finalJobs.filter(j => {
             const expStr = String(j.experienceLevel || '').toLowerCase();
             const titleStr = String(j.title || '').toLowerCase();
 
-            // It must explicitly contain a junior keyword or be completely empty but NOT contain a senior keyword
-            const hasJunior = juniorKeywords.some(k => expStr.includes(k) || titleStr.includes(k));
+            // 1. Must NOT contain senior/expert keywords
             const hasSenior = excludeKeywords.some(k => expStr.includes(k) || titleStr.includes(k));
-
             if (hasSenior) return false;
 
-            // Allow if strictly junior OR if it's implicitly empty and safe
+            // 2. Ideal: explicitly mentions junior/entry
+            const hasJunior = juniorKeywords.some(k => expStr.includes(k) || titleStr.includes(k));
+
+            // 3. Or it is empty but the title/role belongs to the entry-friendly list 
+            // and doesn't have senior markers.
             return hasJunior || (!j.experienceLevel && !hasSenior);
           });
 
