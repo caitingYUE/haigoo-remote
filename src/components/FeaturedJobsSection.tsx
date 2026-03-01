@@ -42,13 +42,11 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
 
       setLoading(true)
       try {
-        let fetchLimit = 6;
-        if (activeTab === CATEGORIES[1].id) {
-          fetchLimit = 20; // 扩大拉取范围以便于后续在客户端做级别过滤
-        }
+        let fetchLimit = activeTab === CATEGORIES[1].id ? 60 : 6;
 
         const filters: any = {
-          isFeatured: true,
+          isFeatured: true, // Only fetch initially featured
+          isApproved: true, // MANDATORY requirement for all homepage jobs
           limit: fetchLimit
         }
 
@@ -60,11 +58,43 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
         let finalJobs = res.jobs;
 
         if (activeTab === CATEGORIES[1].id) {
-          const allowedLevels = ['Entry', 'entry', 'Mid', 'mid', '初级', '中级'];
-          // 仅保留未填写经验或属于初/中级的岗位，并截断为6条
-          finalJobs = finalJobs.filter(j =>
-            !j.experienceLevel || allowedLevels.includes(j.experienceLevel as string)
-          ).slice(0, 6);
+          // 条件一: CATEGORY ALREADY APPLIED IN THE QUERY String.
+          // 条件二: 级别为【初级】
+          const juniorKeywords = ['entry', 'junior', '初级', '实习', 'intern', '助理', 'assistant'];
+          // Also explicitly exclude middle/senior
+          const excludeKeywords = ['mid', 'senior', 'lead', 'manager', 'director', '中级', '高级', '资深', '专家', '管理'];
+
+          finalJobs = finalJobs.filter(j => {
+            const expStr = String(j.experienceLevel || '').toLowerCase();
+            const titleStr = String(j.title || '').toLowerCase();
+
+            // It must explicitly contain a junior keyword or be completely empty but NOT contain a senior keyword
+            const hasJunior = juniorKeywords.some(k => expStr.includes(k) || titleStr.includes(k));
+            const hasSenior = excludeKeywords.some(k => expStr.includes(k) || titleStr.includes(k));
+
+            if (hasSenior) return false;
+
+            // Allow if strictly junior OR if it's implicitly empty and safe
+            return hasJunior || (!j.experienceLevel && !hasSenior);
+          });
+
+          // Sort by updated/published descending (processedJobsService usually sorts by recent or relevance, let's enforce recent)
+          finalJobs.sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+
+          // 条件三: 针对企业做打散，每组（6个）相同企业数量不超过2个
+          const companyCountMap = new Map<string, number>();
+          const dispersedJobs: typeof finalJobs = [];
+
+          for (const job of finalJobs) {
+            const compName = job.company ? job.company.toLowerCase() : 'unknown';
+            const count = companyCountMap.get(compName) || 0;
+            if (count < 2) {
+              dispersedJobs.push(job);
+              companyCountMap.set(compName, count + 1);
+            }
+            if (dispersedJobs.length >= 6) break;
+          }
+          finalJobs = dispersedJobs;
         }
 
         setJobs(finalJobs)
