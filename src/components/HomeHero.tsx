@@ -560,7 +560,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({
-                    userId: user?.user_id,
+                    userId: user?.user_id || (user as any)?.id,
                     goal: GOAL_TO_API[formData.goal],
                     timeline: formData.timeline,
                     investedHours: formData.investedHours,
@@ -637,7 +637,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const handleRefreshRecommendations = async () => {
         if (!generatedPlan) return
 
-        if (!isAuthenticated || !user?.user_id) {
+        if (!isAuthenticated || !(user?.user_id || (user as any)?.id)) {
             showWarning('请先登录', '登录后可刷新个性化岗位推荐')
             navigate('/login')
             return
@@ -654,7 +654,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 },
                 body: JSON.stringify({
                     action: 'refresh-recommendations',
-                    userId: user.user_id,
+                    userId: user?.user_id || (user as any)?.id,
                     goal: GOAL_TO_API[formData.goal],
                     background: {
                         industry: formData.background.role,
@@ -877,7 +877,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             </div>
 
                             {/* Step Panel with slide animation */}
-                            <div className="relative overflow-hidden h-[420px] shrink-0">
+                            <div className={`relative overflow-hidden shrink-0 transition-[height] duration-300 ease-in-out ${step === 4 ? (generatedPlan ? 'h-[650px]' : 'h-[520px]') : 'h-[420px]'}`}>
                                 <div
                                     key={step}
                                     className={`absolute inset-0 transition-all duration-220 ease-out ${animating

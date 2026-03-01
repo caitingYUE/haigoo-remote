@@ -29,7 +29,7 @@ export default function GeneratedPlanView({
 }) {
     if (!plan) return null;
 
-    const { token } = useAuth()
+    const { token, user } = useAuth()
     const recommendations = useMemo(() => (Array.isArray(plan.recommendations) ? plan.recommendations : []), [plan.recommendations])
     const remoteReadiness = useMemo(() => (plan?.plan_v2?.remoteReadiness || plan?.remoteReadiness || null), [plan])
     const readinessScore = plan?.readiness ?? remoteReadiness?.score
@@ -54,6 +54,7 @@ export default function GeneratedPlanView({
 
     const [updatingTasks, setUpdatingTasks] = useState<Set<string>>(new Set())
     const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set())
+    const [generatingAnswerFor, setGeneratingAnswerFor] = useState<string | null>(null)
     const [progressSuggestion, setProgressSuggestion] = useState<{
         next_focus?: string;
         adjustment_suggestions?: string[];
@@ -80,6 +81,51 @@ export default function GeneratedPlanView({
             console.error('Failed to load job details', error);
         } finally {
             setLoadingJobId(null);
+        }
+    };
+
+    
+    const handleGenerateAnswer = async (question: string) => {
+        if (!token || !isMember) return;
+        setGeneratingAnswerFor(question);
+        
+        try {
+            const res = await fetch('/api/copilot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'generate-answer',
+                    userId: user?.user_id || (user as any)?.id,
+                    goal: copilotGoal || undefined,
+                    role: plan?.plan_v2?.goalContext?.industry || undefined,
+                    seniority: plan?.plan_v2?.goalContext?.seniority || undefined,
+                    question,
+                    questionType: '综合'
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.success && data.answer) {
+                setModuleResults(prev => {
+                    const interviewData = prev['interview'] || {};
+                    const newQuestions = (interviewData.questions || []).map((q: any) => 
+                        q.question === question ? { ...q, generatedAnswer: data.answer } : q
+                    );
+                    return {
+                        ...prev,
+                        'interview': { ...interviewData, questions: newQuestions }
+                    };
+                });
+            } else {
+                alert('生成失败: ' + (data.error || '无法生成参考回答'));
+            }
+        } catch (err) {
+            console.error('Failed to generate answer', err);
+            alert('生成出错, 请稍后再试');
+        } finally {
+            setGeneratingAnswerFor(null);
         }
     };
 
@@ -428,16 +474,71 @@ export default function GeneratedPlanView({
                                             </div>
 
                                             {!collapsed && detail && (
-                                                <div className="mt-2 pl-9 text-[11px] text-slate-600 space-y-1.5">
-                                                    {Array.isArray(detail?.roadmap) && detail.roadmap.slice(0, 2).map((step: any, idx: number) => (
-                                                        <div key={`roadmap-${idx}`}>• {step?.phase || `阶段${idx + 1}`}：{step?.focus || ''}</div>
-                                                    ))}
-                                                    {Array.isArray(detail?.questions) && detail.questions.slice(0, 3).map((q: any, idx: number) => (
-                                                        <div key={`q-${idx}`}>• {q?.question || ''}</div>
-                                                    ))}
-                                                    {Array.isArray(detail?.weeklyPlan) && detail.weeklyPlan.slice(0, 2).map((w: any, idx: number) => (
-                                                        <div key={`weekly-${idx}`}>• {w?.week || `Week ${idx + 1}`}：目标投递 {w?.targetCount || '-'} 个</div>
-                                                    ))}
+                                                <div className="mt-3 pl-9 space-y-3">
+                                                    {Array.isArray(detail?.roadmap) && (
+                                                        <div className="space-y-2">
+                                                            {detail.roadmap.map((step: any, idx: number) => (
+                                                                <div key={`roadmap-${idx}`} className="text-[11px] text-slate-600">
+                                                                    <div className="font-semibold text-slate-700">{step?.phase || `阶段${idx + 1}`}：{step?.focus || ''}</div>
+                                                                    {Array.isArray(step?.tasks) && (
+                                                                        <ul className="list-disc pl-4 mt-1 space-y-0.5 opacity-80">
+                                                                            {step.tasks.map((t: string, tidx: number) => <li key={tidx}>{t}</li>)}
+                                                                        </ul>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {Array.isArray(detail?.questions) && (
+                                                        <div className="space-y-3">
+                                                            {detail.questions.map((q: any, idx: number) => (
+                                                                <div key={`q-${idx}`} className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg">
+                                                                    <div className="text-[11px] text-slate-700 font-medium mb-2">Q{idx+1}: {q?.question || ''}</div>
+                                                                    {q?.generatedAnswer ? (
+                                                                        <div className="mt-2 text-[10px] text-slate-600 bg-white p-2 rounded border border-indigo-50 leading-relaxed whitespace-pre-wrap">
+                                                                            <span className="font-bold text-indigo-600 mb-1 block">💡 参考回答 (STAR):</span>
+                                                                            {q.generatedAnswer}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <button 
+                                                                            onClick={() => handleGenerateAnswer(q.question)}
+                                                                            disabled={generatingAnswerFor === q.question}
+                                                                            className="text-[10px] text-indigo-600 bg-white border border-indigo-100 hover:bg-indigo-50 px-2.5 py-1 rounded transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                                                                        >
+                                                                            {generatingAnswerFor === q.question ? <Loader2 className="w-3 h-3 animate-spin"/> : <Sparkles className="w-3 h-3"/>}
+                                                                            {generatingAnswerFor === q.question ? '正在生成个性化回答...' : '参考回答'}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {Array.isArray(detail?.weeklyPlan) && (
+                                                        <div className="space-y-2.5">
+                                                            {detail.weeklyPlan.map((w: any, idx: number) => (
+                                                                <div key={`weekly-${idx}`} className="text-[11px] text-slate-600 bg-white border border-slate-100 p-2.5 rounded shadow-sm">
+                                                                    <div className="font-semibold text-slate-700 flex justify-between items-center mb-1.5">
+                                                                        <span>🗓️ {w?.week || `Week ${idx + 1}`}</span>
+                                                                        {w?.targetCount && <span className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded">建议投递: {w.targetCount} 个</span>}
+                                                                    </div>
+                                                                    {Array.isArray(w?.tasks) && (
+                                                                        <ul className="list-disc pl-4 space-y-1 opacity-90 mt-1">
+                                                                            {w.tasks.map((t: string, tidx: number) => <li key={tidx}>{t}</li>)}
+                                                                        </ul>
+                                                                    )}
+                                                                    {Array.isArray(w?.channels) && w.channels.length > 0 && (
+                                                                        <div className="mt-2 flex flex-wrap gap-1.5">
+                                                                            {w.channels.map((c: string, cidx: number) => (
+                                                                                <span key={cidx} className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100">{c}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
 
