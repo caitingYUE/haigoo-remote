@@ -479,14 +479,20 @@ async function handleResendVerification(req, res) {
     return res.status(200).json({ success: true, message: '该邮箱已验证' })
   }
 
-  user.verification_token = generateVerificationToken()
-  user.verification_expires = generateVerificationExpiry()
-  user.updated_at = new Date().toISOString()
+  const newToken = generateVerificationToken()
+  const newExpires = generateVerificationExpiry()
 
-  await saveUser(user)
+  const { success } = await updateUser(user.user_id, {
+    verificationToken: newToken,
+    verificationExpires: newExpires
+  })
+
+  if (!success) {
+    return res.status(500).json({ success: false, error: '内部错误，无法保存验证令牌' })
+  }
 
   if (isEmailServiceConfigured()) {
-    await sendVerificationEmail(email, user.username, user.verificationToken)
+    await sendVerificationEmail(email, user.username, newToken)
   }
 
   return res.status(200).json({
