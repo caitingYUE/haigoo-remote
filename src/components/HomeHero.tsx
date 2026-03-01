@@ -489,7 +489,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             goal: data.session.goal || '',
                             timeline: data.session.timeline || '',
                             investedHours: data.session.investedHours || '',
-                            background: data.session.background || { role: '', years: '中级', education: '本科', language: '英语-工作 (B2)' }
+                            background: {
+                                role: data.session.background?.industry || data.session.background?.role || '',
+                                years: data.session.background?.seniority || data.session.background?.years || '中级',
+                                education: data.session.background?.education || '本科',
+                                language: data.session.background?.language || '英语-工作 (B2)'
+                            }
                         })
                     }
                     setStep(4);
@@ -1139,6 +1144,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                     />
                                                 )}
                                             </div>
+
+                                            {/* Privacy Disclaimer */}
+                                            <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-1">
+                                                <span>🔒</span> 方案生成完毕后简历文件将自动删除，不会存储
+                                            </p>
 
                                             {/* Tier Info */}
                                             {isVIP ? (
