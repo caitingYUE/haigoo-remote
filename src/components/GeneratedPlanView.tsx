@@ -428,7 +428,7 @@ export default function GeneratedPlanView({
 
                             <div className="space-y-2.5">
                                 {[
-                                    { key: 'interview', title: '面试与沟通突破方案', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '生成实战模拟题' },
+                                    { key: 'interview', title: '面试模拟问答', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '生成实战模拟题' },
                                 ].map((item) => {
                                     const key = item.key as 'interview'
                                     const detail = moduleResults[key] || null
@@ -521,13 +521,20 @@ export default function GeneratedPlanView({
                                             )}
 
                                             <div className="mt-2.5 pl-9 flex flex-wrap items-center gap-2">
-                                                <button
-                                                    disabled={!isMember || loading}
-                                                    onClick={() => fetchExpandedModule(key, item.primaryIntent, true)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md hover:bg-indigo-100 disabled:opacity-50"
-                                                >
-                                                    {detail ? '参考回答' : item.primaryLabel}
-                                                </button>
+                                                {(() => {
+                                                    const questionCount = Array.isArray(detail?.questions) ? detail.questions.length : 0;
+                                                    const atCap = questionCount >= 20;
+                                                    return (
+                                                        <button
+                                                            disabled={!isMember || loading || atCap}
+                                                            onClick={() => fetchExpandedModule(key, item.primaryIntent, true)}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md hover:bg-indigo-100 disabled:opacity-50"
+                                                            title={atCap ? '已达到20题上限' : ''}
+                                                        >
+                                                            {detail ? (atCap ? `已达上限（${questionCount}/20题）` : `生成更多问题（${questionCount}/20题）`) : item.primaryLabel}
+                                                        </button>
+                                                    );
+                                                })()}
 
                                                 {detail?.generatedAt && (
                                                     <span className="text-[10px] text-slate-400">
