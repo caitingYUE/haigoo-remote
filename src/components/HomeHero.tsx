@@ -417,7 +417,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
     const { isAuthenticated, isMember, user, sendVerificationEmail } = useAuth()
     const isVIP = isMember
-    const { showWarning, showError } = useNotificationHelpers()
+    const { showWarning, showError, showSuccess, showInfo } = useNotificationHelpers()
 
     // Verification banner state
     const showVerificationWarning = !!(isAuthenticated && user && !user?.emailVerified)
@@ -682,14 +682,75 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 throw new Error(data?.error || '刷新推荐失败')
             }
 
+            const newRecs = data?.recommendations || []
+            if (newRecs.length > 0) {
+                showSuccess('刷新成功', '已为您更新专属岗位推荐')
+            } else {
+                showInfo('暂无更新', '没有发现更合适的岗位，请稍后再试')
+            }
+
             setGeneratedPlan((prev: any) => ({
                 ...(prev || {}),
-                recommendations: data?.recommendations || []
+                recommendations: newRecs.length > 0 ? newRecs : prev?.recommendations
             }))
         } catch (error: any) {
             showError('刷新失败', error?.message || '请稍后重试')
         } finally {
             setRefreshingRecommendations(false)
+        }
+    }
+
+    const [refiningMilestones, setRefiningMilestones] = useState(false)
+    const handleRefineMilestones = async () => {
+        if (!generatedPlan) return
+        if (!isAuthenticated) { showWarning('请先登录', '登录后可体验深度打磨'); navigate('/login'); return; }
+        if (!isVIP) { showWarning('会员专属功能', '升级会员解锁多次深度打磨权限'); navigate('/membership'); return; }
+
+        const currentCount = generatedPlan.refineCount || 0;
+        if (currentCount >= 3) { showWarning('已达打磨上限', '该方案深度打磨次数已达 3 次'); return; }
+
+        setRefiningMilestones(true)
+        try {
+            const token = localStorage.getItem('haigoo_auth_token')
+            const currentMilestones = generatedPlan.plan_v2?.modules?.milestones?.content?.phases || generatedPlan.milestones || []
+            const res = await fetch('/api/copilot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    action: 'refine-milestones',
+                    userId: user?.user_id || (user as any)?.id,
+                    goal: GOAL_TO_API[formData.goal],
+                    timeline: formData.timeline,
+                    background: {
+                        industry: formData.background.role,
+                        seniority: formData.background.years,
+                        education: formData.background.education,
+                        language: formData.background.language
+                    },
+                    currentMilestones
+                })
+            })
+
+            const data = await res.json()
+            if (!res.ok) throw new Error(data?.error || '打磨失败，请重试')
+
+            setGeneratedPlan((prev: any) => {
+                const updated = { ...prev }
+                if (updated.plan_v2?.modules?.milestones?.content) {
+                    updated.plan_v2.modules.milestones.content.phases = data.milestones
+                }
+                updated.milestones = data.milestones
+                updated.refineCount = currentCount + 1
+                return updated
+            })
+            showSuccess('深度打磨成功', '行动路线已根据你的情况深度优化')
+        } catch (error: any) {
+            showError('打磨失败', error?.message || '请稍后重试')
+        } finally {
+            setRefiningMilestones(false)
         }
     }
 
@@ -1157,7 +1218,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                                             {/* Privacy Disclaimer */}
                                             <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-1">
-                                                <span>🔒</span> 方案生成完毕后简历文件将自动删除，不会存储
+                                                <Lock className="w-3 h-3 text-slate-400" /> 方案生成完毕后简历文件将自动删除，不会存储
                                             </p>
 
                                             {/* Tier Info */}
@@ -1190,7 +1251,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                     trackingService.track('click_generate_copilot_plan');
                                                     handleGenerate();
                                                 }}
-                                                disabled={loading}
+                                                disabled={loading || resumeUploading}
                                                 className="w-full py-4 rounded-xl font-bold text-base text-white relative overflow-hidden group disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:scale-[1.015] active:scale-[0.99] shadow-xl shadow-indigo-500/20"
                                                 style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}
                                             >
@@ -1200,6 +1261,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                         <>
                                                             <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                                                             正在生成专属方案...
+                                                        </>
+                                                    ) : resumeUploading ? (
+                                                        <>
+                                                            <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                            等待简历上传...
                                                         </>
                                                     ) : (
                                                         <>
@@ -1266,6 +1332,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         trackingSetupUrl={trackingSetupUrl}
                                         onRefreshRecommendations={handleRefreshRecommendations}
                                         refreshingRecommendations={refreshingRecommendations}
+                                        onRefineMilestones={handleRefineMilestones}
+                                        refiningMilestones={refiningMilestones}
+                                        refineCount={generatedPlan.refineCount || 0}
                                         compactMode={true}
                                     />
                                     {isWizardCollapsed && (
