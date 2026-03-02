@@ -649,7 +649,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const handleRefreshRecommendations = async () => {
         if (!generatedPlan) return
 
-        if (!isAuthenticated || !(user?.user_id || (user as any)?.id)) {
+        if (!isAuthenticated) {
             showWarning('请先登录', '登录后可刷新个性化岗位推荐')
             navigate('/login')
             return
@@ -1092,6 +1092,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                         {formData.timeline && <div><span className="font-semibold text-indigo-800">时间：</span>{TIMELINE_OPTIONS.find(o => o.value === formData.timeline)?.label || formData.timeline}</div>}
                                                         {formData.investedHours && <div><span className="font-semibold text-indigo-800">投入：</span>每周 {formData.investedHours}</div>}
                                                         {formData.background.role && <div><span className="font-semibold text-indigo-800">方向：</span>{formData.background.role}</div>}
+                                                        {formData.background.years && formData.background.years !== '中级' && <div><span className="font-semibold text-indigo-800">资历：</span>{formData.background.years}</div>}
+                                                        {formData.background.education && formData.background.education !== '本科' && <div><span className="font-semibold text-indigo-800">学历：</span>{formData.background.education}</div>}
+                                                        {formData.background.language && formData.background.language !== '英语-工作 (B2)' && <div><span className="font-semibold text-indigo-800">语言：</span>{formData.background.language}</div>}
                                                     </div>
                                                 </div>
                                             )}
