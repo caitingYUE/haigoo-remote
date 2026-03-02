@@ -402,6 +402,13 @@ const GOAL_TO_API: Record<GoalType, string> = {
     'career-pivot': 'freelance',
     '': 'full-time',
 }
+// Reverse: API value → UI GoalType (for session restore)
+const API_TO_GOAL: Record<string, GoalType> = {
+    'full-time': 'full-time',
+    'part-time': 'side-income',
+    'flexible': 'market-watch',
+    'freelance': 'career-pivot',
+}
 
 
 
@@ -486,7 +493,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     setGeneratedPlan(data.plan)
                     if (data.session) {
                         setFormData({
-                            goal: data.session.goal || '',
+                            goal: API_TO_GOAL[data.session.goal] || data.session.goal as GoalType || 'full-time',
                             timeline: data.session.timeline || '',
                             investedHours: data.session.investedHours || '',
                             background: {
