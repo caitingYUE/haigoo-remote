@@ -78,7 +78,7 @@ interface DataManagementTabsProps {
 }
 
 const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) => {
-  const [activeTab, setActiveTab] = useState<'raw' | 'processed' | 'jobstats'>('processed');
+  const [activeTab, setActiveTab] = useState<'processed' | 'jobstats'>('processed');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncStatusText, setSyncStatusText] = useState<string>('');
@@ -104,6 +104,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [rawDataPageSize] = useState(20);
 
   // 处理后数据状态
+  // 全部数据状态
   const [processedData, setProcessedData] = useState<ProcessedJobData[]>([]);
   const [processedDataTotal, setProcessedDataTotal] = useState(0);
   const [processedDataPage, setProcessedDataPage] = useState(1);
@@ -117,13 +118,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
 
   // 过滤器状态
-  const [rawDataFilters, setRawDataFilters] = useState<{
-    source?: string;
-    category?: string;
-    status?: 'raw' | 'processed' | 'error';
-    dateRange?: { start: Date; end: Date };
-  }>({});
-
   const [processedDataFilters, setProcessedDataFilters] = useState<{
     category?: string[];
     company?: string;
@@ -168,24 +162,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [autoProcess, setAutoProcess] = useState(true);
 
   // 简历库已拆分为独立页面，不在此组件维护状态
-
-  // 加载原始数据
-  const loadRawData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const result = await dataManagementService.getRawData(
-        rawDataPage,
-        rawDataPageSize,
-        rawDataFilters
-      );
-      setRawData(result.data);
-      setRawDataTotal(result.total);
-    } catch (error) {
-      console.error('加载原始数据失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [rawDataPage, rawDataPageSize, rawDataFilters]);
 
   // 加载处理后数据
   const loadProcessedData = useCallback(async () => {
@@ -313,17 +289,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       // 根据 autoProcess 状态决定是否跳过处理
       await dataManagementService.syncAllRSSData(!autoProcess);
 
-      // 重新加载所有相关数据，确保两个页签都更新
-      await loadRawData();
-      if (autoProcess) {
-        await loadProcessedData();
-      }
+      // 重新加载数据
+      await loadProcessedData();
       await loadJobStats();
 
-      const msg = autoProcess
-        ? '已拉取最新RSS并自动处理为岗位数据'
-        : '已拉取最新RSS原始数据（未处理）';
-      showSuccess('同步完成', msg);
+      showSuccess('同步完成', autoProcess ? '已拉取最新RSS并自动处理为岗位数据' : '已拉取最新RSS数据');
     } catch (error) {
       console.error('同步数据失败:', error);
       showError('同步失败', '请检查后端服务或网络连接');
@@ -517,7 +487,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
   // 导航切换
   const handleNavigate = (direction: 'prev' | 'next') => {
-    const currentList = activeTab === 'processed' ? processedData : rawData;
+    const currentList = processedData;
     const currentItem = showEditModal ? editingJob : viewingItem;
 
     if (!currentItem || !currentList.length) return;
@@ -549,14 +519,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   };
 
   useEffect(() => {
-    if (activeTab === 'raw') {
-      loadRawData();
-    } else if (activeTab === 'processed') {
+    if (activeTab === 'processed') {
       loadProcessedData();
     } else if (activeTab === 'jobstats') {
       loadJobStats();
     }
-  }, [activeTab, loadRawData, loadProcessedData, loadJobStats]);
+  }, [activeTab, loadProcessedData, loadJobStats]);
 
   const renderTabButton = (tabKey: string, label: string, icon: React.ReactNode) => (
     <button
@@ -572,241 +540,9 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     </button>
   );
 
-  // 简历库渲染逻辑已迁移至独立页面
-
-  const renderRawDataTable = () => {
-    // 从rawContent中解析字段的辅助函数
-    const parseRawContent = (rawContent: string) => {
-      try {
-        return JSON.parse(rawContent);
-      } catch (e) {
-        return {};
-      }
-    };
-
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-        {/* 过滤器 */}
-        <div className="p-6 border-b border-slate-200">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-slate-500" />
-              <span className="text-sm font-medium text-slate-700">过滤条件：</span>
-            </div>
-
-            <select
-              value={rawDataFilters.source || ''}
-              onChange={(e) => setRawDataFilters({ ...rawDataFilters, source: e.target.value || undefined })}
-              className="px-3 py-2 border border-slate-300 rounded-lg textsm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">所有来源</option>
-              <option value="WeWorkRemotely">WeWorkRemotely</option>
-              <option value="Remotive">Remotive</option>
-              <option value="Himalayas">Himalayas</option>
-              <option value="NoDesk">NoDesk</option>
-            </select>
-
-            <select
-              value={rawDataFilters.status || ''}
-              onChange={(e) => setRawDataFilters({ ...rawDataFilters, status: e.target.value as any || undefined })}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">所有状态</option>
-              <option value="raw">原始</option>
-              <option value="processed">已处理</option>
-              <option value="error">错误</option>
-            </select>
-
-            <button
-              onClick={() => setRawDataFilters({})}
-              className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50"
-            >
-              清除过滤
-            </button>
-          </div>
-        </div>
-
-        {/* 表格 */}
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="w-56 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">岗位标题</th>
-                <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">公司名称</th>
-                <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">工作类型</th>
-                <th className="w-48 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">地点</th>
-                <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">来源</th>
-                <th className="w-16 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">精选</th>
-                <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">发布时间</th>
-                <th className="w-20 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  <span className="inline-flex items-center gap-1">
-                    状态
-                    <Tooltip
-                      content={'原始：尚未解析或标准化\n已处理：解析完成并入库\n错误：解析或入库失败'}
-                      maxLines={6}
-                      clampChildren={false}
-                      trigger="click"
-                      forceShow
-                    >
-                      <Info className="w-3 h-3 text-slate-400 cursor-pointer" />
-                    </Tooltip>
-                  </span>
-                </th>
-                <th className="w-20 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
-                <th className="w-28 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">薪资</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {rawData.map((item) => {
-                const parsed = parseRawContent(item.rawContent || '{}');
-                return (
-                  <tr key={item.id} className="hover:bg-slate-50">
-                    <td className="px-3 py-2">
-                      <div className="max-w-xs">
-                        <Tooltip content={item.title} maxLines={3}>
-                          <div className="font-medium text-slate-900">
-                            {item.title}
-                          </div>
-                        </Tooltip>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="max-w-xs">
-                        {parsed.company ? (
-                          <Tooltip content={parsed.company} maxLines={3}>
-                            <div className="font-medium text-slate-900">
-                              {parsed.company}
-                            </div>
-                          </Tooltip>
-                        ) : (
-                          <span className="text-slate-400 text-sm">-</span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="px-3 py-2">
-                      {parsed.jobType || parsed.type ? (
-                        <Tooltip content={parsed.jobType || parsed.type} maxLines={1} clampChildren={false}>
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
-                            {parsed.jobType || parsed.type}
-                          </span>
-                        </Tooltip>
-                      ) : (
-                        <span className="text-slate-400 text-sm">-</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="max-w-xs">
-                        {parsed.location || parsed.region ? (
-                          <Tooltip content={parsed.location || parsed.region} maxLines={3}>
-                            <div className="text-sm text-slate-900">
-                              {parsed.location || parsed.region}
-                            </div>
-                          </Tooltip>
-                        ) : (
-                          <span className="text-slate-400 text-sm">-</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <Tooltip content={item.source} maxLines={1} clampChildren={false}>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                          {item.source}
-                        </span>
-                      </Tooltip>
-                    </td>
-                    <td className="px-3 py-2 text-sm text-slate-500">
-                      <Tooltip content={item.pubDate ? new Date(item.pubDate).toLocaleDateString() : '-'} maxLines={1}>
-                        <span>
-                          {item.pubDate ? new Date(item.pubDate).toLocaleDateString() : '-'}
-                        </span>
-                      </Tooltip>
-                    </td>
-                    <td className="px-3 py-2">
-                      <Tooltip content={
-                        item.status === 'processed' ? '已处理' :
-                          item.status === 'error' ? '错误' : '原始'
-                      } maxLines={1} clampChildren={false}>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${item.status === 'processed' ? 'bg-green-100 text-green-800' :
-                          item.status === 'error' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                          {item.status === 'processed' ? '已处理' :
-                            item.status === 'error' ? '错误' : '原始'}
-                        </span>
-                      </Tooltip>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleViewDetail(item)}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded transition-colors"
-                        >
-                          <Eye className="w-3 h-3" />
-                          详情
-                        </button>
-                        <a
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          链接
-                        </a>
-                      </div>
-                    </td>
-                    {/* 薪资（移动到最后一列） */}
-                    <td className="px-3 py-2">
-                      <div className="max-w-xs">
-                        {parsed.salary ? (
-                          <Tooltip content={parsed.salary} maxLines={3}>
-                            <div className="text-green-600 font-medium text-sm">
-                              {parsed.salary}
-                            </div>
-                          </Tooltip>
-                        ) : (
-                          <span className="text-slate-400 text-sm">-</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* 分页 */}
-        <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
-          <div className="text-sm text-slate-500">
-            显示 {((rawDataPage - 1) * rawDataPageSize) + 1} 到 {Math.min(rawDataPage * rawDataPageSize, rawDataTotal)} 条，共 {rawDataTotal} 条
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setRawDataPage(Math.max(1, rawDataPage - 1))}
-              disabled={rawDataPage === 1}
-              className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
-            >
-              上一页
-            </button>
-            <span className="px-3 py-1 text-sm">
-              第 {rawDataPage} 页，共 {Math.ceil(rawDataTotal / rawDataPageSize)} 页
-            </span>
-            <button
-              onClick={() => setRawDataPage(rawDataPage + 1)}
-              disabled={rawDataPage >= Math.ceil(rawDataTotal / rawDataPageSize)}
-              className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
-            >
-              下一页
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const renderProcessedDataTable = () => (
+
     <div className="bg-white rounded-xl shadow-sm border border-slate-200">
       {/* 过滤器 */}
       <div className="p-4 border-b border-slate-200">
@@ -1391,8 +1127,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 key={label}
                 onClick={() => onToggle(label)}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-all ${active
-                    ? `${colorClass} text-white border-transparent font-medium shadow-sm`
-                    : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
+                  ? `${colorClass} text-white border-transparent font-medium shadow-sm`
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
                   }`}
               >
                 {label}
@@ -1560,81 +1296,58 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       {/* 头部操作栏 */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex gap-2">
-          {renderTabButton('processed', '处理后数据', <Briefcase className="w-4 h-4" />)}
-          {renderTabButton('raw', '原始数据', <Database className="w-4 h-4" />)}
+          {renderTabButton('processed', '全部数据', <Briefcase className="w-4 h-4" />)}
           {renderTabButton('jobstats', '岗位统计', <BarChart3 className="w-4 h-4" />)}
         </div>
 
         <div className="flex gap-2">
-          {activeTab === 'raw' && (
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={autoProcess}
-                  onChange={(e) => setAutoProcess(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
-                />
-                自动处理为岗位
-              </label>
-              <button
-                onClick={handleSyncData}
-                disabled={syncing}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? '同步中...' : '同步数据'}
-              </button>
-            </div>
-          )}
-          {activeTab === 'processed' && (
-            <div className="flex gap-2 items-center">
-              <select
-                className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                value={processedDataFilters.isApproved === undefined ? '' : processedDataFilters.isApproved.toString()}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setProcessedDataFilters(prev => ({
-                    ...prev,
-                    isApproved: val === '' ? undefined : val === 'true'
-                  }));
-                  setProcessedDataPage(1);
-                }}
-              >
-                <option value="">全部审核状态</option>
-                <option value="true">已审核 (Approved)</option>
-                <option value="false">待审核 (Pending)</option>
-              </select>
 
-              <Tooltip content={
-                <div className="text-left space-y-2">
-                  <p className="font-semibold text-indigo-200">全量数据清洗逻辑：</p>
-                  <ol className="list-decimal list-inside space-y-1 text-xs">
-                    <li><span className="font-medium text-white">同步数据：</span>拉取最新的 RSS 订阅源数据。</li>
-                    <li><span className="font-medium text-white">正则清洗：</span>对全库（含爬虫）最近 200 条职位进行快速正则处理（提取地点、薪资、分类）。</li>
-                    <li><span className="font-medium text-white">AI 深度优化：</span>筛选出 20 个“疑难杂症”职位（优先处理地点/薪资缺失），调用 DeepSeek/Bailian 大模型进行深度解析和 JD 格式化。</li>
-                    <li><span className="font-medium text-white">数据清理：</span>自动移除过期的历史数据。</li>
-                  </ol>
-                  <p className="text-xs text-slate-400 mt-2 border-t border-slate-600 pt-2">
-                    💡 建议每天点击一次，持续优化数据库质量。AI 处理成本较高，每次仅处理少量高价值数据。
-                  </p>
-                </div>
-              } maxLines={20} clampChildren={false} forceShow>
-                <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
-              </Tooltip>
-              <button
-                onClick={handleRefreshProcessedOnly}
-                disabled={syncing}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? '刷新中...' : '刷新处理后数据'}
-              </button>
-              {syncing && syncStatusText && (
-                <span className="text-xs text-indigo-600 animate-pulse hidden md:inline-block">{syncStatusText}</span>
-              )}
-            </div>
-          )}
+          <div className="flex gap-2 items-center">
+            <select
+              className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              value={processedDataFilters.isApproved === undefined ? '' : processedDataFilters.isApproved.toString()}
+              onChange={(e) => {
+                const val = e.target.value;
+                setProcessedDataFilters(prev => ({
+                  ...prev,
+                  isApproved: val === '' ? undefined : val === 'true'
+                }));
+                setProcessedDataPage(1);
+              }}
+            >
+              <option value="">全部审核状态</option>
+              <option value="true">已审核 (Approved)</option>
+              <option value="false">待审核 (Pending)</option>
+            </select>
+
+            <Tooltip content={
+              <div className="text-left space-y-2">
+                <p className="font-semibold text-indigo-200">全量数据清洗逻辑：</p>
+                <ol className="list-decimal list-inside space-y-1 text-xs">
+                  <li><span className="font-medium text-white">同步数据：</span>拉取最新的 RSS 订阅源数据。</li>
+                  <li><span className="font-medium text-white">正则清洗：</span>对全库（含爬虫）最近 200 条职位进行快速正则处理（提取地点、薪资、分类）。</li>
+                  <li><span className="font-medium text-white">AI 深度优化：</span>筛选出 20 个“疑难杂症”职位（优先处理地点/薪资缺失），调用 DeepSeek/Bailian 大模型进行深度解析和 JD 格式化。</li>
+                  <li><span className="font-medium text-white">数据清理：</span>自动移除过期的历史数据。</li>
+                </ol>
+                <p className="text-xs text-slate-400 mt-2 border-t border-slate-600 pt-2">
+                  💡 建议每天点击一次，持续优化数据库质量。AI 处理成本较高，每次仅处理少量高价值数据。
+                </p>
+              </div>
+            } maxLines={20} clampChildren={false} forceShow>
+              <HelpCircle className="w-4 h-4 text-slate-400 cursor-help" />
+            </Tooltip>
+            <button
+              onClick={handleRefreshProcessedOnly}
+              disabled={syncing}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? '刷新中...' : '刷新处理后数据'}
+            </button>
+            {syncing && syncStatusText && (
+              <span className="text-xs text-indigo-600 animate-pulse hidden md:inline-block">{syncStatusText}</span>
+            )}
+          </div>
           {/* 按需：导出数据按钮已移除 */}
         </div>
       </div>
@@ -1647,7 +1360,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         </div>
       ) : (
         <>
-          {activeTab === 'raw' && renderRawDataTable()}
           {activeTab === 'processed' && renderProcessedDataTable()}
           {activeTab === 'jobstats' && renderJobStats()}
         </>
