@@ -851,6 +851,7 @@ export default function JobsPage() {
                     {distributedJobs.map((job, index) => (
                       <JobCardNew
                         key={job.id}
+                        job={job}
                         variant="list"
                         isActive={selectedJob?.id === job.id}
                         onClick={() => handleJobSelect(job, index)}
