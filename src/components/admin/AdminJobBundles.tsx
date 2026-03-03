@@ -12,7 +12,7 @@ interface JobBundle {
   priority: number;
   start_time: string | null;
   end_time: string | null;
-  is_public: boolean;
+  visibility: string;
   is_active: boolean;
   created_at: string;
 }
@@ -22,7 +22,7 @@ const AdminJobBundles: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentBundle, setCurrentBundle] = useState<Partial<JobBundle>>({});
-  
+
   // Job Search State
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -72,30 +72,30 @@ const AdminJobBundles: React.FC = () => {
       // For now, let's just fetch them one by one or modify the API to support ID list
       // Optimization: Fetch all at once if API supports `ids` param
       // Assuming /api/data/processed-jobs supports ?ids=1,2,3 or we filter client side (bad for performance)
-      
+
       // Let's implement a simple search by ID loop for now or search endpoint
       // Better: Use the search endpoint with ID filter if available. 
       // If not, we might need to display just IDs until we load them.
-      
+
       // For this MVP, let's search by ID one by one or batch if possible.
       // Actually, let's just use the search API to find them by title if we can't get by ID easily? No.
-      
+
       // Let's assume we can fetch job details. For now, we will just show IDs in the list until we search.
       // Or we can fetch them using `fetch('/api/data/processed-jobs?ids=' + ids.join(','))` if implemented.
       // Let's implement a helper in the backend later.
-      
-    // Temporary: Just set empty details, populate via search
-    // setSelectedJobs(ids.map(id => ({ id: id, title: 'Loading...', company: '...' })));
-      
-    // Real fetch
-    const res = await fetch(`/api/data/processed-jobs?ids=${ids.join(',')}`);
-    const data = await res.json();
-    if (data.jobs) {
+
+      // Temporary: Just set empty details, populate via search
+      // setSelectedJobs(ids.map(id => ({ id: id, title: 'Loading...', company: '...' })));
+
+      // Real fetch
+      const res = await fetch(`/api/data/processed-jobs?ids=${ids.join(',')}`);
+      const data = await res.json();
+      if (data.jobs) {
         // Reorder according to ids
         const jobMap = new Map(data.jobs.map((j: any) => [j.id, j]));
         const ordered = ids.map(id => jobMap.get(id)).filter(Boolean);
         setSelectedJobs(ordered);
-    }
+      }
     } catch (e) {
       console.error('Failed to fetch job details', e);
     }
@@ -114,7 +114,7 @@ const AdminJobBundles: React.FC = () => {
       content: '',
       job_ids: [],
       priority: 10,
-      is_public: true,
+      visibility: 'public',
       is_active: true
     });
     setSelectedJobs([]);
@@ -211,27 +211,27 @@ const AdminJobBundles: React.FC = () => {
             <h3>基本信息</h3>
             <div className="form-row">
               <label>标题</label>
-              <input 
-                type="text" 
-                value={currentBundle.title || ''} 
-                onChange={e => setCurrentBundle({...currentBundle, title: e.target.value})}
+              <input
+                type="text"
+                value={currentBundle.title || ''}
+                onChange={e => setCurrentBundle({ ...currentBundle, title: e.target.value })}
                 placeholder="例如：2024春招精选"
               />
             </div>
             <div className="form-row">
               <label>副标题</label>
-              <input 
-                type="text" 
-                value={currentBundle.subtitle || ''} 
-                onChange={e => setCurrentBundle({...currentBundle, subtitle: e.target.value})}
+              <input
+                type="text"
+                value={currentBundle.subtitle || ''}
+                onChange={e => setCurrentBundle({ ...currentBundle, subtitle: e.target.value })}
                 placeholder="简短描述"
               />
             </div>
             <div className="form-row">
               <label>详细内容</label>
-              <textarea 
-                value={currentBundle.content || ''} 
-                onChange={e => setCurrentBundle({...currentBundle, content: e.target.value})}
+              <textarea
+                value={currentBundle.content || ''}
+                onChange={e => setCurrentBundle({ ...currentBundle, content: e.target.value })}
                 placeholder="组合包详细介绍..."
                 rows={4}
               />
@@ -239,46 +239,50 @@ const AdminJobBundles: React.FC = () => {
             <div className="form-row two-col">
               <div>
                 <label>开始时间</label>
-                <input 
-                  type="datetime-local" 
+                <input
+                  type="datetime-local"
                   value={formatDateForInput(currentBundle.start_time || null)}
-                  onChange={e => setCurrentBundle({...currentBundle, start_time: parseDateFromInput(e.target.value)})}
+                  onChange={e => setCurrentBundle({ ...currentBundle, start_time: parseDateFromInput(e.target.value) })}
                 />
               </div>
               <div>
                 <label>结束时间</label>
-                <input 
-                  type="datetime-local" 
+                <input
+                  type="datetime-local"
                   value={formatDateForInput(currentBundle.end_time || null)}
-                  onChange={e => setCurrentBundle({...currentBundle, end_time: parseDateFromInput(e.target.value)})}
+                  onChange={e => setCurrentBundle({ ...currentBundle, end_time: parseDateFromInput(e.target.value) })}
                 />
               </div>
             </div>
             <div className="form-row two-col">
               <div>
                 <label>优先级 (1-10)</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  max="10" 
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
                   value={currentBundle.priority || 10}
-                  onChange={e => setCurrentBundle({...currentBundle, priority: parseInt(e.target.value)})}
+                  onChange={e => setCurrentBundle({ ...currentBundle, priority: parseInt(e.target.value) })}
                 />
               </div>
-              <div className="checkbox-row">
+              <div className="checkbox-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label>可见范围</label>
+                  <select
+                    value={currentBundle.visibility || 'public'}
+                    onChange={e => setCurrentBundle({ ...currentBundle, visibility: e.target.value })}
+                    style={{ padding: '6px', borderRadius: '4px', border: '1px solid #e2e8f0', minWidth: '120px' }}
+                  >
+                    <option value="public">公开可见</option>
+                    <option value="member">仅会员可见</option>
+                    <option value="admin">仅管理员可见</option>
+                  </select>
+                </div>
                 <label>
-                  <input 
-                    type="checkbox" 
-                    checked={currentBundle.is_public !== false}
-                    onChange={e => setCurrentBundle({...currentBundle, is_public: e.target.checked})}
-                  />
-                  公开可见
-                </label>
-                <label>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={currentBundle.is_active !== false}
-                    onChange={e => setCurrentBundle({...currentBundle, is_active: e.target.checked})}
+                    onChange={e => setCurrentBundle({ ...currentBundle, is_active: e.target.checked })}
                   />
                   启用
                 </label>
@@ -289,14 +293,14 @@ const AdminJobBundles: React.FC = () => {
           {/* Job Selection */}
           <div className="form-section">
             <h3>职位选择</h3>
-            
+
             <div className="job-selector">
               {/* Search Panel */}
               <div className="search-panel">
                 <div className="search-bar">
-                  <input 
-                    type="text" 
-                    placeholder="搜索职位名称或公司..." 
+                  <input
+                    type="text"
+                    placeholder="搜索职位名称或公司..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSearchJobs()}
@@ -305,16 +309,16 @@ const AdminJobBundles: React.FC = () => {
                     {searching ? '...' : <Search className="w-4 h-4" />}
                   </button>
                 </div>
-                <div className="search-results">
+                <div className="search-results max-h-[300px] overflow-y-auto custom-scrollbar border-b border-slate-100 pb-2">
                   {searchResults.map(job => (
                     <div key={job.id} className="search-item">
                       <div className="job-info">
                         <div className="job-title">{job.title}</div>
                         <div className="job-company text-xs text-gray-500">
-                           {job.company} <span className="ml-2 text-gray-400">ID: {job.id}</span>
+                          {job.company} <span className="ml-2 text-gray-400">ID: {job.id}</span>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => addJobToBundle(job)}
                         className="btn-add"
                         disabled={!!selectedJobs.find(j => j.id === job.id)}
@@ -327,9 +331,9 @@ const AdminJobBundles: React.FC = () => {
               </div>
 
               {/* Selected Panel */}
-              <div className="selected-panel">
+              <div className="selected-panel flex flex-col max-h-[400px]">
                 <h4>已选职位 ({selectedJobs.length})</h4>
-                <div className="selected-list">
+                <div className="selected-list overflow-y-auto custom-scrollbar flex-1 border border-slate-200 rounded-lg bg-slate-50 p-2">
                   {selectedJobs.map((job, index) => (
                     <div key={job.id} className="selected-item">
                       <div className="item-order">{index + 1}</div>
@@ -391,7 +395,7 @@ const AdminJobBundles: React.FC = () => {
                     <td>{bundle.priority}</td>
                     <td>{bundle.job_ids?.length || 0}</td>
                     <td className="text-sm">
-                      {bundle.start_time ? new Date(bundle.start_time).toLocaleDateString() : '即时'} 
+                      {bundle.start_time ? new Date(bundle.start_time).toLocaleDateString() : '即时'}
                       {' - '}
                       {bundle.end_time ? new Date(bundle.end_time).toLocaleDateString() : '永久'}
                     </td>
@@ -401,8 +405,11 @@ const AdminJobBundles: React.FC = () => {
                       ) : (
                         <span className="status-badge low">停用</span>
                       )}
-                      {!bundle.is_public && (
-                        <span className="status-badge medium ml-2">私有</span>
+                      {bundle.visibility === 'member' && (
+                        <span className="status-badge medium ml-2">仅会员</span>
+                      )}
+                      {bundle.visibility === 'admin' && (
+                        <span className="status-badge medium ml-2">仅管理员</span>
                       )}
                     </td>
                     <td>

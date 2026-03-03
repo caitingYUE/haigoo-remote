@@ -244,12 +244,15 @@ export default function JobsPage() {
         const res = await fetch('/api/admin/job-bundles?is_active=true');
         const data = await res.json();
         if (data.success && data.data && data.data.length > 0) {
-          // Filter public and check time
+          // Filter visibility and check time
           const now = new Date();
           const validBundles = data.data.filter((b: any) => {
-            if (!b.is_public) return false;
             if (b.start_time && new Date(b.start_time) > now) return false;
             if (b.end_time && new Date(b.end_time) < now) return false;
+
+            const vis = b.visibility || (b.is_public !== false ? 'public' : 'admin');
+            if (vis === 'admin') return false; // Admin hidden on C-side
+            if (vis === 'member' && !isAuthenticated) return false; // Members only
             return true;
           });
 
@@ -257,6 +260,8 @@ export default function JobsPage() {
             // Sort by priority (asc) and pick first
             validBundles.sort((a: any, b: any) => a.priority - b.priority);
             setActiveBundle(validBundles[0]);
+          } else {
+            setActiveBundle(null);
           }
         }
       } catch (e) {
@@ -264,7 +269,7 @@ export default function JobsPage() {
       }
     };
     fetchActiveBundle();
-  }, []);
+  }, [isAuthenticated]);
 
   // 匹配分数缓存（不再需要单独管理，因为后端已经返回匹配分数）
   const [matchScores, setMatchScores] = useState<Record<string, number>>({})

@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         if (!result || result.length === 0) {
           return res.status(404).json({ error: 'Bundle not found' });
         }
-        
+
         // Enrich with job details? Maybe not for admin list, but for edit view yes.
         // For simplicity, we just return the bundle. The frontend can fetch job details separately if needed.
         return res.status(200).json({ success: true, data: result[0] });
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
     // POST: Create Bundle
     if (req.method === 'POST') {
-      const { title, subtitle, content, job_ids, priority, start_time, end_time, is_public, is_active } = req.body;
+      const { title, subtitle, content, job_ids, priority, start_time, end_time, visibility, is_active } = req.body;
 
       if (!title) {
         return res.status(400).json({ error: 'Title is required' });
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
 
       const result = await neonHelper.query(
         `INSERT INTO job_bundles 
-        (title, subtitle, content, job_ids, priority, start_time, end_time, is_public, is_active)
+        (title, subtitle, content, job_ids, priority, start_time, end_time, visibility, is_active)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *`,
         [
@@ -77,7 +77,7 @@ export default async function handler(req, res) {
           priority || 10,
           start_time || null,
           end_time || null,
-          is_public !== undefined ? is_public : true,
+          visibility || 'public',
           is_active !== undefined ? is_active : true
         ]
       );
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
 
     // PUT: Update Bundle
     if (req.method === 'PUT') {
-      const { id, title, subtitle, content, job_ids, priority, start_time, end_time, is_public, is_active } = req.body;
+      const { id, title, subtitle, content, job_ids, priority, start_time, end_time, visibility, is_active } = req.body;
 
       if (!id) {
         return res.status(400).json({ error: 'ID is required' });
@@ -105,16 +105,16 @@ export default async function handler(req, res) {
       if (priority !== undefined) { fields.push(`priority = $${idx++}`); values.push(priority); }
       if (start_time !== undefined) { fields.push(`start_time = $${idx++}`); values.push(start_time); }
       if (end_time !== undefined) { fields.push(`end_time = $${idx++}`); values.push(end_time); }
-      if (is_public !== undefined) { fields.push(`is_public = $${idx++}`); values.push(is_public); }
+      if (visibility !== undefined) { fields.push(`visibility = $${idx++}`); values.push(visibility); }
       if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(is_active); }
 
       fields.push(`updated_at = CURRENT_TIMESTAMP`);
       values.push(id);
 
       const query = `UPDATE job_bundles SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
-      
+
       const result = await neonHelper.query(query, values);
-      
+
       if (!result || result.length === 0) {
         return res.status(404).json({ error: 'Bundle not found' });
       }
