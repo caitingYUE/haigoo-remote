@@ -4,6 +4,7 @@ import rawRssHandler from '../lib/api-handlers/raw-rss.js';
 import trustedCompaniesHandler from '../lib/api-handlers/trusted-companies.js';
 import publicMembersHandler from '../lib/api-handlers/public-members.js';
 import statsHandler from '../lib/api-handlers/stats.js';
+import jobBundlesHandler from '../lib/api-handlers/job-bundles.js';
 
 export default async function handler(req, res) {
     // ⚠️ Deprecated: This handler is being phased out.
@@ -23,18 +24,18 @@ export default async function handler(req, res) {
     }
 
     console.log('[API:Data] Request Path (Legacy):', path);
-    
+
     // Dispatch based on path or query
     // /api/data/processed-jobs
     if (path.includes('processed-jobs')) {
         return await processedJobsHandler(req, res);
     }
-    
+
     // /api/data/raw-rss
     if (path.includes('raw-rss')) {
         return await rawRssHandler(req, res);
     }
-    
+
     // /api/data/trusted-companies
     if (path.includes('trusted-companies')) {
         return await trustedCompaniesHandler(req, res);
@@ -56,6 +57,7 @@ export default async function handler(req, res) {
     if (resource && (resource === 'raw-rss' || resource.startsWith('raw-rss/'))) return await rawRssHandler(req, res);
     if (resource === 'companies' || resource === 'tags' || resource?.startsWith('trusted-companies')) return await trustedCompaniesHandler(req, res);
     if (resource === 'stats') return await statsHandler(req, res);
+    if (resource === 'job-bundles' || path.includes('job-bundles')) return await jobBundlesHandler(req, res);
 
     return res.status(404).json({ error: 'Data resource not found (Legacy API)' });
 }

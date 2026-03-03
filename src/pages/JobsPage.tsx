@@ -241,7 +241,7 @@ export default function JobsPage() {
     // Fetch active bundle
     const fetchActiveBundle = async () => {
       try {
-        const res = await fetch('/api/admin/job-bundles?is_active=true');
+        const res = await fetch('/api/data/job-bundles?is_active=true');
         const data = await res.json();
         if (data.success && data.data && data.data.length > 0) {
           // Filter visibility and check time
