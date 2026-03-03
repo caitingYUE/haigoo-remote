@@ -246,7 +246,7 @@ export default function JobBundleDetailPage() {
       </div>
 
       {/* ── Jobs Grid ──────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-5">
           包含职位 ({jobs.length})
         </p>
@@ -289,10 +289,11 @@ export default function JobBundleDetailPage() {
                   </span>
                 </div>
                 <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                  加入 Haigoo Club 会员
+                  加入 Haigoo Remote Club 会员
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed max-w-lg">
-                  获取内部推荐渠道、简历优化指导、1-on-1 远程求职咨询。专为追求全球化职业发展的求职者打造。
+                  解锁企业背景信息、内推通道、AI 工作助手、无限翻译/收藏等专属特权，<br />
+                  让你的远程求职之路更加顺畅。
                 </p>
               </div>
               <div className="flex-shrink-0">

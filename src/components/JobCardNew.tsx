@@ -200,7 +200,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
             {/* Company Name (Top) */}
             <div
-               className="text-xs font-bold text-center mb-1.5 line-clamp-2 w-full leading-tight break-words"
+               className="flex-shrink-0 text-xs font-bold text-center mb-1.5 line-clamp-2 w-full leading-tight break-words"
                style={{ color: textColor }}
                title={job.translations?.company || job.company}
             >
@@ -208,7 +208,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             </div>
 
             {/* Logo (Centered) */}
-            <div className="w-16 h-16 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 overflow-hidden">
+            <div className="flex-shrink-0 w-16 h-16 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 overflow-hidden">
                {job.logo ? (
                   <img
                      src={job.logo}
@@ -284,7 +284,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             )} */}
 
             {/* Left: Company Logo Card */}
-            <div className="flex-shrink-0 w-[120px] self-stretch flex">
+            <div className="flex-shrink-0 w-[120px] h-[130px] flex">
                <CompanyCard size="sm" />
             </div>
 
