@@ -261,11 +261,14 @@ export default function JobsPage() {
             validBundles.sort((a: any, b: any) => a.priority - b.priority);
             setActiveBundle(validBundles[0]);
           } else {
-            setActiveBundle(null);
+            setActiveBundle({ id: 'DEBUG_EMPTY', title: 'Debug: Valid=0', subtitle: `Lengths (data=${data.data?.length}, valid=${validBundles?.length})` });
           }
+        } else {
+          setActiveBundle({ id: 'DEBUG_ERR', title: 'Debug: Fetch Empty', subtitle: `Succ: ${data.success}, Len: ${data.data?.length}` });
         }
       } catch (e) {
         console.error('Failed to fetch active bundle', e);
+        setActiveBundle({ id: 'DEBUG_CATCH', title: 'Debug: Exception Error', subtitle: e?.message || 'Unknown' });
       }
     };
     fetchActiveBundle();
@@ -843,8 +846,14 @@ export default function JobsPage() {
                 ) : (
                   <div>
                     {activeBundle && !loadingMore && currentPage === 1 && (
-                      <div className="mb-4">
-                        <JobBundleBanner bundle={activeBundle} />
+                      <div className="mb-4 space-y-2">
+                        {String(activeBundle.id).startsWith('DEBUG') ? (
+                          <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-200">
+                            <strong>{activeBundle.title}</strong>: {activeBundle.subtitle}
+                          </div>
+                        ) : (
+                          <JobBundleBanner bundle={activeBundle} />
+                        )}
                       </div>
                     )}
 
