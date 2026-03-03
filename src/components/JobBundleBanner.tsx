@@ -43,7 +43,7 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
       <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
-      <div className="relative px-4 py-4 flex items-center gap-4 min-h-[104px]">
+      <div className="relative pl-4 pr-8 py-4 flex items-center gap-4 min-h-[104px]">
 
         {/* Left: badge + text */}
         <div className="flex-1 min-w-0">

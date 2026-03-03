@@ -934,7 +934,7 @@ export default function AdminTrustedCompaniesPage() {
                                         <option value="通用邮箱">通用邮箱</option>
                                         <option value="员工邮箱">员工邮箱</option>
                                         <option value="高管邮箱">高管邮箱</option>
-                                        {/* HR邮箱暂不支持，映射到招聘专用 */}
+                                        <option value="HR邮箱">HR邮箱</option>
                                     </select>
                                 </div>
                             </div>

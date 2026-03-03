@@ -284,7 +284,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             )} */}
 
             {/* Left: Company Logo Card */}
-            <div className="flex-shrink-0 w-[120px] h-[130px] flex">
+            <div className="flex-shrink-0 w-[120px] h-[120px] flex">
                <CompanyCard size="sm" />
             </div>
 
