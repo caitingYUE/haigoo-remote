@@ -249,7 +249,7 @@ export default function JobsPage() {
           const validBundles = data.data.filter((b: any) => {
             const vis = b.visibility || (b.is_public !== false ? 'public' : 'admin');
             if (vis === 'admin') return false; // Admin hidden on C-side
-            if (vis === 'member' && !isAuthenticated) return false; // Members only
+            // members-only bundles are deliberately kept here to serve as marketing hooks for unauthorized users
             return true;
           });
 
