@@ -37,46 +37,30 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-      className="group relative overflow-hidden rounded-xl cursor-pointer mb-4 border transition-all duration-200 hover:shadow-md hover:border-blue-200"
-      style={{
-        background: isMemberBundle
-          ? 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)'
-          : 'linear-gradient(135deg, #EAF3FF 0%, #f5f8ff 60%, #ffffff 100%)',
-        borderColor: isMemberBundle ? '#fde68a' : '#dbeafe',
-      }}
+      className="group relative overflow-hidden rounded-2xl cursor-pointer mb-5 border border-indigo-100 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 hover:border-indigo-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
     >
-      {/* Subtle top-right glow */}
-      <div
-        className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
-        style={{
-          background: isMemberBundle ? '#fbbf24' : '#3182CE',
-          transform: 'translate(40%, -40%)',
-        }}
-      />
+      {/* Subtle animated orbs — matches homepage membership card */}
+      <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
-      <div className="relative px-5 py-4 flex items-center justify-between gap-4">
+      <div className="relative px-5 py-4 flex items-center gap-4">
+
         {/* Left: badge + text */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
-            <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold"
-              style={{
-                backgroundColor: isMemberBundle ? '#fef3c7' : '#EAF3FF',
-                color: isMemberBundle ? '#92400e' : '#1A365D',
-                border: `1px solid ${isMemberBundle ? '#fde68a' : '#bfdbfe'}`,
-              }}
-            >
+            {/* Frosted glass badge — same style as homepage crown badge */}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/60 backdrop-blur-md border border-indigo-100 text-xs font-bold text-indigo-900/80 shadow-sm">
               {isMemberBundle
-                ? <><Crown className="w-3 h-3" />会员专属</>
+                ? <><Crown className="w-3 h-3 fill-indigo-900/60" />会员专属</>
                 : <><Layers className="w-3 h-3" />精选合集</>
               }
             </span>
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-slate-500 font-medium">
               {jobCount} 个职位
             </span>
           </div>
 
-          <h3 className="text-base font-bold text-slate-900 truncate leading-snug">
+          <h3 className="text-base font-bold text-slate-900 truncate">
             {bundle.title}
           </h3>
           <p className="text-sm text-slate-500 truncate mt-0.5">
@@ -84,21 +68,18 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
           </p>
         </div>
 
-        {/* Right: CTA icon */}
+        {/* Right: CTA */}
         <div className="flex-shrink-0">
-          <div
-            className="flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 group-hover:scale-105"
-            style={{
-              backgroundColor: isMemberBundle ? '#fef3c7' : '#EAF3FF',
-              borderColor: isMemberBundle ? '#fde68a' : '#bfdbfe',
-              color: isMemberBundle ? '#b45309' : '#3182CE',
-            }}
-          >
-            {isLocked
-              ? <Lock className="w-4 h-4" />
-              : <ArrowRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
-            }
-          </div>
+          {isLocked ? (
+            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/60 border border-indigo-100 text-indigo-400 backdrop-blur-md">
+              <Lock className="w-4 h-4" />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center w-9 h-9 rounded-full text-white shadow-md shadow-indigo-200/50 transition-transform duration-200 group-hover:scale-105"
+              style={{ background: 'linear-gradient(135deg, #2563eb, #4f46e5, #9333ea)' }}>
+              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          )}
         </div>
       </div>
     </div>
