@@ -37,13 +37,13 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-      className="group relative overflow-hidden rounded-2xl cursor-pointer mb-5 border border-indigo-100 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 hover:border-indigo-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
+      className="group relative overflow-hidden rounded-2xl cursor-pointer mb-0 border border-indigo-100 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 hover:border-indigo-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
     >
       {/* Subtle animated orbs — matches homepage membership card */}
       <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
-      <div className="relative px-5 py-4 flex items-center gap-4">
+      <div className="relative px-6 py-5 flex items-center gap-4 min-h-[104px]">
 
         {/* Left: badge + text */}
         <div className="flex-1 min-w-0">
@@ -75,8 +75,7 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
               <Lock className="w-4 h-4" />
             </div>
           ) : (
-            <div className="flex items-center justify-center w-9 h-9 rounded-full text-white shadow-md shadow-indigo-200/50 transition-transform duration-200 group-hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #2563eb, #4f46e5, #9333ea)' }}>
+            <div className="flex items-center justify-center w-9 h-9 rounded-full text-white shadow-md shadow-indigo-200/50 transition-transform duration-200 group-hover:scale-105 bg-indigo-600">
               <ArrowRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
             </div>
           )}

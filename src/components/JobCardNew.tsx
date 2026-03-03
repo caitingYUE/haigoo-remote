@@ -390,7 +390,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      {isFeatured && (
                         <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100">
                            <Sparkles className="w-3.5 h-3.5 fill-indigo-100" />
-                           <span>系统推荐</span>
+                           <span>精选</span>
                         </div>
                      )}
 

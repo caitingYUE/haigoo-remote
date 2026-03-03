@@ -276,12 +276,9 @@ export default function JobBundleDetailPage() {
       {!isMember && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
           <div
-            className="relative overflow-hidden rounded-2xl px-8 py-10 md:px-12"
-            style={{ background: 'linear-gradient(135deg, #0f172a 0%, #111827 40%, #0c2045 100%)' }}
+            className="relative overflow-hidden rounded-2xl px-8 py-10 md:px-12 bg-[#0f172a]"
           >
-            {/* Orb decoration — blue glow */}
-            <div className="absolute right-0 top-0 w-96 h-96 rounded-full blur-3xl opacity-15 translate-x-1/3 -translate-y-1/3 pointer-events-none"
-              style={{ background: 'radial-gradient(circle, #3b82f6, #4f46e5)' }} />
+            <div className="absolute right-0 top-0 w-96 h-96 rounded-full blur-3xl opacity-10 translate-x-1/3 -translate-y-1/3 pointer-events-none bg-indigo-500" />
 
             <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div>
@@ -301,8 +298,7 @@ export default function JobBundleDetailPage() {
               <div className="flex-shrink-0">
                 <button
                   onClick={() => navigate('/membership')}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/30 shadow-md"
-                  style={{ background: 'linear-gradient(135deg, #2563eb, #4f46e5, #9333ea)' }}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/30 shadow-md bg-indigo-600 hover:bg-indigo-500"
                 >
                   了解会员权益
                   <ChevronRight className="w-4 h-4" />
