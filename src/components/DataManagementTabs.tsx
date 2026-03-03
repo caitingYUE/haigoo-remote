@@ -85,12 +85,17 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const { showSuccess, showError } = useNotificationHelpers();
 
   // Job stats state
+  const [jobStatsJobs, setJobStatsJobs] = useState<any[]>([]); // raw job list for cross-filter
   const [jobStats, setJobStats] = useState<{
     byCategory: { label: string; count: number }[];
     byJobType: { label: string; count: number }[];
     byLevel: { label: string; count: number }[];
     total: number;
   } | null>(null);
+  // Cross-filter selections (multi-select)
+  const [sfLevels, setSfLevels] = useState<string[]>([]);
+  const [sfJobTypes, setSfJobTypes] = useState<string[]>([]);
+  const [sfCategories, setSfCategories] = useState<string[]>([]);
 
   // 原始数据状态
   const [rawData, setRawData] = useState<RawRSSData[]>([]);
@@ -242,13 +247,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const loadJobStats = useCallback(async () => {
     try {
       setLoading(true);
-      // Fetch up to 3000 approved jobs for stats aggregation
-      const res = await processedJobsService.getProcessedJobs(1, 3000, { isApproved: true });
+      // Fetch all approved jobs (up to 5000) for full-stats aggregation
+      const res = await processedJobsService.getProcessedJobs(1, 5000, { isApproved: true });
       const jobs = res.jobs || [];
+      setJobStatsJobs(jobs);
 
-      const catMap: Record<string, number> = {};
-      const typeMap: Record<string, number> = {};
-      const levelMap: Record<string, number> = {};
       const levelLabel: Record<string, string> = {
         Entry: '初级 (Entry)', Mid: '中级 (Mid)', Senior: '高级 (Senior)',
         Lead: '专家 (Lead)', Executive: '管理 (Executive)'
@@ -259,17 +262,24 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         'contract': '合同工', 'freelance': '自由职业', 'intern': '实习', 'internship': '实习'
       };
 
+      const catMap: Record<string, number> = {};
+      const typeMap: Record<string, number> = {};
+      const levelMap: Record<string, number> = {};
+
       for (const job of jobs) {
+        // 岗位角色（category 字段）
         const cat = job.category || '未分类';
         catMap[cat] = (catMap[cat] || 0) + 1;
 
-        const rawType = ((job as any).jobType || '').toLowerCase();
+        // 工作类型（jobType 字段：全职/兼职/实习…）
+        const rawType = ((job as any).jobType || (job as any).type || '').toLowerCase();
         let resolvedType = '其他';
         for (const [key, val] of Object.entries(typeLabel)) {
           if (rawType === key || rawType.includes(key)) { resolvedType = val; break; }
         }
         typeMap[resolvedType] = (typeMap[resolvedType] || 0) + 1;
 
+        // 岗位级别（experienceLevel 字段）
         const lvl = job.experienceLevel || '';
         const resolvedLevel = levelLabel[lvl] || (lvl || '未定义');
         levelMap[resolvedLevel] = (levelMap[resolvedLevel] || 0) + 1;
@@ -284,6 +294,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         byLevel: sort(levelMap),
         total: jobs.length
       });
+      // Reset cross-filter selections
+      setSfLevels([]); setSfJobTypes([]); setSfCategories([]);
     } catch (error) {
       console.error('加载岗位统计失败:', error);
     } finally {
@@ -1303,9 +1315,105 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       );
     }
 
-    const StatGroup = ({ title, rows, colorFn }: { title: string; rows: { label: string; count: number }[]; colorFn?: (label: string) => string }) => (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+    // ── helpers ─────────────────────────────────────────────────────
+    const levelLabel: Record<string, string> = {
+      Entry: '初级 (Entry)', Mid: '中级 (Mid)', Senior: '高级 (Senior)',
+      Lead: '专家 (Lead)', Executive: '管理 (Executive)'
+    };
+    const typeLabel: Record<string, string> = {
+      'full-time': '全职', 'fulltime': '全职', 'full time': '全职',
+      'part-time': '兼职', 'parttime': '兼职', 'part time': '兼职',
+      'contract': '合同工', 'freelance': '自由职业', 'intern': '实习', 'internship': '实习'
+    };
+    const resolveType = (raw: string) => {
+      const r = raw.toLowerCase();
+      for (const [k, v] of Object.entries(typeLabel)) { if (r === k || r.includes(k)) return v; }
+      return '其他';
+    };
+    const resolveLevel = (lvl: string) => levelLabel[lvl] || (lvl || '未定义');
+
+    // ── compute cross-filter result ──────────────────────────────────
+    const hasSfFilter = sfLevels.length > 0 || sfJobTypes.length > 0 || sfCategories.length > 0;
+    const filteredJobs = hasSfFilter ? jobStatsJobs.filter(job => {
+      const cat = job.category || '未分类';
+      const lvl = resolveLevel(job.experienceLevel || '');
+      const typ = resolveType((job as any).jobType || (job as any).type || '');
+      const catOk = sfCategories.length === 0 || sfCategories.includes(cat);
+      const lvlOk = sfLevels.length === 0 || sfLevels.includes(lvl);
+      const typOk = sfJobTypes.length === 0 || sfJobTypes.includes(typ);
+      return catOk && lvlOk && typOk;
+    }) : [];
+
+    // ── cross-filter breakdown table ─────────────────────────────────
+    // Group by the dimensions NOT yet pinned, so user can see next level
+    const crossBreakdown: { key: string; count: number }[] = [];
+    if (hasSfFilter) {
+      const breakMap: Record<string, number> = {};
+      for (const job of filteredJobs) {
+        // Show category if not filtered, else level, else type
+        const part: string[] = [];
+        if (sfCategories.length > 0) part.push(job.category || '未分类');
+        if (sfLevels.length > 0) part.push(resolveLevel(job.experienceLevel || ''));
+        if (sfJobTypes.length > 0) part.push(resolveType((job as any).jobType || (job as any).type || ''));
+        const key = part.join(' · ');
+        breakMap[key] = (breakMap[key] || 0) + 1;
+      }
+      Object.entries(breakMap)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([key, count]) => crossBreakdown.push({ key, count }));
+    }
+
+    // ── chip helpers ──────────────────────────────────────────────────
+    const toggle = <T extends string>(arr: T[], v: T, set: (x: T[]) => void) => {
+      set(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
+    };
+
+    const FilterChips = ({ title, items, selected, onToggle, colorClass }: {
+      title: string; items: { label: string; count: number }[];
+      selected: string[]; onToggle: (v: string) => void; colorClass: string;
+    }) => (
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+            <BarChart3 className="w-4 h-4 text-indigo-500" />{title}
+          </h3>
+          {selected.length > 0 && (
+            <button onClick={() => onToggle('__clear__')} className="text-xs text-slate-400 hover:text-red-500">
+              清除选择
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {items.map(({ label, count }) => {
+            const active = selected.includes(label);
+            return (
+              <button
+                key={label}
+                onClick={() => onToggle(label)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-all ${active
+                    ? `${colorClass} text-white border-transparent font-medium shadow-sm`
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
+                  }`}
+              >
+                {label}
+                <span className={`font-mono ${active ? 'text-white/80' : 'text-slate-400'}`}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+
+    const clearCategories = (v: string) => v === '__clear__' ? setSfCategories([]) : toggle(sfCategories, v, setSfCategories);
+    const clearLevels = (v: string) => v === '__clear__' ? setSfLevels([]) : toggle(sfLevels, v, setSfLevels);
+    const clearJobTypes = (v: string) => v === '__clear__' ? setSfJobTypes([]) : toggle(sfJobTypes, v, setSfJobTypes);
+
+    // ── bar-chart stat group (overview) ───────────────────────────────
+    const StatGroup = ({ title, rows, colorFn }: {
+      title: string; rows: { label: string; count: number }[]; colorFn?: (l: string) => string;
+    }) => (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-indigo-500" />{title}
         </h3>
         <div className="space-y-2.5">
@@ -1315,14 +1423,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <div key={label}>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="font-medium text-slate-700 truncate max-w-[60%]">{label}</span>
-                  <span className="text-slate-500 ml-2">{count} 件
-                    <span className="ml-1 text-slate-400">({pct}%)</span>
-                  </span>
+                  <span className="text-slate-500 ml-2">{count} 件<span className="ml-1 text-slate-400">({pct}%)</span></span>
                 </div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${colorFn ? colorFn(label) : 'bg-indigo-400'}`}
-                    style={{ width: `${Math.max(pct, 2)}%` }}
+                    style={{ width: `${Math.max(pct, 1)}%` }}
                   />
                 </div>
               </div>
@@ -1332,27 +1438,24 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       </div>
     );
 
-    const typeColor = (label: string) => {
-      if (label === '全职') return 'bg-green-400';
-      if (label === '兼职') return 'bg-indigo-400';
-      if (label === '合同工') return 'bg-orange-400';
-      if (label === '自由职业') return 'bg-purple-400';
-      if (label === '实习') return 'bg-yellow-400';
-      return 'bg-slate-400';
+    const typeColor = (l: string) => {
+      if (l === '全职') return 'bg-green-400'; if (l === '兼职') return 'bg-indigo-400';
+      if (l === '合同工') return 'bg-orange-400'; if (l === '自由职业') return 'bg-purple-400';
+      if (l === '实习') return 'bg-yellow-400'; return 'bg-slate-400';
     };
-    const levelColor = (label: string) => {
-      if (label.includes('初级')) return 'bg-green-400';
-      if (label.includes('中级')) return 'bg-indigo-400';
-      if (label.includes('高级')) return 'bg-orange-400';
-      if (label.includes('专家')) return 'bg-red-400';
-      if (label.includes('管理')) return 'bg-purple-400';
-      return 'bg-slate-400';
+    const levelColor = (l: string) => {
+      if (l.includes('初级')) return 'bg-green-400'; if (l.includes('中级')) return 'bg-indigo-400';
+      if (l.includes('高级')) return 'bg-orange-400'; if (l.includes('专家')) return 'bg-red-400';
+      if (l.includes('管理')) return 'bg-purple-400'; return 'bg-slate-400';
     };
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">已审核通过岗位总计：<span className="font-bold text-slate-800">{jobStats.total}</span> 条</p>
+          <p className="text-sm text-slate-500">
+            已审核通过岗位总计：<span className="font-bold text-slate-800">{jobStats.total}</span> 条
+          </p>
           <button
             onClick={loadJobStats}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
@@ -1360,16 +1463,97 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <RefreshCw className="w-3 h-3" />刷新统计
           </button>
         </div>
+
+        {/* ── Cross-filter section ── */}
+        <div className="bg-gradient-to-br from-indigo-50 to-slate-50 rounded-2xl border border-indigo-100 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-slate-700">交叉筛选分析</span>
+            <span className="text-xs text-slate-400">多选条件组合看岗位数量</span>
+            {hasSfFilter && (
+              <button
+                onClick={() => { setSfLevels([]); setSfJobTypes([]); setSfCategories([]); }}
+                className="ml-auto text-xs text-red-400 hover:text-red-600 border border-red-200 px-2 py-0.5 rounded-full"
+              >
+                清除全部
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <FilterChips
+              title="岗位角色"
+              items={jobStats.byCategory}
+              selected={sfCategories}
+              onToggle={clearCategories}
+              colorClass="bg-indigo-500"
+            />
+            <FilterChips
+              title="岗位级别"
+              items={jobStats.byLevel}
+              selected={sfLevels}
+              onToggle={clearLevels}
+              colorClass="bg-orange-500"
+            />
+            <FilterChips
+              title="工作类型"
+              items={jobStats.byJobType}
+              selected={sfJobTypes}
+              onToggle={clearJobTypes}
+              colorClass="bg-green-500"
+            />
+          </div>
+
+          {/* Cross-filter result */}
+          {hasSfFilter && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-slate-700">
+                  筛选结果：<span className="text-indigo-600">{filteredJobs.length}</span> 条符合条件的岗位
+                </span>
+                <div className="flex gap-1 flex-wrap justify-end">
+                  {[...sfCategories.map(v => ({ v, color: 'bg-indigo-100 text-indigo-700' })),
+                  ...sfLevels.map(v => ({ v, color: 'bg-orange-100 text-orange-700' })),
+                  ...sfJobTypes.map(v => ({ v, color: 'bg-green-100 text-green-700' }))
+                  ].map(({ v, color }) => (
+                    <span key={v} className={`text-xs px-2 py-0.5 rounded-full ${color} font-medium`}>{v}</span>
+                  ))}
+                </div>
+              </div>
+              {crossBreakdown.length > 0 && (
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {crossBreakdown.map(({ key, count }) => {
+                    const pct = filteredJobs.length > 0 ? Math.round((count / filteredJobs.length) * 100) : 0;
+                    return (
+                      <div key={key} className="flex items-center gap-3 text-xs">
+                        <span className="text-slate-600 min-w-0 flex-1 truncate">{key}</span>
+                        <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${Math.max(pct, 2)}%` }} />
+                        </div>
+                        <span className="text-slate-500 tabular-nums w-14 text-right">{count} 件 ({pct}%)</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+          {!hasSfFilter && (
+            <p className="text-xs text-slate-400 text-center py-2">↑ 点击上方标签进行多选筛选，可组合查看任意条件下的岗位数量</p>
+          )}
+        </div>
+
+        {/* ── Overview bar charts ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <StatGroup title="岗位分类（角色）" rows={jobStats.byCategory} />
+            <StatGroup title="岗位角色分布（全量）" rows={jobStats.byCategory} />
           </div>
-          <StatGroup title="工作类型" rows={jobStats.byJobType} colorFn={typeColor} />
-          <StatGroup title="岗位级别" rows={jobStats.byLevel} colorFn={levelColor} />
+          <StatGroup title="工作类型分布" rows={jobStats.byJobType} colorFn={typeColor} />
+          <StatGroup title="岗位级别分布" rows={jobStats.byLevel} colorFn={levelColor} />
         </div>
       </div>
     );
   };
+
 
   return (
     <div className={`space-y-6 ${className}`}>

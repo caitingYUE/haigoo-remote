@@ -129,7 +129,7 @@ export default function AdminTrustedCompaniesPage() {
         setEditingCompany(company)
         setFormData({
             ...company,
-            emailType: company.emailType || '通用支持邮箱'
+            emailType: company.emailType || '通用邮箱'
         })
 
         // If coverImage is missing (due to list optimization), fetch full details
@@ -143,7 +143,7 @@ export default function AdminTrustedCompaniesPage() {
                     setEditingCompany(fullCompany);
                     setFormData({
                         ...fullCompany,
-                        emailType: fullCompany.emailType || '通用支持邮箱'
+                        emailType: fullCompany.emailType || '通用邮箱'
                     });
                     setCoverUrlInput(fullCompany.coverImage || '');
                 }
