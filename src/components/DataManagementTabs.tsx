@@ -78,11 +78,19 @@ interface DataManagementTabsProps {
 }
 
 const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) => {
-  const [activeTab, setActiveTab] = useState<'raw' | 'processed' | 'storage'>('processed');
+  const [activeTab, setActiveTab] = useState<'raw' | 'processed' | 'jobstats'>('processed');
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncStatusText, setSyncStatusText] = useState<string>('');
   const { showSuccess, showError } = useNotificationHelpers();
+
+  // Job stats state
+  const [jobStats, setJobStats] = useState<{
+    byCategory: { label: string; count: number }[];
+    byJobType: { label: string; count: number }[];
+    byLevel: { label: string; count: number }[];
+    total: number;
+  } | null>(null);
 
   // 原始数据状态
   const [rawData, setRawData] = useState<RawRSSData[]>([]);
@@ -100,7 +108,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
 
-  // 存储统计状态
+  // 存储统计状态 (legacy, kept for backward-compat)
   const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
 
   // 过滤器状态
@@ -178,7 +186,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const loadProcessedData = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Convert array filters to comma-separated strings
       const filters = {
         ...processedDataFilters,
@@ -230,14 +238,54 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     loadCategories();
   }, [activeTab]);
 
-  // 加载存储统计
-  const loadStorageStats = useCallback(async () => {
+  // 加载岗位统计
+  const loadJobStats = useCallback(async () => {
     try {
       setLoading(true);
-      const stats = await dataManagementService.getStorageStats();
-      setStorageStats(stats);
+      // Fetch up to 3000 approved jobs for stats aggregation
+      const res = await processedJobsService.getProcessedJobs(1, 3000, { isApproved: true });
+      const jobs = res.jobs || [];
+
+      const catMap: Record<string, number> = {};
+      const typeMap: Record<string, number> = {};
+      const levelMap: Record<string, number> = {};
+      const levelLabel: Record<string, string> = {
+        Entry: '初级 (Entry)', Mid: '中级 (Mid)', Senior: '高级 (Senior)',
+        Lead: '专家 (Lead)', Executive: '管理 (Executive)'
+      };
+      const typeLabel: Record<string, string> = {
+        'full-time': '全职', 'fulltime': '全职', 'full time': '全职',
+        'part-time': '兼职', 'parttime': '兼职', 'part time': '兼职',
+        'contract': '合同工', 'freelance': '自由职业', 'intern': '实习', 'internship': '实习'
+      };
+
+      for (const job of jobs) {
+        const cat = job.category || '未分类';
+        catMap[cat] = (catMap[cat] || 0) + 1;
+
+        const rawType = ((job as any).jobType || '').toLowerCase();
+        let resolvedType = '其他';
+        for (const [key, val] of Object.entries(typeLabel)) {
+          if (rawType === key || rawType.includes(key)) { resolvedType = val; break; }
+        }
+        typeMap[resolvedType] = (typeMap[resolvedType] || 0) + 1;
+
+        const lvl = job.experienceLevel || '';
+        const resolvedLevel = levelLabel[lvl] || (lvl || '未定义');
+        levelMap[resolvedLevel] = (levelMap[resolvedLevel] || 0) + 1;
+      }
+
+      const sort = (map: Record<string, number>) =>
+        Object.entries(map).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
+
+      setJobStats({
+        byCategory: sort(catMap),
+        byJobType: sort(typeMap),
+        byLevel: sort(levelMap),
+        total: jobs.length
+      });
     } catch (error) {
-      console.error('加载存储统计失败:', error);
+      console.error('加载岗位统计失败:', error);
     } finally {
       setLoading(false);
     }
@@ -258,7 +306,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       if (autoProcess) {
         await loadProcessedData();
       }
-      await loadStorageStats();
+      await loadJobStats();
 
       const msg = autoProcess
         ? '已拉取最新RSS并自动处理为岗位数据'
@@ -279,11 +327,11 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       // 强制处理，因为这是在"处理后数据"页签
       const syncResult = await dataManagementService.syncAllRSSData(false);
       await loadProcessedData();
-      await loadStorageStats();
-      
+      await loadJobStats();
+
       const aiCount = syncResult.aiUpdatedJobs || 0;
       const regexCount = syncResult.regexUpdatedJobs || 0;
-      
+
       showSuccess('刷新完成', `数据已更新。正则优化: ${regexCount}条, AI深度优化: ${aiCount}条`);
       // 广播全局事件，通知前台页面刷新处理后数据
       try {
@@ -376,21 +424,21 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       if (editingJob.id) {
         // 检查标题是否改变，如果改变则清除翻译
         if (updatedJob.title && updatedJob.title !== editingJob.title) {
-            console.log('[Frontend] Title changed, clearing translation title');
-            const currentTranslations = (updatedJob as any).translations || editingJob.translations || {};
-            const newTranslations = { ...currentTranslations };
-            delete newTranslations.title;
-            (updatedJob as any).translations = newTranslations;
-            (updatedJob as any).isTranslated = false;
+          console.log('[Frontend] Title changed, clearing translation title');
+          const currentTranslations = (updatedJob as any).translations || editingJob.translations || {};
+          const newTranslations = { ...currentTranslations };
+          delete newTranslations.title;
+          (updatedJob as any).translations = newTranslations;
+          (updatedJob as any).isTranslated = false;
         }
 
         // 检查公司名是否改变，如果改变则清除翻译
         if (updatedJob.company && updatedJob.company !== editingJob.company) {
-            console.log('[Frontend] Company changed, clearing translation company');
-            const currentTranslations = (updatedJob as any).translations || editingJob.translations || {};
-            const newTranslations = { ...currentTranslations };
-            delete newTranslations.company;
-            (updatedJob as any).translations = newTranslations;
+          console.log('[Frontend] Company changed, clearing translation company');
+          const currentTranslations = (updatedJob as any).translations || editingJob.translations || {};
+          const newTranslations = { ...currentTranslations };
+          delete newTranslations.company;
+          (updatedJob as any).translations = newTranslations;
         }
 
         // 更新现有职位
@@ -409,7 +457,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
         await dataManagementService.addProcessedJob(newJob);
       }
-      
+
       if (shouldClose) {
         setShowEditModal(false);
         setEditingJob(null);
@@ -493,10 +541,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       loadRawData();
     } else if (activeTab === 'processed') {
       loadProcessedData();
-    } else if (activeTab === 'storage') {
-      loadStorageStats();
+    } else if (activeTab === 'jobstats') {
+      loadJobStats();
     }
-  }, [activeTab, loadRawData, loadProcessedData, loadStorageStats]);
+  }, [activeTab, loadRawData, loadProcessedData, loadJobStats]);
 
   const renderTabButton = (tabKey: string, label: string, icon: React.ReactNode) => (
     <button
@@ -759,15 +807,15 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <MultiSelectDropdown
               label="分类"
               options={availableCategories.length > 0 ? availableCategories.map(c => ({ label: c, value: c })) : [
-                  { label: '前端开发', value: '前端开发' },
-                  { label: '后端开发', value: '后端开发' },
-                  { label: '全栈开发', value: '全栈开发' },
-                  { label: '产品经理', value: '产品经理' },
-                  { label: 'UI/UX设计', value: 'UI/UX设计' },
-                  { label: '数据分析', value: '数据分析' },
-                  { label: '运营', value: '运营' },
-                  { label: '市场营销', value: '市场营销' },
-                  { label: '其他', value: '其他' }
+                { label: '前端开发', value: '前端开发' },
+                { label: '后端开发', value: '后端开发' },
+                { label: '全栈开发', value: '全栈开发' },
+                { label: '产品经理', value: '产品经理' },
+                { label: 'UI/UX设计', value: 'UI/UX设计' },
+                { label: '数据分析', value: '数据分析' },
+                { label: '运营', value: '运营' },
+                { label: '市场营销', value: '市场营销' },
+                { label: '其他', value: '其他' }
               ]}
               selected={processedDataFilters.category || []}
               onChange={(selected) => {
@@ -817,13 +865,13 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             />
 
             <div className="w-48">
-                <input
+              <input
                 type="text"
                 placeholder="搜索岗位/公司..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
+              />
             </div>
 
             <button
@@ -860,7 +908,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               <th className="w-32 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">地点/远程</th>
               {/* <th className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">区域分类</th> */}
               <th className="w-40 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">技能标签</th>
-              <th 
+              <th
                 className="w-24 px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                 onClick={() => {
                   const currentSort = processedDataFilters.sortBy;
@@ -903,147 +951,147 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             ) : (
               processedData.map((job) => (
                 <tr key={job.id} className="hover:bg-slate-50">
-                {/* 1. 岗位名称 */}
-                <td className="px-3 py-2 w-56">
-                  <Tooltip content={job.title} maxLines={3}>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium text-slate-900 text-sm truncate">{job.title}</span>
-                        {job.isFeatured && (
-                          <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0" />
+                  {/* 1. 岗位名称 */}
+                  <td className="px-3 py-2 w-56">
+                    <Tooltip content={job.title} maxLines={3}>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium text-slate-900 text-sm truncate">{job.title}</span>
+                          {job.isFeatured && (
+                            <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0" />
+                          )}
+                        </div>
+                        {(job as any).translations?.title && (
+                          <span className="text-xs text-slate-600 italic truncate">
+                            {(job as any).translations.title}
+                          </span>
                         )}
                       </div>
-                      {(job as any).translations?.title && (
-                        <span className="text-xs text-slate-600 italic truncate">
-                          {(job as any).translations.title}
-                        </span>
-                      )}
-                    </div>
-                  </Tooltip>
-                  {job.salary && (
-                    <div className="text-xs text-green-600 mt-1 truncate">
-                      {job.salary}
-                    </div>
-                  )}
-                </td>
+                    </Tooltip>
+                    {job.salary && (
+                      <div className="text-xs text-green-600 mt-1 truncate">
+                        {job.salary}
+                      </div>
+                    )}
+                  </td>
 
-                {/* 2. 岗位分类 */}
-                <td className="px-3 py-2 w-28">
-                  <Tooltip content={job.category || '未分类'} maxLines={1} clampChildren={false}>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${job.category === '前端开发' ? 'bg-indigo-100 text-indigo-800' :
-                      job.category === '后端开发' ? 'bg-green-100 text-green-800' :
-                        job.category === '全栈开发' ? 'bg-purple-100 text-purple-800' :
-                          job.category === 'UI/UX设计' ? 'bg-pink-100 text-pink-800' :
-                            job.category === '数据分析' ? 'bg-yellow-100 text-yellow-800' :
-                              job.category === '运维/SRE' ? 'bg-indigo-100 text-indigo-800' :
-                                job.category === '产品经理' ? 'bg-orange-100 text-orange-800' :
-                                  job.category === '市场营销' ? 'bg-red-100 text-red-800' :
-                                    'bg-slate-100 text-slate-800'
-                      }`}>
-                      {job.category || '未分类'}
-                    </span>
-                  </Tooltip>
-                </td>
+                  {/* 2. 岗位分类 */}
+                  <td className="px-3 py-2 w-28">
+                    <Tooltip content={job.category || '未分类'} maxLines={1} clampChildren={false}>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${job.category === '前端开发' ? 'bg-indigo-100 text-indigo-800' :
+                        job.category === '后端开发' ? 'bg-green-100 text-green-800' :
+                          job.category === '全栈开发' ? 'bg-purple-100 text-purple-800' :
+                            job.category === 'UI/UX设计' ? 'bg-pink-100 text-pink-800' :
+                              job.category === '数据分析' ? 'bg-yellow-100 text-yellow-800' :
+                                job.category === '运维/SRE' ? 'bg-indigo-100 text-indigo-800' :
+                                  job.category === '产品经理' ? 'bg-orange-100 text-orange-800' :
+                                    job.category === '市场营销' ? 'bg-red-100 text-red-800' :
+                                      'bg-slate-100 text-slate-800'
+                        }`}>
+                        {job.category || '未分类'}
+                      </span>
+                    </Tooltip>
+                  </td>
 
-                {/* 3. 行业 */}
-                <td className="px-3 py-2 w-28 truncate">
-                  <Tooltip content={job.industry || '-'} maxLines={1} clampChildren={false}>
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800 truncate">
-                      {job.industry || '-'}
-                    </span>
-                  </Tooltip>
-                </td>
+                  {/* 3. 行业 */}
+                  <td className="px-3 py-2 w-28 truncate">
+                    <Tooltip content={job.industry || '-'} maxLines={1} clampChildren={false}>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800 truncate">
+                        {job.industry || '-'}
+                      </span>
+                    </Tooltip>
+                  </td>
 
-                {/* 4. 岗位级别 */}
-                <td className="px-3 py-2 w-20 truncate">
-                  <Tooltip content={
-                    job.experienceLevel === 'Entry' ? '初级' :
-                      job.experienceLevel === 'Mid' ? '中级' :
-                        job.experienceLevel === 'Senior' ? '高级' :
-                          job.experienceLevel === 'Lead' ? '专家' :
-                            job.experienceLevel === 'Executive' ? '管理层' : '未定义'
-                  } maxLines={1} clampChildren={false}>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${job.experienceLevel === 'Entry' ? 'bg-green-100 text-green-800' :
-                      job.experienceLevel === 'Mid' ? 'bg-indigo-100 text-indigo-800' :
-                        job.experienceLevel === 'Senior' ? 'bg-orange-100 text-orange-800' :
-                          job.experienceLevel === 'Lead' ? 'bg-red-100 text-red-800' :
-                            job.experienceLevel === 'Executive' ? 'bg-purple-100 text-purple-800' :
-                              'bg-slate-100 text-slate-800'
-                      }`}>
-                      {job.experienceLevel === 'Entry' ? '初级' :
+                  {/* 4. 岗位级别 */}
+                  <td className="px-3 py-2 w-20 truncate">
+                    <Tooltip content={
+                      job.experienceLevel === 'Entry' ? '初级' :
                         job.experienceLevel === 'Mid' ? '中级' :
                           job.experienceLevel === 'Senior' ? '高级' :
                             job.experienceLevel === 'Lead' ? '专家' :
-                              job.experienceLevel === 'Executive' ? '管理层' : '未定义'}
-                    </span>
-                  </Tooltip>
-                </td>
-
-                {/* 5. 企业名称 */}
-                <td className="px-3 py-2 w-40 truncate">
-                  <Tooltip content={job.company} maxLines={3}>
-                    <div className="flex items-center gap-1">
-                      <Building className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                      <span className="font-medium text-slate-900 text-sm truncate">{job.company}</span>
-                    </div>
-                  </Tooltip>
-                  {job.companyWebsite && (
-                    <a
-                      href={job.companyWebsite}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs mt-1 truncate"
-                    >
-                      <ExternalLink className="w-2 h-2" />
-                      企业官网
-                    </a>
-                  )}
-                </td>
-
-                {/* 6. 岗位类型 */}
-                <td className="px-3 py-2 w-24 truncate">
-                  {(() => {
-                    const normalizeJobType = (type: string | undefined): string => {
-                      if (!type) return '未定义';
-                      const lower = type.toLowerCase();
-                      if (lower.includes('full') || lower === '全职') return '全职';
-                      if (lower.includes('part') || lower === '兼职') return '兼职';
-                      if (lower.includes('contract') || lower === '合同') return '合同工';
-                      if (lower.includes('freelance') || lower === '自由') return '自由职业';
-                      if (lower.includes('intern') || lower === '实习') return '实习';
-                      return type;
-                    };
-                    const normalizedType = normalizeJobType(job.jobType);
-
-                    return (
-                      <Tooltip content={normalizedType} maxLines={1} clampChildren={false}>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${normalizedType === '全职' ? 'bg-green-100 text-green-800' :
-                          normalizedType === '兼职' ? 'bg-indigo-100 text-indigo-800' :
-                            normalizedType === '合同工' ? 'bg-orange-100 text-orange-800' :
-                              normalizedType === '自由职业' ? 'bg-purple-100 text-purple-800' :
-                                normalizedType === '实习' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-slate-100 text-slate-800'
-                          }`}>
-                          {normalizedType}
-                        </span>
-                      </Tooltip>
-                    );
-                  })()}
-                </td>
-
-                {/* 7. 区域限制 (对应 DB location) */}
-                <td className="px-3 py-2 w-32 truncate">
-                  <Tooltip content={job.location || '不限地点'} maxLines={3} clampChildren={false}>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-2 h-2 text-slate-400 flex-shrink-0" />
-                      <span className="text-xs text-slate-600 truncate">
-                        {job.location || '不限地点'}
+                              job.experienceLevel === 'Executive' ? '管理层' : '未定义'
+                    } maxLines={1} clampChildren={false}>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${job.experienceLevel === 'Entry' ? 'bg-green-100 text-green-800' :
+                        job.experienceLevel === 'Mid' ? 'bg-indigo-100 text-indigo-800' :
+                          job.experienceLevel === 'Senior' ? 'bg-orange-100 text-orange-800' :
+                            job.experienceLevel === 'Lead' ? 'bg-red-100 text-red-800' :
+                              job.experienceLevel === 'Executive' ? 'bg-purple-100 text-purple-800' :
+                                'bg-slate-100 text-slate-800'
+                        }`}>
+                        {job.experienceLevel === 'Entry' ? '初级' :
+                          job.experienceLevel === 'Mid' ? '中级' :
+                            job.experienceLevel === 'Senior' ? '高级' :
+                              job.experienceLevel === 'Lead' ? '专家' :
+                                job.experienceLevel === 'Executive' ? '管理层' : '未定义'}
                       </span>
-                    </div>
-                  </Tooltip>
-                </td>
+                    </Tooltip>
+                  </td>
 
-                {/* 8. 区域分类 (对应 DB region) - 已隐藏
+                  {/* 5. 企业名称 */}
+                  <td className="px-3 py-2 w-40 truncate">
+                    <Tooltip content={job.company} maxLines={3}>
+                      <div className="flex items-center gap-1">
+                        <Building className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                        <span className="font-medium text-slate-900 text-sm truncate">{job.company}</span>
+                      </div>
+                    </Tooltip>
+                    {job.companyWebsite && (
+                      <a
+                        href={job.companyWebsite}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs mt-1 truncate"
+                      >
+                        <ExternalLink className="w-2 h-2" />
+                        企业官网
+                      </a>
+                    )}
+                  </td>
+
+                  {/* 6. 岗位类型 */}
+                  <td className="px-3 py-2 w-24 truncate">
+                    {(() => {
+                      const normalizeJobType = (type: string | undefined): string => {
+                        if (!type) return '未定义';
+                        const lower = type.toLowerCase();
+                        if (lower.includes('full') || lower === '全职') return '全职';
+                        if (lower.includes('part') || lower === '兼职') return '兼职';
+                        if (lower.includes('contract') || lower === '合同') return '合同工';
+                        if (lower.includes('freelance') || lower === '自由') return '自由职业';
+                        if (lower.includes('intern') || lower === '实习') return '实习';
+                        return type;
+                      };
+                      const normalizedType = normalizeJobType(job.jobType);
+
+                      return (
+                        <Tooltip content={normalizedType} maxLines={1} clampChildren={false}>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${normalizedType === '全职' ? 'bg-green-100 text-green-800' :
+                            normalizedType === '兼职' ? 'bg-indigo-100 text-indigo-800' :
+                              normalizedType === '合同工' ? 'bg-orange-100 text-orange-800' :
+                                normalizedType === '自由职业' ? 'bg-purple-100 text-purple-800' :
+                                  normalizedType === '实习' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-slate-100 text-slate-800'
+                            }`}>
+                            {normalizedType}
+                          </span>
+                        </Tooltip>
+                      );
+                    })()}
+                  </td>
+
+                  {/* 7. 区域限制 (对应 DB location) */}
+                  <td className="px-3 py-2 w-32 truncate">
+                    <Tooltip content={job.location || '不限地点'} maxLines={3} clampChildren={false}>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-2 h-2 text-slate-400 flex-shrink-0" />
+                        <span className="text-xs text-slate-600 truncate">
+                          {job.location || '不限地点'}
+                        </span>
+                      </div>
+                    </Tooltip>
+                  </td>
+
+                  {/* 8. 区域分类 (对应 DB region) - 已隐藏
                 <td className="px-3 py-2 w-24 truncate">
                   {(() => {
                     const r = job.region;
@@ -1064,106 +1112,106 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </td>
                 */}
 
-                {/* 9. 技能标签 (对应 DB tags) */}
-                <td className="px-3 py-2 w-40 truncate">
-                  <Tooltip content={job.tags?.join(', ') || '无标签'} maxLines={2} clampChildren={false}>
-                    <div className="flex flex-wrap gap-1">
-                      {job.tags?.slice(0, 2).map((tag, index) => (
-                        <span key={index} className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-slate-100 text-slate-700 truncate max-w-full">
-                          {tag}
-                        </span>
-                      ))}
-                      {job.tags && job.tags.length > 2 && (
-                        <span className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
-                          +{job.tags.length - 2}
-                        </span>
-                      )}
-                    </div>
-                  </Tooltip>
-                </td>
+                  {/* 9. 技能标签 (对应 DB tags) */}
+                  <td className="px-3 py-2 w-40 truncate">
+                    <Tooltip content={job.tags?.join(', ') || '无标签'} maxLines={2} clampChildren={false}>
+                      <div className="flex flex-wrap gap-1">
+                        {job.tags?.slice(0, 2).map((tag, index) => (
+                          <span key={index} className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-slate-100 text-slate-700 truncate max-w-full">
+                            {tag}
+                          </span>
+                        ))}
+                        {job.tags && job.tags.length > 2 && (
+                          <span className="inline-flex items-center px-1 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
+                            +{job.tags.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </Tooltip>
+                  </td>
 
-                {/* 10. 发布日期 (对应 DB published_at) */}
-                <td className="px-3 py-2 text-xs text-slate-500 w-24">
-                  <Tooltip content={new Date(job.publishedAt).toLocaleDateString()} maxLines={1} clampChildren={false}>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-2 h-2 flex-shrink-0" />
-                      <span className="truncate">
-                        {new Date(job.publishedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </Tooltip>
-                </td>
+                  {/* 10. 发布日期 (对应 DB published_at) */}
+                  <td className="px-3 py-2 text-xs text-slate-500 w-24">
+                    <Tooltip content={new Date(job.publishedAt).toLocaleDateString()} maxLines={1} clampChildren={false}>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-2 h-2 flex-shrink-0" />
+                        <span className="truncate">
+                          {new Date(job.publishedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </Tooltip>
+                  </td>
 
-                {/* 11. 岗位来源 (对应 DB source) */}
-                <td className="px-3 py-2 w-28">
-                  <Tooltip content={job.source} maxLines={1} clampChildren={false}>
-                    <div className="flex flex-col gap-1">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 truncate">
-                        {job.source}
+                  {/* 11. 岗位来源 (对应 DB source) */}
+                  <td className="px-3 py-2 w-28">
+                    <Tooltip content={job.source} maxLines={1} clampChildren={false}>
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 truncate">
+                          {job.source}
+                        </span>
+                        <a
+                          href={job.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs truncate"
+                        >
+                          <LinkIcon className="w-2 h-2" />
+                          链接
+                        </a>
+                      </div>
+                    </Tooltip>
+                  </td>
+
+                  {/* 12. 精选 (对应 DB is_featured) */}
+                  <td className="px-3 py-2 w-16 text-center">
+                    {job.isFeatured ? (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-100 text-yellow-600" title="精选岗位">
+                        <Star className="w-4 h-4 fill-current" />
                       </span>
-                      <a
-                        href={job.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs truncate"
+                    ) : (
+                      <span className="text-slate-300">-</span>
+                    )}
+                  </td>
+
+                  {/* 13. 审核 (对应 DB is_approved) */}
+                  <td className="px-3 py-2 w-16 text-center">
+                    {(job as any).isApproved ? (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600" title="已审核通过">
+                        <CheckCircle className="w-4 h-4" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400" title="待审核">
+                        <Info className="w-4 h-4" />
+                      </span>
+                    )}
+                  </td>
+
+                  {/* 14. 操作 */}
+                  <td className="px-3 py-2 w-24">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleViewDetail(job)}
+                        className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                        title="查看详情"
                       >
-                        <LinkIcon className="w-2 h-2" />
-                        链接
-                      </a>
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEditJob(job)}
+                        className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                        title="编辑"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteJob(job.id)}
+                        className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                        title="删除"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                  </Tooltip>
-                </td>
-
-                {/* 12. 精选 (对应 DB is_featured) */}
-                <td className="px-3 py-2 w-16 text-center">
-                  {job.isFeatured ? (
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-100 text-yellow-600" title="精选岗位">
-                      <Star className="w-4 h-4 fill-current" />
-                    </span>
-                  ) : (
-                    <span className="text-slate-300">-</span>
-                  )}
-                </td>
-
-                {/* 13. 审核 (对应 DB is_approved) */}
-                <td className="px-3 py-2 w-16 text-center">
-                  {(job as any).isApproved ? (
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600" title="已审核通过">
-                      <CheckCircle className="w-4 h-4" />
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400" title="待审核">
-                      <Info className="w-4 h-4" />
-                    </span>
-                  )}
-                </td>
-
-                {/* 14. 操作 */}
-                <td className="px-3 py-2 w-24">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleViewDetail(job)}
-                      className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
-                      title="查看详情"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleEditJob(job)}
-                      className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
-                      title="编辑"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteJob(job.id)}
-                      className="p-1 text-slate-400 hover:text-red-600 transition-colors"
-                      title="删除"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+                  </td>
                 </tr>
               ))
             )}
@@ -1245,51 +1293,83 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     </div>
   );
 
-  const renderStorageStats = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {storageStats && (
-        <>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-indigo-100 rounded-lg">
-                <Database className="w-6 h-6 text-indigo-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-slate-900">{storageStats.totalRawData}</div>
-                <div className="text-sm text-slate-500">原始数据条数</div>
-              </div>
-            </div>
-          </div>
+  const renderJobStats = () => {
+    if (!jobStats) {
+      return (
+        <div className="flex items-center justify-center py-20">
+          <Loader className="w-7 h-7 animate-spin text-indigo-600 mr-2" />
+          <span className="text-slate-500">加载中...</span>
+        </div>
+      );
+    }
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-slate-900">{storageStats.totalProcessedJobs}</div>
-                <div className="text-sm text-slate-500">处理后职位</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Server className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-slate-900">
-                  {(storageStats.storageSize / 1024 / 1024).toFixed(2)} MB
+    const StatGroup = ({ title, rows, colorFn }: { title: string; rows: { label: string; count: number }[]; colorFn?: (label: string) => string }) => (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-indigo-500" />{title}
+        </h3>
+        <div className="space-y-2.5">
+          {rows.map(({ label, count }) => {
+            const pct = jobStats.total > 0 ? Math.round((count / jobStats.total) * 100) : 0;
+            return (
+              <div key={label}>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="font-medium text-slate-700 truncate max-w-[60%]">{label}</span>
+                  <span className="text-slate-500 ml-2">{count} 件
+                    <span className="ml-1 text-slate-400">({pct}%)</span>
+                  </span>
                 </div>
-                <div className="text-sm text-slate-500">存储大小</div>
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${colorFn ? colorFn(label) : 'bg-indigo-400'}`}
+                    style={{ width: `${Math.max(pct, 2)}%` }}
+                  />
+                </div>
               </div>
-            </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+
+    const typeColor = (label: string) => {
+      if (label === '全职') return 'bg-green-400';
+      if (label === '兼职') return 'bg-indigo-400';
+      if (label === '合同工') return 'bg-orange-400';
+      if (label === '自由职业') return 'bg-purple-400';
+      if (label === '实习') return 'bg-yellow-400';
+      return 'bg-slate-400';
+    };
+    const levelColor = (label: string) => {
+      if (label.includes('初级')) return 'bg-green-400';
+      if (label.includes('中级')) return 'bg-indigo-400';
+      if (label.includes('高级')) return 'bg-orange-400';
+      if (label.includes('专家')) return 'bg-red-400';
+      if (label.includes('管理')) return 'bg-purple-400';
+      return 'bg-slate-400';
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-slate-500">已审核通过岗位总计：<span className="font-bold text-slate-800">{jobStats.total}</span> 条</p>
+          <button
+            onClick={loadJobStats}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            <RefreshCw className="w-3 h-3" />刷新统计
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <StatGroup title="岗位分类（角色）" rows={jobStats.byCategory} />
           </div>
-        </>
-      )}
-    </div>
-  );
+          <StatGroup title="工作类型" rows={jobStats.byJobType} colorFn={typeColor} />
+          <StatGroup title="岗位级别" rows={jobStats.byLevel} colorFn={levelColor} />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -1298,7 +1378,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         <div className="flex gap-2">
           {renderTabButton('processed', '处理后数据', <Briefcase className="w-4 h-4" />)}
           {renderTabButton('raw', '原始数据', <Database className="w-4 h-4" />)}
-          {renderTabButton('storage', '存储统计', <BarChart3 className="w-4 h-4" />)}
+          {renderTabButton('jobstats', '岗位统计', <BarChart3 className="w-4 h-4" />)}
         </div>
 
         <div className="flex gap-2">
@@ -1385,7 +1465,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         <>
           {activeTab === 'raw' && renderRawDataTable()}
           {activeTab === 'processed' && renderProcessedDataTable()}
-          {activeTab === 'storage' && renderStorageStats()}
+          {activeTab === 'jobstats' && renderJobStats()}
         </>
       )}
 

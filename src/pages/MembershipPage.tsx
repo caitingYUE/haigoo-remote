@@ -50,8 +50,6 @@ const STATIC_PLANS: Plan[] = [
       id: 'goo_plus_yearly',
       name: '海狗远程俱乐部会员 (年度)',
       price: 999,
-      originalPrice: 1999,
-      discountLabel: '早鸟价 · 6月1日恢复原价',
       currency: 'CNY',
       duration_days: 365,
       isPlus: true,
@@ -466,11 +464,6 @@ const MembershipPage: React.FC = () => {
                               {plan.name}
                            </h3>
                            <div className="flex justify-center items-baseline gap-1 mb-2">
-                              {plan.originalPrice && (
-                                 <span className="text-lg text-slate-400 line-through mr-1 font-medium">
-                                    ¥{plan.originalPrice}
-                                 </span>
-                              )}
                               <span className="text-5xl font-extrabold tracking-tight text-slate-900">¥{plan.price}</span>
                               <span className="text-sm font-bold text-slate-500">
                                  /{plan.duration_days > 90 ? '年' : '季度'}
@@ -478,14 +471,9 @@ const MembershipPage: React.FC = () => {
                            </div>
 
                            <div className="mb-4 flex flex-col items-center gap-2 min-h-[3.5rem]">
-                              {plan.discountLabel && (
+                              {plan.discountLabel && plan.id !== 'goo_plus_yearly' && (
                                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-medium border border-slate-200">
                                     {plan.discountLabel}
-                                 </span>
-                              )}
-                              {plan.originalPrice && plan.originalPrice > plan.price && (
-                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                                    限时立省 ¥{plan.originalPrice - plan.price}
                                  </span>
                               )}
                            </div>
@@ -530,7 +518,7 @@ const MembershipPage: React.FC = () => {
                               </>
                            ) : (plan.id === 'goo_plus_yearly') ? (
                               <>
-                                 3月1日开放
+                                 待上线
                               </>
                            ) : plan.isPlus ? (
                               <>
