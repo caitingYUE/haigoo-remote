@@ -85,111 +85,111 @@ export class DataManagementService {
     if (onStatusUpdate) onStatusUpdate('正在连接服务器启动同步任务...');
 
     return new Promise((resolve, reject) => {
-        // Use daily-ingest task which runs fetch and process in sequence
-        // Note: skipProcessing param is currently ignored by the backend daily-ingest task, 
-        // which always runs both. We can enhance backend later if needed.
-        const eventSource = new EventSource('/api/cron/index?task=daily-ingest');
-        
-        eventSource.onopen = () => {
-            console.log('[Sync] SSE connection opened');
-        };
+      // Use daily-ingest task which runs fetch and process in sequence
+      // Note: skipProcessing param is currently ignored by the backend daily-ingest task, 
+      // which always runs both. We can enhance backend later if needed.
+      const eventSource = new EventSource('/api/cron/index?task=daily-ingest');
 
-        eventSource.onmessage = (event) => {
-            // Generic message handler if needed
-        };
+      eventSource.onopen = () => {
+        console.log('[Sync] SSE connection opened');
+      };
 
-        // Listen for specific events
-        eventSource.addEventListener('sequence_start', (e: any) => {
-            try {
-                const data = JSON.parse(e.data);
-                if (onStatusUpdate) onStatusUpdate(data.message);
-                console.log('[Sync] Sequence Start:', data);
-            } catch (err) {}
-        });
+      eventSource.onmessage = (event) => {
+        // Generic message handler if needed
+      };
 
-        eventSource.addEventListener('task_start', (e: any) => {
-            try {
-                const data = JSON.parse(e.data);
-                if (onStatusUpdate) onStatusUpdate(`正在执行: ${data.task === 'stream-fetch-rss' ? '抓取RSS' : '处理数据'}`);
-                console.log('[Sync] Task Start:', data);
-            } catch (err) {}
-        });
+      // Listen for specific events
+      eventSource.addEventListener('sequence_start', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (onStatusUpdate) onStatusUpdate(data.message);
+          console.log('[Sync] Sequence Start:', data);
+        } catch (err) { }
+      });
 
-        eventSource.addEventListener('fetch_complete', (e: any) => {
-             try {
-                const data = JSON.parse(e.data);
-                syncStatus.totalSources = data.fetchedCount || 0; // Approx
-                if (onStatusUpdate) onStatusUpdate(data.message);
-            } catch (err) {}
-        });
+      eventSource.addEventListener('task_start', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (onStatusUpdate) onStatusUpdate(`正在执行: ${data.task === 'stream-fetch-rss' ? '抓取RSS' : '处理数据'}`);
+          console.log('[Sync] Task Start:', data);
+        } catch (err) { }
+      });
 
-        eventSource.addEventListener('save_complete', (e: any) => {
-             try {
-                const data = JSON.parse(e.data);
-                if (data.savedCount) {
-                    syncStatus.newJobsAdded += data.savedCount; // Use this for new jobs or raw items depending on context
-                }
-                if (onStatusUpdate) onStatusUpdate(data.message);
-            } catch (err) {}
-        });
+      eventSource.addEventListener('fetch_complete', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          syncStatus.totalSources = data.fetchedCount || 0; // Approx
+          if (onStatusUpdate) onStatusUpdate(data.message);
+        } catch (err) { }
+      });
 
-        eventSource.addEventListener('item_processing', (e: any) => {
-             try {
-                const data = JSON.parse(e.data);
-                if (onStatusUpdate && data.message) onStatusUpdate(data.message);
-            } catch (err) {}
-        });
+      eventSource.addEventListener('save_complete', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.savedCount) {
+            syncStatus.newJobsAdded += data.savedCount; // Use this for new jobs or raw items depending on context
+          }
+          if (onStatusUpdate) onStatusUpdate(data.message);
+        } catch (err) { }
+      });
 
-        eventSource.addEventListener('error', (e: any) => {
-             try {
-                const data = JSON.parse(e.data);
-                console.error('[Sync] Error:', data);
-                syncStatus.errors.push({
-                    source: 'Backend',
-                    url: '',
-                    error: data.message || data.error,
-                    timestamp: new Date()
-                });
-                // Don't close immediately on task error, sequence might continue? 
-                // Actually daily-ingest sequence might fail if one task fails.
-                // But let's wait for sequence_complete or close on fatal error.
-            } catch (err) {}
-        });
+      eventSource.addEventListener('item_processing', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (onStatusUpdate && data.message) onStatusUpdate(data.message);
+        } catch (err) { }
+      });
 
-        eventSource.addEventListener('sequence_complete', (e: any) => {
-            try {
-                const data = JSON.parse(e.data);
-                console.log('[Sync] Sequence Complete:', data);
-                if (onStatusUpdate) onStatusUpdate('同步任务全部完成');
-                syncStatus.isRunning = false;
-                eventSource.close();
-                resolve(syncStatus);
-            } catch (err) {
-                eventSource.close();
-                resolve(syncStatus);
-            }
-        });
+      eventSource.addEventListener('error', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.error('[Sync] Error:', data);
+          syncStatus.errors.push({
+            source: 'Backend',
+            url: '',
+            error: data.message || data.error,
+            timestamp: new Date()
+          });
+          // Don't close immediately on task error, sequence might continue? 
+          // Actually daily-ingest sequence might fail if one task fails.
+          // But let's wait for sequence_complete or close on fatal error.
+        } catch (err) { }
+      });
 
-        eventSource.onerror = (err) => {
-            console.error('[Sync] SSE Connection Error:', err);
-            // Check readyState. If CLOSED (2), it's done.
-            if (eventSource.readyState === EventSource.CLOSED) {
-                // Already handled
-            } else {
-                eventSource.close();
-                // If we haven't resolved yet
-                if (syncStatus.isRunning) {
-                    syncStatus.isRunning = false;
-                    syncStatus.errors.push({
-                        source: 'Connection',
-                        url: '',
-                        error: '连接中断',
-                        timestamp: new Date()
-                    });
-                    reject(new Error('SSE Connection Error'));
-                }
-            }
-        };
+      eventSource.addEventListener('sequence_complete', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log('[Sync] Sequence Complete:', data);
+          if (onStatusUpdate) onStatusUpdate('同步任务全部完成');
+          syncStatus.isRunning = false;
+          eventSource.close();
+          resolve(syncStatus);
+        } catch (err) {
+          eventSource.close();
+          resolve(syncStatus);
+        }
+      });
+
+      eventSource.onerror = (err) => {
+        console.error('[Sync] SSE Connection Error:', err);
+        // Check readyState. If CLOSED (2), it's done.
+        if (eventSource.readyState === EventSource.CLOSED) {
+          // Already handled
+        } else {
+          eventSource.close();
+          // If we haven't resolved yet
+          if (syncStatus.isRunning) {
+            syncStatus.isRunning = false;
+            syncStatus.errors.push({
+              source: 'Connection',
+              url: '',
+              error: '连接中断',
+              timestamp: new Date()
+            });
+            reject(new Error('SSE Connection Error'));
+          }
+        }
+      };
     });
   }
 
@@ -212,7 +212,7 @@ export class DataManagementService {
       if (filters?.source) queryParams.append('source', filters.source);
       if (filters?.category) queryParams.append('category', filters.category);
       if (filters?.status) queryParams.append('status', filters.status);
-      
+
       // 处理日期范围
       if (filters?.dateRange) {
         queryParams.append('dateFrom', filters.dateRange.start.toISOString().split('T')[0]);
@@ -229,7 +229,7 @@ export class DataManagementService {
       }
 
       const result = await resp.json();
-      
+
       // 转换后端API返回的数据格式为前端期望的格式
       return {
         data: result.items || [],
@@ -290,12 +290,15 @@ export class DataManagementService {
       if (filters?.isFeatured !== undefined) queryParams.append('isFeatured', filters.isFeatured.toString());
       if (filters?.sortBy) queryParams.append('sortBy', filters.sortBy);
       if (filters?.tags && filters.tags.length > 0) queryParams.append('tags', filters.tags.join(','));
-      
+
       // 处理日期范围
       if (filters?.dateRange) {
         queryParams.append('dateFrom', filters.dateRange.start.toISOString().split('T')[0]);
         queryParams.append('dateTo', filters.dateRange.end.toISOString().split('T')[0]);
       }
+
+      // 标记为管理员面板请求，绕过 is_approved 过滤，显示全量数据
+      queryParams.append('isAdminPanel', 'true');
 
       // 添加时间戳避免缓存
       queryParams.append('_t', Date.now().toString());
@@ -316,7 +319,7 @@ export class DataManagementService {
       }
 
       const result = await resp.json();
-      
+
       // 转换后端API返回的数据格式为前端期望的格式
       return {
         data: result.jobs || [],
@@ -359,14 +362,14 @@ export class DataManagementService {
     try {
       // 优化：仅获取需要更新的职位，而不是全部加载
       const result = await this.getProcessedJobs(1, 1, { id: jobId });
-      
+
       if (result.data.length === 0) {
         return false;
       }
 
       const currentJob = result.data[0];
       const updatedJob = { ...currentJob };
-      
+
       // Ensure editHistory exists
       if (!updatedJob.editHistory) {
         updatedJob.editHistory = [];
@@ -482,13 +485,13 @@ export class DataManagementService {
       };
     } catch (error) {
       console.warn('API获取存储统计失败:', error);
-       return {
-          totalRawData: 0,
-          totalProcessedJobs: 0,
-          storageSize: 0,
-          dataRetentionDays: this.RETENTION_DAYS,
-          sources: []
-        };
+      return {
+        totalRawData: 0,
+        totalProcessedJobs: 0,
+        storageSize: 0,
+        dataRetentionDays: this.RETENTION_DAYS,
+        sources: []
+      };
     }
   }
 
@@ -498,7 +501,7 @@ export class DataManagementService {
   private async cleanupOldData(): Promise<void> {
     try {
       console.log('🧹 开始清理过期数据 (调用后端API)...');
-      
+
       const sources = rssService.getRSSSources().map(s => s.name);
 
       const resp = await fetch(`/api/data/processed-jobs?action=cleanup&days=${this.RETENTION_DAYS}`, {
@@ -506,14 +509,14 @@ export class DataManagementService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sources })
       });
-      
+
       const result = await resp.json();
       if (resp.ok && result.success) {
         console.log(`🧹 清理完成: 删除了 ${result.deleted} 个过期职位`);
       } else {
         console.warn('清理过期数据警告:', result.error || '未知错误');
       }
-      
+
     } catch (error) {
       console.error('清理过期数据失败:', error);
     }
@@ -528,7 +531,7 @@ export class DataManagementService {
         const chunk = jobs.slice(i, i + CHUNK_SIZE);
         // 如果是 'replace' 模式，只有第一批次使用 'replace'（清空旧数据），后续批次使用 'append'
         const chunkMode = (mode === 'replace' && i > 0) ? 'append' : mode;
-        
+
         const resp = await fetch('/api/data/processed-jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
