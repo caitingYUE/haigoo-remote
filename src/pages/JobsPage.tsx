@@ -244,12 +244,9 @@ export default function JobsPage() {
         const res = await fetch('/api/data/job-bundles?is_active=true');
         const data = await res.json();
         if (data.success && data.data && data.data.length > 0) {
-          // Filter visibility and check time
-          const now = new Date();
+          // Time filtering is now handled by the backend API.
+          // Only filter by visibility based on current user state.
           const validBundles = data.data.filter((b: any) => {
-            if (b.start_time && new Date(b.start_time) > now) return false;
-            if (b.end_time && new Date(b.end_time) < now) return false;
-
             const vis = b.visibility || (b.is_public !== false ? 'public' : 'admin');
             if (vis === 'admin') return false; // Admin hidden on C-side
             if (vis === 'member' && !isAuthenticated) return false; // Members only
@@ -258,17 +255,17 @@ export default function JobsPage() {
 
           if (validBundles.length > 0) {
             // Sort by priority (asc) and pick first
-            validBundles.sort((a: any, b: any) => a.priority - b.priority);
+            validBundles.sort((a: any, b: any) => (a.priority || 10) - (b.priority || 10));
             setActiveBundle(validBundles[0]);
           } else {
-            setActiveBundle({ id: 'DEBUG_EMPTY', title: 'Debug: Valid=0', subtitle: `Lengths (data=${data.data?.length}, valid=${validBundles?.length})` });
+            setActiveBundle(null);
           }
         } else {
-          setActiveBundle({ id: 'DEBUG_ERR', title: 'Debug: Fetch Empty', subtitle: `Succ: ${data.success}, Len: ${data.data?.length}` });
+          setActiveBundle(null);
         }
       } catch (e) {
         console.error('Failed to fetch active bundle', e);
-        setActiveBundle({ id: 'DEBUG_CATCH', title: 'Debug: Exception Error', subtitle: e?.message || 'Unknown' });
+        setActiveBundle(null);
       }
     };
     fetchActiveBundle();
@@ -846,21 +843,14 @@ export default function JobsPage() {
                 ) : (
                   <div>
                     {activeBundle && !loadingMore && currentPage === 1 && (
-                      <div className="mb-4 space-y-2">
-                        {String(activeBundle.id).startsWith('DEBUG') ? (
-                          <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-200">
-                            <strong>{activeBundle.title}</strong>: {activeBundle.subtitle}
-                          </div>
-                        ) : (
-                          <JobBundleBanner bundle={activeBundle} />
-                        )}
+                      <div className="mb-4">
+                        <JobBundleBanner bundle={activeBundle} />
                       </div>
                     )}
 
                     {distributedJobs.map((job, index) => (
                       <JobCardNew
                         key={job.id}
-                        job={job}
                         variant="list"
                         isActive={selectedJob?.id === job.id}
                         onClick={() => handleJobSelect(job, index)}
