@@ -74,9 +74,9 @@
 
 /* Job Selector Styles */
 .job-selector {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
   height: 500px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -87,7 +87,10 @@
 .selected-panel {
   display: flex;
   flex-direction: column;
+  flex: 0 0 50%;
+  width: 50%;
   height: 100%;
+  overflow: hidden;
 }
 
 .search-panel {
@@ -186,7 +189,8 @@
   align-items: center;
   padding: 8px;
   border-bottom: 1px solid #edf2f7;
-  min-width: max-content;
+  min-width: 360px;
+  /* Guarantee enough width for all action buttons */
 }
 
 .item-order {
