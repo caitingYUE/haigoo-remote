@@ -314,8 +314,14 @@ const AdminJobBundles: React.FC = () => {
                     <div key={job.id} className="search-item">
                       <div className="job-info">
                         <div className="job-title">{job.title}</div>
-                        <div className="job-company text-xs text-gray-500">
-                          {job.company} <span className="ml-2 text-gray-400">ID: {job.id}</span>
+                        <div className="job-company text-xs text-gray-500 font-medium flex items-center flex-wrap gap-2 mt-1">
+                          {job.company}
+                          {job.level && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                              {job.level}
+                            </span>
+                          )}
+                          <span className="text-gray-400 font-normal">ID: {job.id}</span>
                         </div>
                       </div>
                       <button
@@ -333,7 +339,7 @@ const AdminJobBundles: React.FC = () => {
               {/* Selected Panel */}
               <div className="selected-panel flex flex-col max-h-[400px]">
                 <h4>已选职位 ({selectedJobs.length})</h4>
-                <div className="selected-list overflow-y-auto custom-scrollbar flex-1 border border-slate-200 rounded-lg bg-slate-50 p-2">
+                <div className="selected-list overflow-auto overflow-x-auto custom-scrollbar flex-1 border border-slate-200 rounded-lg bg-slate-50 p-2">
                   {selectedJobs.map((job, index) => (
                     <div key={job.id} className="selected-item">
                       <div className="item-order">{index + 1}</div>
