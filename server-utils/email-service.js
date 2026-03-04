@@ -1,21 +1,13 @@
 /**
- * 邮件发送服务
- * 支持邮箱验证、密码重置等场景
- * 使用 Nodemailer + Gmail SMTP 或其他 SMTP 服务
+ * 邮件发送服务 — Resend API
+ * 支持邮箱验证、密码重置、每日岗位推送等场景
  */
 
-import nodemailer from 'nodemailer'
+const RESEND_API_KEY = process.env.RESEND_API_KEY
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@haigooremote.com'
+const FROM_NAME = process.env.FROM_NAME || 'Haigoo'
 
-// SMTP 配置（从环境变量读取）
-const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com'
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587')
-const SMTP_USER = process.env.SMTP_USER // 发件人邮箱
-const SMTP_PASS = process.env.SMTP_PASS // 发件人密码或应用专用密码
-const FROM_EMAIL = process.env.FROM_EMAIL || SMTP_USER || 'noreply@haigoo.com'
-const FROM_NAME = process.env.FROM_NAME || 'Haigoo Team'
-
-// 检查 SMTP 是否配置
-const SMTP_CONFIGURED = !!(SMTP_USER && SMTP_PASS)
+const RESEND_CONFIGURED = !!RESEND_API_KEY
 
 function getTopicLabel(topic) {
   const map = {
@@ -31,49 +23,37 @@ function getTopicLabel(topic) {
 }
 
 /**
- * 创建 Nodemailer transporter
- */
-function createTransporter() {
-  if (!SMTP_CONFIGURED) {
-    console.warn('[email-service] SMTP not configured, emails will not be sent')
-    return null
-  }
-
-  return nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465, // true for 465, false for other ports
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS
-    }
-  })
-}
-
-/**
- * 发送邮件（通用）
- * @param {string} to - 收件人邮箱
- * @param {string} subject - 邮件主题
- * @param {string} html - HTML 正文
- * @returns {Promise<boolean>} 是否发送成功
+ * 发送邮件（通用）via Resend API
  */
 export async function sendEmail(to, subject, html) {
-  if (!SMTP_CONFIGURED) {
-    console.log(`[email-service] SMTP not configured, skipping email to ${to}`)
-    console.log(`[email-service] Subject: ${subject}`)
-    console.log(`[email-service] Content preview: ${html.substring(0, 200)}...`)
+  if (!RESEND_CONFIGURED) {
+    console.warn(`[email-service] RESEND_API_KEY not set, skipping email to ${to}`)
     return false
   }
 
   try {
-    const transporter = createTransporter()
-    const info = await transporter.sendMail({
-      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
-      to,
-      subject,
-      html
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: `${FROM_NAME} <${FROM_EMAIL}>`,
+        to: [to],
+        subject,
+        html
+      })
     })
-    console.log(`[email-service] Email sent to ${to}: ${info.messageId}`)
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      console.error(`[email-service] Resend API error (${res.status}):`, JSON.stringify(data))
+      return false
+    }
+
+    console.log(`[email-service] Email sent to ${to}: id=${data.id}`)
     return true
   } catch (error) {
     console.error(`[email-service] Failed to send email to ${to}:`, error.message)
@@ -83,13 +63,9 @@ export async function sendEmail(to, subject, html) {
 
 /**
  * 发送邮箱验证邮件
- * @param {string} to - 收件人邮箱
- * @param {string} username - 用户名
- * @param {string} token - 验证令牌
- * @returns {Promise<boolean>} 是否发送成功
  */
 export async function sendVerificationEmail(to, username, token) {
-  const siteUrl = (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
+  const siteUrl = (process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
   const verificationLink = `${siteUrl}/verify-email?token=${token}&email=${encodeURIComponent(to)}`
 
   const subject = '验证您的 Haigoo 账户'
@@ -99,21 +75,16 @@ export async function sendVerificationEmail(to, username, token) {
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { text-align: center; margin-bottom: 30px; }
-    .logo { height: 40px; margin-bottom: 10px; }
-    .button { display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; transition: background-color 0.2s; }
-    .button:hover { background-color: #4338CA; }
+    .button { display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
     .footer { margin-top: 40px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
     .link { color: #4F46E5; word-break: break-all; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h2>验证您的邮箱地址</h2>
-    </div>
+    <h2>验证您的邮箱地址</h2>
     <p>亲爱的 ${username}，</p>
     <p>感谢您注册 Haigoo！请点击下方按钮验证您的邮箱地址：</p>
     <div style="text-align: center;">
@@ -134,13 +105,9 @@ export async function sendVerificationEmail(to, username, token) {
 
 /**
  * 发送密码重置邮件
- * @param {string} to - 收件人邮箱
- * @param {string} username - 用户名
- * @param {string} token - 重置令牌
- * @returns {Promise<boolean>} 是否发送成功
  */
 export async function sendPasswordResetEmail(to, username, token) {
-  const siteUrl = (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
+  const siteUrl = (process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
   const resetLink = `${siteUrl}/reset-password?token=${token}&email=${encodeURIComponent(to)}`
 
   const subject = '重置您的 Haigoo 密码'
@@ -150,20 +117,16 @@ export async function sendPasswordResetEmail(to, username, token) {
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { text-align: center; margin-bottom: 30px; }
-    .button { display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; transition: background-color 0.2s; }
-    .button:hover { background-color: #4338CA; }
+    .button { display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
     .footer { margin-top: 40px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
     .link { color: #4F46E5; word-break: break-all; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h2>重置密码</h2>
-    </div>
+    <h2>重置密码</h2>
     <p>亲爱的 ${username}，</p>
     <p>我们收到了您重置密码的请求。如果您没有发起此请求，请忽略此邮件。</p>
     <p>请点击下方按钮重置您的密码：</p>
@@ -185,9 +148,6 @@ export async function sendPasswordResetEmail(to, username, token) {
 
 /**
  * 发送订阅欢迎邮件
- * @param {string} to - 收件人邮箱
- * @param {string} topic - 订阅主题
- * @returns {Promise<boolean>} 是否发送成功
  */
 export async function sendSubscriptionWelcomeEmail(to, topic) {
   const label = getTopicLabel(topic)
@@ -207,9 +167,7 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>订阅成功！</h1>
-    </div>
+    <div class="header"><h1>订阅成功！</h1></div>
     <div class="content">
       <p>Hi,</p>
       <p>恭喜您成功订阅 Haigoo 的岗位推送服务！</p>
@@ -219,39 +177,36 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
     </div>
     <div class="footer">
       <p>&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
-      <p>Go Higher with Haigoo</p>
     </div>
   </div>
 </body>
 </html>
   `.trim()
-
   return sendEmail(to, subject, html)
 }
 
 /**
  * 发送每日岗位推荐邮件
- * @param {string} to - 收件人
- * @param {Array} jobs - 岗位列表
- * @param {string} topic - 主题
  */
 export async function sendDailyDigestEmail(to, jobs, topic) {
   if (!jobs || jobs.length === 0) return false
 
   const label = getTopicLabel(topic)
+  const siteUrl = process.env.SITE_URL || 'https://haigooremote.com'
+
   const jobsHtml = jobs.map(job => `
     <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
       <h3 style="margin: 0 0 10px; font-size: 18px;">
-        <a href="${process.env.SITE_URL || 'http://localhost:3000'}/job/${job.id}" style="text-decoration: none; color: #1a1a1a; font-weight: 700;">${job.title}</a>
+        <a href="${siteUrl}/job/${job.id}" style="text-decoration: none; color: #1a1a1a; font-weight: 700;">${job.title}</a>
       </h3>
       <div style="margin-bottom: 12px; font-weight: 600; color: #4F46E5; font-size: 15px;">${job.company}</div>
-      <div style="margin-bottom: 12px; color: #666; font-size: 14px; display: flex; align-items: center; gap: 10px;">
-        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px;">📍 ${job.location || 'Remote'}</span>
+      <div style="margin-bottom: 12px; color: #666; font-size: 14px;">
+        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px; margin-right: 8px;">📍 ${job.location || 'Remote'}</span>
         <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px;">💰 ${job.salary || '薪资面议'}</span>
       </div>
       <p style="margin: 0; color: #555; font-size: 14px; line-height: 1.6;">${(job.description || '').substring(0, 160)}...</p>
       <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0;">
-         <a href="${process.env.SITE_URL || 'http://localhost:3000'}/job/${job.id}" style="text-decoration: none; color: #4F46E5; font-size: 14px; font-weight: 600;">查看详情 →</a>
+        <a href="${siteUrl}/job/${job.id}" style="text-decoration: none; color: #4F46E5; font-size: 14px; font-weight: 600;">查看详情 →</a>
       </div>
     </div>
   `).join('')
@@ -263,40 +218,31 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f6f8fc; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f6f8fc; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .header { background: linear-gradient(135deg, #818cf8 0%, #4F46E5 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 16px 16px 0 0; }
-    .logo { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; display: block; text-decoration: none; color: white; }
-    .subtitle { font-size: 16px; opacity: 0.9; font-weight: 500; }
-    .content { background: #ffffff; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .content { background: #ffffff; padding: 40px 30px; border-radius: 0 0 16px 16px; }
     .footer { text-align: center; color: #9ca3af; font-size: 13px; margin-top: 30px; padding-bottom: 20px; }
-    .btn-primary { display: inline-block; background: #4F46E5; color: white; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; transition: all 0.2s; margin-top: 20px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
-    .greeting { font-size: 18px; color: #1f2937; margin-bottom: 24px; }
-    .intro { color: #4b5563; margin-bottom: 30px; }
+    .btn-primary { display: inline-block; background: #4F46E5; color: white; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; margin-top: 20px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">Haigoo</div>
-      <div class="subtitle">连接全球优质远程工作机会</div>
+      <div style="font-size: 28px; font-weight: 800; margin-bottom: 8px;">Haigoo</div>
+      <div style="font-size: 15px; opacity: 0.9;">连接全球优质远程工作机会</div>
     </div>
     <div class="content">
-      <div class="greeting">Hi,</div>
-      <div class="intro">这是为您精选的 <strong>${label}</strong> 相关远程工作机会：</div>
-      
+      <div style="font-size: 18px; color: #1f2937; margin-bottom: 24px;">Hi,</div>
+      <div style="color: #4b5563; margin-bottom: 30px;">这是为您精选的 <strong>${label}</strong> 相关远程工作机会：</div>
       ${jobsHtml}
-      
       <center>
-        <a href="${process.env.SITE_URL || 'http://localhost:3000'}/jobs" class="btn-primary">查看更多机会</a>
+        <a href="${siteUrl}/jobs" class="btn-primary">查看更多机会</a>
       </center>
     </div>
     <div class="footer">
-      <p style="margin-bottom: 10px;">&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
-      <p style="margin-bottom: 20px;">Go Higher with Haigoo</p>
-      <p>
-        <a href="${process.env.SITE_URL || 'http://localhost:3000'}/unsubscribe?email=${encodeURIComponent(to)}" style="color: #9ca3af; text-decoration: underline;">管理订阅设置</a>
-      </p>
+      <p>&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
+      <p><a href="${siteUrl}/unsubscribe?email=${encodeURIComponent(to)}" style="color: #9ca3af;">管理订阅设置</a></p>
     </div>
   </div>
 </body>
@@ -310,54 +256,47 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
  * 检查邮件服务是否已配置
  */
 export function isEmailServiceConfigured() {
-  return SMTP_CONFIGURED
+  return RESEND_CONFIGURED
 }
 
 /**
- * 测试 SMTP 连接并发送测试邮件
- * @param {string} to - 测试收件人邮箱
+ * 测试 Resend 连接并发送测试邮件
  */
 export async function sendTestEmail(to) {
-  console.log('[email-service] ── SMTP Test Start ──')
-  console.log(`[email-service] SMTP_HOST: ${SMTP_HOST}`)
-  console.log(`[email-service] SMTP_PORT: ${SMTP_PORT}`)
-  console.log(`[email-service] SMTP_USER: ${SMTP_USER}`)
-  console.log(`[email-service] SMTP_PASS: ${SMTP_PASS ? '(set, length=' + SMTP_PASS.length + ')' : '(NOT SET)'}`)
+  console.log('[email-service] ── Resend Test Start ──')
+  console.log(`[email-service] RESEND_API_KEY: ${RESEND_API_KEY ? '(set, length=' + RESEND_API_KEY.length + ')' : '(NOT SET)'}`)
   console.log(`[email-service] FROM_EMAIL: ${FROM_EMAIL}`)
-  console.log(`[email-service] SMTP_CONFIGURED: ${SMTP_CONFIGURED}`)
+  console.log(`[email-service] RESEND_CONFIGURED: ${RESEND_CONFIGURED}`)
 
-  if (!SMTP_CONFIGURED) {
-    const msg = 'SMTP not configured: SMTP_USER or SMTP_PASS is missing'
-    console.error('[email-service]', msg)
-    return { success: false, error: msg }
+  if (!RESEND_CONFIGURED) {
+    return { success: false, error: 'RESEND_API_KEY not set' }
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_PORT === 465,
-      auth: { user: SMTP_USER, pass: SMTP_PASS },
-      logger: true,   // output full SMTP session log
-      debug: true
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: `${FROM_NAME} <${FROM_EMAIL}>`,
+        to: [to],
+        subject: '[Haigoo] SMTP 测试邮件',
+        html: `<p>如果您收到这封邮件，说明 Resend 配置正确！<br>发件账号：${FROM_EMAIL}<br>时间：${new Date().toISOString()}</p>`
+      })
     })
 
-    // Verify connection first
-    await transporter.verify()
-    console.log('[email-service] SMTP connection verified successfully')
+    const data = await res.json()
+    console.log('[email-service] Resend response:', JSON.stringify(data))
 
-    const info = await transporter.sendMail({
-      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
-      to,
-      subject: '[Haigoo] SMTP 测试邮件',
-      html: `<p>如果您收到这封邮件，说明 SMTP 配置正确！<br>发件账号：${FROM_EMAIL}<br>时间：${new Date().toISOString()}</p>`
-    })
+    if (!res.ok) {
+      return { success: false, error: data.message || JSON.stringify(data), status: res.status }
+    }
 
-    console.log('[email-service] Test email sent:', info.messageId)
-    return { success: true, messageId: info.messageId }
+    return { success: true, id: data.id }
   } catch (error) {
-    console.error('[email-service] SMTP test FAILED:', error.message)
-    console.error('[email-service] Full error:', JSON.stringify(error, null, 2))
-    return { success: false, error: error.message, code: error.code }
+    console.error('[email-service] Resend test FAILED:', error.message)
+    return { success: false, error: error.message }
   }
 }
