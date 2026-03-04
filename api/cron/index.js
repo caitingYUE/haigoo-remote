@@ -34,10 +34,6 @@ export default async function handler(req, res) {
         const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
         return await streamTranslateJobsHandler(req, res);
       }
-      case 'stream-enrich-companies': {
-        const { default: streamEnrichCompaniesHandler } = await import('../../lib/cron-handlers/stream-enrich-companies.js');
-        return await streamEnrichCompaniesHandler(req, res);
-      }
       case 'stream-crawl-trusted-jobs': {
         const { default: streamCrawlTrustedJobsHandler } = await import('../../lib/cron-handlers/stream-crawl-trusted-jobs.js');
         return await streamCrawlTrustedJobsHandler(req, res);
@@ -65,11 +61,9 @@ export default async function handler(req, res) {
 
       case 'daily-enrich': {
         const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
-        const { default: streamEnrichCompaniesHandler } = await import('../../lib/cron-handlers/stream-enrich-companies.js');
         // stream-crawl-trusted-jobs runs separately every 4 hours, no need to duplicate here
         return await runSequence(req, res, [
-          { name: 'stream-translate-jobs', handler: streamTranslateJobsHandler },
-          { name: 'stream-enrich-companies', handler: streamEnrichCompaniesHandler }
+          { name: 'stream-translate-jobs', handler: streamTranslateJobsHandler }
         ]);
       }
 
@@ -80,7 +74,6 @@ export default async function handler(req, res) {
             'stream-fetch-rss',
             'stream-process-rss',
             'stream-translate-jobs',
-            'stream-enrich-companies',
             'stream-crawl-trusted-jobs',
             'stream-verify-links',
             'daily-digest',

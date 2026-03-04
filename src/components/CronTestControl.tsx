@@ -32,7 +32,6 @@ const CronTestControl: React.FC = () => {
     { step: 'Process RSS', status: 'pending' },
     { step: 'Crawl Trusted Jobs', status: 'pending' },
     { step: 'Translate Jobs', status: 'pending' },
-    { step: 'Enrich Companies', status: 'pending' },
     { step: 'Daily Digest', status: 'pending' },
   ]);
 
@@ -86,7 +85,6 @@ const CronTestControl: React.FC = () => {
     { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss' },
     { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
     { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
-    { name: 'Enrich Companies', endpoint: '/api/cron/stream-enrich-companies' },
     { name: 'Daily Digest', endpoint: '/api/cron/daily-digest' },
   ];
 
@@ -104,7 +102,7 @@ const CronTestControl: React.FC = () => {
           return `任务完成: 共发送 ${data.stats.sent}，失败 ${data.stats.errors}`;
         }
         return `任务完成：翻译 ${data.stats?.translatedJobs || 0}，跳过 ${data.stats?.skippedJobs || 0}，失败 ${data.stats?.failedJobs || 0}`;
-      
+
       // 通用/共享消息类型
       case 'total':
         return `共 ${data.totalJobs} 个岗位，分 ${data.totalPages} 页处理`;
@@ -124,7 +122,7 @@ const CronTestControl: React.FC = () => {
         return `开始处理第 ${data.page} 页`;
       case 'processing_complete':
         return `处理完成：更新 ${data.updatedCount}，可信 ${data.trustedCount}，AI ${data.aiClassifiedCount}`;
-      
+
       // Translate Jobs 特有
       case 'page_translated':
         return `第 ${data.page} 页翻译完成：成功 ${data.successCount}，失败 ${data.failCount}`;
@@ -132,7 +130,7 @@ const CronTestControl: React.FC = () => {
         return `第 ${data.page} 页保存完成：${data.savedCount} 个记录`;
       case 'page_error':
         return `第 ${data.page} 页处理失败：${data.error}`;
-      
+
       // Fetch RSS 特有
       case 'fetch_start':
         return '开始抓取RSS源';
@@ -410,7 +408,7 @@ const CronTestControl: React.FC = () => {
     const streamMessages: Array<{ type: string, message: string, timestamp: string }> = [];
 
     try {
-      for (;;) {
+      for (; ;) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -490,9 +488,8 @@ const CronTestControl: React.FC = () => {
       const successMessage = stepName === 'Translate Jobs' ? '翻译任务完成' :
         stepName === 'Fetch RSS' ? 'RSS抓取任务完成' :
           stepName === 'Process RSS' ? 'RSS数据处理完成' :
-            stepName === 'Enrich Companies' ? '公司信息丰富化完成' :
-              stepName === 'Crawl Trusted Jobs' ? '可信公司爬取完成' :
-                '任务完成';
+            stepName === 'Crawl Trusted Jobs' ? '可信公司爬取完成' :
+              '任务完成';
 
       // 更新成功状态
       setResults(prev => prev.map((r, idx) =>
