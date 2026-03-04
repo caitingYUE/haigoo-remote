@@ -313,3 +313,51 @@ export function isEmailServiceConfigured() {
   return SMTP_CONFIGURED
 }
 
+/**
+ * 测试 SMTP 连接并发送测试邮件
+ * @param {string} to - 测试收件人邮箱
+ */
+export async function sendTestEmail(to) {
+  console.log('[email-service] ── SMTP Test Start ──')
+  console.log(`[email-service] SMTP_HOST: ${SMTP_HOST}`)
+  console.log(`[email-service] SMTP_PORT: ${SMTP_PORT}`)
+  console.log(`[email-service] SMTP_USER: ${SMTP_USER}`)
+  console.log(`[email-service] SMTP_PASS: ${SMTP_PASS ? '(set, length=' + SMTP_PASS.length + ')' : '(NOT SET)'}`)
+  console.log(`[email-service] FROM_EMAIL: ${FROM_EMAIL}`)
+  console.log(`[email-service] SMTP_CONFIGURED: ${SMTP_CONFIGURED}`)
+
+  if (!SMTP_CONFIGURED) {
+    const msg = 'SMTP not configured: SMTP_USER or SMTP_PASS is missing'
+    console.error('[email-service]', msg)
+    return { success: false, error: msg }
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+      logger: true,   // output full SMTP session log
+      debug: true
+    })
+
+    // Verify connection first
+    await transporter.verify()
+    console.log('[email-service] SMTP connection verified successfully')
+
+    const info = await transporter.sendMail({
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+      to,
+      subject: '[Haigoo] SMTP 测试邮件',
+      html: `<p>如果您收到这封邮件，说明 SMTP 配置正确！<br>发件账号：${FROM_EMAIL}<br>时间：${new Date().toISOString()}</p>`
+    })
+
+    console.log('[email-service] Test email sent:', info.messageId)
+    return { success: true, messageId: info.messageId }
+  } catch (error) {
+    console.error('[email-service] SMTP test FAILED:', error.message)
+    console.error('[email-service] Full error:', JSON.stringify(error, null, 2))
+    return { success: false, error: error.message, code: error.code }
+  }
+}

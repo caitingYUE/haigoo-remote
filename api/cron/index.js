@@ -50,6 +50,16 @@ export default async function handler(req, res) {
         const { sendDailyDigests } = await import('../../lib/cron-handlers/daily-digest.js');
         return await sendDailyDigests(res);
       }
+
+      case 'test-smtp': {
+        const { sendTestEmail } = await import('../../server-utils/email-service.js');
+        const to = req.query.to || req.body?.to;
+        if (!to) {
+          return res.status(400).json({ error: 'Missing "to" parameter. Usage: ?task=test-smtp&to=your@email.com' });
+        }
+        const result = await sendTestEmail(to);
+        return res.status(result.success ? 200 : 500).json(result);
+      }
       case 'daily-ingest': {
         const { default: streamFetchRssHandler } = await import('../../lib/cron-handlers/stream-fetch-rss.js');
         const { default: streamProcessRssHandler } = await import('../../lib/cron-handlers/stream-process-rss.js');
