@@ -1,7 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, Calendar, Eye, EyeOff, Search, X, Check } from 'lucide-react';
+import { Job } from '../../types';
 import './AdminJobBundles.css';
+
+const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
+  'internship': '实习',
+  'entry': '初级',
+  'mid': '中级',
+  'senior': '高级',
+  'lead': '主导',
+  'manager': '经理',
+  'director': '总监',
+  'executive': '高管'
+};
 
 interface JobBundle {
   id: number;
@@ -316,9 +328,9 @@ const AdminJobBundles: React.FC = () => {
                         <div className="job-title">{job.title}</div>
                         <div className="job-company text-xs text-gray-500 font-medium flex items-center flex-wrap gap-2 mt-1">
                           {job.company}
-                          {job.level && (
+                          {job.experienceLevel && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                              {job.level}
+                              {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
                             </span>
                           )}
                           <span className="text-gray-400 font-normal">ID: {job.id}</span>

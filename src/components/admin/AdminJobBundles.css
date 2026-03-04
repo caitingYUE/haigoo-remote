@@ -1,9 +1,8 @@
-
 .job-bundle-editor {
   background: white;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .editor-header {
@@ -84,7 +83,8 @@
   overflow: hidden;
 }
 
-.search-panel, .selected-panel {
+.search-panel,
+.selected-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -177,7 +177,7 @@
 
 .selected-list {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
   padding: 12px;
 }
 
@@ -186,6 +186,7 @@
   align-items: center;
   padding: 8px;
   border-bottom: 1px solid #edf2f7;
+  min-width: max-content;
 }
 
 .item-order {
