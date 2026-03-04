@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, Calendar, Eye, EyeOff, Search, X, Check } from 'lucide-react';
+import { Plus, Edit3, Trash2, Calendar, Eye, EyeOff, Search, X, Check, Copy } from 'lucide-react';
 import { Job } from '../../types';
 import './AdminJobBundles.css';
 
@@ -40,6 +40,18 @@ const AdminJobBundles: React.FC = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [selectedJobs, setSelectedJobs] = useState<any[]>([]); // Full job objects for display
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyAll = () => {
+    if (selectedJobs.length === 0) return;
+    const text = selectedJobs
+      .map((job, i) => `${i + 1}. ${job.title} - ${job.company}`)
+      .join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
 
   useEffect(() => {
     fetchBundles();
@@ -349,9 +361,21 @@ const AdminJobBundles: React.FC = () => {
               </div>
 
               {/* Selected Panel */}
-              <div className="selected-panel flex flex-col max-h-[400px]">
-                <h4>已选职位 ({selectedJobs.length})</h4>
-                <div className="selected-list overflow-auto overflow-x-auto custom-scrollbar flex-1 border border-slate-200 rounded-lg bg-slate-50 p-2">
+              <div className="selected-panel">
+                <div className="selected-header">
+                  <h4>已选职位 ({selectedJobs.length})</h4>
+                  {selectedJobs.length > 0 && (
+                    <button
+                      className={`btn-copy-all${isCopied ? ' copied' : ''}`}
+                      onClick={handleCopyAll}
+                      title="复制所有职位信息"
+                    >
+                      {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      {isCopied ? '已复制' : '一键复制'}
+                    </button>
+                  )}
+                </div>
+                <div className="selected-list">
                   {selectedJobs.map((job, index) => (
                     <div key={job.id} className="selected-item">
                       <div className="item-order">{index + 1}</div>
