@@ -8,6 +8,7 @@ import JobCardNew from '../components/JobCardNew';
 import JobDetailModal from '../components/JobDetailModal';
 import { Job } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { trackingService } from '../services/tracking-service';
 
 interface JobBundle {
   id: number;
@@ -40,6 +41,17 @@ export default function JobBundleDetailPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => { if (id) fetchBundle(id); }, [id]);
+
+  // Fire page-view tracking after bundle loads
+  useEffect(() => {
+    if (bundle) {
+      trackingService.track('view_job_bundle', {
+        bundle_id: bundle.id,
+        bundle_title: bundle.title,
+        job_count: jobs.length,
+      });
+    }
+  }, [bundle?.id]);
 
   const fetchBundle = async (bundleId: string) => {
     try {
@@ -87,6 +99,12 @@ export default function JobBundleDetailPage() {
     setSelectedJob(job);
     setCurrentJobIndex(jobs.findIndex(j => j.id === job.id));
     setIsJobDetailOpen(true);
+    trackingService.track('click_job_bundle_job', {
+      bundle_id: bundle?.id,
+      job_id: job.id,
+      job_title: job.title,
+      company: (job as any).company,
+    });
   };
 
   const handleNavigateJob = (direction: 'prev' | 'next') => {
@@ -109,6 +127,10 @@ export default function JobBundleDetailPage() {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    trackingService.track('click_job_bundle_share', {
+      bundle_id: bundle?.id,
+      bundle_title: bundle?.title,
+    });
   };
 
   // ── Loading state ─────────────────────────────────────────────────────────

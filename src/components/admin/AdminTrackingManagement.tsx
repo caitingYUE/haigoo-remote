@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-  BarChart2, 
-  Map, 
-  MousePointer, 
-  Eye, 
-  FileText, 
+import {
+  BarChart2,
+  Map,
+  MousePointer,
+  Eye,
+  FileText,
   CheckCircle,
   AlertCircle,
   User,
@@ -32,7 +32,7 @@ const AdminTrackingManagement: React.FC = () => {
           </div>
           <span className="status-badge high">设计中</span>
         </div>
-        
+
         <div className="card-content">
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-8">
             <h3 className="font-bold text-slate-800 mb-4 flex items-center">
@@ -62,8 +62,8 @@ const AdminTrackingManagement: React.FC = () => {
           </div>
 
           {/* 1. 流量与浏览 (Traffic) */}
-          <TrackingSection 
-            title="1. 流量与浏览 (Traffic & Views)" 
+          <TrackingSection
+            title="1. 流量与浏览 (Traffic & Views)"
             icon={<Eye className="w-5 h-5" />}
             color="blue"
             events={[
@@ -71,29 +71,33 @@ const AdminTrackingManagement: React.FC = () => {
               { id: 'view_job_list', name: '浏览岗位列表', desc: '用户访问远程岗位列表页', params: 'page, filters, sort' },
               { id: 'view_job_detail', name: '浏览岗位详情', desc: '用户进入岗位详情页', params: 'job_id, job_title, company' },
               { id: 'view_company_detail', name: '浏览企业详情', desc: '用户查看企业信息页', params: 'company_id, company_name' },
+              { id: 'view_job_bundle', name: '浏览岗位合集', desc: '用户访问岗位合集详情页 (UV/PV)', params: 'bundle_id, bundle_title, job_count' },
               { id: 'view_profile', name: '访问个人中心', desc: '用户进入个人中心', params: 'tab (resume/jobs/settings)' },
               { id: 'view_membership', name: '访问会员页', desc: '用户查看会员订阅方案', params: 'source (entry_point)' }
             ]}
           />
 
           {/* 2. 用户互动 (Interaction) */}
-          <TrackingSection 
-            title="2. 岗位互动 (Interaction)" 
+          <TrackingSection
+            title="2. 岗位互动 (Interaction)"
             icon={<MousePointer className="w-5 h-5" />}
             color="indigo"
             events={[
               { id: 'click_save_job', name: '收藏岗位', desc: '点击收藏按钮', params: 'job_id' },
               { id: 'click_apply_init', name: '点击申请(唤起)', desc: '点击申请按钮，唤起拦截/内推弹窗', params: 'job_id, user_level' },
               { id: 'click_apply_external', name: '跳转外部申请', desc: '确认前往外部官网投递', params: 'job_id, external_url' },
+              { id: 'click_job_bundle_job', name: '点击合集内岗位', desc: '用户在岗位合集页点击某个岗位查看详情', params: 'bundle_id, job_id, job_title, company' },
+              { id: 'click_job_bundle_share', name: '分享岗位合集', desc: '用户点击分享按钮复制合集链接', params: 'bundle_id, bundle_title' },
               { id: 'search_jobs', name: '搜索岗位', desc: '执行岗位搜索', params: 'keyword' },
               { id: 'filter_jobs', name: '筛选岗位', desc: '使用筛选器', params: 'filter_type, value' },
               { id: 'share_job', name: '分享岗位', desc: '点击分享/复制链接', params: 'job_id, channel' }
             ]}
           />
 
+
           {/* 3. 简历与转化 (Conversion - Resume & Apply) */}
-          <TrackingSection 
-            title="3. 简历与转化 (Resume & Application)" 
+          <TrackingSection
+            title="3. 简历与转化 (Resume & Application)"
             icon={<FileText className="w-5 h-5" />}
             color="green"
             events={[
@@ -106,8 +110,8 @@ const AdminTrackingManagement: React.FC = () => {
           />
 
           {/* 4. 账户与会员 (Account & Revenue) */}
-          <TrackingSection 
-            title="4. 账户与会员 (Account & Revenue)" 
+          <TrackingSection
+            title="4. 账户与会员 (Account & Revenue)"
             icon={<User className="w-5 h-5" />}
             color="purple"
             events={[

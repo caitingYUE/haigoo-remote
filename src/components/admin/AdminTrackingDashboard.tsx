@@ -177,12 +177,13 @@ export default function AdminTrackingDashboard() {
                             const prev = data.funnel[index - 1];
                             const conversion = prev && prev.uv > 0 ? (step.uv / prev.uv) * 100 : 100;
 
-                            const labels = {
+                            const labels: Record<string, string> = {
                                 'view_landing': '浏览访问',
                                 'signup_success': '激活/注册',
                                 'view_job_detail': '浏览岗位',
                                 'click_apply_init': '简历/申请',
-                                'submit_membership_application': '会员订阅'
+                                'submit_membership_application': '会员订阅',
+                                'view_job_bundle': '岗位合集',
                             };
 
                             return (
