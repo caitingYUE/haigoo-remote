@@ -914,7 +914,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     {/* Glass sheen effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
 
-                    <div className={`grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 relative z-10 transition-all duration-700 ease-in-out origin-top ${isWizardCollapsed ? 'max-h-[600px] min-h-[600px] overflow-hidden' : 'max-h-[5000px] opacity-100 min-h-[600px]'
+                    <div className={`grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 relative z-10 transition-all duration-700 ease-in-out origin-top items-start ${isWizardCollapsed ? 'max-h-[600px] overflow-hidden' : 'max-h-[5000px] opacity-100'
                         }`}>
 
                         {/* ── Left: Wizard ── */}
