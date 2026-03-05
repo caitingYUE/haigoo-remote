@@ -43,6 +43,7 @@ interface JobCardNewProps {
    className?: string;
    variant?: 'grid' | 'list';
    isActive?: boolean;
+   applicationStatusNode?: React.ReactNode;
 }
 
 // Simple hash function to generate a stable pastel color from string
@@ -73,7 +74,7 @@ const getDarkerColor = (str: string) => {
    return `hsl(${h}, 70%, 30%)`;
 };
 
-export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false }: JobCardNewProps) {
+export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, applicationStatusNode }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
    const isTranslated = !!job.translations?.title;
@@ -339,9 +340,16 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      )}
                   </div>
 
-                  {/* Salary (Desktop - Restored to Top Right) */}
-                  <div className={`hidden md:block text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
-                     {formatSalary(job.salary)}
+                  {/* Salary & Application Status (Desktop - Restored to Top Right) */}
+                  <div className="hidden md:flex flex-col items-end gap-1.5">
+                     <div className={`text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                        {formatSalary(job.salary)}
+                     </div>
+                     {applicationStatusNode && (
+                        <div onClick={e => e.stopPropagation()}>
+                           {applicationStatusNode}
+                        </div>
+                     )}
                   </div>
                </div>
 
@@ -379,11 +387,15 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
                   </div>
 
-                  {(job as any).savedAt && (
+                  {(job as any).appliedAt ? (
+                     <div className="flex items-center gap-1.5 ml-2">
+                        <span className="text-slate-400 text-xs">申请于: {new Date((job as any).appliedAt).toLocaleDateString()}</span>
+                     </div>
+                  ) : (job as any).savedAt ? (
                      <div className="flex items-center gap-1.5 ml-2">
                         <span className="text-slate-400 text-xs">收藏于: {new Date((job as any).savedAt).toLocaleDateString()}</span>
                      </div>
-                  )}
+                  ) : null}
                </div>
 
                {/* Row 4: Tags & System Recommended */}
@@ -408,9 +420,16 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         </div>
                      )}
 
-                     {/* Salary (Mobile Only) */}
-                     <div className={`md:hidden text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
-                        {formatSalary(job.salary)}
+                     {/* Salary & Status (Mobile Only) */}
+                     <div className="md:hidden flex items-center gap-3">
+                        <div className={`text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                           {formatSalary(job.salary)}
+                        </div>
+                        {applicationStatusNode && (
+                           <div onClick={e => e.stopPropagation()}>
+                              {applicationStatusNode}
+                           </div>
+                        )}
                      </div>
 
                      {/* Delete Button */}
