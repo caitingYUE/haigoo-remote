@@ -168,9 +168,9 @@ export default function CompanyDetailPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-orange-50/20">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 shadow-sm">
+            <div className="bg-white border-b border-slate-200 shadow-sm pt-20 lg:pt-24">
                 {/* Back Button Section */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
                     <button
                         onClick={() => navigate(-1)}
                         className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
