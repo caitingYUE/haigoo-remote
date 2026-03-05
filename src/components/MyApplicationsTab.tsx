@@ -152,12 +152,6 @@ export default function MyApplicationsTab({ onViewJob }: { onViewJob?: (job: Job
         {applications.map((app) => {
           const statusNode = (
             <div className="flex items-center gap-2">
-              {app.applicationSource === 'referral' && (
-                <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold border border-purple-100 uppercase tracking-wider">内推</span>
-              )}
-              {(app.applicationSource === 'official' || app.applicationSource === 'trusted_platform') && (
-                <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-100 uppercase tracking-wider">自投</span>
-              )}
               <div className="relative">
                 <select
                   value={app.status}

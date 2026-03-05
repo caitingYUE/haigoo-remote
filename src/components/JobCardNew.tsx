@@ -340,16 +340,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      )}
                   </div>
 
-                  {/* Salary & Application Status (Desktop - Restored to Top Right) */}
-                  <div className="hidden md:flex flex-col items-end gap-1.5">
-                     <div className={`text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
-                        {formatSalary(job.salary)}
-                     </div>
-                     {applicationStatusNode && (
-                        <div onClick={e => e.stopPropagation()}>
-                           {applicationStatusNode}
-                        </div>
-                     )}
+                  {/* Salary (Desktop - Restored to Top Right) */}
+                  <div className={`hidden md:block text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                     {formatSalary(job.salary)}
                   </div>
                </div>
 
@@ -420,17 +413,17 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         </div>
                      )}
 
-                     {/* Salary & Status (Mobile Only) */}
-                     <div className="md:hidden flex items-center gap-3">
-                        <div className={`text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
-                           {formatSalary(job.salary)}
-                        </div>
-                        {applicationStatusNode && (
-                           <div onClick={e => e.stopPropagation()}>
-                              {applicationStatusNode}
-                           </div>
-                        )}
+                     {/* Salary (Mobile Only) */}
+                     <div className={`md:hidden text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                        {formatSalary(job.salary)}
                      </div>
+
+                     {/* Status Dropdown (Right side, before delete) */}
+                     {applicationStatusNode && (
+                        <div onClick={e => e.stopPropagation()} className="ml-1 z-10">
+                           {applicationStatusNode}
+                        </div>
+                     )}
 
                      {/* Delete Button */}
                      {onDelete && (
