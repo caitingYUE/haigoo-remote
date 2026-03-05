@@ -48,9 +48,9 @@ export default function CompanyDetailPage() {
             // 1. Fetch trusted company info first to get ID
             // Use 'name' parameter for precise search if available in backend
             const companiesResponse = await trustedCompaniesService.getAllCompanies({ name: decodedCompanyName });
-            
-            const companies = Array.isArray(companiesResponse) 
-                ? companiesResponse 
+
+            const companies = Array.isArray(companiesResponse)
+                ? companiesResponse
                 : ((companiesResponse as any)?.companies || []);
 
             const norm = decodedCompanyName.trim().toLowerCase()
@@ -72,14 +72,14 @@ export default function CompanyDetailPage() {
                         console.error('Failed to fetch full company details:', e);
                     }
                 }
-                
+
                 setCompanyInfo({ ...fullTrusted, isTrusted: true })
                 companyId = fullTrusted.id;
             }
 
             // 2. Fetch jobs using company ID if available (much faster), otherwise fallback to name
-            const jobsQuery = companyId 
-                ? { companyId, isApproved: true, skipAggregations: true } 
+            const jobsQuery = companyId
+                ? { companyId, isApproved: true, skipAggregations: true }
                 : { company: decodedCompanyName, isApproved: true, skipAggregations: true };
 
             const jobsResponse = await processedJobsService.getProcessedJobs(1, 100, jobsQuery);
@@ -169,7 +169,7 @@ export default function CompanyDetailPage() {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-orange-50/20">
             {/* Header */}
             <div className="bg-white border-b border-slate-200 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
                     <button
                         onClick={() => navigate(-1)}
                         className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4 transition-colors"
@@ -299,11 +299,10 @@ export default function CompanyDetailPage() {
                                                 {companyInfo.address && (
                                                     <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors relative h-full">
                                                         <div
-                                                            className={`w-10 h-10 rounded-lg bg-indigo-50 transition-colors flex items-center justify-center flex-shrink-0 ${
-                                                                companyInfo.address.includes('远程') || companyInfo.address.toLowerCase().includes('remote')
+                                                            className={`w-10 h-10 rounded-lg bg-indigo-50 transition-colors flex items-center justify-center flex-shrink-0 ${companyInfo.address.includes('远程') || companyInfo.address.toLowerCase().includes('remote')
                                                                     ? ''
                                                                     : 'cursor-help hover:bg-indigo-100'
-                                                            }`}
+                                                                }`}
                                                             onMouseEnter={() => {
                                                                 if (!companyInfo.address!.includes('远程') && !companyInfo.address!.toLowerCase().includes('remote')) {
                                                                     setShowLocationTooltip(true)
@@ -376,7 +375,7 @@ export default function CompanyDetailPage() {
 
                                                 {/* Hiring Email - Row 2 - Flexible Width */}
                                                 {companyInfo.hiringEmail && (
-                                                    <div 
+                                                    <div
                                                         onClick={() => {
                                                             navigator.clipboard.writeText(companyInfo.hiringEmail || '');
                                                             // Optional: You could add a toast notification here if available
@@ -393,14 +392,14 @@ export default function CompanyDetailPage() {
                                                                 {companyInfo.hiringEmail}
                                                             </div>
                                                             <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                                                                {companyInfo.emailType === '招聘邮箱' ? '招聘邮箱' : 
-                                                                 companyInfo.emailType === '通用邮箱' ? '通用邮箱' : 
-                                                                 companyInfo.emailType === '员工邮箱' ? '员工邮箱' : 
-                                                                 companyInfo.emailType === '高管邮箱' ? '高管邮箱' : 
-                                                                 // Fallback for legacy long forms
-                                                                 companyInfo.emailType === '招聘专用邮箱' ? '招聘邮箱' : 
-                                                                 companyInfo.emailType === '通用支持邮箱' ? '通用邮箱' : 
-                                                                 (companyInfo.emailType || '招聘邮箱')}
+                                                                {companyInfo.emailType === '招聘邮箱' ? '招聘邮箱' :
+                                                                    companyInfo.emailType === '通用邮箱' ? '通用邮箱' :
+                                                                        companyInfo.emailType === '员工邮箱' ? '员工邮箱' :
+                                                                            companyInfo.emailType === '高管邮箱' ? '高管邮箱' :
+                                                                                // Fallback for legacy long forms
+                                                                                companyInfo.emailType === '招聘专用邮箱' ? '招聘邮箱' :
+                                                                                    companyInfo.emailType === '通用支持邮箱' ? '通用邮箱' :
+                                                                                        (companyInfo.emailType || '招聘邮箱')}
                                                             </div>
                                                         </div>
                                                         {/* Hover Hint */}

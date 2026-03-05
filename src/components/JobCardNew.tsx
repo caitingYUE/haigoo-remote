@@ -272,6 +272,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-start
                ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10' : 'border-slate-100 hover:border-indigo-200'}
                ${isFeatured ? 'bg-gradient-to-r from-white via-indigo-50/20 to-white border-indigo-100 ring-1 ring-indigo-500/10' : ''}
+               ${(job.status === '已失效' || job.status === '已结束') ? 'opacity-65 grayscale hover:grayscale-0' : ''}
                ${className}
             `}
          >
@@ -329,6 +330,13 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                            {job.category}
                         </span>
                      )}
+
+                     {/* Deactivated Badge */}
+                     {(job.status === '已失效' || job.status === '已结束') && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                           已下架
+                        </span>
+                     )}
                   </div>
 
                   {/* Salary (Desktop - Restored to Top Right) */}
@@ -370,6 +378,12 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      <Clock className="w-4 h-4 text-slate-400" />
                      <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
                   </div>
+
+                  {(job as any).savedAt && (
+                     <div className="flex items-center gap-1.5 ml-2">
+                        <span className="text-slate-400 text-xs">收藏于: {new Date((job as any).savedAt).toLocaleDateString()}</span>
+                     </div>
+                  )}
                </div>
 
                {/* Row 4: Tags & System Recommended */}

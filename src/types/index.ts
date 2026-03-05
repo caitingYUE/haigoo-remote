@@ -101,6 +101,8 @@ export interface Job {
     english_req?: string
     contract_type?: string
   }
+  status?: string
+  savedAt?: string | null
 }
 
 export interface User {
