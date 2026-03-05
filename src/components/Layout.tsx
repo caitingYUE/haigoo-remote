@@ -20,7 +20,7 @@ export default function Layout({ children }: LayoutProps) {
   const isJobsPage = pathname === '/jobs' || pathname.startsWith('/jobs/')
   const isHome = pathname === '/'
   const isMembership = pathname === '/membership'
-  const isCompanies = pathname === '/trusted-companies' || pathname.startsWith('/trusted-companies/')
+  const isCompanies = pathname === '/trusted-companies' || pathname.startsWith('/trusted-companies/') || pathname.startsWith('/companies/')
   const isAbout = pathname === '/about'
   const isBundle = pathname.startsWith('/job-bundles/')
   const hideFooter = pathname.startsWith('/resume') || isJobsPage
