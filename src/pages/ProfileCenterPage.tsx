@@ -1764,7 +1764,7 @@ export default function ProfileCenterPage() {
               )}
               {tab === 'resume' && <ResumeTab />}
               {tab === 'favorites' && <FavoritesTab />}
-              {tab === 'applications' && <MyApplicationsTab />}
+              {tab === 'applications' && <MyApplicationsTab onViewJob={(job) => { setSelectedJob(job); setIsJobDetailOpen(true) }} />}
               {tab === 'feedback' && <FeedbackTab />}
               {tab === 'subscriptions' && <SubscriptionsTab />}
               {tab === 'membership' && <ResumeTab />}

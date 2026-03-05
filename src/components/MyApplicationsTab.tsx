@@ -2,12 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Briefcase, Clock, CheckCircle, XCircle, MoreHorizontal, AlertCircle, MessageSquare, FileText, Trash2, ChevronDown } from 'lucide-react';
+import JobCardNew from './JobCardNew';
+import { Job } from '../types';
 
 interface Application {
   id: number;
   jobId: string;
   jobTitle: string;
   company: string;
+  job: Job;
   interactionType: string;
   status: string;
   updatedAt: string;
@@ -17,7 +20,7 @@ interface Application {
   resumeName?: string;
 }
 
-export default function MyApplicationsTab() {
+export default function MyApplicationsTab({ onViewJob }: { onViewJob?: (job: Job) => void }) {
   const { token } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +38,7 @@ export default function MyApplicationsTab() {
       });
       const data = await res.json();
       if (data.success) {
-        setApplications(data.applications);
+        setApplications(data.applications || []);
       }
     } catch (error) {
       console.error('Failed to fetch applications', error);
@@ -55,7 +58,7 @@ export default function MyApplicationsTab() {
         },
         body: JSON.stringify({ id })
       });
-      
+
       if (res.ok) {
         setApplications(prev => prev.filter(app => app.id !== id));
       } else {
@@ -77,9 +80,9 @@ export default function MyApplicationsTab() {
         },
         body: JSON.stringify({ id, status: newStatus })
       });
-      
+
       if (res.ok) {
-        setApplications(prev => prev.map(app => 
+        setApplications(prev => prev.map(app =>
           app.id === id ? { ...app, status: newStatus, updatedAt: new Date().toISOString() } : app
         ));
       }
@@ -92,136 +95,149 @@ export default function MyApplicationsTab() {
 
   const getStatusColor = (status: string) => {
     const styles: Record<string, string> = {
-        'pending': 'bg-yellow-100 text-yellow-800',
-        'pending_apply': 'bg-blue-50 text-blue-600 border border-blue-100', // 待申请
-        'applied': 'bg-blue-100 text-blue-800',
-        'reviewed': 'bg-indigo-100 text-indigo-800',
-        'referred': 'bg-purple-100 text-purple-800',
-        'interviewing': 'bg-orange-100 text-orange-800',
-        'success': 'bg-green-100 text-green-800',
-        'rejected': 'bg-red-100 text-red-800',
-        'failed': 'bg-red-50 text-red-900',
-        'offer': 'bg-green-100 text-green-800'
+      'pending': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'pending_apply': 'bg-blue-50 text-blue-600 border-blue-200',
+      'applied': 'bg-blue-100 text-blue-800 border-blue-200',
+      'reviewed': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      'referred': 'bg-purple-100 text-purple-800 border-purple-200',
+      'interviewing': 'bg-orange-100 text-orange-800 border-orange-200',
+      'success': 'bg-green-100 text-green-800 border-green-200',
+      'rejected': 'bg-red-100 text-red-800 border-red-200',
+      'failed': 'bg-red-50 text-red-900 border-red-200',
+      'offer': 'bg-green-100 text-green-800 border-green-200'
     }
-    return styles[status] || 'bg-gray-100 text-gray-800'
+    return styles[status] || 'bg-gray-100 text-gray-800 border-gray-200'
   };
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-        'pending': '待处理',
-        'pending_apply': '待投递',
-        'applied': '已申请',
-        'reviewed': '简历已阅',
-        'referred': '已内推',
-        'interviewing': '面试中',
-        'success': '内推成功',
-        'rejected': '已拒绝',
-        'failed': '内推失败',
-        'offer': '已录用'
+      'pending': '待处理',
+      'pending_apply': '待投递',
+      'applied': '已申请',
+      'reviewed': '简历已阅',
+      'referred': '已内推',
+      'interviewing': '面试中',
+      'success': '内推成功',
+      'rejected': '已拒绝',
+      'failed': '内推失败',
+      'offer': '已录用'
     }
     return labels[status] || status
   };
 
   if (loading) {
-      return <div className="p-8 text-center text-gray-500">加载中...</div>
+    return <div className="p-8 text-center text-gray-500">加载中...</div>
   }
 
   if (applications.length === 0) {
-      return (
-          <div className="p-12 text-center bg-white rounded-xl border border-gray-100 shadow-sm">
-              <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">暂无申请记录</h3>
-              <p className="text-gray-500 mt-2">您还没有投递过任何岗位，快去看看吧！</p>
-          </div>
-      )
+    return (
+      <div className="p-12 text-center bg-white rounded-xl border border-gray-100 shadow-sm">
+        <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900">暂无申请记录</h3>
+        <p className="text-gray-500 mt-2">您还没有投递过任何岗位，快去看看吧！</p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Briefcase className="w-6 h-6" />
-            我的申请
-          </div>
-          <span className="text-xs font-normal text-gray-400">仅保留近1年的申请记录</span>
+        <div className="flex items-center gap-2">
+          <Briefcase className="w-6 h-6" />
+          我的申请
+        </div>
+        <span className="text-xs font-normal text-gray-400">仅保留近1年的申请记录</span>
       </h2>
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {applications.map((app) => (
-          <div key={app.id} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all p-4 group">
-            <div className="flex justify-between items-start gap-4">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-base text-gray-900 mb-1.5 truncate pr-2" title={app.jobTitle}>{app.jobTitle}</h3>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mb-2">
-                    <span className="font-medium text-gray-700 flex items-center gap-1">
-                        <Briefcase className="w-3 h-3" />
-                        {app.company}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(app.updatedAt).toLocaleDateString()}
-                    </span>
-                    
-                    {app.applicationSource === 'referral' && (
-                        <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded text-[10px] font-medium border border-purple-100">内推</span>
+          <div key={app.id} className="group relative flex flex-col h-full bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all overflow-hidden cursor-pointer" onClick={() => onViewJob && app.job?.id && onViewJob(app.job)}>
+
+            <div className="p-5 flex-1 relative">
+              {/* Status Badge */}
+              <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                  <select
+                    value={app.status}
+                    onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
+                    disabled={updatingId === app.id}
+                    className={`appearance-none pl-3 pr-7 py-1 rounded-full text-xs font-medium border cursor-pointer transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-70 ${getStatusColor(app.status)}`}
+                  >
+                    <option value="applied">已投递</option>
+                    <option value="interviewing">面试中</option>
+                    <option value="offer">已录用</option>
+                    <option value="rejected">已拒绝</option>
+                    {['referred', 'reviewed', 'pending', 'pending_apply', 'success', 'failed'].includes(app.status) && (
+                      <option value={app.status} disabled>{getStatusLabel(app.status)}</option>
                     )}
-                    {(app.applicationSource === 'official' || app.applicationSource === 'trusted_platform') && (
-                        <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-[10px] font-medium border border-blue-100">自投</span>
-                    )}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-50" />
                 </div>
-                
-                {(app.notes || app.resumeName) && (
-                    <div className="flex flex-col gap-1.5 mt-2.5">
-                        {app.resumeName && (
-                            <div className="flex items-center gap-1.5 text-xs text-indigo-600">
-                                <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-                                <a 
-                                    href={`/api/resumes/${app.resumeId}/download`} 
-                                    target="_blank" 
-                                    rel="noreferrer"
-                                    className="hover:underline truncate"
-                                >
-                                    {app.resumeName}
-                                </a>
-                            </div>
-                        )}
-                        {app.notes && (
-                            <div className="flex items-start gap-1.5 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100/50">
-                                <MessageSquare className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" />
-                                <p className="line-clamp-2">{app.notes}</p>
-                            </div>
-                        )}
-                    </div>
+                {app.applicationSource === 'referral' && (
+                  <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold border border-purple-100 uppercase tracking-wider">内推</span>
+                )}
+                {(app.applicationSource === 'official' || app.applicationSource === 'trusted_platform') && (
+                  <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-100 uppercase tracking-wider">自投</span>
                 )}
               </div>
 
-              <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                <div className="relative">
-                    <select 
-                        value={app.status}
-                        onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
-                        disabled={updatingId === app.id}
-                        className={`appearance-none pl-3 pr-7 py-1 rounded-full text-xs font-medium border-0 cursor-pointer transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-70 ${getStatusColor(app.status)}`}
-                    >
-                        <option value="applied">已投递</option>
-                        <option value="interviewing">面试中</option>
-                        <option value="offer">已录用</option>
-                        <option value="rejected">已拒绝</option>
-                        {['referred', 'reviewed', 'pending', 'pending_apply', 'success', 'failed'].includes(app.status) && (
-                            <option value={app.status} disabled>{getStatusLabel(app.status)}</option>
-                        )}
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-50" />
+              {app.job && app.job.id ? (
+                <div className="pr-24">
+                  <JobCardNew
+                    job={{ ...app.job, isFeatured: false }}
+                    variant="list"
+                    className="border-0 shadow-none hover:shadow-none p-0 bg-transparent rounded-none"
+                  />
                 </div>
-                
-                <button 
-                    onClick={() => handleDelete(app.id)}
-                    className="text-gray-300 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50"
-                    title="删除记录"
-                >
-                    <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+              ) : (
+                <div className="flex-1 min-w-0 pr-24">
+                  <h3 className="font-bold text-lg text-slate-900 mb-1.5 truncate pr-2" title={app.jobTitle}>{app.jobTitle}</h3>
+                  <div className="flex items-center gap-1.5 text-sm text-slate-600 font-medium">
+                    {app.company}
+                  </div>
+                  <div className="mt-3 text-xs text-slate-400 bg-slate-50 px-3 py-1.5 rounded-md inline-block">
+                    该职位已失效或信息不全
+                  </div>
+                </div>
+              )}
             </div>
+
+            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1 font-medium select-none" title="申请/更新时间">
+                  <Clock className="w-3.5 h-3.5" />
+                  {new Date(app.updatedAt).toLocaleDateString()} 更新
+                </span>
+                {app.resumeName && (
+                  <a
+                    href={`/api/resumes/${app.resumeId}/download`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 hover:underline font-medium max-w-[150px] truncate"
+                  >
+                    <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate">{app.resumeName}</span>
+                  </a>
+                )}
+              </div>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(app.id); }}
+                className="text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors p-1.5 rounded-lg flex items-center gap-1"
+                title="删除记录"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            {app.notes && (
+              <div className="px-5 pb-4 bg-slate-50">
+                <div className="flex items-start gap-2 text-xs text-slate-600 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                  <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
+                  <p className="line-clamp-2 leading-relaxed">{app.notes}</p>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

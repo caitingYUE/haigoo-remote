@@ -167,20 +167,20 @@ export default function CompanyDetailPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-orange-50/20">
-            {/* Back Button Section */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span className="text-sm">返回</span>
-                </button>
-            </div>
-
             {/* Header */}
             <div className="bg-white border-b border-slate-200 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                {/* Back Button Section */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span className="text-sm">返回</span>
+                    </button>
+                </div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
                     <div className="flex flex-col lg:flex-row gap-6 items-start">
                         {/* Left Column: Identity + Certified Info (Main) */}
                         <div className="flex-1 min-w-0">
