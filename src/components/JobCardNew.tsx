@@ -209,7 +209,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             </div>
 
             {/* Logo (Centered) */}
-            <div className="flex-shrink-0 w-16 h-16 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 overflow-hidden">
+            <div className="relative flex-shrink-0 w-16 h-16 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 overflow-hidden">
                {job.logo ? (
                   <img
                      src={job.logo}
@@ -218,13 +218,25 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
-                        if (target.parentElement) {
-                           target.parentElement.innerHTML = `<span class="text-2xl font-bold" style="color:${textColor}">${companyInitial}</span>`;
+                        if (target.parentElement && !target.dataset.errorHandled) {
+                           target.dataset.errorHandled = 'true';
+                           const initialSpan = document.createElement('span');
+                           initialSpan.className = "text-2xl font-bold";
+                           initialSpan.style.color = textColor;
+                           initialSpan.textContent = companyInitial;
+                           target.parentElement.appendChild(initialSpan);
                         }
                      }}
                   />
                ) : (
                   <span className="text-2xl font-bold" style={{ color: textColor }}>{companyInitial}</span>
+               )}
+
+               {/* Email Only Badge */}
+               {Boolean(job.hiringEmail && !(job.url || job.sourceUrl)) && (
+                  <div className="absolute top-0 left-0 w-full bg-indigo-600/95 backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-0.5 z-10">
+                     仅会员
+                  </div>
                )}
             </div>
          </div>
@@ -250,15 +262,26 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   onError={(e) => {
                      const target = e.target as HTMLImageElement;
                      target.style.display = 'none';
-                     if (target.parentElement) {
+                     if (target.parentElement && !target.dataset.errorHandled) {
                         target.parentElement.classList.add('bg-indigo-50');
-                        target.parentElement.innerHTML = `<span class="text-indigo-500 font-bold text-xl">${companyInitial}</span>`;
+                        target.dataset.errorHandled = 'true';
+                        const initialSpan = document.createElement('span');
+                        initialSpan.className = "text-indigo-500 font-bold text-xl";
+                        initialSpan.textContent = companyInitial;
+                        target.parentElement.appendChild(initialSpan);
                      }
                   }}
                />
             ) : (
                <div className="w-full h-full flex items-center justify-center bg-indigo-50 text-indigo-500 font-bold text-xl">
                   {companyInitial}
+               </div>
+            )}
+
+            {/* Email Only Badge */}
+            {Boolean(job.hiringEmail && !(job.url || job.sourceUrl)) && (
+               <div className="absolute top-0 left-0 w-full bg-indigo-600/95 backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-px tracking-wider z-10 scale-95 origin-top">
+                  仅会员
                </div>
             )}
          </div>

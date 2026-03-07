@@ -2,11 +2,12 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
     Sparkles, Upload, CheckCircle2, ArrowRight, ArrowLeft, Lock,
-    Target, TrendingUp, Eye, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, Send
+    Target, TrendingUp, Eye, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, Send, Wand2, CalendarDays, Rocket, BellRing, Settings2, Play, Search, Link2, MoveRight, ArrowUpRight
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
 import GeneratedPlanView from './GeneratedPlanView'
+import JobBundleBanner from './JobBundleBanner' // Added import
 import { trackingService } from '../services/tracking-service'
 
 interface HomeHeroProps {
@@ -163,7 +164,7 @@ function DemoPanel({ paused, isGenerating }: { paused: boolean, isGenerating?: b
                 <div className="absolute left-[17px] top-6 bottom-6 w-px bg-gradient-to-b from-indigo-200 via-slate-100 to-transparent pointer-events-none" />
 
                 {/* Step 1 - Resume */}
-                <div className={`relative pl-10 transition-all duration-500 ${activePhase === 'profile' ? 'opacity-60' : 'opacity-100'}`}>
+                <div className={`relative pl-10 transition-all duration-500 ${activePhase === 'profile' ? 'opacity-60' : 'opacity-100'} `}>
                     <div className={`absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm z-10 transition-all duration-300 ${activePhase === 'profile' ? 'bg-white border-slate-200 text-slate-400' :
                         'bg-indigo-600 border-indigo-600 text-white'
                         }`}>
@@ -241,11 +242,11 @@ function DemoPanel({ paused, isGenerating }: { paused: boolean, isGenerating?: b
                             <span className="text-[11px] text-slate-300 italic">待解锁...</span>
                         )}
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Demo Footer */}
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+            < div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between" >
                 <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
                     <div className="w-1.5 h-1.5 bg-indigo-300 rounded-full animate-pulse [animation-delay:0.2s]" />
@@ -255,8 +256,8 @@ function DemoPanel({ paused, isGenerating }: { paused: boolean, isGenerating?: b
                 <div className="text-[10px] text-slate-400">
                     预计完成 <span className="text-indigo-500 font-medium">3 天准备周期</span>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }
 
@@ -461,6 +462,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [resumeId, setResumeId] = useState<string | null>(null)
     const [demoPaused, setDemoPaused] = useState(false)
     const [isWizardCollapsed, setIsWizardCollapsed] = useState(false)
+    const [activeBundle, setActiveBundle] = useState<any>(null) // Added state for activeBundle
 
     // Debug controls
     const [debugMode, setDebugMode] = useState(false)
@@ -895,12 +897,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                         不只是找工作 — Haigoo 陪你走好从规划准备、投递面试到适应远程生活的每一步。
                     </p>
 
-                    {/* Trust Chips */}
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
                         {[
-                            '✓ 1k+ 国内可申的真实远程机会',
-                            '✓ 500+ 精选远程企业',
-                            '✓ 5k+ 远程同行人',
+                            '✓ 完全面向中国人设计的远程工作平台',
+                            '✓ 所有岗位均经过人工逐条审核',
+                            '✓ 没有信息差！全站岗位可免费直申',
                         ].map((chip) => (
                             <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/80 backdrop-blur-md border border-white/50 rounded-full shadow-sm">
                                 {chip}
@@ -909,8 +910,26 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     </div>
                 </div>
 
+                {/* ── Marquee Banner ── */}
+                {activeBundle && (
+                    <div className="w-full max-w-5xl mx-auto mt-6 mb-2 overflow-hidden rounded-2xl">
+                        <div className="flex w-[200%] animate-marquee">
+                            <div className="w-1/2 flex justify-around px-4">
+                                <JobBundleBanner bundle={activeBundle} />
+                                <JobBundleBanner bundle={activeBundle} />
+                                <JobBundleBanner bundle={activeBundle} />
+                            </div>
+                            <div className="w-1/2 flex justify-around px-4">
+                                <JobBundleBanner bundle={activeBundle} />
+                                <JobBundleBanner bundle={activeBundle} />
+                                <JobBundleBanner bundle={activeBundle} />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* ── Main Panel ── */}
-                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-2 relative">
+                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-4 relative">
                     {/* Glass sheen effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
 
@@ -918,7 +937,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                         }`}>
 
                         {/* ── Left: Wizard ── */}
-                        <div className="lg:col-span-5 bg-white/60 backdrop-blur-xl rounded-[24px] p-8 md:p-10 flex flex-col border border-white/40 shadow-sm relative overflow-hidden self-start lg:sticky lg:top-24 z-20">
+                        <div className={`lg:col-span-5 bg-white/60 backdrop-blur-xl rounded-[24px] p-8 md:p-10 flex flex-col border border-white/40 shadow-sm relative overflow-hidden self-start z-20 ${isWizardCollapsed ? '' : 'lg:sticky lg:top-24'}`}>
 
                             {/* Header */}
                             <div className="flex items-center gap-3 mb-5">

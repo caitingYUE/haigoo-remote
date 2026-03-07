@@ -896,24 +896,26 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             </main >
 
             {/* Footer */}
-            < footer className={`border-t border-slate-100 bg-white p-4 flex-shrink-0 grid ${companyInfo?.hiringEmail ? 'grid-cols-2' : 'grid-cols-1'} gap-3`} >
+            < footer className={`border-t border-slate-100 bg-white p-4 flex-shrink-0 grid ${(job.url || job.sourceUrl || !companyInfo?.hiringEmail) && companyInfo?.hiringEmail ? 'grid-cols-2' : 'grid-cols-1'} gap-3`} >
                 {/* Website Apply Button */}
-                <button
-                    onClick={() => {
-                        if (!isAuthenticated) {
-                            if (window.confirm('申请职位需要登录\n\n是否前往登录？')) {
-                                navigate('/login')
+                {(job.url || job.sourceUrl || !companyInfo?.hiringEmail) && (
+                    <button
+                        onClick={() => {
+                            if (!isAuthenticated) {
+                                if (window.confirm('申请职位需要登录\n\n是否前往登录？')) {
+                                    navigate('/login')
+                                }
+                                return
                             }
-                            return
-                        }
-                        executeApply('website')
-                    }}
-                    className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3 px-4 rounded-lg font-medium transition-all hover:border-indigo-300 hover:shadow-sm flex items-center justify-center gap-2 min-h-[52px] group relative overflow-hidden"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-50/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
-                    <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">官网直申</span>
-                </button>
+                            executeApply('website')
+                        }}
+                        className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3 px-4 rounded-lg font-medium transition-all hover:border-indigo-300 hover:shadow-sm flex items-center justify-center gap-2 min-h-[52px] group relative overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-50/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                        <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
+                        <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">官网直申</span>
+                    </button>
+                )}
 
                 {/* Email Apply Button - Only show if company has hiring email */}
                 {companyInfo?.hiringEmail && (

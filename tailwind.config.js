@@ -48,6 +48,15 @@ export default {
       boxShadow: {
         'primary': '0 4px 14px 0 rgba(49, 130, 206, 0.1)',
         'modal': '-10px 0 30px rgba(0, 0, 0, 0.1)'
+      },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-100%)' },
+        }
+      },
+      animation: {
+        marquee: 'marquee 25s linear infinite',
       }
     },
   },

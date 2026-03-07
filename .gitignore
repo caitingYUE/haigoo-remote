@@ -39,3 +39,4 @@ dist-ssr
 # Generated docs/assets that should not be in git
 archive/trusted-companies/
 archive/trusted-companies-export/
+.env*.local
