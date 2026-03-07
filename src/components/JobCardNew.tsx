@@ -1,7 +1,8 @@
 
 import React, { useMemo } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Sparkles, Zap } from 'lucide-react';
+import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Sparkles, Zap, Crown } from 'lucide-react';
 import { Job } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import { DateFormatter } from '../utils/date-formatter';
 import { getMatchLevelClassName, getMatchLevelLabel, resolveMatchLevel } from '../utils/match-display';
 // import { getJobSourceType } from '../utils/job-source-helper';
@@ -77,9 +78,33 @@ const getDarkerColor = (str: string) => {
 export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, applicationStatusNode }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
+   const { isMember } = useAuth();
    const isTranslated = !!job.translations?.title;
 
-   // Check if job is new (published within 3 days)
+   // Determine if this is a member-only job (Email only, no public URL)
+   // Logic: Has hiring email AND (no URL OR URL is mailto) AND no source URL
+   const isMemberOnlyJob = useMemo(() => {
+      // If explicitly trusted/referral, it's member only
+      if (job.isTrusted || job.canRefer) return true;
+      
+      // If hiring email exists
+      if (job.hiringEmail) {
+         // Check if there's a valid public URL
+         const hasPublicUrl = (job.url && !job.url.startsWith('mailto:')) || job.sourceUrl;
+         return !hasPublicUrl;
+      }
+      
+      return false;
+   }, [job]);
+
+   // Label text based on membership status
+   const memberLabel = isMember ? '会员专属' : '仅会员';
+   const MemberBadge = () => (
+      <div className={`absolute top-0 left-0 w-full ${isMember ? 'bg-amber-500/95' : 'bg-indigo-600/95'} backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-0.5 z-10 flex items-center justify-center gap-0.5`}>
+         {isMember && <Crown className="w-2 h-2" />}
+         {memberLabel}
+      </div>
+   );
    const isNew = useMemo(() => {
       if (!job.publishedAt) return false;
       try {
@@ -233,11 +258,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                )}
 
                {/* Email Only Badge */}
-               {Boolean(job.hiringEmail && !(job.url || job.sourceUrl)) && (
-                  <div className="absolute top-0 left-0 w-full bg-indigo-600/95 backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-0.5 z-10">
-                     仅会员
-                  </div>
-               )}
+               {isMemberOnlyJob && <MemberBadge />}
             </div>
          </div>
       );
@@ -279,9 +300,10 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             )}
 
             {/* Email Only Badge */}
-            {Boolean(job.hiringEmail && !(job.url || job.sourceUrl)) && (
-               <div className="absolute top-0 left-0 w-full bg-indigo-600/95 backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-px tracking-wider z-10 scale-95 origin-top">
-                  仅会员
+            {isMemberOnlyJob && (
+               <div className={`absolute top-0 left-0 w-full ${isMember ? 'bg-amber-500/95' : 'bg-indigo-600/95'} backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-px tracking-wider z-10 scale-95 origin-top flex items-center justify-center gap-0.5`}>
+                  {isMember && <Crown className="w-2 h-2" />}
+                  {memberLabel}
                </div>
             )}
          </div>
