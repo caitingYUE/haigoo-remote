@@ -84,13 +84,11 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    // Determine if this is a member-only job (Email only, no public URL)
    // Logic: Has hiring email AND (no URL OR URL is mailto) AND no source URL
    const isMemberOnlyJob = useMemo(() => {
-      // If explicitly trusted/referral, it's member only
-      if (job.isTrusted || job.canRefer) return true;
-      
       // If hiring email exists
       if (job.hiringEmail) {
          // Check if there's a valid public URL
          const hasPublicUrl = (job.url && !job.url.startsWith('mailto:')) || job.sourceUrl;
+         // If NO public URL, it's member only
          return !hasPublicUrl;
       }
       
