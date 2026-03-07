@@ -144,12 +144,7 @@ class ProcessedJobsService {
         location: job.location,
         region: job.region,
         type: this.mapJobType(job.jobType),
-        salary: job.salary ? {
-          min: 0,
-          max: 0,
-          currency: 'USD',
-          display: job.salary
-        } : undefined,
+        salary: job.salary,
         description: job.description,
         requirements: job.requirements || [],
         responsibilities: [],
@@ -259,12 +254,7 @@ class ProcessedJobsService {
         location: job.location,
         region: job.region,
         type: this.mapJobType(job.jobType),
-        salary: job.salary ? {
-          min: 0,
-          max: 0,
-          currency: 'USD',
-          display: job.salary
-        } : undefined,
+        salary: job.salary,
         description: job.description,
         requirements: job.requirements || [],
         responsibilities: [],
@@ -277,6 +267,7 @@ class ProcessedJobsService {
         status: job.status,
         isRemote: job.isRemote,
         category: job.category,
+        experienceLevel: job.experienceLevel,
         isTrusted: job.isTrusted,
         canRefer: job.canRefer,
         isFeatured: job.isFeatured,

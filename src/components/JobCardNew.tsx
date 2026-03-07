@@ -152,7 +152,12 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       }
 
       // Handle object type (Legacy format)
-      if (salary.min === 0 && salary.max === 0) return '薪资Open';
+      if (salary.min === 0 && salary.max === 0) {
+         // Check if there is a display string (from legacy service mapping)
+         const display = (salary as any).display;
+         if (display && typeof display === 'string' && display !== '0') return display;
+         return '薪资Open';
+      }
 
       const formatAmount = (amount: number) => {
          // Safety check: if amount is null/undefined/NaN, return '0' or empty string
