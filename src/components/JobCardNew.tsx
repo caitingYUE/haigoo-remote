@@ -98,7 +98,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    // Label text based on membership status
    const memberLabel = isMember ? '会员专属' : '仅会员';
    const MemberBadge = () => (
-      <div className={`absolute top-0 left-0 w-full ${isMember ? 'bg-amber-500/95' : 'bg-indigo-600/95'} backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-0.5 z-10 flex items-center justify-center gap-0.5`}>
+      <div className={`absolute top-0 left-0 w-full ${isMember ? 'bg-indigo-600/95' : 'bg-indigo-600/95'} backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-0.5 z-10 flex items-center justify-center gap-0.5`}>
          {isMember && <Crown className="w-2 h-2" />}
          {memberLabel}
       </div>
@@ -304,7 +304,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
             {/* Email Only Badge */}
             {isMemberOnlyJob && (
-               <div className={`absolute top-0 left-0 w-full ${isMember ? 'bg-amber-500/95' : 'bg-indigo-600/95'} backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-px tracking-wider z-10 scale-95 origin-top flex items-center justify-center gap-0.5`}>
+               <div className={`absolute top-0 left-0 w-full ${isMember ? 'bg-indigo-600/95' : 'bg-indigo-600/95'} backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-px tracking-wider z-10 scale-95 origin-top flex items-center justify-center gap-0.5`}>
                   {isMember && <Crown className="w-2 h-2" />}
                   {memberLabel}
                </div>

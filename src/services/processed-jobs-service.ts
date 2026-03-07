@@ -277,7 +277,8 @@ class ProcessedJobsService {
         sourceType: job.sourceType ? job.sourceType.toLowerCase() : undefined,
         translations: job.translations || undefined,
         isTranslated: job.isTranslated || false,
-        translatedAt: job.translatedAt || undefined
+        translatedAt: job.translatedAt || undefined,
+        hiringEmail: job.hiringEmail || job.trusted_hiring_email // Ensure hiring email is mapped
       }))
     } catch (error) {
       console.error('获取首页精选职位失败:', error)
