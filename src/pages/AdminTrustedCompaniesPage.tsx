@@ -52,6 +52,21 @@ export default function AdminTrustedCompaniesPage() {
     const [coverUrlInput, setCoverUrlInput] = useState('')
     const fileInputRef = useRef<HTMLInputElement | null>(null)
 
+    const normalizeEmailType = (emailType?: string) => {
+        const map: Record<string, string> = {
+            '招聘专用邮箱': '招聘邮箱',
+            '通用支持邮箱': '通用邮箱',
+            '内部员工邮箱': '员工邮箱',
+            '企业领导邮箱': '高管邮箱',
+            '招聘邮箱': '招聘邮箱',
+            '通用邮箱': '通用邮箱',
+            '员工邮箱': '员工邮箱',
+            '高管邮箱': '高管邮箱',
+            'HR邮箱': 'HR邮箱'
+        }
+        return map[String(emailType || '').trim()] || '通用邮箱'
+    }
+
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -129,7 +144,7 @@ export default function AdminTrustedCompaniesPage() {
         setEditingCompany(company)
         setFormData({
             ...company,
-            emailType: company.emailType || '通用邮箱'
+            emailType: normalizeEmailType(company.emailType)
         })
 
         // If coverImage is missing (due to list optimization), fetch full details
@@ -143,7 +158,7 @@ export default function AdminTrustedCompaniesPage() {
                     setEditingCompany(fullCompany);
                     setFormData({
                         ...fullCompany,
-                        emailType: fullCompany.emailType || '通用邮箱'
+                        emailType: normalizeEmailType(fullCompany.emailType)
                     });
                     setCoverUrlInput(fullCompany.coverImage || '');
                 }
@@ -201,6 +216,7 @@ export default function AdminTrustedCompaniesPage() {
                 const compressedCover = await compressImage(formData.coverImage, 1200, 0.8);
                 optimizedFormData.coverImage = compressedCover;
             }
+            optimizedFormData.emailType = normalizeEmailType(optimizedFormData.emailType)
 
             const result = await trustedCompaniesService.saveCompany(optimizedFormData)
 

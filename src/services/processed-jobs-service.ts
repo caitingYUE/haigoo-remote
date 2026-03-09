@@ -153,6 +153,7 @@ class ProcessedJobsService {
         publishedAt: job.publishedAt,
         expiresAt: undefined,
         source: job.source,
+        url: job.url,
         sourceUrl: job.url,
         tags: job.tags || [],
         status: job.status,
@@ -179,7 +180,9 @@ class ProcessedJobsService {
         companyIndustry: job.companyIndustry,
         companyTags: job.companyTags,
         companyWebsite: job.companyWebsite,
-        companyDescription: job.companyDescription
+        companyDescription: job.companyDescription,
+        hiringEmail: job.hiringEmail || job.trusted_hiring_email,
+        emailType: job.emailType || job.trusted_email_type
       }))
 
       return {

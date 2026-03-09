@@ -82,18 +82,14 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    const isTranslated = !!job.translations?.title;
 
    // Determine if this is a member-only job (Email only, no public URL)
-   // Logic: Has hiring email AND (no URL OR URL is mailto) AND no source URL
    const isMemberOnlyJob = useMemo(() => {
-      // If hiring email exists
-      if (job.hiringEmail) {
-         // Check if there's a valid public URL
-         const hasPublicUrl = (job.url && !job.url.startsWith('mailto:')) || job.sourceUrl;
-         // If NO public URL, it's member only
-         return !hasPublicUrl;
-      }
-      
-      return false;
-   }, [job]);
+      const url = String(job.url || '').trim();
+      const sourceUrl = String(job.sourceUrl || '').trim();
+      const isMailto = (value: string) => value.toLowerCase().startsWith('mailto:');
+      const hasPublicApplyLink = [url, sourceUrl].some(link => !!link && !isMailto(link));
+      const hasEmailApply = !!String(job.hiringEmail || '').trim() || isMailto(url) || isMailto(sourceUrl);
+      return hasEmailApply && !hasPublicApplyLink;
+   }, [job.hiringEmail, job.url, job.sourceUrl]);
 
    // Label text based on membership status
    const memberLabel = isMember ? '会员专属' : '仅会员';
