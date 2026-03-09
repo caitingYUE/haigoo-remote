@@ -46,9 +46,9 @@ export default async function handler(req, res) {
         const { default: rotateFeaturedHandler } = await import('../../lib/cron-handlers/rotate-featured.js');
         return await rotateFeaturedHandler(req, res);
       }
-      case 'daily-digest': {
-        const { sendDailyDigests } = await import('../../lib/cron-handlers/daily-digest.js');
-        return await sendDailyDigests(res);
+      case 'admin-daily-featured-email': {
+        const { default: adminDailyFeaturedEmailHandler } = await import('../../lib/cron-handlers/admin-daily-featured-email.js');
+        return await adminDailyFeaturedEmailHandler(req, res);
       }
 
       case 'test-smtp': {
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
             'stream-translate-jobs',
             'stream-crawl-trusted-jobs',
             'stream-verify-links',
-            'daily-digest',
+            'admin-daily-featured-email',
             'daily-ingest',
             'daily-enrich'
           ]
@@ -207,4 +207,3 @@ async function runSequence(req, mainRes, tasks) {
   console.log('[CronSequence] Sequence completed successfully.');
   mainRes.end();
 }
-

@@ -146,11 +146,11 @@ export const SubscriptionsTable: React.FC = () => {
   return (
     <div className="table-container">
       <div className="table-header">
-        <h3 className="table-title">邮件订阅列表 ({subscriptions.length})</h3>
+        <h3 className="table-title">历史邮件订阅列表 ({subscriptions.length})</h3>
         <div className="table-controls">
           <button className="btn-primary" onClick={() => setIsAddModalOpen(true)}>
             <span className="material-symbols-outlined">add</span>
-            添加订阅
+            手动录入
           </button>
         </div>
       </div>
@@ -291,7 +291,7 @@ export const SubscriptionsTable: React.FC = () => {
               background: 'white', padding: '24px', borderRadius: '8px', width: '400px', maxWidth: '90%'
           }}>
             <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h3>添加新订阅</h3>
+              <h3>手动录入历史订阅</h3>
               <button className="close-btn" onClick={() => setIsAddModalOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>×</button>
             </div>
             <form onSubmit={handleAddSubscription}>

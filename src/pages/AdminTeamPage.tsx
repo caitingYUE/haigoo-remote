@@ -980,7 +980,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'contact-mining', label: '联系挖掘', icon: Search },
     { id: 'tag-management', label: '标签管理', icon: Tag },
     { id: 'resumes', label: '简历数据', icon: FileText },
-    { id: 'subscriptions', label: '订阅管理', icon: Mail },
+    { id: 'subscriptions', label: '历史订阅', icon: Mail },
     { id: 'users', label: '用户管理', icon: Users },
     { id: 'job-applications', label: '岗位申请', icon: Briefcase },
     { id: 'member-applications', label: '会员申请', icon: FileText },

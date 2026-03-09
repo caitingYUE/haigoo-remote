@@ -32,7 +32,6 @@ const CronTestControl: React.FC = () => {
     { step: 'Process RSS', status: 'pending' },
     { step: 'Crawl Trusted Jobs', status: 'pending' },
     { step: 'Translate Jobs', status: 'pending' },
-    { step: 'Daily Digest', status: 'pending' },
   ]);
 
   // Dragging state
@@ -85,7 +84,6 @@ const CronTestControl: React.FC = () => {
     { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss' },
     { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
     { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
-    { name: 'Daily Digest', endpoint: '/api/cron/daily-digest' },
   ];
 
   // 根据流数据生成用户友好的消息
@@ -317,14 +315,6 @@ const CronTestControl: React.FC = () => {
           newJobsFound: data.stats?.newJobsFound,
           totalCompanies: data.stats?.totalCompanies
         };
-
-      // Daily Digest 进度信息
-      case 'Daily Digest:start':
-        return { status: 'starting' };
-      case 'Daily Digest:progress':
-        return { sent: data.sent, errors: data.errors };
-      case 'Daily Digest:complete':
-        return { sent: data.stats?.sent, errors: data.stats?.errors, status: 'complete' };
 
       // 向后兼容：如果没有提供stepName，使用原来的逻辑（可能会有冲突）
       default:

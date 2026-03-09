@@ -1,325 +1,71 @@
-import React, { useState, useRef, useEffect } from 'react'
+import { ArrowRight, MessageSquare, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
-import { Check, ChevronDown, Info, ArrowRight } from 'lucide-react'
 
 type Variant = 'card' | 'compact' | 'minimal'
 
 export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: { variant?: Variant, theme?: 'light' | 'dark' }) {
   const navigate = useNavigate()
-  const { isAuthenticated, token } = useAuth()
-  const [channel] = useState<'email'>('email')
-  const [identifier, setIdentifier] = useState('')
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([])
-  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const [hasSubscription, setHasSubscription] = useState(false)
-  const [checkingSubscription, setCheckingSubscription] = useState(false)
-
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      setCheckingSubscription(true)
-      fetch('/api/auth?action=get-subscriptions', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.subscriptions && data.subscriptions.length > 0) {
-          setHasSubscription(true)
-        }
-      })
-      .catch(err => console.error('Check subscription failed', err))
-      .finally(() => setCheckingSubscription(false))
-    }
-  }, [isAuthenticated, token])
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const toggleTopic = (value: string) => {
-    if (selectedTopics.includes(value)) {
-      setSelectedTopics(selectedTopics.filter(t => t !== value))
-    } else {
-      if (selectedTopics.length >= MAX_SUBSCRIPTION_TOPICS) return
-      setSelectedTopics([...selectedTopics, value])
-    }
-  }
-
-  const submit = async () => {
-    if (!identifier.trim()) return
-    if (selectedTopics.length === 0) {
-        alert('请至少选择一个岗位类型')
-        return
-    }
-    
-    setStatus('loading')
-    try {
-      const resp = await fetch('/api/auth?action=subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            channel: 'email', 
-            identifier, 
-            topic: selectedTopics.join(',')
-        })
-      })
-      const json = await resp.json()
-      setStatus(json.success ? 'done' : 'error')
-      if (json.success) {
-          setTimeout(() => {
-              setStatus('idle')
-              setHasSubscription(true)
-          }, 2000)
-      }
-    } catch {
-      setStatus('error')
-    }
-  }
-
-  const getButtonLabel = () => {
-    if (selectedTopics.length === 0) return '选择岗位类型'
-    return null
-  }
-
-  const removeTopic = (e: React.MouseEvent, topicValue: string) => {
-      e.stopPropagation();
-      toggleTopic(topicValue);
-  }
-
-  const renderTriggerContent = (isLight: boolean) => {
-    if (selectedTopics.length === 0) return (
-      <span className={isLight ? "text-slate-400" : "text-indigo-200"}>选择岗位类型</span>
-    )
-    return (
-      <div className="flex flex-wrap gap-1">
-        {selectedTopics.map(t => (
-          <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">
-            {t}
-          </span>
-        ))}
-      </div>
-    )
-  }
-
-  // Modified renderDropdown to be simpler since tags are now outside
-  const renderDropdown = (isDark: boolean, widthClass = "w-full") => {
-      return (
-        <div className={`absolute left-0 bottom-full mb-2 ${widthClass} max-h-60 overflow-y-auto rounded-xl shadow-xl border z-50
-            ${isDark 
-            ? 'bg-slate-800 border-slate-700' 
-            : 'bg-white border-slate-200'}
-        `}>
-            <div className="p-2 grid grid-cols-1 gap-1">
-                {SUBSCRIPTION_TOPICS.map(topic => {
-                    const isSelected = selectedTopics.includes(topic.value)
-                    return (
-                        <button
-                            key={topic.value}
-                            onClick={(e) => {
-                                e.stopPropagation(); // Prevent closing
-                                toggleTopic(topic.value)
-                            }}
-                            className={`flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors
-                                ${isDark
-                                ? (isSelected ? 'bg-indigo-900/50 text-indigo-300' : 'text-slate-300 hover:bg-slate-700')
-                                : (isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50')}
-                            `}
-                        >
-                            <span>{topic.label}</span>
-                            {isSelected && <Check className="w-4 h-4" />}
-                        </button>
-                    )
-                })}
-            </div>
-            <div className={`px-3 py-2 text-xs border-t ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-500'}`}>
-                最多可选 {MAX_SUBSCRIPTION_TOPICS} 个
-            </div>
-        </div>
-      )
-  }
-
-  const renderHint = () => {
-      return (
-        <div className="flex items-start gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-100">
-            <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-            <span>
-                提示：最多可选{MAX_SUBSCRIPTION_TOPICS}个。上传简历可大幅提升推荐精准度，否则仅基于所选类型泛匹配。
-            </span>
-        </div>
-      )
-  }
+  const isLight = theme === 'light'
 
   if (variant === 'compact') {
     return (
-      <div className="cta-inline relative" role="form" aria-label="订阅岗位推送">
-        <div className="relative" ref={dropdownRef}>
-            <button 
-                className="cta-select mr-2 p-2 rounded border border-slate-300 text-sm flex items-center justify-between min-w-[120px] bg-white"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-                <div className="truncate max-w-[150px] flex items-center">{renderTriggerContent(true)}</div>
-                <ChevronDown className="w-3 h-3 ml-1 opacity-50 flex-shrink-0" />
-            </button>
-            {isDropdownOpen && renderDropdown(false)}
+      <div className="cta-inline flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3">
+        <div>
+          <div className="text-sm font-semibold text-slate-900">加入企业微信群</div>
+          <div className="text-xs text-slate-500">每日精选岗位推送 + 同行交流</div>
         </div>
-        
-        <input className="cta-input" placeholder="输入邮箱即可订阅" value={identifier} onChange={e => setIdentifier(e.target.value)} />
-        <button onClick={submit} className="cta-btn">订阅</button>
-        {status === 'done' && <span className="text-green-600 text-xs ml-2">已订阅</span>}
-        {status === 'error' && <span className="text-red-600 text-xs ml-2">失败</span>}
+        <button onClick={() => navigate('/community')} className="cta-btn rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">
+          去加群
+        </button>
       </div>
     )
   }
 
   if (variant === 'minimal') {
-    const isLight = theme === 'light'
-
-    if (hasSubscription) {
-        return (
-            <div className="flex flex-col items-center justify-center gap-6 py-2">
-                <div className={`text-lg font-medium flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-white'}`}>
-                    <Check className="w-5 h-5 text-green-500" />
-                    您已订阅岗位提醒，可前往个人中心管理
-                </div>
-                <button
-                    onClick={() => navigate('/profile?tab=subscriptions')}
-                    className={`px-8 py-3 font-bold rounded-xl transition-colors shadow-lg flex items-center gap-2
-                        ${isLight
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
-                        : 'bg-white text-indigo-600 hover:bg-indigo-50 shadow-indigo-900/20'}`}
-                >
-                    管理我的订阅
-                    <ArrowRight className="w-4 h-4" />
-                </button>
-            </div>
-        )
-    }
-
     return (
       <div className="flex flex-col gap-3">
-        {/* Channel Selector Removed - Email Only */}
-        
-        <div className="flex flex-col sm:flex-row gap-3 relative z-20">
-           <div className="relative w-full sm:w-40" ref={dropdownRef}>
-              <button
-                className={`w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors backdrop-blur-sm flex items-center justify-between text-left
-                    ${isLight
-                    ? 'bg-white border-slate-200 text-slate-900 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100'
-                    : 'bg-white/10 border-white/20 text-white focus:bg-white/20'}
-                `}
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              >
-                <div className="truncate flex-1 flex items-center mr-2">{renderTriggerContent(isLight)}</div>
-                <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isLight ? 'text-slate-400' : 'text-white/60'}`} />
-              </button>
-              {isDropdownOpen && renderDropdown(!isLight, "w-full sm:w-64")}
-           </div>
-
-          <input
-            className={`flex-1 px-4 py-3 rounded-xl border focus:outline-none transition-colors backdrop-blur-sm
-                ${isLight
-                ? 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100'
-                : 'bg-white/10 border-white/20 text-white placeholder-indigo-200 focus:bg-white/20'}`}
-            placeholder="输入您的邮箱地址"
-            value={identifier}
-            onChange={e => setIdentifier(e.target.value)}
-          />
-          <button
-            onClick={submit}
-            disabled={status === 'loading' || status === 'done'}
-            className={`px-6 py-3 font-bold rounded-xl transition-all shadow-lg whitespace-nowrap flex items-center justify-center gap-2 min-w-[120px]
-                ${status === 'done' 
-                    ? (isLight ? 'bg-green-500 text-white shadow-green-200' : 'bg-green-500 text-white shadow-green-900/20')
-                    : (isLight
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
-                        : 'bg-white text-indigo-600 hover:bg-indigo-50 shadow-indigo-900/20')
-                }`}
-          >
-            {status === 'loading' && <span className="animate-spin">⏳</span>}
-            {status === 'done' ? (
-                <>
-                    <Check className="w-5 h-5" />
-                    <span>订阅成功</span>
-                </>
-            ) : (
-                '立即订阅'
-            )}
-          </button>
+        <div className={`rounded-2xl border px-4 py-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/20 bg-white/10 backdrop-blur-sm'}`}>
+          <div className={`flex items-start gap-3 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${isLight ? 'bg-emerald-50 text-emerald-600' : 'bg-white/15 text-white'}`}>
+              <Users className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-base font-semibold">加入企业微信群，获取每日精选岗位</div>
+              <div className={`mt-1 text-sm leading-6 ${isLight ? 'text-slate-500' : 'text-white/75'}`}>
+                邮件订阅已切换为企业微信群推送。群内会同步精选岗位，也可以和大家交流远程工作经验。
+              </div>
+            </div>
+          </div>
         </div>
-        {/* Hint Text */}
-        <div className={`text-xs text-center sm:text-left ${isLight ? 'text-slate-500' : 'text-white/70'} mt-1 flex items-center justify-center sm:justify-start gap-1`}>
-             <Info className="w-3 h-3" />
-             <span>最多选3个。上传简历可大幅提升推荐精准度。</span>
-        </div>
+        <button
+          onClick={() => navigate('/community')}
+          className={`${isLight ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-white text-indigo-700 hover:bg-indigo-50'} inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors`}
+        >
+          前往社群中心
+          <ArrowRight className="h-4 w-4" />
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="rounded-2xl border p-5 bg-white shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div className="font-semibold text-slate-900">订阅岗位提醒</div>
-      </div>
-      
-      {hasSubscription ? (
-        <div className="text-center py-4">
-            <div className="flex justify-center mb-2">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <Check className="w-5 h-5 text-green-600" />
-                </div>
-            </div>
-            <div className="text-slate-900 font-medium mb-1">您已订阅</div>
-            <p className="text-xs text-slate-500 mb-4">不错过任何好机会</p>
-            <button 
-                onClick={() => navigate('/profile?tab=subscriptions')} 
-                className="w-full py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors font-medium text-sm"
-            >
-                管理我的订阅
-            </button>
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+          <MessageSquare className="h-5 w-5" />
         </div>
-      ) : (
-        <>
-            <div className="space-y-3">
-                <div className="relative" ref={dropdownRef}>
-                    <button 
-                        className="w-full px-3 py-2 border rounded-lg text-sm flex items-center justify-between hover:border-indigo-500 transition-colors"
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    >
-                        <div className="flex-1 flex items-center mr-2">{renderTriggerContent(true)}</div>
-                        <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                    </button>
-                    {isDropdownOpen && renderDropdown(false)}
-                </div>
-
-                <div className="flex flex-col gap-2">
-                    <input 
-                        className="input w-full px-3 py-2 border rounded-lg text-sm" 
-                        placeholder="you@example.com" 
-                        value={identifier} 
-                        onChange={e => setIdentifier(e.target.value)} 
-                    />
-                </div>
-                
-                <button onClick={submit} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
-                    {status === 'loading' ? '提交中...' : '立即订阅'}
-                </button>
-            </div>
-
-            {renderHint()}
-            
-            {status === 'done' && <div className="mt-3 text-green-600 text-sm font-medium text-center">订阅成功！</div>}
-            {status === 'error' && <div className="mt-3 text-red-600 text-sm font-medium text-center">订阅失败，请重试</div>}
-        </>
-      )}
+        <div>
+          <div className="font-semibold text-slate-900">加入企业微信群</div>
+          <div className="text-sm text-slate-500">每日精选岗位推送，和远程求职同行实时交流。</div>
+        </div>
+      </div>
+      <button
+        onClick={() => navigate('/community')}
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+      >
+        前往社群中心
+        <ArrowRight className="h-4 w-4" />
+      </button>
     </div>
   )
 }

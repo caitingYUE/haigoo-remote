@@ -289,7 +289,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
               onClick={(e) => { e.preventDefault(); setActiveTab('subscriptions'); }}
             >
               <span className="material-symbols-outlined">mark_email_unread</span>
-              订阅管理
+              历史订阅
             </a>
             <a href="#" className="nav-item">
               <span className="material-symbols-outlined">storage</span>
@@ -372,7 +372,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
                 className={`tab-item ${activeTab === 'subscriptions' ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); setActiveTab('subscriptions'); }}
               >
-                邮件订阅
+                历史邮件订阅
               </a>
             </nav>
           </div>

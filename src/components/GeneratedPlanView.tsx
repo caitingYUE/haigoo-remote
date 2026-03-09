@@ -12,7 +12,7 @@ export default function GeneratedPlanView({
     isMember = false,
     deepMode = false,
     onModuleDataUpdate,
-    trackingSetupUrl = '/profile?tab=subscriptions',
+    trackingSetupUrl = '/community',
     onRefreshRecommendations,
     refreshingRecommendations = false,
     compactMode = false,

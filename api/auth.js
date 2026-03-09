@@ -20,7 +20,7 @@ import {
   isTokenExpired
 } from '../server-utils/auth-helpers.js'
 import { getUserByEmail, getUserById, saveUser, updateUser, deleteUserById } from '../server-utils/user-helper.js'
-import { sendVerificationEmail, sendSubscriptionWelcomeEmail, sendPasswordResetEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
+import { sendVerificationEmail, sendPasswordResetEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
 import neonHelper from '../server-utils/dal/neon-helper.js'
@@ -621,106 +621,12 @@ async function handleDeleteSubscription(req, res) {
 async function handleSubscribe(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
 
-  const { channel, identifier, topic, nickname, preferences } = req.body || {}
-  if (!channel || !identifier) {
-    return res.status(400).json({ success: false, error: '缺少必要字段' })
-  }
-
-  // 验证不同渠道的必填项
-  if (channel === 'email' && !topic && !preferences) {
-    return res.status(400).json({ success: false, error: '邮箱订阅需要选择岗位类型或提供偏好' })
-  }
-  if (channel === 'feishu' && !nickname) {
-    return res.status(400).json({ success: false, error: '飞书订阅需要提供昵称' })
-  }
-
-  try {
-    // 尝试查找用户以关联 user_id
-    let userId = null
-    if (channel === 'email') {
-      const user = await getUserByEmail(identifier)
-      if (user) userId = user.user_id
-    } else if (channel === 'feishu') {
-      // 尝试通过手机号查找用户 (手机号存储在 profile JSON 中)
-      const query = `SELECT user_id FROM users WHERE profile->>'phone' = $1 LIMIT 1`
-      const result = await neonHelper.query(query, [identifier])
-      if (result && result.length > 0) {
-        userId = result[0].user_id
-      }
-    }
-
-    // 检查订阅是否已存在
-    const existingSubscription = await neonHelper.select('subscriptions', {
-      channel,
-      identifier
-    })
-
-    if (existingSubscription && existingSubscription.length > 0) {
-      // 清理重复订阅 (如果存在多个，保留第一个，删除其他的)
-      if (existingSubscription.length > 1) {
-        console.log(`[auth] Found ${existingSubscription.length} duplicate subscriptions for ${identifier}, cleaning up...`)
-        const idsToDelete = existingSubscription.slice(1).map(s => s.subscription_id)
-        for (const id of idsToDelete) {
-          await neonHelper.query('DELETE FROM subscriptions WHERE subscription_id = $1', [id])
-        }
-      }
-
-      // 更新现有订阅
-      const subscriptionId = existingSubscription[0].subscription_id
-      const updates = {
-        status: 'active', // 重新激活
-        updated_at: new Date().toISOString()
-      }
-
-      // 根据渠道更新特定字段
-      if (channel === 'email') {
-        if (topic) updates.topic = topic
-        if (preferences) updates.preferences = preferences
-      }
-      if (channel === 'feishu') updates.nickname = nickname
-
-      if (userId && !existingSubscription[0].user_id) {
-        updates.user_id = userId
-      }
-
-      await neonHelper.update('subscriptions', updates, { subscription_id: subscriptionId })
-    } else {
-      // 创建新订阅
-      const subscriptionId = crypto.randomUUID()
-      const newSub = {
-        subscription_id: subscriptionId,
-        channel,
-        identifier,
-        user_id: userId, // 关联用户
-        status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-
-      if (channel === 'email') {
-        if (topic) newSub.topic = topic
-        if (preferences) newSub.preferences = preferences
-      }
-      if (channel === 'feishu') newSub.nickname = nickname
-
-      await neonHelper.insert('subscriptions', newSub)
-    }
-
-    // 发送欢迎邮件 (仅当渠道为 email 时)
-    if (channel === 'email' && isEmailServiceConfigured()) {
-      try {
-        await sendSubscriptionWelcomeEmail(identifier, topic)
-        console.log(`[auth] Subscription welcome email sent to ${identifier}`)
-      } catch (emailError) {
-        console.error('[auth] Failed to send subscription welcome email:', emailError)
-      }
-    }
-
-    return res.status(200).json({ success: true, message: '订阅成功' })
-  } catch (error) {
-    console.error('[auth] Subscription error:', error)
-    return res.status(500).json({ success: false, error: '服务器错误' })
-  }
+  return res.status(410).json({
+    success: false,
+    error: '用户侧邮件订阅已停用',
+    message: '请改为加入企业微信群获取每日精选岗位推送和交流信息。',
+    redirect: '/community'
+  })
 }
 
 // copilot analysis (baseline)
@@ -757,20 +663,11 @@ async function handleUnsubscribeByEmail(req, res) {
   const { email } = req.body
   if (!email) return res.status(400).json({ success: false, error: 'Email is required' })
 
-  try {
-    // 删除该邮箱关联的所有订阅 (包括 email 渠道订阅，以及该邮箱对应用户的订阅)
-    const query = `
-      DELETE FROM subscriptions 
-      WHERE (channel = 'email' AND identifier = $1) 
-      OR user_id IN (SELECT user_id FROM users WHERE email = $1)
-    `
-    await neonHelper.query(query, [email])
-
-    return res.status(200).json({ success: true, message: '已取消所有订阅' })
-  } catch (error) {
-    console.error('[auth] Unsubscribe by email error:', error)
-    return res.status(500).json({ success: false, error: '服务器错误' })
-  }
+  return res.status(200).json({
+    success: true,
+    message: '用户侧邮件订阅已停用，无需额外退订。',
+    email
+  })
 }
 
 /**
@@ -949,4 +846,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: '服务器错误' })
   }
 }
-

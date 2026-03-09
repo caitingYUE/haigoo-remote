@@ -2,13 +2,13 @@ import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
-import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
 import HomeHero from '../components/HomeHero'
 import FeaturedJobsSection from '../components/FeaturedJobsSection'
 import JobDetailModal from '../components/JobDetailModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import HomeCompanyCard from '../components/HomeCompanyCard'
+import WeChatCommunityPanel from '../components/WeChatCommunityPanel'
 import { ArrowRight, Building2, Zap, Users, Target, Globe, CheckCircle2, Crown, Download, Sparkles } from 'lucide-react'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
@@ -417,28 +417,12 @@ export default function LandingPage() {
           variant="center"
         />
 
-        {/* Job Alert Subscription */}
+        {/* WeChat Community */}
         <div className="mt-32">
-          <div className="relative rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-50 overflow-hidden bg-white">
-            <div className="absolute inset-0 bg-gradient-to-br from-white via-indigo-50/30 to-blue-50/30"></div>
-
-            <div className="relative z-10 max-w-2xl mx-auto p-12 text-center">
-              <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3 hover:rotate-6 transition-transform">
-                <Zap className="w-8 h-8 text-indigo-600 fill-indigo-600" />
-              </div>
-
-              <h2 className="text-3xl font-bold mb-4 tracking-tight text-slate-900">
-                不错过任何新机会
-              </h2>
-              <p className="text-slate-600 mb-10 text-lg leading-relaxed">
-                订阅岗位提醒，第一时间获取最新的远程工作机会。<br />
-                支持 <span className="font-semibold text-indigo-600">Email</span> 推送。
-              </p>
-              <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 inline-block w-full">
-                <JobAlertSubscribe variant="minimal" theme="light" />
-              </div>
-            </div>
-          </div>
+          <WeChatCommunityPanel
+            isMember={isMember}
+            variant="embedded"
+          />
         </div>
       </div>
     </div>

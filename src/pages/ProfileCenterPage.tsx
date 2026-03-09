@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -14,92 +14,9 @@ import { MembershipCertificateModal } from '../components/MembershipCertificateM
 import MyApplicationsTab from '../components/MyApplicationsTab'
 import GeneratedPlanView from '../components/GeneratedPlanView'
 import { useNotificationHelpers } from '../components/NotificationSystem'
-import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
+import WeChatCommunityPanel from '../components/WeChatCommunityPanel'
 
 type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'subscriptions' | 'membership' | 'settings'
-type SubscriptionTopicValue = (typeof SUBSCRIPTION_TOPICS)[number]['value']
-
-const SUBSCRIPTION_TOPIC_LABEL_MAP = new Map<SubscriptionTopicValue, string>(
-  SUBSCRIPTION_TOPICS.map((topic) => [topic.value, topic.label] as [SubscriptionTopicValue, string])
-)
-
-const PREFILL_ROLE_TOPIC_RULES: Array<{ topic: SubscriptionTopicValue; keywords: string[] }> = [
-  { topic: 'full-stack', keywords: ['full stack', 'full-stack', 'fullstack', '全栈'] },
-  { topic: 'frontend', keywords: ['frontend', 'front-end', '前端', 'react', 'vue', 'angular'] },
-  { topic: 'backend', keywords: ['backend', 'back-end', '后端', 'java', 'spring', 'golang', 'node', 'api', '服务端'] },
-  { topic: 'mobile', keywords: ['mobile', 'ios', 'android', 'flutter', 'react native', '移动开发'] },
-  { topic: 'devops', keywords: ['devops', 'sre', 'platform engineer', 'kubernetes', 'k8s', 'docker', '运维', '云原生'] },
-  { topic: 'data', keywords: ['data', 'analyst', 'analytics', 'bi', 'sql', 'etl', '数据分析', '数据科学'] },
-  { topic: 'ai-ml', keywords: ['ai', 'ml', 'machine learning', 'llm', '人工智能', '机器学习', '算法工程师'] },
-  { topic: 'qa', keywords: ['qa', 'test', 'testing', 'sdet', '测试', '质量保障'] },
-  { topic: 'security', keywords: ['security', 'cyber', '网络安全', '信息安全', '合规安全', '渗透'] },
-  { topic: 'ui-ux', keywords: ['ui/ux', 'ui', 'ux', 'designer', 'design', '产品设计', '交互设计', '视觉设计'] },
-  { topic: 'product-management', keywords: ['product manager', 'pm', 'product owner', '产品经理', '产品负责人'] },
-  { topic: 'project-management', keywords: ['project manager', '项目经理', '项目管理', 'scrum master', 'delivery manager'] },
-  { topic: 'marketing', keywords: ['marketing', 'growth', 'brand', '市场', '增长', '投放', '运营'] },
-  { topic: 'sales', keywords: ['sales', 'business development', 'bd', '销售', '商务拓展'] },
-  { topic: 'content', keywords: ['content', 'copywriter', 'writer', '内容', '文案', '编辑', '新媒体'] },
-  { topic: 'customer-support', keywords: ['customer support', 'support', '客服', '客户成功', '售后', 'helpdesk'] },
-  { topic: 'hr', keywords: ['hr', 'human resources', 'recruiter', '招聘', '人力资源'] },
-  { topic: 'finance', keywords: ['finance', 'financial', 'accountant', '财务', '会计', '审计'] },
-  { topic: 'legal', keywords: ['legal', 'lawyer', 'compliance', '法务', '律师'] }
-]
-
-function normalizeRoleText(rawRole: string): string {
-  return rawRole
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5+\s/-]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function keywordMatched(normalizedText: string, tokens: Set<string>, keyword: string): boolean {
-  const normalizedKeyword = keyword.trim().toLowerCase()
-  if (!normalizedKeyword) return false
-  if (/^[a-z]{1,3}$/.test(normalizedKeyword)) return tokens.has(normalizedKeyword)
-  return normalizedText.includes(normalizedKeyword)
-}
-
-function inferTopicsFromRole(role: string): SubscriptionTopicValue[] {
-  const normalized = normalizeRoleText(role)
-  if (!normalized) return []
-
-  const tokens = new Set(normalized.split(' ').filter(Boolean))
-  const scoredTopics = new Map<SubscriptionTopicValue, number>()
-
-  PREFILL_ROLE_TOPIC_RULES.forEach((rule) => {
-    const matches = rule.keywords.reduce((count, keyword) => (
-      keywordMatched(normalized, tokens, keyword) ? count + 1 : count
-    ), 0)
-    if (matches > 0) {
-      scoredTopics.set(rule.topic, (scoredTopics.get(rule.topic) || 0) + matches)
-    }
-  })
-
-  if (scoredTopics.size === 0) {
-    if (normalized.includes('开发') || normalized.includes('工程师') || normalized.includes('developer') || normalized.includes('engineer')) {
-      return ['full-stack']
-    }
-    if (normalized.includes('设计') || normalized.includes('designer')) {
-      return ['ui-ux']
-    }
-    if (normalized.includes('产品')) {
-      return ['product-management']
-    }
-    if (normalized.includes('运营') || normalized.includes('增长')) {
-      return ['marketing']
-    }
-    if (normalized.includes('客服') || normalized.includes('support')) {
-      return ['customer-support']
-    }
-    return []
-  }
-
-  return [...scoredTopics.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([topic]) => topic)
-    .slice(0, MAX_SUBSCRIPTION_TOPICS)
-}
 
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember, logout } = useAuth()
@@ -108,17 +25,18 @@ export default function ProfileCenterPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const initialTab: TabKey = (() => {
-    const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'custom-plan'
+    const rawTab = new URLSearchParams(location.search).get('tab')
+    const t = rawTab === 'community' ? 'subscriptions' : rawTab
+    return t && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t as TabKey : 'custom-plan'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
-  const prefillRole = useMemo(() => new URLSearchParams(location.search).get('prefillRole')?.trim() || '', [location.search])
 
   // Sync tab with URL query parameter
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
-    const urlTab = searchParams.get('tab') as TabKey | null
+    const rawTab = searchParams.get('tab')
+    const urlTab = (rawTab === 'community' ? 'subscriptions' : rawTab) as TabKey | null
     if (urlTab && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(urlTab)) {
       setTab(urlTab)
     }
@@ -215,25 +133,11 @@ export default function ProfileCenterPage() {
     }
   }
 
-  useEffect(() => {
-    const sp = new URLSearchParams(location.search)
-    const t = sp.get('tab') as TabKey | null
-    if (t && ['resume', 'favorites', 'feedback'].includes(t)) setTab(t as TabKey)
-  }, [location.search])
-
   const switchTab = (t: TabKey) => {
     setTab(t)
     const sp = new URLSearchParams(location.search)
     sp.set('tab', t)
     navigate({ pathname: '/profile', search: `?${sp.toString()}` }, { replace: true })
-  }
-
-  const clearPrefillRole = () => {
-    const sp = new URLSearchParams(location.search)
-    if (!sp.has('prefillRole')) return
-    sp.delete('prefillRole')
-    const query = sp.toString()
-    navigate({ pathname: '/profile', search: query ? `?${query}` : '' }, { replace: true })
   }
 
   const { data: _jobs } = usePageCache<Job[]>('profile-jobs-source', {
@@ -446,8 +350,6 @@ export default function ProfileCenterPage() {
     fetchPlan()
   }, [authUser, token])
 
-
-  const favoritesWithStatus = useMemo(() => favorites, [favorites])
 
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisStep, setAnalysisStep] = useState<string>('')
@@ -922,7 +824,7 @@ export default function ProfileCenterPage() {
               </div>
             ))}
           </div>
-        ) : favoritesWithStatus.length === 0 ? (
+        ) : favorites.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[200px] text-center">
             <Heart className="w-12 h-12 text-slate-300 mb-3" />
             <p className="text-lg font-bold text-slate-900">还没有收藏职位</p>
@@ -930,7 +832,7 @@ export default function ProfileCenterPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {favoritesWithStatus.map((f: any) => (
+            {favorites.map((f: any) => (
               <div key={f.id || f.jobId}>
                 <JobCardNew
                   job={f as Job}
@@ -1108,325 +1010,21 @@ export default function ProfileCenterPage() {
   }
 
   const SubscriptionsTab = () => {
-    const [subscriptions, setSubscriptions] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [editTopics, setEditTopics] = useState<string[]>([])
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const [isApplyingPrefill, setIsApplyingPrefill] = useState(false)
-    const dropdownRef = useRef<HTMLDivElement>(null)
-    const prefillTopics = useMemo(() => inferTopicsFromRole(prefillRole), [prefillRole])
-    const prefillTopicLabels = useMemo(
-      () => prefillTopics.map((topic) => SUBSCRIPTION_TOPIC_LABEL_MAP.get(topic) || topic),
-      [prefillTopics]
-    )
-    const emailSubscription = useMemo(() => (
-      subscriptions.find((subscription) => (
-        subscription.channel === 'email' && subscription.identifier === authUser?.email
-      ))
-    ), [authUser?.email, subscriptions])
-    const prefillAlreadyApplied = useMemo(() => {
-      if (!emailSubscription || prefillTopics.length === 0) return false
-      const existing = String(emailSubscription.topic || '')
-        .split(',')
-        .map((item: string) => item.trim())
-        .filter(Boolean)
-        .sort()
-      const suggested = [...prefillTopics].sort()
-      return existing.length === suggested.length && existing.every((topic: string, index: number) => topic === suggested[index])
-    }, [emailSubscription, prefillTopics])
-
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-          setIsDropdownOpen(false)
-        }
-      }
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
-
-    const fetchSubscriptions = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch('/api/auth?action=get-subscriptions', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const data = await res.json()
-        if (data.success) {
-          setSubscriptions(data.subscriptions || [])
-        }
-      } catch (e) {
-        console.error('Failed to fetch subscriptions', e)
-        showError('加载失败', '无法获取订阅列表')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    useEffect(() => {
-      fetchSubscriptions()
-    }, [])
-
-    const handleApplyPrefill = async () => {
-      if (!authUser?.email) {
-        showError('请先登录', '登录后可设置岗位追踪')
-        return
-      }
-      if (prefillTopics.length === 0) {
-        showError('未识别方向', '请手动选择订阅主题')
-        return
-      }
-
-      try {
-        setIsApplyingPrefill(true)
-        const res = await fetch('/api/auth?action=subscribe', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            channel: 'email',
-            identifier: authUser.email,
-            topic: prefillTopics.join(',')
-          })
-        })
-        const data = await res.json()
-        if (!res.ok || !data.success) {
-          throw new Error(data?.error || '设置失败')
-        }
-
-        trackingService.track('subscription_prefill_applied', {
-          role: prefillRole,
-          topics: prefillTopics.join(','),
-          topics_count: prefillTopics.length
-        })
-        showSuccess('岗位追踪已配置', `已根据「${prefillRole}」更新订阅主题`)
-        await fetchSubscriptions()
-        clearPrefillRole()
-      } catch (error: any) {
-        showError('设置失败', error?.message || '请稍后重试')
-      } finally {
-        setIsApplyingPrefill(false)
-      }
-    }
-
-    const startEditing = (sub: any) => {
-      setEditingId(sub.subscription_id)
-      setEditTopics(sub.topic ? sub.topic.split(',') : [])
-      setIsDropdownOpen(false)
-    }
-
-    const toggleEditTopic = (val: string) => {
-      if (editTopics.includes(val)) {
-        setEditTopics(editTopics.filter(t => t !== val))
-      } else {
-        if (editTopics.length >= MAX_SUBSCRIPTION_TOPICS) return
-        setEditTopics([...editTopics, val])
-      }
-    }
-
-    const handleUpdate = async (id: string) => {
-      if (editTopics.length === 0) {
-        showError('请至少选择一个类型')
-        return
-      }
-      try {
-        const res = await fetch('/api/auth?action=update-subscription', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ id, topic: editTopics.join(',') })
-        })
-        const data = await res.json()
-        if (data.success) {
-          showSuccess('更新成功')
-          setEditingId(null)
-          fetchSubscriptions()
-        } else {
-          showError('更新失败', data.error)
-        }
-      } catch (e) {
-        showError('更新失败', '网络错误')
-      }
-    }
-
-    const handleDelete = async (id: string) => {
-      if (!confirm('确定要取消订阅吗？')) return
-      try {
-        const res = await fetch('/api/auth?action=delete-subscription', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ id })
-        })
-        const data = await res.json()
-        if (data.success) {
-          showSuccess('已取消订阅')
-          fetchSubscriptions()
-        } else {
-          showError('操作失败', data.error)
-        }
-      } catch (e) {
-        showError('操作失败', '网络错误')
-      }
-    }
-
-    const getTopicLabel = (topicStr: string, preferences?: any) => {
-      if (preferences && Object.keys(preferences).length > 0) {
-        return <span className="text-indigo-600 font-medium">详细偏好订阅</span>
-      }
-      if (!topicStr) return '无'
-      const values = topicStr.split(',')
-      return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
-    }
-
-    const getEditLabel = () => {
-      // 简单编辑只支持 topic，不支持详细偏好
-      if (editTopics.length === 0) return '请选择'
-      if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
-      return `已选 ${editTopics.length} 个`
-    }
-
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">订阅管理</h2>
-            <p className="text-slate-500 mt-1">管理您的岗位推送订阅。</p>
+            <h2 className="text-2xl font-bold text-slate-900">社群中心</h2>
+            <p className="text-slate-500 mt-1">通过企业微信群获取每日精选岗位，并和远程求职同行保持交流。</p>
           </div>
         </div>
-        {prefillRole && (
-          <div className={`rounded-xl border p-4 sm:p-5 ${prefillTopics.length > 0 ? 'bg-gradient-to-r from-indigo-50 to-sky-50 border-indigo-100' : 'bg-amber-50 border-amber-200'}`}>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold text-slate-900">
-                  {prefillTopics.length > 0 ? '基于职业方向的追踪建议' : '暂未识别到可用追踪主题'}
-                </p>
-                <p className="text-xs text-slate-600 mt-1">
-                  当前方向：<span className="font-semibold text-slate-800">{prefillRole}</span>
-                </p>
-                {prefillTopics.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {prefillTopicLabels.map((label) => (
-                      <span key={label} className="px-2 py-0.5 rounded-full text-xs font-medium bg-white text-indigo-700 border border-indigo-100">
-                        {label}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-amber-700 mt-2">你可以在下方手动选择最关注的岗位类型。</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {prefillTopics.length > 0 && (
-                  <button
-                    onClick={handleApplyPrefill}
-                    disabled={isApplyingPrefill || prefillAlreadyApplied}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {prefillAlreadyApplied ? '已应用' : isApplyingPrefill ? '应用中...' : '一键应用岗位追踪'}
-                  </button>
-                )}
-                <button
-                  onClick={clearPrefillRole}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
-                >
-                  忽略
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
-          {loading ? (
-            <div className="p-8 text-center text-slate-500">加载中...</div>
-          ) : subscriptions.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center">
-              <Bell className="w-12 h-12 text-slate-300 mb-3" />
-              <p className="text-slate-900 font-medium">暂无订阅</p>
-              <p className="text-slate-500 text-sm mt-1">在首页订阅后，可以在这里管理</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {subscriptions.map(sub => (
-                <div key={sub.subscription_id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                        Email
-                      </span>
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${sub.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                        {sub.status === 'active' ? '活跃' : '已暂停'}
-                      </span>
-                    </div>
-                    <div className="font-medium text-slate-900">{sub.identifier}</div>
-                    <div className="text-sm text-slate-500 mt-1 relative">
-                      订阅内容：
-                      {editingId === sub.subscription_id ? (
-                        <div className="inline-flex items-center gap-2 ml-2 relative" ref={dropdownRef}>
-                          <div className="relative">
-                            <button
-                              className="border rounded px-2 py-1 bg-white text-sm min-w-[100px] flex items-center justify-between"
-                              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                              <span className="truncate max-w-[120px]">{getEditLabel()}</span>
-                              <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />
-                            </button>
-                            {isDropdownOpen && (
-                              <div className="absolute top-full left-0 mt-1 w-64 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-xl z-50 p-2">
-                                <div className="text-xs text-slate-500 px-2 py-1 mb-1">最多可选 {MAX_SUBSCRIPTION_TOPICS} 个</div>
-                                {SUBSCRIPTION_TOPICS.map(opt => {
-                                  const isSelected = editTopics.includes(opt.value)
-                                  return (
-                                    <div
-                                      key={opt.value}
-                                      onClick={() => toggleEditTopic(opt.value)}
-                                      className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors
-                                                        ${isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}
-                                                    `}
-                                    >
-                                      <span>{opt.label}</span>
-                                      {isSelected && <Check className="w-3.5 h-3.5" />}
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )}
-                          </div>
-                          <button onClick={() => handleUpdate(sub.subscription_id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="w-4 h-4" /></button>
-                          <button onClick={() => setEditingId(null)} className="p-1 text-slate-400 hover:bg-slate-100 rounded"><X className="w-4 h-4" /></button>
-                        </div>
-                      ) : (
-                        <span className="font-medium text-slate-700 ml-1">
-                          {getTopicLabel(sub.topic)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {editingId !== sub.subscription_id && (
-                      <>
-                        <button
-                          onClick={() => startEditing(sub)}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          修改
-                        </button>
-                        <button
-                          onClick={() => handleDelete(sub.subscription_id)}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          取消
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <WeChatCommunityPanel
+            isMember={isMember}
+            variant="embedded"
+            showActions={false}
+            className="shadow-none border-0 rounded-none"
+          />
         </div>
       </div>
     )
@@ -1437,7 +1035,7 @@ export default function ProfileCenterPage() {
     const [isDeleting, setIsDeleting] = useState(false)
 
     const handleDeleteAccount = async () => {
-      if (!confirm('确定要永久删除账号吗？所有数据（简历、收藏、订阅等）将无法恢复。')) return
+      if (!confirm('确定要永久删除账号吗？所有数据（简历、收藏、申请记录等）将无法恢复。')) return
       if (!confirm('再次确认：此操作不可撤销，确定要删除吗？')) return
 
       try {
@@ -1488,7 +1086,7 @@ export default function ProfileCenterPage() {
                   <div>
                     <h4 className="text-base font-bold text-slate-900 mb-1">删除账号</h4>
                     <p className="text-sm text-slate-600">
-                      永久删除您的账号及所有相关数据（简历、收藏、订阅记录等）。
+                      永久删除您的账号及所有相关数据（简历、收藏、申请记录等）。
                       <br />
                       <span className="text-red-600 font-medium">此操作无法撤销。</span>
                     </p>
@@ -1623,7 +1221,7 @@ export default function ProfileCenterPage() {
                   { id: 'resume', label: '我的简历', icon: FileText },
                   { id: 'favorites', label: '我的收藏', icon: Heart },
                   { id: 'applications', label: '我的申请', icon: Briefcase },
-                  { id: 'subscriptions', label: '订阅管理', icon: Bell },
+                  { id: 'subscriptions', label: '社群中心', icon: Users },
                   { id: 'feedback', label: '我要反馈', icon: MessageSquare },
                   { id: 'settings', label: '注销账号', icon: Settings }
                 ].map((item) => (

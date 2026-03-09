@@ -474,10 +474,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [generatedPlan, setGeneratedPlan] = useState<any>(null)
     const [refreshingRecommendations, setRefreshingRecommendations] = useState(false)
     const trackingSetupUrl = useMemo(() => {
-        const params = new URLSearchParams({ tab: 'subscriptions' })
+        const params = new URLSearchParams({ source: 'copilot' })
         const role = formData.background.role.trim()
-        if (role) params.set('prefillRole', role)
-        return `/profile?${params.toString()}`
+        if (role) params.set('role', role)
+        return `/community?${params.toString()}`
     }, [formData.background.role])
 
     // Load previous plan on mount (authenticated users only, no guest cache)
@@ -899,9 +899,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
                         {[
-                            '✓ 完全面向中国人设计的远程工作平台',
-                            '✓ 所有岗位均经过人工逐条审核',
-                            '✓ 没有信息差！全站岗位可免费直申',
+                            '✓ 专为中国人设计的远程工作网站',
+                            '✓ 所有岗位均经过人工审核',
+                            '✓ 90%+岗位可免费直申',
                         ].map((chip) => (
                             <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/80 backdrop-blur-md border border-white/50 rounded-full shadow-sm">
                                 {chip}

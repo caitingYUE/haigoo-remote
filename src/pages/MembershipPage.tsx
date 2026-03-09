@@ -8,6 +8,7 @@ import JobCardNew from '../components/JobCardNew';
 import { processedJobsService } from '../services/processed-jobs-service';
 import { trackingService } from '../services/tracking-service';
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal';
+import WeChatCommunityPanel from '../components/WeChatCommunityPanel';
 
 interface Plan {
    id: string;
@@ -333,26 +334,12 @@ const MembershipPage: React.FC = () => {
                            </div>
                         </div>
 
-                        {/* Right: DingTalk QR */}
-                        <div className="w-56 shrink-0 bg-indigo-50/40 border border-indigo-100/50 rounded-2xl p-5 flex flex-col items-center gap-3 hidden sm:flex">
-                           <div className="flex items-center gap-1.5 text-sm font-bold text-slate-800 w-full justify-center">
-                              <Users className="w-4 h-4 text-indigo-500 shrink-0" />
-                              会员专属服务群
-                           </div>
-                           <div className="w-28 h-28 bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
-                              <img
-                                 src="/dingtalk.jpg"
-                                 alt="钉钉群二维码"
-                                 className="w-full h-full object-cover"
-                                 onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                    (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="text-[10px] text-slate-400 text-center px-2">二维码\n待上传</div>';
-                                 }}
-                              />
-                           </div>
-                           <p className="text-[11px] text-slate-400 text-center leading-relaxed">
-                              请使用钉钉扫码加入<br />快速获取响应和支持
-                           </p>
+                        <div className="w-full max-w-[360px] shrink-0 hidden sm:block">
+                           <WeChatCommunityPanel
+                              isMember
+                              variant="compact"
+                              showActions={false}
+                           />
                         </div>
                      </div>
                   </div>

@@ -11,6 +11,10 @@
     },
     {
       "path": "/api/cron/daily-enrich",
+      "schedule": "50 1 * * *"
+    },
+    {
+      "path": "/api/cron/admin-daily-featured-email",
       "schedule": "0 2 * * *"
     },
     {

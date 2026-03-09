@@ -38,6 +38,7 @@ const NoPermissionPage = lazy(() => import('./pages/NoPermissionPage'))
 const JobDetailPage = lazy(() => import('./pages/JobDetailPage'))
 const JobBundleDetailPage = lazy(() => import('./pages/JobBundleDetailPage'))
 const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
+const CommunityPage = lazy(() => import('./pages/CommunityPage'))
 const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const CopilotPage = lazy(() => import('./pages/CopilotPage'))
@@ -89,6 +90,7 @@ function App() {
                     <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/no-permission" element={<NoPermissionPage />} />
                     <Route path="/unsubscribe" element={<UnsubscribePage />} />
+                    <Route path="/community" element={<CommunityPage />} />
 
                     {/* AdminPanel 独立布局，用于数据管理（需要登录） */}
                     <Route path="/admin/data" element={

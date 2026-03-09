@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { Search, SortAsc, Sparkles, Briefcase, Zap, AlertTriangle, X } from 'lucide-react'
+import { Search, Sparkles, Briefcase, Zap } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
@@ -11,7 +11,6 @@ import { Job } from '../types'
 
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService } from '../services/trusted-companies-service'
-import { JobTrackingModal, JobPreferences } from '../components/JobTrackingModal'
 import { trackingService } from '../services/tracking-service'
 import { useDebounce } from '../hooks/useDebounce'
 
@@ -140,91 +139,11 @@ export default function JobsPage() {
     localStorage.setItem('haigoo_job_filters', JSON.stringify(filters))
   }, [filters])
 
-  // Load user preferences - CRITICAL FIX: Function defined inside useEffect
-  useEffect(() => {
-    const loadUserPreferences = async () => {
-      if (!isAuthenticated || !token) {
-        console.log(`[Preferences ${new Date().toISOString()}] ⏭️  Skipping load: not authenticated or no token`)
-        return
-      }
-
-      console.log(`[Preferences ${new Date().toISOString()}] 🔄 Loading user preferences...`)
-      console.log(`[Preferences] Auth state: isAuthenticated=${isAuthenticated}, hasToken=${!!token}`)
-
-      try {
-        const resp = await fetch('/api/user-profile?action=get_preferences', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        console.log(`[Preferences ${new Date().toISOString()}] 📡 Response status:`, resp.status)
-
-        if (resp.ok) {
-          const data = await resp.json()
-          console.log(`[Preferences ${new Date().toISOString()}] 📦 Loaded data:`, data)
-
-          if (data.success && data.preferences) {
-            setUserPreferences(data.preferences)
-            console.log(`[Preferences ${new Date().toISOString()}] ✅ Preferences set successfully:`, data.preferences)
-          } else if (data.preferences) {
-            // Backward compatibility: some responses might not have success field
-            setUserPreferences(data.preferences)
-            console.log(`[Preferences ${new Date().toISOString()}] ✅ Preferences set (legacy format):`, data.preferences)
-          } else {
-            console.log(`[Preferences ${new Date().toISOString()}] ⚠️  No preferences in response`)
-            setUserPreferences(null)
-          }
-        } else {
-          const errorText = await resp.text()
-          console.error(`[Preferences ${new Date().toISOString()}] ❌ Failed to load:`, resp.status, resp.statusText)
-          console.error(`[Preferences] Error details:`, errorText)
-        }
-      } catch (error) {
-        console.error(`[Preferences ${new Date().toISOString()}] ❌ Load error:`, error)
-      }
-    }
-
-    // Execute the load function
-    loadUserPreferences()
-  }, [isAuthenticated, token]) // ✅ Clean dependencies, no function reference issues
-
-
-  const saveUserPreferences = async (preferences: JobPreferences) => {
-    if (!isAuthenticated || !token) {
-      navigate('/login')
-      return
-    }
-
-    try {
-      const resp = await fetch('/api/user-profile?action=save_preferences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ preferences })
-      })
-
-      if (resp.ok) {
-        const data = await resp.json()
-        setUserPreferences(preferences)
-        showSuccess('求职期望已保存')
-      } else {
-        const errorText = await resp.text()
-        console.error('[Preferences] Save failed:', resp.status, errorText)
-        showError('保存失败，请稍后重试')
-      }
-    } catch (error) {
-      console.error('[Preferences] Save error:', error)
-      showError('保存失败，请检查网络连接')
-    }
-  }
-
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
   const [showInlineDetail, setShowInlineDetail] = useState(false)
   const [currentJobIndex, setCurrentJobIndex] = useState(0)
-  const [isPreferenceModalOpen, setIsPreferenceModalOpen] = useState(false)
-  const [userPreferences, setUserPreferences] = useState<JobPreferences | null>(null)
 
   // 岗位数据状态（替代页面缓存）
   const [jobs, setJobs] = useState<Job[]>([])
@@ -276,6 +195,10 @@ export default function JobsPage() {
   const [matchScoresLoading, setMatchScoresLoading] = useState(false)
   // Track if initial match scores have been loaded
   const [initialMatchScoresLoaded, setInitialMatchScoresLoaded] = useState(false)
+
+  const openCommunityPage = useCallback(() => {
+    navigate('/community')
+  }, [navigate])
 
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
@@ -768,7 +691,7 @@ export default function JobsPage() {
               onSearchChange={setSearchTerm}
               sortBy={sortBy}
               onSortChange={() => setSortBy(prev => prev === 'recent' ? 'relevance' : 'recent')}
-              onOpenTracking={() => setIsPreferenceModalOpen(true)}
+              onOpenTracking={openCommunityPage}
             />
           </div>
 
@@ -825,18 +748,18 @@ export default function JobsPage() {
                       </>
                     )}
 
-                    {/* Job Tracking Promo for Empty State */}
+                    {/* Community Promo for Empty State */}
                     <div className="w-full max-w-sm bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col items-center gap-3">
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-indigo-600" />
-                        <span className="font-bold text-slate-900 text-sm">不错过未来好机会？</span>
+                        <span className="font-bold text-slate-900 text-sm">去群里看每日精选岗位</span>
                       </div>
-                      <p className="text-xs text-slate-500 text-center">告诉我们您的求职偏好，有合适的高匹配职位第一时间为您内推</p>
+                      <p className="text-xs text-slate-500 text-center">企业微信群会集中同步精选岗位，也方便和其他求职者交流投递与面试经验。</p>
                       <button
-                        onClick={() => setIsPreferenceModalOpen(true)}
+                        onClick={openCommunityPage}
                         className="px-6 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors w-full tracking-wide"
                       >
-                        开启精准职位推送
+                        立即加入微信群
                       </button>
                     </div>
                   </div>
@@ -868,14 +791,14 @@ export default function JobsPage() {
                           </div>
                           <div className="text-center sm:text-left">
                             <h3 className="font-bold text-slate-900 text-sm">没找到心仪的职位？</h3>
-                            <p className="text-xs text-slate-500 mt-0.5">告诉我们您的需求，有合适机会第一时间通知您</p>
+                            <p className="text-xs text-slate-500 mt-0.5">去企业微信群看每日精选岗位，也可以和大家交流最新远程机会</p>
                           </div>
                         </div>
                         <button
-                          onClick={() => setIsPreferenceModalOpen(true)}
+                          onClick={openCommunityPage}
                           className="px-4 py-2 bg-white text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100 shadow-sm hover:bg-indigo-50 transition-colors whitespace-nowrap"
                         >
-                          开启岗位订阅
+                          加入微信群
                         </button>
                       </div>
                     )}
@@ -948,15 +871,6 @@ export default function JobsPage() {
           />
         )}
 
-        {/* Job Preferences Modal */}
-        <JobTrackingModal
-          isOpen={isPreferenceModalOpen}
-          onClose={() => setIsPreferenceModalOpen(false)}
-          onSave={saveUserPreferences}
-          initialPreferences={userPreferences || undefined}
-          jobTypeOptions={CATEGORY_OPTIONS.map(o => o.label)}
-          industryOptions={INDUSTRY_OPTIONS.map(opt => opt.label)}
-        />
       </div>
     </MobileRestricted>
   )
