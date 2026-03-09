@@ -52,6 +52,7 @@ import { processedJobsService } from '../services/processed-jobs-service';
 import AdminTrackingManagement from '../components/admin/AdminTrackingManagement';
 import AdminTrackingDashboard from '../components/admin/AdminTrackingDashboard';
 import AdminJobBundles from '../components/admin/AdminJobBundles';
+import AdminSocialPush from '../components/admin/AdminSocialPush';
 import AdminContactMiningPage from './AdminContactMiningPage';
 import logoPng from '../assets/logo.png';
 
@@ -206,6 +207,40 @@ const AdminTeamPage: React.FC = () => {
     loadData();
     fetchAdminMessages();
   }, [loadData, fetchAdminMessages]);
+
+  useEffect(() => {
+    const nextTab = new URLSearchParams(window.location.search).get('tab');
+    const allowedTabs = new Set([
+      'dashboard',
+      'core-metrics',
+      'rss',
+      'jobs',
+      'social-push',
+      'job-bundles',
+      'companies',
+      'trusted-companies',
+      'contact-mining',
+      'tag-management',
+      'resumes',
+      'subscriptions',
+      'users',
+      'job-applications',
+      'member-applications',
+      'analytics',
+      'feedback',
+      'settings',
+      'tracking'
+    ]);
+    if (nextTab && allowedTabs.has(nextTab)) {
+      setActiveTab(nextTab);
+    }
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', activeTab);
+    window.history.replaceState({}, '', url.toString());
+  }, [activeTab]);
 
   // 获取简历数据
   const fetchResumes = useCallback(async () => {
@@ -974,6 +1009,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'core-metrics', label: '核心看板', icon: Activity },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
+    { id: 'social-push', label: '社群推送', icon: Mail },
     { id: 'job-bundles', label: '职位组合', icon: Tag },
     { id: 'companies', label: '全部企业', icon: Building },
     { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
@@ -1081,6 +1117,7 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'rss' && renderRSSManagement()}
               {activeTab === 'jobs' && renderJobDataManagement()}
+              {activeTab === 'social-push' && <AdminSocialPush />}
               {activeTab === 'job-bundles' && <AdminJobBundles />}
               {activeTab === 'resumes' && renderResumeLibrary()}
               {activeTab === 'subscriptions' && <SubscriptionsTable />}

@@ -271,52 +271,37 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
 /**
  * 发送管理员每日精选岗位邮件
  */
-export async function sendAdminDailyFeaturedJobsEmail(to, jobs, options = {}) {
-  if (!jobs || jobs.length === 0) return false
+export async function sendAdminDailyFeaturedJobsEmail(to, digest) {
+  const audiences = digest?.audiences || {}
+  const publicAudience = audiences.public
+  const memberAudience = audiences.member
+
+  if (!publicAudience?.jobCount && !memberAudience?.jobCount) return false
 
   const siteUrl = String(process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
-  const batchLabel = options.batchLabel || options.batchDate || new Date().toISOString().slice(0, 10)
-  const subject = options.subject || `Haigoo 每日精选岗位 ${batchLabel}`
-  const featuredCount = Number(options.featuredCount || 0)
-  const fallbackCount = Number(options.fallbackCount || 0)
-  const recentExcludedCount = Number(options.recentExcludedCount || 0)
+  const batchLabel = digest?.batchLabel || digest?.batchDate || new Date().toISOString().slice(0, 10)
+  const subject = digest?.subject || `海狗远程俱乐部 ${batchLabel} 社群推送`
+  const adminPreviewUrl = `${siteUrl}/admin_team?tab=social-push`
 
-  const jobsHtml = jobs.map((job, index) => {
-    const jobId = encodeURIComponent(job.id)
-    const detailUrl = `${siteUrl}/job/${jobId}`
-    const externalUrl = String(job.url || '').trim()
-    const badgeLabel = job.sourceBucket === 'featured' ? '精选池' : '普通池补位'
-    const badgeBg = job.sourceBucket === 'featured' ? '#eef2ff' : '#ecfeff'
-    const badgeColor = job.sourceBucket === 'featured' ? '#4338ca' : '#155e75'
-    const description = truncateText(job.description, 180)
-    const tags = Array.isArray(job.tags) ? job.tags.filter(Boolean).slice(0, 4) : []
+  const renderAudienceSection = (audience, accentColor) => {
+    if (!audience) return ''
 
     return `
-      <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 22px; margin-bottom: 18px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px;">
-          <div style="font-size: 12px; color: #6b7280; font-weight: 600;">#${index + 1}</div>
-          <span style="display: inline-block; background: ${badgeBg}; color: ${badgeColor}; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700;">${badgeLabel}</span>
+      <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 24px; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap;">
+          <h2 style="margin: 0; font-size: 20px; line-height: 1.4; color: #111827;">${escapeHtml(audience.title || '')}</h2>
+          <span style="display: inline-block; padding: 6px 12px; border-radius: 999px; background: ${accentColor}; color: #ffffff; font-size: 12px; font-weight: 700;">${escapeHtml(audience.groupLabel || '')}</span>
         </div>
-        <h3 style="margin: 0 0 10px; font-size: 20px; line-height: 1.4;">
-          <a href="${detailUrl}" style="color: #111827; text-decoration: none;">${escapeHtml(job.title)}</a>
-        </h3>
-        <div style="margin-bottom: 12px; color: #4338ca; font-size: 15px; font-weight: 700;">${escapeHtml(job.company)}</div>
-        <div style="margin-bottom: 14px; color: #4b5563; font-size: 13px; line-height: 1.8;">
-          <span style="display: inline-block; margin-right: 10px;">地点: ${escapeHtml(job.location || 'Remote')}</span>
-          <span style="display: inline-block; margin-right: 10px;">薪资: ${escapeHtml(job.salary || '薪资面议')}</span>
-          ${job.category ? `<span style="display: inline-block; margin-right: 10px;">分类: ${escapeHtml(job.category)}</span>` : ''}
-          ${job.jobType ? `<span style="display: inline-block; margin-right: 10px;">类型: ${escapeHtml(job.jobType)}</span>` : ''}
-          ${job.experienceLevel ? `<span style="display: inline-block;">级别: ${escapeHtml(job.experienceLevel)}</span>` : ''}
+        <div style="margin-bottom: 14px; color: #4b5563; font-size: 13px; line-height: 1.7;">
+          <div>${escapeHtml(audience.ruleSummary || '')}</div>
+          <div style="margin-top: 6px;">本批次 ${audience.jobCount || 0} 条，优先池 ${audience.preferredCount || 0} 条，补位 ${audience.fallbackCount || 0} 条，避开近 ${audience.repeatWindowDays || 0} 天重复 ${audience.recentExcludedCount || 0} 条。</div>
         </div>
-        ${description ? `<p style="margin: 0 0 14px; color: #374151; font-size: 14px; line-height: 1.7;">${escapeHtml(description)}</p>` : ''}
-        ${tags.length ? `<div style="margin-bottom: 14px;">${tags.map((tag) => `<span style="display: inline-block; margin: 0 8px 8px 0; padding: 4px 10px; border-radius: 999px; background: #f3f4f6; color: #374151; font-size: 12px;">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
-        <div style="padding-top: 14px; border-top: 1px solid #f3f4f6;">
-          <a href="${detailUrl}" style="color: #4f46e5; text-decoration: none; font-size: 14px; font-weight: 700; margin-right: 16px;">站内详情</a>
-          ${externalUrl ? `<a href="${externalUrl}" style="color: #0f766e; text-decoration: none; font-size: 14px; font-weight: 700;">原始链接</a>` : ''}
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px;">
+          <pre style="margin: 0; white-space: pre-wrap; word-break: break-word; color: #0f172a; font-size: 14px; line-height: 1.8; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;">${escapeHtml(audience.copyText || '')}</pre>
         </div>
       </div>
     `
-  }).join('')
+  }
 
   const html = `
 <!DOCTYPE html>
@@ -324,33 +309,27 @@ export async function sendAdminDailyFeaturedJobsEmail(to, jobs, options = {}) {
 <head>
   <meta charset="utf-8">
   <style>
-    body { margin: 0; padding: 0; background: #f4f7fb; color: #111827; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .container { max-width: 720px; margin: 0 auto; padding: 24px; }
-    .hero { background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%); color: #ffffff; border-radius: 20px 20px 0 0; padding: 32px 28px; }
-    .content { background: #ffffff; border-radius: 0 0 20px 20px; padding: 28px; }
-    .meta { display: inline-block; margin: 0 12px 12px 0; padding: 8px 12px; background: rgba(255,255,255,0.12); border-radius: 999px; font-size: 12px; font-weight: 600; }
+    body { margin: 0; padding: 0; background: #f3f6fb; color: #111827; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .container { max-width: 820px; margin: 0 auto; padding: 24px; }
+    .hero { background: linear-gradient(135deg, #082f49 0%, #1d4ed8 100%); color: #ffffff; border-radius: 22px; padding: 30px 28px; margin-bottom: 20px; }
+    .button { display: inline-block; padding: 12px 20px; border-radius: 999px; background: #111827; color: #ffffff !important; text-decoration: none; font-weight: 700; }
     .footer { text-align: center; color: #94a3b8; font-size: 12px; margin-top: 24px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="hero">
-      <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.8; margin-bottom: 10px;">Haigoo Admin Digest</div>
-      <div style="font-size: 28px; font-weight: 800; line-height: 1.3; margin-bottom: 10px;">${escapeHtml(batchLabel)} 每日岗位精选</div>
-      <div style="font-size: 15px; line-height: 1.7; opacity: 0.92;">优先发送精选岗位，不足时自动从非精选岗位补位。近 5 天内已发送过的岗位不会重复进入本批次。</div>
+      <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.82; margin-bottom: 10px;">Haigoo Social Push</div>
+      <div style="font-size: 28px; font-weight: 800; line-height: 1.35; margin-bottom: 10px;">${escapeHtml(batchLabel)} 管理员社群推送预览</div>
+      <div style="font-size: 15px; line-height: 1.75; opacity: 0.94;">邮件内已切换为便于复制转发的中文文案。若要一键复制，请直接打开管理后台的社群推送模块。</div>
       <div style="margin-top: 18px;">
-        <span class="meta">共 ${jobs.length} 条</span>
-        <span class="meta">精选 ${featuredCount} 条</span>
-        <span class="meta">补位 ${fallbackCount} 条</span>
-        <span class="meta">避开近 5 天重复 ${recentExcludedCount} 条</span>
+        <a href="${adminPreviewUrl}" class="button">打开后台一键复制</a>
       </div>
     </div>
-    <div class="content">
-      ${jobsHtml}
-      <div style="text-align: center; margin-top: 10px;">
-        <a href="${siteUrl}/jobs" style="display: inline-block; padding: 14px 26px; border-radius: 999px; background: #111827; color: #ffffff; font-weight: 700; text-decoration: none;">打开岗位库</a>
-      </div>
-    </div>
+
+    ${renderAudienceSection(publicAudience, '#0f766e')}
+    ${renderAudienceSection(memberAudience, '#4338ca')}
+
     <div class="footer">
       <div>${escapeHtml(FROM_NAME)} · ${escapeHtml(FROM_EMAIL)}</div>
       <div style="margin-top: 6px;">Generated at ${escapeHtml(new Date().toISOString())}</div>
