@@ -63,6 +63,52 @@ export default function WeChatCommunityPanel({
     ? 'grid gap-4 p-5'
     : 'grid gap-8 lg:grid-cols-[1.15fr_0.85fr] p-6 sm:p-8 lg:p-10'
 
+  if (variant === 'compact') {
+    const compactHighlights = isMember
+      ? ['每日精选', '会员答疑', '同行交流']
+      : ['每日精选', '岗位提醒', '经验交流']
+
+    return (
+      <section className={`${baseClass} ${className}`}>
+        <div className="grid gap-4 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                <Users className="h-3.5 w-3.5" />
+                {config.badge}
+              </div>
+              <h3 className="mt-3 text-lg font-bold tracking-tight text-slate-950">
+                {isMember ? '会员微信群入口' : '企业微信群入口'}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {isMember ? '扫码入群，直接接收精选岗位和会员交流。' : '扫码入群，接收每日精选岗位推送。'}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {compactHighlights.map((item) => (
+                  <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="shrink-0 rounded-3xl border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-3 shadow-sm">
+              <img
+                src={config.qrSrc}
+                alt={config.qrAlt}
+                className="h-28 w-28 rounded-2xl object-contain"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs leading-5 text-slate-600">
+            微信扫码即可加入。二维码失效时联系管理员更新。
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className={`${baseClass} ${className}`}>
       <div className="absolute" aria-hidden />
@@ -74,16 +120,16 @@ export default function WeChatCommunityPanel({
                 <Users className="h-3.5 w-3.5" />
                 {config.badge}
               </div>
-              <h2 className={`mt-4 font-bold tracking-tight text-slate-950 ${variant === 'compact' ? 'text-2xl' : 'text-3xl sm:text-4xl'}`}>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
                 {config.title}
               </h2>
-              <p className={`mt-3 max-w-2xl text-slate-600 ${variant === 'compact' ? 'text-sm leading-6' : 'text-base sm:text-lg leading-8'}`}>
+              <p className="mt-3 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
                 {config.subtitle}
               </p>
             </div>
           )}
 
-          <div className={`grid gap-3 ${variant === 'compact' ? 'grid-cols-1' : 'sm:grid-cols-2'}`}>
+          <div className="grid gap-3 sm:grid-cols-2">
             {[
               { icon: Briefcase, title: '每日精选岗位', desc: '固定同步重点岗位，不需要反复刷新站点。' },
               { icon: MessageSquare, title: '同行交流', desc: '和正在找远程工作的用户讨论投递、面试和工作方式。' },
@@ -116,11 +162,11 @@ export default function WeChatCommunityPanel({
             </div>
           </div>
 
-          {showActions && variant !== 'compact' && (
+          {showActions && (
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/jobs"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white no-underline transition-colors hover:bg-slate-800 hover:text-white visited:text-white active:text-white focus:text-white"
               >
                 先看看今日岗位
                 <ArrowRight className="h-4 w-4" />
@@ -139,7 +185,7 @@ export default function WeChatCommunityPanel({
         </div>
 
         <div className="flex min-w-0 items-center justify-center">
-          <div className={`w-full rounded-[28px] border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 ${variant === 'compact' ? 'p-4' : 'p-6 sm:p-7'}`}>
+          <div className="w-full rounded-[28px] border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-6 sm:p-7">
             <div className="text-center">
               <div className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
                 Scan To Join

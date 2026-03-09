@@ -1,5 +1,27 @@
 import React, { useState } from 'react';
-import { Play, AlertCircle, CheckCircle, Loader, XCircle, Terminal } from 'lucide-react';
+import { Play, AlertCircle, CheckCircle, Loader, RefreshCw, XCircle, Terminal } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+
+type PipelineMode = 'sse' | 'json';
+
+interface StepMonitor {
+  health: 'ok' | 'waiting' | 'warning' | 'error' | 'unknown';
+  message: string;
+  run?: {
+    status?: string;
+    sentAt?: string;
+    updatedAt?: string;
+    jobCount?: number;
+  } | null;
+}
+
+interface PipelineStep {
+  name: string;
+  endpoint: string;
+  method?: 'GET' | 'POST';
+  mode?: PipelineMode;
+  monitorEndpoint?: string;
+}
 
 interface StepResult {
   step: string;
@@ -21,18 +43,42 @@ interface StepResult {
     message: string;
     timestamp: string;
   }>;
+  monitor?: StepMonitor | null;
 }
 
-const CronTestControl: React.FC = () => {
+const PIPELINE_STEPS: PipelineStep[] = [
+  { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss', mode: 'sse' },
+  { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss', mode: 'sse' },
+  { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs', mode: 'sse' },
+  { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs', mode: 'sse' },
+  {
+    name: 'Admin Daily Featured Email',
+    endpoint: '/api/cron/admin-daily-featured-email?action=run&force=true',
+    method: 'POST',
+    mode: 'json',
+    monitorEndpoint: '/api/cron/admin-daily-featured-email?action=monitor'
+  },
+];
+
+const createInitialResults = (): StepResult[] => (
+  PIPELINE_STEPS.map(step => ({
+    step: step.name,
+    status: 'pending',
+    monitor: null
+  }))
+);
+
+interface CronTestControlProps {
+  onMonitorUpdated?: () => void | Promise<void>;
+}
+
+const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) => {
+  const { token } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [executionMode, setExecutionMode] = useState<'pipeline' | 'single'>('pipeline');
-  const [results, setResults] = useState<StepResult[]>([
-    { step: 'Fetch RSS', status: 'pending' },
-    { step: 'Process RSS', status: 'pending' },
-    { step: 'Crawl Trusted Jobs', status: 'pending' },
-    { step: 'Translate Jobs', status: 'pending' },
-  ]);
+  const [results, setResults] = useState<StepResult[]>(createInitialResults);
+  const [isRefreshingMonitor, setIsRefreshingMonitor] = useState(false);
 
   // Dragging state
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -79,12 +125,10 @@ const CronTestControl: React.FC = () => {
     }
   };
 
-  const PIPELINE_STEPS = [
-    { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss' },
-    { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss' },
-    { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs' },
-    { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs' },
-  ];
+  const buildHeaders = () => ({
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  });
 
   // 根据流数据生成用户友好的消息
   const getStreamMessage = (data: any): string => {
@@ -497,42 +541,99 @@ const CronTestControl: React.FC = () => {
     }
   };
 
-  // 执行单个步骤
-  const runSingleStep = async (stepIndex: number) => {
-    if (isRunning) return;
+  const refreshMonitorStatus = async () => {
+    setIsRefreshingMonitor(true);
+    try {
+      const monitorResults = await Promise.all(
+        PIPELINE_STEPS.map(async (step) => {
+          if (!step.monitorEndpoint) return null;
 
-    setIsRunning(true);
+          const response = await fetch(step.monitorEndpoint, {
+            method: 'GET',
+            headers: buildHeaders()
+          });
+
+          if (!response.ok) {
+            throw new Error(`监控请求失败: HTTP ${response.status}`);
+          }
+
+          return await response.json();
+        })
+      );
+
+      setResults(prev => prev.map((result, index) => ({
+        ...result,
+        monitor: monitorResults[index] || result.monitor || null
+      })));
+      await onMonitorUpdated?.();
+    } catch (error) {
+      console.error('Failed to refresh cron monitor status:', error);
+    } finally {
+      setIsRefreshingMonitor(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    refreshMonitorStatus();
+  }, [isOpen, token]);
+
+  const runJsonStep = async (response: Response, stepIndex: number) => {
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.success === false) {
+      throw new Error(payload.message || payload.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const message = payload.sent
+      ? `已发送 ${payload.jobCount || 0} 条岗位到管理员邮箱`
+      : payload.skipped
+        ? (payload.message || '任务已跳过')
+        : (payload.message || '任务完成');
+
+    setResults(prev => prev.map((r, idx) =>
+      idx === stepIndex ? {
+        ...r,
+        status: 'success',
+        message,
+        details: payload,
+        streamMessages: []
+      } : r
+    ));
+
+    await refreshMonitorStatus();
+  };
+
+  const executeStep = async (stepIndex: number) => {
     const step = PIPELINE_STEPS[stepIndex];
 
-    // Update current step to running
     setResults(prev => prev.map((r, idx) =>
       idx === stepIndex ? {
         ...r,
         status: 'running',
         timestamp: new Date().toLocaleTimeString(),
         streamMessages: [],
-        progress: undefined
+        progress: undefined,
+        message: undefined,
+        details: undefined
       } : r
     ));
 
     try {
-      // 发送请求
       const response = await fetch(step.endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        method: step.method || 'POST',
+        headers: buildHeaders()
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if ((step.mode || 'sse') === 'json') {
+        await runJsonStep(response, stepIndex);
+      } else {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        await handleSSEResponse(response, stepIndex);
       }
-
-      await handleSSEResponse(response, stepIndex);
-
     } catch (error: any) {
       console.error(`Error in step ${step.name}:`, error);
-      // Update error
       setResults(prev => prev.map((r, idx) =>
         idx === stepIndex ? {
           ...r,
@@ -541,6 +642,20 @@ const CronTestControl: React.FC = () => {
           details: error
         } : r
       ));
+      await refreshMonitorStatus();
+      throw error;
+    }
+  };
+
+  // 执行单个步骤
+  const runSingleStep = async (stepIndex: number) => {
+    if (isRunning) return;
+
+    setIsRunning(true);
+    try {
+      await executeStep(stepIndex);
+    } catch (_) {
+      // no-op, error state has been written into result
     } finally {
       setIsRunning(false);
     }
@@ -550,50 +665,16 @@ const CronTestControl: React.FC = () => {
     if (isRunning) return;
 
     setIsRunning(true);
-    // Reset results
-    setResults(PIPELINE_STEPS.map(s => ({ step: s.name, status: 'pending' })));
+    setResults(prev => PIPELINE_STEPS.map((step, index) => ({
+      step: step.name,
+      status: 'pending',
+      monitor: prev[index]?.monitor || null
+    })));
 
     for (let i = 0; i < PIPELINE_STEPS.length; i++) {
-      const step = PIPELINE_STEPS[i];
-
-      // Update current step to running
-      setResults(prev => prev.map((r, idx) =>
-        idx === i ? {
-          ...r,
-          status: 'running',
-          timestamp: new Date().toLocaleTimeString(),
-          streamMessages: [],
-          progress: undefined
-        } : r
-      ));
-
       try {
-        // 发送请求
-        const response = await fetch(step.endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        await handleSSEResponse(response, i);
-
-      } catch (error: any) {
-        console.error(`Error in step ${step.name}:`, error);
-        // Update error
-        setResults(prev => prev.map((r, idx) =>
-          idx === i ? {
-            ...r,
-            status: 'error',
-            message: error.message || 'Request failed',
-            details: error
-          } : r
-        ));
-        // Stop pipeline on error
+        await executeStep(i);
+      } catch (_) {
         setIsRunning(false);
         return;
       }
@@ -637,10 +718,18 @@ const CronTestControl: React.FC = () => {
                   Cron Pipeline Simulator
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  Manually trigger the scheduled task pipeline for testing.
+                  Manually trigger the scheduled task pipeline for testing and fallback reruns.
                 </p>
               </div>
               <div className="flex items-center gap-4">
+                <button
+                  onClick={refreshMonitorStatus}
+                  disabled={isRunning || isRefreshingMonitor}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <RefreshCw className={`${isRefreshingMonitor ? 'animate-spin' : ''}`} size={16} />
+                  刷新监控
+                </button>
                 {/* Execution Mode Toggle */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-600">执行模式:</span>
@@ -740,7 +829,7 @@ const CronTestControl: React.FC = () => {
 
                   {/* Progress Information */}
                   {result.progress && (
-                    <div className="mt-2 pl-11">
+                  <div className="mt-2 pl-11">
                       <div className="text-xs text-slate-500 space-y-1">
                         {result.progress.page && (
                           <div>当前页面: {result.progress.page}/{result.progress.totalPages}</div>
@@ -753,6 +842,35 @@ const CronTestControl: React.FC = () => {
                         )}
                         {result.progress.skipped !== undefined && (
                           <div>跳过: {result.progress.skipped}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {result.monitor && (
+                    <div className="mt-3 pl-11">
+                      <div className={`
+                        inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium
+                        ${result.monitor.health === 'ok' ? 'bg-emerald-50 text-emerald-700' : ''}
+                        ${result.monitor.health === 'waiting' ? 'bg-slate-100 text-slate-600' : ''}
+                        ${result.monitor.health === 'warning' ? 'bg-amber-50 text-amber-700' : ''}
+                        ${result.monitor.health === 'error' ? 'bg-red-50 text-red-700' : ''}
+                        ${result.monitor.health === 'unknown' ? 'bg-slate-100 text-slate-500' : ''}
+                      `}>
+                        监控
+                        <span>
+                          {result.monitor.health === 'ok' ? '正常' :
+                            result.monitor.health === 'waiting' ? '等待执行' :
+                              result.monitor.health === 'warning' ? '需关注' :
+                                result.monitor.health === 'error' ? '异常' : '未知'}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-xs leading-5 text-slate-500">
+                        {result.monitor.message}
+                        {result.monitor.run?.updatedAt && (
+                          <span className="ml-2 text-slate-400">
+                            最近更新 {new Date(result.monitor.run.updatedAt).toLocaleString('zh-CN')}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -796,7 +914,7 @@ const CronTestControl: React.FC = () => {
             {/* Footer / Actions */}
             <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
               <div className="text-sm text-slate-500">
-                {executionMode === 'pipeline' ? '按顺序执行所有步骤' : '点击每个步骤的"执行"按钮单独运行'}
+                {executionMode === 'pipeline' ? '按顺序执行所有步骤，包含管理员每日精选邮件补跑' : '点击每个步骤的"执行"按钮单独运行'}
               </div>
               <div className="flex gap-3">
                 <button

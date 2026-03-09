@@ -1102,7 +1102,7 @@ const AdminTeamPage: React.FC = () => {
       </main>
 
       {/* 定时任务测试控件 */}
-      <CronTestControl />
+      <CronTestControl onMonitorUpdated={fetchAdminMessages} />
 
       {/* 简历详情模态框 */}
       {selectedResume && (
