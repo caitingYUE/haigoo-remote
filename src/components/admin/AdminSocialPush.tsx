@@ -27,9 +27,23 @@ interface AudiencePreview {
 
 interface PreviewResponse {
   success: boolean;
+  source: 'cache' | 'generated';
+  timeZone: string;
   batchDate: string;
   batchLabel: string;
   subject: string;
+  generatedAt: string | null;
+  updatedAt: string | null;
+  schedule: {
+    timeZone: string;
+    refreshHour: number;
+    refreshMinute: number;
+    currentBatchDate: string;
+    currentBatchLabel: string;
+    displayBatchDate: string;
+    displayBatchLabel: string;
+    hasReachedRefreshTime: boolean;
+  };
   audiences: {
     public: AudiencePreview;
     member: AudiencePreview;
@@ -76,6 +90,68 @@ const AdminSocialPush: React.FC = () => {
   useEffect(() => {
     fetchPreview();
   }, [fetchPreview]);
+
+  useEffect(() => {
+    if (!preview) return undefined;
+
+    const getMsUntilNextRefresh = () => {
+      const now = new Date();
+      const utcNowMs = now.getTime();
+      const shanghaiNowMs = utcNowMs + (8 * 60 * 60 * 1000);
+      const shanghaiNow = new Date(shanghaiNowMs);
+      const target = new Date(shanghaiNowMs);
+      target.setUTCHours(preview.schedule.refreshHour, preview.schedule.refreshMinute, 0, 0);
+
+      if (target.getTime() <= shanghaiNow.getTime()) {
+        target.setUTCDate(target.getUTCDate() + 1);
+      }
+
+      return Math.max((target.getTime() - shanghaiNow.getTime()) + 1000, 1000);
+    };
+
+    const timer = window.setTimeout(() => {
+      fetchPreview(true);
+    }, getMsUntilNextRefresh());
+
+    return () => window.clearTimeout(timer);
+  }, [preview, fetchPreview]);
+
+  const handleRefreshToday = async () => {
+    try {
+      setRefreshing(true);
+      setError(null);
+
+      const res = await fetch('/api/cron/admin-daily-featured-email?action=refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || '手动刷新失败');
+      }
+
+      setPreview(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '手动刷新失败');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const formatDateTime = (value: string | null) => {
+    if (!value) return '暂无';
+    try {
+      return new Date(value).toLocaleString('zh-CN', {
+        hour12: false
+      });
+    } catch (_) {
+      return value;
+    }
+  };
 
   const handleCopy = async (key: string, text: string) => {
     try {
@@ -143,7 +219,7 @@ const AdminSocialPush: React.FC = () => {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-900">可直接复制的群发文案</h3>
-            <span className="text-xs text-slate-400">邮件和后台保持一致</span>
+            <span className="text-xs text-slate-400">后台缓存结果，可直接复制</span>
           </div>
           <textarea
             readOnly
@@ -213,22 +289,42 @@ const AdminSocialPush: React.FC = () => {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Social Push Preview</div>
-            <h1 className="mt-2 text-2xl font-bold">{preview.batchLabel} 社群推送</h1>
+            <h1 className="mt-2 text-2xl font-bold">{preview.schedule.displayBatchLabel} 社群推送</h1>
             <p className="mt-2 text-sm leading-6 text-white/80">
-              当前邮件已按管理员转发场景生成双版本文案。可分别复制到微信群、企业微信或小红书群。
+              社群推送内容每天上午 10:00（UTC+8）切换到当天批次。当前页面只使用后台缓存，不再发送每日精选邮件。
             </p>
-            <p className="mt-2 text-xs text-white/60">邮件标题：{preview.subject}</p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-white/70">
+              <span>当前展示：{preview.schedule.displayBatchLabel}</span>
+              <span>当前自然日：{preview.schedule.currentBatchLabel}</span>
+              <span>生成状态：{preview.source === 'generated' ? '本次新生成' : '已命中缓存'}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/60">
+              <span>最近生成：{formatDateTime(preview.generatedAt)}</span>
+              <span>时区：{preview.timeZone}</span>
+              <span>手动刷新只会确保当天批次存在，不会在同一天重复重算</span>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => fetchPreview(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-white/12 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/18"
-            disabled={refreshing}
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? '刷新中...' : '刷新预览'}
-          </button>
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => fetchPreview(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/16"
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              刷新展示
+            </button>
+            <button
+              type="button"
+              onClick={handleRefreshToday}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? '处理中...' : '手动刷新当天'}
+            </button>
+          </div>
         </div>
       </div>
 

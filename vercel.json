@@ -14,10 +14,6 @@
       "schedule": "50 1 * * *"
     },
     {
-      "path": "/api/cron/admin-daily-featured-email",
-      "schedule": "0 2 * * *"
-    },
-    {
       "path": "/api/cron/rotate-featured",
       "schedule": "0 3 * * *"
     },

@@ -51,13 +51,6 @@ const PIPELINE_STEPS: PipelineStep[] = [
   { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss', mode: 'sse' },
   { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs', mode: 'sse' },
   { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs', mode: 'sse' },
-  {
-    name: 'Admin Daily Featured Email',
-    endpoint: '/api/cron/admin-daily-featured-email?action=run&force=true',
-    method: 'POST',
-    mode: 'json',
-    monitorEndpoint: '/api/cron/admin-daily-featured-email?action=monitor'
-  },
 ];
 
 const createInitialResults = (): StepResult[] => (
@@ -914,7 +907,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
             {/* Footer / Actions */}
             <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
               <div className="text-sm text-slate-500">
-                {executionMode === 'pipeline' ? '按顺序执行所有步骤，包含管理员每日精选邮件补跑' : '点击每个步骤的"执行"按钮单独运行'}
+                {executionMode === 'pipeline' ? '按顺序执行岗位数据链路任务' : '点击每个步骤的"执行"按钮单独运行'}
               </div>
               <div className="flex gap-3">
                 <button
