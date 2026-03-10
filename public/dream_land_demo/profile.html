@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>我的技能店铺 — Haigoo Dream Land</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* ── Profile-specific styles ── */
+        .profile-layout {
+            display: flex;
+            margin-top: var(--nav-h);
+            min-height: calc(100vh - var(--nav-h));
+        }
+
+        .profile-main {
+            flex: 1;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 28px 32px 80px;
+        }
+
+        /* Hero card */
+        .profile-hero {
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            border-radius: 16px;
+            padding: 28px 32px;
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-hero::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .profile-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            right: 80px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .profile-avatar-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .profile-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2.5px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .profile-online-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #34D399;
+            border: 2px solid #fff;
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .profile-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .profile-tag {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+            letter-spacing: 0.3px;
+        }
+
+        .tag-super {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+
+        .tag-verified {
+            background: #D1FAE5;
+            color: #065F46;
+            border: none;
+        }
+
+        .tag-top {
+            background: #FEF3C7;
+            color: #92400E;
+            border: none;
+        }
+
+        .profile-bio {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            max-width: 500px;
+        }
+
+        .profile-hero-right {
+            flex-shrink: 0;
+            text-align: right;
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-edit-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .profile-edit-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .profile-edit-btn svg {
+            width: 13px;
+            height: 13px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        /* Score strip */
+        .score-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .score-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .score-card:hover {
+            border-color: #C7D2FE;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .score-card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+        }
+
+        .score-card-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .score-card-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            margin-bottom: 3px;
+        }
+
+        .score-card-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Two-col layout */
+        .profile-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .profile-col-wide {
+            display: grid;
+            gap: 16px;
+        }
+
+        /* Section card */
+        .section-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .section-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .section-card-title svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--brand-indigo);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .section-card-action {
+            font-size: 12px;
+            color: var(--brand-indigo);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .section-card-body {
+            padding: 16px 20px;
+        }
+
+        /* Skill product cards */
+        .skill-product {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+
+        .skill-product:last-child {
+            margin-bottom: 0;
+        }
+
+        .skill-product:hover {
+            border-color: #C7D2FE;
+            background: var(--brand-indigo-light);
+        }
+
+        .skill-product-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--brand-indigo-light);
+            border: 1px solid #C7D2FE;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .skill-product-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--brand-indigo);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .skill-product-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .skill-product-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 3px;
+            line-height: 1.3;
+        }
+
+        .skill-product-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 8px;
+        }
+
+        .skill-product-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .skill-product-price {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--brand-indigo);
+        }
+
+        .skill-product-status {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 999px;
+            margin-top: 3px;
+            display: inline-block;
+        }
+
+        .status-on-sale {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        /* Reviews */
+        .review-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .review-item:last-child {
+            border-bottom: none;
+        }
+
+        .review-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .review-user {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .review-stars {
+            font-size: 12px;
+            color: #D97706;
+        }
+
+        .review-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .review-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .review-skill {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--brand-indigo);
+            background: var(--brand-indigo-light);
+            padding: 2px 8px;
+            border-radius: 999px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        /* Portfolio */
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .portfolio-item {
+            aspect-ratio: 4/3;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(135deg, var(--brand-indigo-light), #F5F3FF);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .portfolio-item:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-md);
+        }
+
+        .portfolio-item svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--brand-indigo);
+            fill: none;
+            stroke-width: 1.5;
+            opacity: 0.5;
+        }
+
+        .portfolio-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 6px 8px;
+            background: rgba(15, 23, 42, 0.65);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Cert items */
+        .cert-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cert-item:last-child {
+            border-bottom: none;
+        }
+
+        .cert-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--warning-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .cert-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--warning);
+            fill: none;
+            stroke-width: 1.75;
+        }
+
+        .cert-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .cert-issuer {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .cert-verified {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--success);
+            background: var(--success-light);
+            padding: 2px 8px;
+            border-radius: 999px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        /* Income chart */
+        .income-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .income-month {
+            font-size: 12px;
+            color: var(--text-muted);
+            min-width: 42px;
+            flex-shrink: 0;
+        }
+
+        .income-bar-wrap {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-page);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .income-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--brand-indigo), var(--brand-indigo-mid));
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .income-amount {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-primary);
+            min-width: 52px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 860px) {
+            .profile-cols {
+                grid-template-columns: 1fr;
+            }
+
+            .score-strip {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .portfolio-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+    <nav class="nav">
+        <a class="nav-logo" href="/dream_land_demo/index.html">
+            <div class="nav-logo-mark">
+                <svg viewBox="0 0 24 24">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+            </div>
+            <span class="nav-logo-text">Haigoo Dream Land</span>
+            <span class="nav-logo-tagline">技能零售平台</span>
+            <span class="nav-demo-badge">DEMO</span>
+        </a>
+
+        <div class="nav-center">
+            <div style="display:flex;gap:24px;font-size:13px;font-weight:600;color:var(--text-muted)">
+                <a href="/dream_land_demo/index.html"
+                    style="text-decoration:none;color:var(--text-muted);transition:color 0.15s"
+                    onmouseover="this.style.color='var(--brand-indigo)'"
+                    onmouseout="this.style.color='var(--text-muted)'">任务商店</a>
+                <a href="/dream_land_demo/index.html"
+                    style="text-decoration:none;color:var(--text-muted);transition:color 0.15s"
+                    onmouseover="this.style.color='var(--brand-indigo)'"
+                    onmouseout="this.style.color='var(--text-muted)'">技能商店</a>
+                <a href="/dream_land_demo/profile.html"
+                    style="text-decoration:none;color:var(--brand-indigo);font-weight:700">我的店铺</a>
+            </div>
+        </div>
+
+        <div class="nav-right">
+            <div class="nav-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" placeholder="搜索技能、作品或项目…" />
+            </div>
+            <button class="nav-icon-btn" title="通知">
+                <svg viewBox="0 0 24 24">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+            </button>
+            <div class="nav-avatar" title="我的账户">张</div>
+        </div>
+    </nav>
+
+    <!-- PROFILE LAYOUT -->
+    <div class="profile-layout">
+        <main class="profile-main">
+
+            <!-- Hero Card -->
+            <div class="profile-hero">
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar">张小</div>
+                    <div class="profile-online-dot"></div>
+                </div>
+                <div class="profile-info">
+                    <div class="profile-name">张小凡的技能店铺</div>
+                    <div class="profile-tags">
+                        <span class="profile-tag tag-super">
+                            <svg style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;margin-right:3px;vertical-align:middle"
+                                viewBox="0 0 24 24">
+                                <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+                            </svg>
+                            超级个体
+                        </span>
+                        <span class="profile-tag tag-verified">Haigoo 认证</span>
+                        <span class="profile-tag tag-top">Top 5% 卖家</span>
+                    </div>
+                    <div class="profile-bio">全栈工程师，专注 React / Node.js / Python，5 年技术接单经验。擅长复杂 Bug 修复、Code
+                        Review、系统架构诊断。精准交付每一单，用技术实现你的想法。</div>
+                </div>
+                <div class="profile-hero-right">
+                    <button class="profile-edit-btn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        </svg>
+                        编辑店铺
+                    </button>
+                </div>
+            </div>
+
+            <!-- Score Strip -->
+            <div class="score-strip">
+                <div class="score-card">
+                    <div class="score-card-icon" style="background:#EEF2FF">
+                        <svg viewBox="0 0 24 24" style="stroke:var(--brand-indigo)">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </div>
+                    <div class="score-card-val" style="color:var(--brand-indigo)">¥18,420</div>
+                    <div class="score-card-label">累计收入</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-card-icon" style="background:#ECFDF5">
+                        <svg viewBox="0 0 24 24" style="stroke:var(--success)">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <div class="score-card-val" style="color:var(--success)">98.6</div>
+                    <div class="score-card-label">信誉分</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-card-icon" style="background:#FEF3C7">
+                        <svg viewBox="0 0 24 24" style="stroke:#D97706">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                    </div>
+                    <div class="score-card-val" style="color:#D97706">4.9 ★</div>
+                    <div class="score-card-label">平均评分</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-card-icon" style="background:#F5F3FF">
+                        <svg viewBox="0 0 24 24" style="stroke:var(--brand-purple)">
+                            <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+                        </svg>
+                    </div>
+                    <div class="score-card-val" style="color:var(--brand-purple)">127</div>
+                    <div class="score-card-label">技能点</div>
+                </div>
+            </div>
+
+            <!-- Two columns -->
+            <div class="profile-cols">
+                <!-- Left: Skill Products + Reviews -->
+                <div class="profile-col-wide" style="display:flex;flex-direction:column;gap:16px">
+
+                    <!-- Skill Products -->
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title">
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                                    <path d="M8 21h8M12 17v4" />
+                                </svg>
+                                我的技能商品
+                            </div>
+                            <span class="section-card-action">+ 新增技能包</span>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="skill-product">
+                                <div class="skill-product-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <polyline points="16 18 22 12 16 6" />
+                                        <polyline points="8 6 2 12 8 18" />
+                                    </svg>
+                                </div>
+                                <div class="skill-product-info">
+                                    <div class="skill-product-title">精准 Debug — 帮你找到那只隐藏最深的 Bug</div>
+                                    <div class="skill-product-meta">
+                                        <span>★ 4.9</span><span>127 单</span><span>4h 交付</span>
+                                    </div>
+                                </div>
+                                <div class="skill-product-right">
+                                    <div class="skill-product-price">¥99</div>
+                                    <span class="skill-product-status status-on-sale">上架中</span>
+                                </div>
+                            </div>
+                            <div class="skill-product">
+                                <div class="skill-product-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M9 11l3 3L22 4" />
+                                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                    </svg>
+                                </div>
+                                <div class="skill-product-info">
+                                    <div class="skill-product-title">Code Review — 500 行内代码深度审查 + 建议报告</div>
+                                    <div class="skill-product-meta">
+                                        <span>★ 5.0</span><span>43 单</span><span>8h 交付</span>
+                                    </div>
+                                </div>
+                                <div class="skill-product-right">
+                                    <div class="skill-product-price">¥199</div>
+                                    <span class="skill-product-status status-on-sale">上架中</span>
+                                </div>
+                            </div>
+                            <div class="skill-product">
+                                <div class="skill-product-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <ellipse cx="12" cy="5" rx="9" ry="3" />
+                                        <path d="M3 5v14a9 3 0 0 0 18 0V5" />
+                                        <path d="M3 12a9 3 0 0 0 18 0" />
+                                    </svg>
+                                </div>
+                                <div class="skill-product-info">
+                                    <div class="skill-product-title">数据库慢查询优化 — MySQL / PostgreSQL 性能提升</div>
+                                    <div class="skill-product-meta">
+                                        <span>★ 4.8</span><span>31 单</span><span>12h 交付</span>
+                                    </div>
+                                </div>
+                                <div class="skill-product-right">
+                                    <div class="skill-product-price">¥299</div>
+                                    <span class="skill-product-status status-on-sale">上架中</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reviews -->
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title">
+                                <svg viewBox="0 0 24 24">
+                                    <polygon
+                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                </svg>
+                                客户评价 <span
+                                    style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:4px">4.9 ★
+                                    · 201 条</span>
+                            </div>
+                            <span class="section-card-action">查看全部</span>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="review-item">
+                                <div class="review-skill">Code Review</div>
+                                <div class="review-header">
+                                    <span class="review-user">李**</span>
+                                    <span class="review-stars">★★★★★</span>
+                                    <span class="review-date">2 天前</span>
+                                </div>
+                                <div class="review-text">代码审查非常细致，给出了 12 条改进建议，附带优先级排序，很专业。按时交付，沟通顺畅，强烈推荐！</div>
+                            </div>
+                            <div class="review-item">
+                                <div class="review-skill">精准 Debug</div>
+                                <div class="review-header">
+                                    <span class="review-user">王**</span>
+                                    <span class="review-stars">★★★★★</span>
+                                    <span class="review-date">5 天前</span>
+                                </div>
+                                <div class="review-text">困扰了 3 天的 Bug 只花了 2 小时就找到根因，还附上了完整的修复说明。下次还来！</div>
+                            </div>
+                            <div class="review-item">
+                                <div class="review-skill">数据库优化</div>
+                                <div class="review-header">
+                                    <span class="review-user">陈**</span>
+                                    <span class="review-stars">★★★★☆</span>
+                                    <span class="review-date">1 周前</span>
+                                </div>
+                                <div class="review-text">慢查询优化效果明显，从 8 秒降到 0.3 秒。文档写的清晰，方便后续维护。</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Income + Portfolio + Certs -->
+                <div style="display:flex;flex-direction:column;gap:16px">
+
+                    <!-- Income -->
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title">
+                                <svg viewBox="0 0 24 24">
+                                    <line x1="18" y1="20" x2="18" y2="10" />
+                                    <line x1="12" y1="20" x2="12" y2="4" />
+                                    <line x1="6" y1="20" x2="6" y2="14" />
+                                </svg>
+                                收入趋势
+                            </div>
+                            <span style="font-size:12px;color:var(--success);font-weight:700">↑ 23% 本月</span>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="income-row"><span class="income-month">2月</span>
+                                <div class="income-bar-wrap">
+                                    <div class="income-bar" style="width:55%"></div>
+                                </div><span class="income-amount">¥2,860</span>
+                            </div>
+                            <div class="income-row"><span class="income-month">3月 (截)</span>
+                                <div class="income-bar-wrap">
+                                    <div class="income-bar" style="width:72%"></div>
+                                </div><span class="income-amount">¥3,520</span>
+                            </div>
+                            <div class="income-row" style="opacity:0.45"><span class="income-month">4月</span>
+                                <div class="income-bar-wrap">
+                                    <div class="income-bar" style="width:0%"></div>
+                                </div><span class="income-amount">—</span>
+                            </div>
+                            <div
+                                style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
+                                <div>
+                                    <div style="font-size:11px;color:var(--text-muted)">本月待结算</div>
+                                    <div
+                                        style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;color:var(--brand-indigo)">
+                                        ¥1,240</div>
+                                </div>
+                                <div style="text-align:right">
+                                    <div style="font-size:11px;color:var(--text-muted)">进行中订单</div>
+                                    <div
+                                        style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;color:var(--success)">
+                                        3 单</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Portfolio -->
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title">
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                                    <circle cx="8.5" cy="8.5" r="1.5" />
+                                    <polyline points="21 15 16 10 5 21" />
+                                </svg>
+                                作品集 & 案例
+                            </div>
+                            <span class="section-card-action">编辑</span>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="portfolio-grid">
+                                <div class="portfolio-item">
+                                    <svg viewBox="0 0 24 24">
+                                        <polyline points="16 18 22 12 16 6" />
+                                        <polyline points="8 6 2 12 8 18" />
+                                    </svg>
+                                    <span class="portfolio-label">React 性能优化</span>
+                                </div>
+                                <div class="portfolio-item">
+                                    <svg viewBox="0 0 24 24">
+                                        <ellipse cx="12" cy="5" rx="9" ry="3" />
+                                        <path d="M3 5v14a9 3 0 0 0 18 0V5" />
+                                    </svg>
+                                    <span class="portfolio-label">数据库架构设计</span>
+                                </div>
+                                <div class="portfolio-item">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M9 11l3 3L22 4" />
+                                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                    </svg>
+                                    <span class="portfolio-label">代码审查报告</span>
+                                </div>
+                                <div class="portfolio-item" style="opacity:0.5">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12 5v14M5 12h14" />
+                                    </svg>
+                                </div>
+                                <div class="portfolio-item" style="opacity:0.5">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12 5v14M5 12h14" />
+                                    </svg>
+                                </div>
+                                <div class="portfolio-item" style="opacity:0.5">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12 5v14M5 12h14" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Certs / Qualifications -->
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <div class="section-card-title">
+                                <svg viewBox="0 0 24 24">
+                                    <circle cx="12" cy="8" r="6" />
+                                    <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+                                </svg>
+                                资质认证
+                            </div>
+                            <span class="section-card-action">添加</span>
+                        </div>
+                        <div class="section-card-body" style="padding-top:8px;padding-bottom:8px">
+                            <div class="cert-item">
+                                <div class="cert-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="8" r="6" />
+                                        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="cert-name">Haigoo 超级个体认证</div>
+                                    <div class="cert-issuer">Haigoo 平台 · 2024</div>
+                                </div>
+                                <span class="cert-verified">已验证</span>
+                            </div>
+                            <div class="cert-item">
+                                <div class="cert-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="8" r="6" />
+                                        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="cert-name">AWS 解决方案架构师</div>
+                                    <div class="cert-issuer">Amazon Web Services · 2023</div>
+                                </div>
+                                <span class="cert-verified">已验证</span>
+                            </div>
+                            <div class="cert-item">
+                                <div class="cert-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <polyline points="16 18 22 12 16 6" />
+                                        <polyline points="8 6 2 12 8 18" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="cert-name">React 高级开发者认证</div>
+                                    <div class="cert-issuer">Meta · 2023</div>
+                                </div>
+                                <span class="cert-verified">已验证</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+    <script>
+        // Simple toast on button click
+        document.querySelector('.profile-edit-btn')?.addEventListener('click', () => {
+            const t = document.createElement('div');
+            t.className = 'toast success';
+            t.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>编辑功能将在正式版上线</span>`;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => { t.style.transition = 'all 0.3s ease'; t.style.opacity = '0'; t.style.transform = 'translateX(80px)'; setTimeout(() => t.remove(), 300); }, 2500);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Haigoo Dream Land — 技能零售平台</title>
+  <meta name="description" content="原子化技能交易平台，让技能像商品一样被购买，结果即交付，人人都是超级个体。" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════
+     NAVIGATION
+══════════════════════════════════════════ -->
+  <nav class="nav">
+    <!-- Logo -->
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-mark">
+        <svg viewBox="0 0 24 24">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+      </div>
+      <span class="nav-logo-text">Haigoo Dream Land</span>
+      <span class="nav-logo-tagline">技能零售平台</span>
+      <span class="nav-demo-badge">DEMO</span>
+    </a>
+
+    <!-- Center Toggle -->
+    <div class="nav-center">
+      <div class="perspective-toggle" role="tablist">
+        <div class="toggle-slider" id="toggle-slider"></div>
+        <button id="toggle-task" class="toggle-btn active" role="tab">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+          </svg>
+          任务商店
+        </button>
+        <button id="toggle-skill" class="toggle-btn" role="tab">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+          </svg>
+          技能商店
+        </button>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div class="nav-right">
+      <div class="nav-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+        <input type="text" placeholder="搜索任务、技能或项目类型…" />
+      </div>
+      <button class="nav-icon-btn" title="通知">
+        <svg viewBox="0 0 24 24">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+      </button>
+      <div class="nav-avatar" title="我的店铺" onclick="location.href='/dream_land_demo/profile.html'"
+        style="cursor:pointer">张</div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════
+     LAYOUT
+══════════════════════════════════════════ -->
+  <div class="layout">
+
+    <!-- ── SIDEBAR ─────────────────────────── -->
+    <aside class="sidebar">
+
+      <!-- Task Store Sidebar -->
+      <div id="sidebar-task">
+        <div class="sidebar-section">
+          <div class="sidebar-label">任务分类</div>
+          <button class="sidebar-item active task-filter-chip" data-filter="all">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>全部任务
+          </button>
+          <button class="sidebar-item task-filter-chip" data-filter="dev">
+            <svg viewBox="0 0 24 24">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>技术研发
+          </button>
+          <button class="sidebar-item task-filter-chip" data-filter="design">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+            </svg>UI/UX 设计
+          </button>
+          <button class="sidebar-item task-filter-chip" data-filter="writing">
+            <svg viewBox="0 0 24 24">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+            </svg>内容创作
+          </button>
+          <button class="sidebar-item task-filter-chip" data-filter="data">
+            <svg viewBox="0 0 24 24">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>数据分析
+          </button>
+          <button class="sidebar-item task-filter-chip" data-filter="soft">
+            <svg viewBox="0 0 24 24">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>软技能
+          </button>
+          <button class="sidebar-item task-filter-chip" data-filter="translate">
+            <svg viewBox="0 0 24 24">
+              <path d="m5 8 6 6" />
+              <path d="m4 14 6-6 2-3" />
+              <path d="M2 5h12" />
+              <path d="M7 2h1" />
+              <path d="m22 22-5-10-5 10" />
+              <path d="M14 18h6" />
+            </svg>翻译
+          </button>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">工作量等级</div>
+          <label
+            style="display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+            <input type="checkbox" checked style="accent-color:var(--brand-indigo)"> 快速任务 (&lt;4h)
+          </label>
+          <label
+            style="display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+            <input type="checkbox" checked style="accent-color:var(--brand-indigo)"> 短期协作 (1-3天)
+          </label>
+          <label
+            style="display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+            <input type="checkbox" style="accent-color:var(--brand-indigo)"> 深度合作 (&gt;1周)
+          </label>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">最低报酬（元）</div>
+          <div class="price-range">
+            <input type="range" class="range-input" min="0" max="10000" value="0" />
+            <div class="range-labels"><span>¥0</span><span>¥10,000+</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skill Store Sidebar -->
+      <div id="sidebar-skill" style="display:none">
+        <div class="sidebar-section">
+          <div class="sidebar-label">技能分类</div>
+          <button class="sidebar-item active skill-filter-chip" data-filter="all">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>全部技能
+          </button>
+          <button class="sidebar-item skill-filter-chip" data-filter="dev">
+            <svg viewBox="0 0 24 24">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>技术研发
+          </button>
+          <button class="sidebar-item skill-filter-chip" data-filter="design">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+            </svg>UI/UX 设计
+          </button>
+          <button class="sidebar-item skill-filter-chip" data-filter="writing">
+            <svg viewBox="0 0 24 24">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+            </svg>内容创作
+          </button>
+          <button class="sidebar-item skill-filter-chip" data-filter="data">
+            <svg viewBox="0 0 24 24">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>数据分析
+          </button>
+          <button class="sidebar-item skill-filter-chip" data-filter="soft">
+            <svg viewBox="0 0 24 24">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+            </svg>软技能
+          </button>
+          <button class="sidebar-item skill-filter-chip" data-filter="translate">
+            <svg viewBox="0 0 24 24">
+              <path d="m5 8 6 6" />
+              <path d="m4 14 6-6 2-3" />
+              <path d="M2 5h12" />
+              <path d="M7 2h1" />
+              <path d="m22 22-5-10-5 10" />
+              <path d="M14 18h6" />
+            </svg>翻译
+          </button>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">技能栈</div>
+          <div class="sidebar-skill-chips">
+            <span class="skill-chip-tag active">React</span>
+            <span class="skill-chip-tag">Python</span>
+            <span class="skill-chip-tag">TypeScript</span>
+            <span class="skill-chip-tag">Node.js</span>
+            <span class="skill-chip-tag">Figma</span>
+            <span class="skill-chip-tag">SQL</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">价格区间（元）</div>
+          <div class="price-range">
+            <input type="range" class="range-input" min="0" max="1000" value="0" />
+            <div class="range-labels"><span>¥0</span><span>¥1,000+</span></div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ── CONTENT ──────────────────────────── -->
+    <main class="content">
+
+      <!-- ─── TASK STORE VIEW ─────────────── -->
+      <div id="task-store-view" class="view active">
+        <div class="content-header">
+          <div class="content-header-left">
+            <h1>任务商店</h1>
+            <p class="content-header-sub">根据当前技能匹配，已找到 <strong>2,840+</strong> 个活跃任务</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-secondary" id="btn-post-task">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14" />
+              </svg>发布需求
+            </button>
+          </div>
+        </div>
+
+        <!-- Task Store Banner + Stats -->
+        <div class="store-banner">
+          <div class="store-banner-text">
+            <svg class="store-banner-icon" viewBox="0 0 24 24">
+              <path
+                d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+            </svg>
+            <span>发布你的需求，AI 自动拆解任务，帮你找到最合适的超级个体接单</span>
+          </div>
+          <button class="store-banner-btn" id="btn-post-task-banner">立即发布</button>
+        </div>
+
+        <div class="stats-bar">
+          <div class="stat-item">
+            <div class="stat-value">2,840+</div>
+            <div class="stat-label">活跃任务</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value">1,260+</div>
+            <div class="stat-label">认证技能方</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value" style="color:var(--success)">¥2.4M</div>
+            <div class="stat-label">已结算报酬</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value">98.6%</div>
+            <div class="stat-label">按时交付率</div>
+          </div>
+        </div>
+
+        <div class="sort-row">
+          <span class="sort-label">排序：</span>
+          <select class="sort-select">
+            <option>最新发布</option>
+            <option>报酬最高</option>
+            <option>截止最近</option>
+            <option>匹配度</option>
+          </select>
+        </div>
+
+        <div class="cards-grid" id="tasks-grid"></div>
+      </div>
+
+      <!-- ─── SKILL STORE VIEW ─────────────── -->
+      <div id="skill-store-view" class="view">
+        <div class="content-header">
+          <div class="content-header-left">
+            <h1>技能商店</h1>
+            <p class="content-header-sub">已有 <strong>980+</strong> 个技能包上架，平均评分 <strong>4.8</strong></p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-secondary" id="btn-upload-skill">
+              <svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>出售技能
+            </button>
+          </div>
+        </div>
+
+        <!-- Skill Store Banner + Stats -->
+        <div class="store-banner store-banner-skill">
+          <div class="store-banner-text">
+            <svg class="store-banner-icon" viewBox="0 0 24 24">
+              <path
+                d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+            </svg>
+            <span>发布你的技能并出售，AI 为你精准推荐匹配任务。按结果交付，薪资立即到账。</span>
+          </div>
+          <button class="store-banner-btn" id="btn-sell-skill-banner">立即出售技能</button>
+        </div>
+
+        <div class="stats-bar">
+          <div class="stat-item">
+            <div class="stat-value">980+</div>
+            <div class="stat-label">技能包上架</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value">¥299</div>
+            <div class="stat-label">平均单价</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value" style="color:#D97706">4.8★</div>
+            <div class="stat-label">平均评分</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value">72h</div>
+            <div class="stat-label">平均变现周期</div>
+          </div>
+        </div>
+
+        <div class="sort-row">
+          <span class="sort-label">排序：</span>
+          <select class="sort-select">
+            <option>最新发布</option>
+            <option>评分最高</option>
+            <option>价格最低</option>
+            <option>完成订单</option>
+          </select>
+        </div>
+
+        <div class="cards-grid" id="skills-grid"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+     DRAWER OVERLAY
+══════════════════════════════════════════ -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+
+  <!-- Task Detail Drawer -->
+  <aside class="drawer" id="task-drawer" role="dialog" aria-modal="true">
+    <div class="drawer-header">
+      <div class="drawer-title" id="task-drawer-title">任务详情</div>
+      <button class="modal-close drawer-close">
+        <svg viewBox="0 0 24 24">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div id="task-drawer-content"></div>
+  </aside>
+
+  <!-- Skill Detail Drawer -->
+  <aside class="drawer" id="skill-drawer" role="dialog" aria-modal="true">
+    <div class="drawer-header">
+      <div class="drawer-title" id="skill-drawer-title">技能详情</div>
+      <button class="modal-close drawer-close">
+        <svg viewBox="0 0 24 24">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div id="skill-drawer-content"></div>
+  </aside>
+
+  <!-- ══════════════════════════════════════════
+     MODAL: Post Task
+══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="post-task-modal" role="dialog" aria-modal="true">
+    <div class="modal modal-xl">
+      <div class="modal-header">
+        <div class="modal-title">发布需求</div>
+        <button class="modal-close"><svg viewBox="0 0 24 24">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg></button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="task-desc-input">描述你的需求</label>
+        <textarea class="form-textarea" id="task-desc-input"
+          placeholder="用自然语言描述即可，例如：帮我做一个电商网站 / 修复一个 React Bug / 写 3 篇小红书文案…"></textarea>
+        <p class="form-hint">不需要描述得很详细，AI 会帮你分析并自动拆解复合需求</p>
+      </div>
+
+      <button class="btn-primary" id="btn-ai-analyze" style="width:100%;justify-content:center;margin-bottom:16px">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+        </svg>
+        AI 分析需求
+      </button>
+
+      <!-- AI Analysis Box -->
+      <div class="ai-analysis-box" id="ai-analysis-box">
+        <div class="ai-thinking" id="ai-thinking">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--brand-indigo);fill:none;stroke-width:2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+          </svg>
+          <span>AI 正在分析你的需求</span>
+          <div class="ai-thinking-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="ai-result" id="ai-result"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" for="task-budget">预算上限（元）</label>
+          <input class="form-input" id="task-budget" type="number" placeholder="例如：500" min="0" />
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" for="task-deadline">截止时间</label>
+          <select class="form-select" id="task-deadline">
+            <option value="">请选择</option>
+            <option>明天</option>
+            <option>3天后</option>
+            <option>1周后</option>
+            <option>2周后</option>
+            <option>1个月内</option>
+            <option>时间灵活</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn-cancel">取消</button>
+        <button class="modal-btn-submit" id="post-task-submit">发布需求</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+     MODAL: Upload Skill
+══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="upload-skill-modal" role="dialog" aria-modal="true">
+    <div class="modal modal-xl">
+      <div class="modal-header">
+        <div class="modal-title">上架技能包</div>
+        <button class="modal-close"><svg viewBox="0 0 24 24">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg></button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="skill-title-input">技能包名称</label>
+        <input class="form-input" id="skill-title-input" placeholder="例如：Code Review — 500行内代码深度审查" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" for="skill-category-input">技能类别</label>
+          <select class="form-select" id="skill-category-input">
+            <option>开发</option>
+            <option>设计</option>
+            <option>文案</option>
+            <option>数据</option>
+            <option>软技能</option>
+            <option>翻译</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" for="skill-price-input">定价（元 / 次）</label>
+          <input class="form-input" id="skill-price-input" type="number" placeholder="例如：199" min="0" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="skill-input-spec">买家需要提供（输入）</label>
+        <input class="form-input" id="skill-input-spec" placeholder="例如：代码仓库链接 + 错误描述 + 复现步骤" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="skill-output-spec">你将交付什么（输出）</label>
+        <input class="form-input" id="skill-output-spec" placeholder="例如：修复后的代码 + Bug 根因分析报告" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">上传简历 / 作品集（可选）</label>
+        <div class="upload-area" id="resume-upload-area">
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </div>
+          <div class="upload-text"><strong>点击上传</strong>或拖拽文件至此</div>
+          <div class="upload-sub">支持 PDF、Word、图片，最大 20MB</div>
+        </div>
+        <button class="btn-secondary" id="btn-parse-resume" style="width:100%;justify-content:center">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+          </svg>
+          AI 解析简历，推荐适合任务
+        </button>
+      </div>
+
+      <!-- AI Recommend Panel -->
+      <div class="ai-rec-panel" id="ai-rec-panel">
+        <div class="ai-rec-header">
+          <svg viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span class="ai-rec-title">AI 已为你推荐 4 个高匹配任务</span>
+        </div>
+        <div class="ai-rec-list" id="ai-rec-list"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn-cancel">取消</button>
+        <button class="modal-btn-submit" id="upload-skill-submit">上架技能包</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+     MODAL: Buy Skill
+══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="buy-skill-modal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">确认下单</div>
+        <button class="modal-close"><svg viewBox="0 0 24 24">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg></button>
+      </div>
+
+      <div id="buy-skill-content"></div>
+
+      <div class="form-group">
+        <label class="form-label" for="buy-extra-input">补充具体需求（可选）</label>
+        <textarea class="form-textarea" id="buy-extra-input" placeholder="描述你的具体情况，技能方越了解背景，交付质量越高…"
+          style="min-height:70px"></textarea>
+      </div>
+
+      <div
+        style="background:var(--brand-indigo-light);border:1px solid #C7D2FE;border-radius:var(--radius-md);padding:14px;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:var(--text-secondary)">订单总价</span>
+          <span id="buy-price"
+            style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;color:var(--brand-indigo)">¥0</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;display:flex;align-items:center;gap:4px">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          验收通过后自动付款，不满意可申请退款
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn-cancel">取消</button>
+        <button class="modal-btn-submit" id="confirm-buy-btn">确认下单</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+     TOAST Container
+══════════════════════════════════════════ -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="mock-data.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

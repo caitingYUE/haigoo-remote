@@ -72,6 +72,14 @@
       "destination": "/api/data?resource=stats"
     },
     {
+      "source": "/dream_land_demo",
+      "destination": "/dream_land_demo/index.html"
+    },
+    {
+      "source": "/dream_land_demo/:path*",
+      "destination": "/dream_land_demo/:path*"
+    },
+    {
       "source": "/api/:match*",
       "destination": "/api/:match*"
     },
