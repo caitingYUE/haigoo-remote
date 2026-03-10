@@ -311,6 +311,18 @@ async function handleGoogleLogin(req, res) {
       profile: null
     }
     await saveUser(user)
+
+    // Log the new registration in the admin dashboard
+    if (neonHelper.isConfigured) {
+      try {
+        await neonHelper.query(
+          'INSERT INTO admin_messages (type, title, content) VALUES ($1, $2, $3)',
+          ['user_register', '新用户注册', `用户邮箱: ${googleUser.email}\n用户名: ${user.username}`]
+        )
+      } catch (e) {
+        console.error('[auth] Failed to insert admin message for Google sign up', e)
+      }
+    }
   }
 
   const token = generateToken({
