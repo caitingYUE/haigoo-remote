@@ -68,7 +68,7 @@ export default function JobsPage() {
   console.log('[JobsPage] Version: Preview Fix Applied 2026-02-21 v3 - Layout & Auth Fixes');
   const navigate = useNavigate()
   const location = useLocation()
-  const { token, isAuthenticated } = useAuth()
+  const { token, isAuthenticated, isMember } = useAuth()
 
   const [searchTerm, setSearchTerm] = useState(() => {
     // Optimization: Initialize from URL to avoid double-fetch and flash of wrong content
@@ -897,17 +897,17 @@ export default function JobsPage() {
                     <Sparkles className="w-7 h-7 text-emerald-500" />
                   </div>
                   <h3 className="text-[22px] font-bold tracking-tight text-slate-900 mb-2">
-                    {isAuthenticated ? '专属会员微信群' : '加入企业微信群'}
+                    {isMember ? '专属会员微信群' : '加入企业微信群'}
                   </h3>
                   <p className="text-[13px] leading-relaxed text-slate-500 mb-6 px-1">
-                    {isAuthenticated 
+                    {isMember 
                       ? '获取高价值精选岗位、实战求职讨论和专属内推线索。' 
                       : '每天看精选岗位推送，和正在找远程工作的同行交流信息。'}
                   </p>
                   
                   <div className="relative mx-auto max-w-[200px] bg-white p-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 mb-6 group">
                     <img
-                      src={isAuthenticated ? '/Wechat_group_vip.png' : '/Wechat_group.png'}
+                      src={isMember ? '/Wechat_group_vip.png' : '/Wechat_group.png'}
                       alt="微信群二维码"
                       className="w-full h-auto rounded-xl object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                     />
