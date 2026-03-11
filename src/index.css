@@ -9,7 +9,8 @@ html, body, #root {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
+  /* Removed fixed height: 100% to allow scrolling */
+  min-height: 100%; 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -21,15 +22,15 @@ html, body, #root {
 /* Isolate the root application from injected extension styles */
 #root {
   isolation: isolate;
-  display: flex;
-  flex-direction: column;
+  /* Removed display: flex; flex-direction: column; to prevent layout lock-up */
   position: relative;
   z-index: 0; /* Create stacking context */
 }
 
 /* Protect critical layout components from external margin/padding injections */
-header, nav, main, footer {
-  display: block; /* Ensure block formatting context */
+/* Removed strict display: block rule to avoid interfering with flex layouts */
+header, nav, footer {
+  display: block; 
 }
 
 /* Enforce critical form element styles within the app to prevent extension overrides */
