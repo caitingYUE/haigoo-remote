@@ -652,7 +652,7 @@ export default function JobsPage() {
   return (
     <MobileRestricted allowContinue={true}>
       <div
-        className="h-full bg-slate-50 flex flex-col"
+        className="h-full bg-transparent flex flex-col pt-20"
         role="main"
         aria-label="职位搜索页面"
       >
