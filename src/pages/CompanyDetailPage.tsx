@@ -47,22 +47,43 @@ export default function CompanyDetailPage() {
             // P0 Optimization: Run requests sequentially to prioritize ID-based job fetching
             // 1. Fetch trusted company info first to get ID
             // Use 'name' parameter for precise search if available in backend
-            const companiesResponse = await trustedCompaniesService.getAllCompanies({ name: decodedCompanyName });
+            let companiesResponse = await trustedCompaniesService.getAllCompanies({ name: decodedCompanyName });
 
-            const companies = Array.isArray(companiesResponse)
+            let companies = Array.isArray(companiesResponse)
                 ? companiesResponse
                 : ((companiesResponse as any)?.companies || []);
 
             const norm = decodedCompanyName.trim().toLowerCase()
-            const trusted = companies.find((c: TrustedCompany) => c.name?.trim().toLowerCase() === norm) ||
+            let trusted = companies.find((c: TrustedCompany) => c.name?.trim().toLowerCase() === norm) ||
                 companies.find((c: TrustedCompany) => c.name && c.name.toLowerCase().includes(norm))
+
+            // Fallback: If exact name match fails (e.g. company was renamed from "Macro" -> "Makro"),
+            // try fuzzy search using the search parameter which uses ILIKE matching
+            if (!trusted && decodedCompanyName) {
+                console.log(`[CompanyDetail] Exact name match failed for "${decodedCompanyName}", trying fuzzy search...`);
+                try {
+                    const fuzzyResponse = await trustedCompaniesService.getAllCompanies({ search: decodedCompanyName });
+                    const fuzzyCompanies = Array.isArray(fuzzyResponse)
+                        ? fuzzyResponse
+                        : ((fuzzyResponse as any)?.companies || []);
+                    // Pick the best match: exact > includes > first available
+                    trusted = fuzzyCompanies.find((c: TrustedCompany) => c.name?.trim().toLowerCase() === norm) ||
+                        fuzzyCompanies.find((c: TrustedCompany) => c.name && c.name.toLowerCase().includes(norm)) ||
+                        fuzzyCompanies[0]; // last resort: take first result
+                    if (trusted) {
+                        console.log(`[CompanyDetail] Fuzzy match found: "${trusted.name}"`);
+                        companies = fuzzyCompanies;
+                    }
+                } catch (e) {
+                    console.error('[CompanyDetail] Fuzzy search failed:', e);
+                }
+            }
 
             let companyId = null;
             if (trusted) {
-                // If trusted company is found, check if coverImage is missing (due to list optimization)
-                // If missing, fetch full details by ID to get the cover image
+                // Always fetch full details by ID to ensure all fields (coverImage, etc.) are present
                 let fullTrusted = trusted;
-                if (!trusted.coverImage && trusted.id) {
+                if (trusted.id) {
                     try {
                         const details = await trustedCompaniesService.getCompanyById(trusted.id);
                         if (details) {

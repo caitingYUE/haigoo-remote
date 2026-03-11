@@ -44,7 +44,7 @@ export default function AdminCompanyManagementPage() {
     const [pageSize] = useState(20);
     const [searchQuery, setSearchQuery] = useState('');
     const [industryFilter, setIndustryFilter] = useState('');
-    
+
     // Selection & Modals
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -52,7 +52,7 @@ export default function AdminCompanyManagementPage() {
     const [editForm, setEditForm] = useState<Partial<Company>>({});
     const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
     const [jobSearchTerm, setJobSearchTerm] = useState('');
-    
+
     // Tag Config State
     const [tagConfig, setTagConfig] = useState<{
         jobCategories: string[];
@@ -89,7 +89,7 @@ export default function AdminCompanyManagementPage() {
             };
 
             const data = await trustedCompaniesService.getAllCompanies(params);
-            
+
             if (Array.isArray(data)) {
                 // Handle array response (should match Company interface)
                 const list = data.map(tc => ({
@@ -401,7 +401,7 @@ export default function AdminCompanyManagementPage() {
                 // Note: Generic crawler might not get employee count/founded year/specialties
                 // We leave them for manual entry or future enhancement
             }));
-            
+
             alert('获取成功！请检查并补充信息。');
         } catch (error) {
             console.error('Fetch LinkedIn error:', error);
@@ -436,7 +436,22 @@ export default function AdminCompanyManagementPage() {
             if (response.ok && data.success) {
                 setCompanies((prev: Company[]) => prev.map((c: Company) => c.id === updatedCompany.id ? updatedCompany : c));
                 setIsEditModalOpen(false);
-                alert('保存成功！');
+                alert('保存成功！正在同步数据到岗位库...');
+
+                // Auto-trigger sync-jobs in background to propagate company updates (logo, industry, tags, etc.) to jobs table
+                // This is non-blocking - runs silently after the save
+                fetch('/api/data/trusted-companies?action=sync-jobs', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).then(r => r.json()).then(result => {
+                    if (result.success) {
+                        console.log(`[Admin] Auto sync-jobs completed: ${result.message}`);
+                    } else {
+                        console.warn('[Admin] Auto sync-jobs failed:', result.error);
+                    }
+                }).catch(err => {
+                    console.warn('[Admin] Auto sync-jobs request failed:', err);
+                });
             } else {
                 alert('保存失败: ' + (data.error || '未知错误'));
             }
@@ -445,6 +460,7 @@ export default function AdminCompanyManagementPage() {
             alert('保存失败');
         }
     };
+
 
     return (
         <div className="p-6 max-w-[1600px] mx-auto">
@@ -575,7 +591,7 @@ export default function AdminCompanyManagementPage() {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         <div className="flex items-center gap-2">
                                             <span>{company.jobCount}</span>
-                                            <button 
+                                            <button
                                                 onClick={() => handleViewJobs(company)}
                                                 className="text-indigo-600 hover:text-indigo-800"
                                                 title="查看岗位"
@@ -595,7 +611,7 @@ export default function AdminCompanyManagementPage() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex justify-end gap-2">
-                                            <button 
+                                            <button
                                                 onClick={() => handleUpdateInfo(company)}
                                                 disabled={updatingMap[company.id]}
                                                 className="text-gray-600 hover:text-green-600 disabled:opacity-50"
@@ -603,8 +619,8 @@ export default function AdminCompanyManagementPage() {
                                             >
                                                 <RefreshCw className={`w-4 h-4 ${updatingMap[company.id] ? 'animate-spin' : ''}`} />
                                             </button>
-                                            <button 
-                                                onClick={() => handleEditClick(company)} 
+                                            <button
+                                                onClick={() => handleEditClick(company)}
                                                 className="text-gray-600 hover:text-indigo-600"
                                                 title="编辑"
                                             >
@@ -639,7 +655,7 @@ export default function AdminCompanyManagementPage() {
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        
+
                         <div className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">企业名称</label>
@@ -650,7 +666,7 @@ export default function AdminCompanyManagementPage() {
                                     className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                 />
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">行业</label>
@@ -793,13 +809,13 @@ export default function AdminCompanyManagementPage() {
                                                     onClick={() => {
                                                         const rawTags = editForm.tags as any;
                                                         let currentTags: string[] = [];
-                                                        
+
                                                         if (Array.isArray(rawTags)) {
                                                             currentTags = rawTags;
                                                         } else if (typeof rawTags === 'string') {
                                                             currentTags = rawTags.split(',').map((t: string) => t.trim()).filter(Boolean);
                                                         }
-                                                        
+
                                                         if (!currentTags.includes(tag)) {
                                                             const newTags = [...currentTags, tag].join(', ');
                                                             setEditForm({ ...editForm, tags: newTags as any });
@@ -873,8 +889,8 @@ export default function AdminCompanyManagementPage() {
                                                     <span>{job.location}</span>
                                                     {job.salary && (
                                                         <span>
-                                                            {typeof job.salary === 'string' 
-                                                                ? job.salary 
+                                                            {typeof job.salary === 'string'
+                                                                ? job.salary
                                                                 : `${job.salary.min}-${job.salary.max} ${job.salary.currency}`}
                                                         </span>
                                                     )}
