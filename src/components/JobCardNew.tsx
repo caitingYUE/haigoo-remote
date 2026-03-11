@@ -385,7 +385,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   {/* Salary (Desktop - Restored to Top Right) */}
-                  <div className={`hidden md:block text-base whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                  <div className={`hidden md:block text-[15px] whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
                      {formatSalary(job.salary)}
                   </div>
                </div>
@@ -458,7 +458,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      )}
 
                      {/* Salary (Mobile Only) */}
-                     <div className={`md:hidden text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-slate-900'}`}>
+                     <div className={`md:hidden text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
                         {formatSalary(job.salary)}
                      </div>
 
@@ -561,7 +561,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             {/* Footer */}
             <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
                <div className="flex items-center gap-2">
-                  <div className={`text-base ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400 font-medium' : 'font-bold text-indigo-600'}`}>
+                  <div className={`text-[15px] ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
                      {formatSalary(job.salary)}
                   </div>
                   {resolvedMatchLevel !== 'none' && (
