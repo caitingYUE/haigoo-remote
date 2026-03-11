@@ -142,69 +142,63 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-slate-200">
+        <div className="p-5 border-b border-slate-200 bg-slate-50/50 rounded-t-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h2 className="text-xl font-semibold text-slate-900">编辑职位信息</h2>
+              <h2 className="text-lg font-semibold text-slate-900">编辑职位信息</h2>
               {/* 导航按钮 */}
               {onNavigate && (
-                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-md p-0.5 shadow-sm">
                   <button
                     type="button"
                     onClick={() => onNavigate('prev')}
                     disabled={!hasPrev}
-                    className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
+                    className="p-1 hover:bg-slate-50 rounded disabled:opacity-30 disabled:hover:bg-transparent transition-all"
                     title="上一条 (←)"
                   >
-                    <ChevronLeft className="w-5 h-5 text-slate-600" />
+                    <ChevronLeft className="w-4 h-4 text-slate-600" />
                   </button>
-                  <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                  <div className="w-px h-3 bg-slate-200 mx-0.5"></div>
                   <button
                     type="button"
                     onClick={() => onNavigate('next')}
                     disabled={!hasNext}
-                    className="p-1 hover:bg-white rounded shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:shadow-none transition-all"
+                    className="p-1 hover:bg-slate-50 rounded disabled:opacity-30 disabled:hover:bg-transparent transition-all"
                     title="下一条 (→)"
                   >
-                    <ChevronRight className="w-5 h-5 text-slate-600" />
+                    <ChevronRight className="w-4 h-4 text-slate-600" />
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-md hover:bg-slate-50 transition-colors text-[13px] font-medium shadow-sm"
               >
                 取消
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={isSaving}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center gap-1.5 text-[13px] font-medium shadow-sm"
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     保存中...
                   </>
                 ) : '保存'}
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors ml-2"
-              >
-                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Approval Action Bar */}
-          <div className="flex items-center justify-between bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+          <div className="flex items-center justify-between bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.isApproved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
                 {formData.isApproved ? <CheckCircle className="w-6 h-6" /> : <Info className="w-6 h-6" />}
@@ -233,14 +227,14 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">岗位名称</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位名称</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
               {(formData as any).translations?.title && (
@@ -255,7 +249,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                       delete newTrans.title;
                       setFormData({ ...formData, translations: newTrans });
                     }}
-                    className="text-xs text-red-600 hover:text-red-700 font-medium whitespace-nowrap"
+                    className="text-[11px] text-red-600 hover:text-red-700 font-medium whitespace-nowrap"
                   >
                     清除翻译
                   </button>
@@ -264,23 +258,23 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">企业名称</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">企业名称</label>
               <input
                 type="text"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">工作地点</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">工作地点</label>
               <input
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 mb-2"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 mb-1.5"
               />
               <div className="flex flex-wrap gap-1.5">
                 {['全球远程', '中国远程', '亚太远程', '香港远程', '台湾远程'].map(loc => (
@@ -288,7 +282,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                     key={loc}
                     type="button"
                     onClick={() => setFormData({ ...formData, location: loc })}
-                    className="text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-colors"
+                    className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition-colors"
                   >
                     {loc}
                   </button>
@@ -297,55 +291,54 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">时区</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">时区</label>
               <input
                 type="text"
                 value={formData.timezone}
                 onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="例如: UTC+8, PST, America/New_York"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">发布时间</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">发布时间</label>
               <input
                 type="datetime-local"
                 value={formData.publishedAt}
                 onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">薪资</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">薪资</label>
               <input
                 type="text"
                 value={formData.salary}
                 onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="例如: $80,000 - $120,000"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">申请链接 (URL)</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">申请链接 (URL)</label>
               <input
                 type="url"
                 value={(formData as any).url || ''}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value } as any)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="https://..."
               />
-              <p className="text-xs text-slate-500 mt-1">手动录入岗位时请填写，爬虫抓取的岗位会自动填充。</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">岗位类型</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位类型</label>
               <select
                 value={formData.jobType}
                 onChange={(e) => setFormData({ ...formData, jobType: e.target.value as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship' })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="full-time">全职</option>
                 <option value="part-time">兼职</option>
@@ -356,11 +349,11 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div className="hidden">
-              <label className="block text-sm font-medium text-slate-700 mb-2">区域分类</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">区域分类</label>
               <select
                 value={formData.region || ''}
                 onChange={(e) => setFormData({ ...formData, region: (e.target.value || undefined) as 'domestic' | 'overseas' | undefined })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">未设置</option>
                 <option value="domestic">国内</option>
@@ -369,11 +362,11 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">岗位级别</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位级别</label>
               <select
                 value={formData.experienceLevel}
                 onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="Entry">初级</option>
                 <option value="Mid">中级</option>
@@ -384,11 +377,11 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">岗位分类</label>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位分类</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value as JobCategory })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 {/* Dynamically populated categories or fallback */}
                 {availableCategories.length > 0 ? (
@@ -411,21 +404,21 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div className="md:col-span-2">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer mt-1">
                 <input
                   type="checkbox"
                   checked={formData.isFeatured}
                   onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                 />
-                <span className="text-sm font-medium text-slate-700">设为精选岗位 (Featured)</span>
-                <Star className={`w-4 h-4 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-slate-400'}`} />
+                <span className="text-[13px] font-medium text-slate-700">设为精选岗位 (Featured)</span>
+                <Star className={`w-3.5 h-3.5 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-slate-400'}`} />
               </label>
             </div>
 
-            <div className="md:col-span-2">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-slate-700">技能标签（用逗号分隔）</label>
+            <div className="md:col-span-2 mt-4 space-y-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[13px] font-medium text-slate-700">技能标签（用逗号分隔）</label>
                 <button
                   type="button"
                   onClick={() => {
@@ -465,7 +458,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                       setFormData({ ...formData, tags: Array.from(newTags).join(', ') });
                     }
                   }}
-                  className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1.5 rounded-md transition-colors font-medium border border-indigo-100"
+                  className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors font-medium"
                   title="自动扫描职位描述并提取常见关键词"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -477,13 +470,13 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="例如: React, TypeScript, Node.js"
                 />
                 {/* Use currentSuggestedTags instead of generic availableTags if available */}
                 {(currentSuggestedTags.length > 0 ? currentSuggestedTags : availableTags).length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    <span className="text-xs text-slate-500 flex items-center">推荐标签:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    <span className="text-[11px] text-slate-500 flex items-center pr-1">推荐标签:</span>
                     {(currentSuggestedTags.length > 0 ? currentSuggestedTags : availableTags).map(tag => (
                       <button
                         key={tag}
@@ -495,7 +488,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                             setFormData({ ...formData, tags: newTags });
                           }
                         }}
-                        className="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 text-xs rounded transition-colors"
+                        className="px-1.5 py-0.5 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 text-[11px] rounded transition-colors border border-transparent hover:border-indigo-100"
                       >
                         + {tag}
                       </button>
@@ -505,57 +498,60 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
             </div>
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 mt-4 space-y-4 pt-4 border-t border-slate-100">
               {(job as any).translations?.description && (
-                <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 text-indigo-800 font-medium">
-                      <span className="text-xs bg-indigo-200 px-2 py-0.5 rounded text-indigo-800">中文翻译 (参考)</span>
+                <div className="mb-3 bg-indigo-50/50 border border-indigo-100/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2 text-indigo-700 font-medium">
+                      <span className="text-[11px] bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-800">中文翻译 (参考)</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, description: (job as any).translations.description })}
-                      className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-800 transition-colors bg-white px-2 py-1 rounded border border-indigo-200 hover:border-indigo-300 shadow-sm"
+                      className="text-[11px] flex items-center gap-1 text-indigo-600 hover:text-indigo-800 transition-colors bg-white px-2 py-1 rounded shadow-sm border border-indigo-100"
                       title="使用翻译替换当前描述"
                     >
                       <ArrowDown className="w-3 h-3" />
                       填入描述
                     </button>
                   </div>
-                  <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto custom-scrollbar">
+                  <div className="text-[13px] text-slate-700 whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto custom-scrollbar">
                     {(job as any).translations.description}
                   </div>
                 </div>
               )}
-              <label className="block text-sm font-medium text-slate-700 mb-2">岗位描述</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
+              
+              <div>
+                <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位描述</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">岗位要求（每行一个）</label>
-              <textarea
-                value={formData.requirements}
-                onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="例如:&#10;3+ years React experience&#10;TypeScript proficiency"
-              />
-            </div>
+              <div>
+                <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位要求（每行一个）</label>
+                <textarea
+                  value={formData.requirements}
+                  onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
+                  rows={3}
+                  className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                  placeholder="例如:&#10;3+ years React experience&#10;TypeScript proficiency"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">福利待遇（每行一个）</label>
-              <textarea
-                value={formData.benefits}
-                onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
-                rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="例如:&#10;Remote work&#10;Health insurance"
-              />
+              <div>
+                <label className="block text-[13px] font-medium text-slate-700 mb-1.5">福利待遇（每行一个）</label>
+                <textarea
+                  value={formData.benefits}
+                  onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
+                  rows={3}
+                  className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                  placeholder="例如:&#10;Remote work&#10;Health insurance"
+                />
+              </div>
             </div>
           </div>
         </form>
