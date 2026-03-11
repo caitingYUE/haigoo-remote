@@ -177,7 +177,7 @@ export default function Header() {
       role="banner"
     >
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto transition-all duration-300 bg-white/70 backdrop-blur-2xl border-b border-white/20 shadow-sm shadow-white/10">
-        <div className="flex items-center h-14 w-full">
+        <div className="flex items-center h-16 w-full">
           {/* Logo */}
           <div className="flex items-center group shrink-0">
             {/* Logo Image with Optical Adjustment */}
