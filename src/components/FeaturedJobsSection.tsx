@@ -82,14 +82,14 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
           // Sort by updated/published descending (processedJobsService usually sorts by recent or relevance, let's enforce recent)
           finalJobs.sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
 
-          // 条件三: 针对企业做打散，每组（6个）相同企业数量不超过2个
+          // 条件三: 针对企业做打散，每组（6个）相同企业数量不超过1个
           const companyCountMap = new Map<string, number>();
           const dispersedJobs: typeof finalJobs = [];
 
           for (const job of finalJobs) {
             const compName = job.company ? job.company.toLowerCase() : 'unknown';
             const count = companyCountMap.get(compName) || 0;
-            if (count < 2) {
+            if (count < 1) {
               dispersedJobs.push(job);
               companyCountMap.set(compName, count + 1);
             }
