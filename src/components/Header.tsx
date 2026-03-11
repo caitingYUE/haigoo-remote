@@ -189,7 +189,7 @@ export default function Header() {
               <img
                 src={BRAND_LOGO}
                 alt="Haigoo - 海外远程工作助手"
-                className="h-10 md:h-12 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
+                className="h-9 md:h-10 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
               />
               <span className="hidden md:block text-sm font-bold text-slate-900 tracking-tight">海狗远程俱乐部</span>
             </Link>
