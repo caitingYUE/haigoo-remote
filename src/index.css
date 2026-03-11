@@ -34,10 +34,10 @@ header, nav, footer {
 }
 
 /* Enforce critical form element styles within the app to prevent extension overrides */
-#root input,
-#root select,
-#root textarea,
-#root button {
+:where(#root) input,
+:where(#root) select,
+:where(#root) textarea,
+:where(#root) button {
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;

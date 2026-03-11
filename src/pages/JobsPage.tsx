@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Search, Sparkles, Briefcase, Zap, X } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -7,7 +8,6 @@ import JobBundleBanner from '../components/JobBundleBanner'
 import JobDetailModal from '../components/JobDetailModal'
 import { JobDetailPanel } from '../components/JobDetailPanel'
 import JobFilterBar from '../components/JobFilterBar'
-import WeChatCommunityPanel from '../components/WeChatCommunityPanel'
 import { Job } from '../types'
 
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -875,24 +875,53 @@ export default function JobsPage() {
         )}
 
         {/* WeChat Community Modal */}
-        {showWechatModal && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 animate-in fade-in duration-200" onClick={() => setShowWechatModal(false)}>
-            <div className="relative w-full max-w-[850px] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-              <button
-                onClick={() => setShowWechatModal(false)}
-                className="absolute right-4 top-4 z-10 p-2 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
-                aria-label="Close modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <WeChatCommunityPanel 
-                isMember={isAuthenticated} 
-                variant="page" 
-                showHeader={true} 
-                showActions={false} 
-              />
+        {showWechatModal && typeof document !== 'undefined' && createPortal(
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setShowWechatModal(false)}>
+            <div className="relative w-full max-w-[360px] bg-white rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="absolute right-4 top-4 z-20">
+                <button
+                  onClick={() => setShowWechatModal(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 bg-white/80 hover:bg-slate-100 backdrop-blur rounded-full transition-colors shadow-sm border border-slate-100"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="px-6 py-8 text-center bg-gradient-to-br from-emerald-50/50 via-white to-sky-50/50 relative">
+                {/* Decorative blob */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-full mix-blend-multiply filter blur-2xl opacity-50 translate-x-8 -translate-y-8"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-sky-100 rounded-full mix-blend-multiply filter blur-2xl opacity-50 -translate-x-8 translate-y-8"></div>
+                
+                <div className="relative z-10">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow-sm border border-emerald-100 mb-5">
+                    <Sparkles className="w-7 h-7 text-emerald-500" />
+                  </div>
+                  <h3 className="text-[22px] font-bold tracking-tight text-slate-900 mb-2">
+                    {isAuthenticated ? '专属会员微信群' : '加入企业微信群'}
+                  </h3>
+                  <p className="text-[13px] leading-relaxed text-slate-500 mb-6 px-1">
+                    {isAuthenticated 
+                      ? '获取高价值精选岗位、实战求职讨论和专属内推线索。' 
+                      : '每天看精选岗位推送，和正在找远程工作的同行交流信息。'}
+                  </p>
+                  
+                  <div className="relative mx-auto max-w-[200px] bg-white p-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 mb-6 group">
+                    <img
+                      src={isAuthenticated ? '/Wechat_group_vip.png' : '/Wechat_group.png'}
+                      alt="微信群二维码"
+                      className="w-full h-auto rounded-xl object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                  
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-700 text-xs font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    使用微信或企业微信扫码加入
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
       </div>
