@@ -550,12 +550,12 @@ export default function AdminTrustedCompaniesPage() {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">规模/地址</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">评分/成立</th>
+                                    <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">企业名称</th>
+                                    <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">行业</th>
+                                    <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">规模/地址</th>
+                                    <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">评分/成立</th>
                                     <th
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
+                                        className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider w-[110px] cursor-pointer hover:bg-gray-100 select-none"
                                         onClick={() => handleSort('jobCount')}
                                     >
                                         <div className="flex items-center gap-1">
@@ -566,7 +566,7 @@ export default function AdminTrustedCompaniesPage() {
                                         </div>
                                     </th>
                                     <th
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px] cursor-pointer hover:bg-gray-100 select-none"
+                                        className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider w-[120px] cursor-pointer hover:bg-gray-100 select-none"
                                         onClick={() => handleSort('updatedAt')}
                                     >
                                         <div className="flex items-center gap-1">
@@ -576,109 +576,111 @@ export default function AdminTrustedCompaniesPage() {
                                             )}
                                         </div>
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">链接</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">操作</th>
+                                    <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider w-[100px]">链接</th>
+                                    <th className="px-4 py-2 text-right text-[11px] font-medium text-gray-500 uppercase tracking-wider w-[120px]">操作</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {companies.map(company => (
                                     <tr key={company.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-2.5">
                                             <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200">
+                                                <div className="flex-shrink-0 h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200">
                                                     {company.logo ? (
-                                                        <img src={company.logo} alt="" className="h-full w-full object-contain p-1" />
+                                                        <img src={company.logo} alt="" className="h-full w-full object-contain p-0.5" />
                                                     ) : (
-                                                        <Building2 className="w-5 h-5 text-gray-400" />
+                                                        <Building2 className="w-4 h-4 text-gray-400" />
                                                     )}
                                                 </div>
-                                                <div className="ml-4 max-w-xs">
-                                                    <div className="font-medium text-gray-900 flex items-center gap-2">
+                                                <div className="ml-3 max-w-xs">
+                                                    <div className="font-medium text-gray-900 flex items-center gap-2 text-[13px]">
                                                         {company.name}
                                                         {company.canRefer && (
-                                                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded border border-green-200 whitespace-nowrap">
+                                                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] rounded border border-green-200 whitespace-nowrap leading-none">
                                                                 内推
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="text-xs text-gray-500 truncate" title={company.description}>
+                                                    <div className="text-[11px] text-gray-500 truncate" title={company.description}>
                                                         {company.description || '暂无简介'}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        <td className="px-4 py-2.5 whitespace-nowrap">
+                                            <span className="px-1.5 py-0.5 inline-flex text-[11px] leading-tight font-semibold rounded-full bg-blue-100 text-blue-800">
                                                 {company.industry || '未分类'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                            <div className="flex flex-col">
+                                        <td className="px-4 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
+                                            <div className="flex flex-col leading-tight">
                                                 <span>{company.employeeCount || '-'}</span>
-                                                <span className="text-xs text-gray-400 truncate max-w-[150px]" title={company.address}>{company.address || '-'}</span>
+                                                <span className="text-[11px] text-gray-400 truncate max-w-[150px] mt-0.5" title={company.address}>{company.address || '-'}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                            <div className="flex flex-col">
+                                        <td className="px-4 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
+                                            <div className="flex flex-col leading-tight">
                                                 <span>{company.companyRating ? `⭐ ${company.companyRating}` : '-'}</span>
-                                                <span className="text-xs text-gray-400">{company.foundedYear ? `${company.foundedYear}年成立` : '-'}</span>
+                                                <span className="text-[11px] text-gray-400 mt-0.5">{company.foundedYear ? `${company.foundedYear}年` : '-'}</span>
                                             </div>
                                         </td>
                                         <td
-                                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 cursor-pointer hover:text-indigo-600 hover:font-medium underline decoration-dashed underline-offset-4"
+                                            className="px-4 py-2.5 whitespace-nowrap text-[13px] text-gray-700 cursor-pointer hover:text-indigo-600 hover:font-medium underline decoration-dashed underline-offset-4"
                                             onClick={() => setSelectedCompanyForJobs(company)}
                                             title="点击管理岗位"
                                         >
                                             {company.jobCount ?? 0}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td className="px-4 py-2.5 whitespace-nowrap text-[13px] text-gray-500">
                                             {company.updatedAt ? (
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col leading-tight">
                                                     <span>{new Date(company.updatedAt).toLocaleDateString()}</span>
-                                                    <span className="text-xs text-gray-400">{new Date(company.updatedAt).toLocaleTimeString()}</span>
+                                                    <span className="text-[11px] text-gray-400 mt-0.5">{new Date(company.updatedAt).toLocaleTimeString()}</span>
                                                 </div>
                                             ) : (
                                                 <span className="text-gray-400">-</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div className="flex gap-2">
+                                        <td className="px-4 py-2.5 whitespace-nowrap text-[13px] text-gray-500">
+                                            <div className="flex gap-1.5">
                                                 {company.website && (
                                                     <a href={company.website} target="_blank" rel="noreferrer" title="官网" className="text-gray-400 hover:text-indigo-600">
-                                                        <GlobeIcon />
+                                                        <GlobeIcon className="w-[14px] h-[14px]" />
                                                     </a>
                                                 )}
                                                 {company.careersPage && (
                                                     <a href={company.careersPage} target="_blank" rel="noreferrer" title="招聘主页" className="text-gray-400 hover:text-indigo-600">
-                                                        <BriefcaseIcon />
+                                                        <BriefcaseIcon className="w-[14px] h-[14px]" />
                                                     </a>
                                                 )}
                                                 {company.linkedin && (
                                                     <a href={company.linkedin} target="_blank" rel="noreferrer" title="LinkedIn" className="text-gray-400 hover:text-indigo-600">
-                                                        <LinkedinIcon />
+                                                        <LinkedinIcon className="w-[14px] h-[14px]" />
                                                     </a>
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button
-                                                onClick={() => handleCrawlJobs(company.id)}
-                                                disabled={crawlingId === company.id}
-                                                className="text-gray-600 hover:text-indigo-600 mr-4 disabled:opacity-50"
-                                                title="抓取岗位数据"
-                                            >
-                                                {crawlingId === company.id ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <DownloadCloud className="w-4 h-4" />
-                                                )}
-                                            </button>
-                                            <button onClick={() => handleEdit(company)} className="text-indigo-600 hover:text-indigo-900 mr-4">
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button onClick={() => handleDelete(company.id)} className="text-red-600 hover:text-red-900">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                        <td className="px-4 py-2.5 whitespace-nowrap text-[13px] font-medium">
+                                            <div className="flex items-center justify-end gap-3">
+                                                <button
+                                                    onClick={() => handleCrawlJobs(company.id)}
+                                                    disabled={crawlingId === company.id}
+                                                    className="text-gray-600 hover:text-indigo-600 disabled:opacity-50 transition-colors"
+                                                    title="抓取岗位数据"
+                                                >
+                                                    {crawlingId === company.id ? (
+                                                        <Loader2 className="w-[15px] h-[15px] animate-spin" />
+                                                    ) : (
+                                                        <DownloadCloud className="w-[15px] h-[15px]" />
+                                                    )}
+                                                </button>
+                                                <button onClick={() => handleEdit(company)} className="text-indigo-600 hover:text-indigo-900 transition-colors" title="编辑企业">
+                                                    <Edit2 className="w-[15px] h-[15px]" />
+                                                </button>
+                                                <button onClick={() => handleDelete(company.id)} className="text-red-600 hover:text-red-900 transition-colors" title="删除企业">
+                                                    <Trash2 className="w-[15px] h-[15px]" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
