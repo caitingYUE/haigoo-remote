@@ -518,7 +518,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <div className="flex items-center gap-1.5">
                         <div className="w-1 h-1 rounded-full bg-slate-300"></div>
                         <DollarSign className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-semibold text-slate-900">
+                        <span className="font-medium text-slate-700">
                             {(() => {
                                 if (!job.salary) return '薪资面议';
                                 if (typeof job.salary === 'string') {

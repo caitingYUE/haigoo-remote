@@ -234,7 +234,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
           </div>
 
           <div className="flex items-center justify-between mt-2">
-            <div className="font-medium text-emerald-600 text-sm">
+            <div className="font-medium text-slate-700 text-[13px]">
               {formatSalary(job.salary)}
             </div>
             <time className="text-xs text-slate-400" dateTime={job.publishedAt}>
@@ -405,7 +405,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
           </div>
         </div>
 
-        <div className="font-semibold text-emerald-600 text-sm">
+        <div className="font-medium text-slate-700 text-sm">
           {formatSalary(job.salary)}
         </div>
       </div>
