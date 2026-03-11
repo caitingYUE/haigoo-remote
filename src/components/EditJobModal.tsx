@@ -218,7 +218,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 const newStatus = !formData.isApproved;
                 setFormData(prev => ({ ...prev, isApproved: newStatus }));
               }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${formData.isApproved
+              className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors flex items-center gap-2 ${formData.isApproved
                 ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                 : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
                 }`}

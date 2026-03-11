@@ -133,7 +133,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
   const theme = THEME_STYLES[colorTheme];
 
   // Button Styles
-  let buttonClass = "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all border whitespace-nowrap ";
+  let buttonClass = "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-all border whitespace-nowrap ";
 
   if (isActive || isOpen) {
     buttonClass += theme.active + " font-semibold";
@@ -249,7 +249,7 @@ const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, c
 
   return (
     <div
-      className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full select-none"
+      className="flex items-center gap-2 cursor-pointer py-1.5 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full select-none"
       onClick={(e) => {
         // P0 Debug: Explicitly handle label click to ensure event propagation
         console.log(`[JobFilterBar] Container clicked for: ${label}`);
@@ -262,11 +262,11 @@ const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, c
         }`}>
         {checked && <Check className="w-3 h-3 text-white" />}
       </div>
-      <span className={`text-sm flex-1 ${checked ? `${theme.textChecked} font-medium` : 'text-slate-600'} ${emphasized ? 'font-bold' : ''}`}>
+      <span className={`text-[13px] flex-1 ${checked ? `${theme.textChecked} font-medium` : 'text-slate-600'} ${emphasized ? 'font-bold' : ''}`}>
         {label}
       </span>
       {count !== undefined && (
-        <span className="ml-auto text-xs text-slate-400">{count}</span>
+        <span className="ml-auto text-[11px] text-slate-400">{count}</span>
       )}
     </div>
   );
@@ -407,7 +407,7 @@ export default function JobFilterBar({
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search jobs..."
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-sm font-medium transition-all"
+            className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-[13px] font-medium transition-all"
           />
           {searchTerm && (
             <button
@@ -553,21 +553,21 @@ export default function JobFilterBar({
         <div className="flex items-center gap-2 ml-auto hidden xl:flex flex-shrink-0">
           <button
             onClick={onSortChange}
-            className={`flex items-center gap-2 px-3 py-2 border rounded-lg shadow-sm text-sm font-medium transition-all whitespace-nowrap ${sortBy === 'recent'
+            className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg shadow-sm text-[13px] font-medium transition-all whitespace-nowrap ${sortBy === 'recent'
               ? 'bg-slate-900 border-slate-900 text-white'
               : 'bg-white border-slate-200 text-slate-700 hover:bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold'
               }`}
             title={sortBy === 'recent' ? '当前：最新发布' : '当前：按 AI 目标匹配度排序'}
           >
-            <SortAsc className="w-4 h-4" />
+            <SortAsc className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{sortBy === 'recent' ? '最新' : 'AI匹配'}</span>
           </button>
 
           <button
             onClick={onOpenTracking}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white border border-indigo-600 rounded-lg shadow-sm text-sm font-bold hover:bg-indigo-700 transition-all whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white border border-indigo-600 rounded-lg shadow-sm text-[13px] font-bold hover:bg-indigo-700 transition-all whitespace-nowrap"
           >
-            <Sparkles className="w-4 h-4 text-indigo-100" />
+            <Sparkles className="w-3.5 h-3.5 text-indigo-100" />
             <span className="hidden sm:inline">加入微信群</span>
           </button>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { Search, Sparkles, Briefcase, Zap } from 'lucide-react'
+import { Search, Sparkles, Briefcase, Zap, X } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
@@ -7,6 +7,7 @@ import JobBundleBanner from '../components/JobBundleBanner'
 import JobDetailModal from '../components/JobDetailModal'
 import { JobDetailPanel } from '../components/JobDetailPanel'
 import JobFilterBar from '../components/JobFilterBar'
+import WeChatCommunityPanel from '../components/WeChatCommunityPanel'
 import { Job } from '../types'
 
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -196,9 +197,11 @@ export default function JobsPage() {
   // Track if initial match scores have been loaded
   const [initialMatchScoresLoaded, setInitialMatchScoresLoaded] = useState(false)
 
+  const [showWechatModal, setShowWechatModal] = useState(false)
+
   const openCommunityPage = useCallback(() => {
-    navigate('/community')
-  }, [navigate])
+    setShowWechatModal(true)
+  }, [])
 
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
@@ -869,6 +872,27 @@ export default function JobsPage() {
               handleJobSelect(distributedJobs[nextIndex], nextIndex)
             }}
           />
+        )}
+
+        {/* WeChat Community Modal */}
+        {showWechatModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 animate-in fade-in duration-200" onClick={() => setShowWechatModal(false)}>
+            <div className="relative w-full max-w-[850px] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+              <button
+                onClick={() => setShowWechatModal(false)}
+                className="absolute right-4 top-4 z-10 p-2 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <WeChatCommunityPanel 
+                isMember={isAuthenticated} 
+                variant="page" 
+                showHeader={true} 
+                showActions={false} 
+              />
+            </div>
+          </div>
         )}
 
       </div>
