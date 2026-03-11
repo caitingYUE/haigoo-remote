@@ -420,7 +420,7 @@ export default function JobFilterBar({
         </div>
 
         {/* Filter Row - Scrollable on mobile, wrap on desktop */}
-        <div className="flex flex-wrap items-center gap-2 flex-1 w-full pb-1 xl:pb-0">
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0 w-full xl:w-auto pb-1 xl:pb-0">
 
           {/* Job Type (Renamed from Commitment) */}
           <FilterDropdown
@@ -550,7 +550,7 @@ export default function JobFilterBar({
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2 ml-auto hidden xl:flex">
+        <div className="flex items-center gap-2 ml-auto hidden xl:flex flex-shrink-0">
           <button
             onClick={onSortChange}
             className={`flex items-center gap-2 px-3 py-2 border rounded-lg shadow-sm text-sm font-medium transition-all whitespace-nowrap ${sortBy === 'recent'
