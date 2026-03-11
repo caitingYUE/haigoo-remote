@@ -176,18 +176,18 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-md hover:bg-slate-50 transition-colors text-[13px] font-medium shadow-sm"
+                className="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded hover:bg-slate-50 transition-colors text-[11px] font-medium shadow-sm"
               >
                 取消
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={isSaving}
-                className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center gap-1.5 text-[13px] font-medium shadow-sm"
+                className="px-2.5 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center gap-1.5 text-[11px] font-medium shadow-sm"
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                     保存中...
                   </>
                 ) : '保存'}
@@ -238,8 +238,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 required
               />
               {(formData as any).translations?.title && (
-                <div className="mt-1.5 flex items-center justify-between bg-slate-50 px-2 py-1.5 rounded border border-slate-200">
-                  <span className="text-xs text-slate-600 truncate mr-2" title={(formData as any).translations.title}>
+                <div className="mt-1 flex items-center justify-between bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                  <span className="text-[11px] text-slate-500 truncate mr-2" title={(formData as any).translations.title}>
                     翻译: {(formData as any).translations.title}
                   </span>
                   <button
@@ -249,7 +249,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                       delete newTrans.title;
                       setFormData({ ...formData, translations: newTrans });
                     }}
-                    className="text-[11px] text-red-600 hover:text-red-700 font-medium whitespace-nowrap"
+                    className="text-[10px] text-red-500 hover:text-red-700 font-medium whitespace-nowrap"
                   >
                     清除翻译
                   </button>
@@ -276,13 +276,13 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 mb-1.5"
               />
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1 mt-1">
                 {['全球远程', '中国远程', '亚太远程', '香港远程', '台湾远程'].map(loc => (
                   <button
                     key={loc}
                     type="button"
                     onClick={() => setFormData({ ...formData, location: loc })}
-                    className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition-colors"
+                    className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition-colors"
                   >
                     {loc}
                   </button>
@@ -376,7 +376,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </select>
             </div>
 
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位分类</label>
               <select
                 value={formData.category}
@@ -418,7 +418,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
             <div className="md:col-span-2 mt-4 space-y-3 pt-4 border-t border-slate-100">
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-[13px] font-medium text-slate-700">技能标签（用逗号分隔）</label>
+                <label className="block text-[13px] font-medium text-slate-700 text-sm">技能标签 <span className="text-[11px] text-slate-400 font-normal">（用逗号分隔）</span></label>
                 <button
                   type="button"
                   onClick={() => {
@@ -458,14 +458,14 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                       setFormData({ ...formData, tags: Array.from(newTags).join(', ') });
                     }
                   }}
-                  className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors font-medium"
+                  className="flex items-center gap-1 text-[10px] text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded transition-colors font-medium border border-indigo-50"
                   title="自动扫描职位描述并提取常见关键词"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-2.5 h-2.5" />
                   从详情智能提取
                 </button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <input
                   type="text"
                   value={formData.tags}
@@ -475,8 +475,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 />
                 {/* Use currentSuggestedTags instead of generic availableTags if available */}
                 {(currentSuggestedTags.length > 0 ? currentSuggestedTags : availableTags).length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    <span className="text-[11px] text-slate-500 flex items-center pr-1">推荐标签:</span>
+                  <div className="flex flex-wrap gap-1 mt-1 items-center">
+                    <span className="text-[10px] text-slate-400 pr-1">推荐:</span>
                     {(currentSuggestedTags.length > 0 ? currentSuggestedTags : availableTags).map(tag => (
                       <button
                         key={tag}
@@ -488,7 +488,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                             setFormData({ ...formData, tags: newTags });
                           }
                         }}
-                        className="px-1.5 py-0.5 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 text-[11px] rounded transition-colors border border-transparent hover:border-indigo-100"
+                        className="px-1.5 py-0.5 bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 text-[10px] rounded transition-colors border border-slate-100 hover:border-indigo-100 shadow-sm"
                       >
                         + {tag}
                       </button>
@@ -503,15 +503,15 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 <div className="mb-3 bg-indigo-50/50 border border-indigo-100/50 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2 text-indigo-700 font-medium">
-                      <span className="text-[11px] bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-800">中文翻译 (参考)</span>
+                      <span className="text-[10px] bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-800">中文翻译 (参考)</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, description: (job as any).translations.description })}
-                      className="text-[11px] flex items-center gap-1 text-indigo-600 hover:text-indigo-800 transition-colors bg-white px-2 py-1 rounded shadow-sm border border-indigo-100"
+                      className="text-[10px] flex items-center gap-1 text-indigo-600 hover:text-indigo-800 transition-colors bg-white px-1.5 py-0.5 rounded shadow-sm border border-indigo-100"
                       title="使用翻译替换当前描述"
                     >
-                      <ArrowDown className="w-3 h-3" />
+                      <ArrowDown className="w-2.5 h-2.5" />
                       填入描述
                     </button>
                   </div>
