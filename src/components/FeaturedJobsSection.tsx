@@ -59,11 +59,11 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
 
         if (activeTab === CATEGORIES[1].id) {
           // 条件一: CATEGORY ALREADY APPLIED IN THE QUERY String.
-          // 条件二: 级别为【初级】
           const juniorKeywords = ['entry', 'junior', '初级', '实习', 'intern'];
           const excludeKeywords = ['mid', 'senior', 'lead', 'manager', 'director', '中级', '高级', '资深', '专家', '管理', '架构师', 'architect', 'head of'];
 
-          finalJobs = finalJobs.filter(j => {
+          // Helper to check if a job is junior/intern (and not senior)
+          const isJuniorOrIntern = (j: Job) => {
             const expStr = String(j.experienceLevel || '').toLowerCase();
             const titleStr = String(j.title || '').toLowerCase();
 
@@ -77,24 +77,70 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
             // 3. Or it is empty but the title/role belongs to the entry-friendly list 
             // and doesn't have senior markers.
             return hasJunior || (!j.experienceLevel && !hasSenior);
-          });
+          };
 
-          // Sort by updated/published descending (processedJobsService usually sorts by recent or relevance, let's enforce recent)
-          finalJobs.sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
-
-          // 条件三: 针对企业做打散，每组（6个）相同企业数量不超过1个
           const companyCountMap = new Map<string, number>();
           const dispersedJobs: typeof finalJobs = [];
+          const addedJobIds = new Set<string>();
 
-          for (const job of finalJobs) {
-            const compName = job.company ? job.company.toLowerCase() : 'unknown';
-            const count = companyCountMap.get(compName) || 0;
-            if (count < 1) {
-              dispersedJobs.push(job);
-              companyCountMap.set(compName, count + 1);
+          // Helper to add jobs to the final list ensuring company limit (max 1 per company)
+          const addJobs = (jobsToAdd: typeof finalJobs) => {
+            // Sort by updated/published descending (processedJobsService usually sorts by recent or relevance, let's enforce recent)
+            const sortedJobs = [...jobsToAdd].sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+
+            for (const job of sortedJobs) {
+              if (addedJobIds.has(job.id)) continue;
+              const compName = job.company ? job.company.toLowerCase() : 'unknown';
+              const count = companyCountMap.get(compName) || 0;
+              if (count < 1) {
+                dispersedJobs.push(job);
+                addedJobIds.add(job.id);
+                companyCountMap.set(compName, count + 1);
+              }
+              if (dispersedJobs.length >= 6) break;
             }
-            if (dispersedJobs.length >= 6) break;
+          };
+
+          // Step 1: Add original category jobs
+          addJobs(finalJobs.filter(isJuniorOrIntern));
+
+          // Step 2: If we still need more jobs, fetch 'internship' explicitly
+          if (dispersedJobs.length < 6) {
+            try {
+              const internRes = await processedJobsService.getProcessedJobs(1, 60, {
+                isFeatured: true,
+                isApproved: true,
+                type: 'internship', // Fetch explicitly by job type
+                limit: 60
+              });
+              
+              if (internRes.jobs && internRes.jobs.length > 0) {
+                 addJobs(internRes.jobs.filter(isJuniorOrIntern));
+              }
+            } catch (err) {
+              console.warn('Failed to fetch internship jobs as fallback', err);
+            }
           }
+
+          // Step 3: If we STILL need more jobs, fallback to Product (CATEGORIES[2]) and Tech (CATEGORIES[3])
+          if (dispersedJobs.length < 6) {
+             try {
+               const fallbackCategories = [CATEGORIES[2].id, CATEGORIES[3].id].join(',');
+               const fallbackRes = await processedJobsService.getProcessedJobs(1, 60, {
+                  isFeatured: true,
+                  isApproved: true,
+                  category: fallbackCategories,
+                  limit: 60
+               });
+
+               if (fallbackRes.jobs && fallbackRes.jobs.length > 0) {
+                  addJobs(fallbackRes.jobs.filter(isJuniorOrIntern));
+               }
+             } catch (err) {
+               console.warn('Failed to fetch product/tech fallback jobs', err);
+             }
+          }
+
           finalJobs = dispersedJobs;
         }
 
