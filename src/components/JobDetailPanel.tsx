@@ -53,10 +53,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [feedbackContent, setFeedbackContent] = useState('')
     const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
     const [feedbackMessage, setFeedbackMessage] = useState('')
-    // Translation defaults to false, enabled for members automatically
     const [showTranslation, setShowTranslation] = useState(false)
     const [translationUsageCount, setTranslationUsageCount] = useState(0)
-    const TRANSLATION_FREE_LIMIT = 3
+    const TRANSLATION_FREE_LIMIT = 100
     const hasTranslation = !!(job?.translations?.title || job?.translations?.description)
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -575,7 +574,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <button
                                 onClick={() => {
                                     if (!isAuthenticated) {
-                                        if (window.confirm('登录后可免费试用翻译功能（共3次）\\n\\n是否前往登录？')) {
+                                        if (window.confirm('登录后可免费试用翻译功能（共100次）\\n\\n是否前往登录？')) {
                                             navigate('/login')
                                         }
                                         return
@@ -647,7 +646,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 )}
                                 {isAuthenticated && !isMember && translationUsageCount < TRANSLATION_FREE_LIMIT && (
                                     <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
-                                        {TRANSLATION_FREE_LIMIT - translationUsageCount}/3
+                                        {TRANSLATION_FREE_LIMIT - translationUsageCount}/100
                                     </span>
                                 )}
                                 {isAuthenticated && !isMember && translationUsageCount >= TRANSLATION_FREE_LIMIT && (

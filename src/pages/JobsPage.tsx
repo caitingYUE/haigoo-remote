@@ -702,16 +702,15 @@ export default function JobsPage() {
           <div className="flex-1 flex overflow-hidden gap-6 min-h-0 mt-0">
             {/* Middle Column: Job List */}
             <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[55%] xl:w-[55%]' : 'lg:w-[800px] mx-auto'} bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden flex-shrink-0`}>
-              {/* List Header Info */}
-              <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center text-xs text-slate-500 font-medium">
-                <span></span>
-                {filters.isTrusted && (
+              {/* List Header Info - Only show if there's a specific filter info to display like isTrusted */}
+              {filters.isTrusted && (
+                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-end items-center text-xs text-slate-500 font-medium">
                   <span className="flex items-center gap-1 text-indigo-600">
                     <Zap className="w-3 h-3 fill-indigo-600" />
                     已过滤精选企业
                   </span>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* List Content */}
               <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-white overscroll-y-contain">
