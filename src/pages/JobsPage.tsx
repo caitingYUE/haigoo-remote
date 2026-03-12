@@ -343,27 +343,43 @@ export default function JobsPage() {
 
         // Helper to merge with static options
         const mergeOptions = (staticOpts: any[], dynamicOpts: any[], selectedValues: string[] = []) => {
-          // 修正：如果 dynamicOpts 存在但为空数组（表示当前条件下无数据），则应返回空，而不是回退到静态全量
-          // 但为了防止筛选死锁（选中了某个值但不在列表中导致无法取消），我们需要保留已选中的值
-          if (!dynamicOpts) return staticOpts;
+          // If no dynamic options, return static opts with count 0 explicitly (or undefined)
+          if (!dynamicOpts) return staticOpts.map(opt => ({ ...opt, count: 0 }));
 
-          const combined = [...dynamicOpts];
+          // Start with all static options as the base to ensure full list is shown
+          const resultMap = new Map();
+          staticOpts.forEach(opt => {
+            resultMap.set(opt.value, { ...opt, count: 0 });
+          });
 
-          // Ensure selected values are present (so they can be unchecked)
-          selectedValues.forEach(val => {
-            if (!combined.find(c => c.value === val)) {
-              combined.push({ value: val, count: 0 });
+          // Overlay counts from dynamic options, AND add any custom dynamic opts that aren't in static
+          dynamicOpts.forEach((d: any) => {
+            if (resultMap.has(d.value)) {
+              resultMap.get(d.value).count = d.count;
+            } else {
+              resultMap.set(d.value, { label: d.value, value: d.value, count: d.count });
             }
           });
 
-          return combined.map((d: any) => {
-            const staticMatch = staticOpts.find(s => s.value === d.value);
-            return {
-              label: staticMatch ? staticMatch.label : d.value,
-              value: d.value,
-              count: d.count
-            };
+          // Ensure selected values are present (so they can be unchecked), even if count is 0
+          selectedValues.forEach(val => {
+            if (!resultMap.has(val)) {
+              resultMap.set(val, { label: val, value: val, count: 0 });
+            }
           });
+
+          // Return as array, prioritizing static option order first, then custom/dynamic ones end
+          const mergedArray = [];
+          staticOpts.forEach(opt => {
+            mergedArray.push(resultMap.get(opt.value));
+            resultMap.delete(opt.value);
+          });
+          // Add remaining custom options
+          for (const remaining of resultMap.values()) {
+            mergedArray.push(remaining);
+          }
+
+          return mergedArray;
         };
 
         setCategoryOptions(mergeOptions(CATEGORY_OPTIONS, category, filters.category));
