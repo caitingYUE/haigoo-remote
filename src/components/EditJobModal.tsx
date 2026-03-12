@@ -172,25 +172,36 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded hover:bg-slate-50 transition-colors text-[11px] font-medium shadow-sm"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSaving}
+                  className="px-2.5 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center gap-1.5 text-[11px] font-medium shadow-sm"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      保存中...
+                    </>
+                  ) : '保存'}
+                </button>
+              </div>
+              <div className="w-px h-4 bg-slate-200"></div>
               <button
                 type="button"
                 onClick={onClose}
-                className="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded hover:bg-slate-50 transition-colors text-[11px] font-medium shadow-sm"
+                className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-200/50 rounded-full transition-colors"
+                aria-label="Close"
               >
-                取消
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={isSaving}
-                className="px-2.5 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center gap-1.5 text-[11px] font-medium shadow-sm"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    保存中...
-                  </>
-                ) : '保存'}
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>

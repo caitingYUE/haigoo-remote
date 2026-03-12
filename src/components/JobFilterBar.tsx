@@ -568,7 +568,7 @@ export default function JobFilterBar({
             className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white border border-indigo-600 rounded-lg shadow-sm text-[13px] font-bold hover:bg-indigo-700 transition-all whitespace-nowrap"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-100" />
-            <span className="hidden sm:inline">加入微信群</span>
+            <span className="hidden sm:inline">岗位订阅</span>
           </button>
         </div>
       </div>
