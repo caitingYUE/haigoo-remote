@@ -899,9 +899,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
                         {[
-                            '✓ 专为中国人设计的远程工作网站',
+                            '✓ 仅收录国内可申的全球远程工作',
                             '✓ 所有岗位均经过人工审核',
-                            '✓ 90%+岗位可免费直申',
+                            '✓ 限时免费直申中',
                         ].map((chip) => (
                             <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/80 backdrop-blur-md border border-white/50 rounded-full shadow-sm">
                                 {chip}
