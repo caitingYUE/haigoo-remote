@@ -15,11 +15,11 @@ import { trustedCompaniesService } from '../services/trusted-companies-service'
 import { trackingService } from '../services/tracking-service'
 import { useDebounce } from '../hooks/useDebounce'
 
-// Industry Options (Based on classification-service.js)
+// Industry Options - aligned with DB canonical values (trusted-companies.js DEFAULT_CONFIG)
 const INDUSTRY_OPTIONS = [
   '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
-  '电子商务', 'Web3/区块链', '游戏/娱乐', '企业服务/SaaS',
-  '硬件/物联网', '其他'
+  '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
+  '硬件/物联网', '消费生活', '其他'
 ].map(v => ({ label: v, value: v }));
 
 // Job Type Options - Standardized
