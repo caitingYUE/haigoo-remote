@@ -5,7 +5,7 @@ import {
     Wand2, DownloadCloud, Upload, Image as ImageIcon, RefreshCw,
     Globe as GlobeIcon, Briefcase as BriefcaseIcon, Linkedin as LinkedinIcon
 } from 'lucide-react'
-import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import { trustedCompaniesService, TrustedCompany, ReferralContact } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
 import Cropper, { Area } from 'react-easy-crop'
 import getCroppedImg, { compressImage } from '../utils/cropImage'
@@ -66,6 +66,65 @@ export default function AdminTrustedCompaniesPage() {
             'HR邮箱': 'HR邮箱'
         }
         return map[String(emailType || '').trim()] || '通用邮箱'
+    }
+
+    const buildEmptyReferralContact = (override: Partial<ReferralContact> = {}): ReferralContact => ({
+        hiringEmail: '',
+        emailType: '通用邮箱',
+        name: '',
+        title: '',
+        linkedin: '',
+        ...override
+    })
+
+    const normalizeReferralContacts = (contacts: ReferralContact[] = []): ReferralContact[] => {
+        if (!Array.isArray(contacts)) return []
+        return contacts
+            .map(contact => ({
+                hiringEmail: String(contact?.hiringEmail || '').trim(),
+                emailType: normalizeEmailType(contact?.emailType),
+                name: String(contact?.name || '').trim(),
+                title: String(contact?.title || '').trim(),
+                linkedin: String(contact?.linkedin || '').trim()
+            }))
+            .filter(contact => contact.hiringEmail || contact.name || contact.title || contact.linkedin)
+    }
+
+    const resolveInitialReferralContacts = (company?: Partial<TrustedCompany> | null): ReferralContact[] => {
+        const fromArray = normalizeReferralContacts(
+            Array.isArray(company?.referralContacts) ? company!.referralContacts as ReferralContact[] : []
+        )
+        if (fromArray.length > 0) return fromArray
+        const fallbackEmail = String(company?.hiringEmail || '').trim()
+        const fallbackEmailType = normalizeEmailType(company?.emailType)
+        if (fallbackEmail) {
+            return [buildEmptyReferralContact({ hiringEmail: fallbackEmail, emailType: fallbackEmailType })]
+        }
+        return []
+    }
+
+    const addReferralContact = () => {
+        setFormData(prev => ({
+            ...prev,
+            referralContacts: [...(Array.isArray(prev.referralContacts) ? prev.referralContacts : []), buildEmptyReferralContact()]
+        }))
+    }
+
+    const removeReferralContact = (index: number) => {
+        setFormData(prev => {
+            const current = Array.isArray(prev.referralContacts) ? [...prev.referralContacts] : []
+            current.splice(index, 1)
+            return { ...prev, referralContacts: current }
+        })
+    }
+
+    const updateReferralContact = (index: number, key: keyof ReferralContact, value: string) => {
+        setFormData(prev => {
+            const current = Array.isArray(prev.referralContacts) ? [...prev.referralContacts] : []
+            while (current.length <= index) current.push(buildEmptyReferralContact())
+            current[index] = { ...current[index], [key]: value }
+            return { ...prev, referralContacts: current }
+        })
     }
 
     // Debounce search
@@ -145,7 +204,8 @@ export default function AdminTrustedCompaniesPage() {
         setEditingCompany(company)
         setFormData({
             ...company,
-            emailType: normalizeEmailType(company.emailType)
+            emailType: normalizeEmailType(company.emailType),
+            referralContacts: resolveInitialReferralContacts(company)
         })
 
         // If coverImage is missing (due to list optimization), fetch full details
@@ -159,7 +219,8 @@ export default function AdminTrustedCompaniesPage() {
                     setEditingCompany(fullCompany);
                     setFormData({
                         ...fullCompany,
-                        emailType: normalizeEmailType(fullCompany.emailType)
+                        emailType: normalizeEmailType(fullCompany.emailType),
+                        referralContacts: resolveInitialReferralContacts(fullCompany)
                     });
                     setCoverUrlInput(fullCompany.coverImage || '');
                 }
@@ -180,7 +241,8 @@ export default function AdminTrustedCompaniesPage() {
         setFormData({
             isTrusted: true,
             canRefer: false,
-            tags: []
+            tags: [],
+            referralContacts: []
         })
         setCoverUrlInput('')
         resetCropperState()
@@ -211,13 +273,19 @@ export default function AdminTrustedCompaniesPage() {
             setSaving(true)
 
             // Optimize cover image if present and is a base64 string (starts with data:image)
-            let optimizedFormData = { ...formData };
+            const optimizedFormData = { ...formData };
             if (formData.coverImage && formData.coverImage.startsWith('data:image')) {
                 // Compress image to WebP with 0.8 quality and max width 1200
                 const compressedCover = await compressImage(formData.coverImage, 1200, 0.8);
                 optimizedFormData.coverImage = compressedCover;
             }
-            optimizedFormData.emailType = normalizeEmailType(optimizedFormData.emailType)
+            const normalizedReferralContacts = normalizeReferralContacts(
+                Array.isArray(optimizedFormData.referralContacts) ? optimizedFormData.referralContacts as ReferralContact[] : []
+            )
+            const primaryContact = normalizedReferralContacts[0]
+            optimizedFormData.referralContacts = normalizedReferralContacts
+            optimizedFormData.hiringEmail = primaryContact?.hiringEmail || undefined
+            optimizedFormData.emailType = normalizeEmailType(primaryContact?.emailType || optimizedFormData.emailType)
 
             const result = await trustedCompaniesService.saveCompany(optimizedFormData)
 
@@ -969,31 +1037,95 @@ AI分类补全：${data.classifiedCount ?? 0} 个岗位`)
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">招聘邮箱 (可选)</label>
-                                    <input
-                                        type="email"
-                                        value={formData.hiringEmail || ''}
-                                        onChange={e => setFormData({ ...formData, hiringEmail: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="jobs@company.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">招聘邮箱类型</label>
-                                    <select
-                                        value={formData.emailType || '通用邮箱'}
-                                        onChange={e => setFormData({ ...formData, emailType: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="block text-sm font-medium text-gray-700">内推联系人</label>
+                                    <button
+                                        type="button"
+                                        onClick={addReferralContact}
+                                        className="px-3 py-1.5 text-sm bg-indigo-50 text-indigo-600 border border-indigo-200 rounded hover:bg-indigo-100"
                                     >
-                                        <option value="招聘邮箱">招聘邮箱</option>
-                                        <option value="通用邮箱">通用邮箱</option>
-                                        <option value="员工邮箱">员工邮箱</option>
-                                        <option value="高管邮箱">高管邮箱</option>
-                                        <option value="HR邮箱">HR邮箱</option>
-                                    </select>
+                                        新增联系人
+                                    </button>
                                 </div>
+                                {Array.isArray(formData.referralContacts) && formData.referralContacts.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {formData.referralContacts.map((contact, index) => (
+                                            <div key={`referral-contact-${index}`} className="p-3 border rounded-lg bg-gray-50 space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-medium text-gray-700">联系人 {index + 1}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeReferralContact(index)}
+                                                        className="px-2 py-1 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50"
+                                                    >
+                                                        删除
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">招聘邮箱</label>
+                                                        <input
+                                                            type="email"
+                                                            value={contact.hiringEmail || ''}
+                                                            onChange={e => updateReferralContact(index, 'hiringEmail', e.target.value)}
+                                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                                            placeholder="jobs@company.com"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">邮箱类型</label>
+                                                        <select
+                                                            value={contact.emailType || '通用邮箱'}
+                                                            onChange={e => updateReferralContact(index, 'emailType', e.target.value)}
+                                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                                        >
+                                                            <option value="招聘邮箱">招聘邮箱</option>
+                                                            <option value="通用邮箱">通用邮箱</option>
+                                                            <option value="员工邮箱">员工邮箱</option>
+                                                            <option value="高管邮箱">高管邮箱</option>
+                                                            <option value="HR邮箱">HR邮箱</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                                                        <input
+                                                            type="text"
+                                                            value={contact.name || ''}
+                                                            onChange={e => updateReferralContact(index, 'name', e.target.value)}
+                                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                                            placeholder="例如：Alice Zhang"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">职位</label>
+                                                        <input
+                                                            type="text"
+                                                            value={contact.title || ''}
+                                                            onChange={e => updateReferralContact(index, 'title', e.target.value)}
+                                                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                                            placeholder="例如：Senior Recruiter"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn主页</label>
+                                                    <input
+                                                        type="url"
+                                                        value={contact.linkedin || ''}
+                                                        onChange={e => updateReferralContact(index, 'linkedin', e.target.value)}
+                                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                                        placeholder="https://linkedin.com/in/..."
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-sm text-gray-500 border border-dashed rounded-lg p-4 bg-gray-50">
+                                        当前未设置内推联系人，可点击“新增联系人”添加 0-N 组信息。
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-3 gap-4">

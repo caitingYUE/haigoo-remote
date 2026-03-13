@@ -8,6 +8,14 @@ const getAuthToken = () => {
 
 import { CompanyIndustry, CompanyTag } from '../types/rss-types';
 
+export interface ReferralContact {
+    hiringEmail?: string;
+    emailType?: string;
+    name?: string;
+    title?: string;
+    linkedin?: string;
+}
+
 export interface TrustedCompany {
     id: string;
     name: string;
@@ -21,6 +29,7 @@ export interface TrustedCompany {
     employeeCount?: string;
     hiringEmail?: string;
     emailType?: string;
+    referralContacts?: ReferralContact[];
     foundedYear?: string;
     specialties?: string[];
     companyRating?: string;

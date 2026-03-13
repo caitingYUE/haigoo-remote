@@ -93,3 +93,7 @@ ADD COLUMN IF NOT EXISTS hiring_email VARCHAR(255);
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS last_verified_at TIMESTAMPTZ;
 UPDATE jobs SET last_verified_at = published_at WHERE last_verified_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_jobs_last_verified_at ON jobs(last_verified_at ASC);
+
+-- 2026-03-13: Add referral_contacts for trusted companies
+ALTER TABLE trusted_companies
+ADD COLUMN IF NOT EXISTS referral_contacts JSONB DEFAULT '[]'::jsonb;
