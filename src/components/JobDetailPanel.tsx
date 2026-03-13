@@ -343,9 +343,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         return normalized.charAt(0).toUpperCase()
     }
 
+    const goToMembershipPayment = () => {
+        navigate('/membership#pricing-plans')
+    }
+
     const applyViaReferralContact = async (contact: ReferralContact) => {
         if (!isMember) {
-            setShowUpgradeModal(true)
+            goToMembershipPayment()
             return
         }
 
@@ -506,6 +510,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const trustedCompanyJobCount = Number.isFinite(rawCompanyJobCount) && rawCompanyJobCount > 0 ? rawCompanyJobCount : null
     const companyOpenJobCount = companyOpenJobsCount ?? trustedCompanyJobCount
     const companyDescription = String(companyInfo?.description || '').trim() || '该企业暂无公开简介信息，Haigoo 正在持续补充。'
+    const websiteApplyLabel = !isAuthenticated ? '前往申请（需登录）' : '前往申请'
 
     return (
         <div className="flex flex-col bg-white">
@@ -953,23 +958,25 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <div className="rounded-xl border border-indigo-100/80 bg-gradient-to-br from-indigo-50/70 via-white to-slate-50/40 p-3.5 md:p-4 space-y-3">
                                 <div className="flex items-center justify-between gap-3">
                                     <h3 className="text-[15px] md:text-base font-bold text-slate-900">帮我内推</h3>
-                                    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${isMember ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                                        <Crown className="w-3 h-3" />
-                                        会员专属功能
+                                    <div className="flex flex-col items-end gap-1.5">
+                                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${isMember ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                                            <Crown className="w-3 h-3" />
+                                            会员专属功能
+                                        </div>
+                                        {!isMember && (
+                                            <button
+                                                onClick={goToMembershipPayment}
+                                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold bg-indigo-600 text-white border border-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm"
+                                            >
+                                                <Crown className="w-3.5 h-3.5" />
+                                                加入 Haigoo，收获企业人脉
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                                 <p className="text-xs text-slate-600 leading-relaxed">
                                     海狗远程俱乐部帮您找到以下企业联系人，通过联系人工作邮箱申请，让简历更快直达企业内部，提高3x回复率。
                                 </p>
-                                {!isMember && (
-                                    <button
-                                        onClick={() => setShowUpgradeModal(true)}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
-                                    >
-                                        <Crown className="w-3.5 h-3.5" />
-                                        立即开通会员，解锁内推联系人
-                                    </button>
-                                )}
 
                                 <div className="space-y-2">
                                     {referralContacts.map((contact, index) => (
@@ -1014,13 +1021,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${isMember ? 'bg-slate-900 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-500'}`}
                                                 >
                                                     {isMember ? <Mail className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                                                    邮箱直申
+                                                    {isMember ? '邮箱直申' : '找TA内推'}
                                                 </button>
                                             </div>
 
                                             {!isMember && (
                                                 <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-2 py-1">
-                                                    开通会员后解锁联系人邮箱与领英主页
+                                                    加入 Haigoo，解锁企业重要联系人工作邮箱与 Linkedin
                                                 </div>
                                             )}
                                         </div>
@@ -1039,9 +1046,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <button
                         onClick={() => {
                             if (!isAuthenticated) {
-                                if (window.confirm('申请职位需要登录\n\n是否前往登录？')) {
-                                    navigate('/login')
-                                }
+                                navigate('/login')
                                 return
                             }
                             executeApply('website')
@@ -1050,7 +1055,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-50/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                         <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
-                        <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">官网直申</span>
+                        <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">{websiteApplyLabel}</span>
                     </button>
                 )}
 
