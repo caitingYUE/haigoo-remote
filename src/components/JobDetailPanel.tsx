@@ -470,6 +470,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         navigate(`/companies/${companyName}`)
     }
 
+    const companyIndustryLabel = companyInfo?.industry || job.companyIndustry || job.category || '未分类'
+    const rawCompanyJobCount = Number(companyInfo?.jobCount)
+    const companyOpenJobCount = Number.isFinite(rawCompanyJobCount) && rawCompanyJobCount > 0 ? rawCompanyJobCount : 1
+    const companyDescription = String(companyInfo?.description || '').trim() || '该企业暂无公开简介信息，Haigoo 正在持续补充。'
+
     return (
         <div className="flex flex-col bg-white">
             {/* Header */}
@@ -824,37 +829,26 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover/card:text-indigo-600 transition-colors">
-                                            {displayText(job.company || '')}
-                                        </h3>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs font-semibold">
-                                            {companyInfo?.industry || job.companyIndustry || job.category || '未分类'}
-                                        </span>
-                                    </div>
-
-                                    <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm space-y-3">
-                                        <p className="text-xs leading-6 text-slate-600 line-clamp-3">
-                                            {companyInfo?.description || '该企业暂无公开简介信息，Haigoo 正在持续补充。'}
-                                        </p>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="flex items-center gap-2 text-xs text-slate-600">
-                                                <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-                                                    <Building2 className="w-3 h-3 text-indigo-600" />
-                                                </div>
-                                                <span className="truncate">{companyInfo?.industry || job.companyIndustry || job.category || '未分类'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs text-slate-600">
-                                                <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-                                                    <Briefcase className="w-3 h-3 text-indigo-600" />
-                                                </div>
-                                                <span>{typeof companyInfo?.jobCount === 'number' ? `${companyInfo.jobCount} 个在招岗位` : '在招岗位待更新'}</span>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <h3 className="text-lg font-bold text-slate-900 group-hover/card:text-indigo-600 transition-colors truncate">
+                                                    {displayText(job.company || '')}
+                                                </h3>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs font-semibold">
+                                                    {companyIndustryLabel}
+                                                </span>
                                             </div>
                                         </div>
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-indigo-100 text-indigo-700 text-xs font-semibold whitespace-nowrap">
+                                            <Briefcase className="w-3.5 h-3.5" />
+                                            <span>{companyOpenJobCount} 个在招岗位</span>
+                                        </div>
                                     </div>
+
+                                    <p className="mt-2 text-sm leading-7 text-slate-600 line-clamp-3">
+                                        {companyDescription}
+                                    </p>
                                 </div>
                             </div>
 
