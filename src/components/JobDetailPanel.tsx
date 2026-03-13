@@ -80,6 +80,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [companyInfo])
 
     const showReferralModule = referralContacts.length > 0
+    const translationPreferenceKey = `job_translation_preference_${job?.id || ''}`
 
     useEffect(() => {
         // Reset state when job changes
@@ -88,8 +89,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         setFeedbackContent('')
         setFeedbackMessage('')
 
-        // Reset translation state - Auto-enable for members
-        setShowTranslation(isMember)
+        const savedPreference = typeof window !== 'undefined' ? localStorage.getItem(translationPreferenceKey) : null
+        const shouldShowTranslation = isMember || (savedPreference === 'translated' && hasTranslation)
+        setShowTranslation(shouldShowTranslation)
 
         // Track view job detail
         if (job?.id) {
@@ -100,7 +102,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 source: sourceType
             })
         }
-    }, [job?.id, isMember])
+    }, [job?.id, isMember, hasTranslation, translationPreferenceKey])
 
     // Initialize translation usage from server
     useEffect(() => {
@@ -721,6 +723,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                             setTranslationUsageCount(TRANSLATION_FREE_LIMIT)
                                                             setShowUpgradeModal(true)
                                                             setShowTranslation(false) // Hide translation
+                                                            if (typeof window !== 'undefined') {
+                                                                localStorage.setItem(translationPreferenceKey, 'original')
+                                                            }
                                                             return // Stop here
                                                         }
                                                     })
@@ -736,7 +741,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             }
                                         }
                                     }
-                                    setShowTranslation(!showTranslation)
+                                    const nextShowTranslation = !showTranslation
+                                    setShowTranslation(nextShowTranslation)
+                                    if (typeof window !== 'undefined') {
+                                        localStorage.setItem(translationPreferenceKey, nextShowTranslation ? 'translated' : 'original')
+                                    }
                                 }}
                                 className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium border ${showTranslation
                                     ? 'bg-violet-50 text-violet-600 border-violet-100'
@@ -957,12 +966,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         <section className="pb-5">
                             <div className="rounded-xl border border-indigo-100/80 bg-gradient-to-br from-indigo-50/70 via-white to-slate-50/40 p-3.5 md:p-4 space-y-3">
                                 <div className="flex items-center justify-between gap-3">
-                                    <h3 className="text-[15px] md:text-base font-bold text-slate-900">帮我内推</h3>
-                                    <div className="flex flex-col items-end gap-1.5">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <h3 className="text-[15px] md:text-base font-bold text-slate-900 whitespace-nowrap">帮我内推</h3>
                                         <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${isMember ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                                             <Crown className="w-3 h-3" />
                                             会员专属功能
                                         </div>
+                                    </div>
+                                    <div className="flex items-center justify-end">
                                         {!isMember && (
                                             <button
                                                 onClick={goToMembershipPayment}
