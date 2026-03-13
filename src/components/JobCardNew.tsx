@@ -207,6 +207,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       return tags.slice(0, 5); // Reduce max tags for cleaner look
    }, [job.skills, job.tags, job.companyTags]);
 
+   const salaryText = formatSalary(job.salary);
+   const isSalaryOpen = salaryText === '薪资Open' || salaryText === '薪资 Open';
+
    // Redesigned Company Logo Component
    // Matching reference: Large card style, dynamic background, centered logo, company name above
    const CompanyCard = ({ size: _size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
@@ -385,8 +388,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   {/* Salary (Desktop - Restored to Top Right) */}
-                  <div className={`hidden md:block text-[15px] whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
-                     {formatSalary(job.salary)}
+                  <div className={`hidden md:block text-[15px] whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
+                     {salaryText}
                   </div>
                </div>
 
@@ -458,8 +461,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      )}
 
                      {/* Salary (Mobile Only) */}
-                     <div className={`md:hidden text-sm whitespace-nowrap ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
-                        {formatSalary(job.salary)}
+                     <div className={`md:hidden text-sm whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
+                        {salaryText}
                      </div>
 
                      {/* Status Dropdown (Right side, before delete) */}

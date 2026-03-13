@@ -14,6 +14,7 @@ import { ReferralApplicationModal } from './ReferralApplicationModal'
 import { RiskRatingDisplay } from './RiskRatingDisplay'
 import { MatchDetailsPanel } from './MatchDetailsPanel'
 import { trustedCompaniesService, TrustedCompany, ReferralContact } from '../services/trusted-companies-service'
+import { processedJobsService } from '../services/processed-jobs-service'
 import { useNotificationHelpers } from './NotificationSystem'
 import { getJobSourceType } from '../utils/job-source-helper'
 import { trackingService } from '../services/tracking-service'
@@ -58,6 +59,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const TRANSLATION_FREE_LIMIT = 100
     const hasTranslation = !!(job?.translations?.title || job?.translations?.description)
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
+    const [companyOpenJobsCount, setCompanyOpenJobsCount] = useState<number | null>(null)
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
     const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
@@ -141,6 +143,35 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             setCompanyInfo(null)
         }
     }, [job?.companyId])
+
+    useEffect(() => {
+        let cancelled = false
+        const loadCompanyOpenJobsCount = async () => {
+            try {
+                const jobsQuery = job?.companyId
+                    ? { companyId: job.companyId, isApproved: true, skipAggregations: true as const }
+                    : { company: job.company, isApproved: true, skipAggregations: true as const }
+                const jobsResponse = await processedJobsService.getProcessedJobs(1, 100, jobsQuery)
+                if (!cancelled) {
+                    setCompanyOpenJobsCount(Array.isArray(jobsResponse.jobs) ? jobsResponse.jobs.length : null)
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    setCompanyOpenJobsCount(null)
+                }
+            }
+        }
+
+        if (job?.companyId || job?.company) {
+            loadCompanyOpenJobsCount()
+        } else {
+            setCompanyOpenJobsCount(null)
+        }
+
+        return () => {
+            cancelled = true
+        }
+    }, [job?.companyId, job?.company])
 
     // Member-only fields (from PRD)
     const riskRating = job.riskRating;
@@ -472,7 +503,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const companyIndustryLabel = companyInfo?.industry || job.companyIndustry || job.category || '未分类'
     const rawCompanyJobCount = Number(companyInfo?.jobCount)
-    const companyOpenJobCount = Number.isFinite(rawCompanyJobCount) && rawCompanyJobCount > 0 ? rawCompanyJobCount : 1
+    const trustedCompanyJobCount = Number.isFinite(rawCompanyJobCount) && rawCompanyJobCount > 0 ? rawCompanyJobCount : null
+    const companyOpenJobCount = companyOpenJobsCount ?? trustedCompanyJobCount
     const companyDescription = String(companyInfo?.description || '').trim() || '该企业暂无公开简介信息，Haigoo 正在持续补充。'
 
     return (
@@ -842,7 +874,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         </div>
                                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-indigo-100 text-indigo-700 text-xs font-semibold whitespace-nowrap">
                                             <Briefcase className="w-3.5 h-3.5" />
-                                            <span>{companyOpenJobCount} 个在招岗位</span>
+                                            <span>{companyOpenJobCount != null ? `${companyOpenJobCount} 个在招岗位` : '在招岗位统计中'}</span>
                                         </div>
                                     </div>
 
@@ -929,6 +961,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <p className="text-xs text-slate-600 leading-relaxed">
                                     海狗远程俱乐部帮您找到以下企业联系人，通过联系人工作邮箱申请，让简历更快直达企业内部，提高3x回复率。
                                 </p>
+                                {!isMember && (
+                                    <button
+                                        onClick={() => setShowUpgradeModal(true)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+                                    >
+                                        <Crown className="w-3.5 h-3.5" />
+                                        立即开通会员，解锁内推联系人
+                                    </button>
+                                )}
 
                                 <div className="space-y-2">
                                     {referralContacts.map((contact, index) => (
