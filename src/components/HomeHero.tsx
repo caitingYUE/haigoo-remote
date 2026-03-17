@@ -321,6 +321,22 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [tickerJobs, setTickerJobs] = useState<any[]>([])
     const tickerLoop = [...tickerJobs, ...tickerJobs]
 
+    const openTickerJobDetail = (job: any) => {
+        const company = job?.company_name || job?.company || 'Company'
+        setSelectedJobDetail({
+            id: String(job?.id || ''),
+            title: job?.title || '远程岗位',
+            company,
+            company_name: company,
+            location: job?.location || '远程',
+            salary: job?.salary || '薪酬面议',
+            timezone: job?.timezone || '',
+            description: job?.description || job?.company_intro || `${company} 当前开放远程岗位，点击查看完整岗位详情。`,
+            company_intro: job?.company_intro || job?.description || '',
+            source: 'hero_ticker'
+        })
+    }
+
     // Load saved form data from local storage for guest/returning users
     useEffect(() => {
         const cached = localStorage.getItem(HERO_CACHE_KEY)
@@ -406,16 +422,33 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             try {
                 const fetchWindowJobs = async (days: number) => {
                     const dateFrom = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
-                    const params = new URLSearchParams({
-                        resource: 'processed-jobs',
+                    const baseParams = {
                         page: '1',
                         limit: '60',
                         sortBy: 'recent',
                         dateFrom,
-                        _t: Date.now().toString()
+                        _t: `${Date.now()}-${days}`
+                    }
+
+                    const directParams = new URLSearchParams(baseParams)
+                    let resp = await fetch(`/api/data/processed-jobs?${directParams.toString()}`, {
+                        cache: 'no-store',
+                        headers: { 'cache-control': 'no-cache' }
                     })
-                    const resp = await fetch(`/api/data?${params.toString()}`)
-                    const data = await resp.json().catch(() => ({}))
+                    let data = await resp.json().catch(() => ({}))
+
+                    if (!resp.ok || !Array.isArray(data.jobs)) {
+                        const fallbackParams = new URLSearchParams({
+                            resource: 'processed-jobs',
+                            ...baseParams
+                        })
+                        resp = await fetch(`/api/data?${fallbackParams.toString()}`, {
+                            cache: 'no-store',
+                            headers: { 'cache-control': 'no-cache' }
+                        })
+                        data = await resp.json().catch(() => ({}))
+                    }
+
                     if (!resp.ok || !Array.isArray(data.jobs)) return []
                     return data.jobs
                 }
@@ -440,7 +473,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             company_name: companyName,
                             company_logo: j.logo || '',
                             logo_candidates: resolveLogoCandidates(j.logo, companyName, j.companyWebsite || j.company_website),
-                            salary: j.salary || '薪资面议'
+                            salary: j.salary || '薪资面议',
+                            location: j.location || 'Remote',
+                            timezone: j.timezone || '',
+                            description: j.description || '',
+                            company_intro: j.companyDescription || j.description || '',
+                            company_website: j.companyWebsite || j.company_website
                         }
                     })
                 if (normalizedTicker.length < TICKER_TARGET_MIN) {
@@ -665,7 +703,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                     className="pointer-events-auto"
                                     aria-hidden={i >= tickerJobs.length}
                                 >
-                                    <JobTickerItem job={job} />
+                                    <JobTickerItem job={job} onOpen={openTickerJobDetail} />
                                 </div>
                             ))}
                         </div>
