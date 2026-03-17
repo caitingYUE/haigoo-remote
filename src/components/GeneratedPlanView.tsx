@@ -1,7 +1,7 @@
 import { CheckCircle2, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-export default function GeneratedPlanView({ plan, isGuest }: { plan: any, isGuest: boolean }) {
+export default function GeneratedPlanView({ plan, isGuest, openInNewTab = false }: { plan: any, isGuest: boolean, openInNewTab?: boolean }) {
     if (!plan) return null;
 
     return (
@@ -115,11 +115,21 @@ export default function GeneratedPlanView({ plan, isGuest }: { plan: any, isGues
             <div className="mt-4 pt-4 border-t border-slate-100 flex-shrink-0 flex flex-col items-center gap-3">
 
                 <div className="flex w-full gap-2">
-                    <Link to="/jobs" className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-indigo-500 hover:text-white transition-colors shadow-sm no-underline hover:no-underline">
+                    <Link
+                        to="/jobs"
+                        target={openInNewTab ? '_blank' : undefined}
+                        rel={openInNewTab ? 'noopener noreferrer' : undefined}
+                        className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-indigo-500 hover:text-white transition-colors shadow-sm no-underline hover:no-underline"
+                    >
                         去大厅查看更多岗位 <ArrowRight className="w-4 h-4" />
                     </Link>
                     {!isGuest && (
-                        <Link to="/profile?tab=custom-plan" className="flex-1 py-2.5 bg-slate-50 text-slate-700 rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-slate-100 border border-slate-200 transition-colors">
+                        <Link
+                            to="/profile?tab=custom-plan"
+                            target={openInNewTab ? '_blank' : undefined}
+                            rel={openInNewTab ? 'noopener noreferrer' : undefined}
+                            className="flex-1 py-2.5 bg-slate-50 text-slate-700 rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-slate-100 border border-slate-200 transition-colors"
+                        >
                             前往个人中心查看完整版
                         </Link>
                     )}

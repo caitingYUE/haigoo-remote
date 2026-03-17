@@ -200,6 +200,31 @@ function CompanyLogo({ companyName, logoCandidates, className }: { companyName: 
     )
 }
 
+function normalizePlanForView(plan: any) {
+    if (!plan) return null
+    const normalized = { ...plan }
+    if (normalized.readiness === undefined && typeof normalized.remoteReadiness?.score === 'number') {
+        normalized.readiness = normalized.remoteReadiness.score
+    }
+    if ((!normalized.summary || !normalized.summary.trim()) && normalized.resumeEval?.summary) {
+        normalized.summary = normalized.resumeEval.summary
+    }
+    if ((!normalized.recommendations || normalized.recommendations.length === 0) && normalized.applicationPlan?.recommendations) {
+        normalized.recommendations = normalized.applicationPlan.recommendations
+    }
+    if ((!normalized.milestones || normalized.milestones.length === 0) && Array.isArray(normalized.applicationPlan?.steps)) {
+        normalized.milestones = normalized.applicationPlan.steps.map((s: any, idx: number) => ({
+            month: s.week || `阶段 ${idx + 1}`,
+            focus: s.action || s.focus || '行动任务',
+            tasks: s.tasks || (s.action ? [s.action] : [])
+        }))
+    }
+    if ((!normalized.milestones || normalized.milestones.length === 0) && normalized.plan_v2?.milestones) {
+        normalized.milestones = normalized.plan_v2.milestones
+    }
+    return normalized
+}
+
 
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
@@ -225,6 +250,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [hasHydrated, setHasHydrated] = useState(false)
     const [showPlanModal, setShowPlanModal] = useState(false)
     const [activeCard, setActiveCard] = useState(0)
+    const touchStartXRef = useRef<number | null>(null)
     const [selectedJobDetail, setSelectedJobDetail] = useState<any | null>(null)
     const [lastUpdatedAt, setLastUpdatedAt] = useState<number>(Date.now())
     const [previewJobs, setPreviewJobs] = useState<any[]>([])
@@ -626,13 +652,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                 {hasResults && (
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => setActiveCard(prev => Math.max(0, prev - 1))} disabled={activeCard === 0}
-                                            className="w-7 h-7 rounded-full bg-white border border-slate-100 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-50 transition-colors">
-                                            <ChevronLeft className="w-3.5 h-3.5 text-slate-600" />
+                                            className="w-9 h-9 rounded-full bg-indigo-50 border border-indigo-200 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-100 transition-colors">
+                                            <ChevronLeft className="w-4 h-4 text-indigo-700" />
                                         </button>
-                                        <span className="text-xs text-slate-400">{activeCard + 1} / {displayRecommendations.length}</span>
+                                        <span className="text-xs text-slate-500 font-semibold">{activeCard + 1} / {displayRecommendations.length}</span>
                                         <button onClick={() => setActiveCard(prev => Math.min(displayRecommendations.length - 1, prev + 1))} disabled={activeCard >= displayRecommendations.length - 1}
-                                            className="w-7 h-7 rounded-full bg-white border border-slate-100 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-50 transition-colors">
-                                            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+                                            className="w-9 h-9 rounded-full bg-indigo-50 border border-indigo-200 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-100 transition-colors">
+                                            <ChevronRight className="w-4 h-4 text-indigo-700" />
                                         </button>
                                     </div>
                                 )}
@@ -701,7 +727,17 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                         company_intro: companyIntro,
                                                         source: 'hero_copilot'
                                                     })}
-                                                    className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex-1 min-h-0 relative z-10 text-left hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col"
+                                                    onTouchStart={(e) => { touchStartXRef.current = e.changedTouches[0].clientX }}
+                                                    onTouchEnd={(e) => {
+                                                        if (touchStartXRef.current === null) return
+                                                        const deltaX = e.changedTouches[0].clientX - touchStartXRef.current
+                                                        if (Math.abs(deltaX) > 40) {
+                                                            if (deltaX < 0) setActiveCard(prev => Math.min(displayRecommendations.length - 1, prev + 1))
+                                                            if (deltaX > 0) setActiveCard(prev => Math.max(0, prev - 1))
+                                                        }
+                                                        touchStartXRef.current = null
+                                                    }}
+                                                    className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex-1 h-[420px] relative z-10 text-left hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col"
                                                 >
                                                     <h4 className="text-[30px] font-bold text-slate-900 mb-3 leading-[1.12] line-clamp-2">{title}</h4>
                                                     <div className="flex flex-col gap-1.5 mb-4">
@@ -733,18 +769,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         )
                                     })()
                                 )}
-                                {hasResults && (
+                                {hasResults && !isAuthenticated && (
                                     <div className="h-[52px] mt-3 relative z-10">
-                                        {!isAuthenticated ? (
-                                            <div className="h-full flex items-center justify-between bg-indigo-600 rounded-xl px-4">
-                                                <span className="text-sm font-bold text-white">登录后解锁每日 5 个精选推荐</span>
-                                                <button onClick={() => navigate('/login')} className="text-sm font-bold text-indigo-100 hover:text-white underline transition-colors">去登录</button>
-                                            </div>
-                                        ) : (
-                                            <div className="h-full flex items-center justify-center bg-indigo-600 rounded-xl px-4">
-                                                <span className="text-sm font-bold text-white">已登录，可继续查看完整推荐岗位</span>
-                                            </div>
-                                        )}
+                                        <div className="h-full flex items-center justify-between bg-indigo-600 rounded-xl px-4">
+                                            <span className="text-sm font-bold text-white">登录后解锁每日 5 个精选推荐</span>
+                                            <button onClick={() => navigate('/login')} className="text-sm font-bold text-indigo-100 hover:text-white underline transition-colors">去登录</button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -911,14 +941,14 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
             <div className="relative w-full max-w-4xl max-h-[88vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-500 to-violet-500 text-white px-6 py-5 flex items-center justify-between flex-shrink-0">
+                <div className="bg-indigo-600 text-white px-6 py-5 flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
                             <Sparkles className="w-4 h-4 text-white" />
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-white">Copilot 求职助手</h2>
-                            <p className="text-indigo-100 text-xs">未登录也可体验简版求职规划，登录后解锁完整方案与更多岗位推荐。</p>
+                            <p className="text-indigo-100 text-xs">{isAuthenticated ? '可在下方调整关键行动路线，并同步更新专属求职规划。' : '未登录也可体验简版求职规划，登录后解锁完整方案与更多岗位推荐。'}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
@@ -971,14 +1001,8 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                     {planLoading && isAuthenticated ? (
                         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-sm text-slate-500">正在加载你的完整求职规划...</div>
                     ) : (
-                        <GeneratedPlanView plan={isAuthenticated ? (planData || guestPlan) : guestPlan} isGuest={!isAuthenticated} />
+                        <GeneratedPlanView plan={normalizePlanForView(isAuthenticated ? (planData || guestPlan) : guestPlan)} isGuest={!isAuthenticated} openInNewTab />
                     )}
-
-                    <div className="text-center pt-2">
-                        <Link to="/copilot" onClick={onClose} className="text-sm text-indigo-600 font-semibold hover:underline">
-                            前往个人中心查看完整版 →
-                        </Link>
-                    </div>
                 </div>
             </div>
         </div>
