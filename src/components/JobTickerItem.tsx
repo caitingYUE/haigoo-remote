@@ -1,14 +1,22 @@
 import React from 'react';
 
 export default function JobTickerItem({ job }: { job: any }) {
+    const logos = Array.isArray(job.logo_candidates) ? job.logo_candidates.filter(Boolean) : []
+    const [logoIndex, setLogoIndex] = React.useState(0)
+    const currentLogo = logos[logoIndex] || job.company_logo || ''
     return (
         <div 
             className="flex-shrink-0 flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-full border border-slate-100 px-4 py-2 mx-2 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all cursor-pointer group min-w-[240px]"
             onClick={() => window.location.href = `/jobs/${job.id}`}
         >
             <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {job.company_logo ? (
-                    <img src={job.company_logo} alt={job.company_name} className="w-full h-full object-contain" />
+                {currentLogo ? (
+                    <img
+                        src={currentLogo}
+                        alt={job.company_name}
+                        className="w-full h-full object-contain"
+                        onError={() => setLogoIndex((prev) => (prev < logos.length - 1 ? prev + 1 : prev))}
+                    />
                 ) : (
                     <span className="text-[10px] font-bold text-slate-400">
                         {job.company_name?.slice(0, 2).toUpperCase()}
